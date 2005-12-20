@@ -37,12 +37,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 using namespace ASDCP;
 using namespace ASDCP::MXF;
 
-
-// GetMDObjectByPath() path to file's Identification metadata object
-static const char* INFO_OBJECT_PATH = "Preface.Identifications.Identification.Identification";
-static const char* ASSET_ID_OBJECT_PATH = "Preface.ContentStorage.ContentStorage.Packages.Package.SourcePackage.PackageUID";
-
-
+//
 ASDCP::h__Reader::h__Reader() : m_EssenceStart(0)
 {
 }
