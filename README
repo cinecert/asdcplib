@@ -6,8 +6,9 @@ simplified access to files conforming to the sound and
 picture track file formats proposed by the SMPTE working
 group DC-28.20.
 
-This work was funded by Digital Cinema Initiatives, LLC
-and others.
+This work was originally funded by Digital Cinema
+Initiatives, LLC. Subsequent efforts have been funded by
+Deluxe Laboratories, Doremi Labs, and others.
 
 **The asdcplib project is housed on SourceForge. The project
 home page is at http://sourceforge.net/projects/asdcplib.
@@ -17,14 +18,11 @@ Feel free to email with questions or to request a tar file.
 
 The project used to depend upon the mxflib project. Because
 of the focus on covering the whole of the MXF spscifications,
-mxflib is considerably larger and more complex that what we
-require for this application. For this reason we have forked
-mxflib and have simplified its implementation to better suit
-our application. Thanks to Matt Beard and Oliver Morgan for
-their great work and support.
-
-OpenSSL is also required if you want to read and write
-encrypted AS-DCP files. See http://www.openssl.org
+mxflib is considerably larger and more complex that what I
+require for this application. For this reason I have created
+a dedicated MXF interface that is now part of this library.
+Special thanks to Matt Beard and Oliver Morgan for their great
+work and support.
 
 Thanks also to the members of the SMPTE DC-28.20 packaging
 ad-hoc group and the members of the MXF Interop Initiative
@@ -65,13 +63,17 @@ Build Instructions
 GNU make is required to build asdcplib. The makefile will
 work on win32 systems that have Cygwin. Other win32 gmake
 packages may or may not work depending upon the availability
-of standard POSIX shell commands.
+of standard POSIX shell commands. You will need gcc to rebuild
+the dep.make file.
 
-If you are building on win32 or a unix with no OpenSSL
-library support, you will have to also obtain and build
-OpenSSL (I'm using 0.9.7d).  Unpack it into the same
-parent directory as asdcplib/, and rename the directory
-as (or make a sym link named) 'openssl':
+OpenSSL is required if you want to read and write encrypted
+AS-DCP files. See http://www.openssl.org
+
+If you are building on win32 or a unix with no OpenSSL library
+support, you will have to also obtain and build OpenSSL (I'm
+using 0.9.7d on win32).  Unpack it into the same parent directory
+as asdcplib/, and rename the directory as (or make a sym link
+named) 'openssl':
 
 myhost$ ls -l
 total 1761
@@ -116,6 +118,13 @@ examples. More detailed documentation will be written RSN.
 
 
 Change History
+2005.00.00 - A New Hope
+ o The temporary mxf-lite has been removed. MXF files are now 
+   managed via the objects in KLV.h, MXFTypes.h MXF.h and
+   Metadata.h. This release does not support writing MXF files.
+ o Fixed a header interpretation error in the Wav parser.
+
+
 2005.00.00 - The Reformation
  o Removed mxflib as a dependency by forking the necessary
    functions and placing them in the mxf-lite subdirectory.

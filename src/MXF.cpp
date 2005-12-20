@@ -31,7 +31,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #define ASDCP_DECLARE_MDD
 #include "MDD.h"
-
+#include "Mutex.h"
 #include "MXF.h"
 #include "Metadata.h"
 #include <hex_utils.h>
@@ -673,6 +673,7 @@ ASDCP::MXF::OPAtomHeader::GetMDObjectByType(const byte_t* ObjectID, InterchangeO
   return m_PacketList->GetMDObjectByType(ObjectID, Object);
 }
 
+//
 ASDCP::MXF::Identification*
 ASDCP::MXF::OPAtomHeader::GetIdentification()
 {
@@ -680,6 +681,18 @@ ASDCP::MXF::OPAtomHeader::GetIdentification()
 
   if ( ASDCP_SUCCESS(GetMDObjectByType(OBJ_TYPE_ARGS(Identification), &Object)) )
     return (Identification*)Object;
+
+  return 0;
+}
+
+//
+ASDCP::MXF::SourcePackage*
+ASDCP::MXF::OPAtomHeader::GetSourcePackage()
+{
+  InterchangeObject* Object;
+
+  if ( ASDCP_SUCCESS(GetMDObjectByType(OBJ_TYPE_ARGS(SourcePackage), &Object)) )
+    return (SourcePackage*)Object;
 
   return 0;
 }
@@ -974,10 +987,37 @@ enum FLT_t
   };
 
 //
-typedef std::map<ASDCP::UL, FLT_t> FactoryList;
-#define SETUP_IDX(t) const ui32_t FLT_##t = v;
+typedef std::map<ASDCP::UL, FLT_t>::iterator FLi_t;
 
+class FactoryList : public std::map<ASDCP::UL, FLT_t>
+{
+  ASDCP::Mutex m_Lock;
+
+public:
+  FactoryList() {}
+  ~FactoryList() {}
+
+  bool Empty() {
+    ASDCP::AutoMutex BlockLock(m_Lock);
+    return empty();
+  }
+
+  FLi_t Find(const byte_t* label) {
+    ASDCP::AutoMutex BlockLock(m_Lock);
+    return find(label);
+  }
+
+  FLi_t End() {
+    ASDCP::AutoMutex BlockLock(m_Lock);
+    return end();
+  }
+
+};
+
+//
 static FactoryList s_FactoryList;
+
+#define SETUP_IDX(t) const ui32_t FLT_##t = v;
 #define SETUP_FACTORY(t) s_FactoryList.insert(FactoryList::value_type(s_MDD_Table[MDDindex_##t].ul, FLT_##t));
 #define CASE_FACTORY(t)  case FLT_##t: return new t
 
@@ -1010,7 +1050,7 @@ ASDCP::MXF::CreateObject(const byte_t* label)
       SETUP_FACTORY(CryptographicContext);
     }
 
-  FactoryList::iterator i = s_FactoryList.find(label);
+  FLi_t i = s_FactoryList.find(label);
 
   if ( i == s_FactoryList.end() )
     return new InterchangeObject;

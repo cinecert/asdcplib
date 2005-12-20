@@ -1100,7 +1100,7 @@ class MyVideoDescriptor : public MPEG2::VideoDescriptor
     MPEG2::VideoDescriptorDump(*this, stream);
   }
 };
-#if 0
+
 class MyPictureDescriptor : public JP2K::PictureDescriptor
 {
  public:
@@ -1124,7 +1124,7 @@ class MyAudioDescriptor : public PCM::AudioDescriptor
     PCM::AudioDescriptorDump(*this, stream);
   }
 };
-#endif
+
 
 // MSVC didn't like the function template, so now it's a static class method
 template<class ReaderT, class DescriptorT>
@@ -1181,7 +1181,6 @@ show_file_info(CommandOptions& Options)
       fputs("File essence type is MPEG2 video.\n", stdout);
       FileInfoWrapper<ASDCP::MPEG2::MXFReader, MyVideoDescriptor>::file_info(Options);
     }
-#if 0
   else if ( EssenceType == ESS_PCM_24b_48k )
     {
       fputs("File essence type is PCM audio.\n", stdout);
@@ -1192,7 +1191,6 @@ show_file_info(CommandOptions& Options)
       fputs("File essence type is JPEG 2000 pictures.\n", stdout);
       FileInfoWrapper<ASDCP::JP2K::MXFReader, MyPictureDescriptor>::file_info(Options);
     }
-#endif
   else
     {
       fprintf(stderr, "File is not AS-DCP: %s\n", Options.filenames[0]);
@@ -1206,17 +1204,17 @@ show_file_info(CommandOptions& Options)
 
       if ( ASDCP_SUCCESS(result) )
 	{
+	  TestHeader.Partition::Dump();
+
 	  if ( MXF::Identification* ID = TestHeader.GetIdentification() )
-	    {
-	      TestHeader.Dump();
-	      ID->Dump();
-	      // show OP
-	      // show 
-	    }
+	    ID->Dump();
 	  else
-	    {
-	      fputs("File contains no Identification object.\n", stdout);
-	    }
+	    fputs("File contains no Identification object.\n", stdout);
+
+	  if ( MXF::SourcePackage* SP = TestHeader.GetSourcePackage() )
+	    SP->Dump();
+	  else
+	    fputs("File contains no SourcePackage object.\n", stdout);
 	}
       else
 	{
@@ -1307,6 +1305,9 @@ main(int argc, const char** argv)
     }
   else if ( Options.create_flag )
     {
+      fprintf(stderr, "ATTENTION! This version of asdcplib does not support writing MXF files.\n");
+
+#if 0
       if ( Options.do_repeat && ! Options.duration_flag )
 	{
 	  fputs("Option -R requires -d <duration>\n", stderr);
@@ -1318,7 +1319,6 @@ main(int argc, const char** argv)
 #ifdef SMPTE_LABELS
       fprintf(stderr, "ATTENTION! Writing SMPTE Universal Labels\n");
 #endif
-#if 0
       if ( ASDCP_SUCCESS(result) )
 	{
 	  switch ( EssenceType )

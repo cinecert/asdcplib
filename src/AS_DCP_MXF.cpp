@@ -41,39 +41,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // misc subroutines
 
 
-// helper class for XXX below
-//
-class PathSplitter
-{
-public:
-  char* Root;
-  char* SubPath;
-
-  PathSplitter(const std::string Str)
-  {
-    Root = strdup(Str.c_str());
-    assert(Root);
-
-    // sub-path exists?
-    SubPath = strchr(Root, OBJECT_PATH_SEPARATOR);
-
-    if ( SubPath )
-      {
-	while ( SubPath[1] == OBJECT_PATH_SEPARATOR )
-	  SubPath++;
-
-	*SubPath++ = 0;
-
-	if ( *SubPath == 0 )
-	  SubPath = 0;
-      }
-  }
-
-  ~PathSplitter() {
-    free(Root);
-  }
-};
-
 //
 void
 ASDCP::WriterInfoDump(const WriterInfo& Info, FILE* stream)
