@@ -1,0 +1,346 @@
+/*
+Copyright (c) 2004-2005, John Hurst
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions
+are met:
+1. Redistributions of source code must retain the above copyright
+   notice, this list of conditions and the following disclaimer.
+2. Redistributions in binary form must reproduce the above copyright
+   notice, this list of conditions and the following disclaimer in the
+   documentation and/or other materials provided with the distribution.
+3. The name of the author may not be used to endorse or promote products
+   derived from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
+IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
+INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
+/*! \file    h__Reader.cpp
+    \version $Id$
+    \brief   MXF file reader base class
+*/
+
+#include "AS_DCP_internal.h"
+#include "KLV.h"
+#include "MDD.h"
+#include <assert.h>
+
+using namespace ASDCP;
+using namespace ASDCP::MXF;
+
+
+// GetMDObjectByPath() path to file's Identification metadata object
+static const char* INFO_OBJECT_PATH = "Preface.Identifications.Identification.Identification";
+static const char* ASSET_ID_OBJECT_PATH = "Preface.ContentStorage.ContentStorage.Packages.Package.SourcePackage.PackageUID";
+
+
+ASDCP::h__Reader::h__Reader() : m_EssenceStart(0)
+{
+}
+
+ASDCP::h__Reader::~h__Reader()
+{
+  Close();
+}
+
+void
+ASDCP::h__Reader::Close()
+{
+  m_File.Close();
+}
+
+//------------------------------------------------------------------------------------------
+//
+
+//
+Result_t
+ASDCP::h__Reader::InitInfo(WriterInfo& Info)
+{
+  InterchangeObject* Object;
+
+  // Identification
+  Result_t result = m_HeaderPart.GetMDObjectByType(OBJ_TYPE_ARGS(Identification), &Object);
+
+  if( ASDCP_SUCCESS(result) )
+    MD_to_WriterInfo((Identification*)Object, m_Info);
+
+  // SourcePackage
+  if( ASDCP_SUCCESS(result) )
+    result = m_HeaderPart.GetMDObjectByType(OBJ_TYPE_ARGS(SourcePackage), &Object);
+
+  if( ASDCP_SUCCESS(result) )
+    {
+      SourcePackage* SP = (SourcePackage*)Object;
+      memcpy(Info.AssetUUID, SP->PackageUID.Data() + 16, UUIDlen);
+    }
+
+  // optional CryptographicContext
+  if( ASDCP_SUCCESS(result) )
+    {
+      Result_t cr_result = m_HeaderPart.GetMDObjectByType(OBJ_TYPE_ARGS(CryptographicContext), &Object);
+
+      if( ASDCP_SUCCESS(cr_result) )
+	MD_to_CryptoInfo((CryptographicContext*)Object, m_Info);
+    }
+
+  return result;
+}
+
+
+// standard method of opening an MXF file for read
+Result_t
+ASDCP::h__Reader::OpenMXFRead(const char* filename)
+{
+  Result_t result = m_File.OpenRead(filename);
+
+  if ( ASDCP_SUCCESS(result) )
+    result = m_HeaderPart.InitFromFile(m_File);
+
+  // OP-Atom states that there will be either two or three partitions,
+  // one closed header and one closed footer with an optional body
+  ui32_t test_s = m_HeaderPart.m_RIP.PairArray.size();
+
+  if ( test_s < 2 || test_s > 3 )
+    {
+      DefaultLogSink().Error("RIP count is not 2 or 3: %lu\n", test_s);
+      return RESULT_FORMAT;
+    }
+
+  // it really OP-Atom?
+  //  MDObject* OpPattern = GetMDObjectByType("OperationalPattern");
+  // TODO: check the label
+
+  // if this is a three partition file, go to the body
+  // partition and read off the partition pack
+  if ( test_s == 3 )
+    {
+      DefaultLogSink().Error("RIP count is 3: must write code...\n");
+      return RESULT_FORMAT;
+    }
+  // TODO: check the partition pack to make sure it is
+  //       really a body with a single essence container
+
+  m_EssenceStart = m_File.Tell();
+
+  return RESULT_OK;
+}
+
+
+// standard method of populating the in-memory index
+Result_t
+ASDCP::h__Reader::InitMXFIndex()
+{
+  if ( ! m_File.IsOpen() )
+    return RESULT_INIT;
+
+  Result_t result = m_File.Seek(m_HeaderPart.FooterPartition);
+
+  if ( ASDCP_SUCCESS(result) )
+    {
+      m_FooterPart.m_Lookup = &m_HeaderPart.m_Primer;
+      result = m_FooterPart.InitFromFile(m_File);
+    }
+
+  return result;
+}
+
+
+// standard method of reading a plaintext or encrypted frame
+Result_t
+ASDCP::h__Reader::ReadEKLVPacket(ui32_t FrameNum, ASDCP::FrameBuffer& FrameBuf,
+				 const byte_t* EssenceUL, AESDecContext* Ctx, HMACContext* HMAC)
+{
+  // look up frame index node
+  IndexTableSegment::IndexEntry TmpEntry;
+
+  if ( ASDCP_FAILURE(m_FooterPart.Lookup(FrameNum, TmpEntry)) )
+    {
+      DefaultLogSink().Error("Frame value out of range: %lu\n", FrameNum);
+      return RESULT_RANGE;
+    }
+
+  // get frame position and go read the frame's key and length
+  ASDCP::KLVReader Reader;
+  ASDCP::fpos_t FilePosition = m_EssenceStart + TmpEntry.StreamOffset;
+
+  Result_t result = m_File.Seek(FilePosition);
+
+  if ( ASDCP_SUCCESS(result) )
+    result = Reader.ReadKLFromFile(m_File);
+
+  if ( ASDCP_FAILURE(result) )
+    return result;
+
+  UL Key(Reader.Key());
+  UL InteropRef(CryptEssenceUL_Data);
+  UL SMPTERef(CryptEssenceUL_Data);
+  ui64_t PacketLength = Reader.Length();
+
+  if ( Key == InteropRef || Key == SMPTERef )
+    {
+      if ( ! m_Info.EncryptedEssence )
+	{
+	  DefaultLogSink().Error("EKLV packet found, no Cryptographic Context in header.\n");
+	  return RESULT_FORMAT;
+	}
+
+      // read encrypted triplet value into internal buffer
+      m_CtFrameBuf.Capacity(PacketLength);
+      ui32_t read_count;
+      result = m_File.Read(m_CtFrameBuf.Data(), PacketLength, &read_count);
+
+      if ( ASDCP_FAILURE(result) )
+	return result;
+
+      if ( read_count != PacketLength )
+	{
+	  DefaultLogSink().Error("read length is smaller than EKLV packet length.\n");
+          return RESULT_FORMAT;
+        }
+
+      m_CtFrameBuf.Size(PacketLength);
+
+      // should be const but mxflib::ReadBER is not
+      byte_t* ess_p = m_CtFrameBuf.Data();
+
+      // read context ID length
+      if ( ! read_test_BER(&ess_p, UUIDlen) )
+	return RESULT_FORMAT;
+
+      // test the context ID
+      if ( memcmp(ess_p, m_Info.ContextID, UUIDlen) != 0 )
+	{
+	  DefaultLogSink().Error("Packet's Cryptographic Context ID does not match the header.\n");
+	  return RESULT_FORMAT;
+	}
+      ess_p += UUIDlen;
+
+      // read PlaintextOffset length
+      if ( ! read_test_BER(&ess_p, sizeof(ui64_t)) )
+	return RESULT_FORMAT;
+
+      ui32_t PlaintextOffset = (ui32_t)ASDCP_i64_BE(cp2i<ui64_t>(ess_p));
+      ess_p += sizeof(ui64_t);
+
+      // read essence UL length
+      if ( ! read_test_BER(&ess_p, klv_key_size) )
+	return RESULT_FORMAT;
+
+      // TODO: test essence UL
+      ess_p += klv_key_size;
+
+      // read SourceLength length
+      if ( ! read_test_BER(&ess_p, sizeof(ui64_t)) )
+	return RESULT_FORMAT;
+
+      ui32_t SourceLength = (ui32_t)ASDCP_i64_BE(cp2i<ui64_t>(ess_p));
+      ess_p += sizeof(ui64_t);
+      assert(SourceLength);
+	  
+      if ( FrameBuf.Capacity() < SourceLength )
+	{
+	  DefaultLogSink().Error("FrameBuf.Capacity: %lu SourceLength: %lu\n", FrameBuf.Capacity(), SourceLength);
+	  return RESULT_SMALLBUF;
+	}
+
+      ui32_t esv_length = calc_esv_length(SourceLength, PlaintextOffset);
+
+      // read ESV length
+      if ( ! read_test_BER(&ess_p, esv_length) )
+	{
+	  DefaultLogSink().Error("read_test_BER did not return %lu\n", esv_length);
+	  return RESULT_FORMAT;
+	}
+
+      ui32_t tmp_len = esv_length + (m_Info.UsesHMAC ? klv_intpack_size : 0);
+
+      if ( PacketLength < tmp_len )
+	{
+	  DefaultLogSink().Error("Frame length is larger than EKLV packet length.\n");
+	  return RESULT_FORMAT;
+	}
+
+      if ( Ctx )
+	{
+	  // wrap the pointer and length as a FrameBuffer for use by
+	  // DecryptFrameBuffer() and TestValues()
+	  FrameBuffer TmpWrapper;
+	  TmpWrapper.SetData(ess_p, tmp_len);
+	  TmpWrapper.Size(tmp_len);
+	  TmpWrapper.SourceLength(SourceLength);
+	  TmpWrapper.PlaintextOffset(PlaintextOffset);
+
+	  result = DecryptFrameBuffer(TmpWrapper, FrameBuf, Ctx);
+	  FrameBuf.FrameNumber(FrameNum);
+  
+	  // detect and test integrity pack
+	  if ( ASDCP_SUCCESS(result) && m_Info.UsesHMAC && HMAC )
+	    {
+	      IntegrityPack IntPack;
+	      result = IntPack.TestValues(TmpWrapper, m_Info.AssetUUID, FrameNum + 1, HMAC);
+	    }
+	}
+      else // return ciphertext to caller
+	{
+	  if ( FrameBuf.Capacity() < tmp_len )
+	    return RESULT_SMALLBUF;
+
+	  memcpy(FrameBuf.Data(), ess_p, tmp_len);
+	  FrameBuf.Size(tmp_len);
+	  FrameBuf.SourceLength(SourceLength);
+	  FrameBuf.PlaintextOffset(PlaintextOffset);
+	}
+    }
+  else if ( Key == EssenceUL )
+    { // read plaintext frame
+       if ( FrameBuf.Capacity() < PacketLength )
+	{
+	  char intbuf[IntBufferLen];
+	  DefaultLogSink().Error("FrameBuf.Capacity: %lu FrameLength: %s\n",
+				 FrameBuf.Capacity(), ui64sz(PacketLength, intbuf));
+	  return RESULT_SMALLBUF;
+	}
+
+      // read the data into the supplied buffer
+      ui32_t read_count;
+      result = m_File.Read(FrameBuf.Data(), PacketLength, &read_count);
+	  
+      if ( ASDCP_FAILURE(result) )
+	return result;
+
+      if ( read_count != PacketLength )
+	{
+	  char intbuf1[IntBufferLen];
+	  char intbuf2[IntBufferLen];
+	  DefaultLogSink().Error("read_count: %s != FrameLength: %s\n",
+				 ui64sz(read_count, intbuf1),
+				 ui64sz(PacketLength, intbuf2) );
+	  
+	  return RESULT_READFAIL;
+	}
+
+      FrameBuf.FrameNumber(FrameNum);
+      FrameBuf.Size(read_count);
+    }
+  else
+    {
+      DefaultLogSink().Error("Unexpected UL found.\n");
+      return RESULT_FORMAT;
+    }
+
+  return result;
+}
+
+
+//
+// end h__Reader.cpp
+//

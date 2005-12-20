@@ -1,0 +1,326 @@
+
+$Id$
+
+The asdcplib library is a set of objects that offer
+simplified access to files conforming to the sound and
+picture track file formats proposed by the SMPTE working
+group DC-28.20.
+
+This work was funded by Digital Cinema Initiatives, LLC
+and others.
+
+**The asdcplib project is housed on SourceForge. The project
+home page is at http://sourceforge.net/projects/asdcplib.
+There is not much there other than CVS because I don't
+really have the time to master SourceForge administration.
+Feel free to email with questions or to request a tar file.
+
+The project used to depend upon the mxflib project. Because
+of the focus on covering the whole of the MXF spscifications,
+mxflib is considerably larger and more complex that what we
+require for this application. For this reason we have forked
+mxflib and have simplified its implementation to better suit
+our application. Thanks to Matt Beard and Oliver Morgan for
+their great work and support.
+
+OpenSSL is also required if you want to read and write
+encrypted AS-DCP files. See http://www.openssl.org
+
+Thanks also to the members of the SMPTE DC-28.20 packaging
+ad-hoc group and the members of the MXF Interop Initiative
+for their encouragement and support. Special thanks to
+Jim Whittlesey and Howard Lukk at DCI for proposing and
+supporting this project.
+
+
+Design Notes
+
+This library is intended (but of course not limited) for
+use by developers of commercial D-Cinema products.  It is
+designed to be easily integrated into a wide variety of
+development environments.  Commercial users are strongly
+urged to use static linking (at least where you use this
+library) to prevent malicious in-field replacement of
+critical system modules. This recommendation should be
+considered wherever Open Source or Free software is being
+used for applications having non-trivial security
+requirements.
+
+The author strives mightily to provide an API that is
+completely independent of operating system and other
+library dependencies, and which allows selective replacement
+of some modules for local needs.  Specifically, the essence
+parsers and OpenSSL crypto functions can be replaced by
+linking to alternative implementations of the ASDCP::
+objects which provide those services.
+
+AS_DCP.h contains the entire API.  You do not need to read
+any of the other files, except maybe asdcp-test.cpp which
+contains detailed usage examples of each of the API's
+services.
+
+
+Build Instructions
+
+GNU make is required to build asdcplib. The makefile will
+work on win32 systems that have Cygwin. Other win32 gmake
+packages may or may not work depending upon the availability
+of standard POSIX shell commands.
+
+If you are building on win32 or a unix with no OpenSSL
+library support, you will have to also obtain and build
+OpenSSL (I'm using 0.9.7d).  Unpack it into the same
+parent directory as asdcplib/, and rename the directory
+as (or make a sym link named) 'openssl':
+
+myhost$ ls -l
+total 1761
+drwxr-xr-x    1 jhurst   None         0 Feb  3 16:37 asdcplib
+drwxr-xr-x   56 jhurst   None         0 Feb  2 16:35 openssl
+
+I have tested this build on win32, Linux and Darwin platforms.
+Others may work as well.
+
+If you do not want to use or do not have OpenSSL, invoke
+make with ASDCP_WITHOUT_OPENSSL defined:
+ 
+  make ASDCP_WITHOUT_OPENSSL=1
+
+
+Build Versions
+
+There are two flavors of build: the default build and the
+"SMPTE_LABELS" build. Unless you are specifically  working on
+emerging SMPTE standards for D-Cinema content, you will certainly
+want the default build. If you are developing support for the MXF
+Interop Initiative standards, the default build is for you!
+
+If you are not aiming for MXF Interop and if you are working
+on developing support for the very latest versions of the SMPTE
+draft standards, then you want the SMPTE_LABELS build:
+
+  make SMPTE_LABELS=1
+
+NOTE: If you choose the SMPTE_LABELS build, you will be creating
+files that may not work on MXF Interop systems. In the case of
+encryption, incompatibility with MXF Interop is guaranteed! You
+have been warned!
+
+
+Documentation
+
+Currently, the documentation is mostly in AS_DCP.h. Read
+that file for a detailed description of the library's
+capabilities.  Read asdcp-test.cpp for library usage
+examples. More detailed documentation will be written RSN.
+
+
+Change History
+2005.00.00 - The Reformation
+ o Removed mxflib as a dependency by forking the necessary
+   functions and placing them in the mxf-lite subdirectory.
+   Please note that the very heavy modifications done here
+   render all comparisson to mxflib code a substantial task.
+   All errors are now mine and users are warned not to bug
+   Oliver or Matt for help with this code. The version of
+   mxflib at the time of the fork was: 0.5.1.3.
+
+
+2005.06.03 - bug fixes v0.10.18
+ o Updated UL batch to include GC UL.
+
+
+2005.05.27 - bug fixes v0.10.17
+ o Un-did essence container and compression descriptor changes.
+   The default build reflects MXF Interop decisions as of 26 May.
+ o Added note about build versions to README (see above).
+ o Added warnings to SMPTE_LABELS builds.
+ o Fixed JP2K essence container label.
+
+
+2005.05.02 - bug fixes v0.10.16
+ o Reorganized internal files, added file reader object, added OS
+   portability header, removed and renamed some files. If you have a
+   patch against previous versions of the source, you should check
+   it thoroughly.
+ o Added RGBA attributes to JP2K descriptor.
+ o Changed interface to CodestreamParser.
+ o Added JP2K parser implementation. It is parsing each frame but is
+   not yet being used to populate the descriptor.
+ o Added 48fps option for `asdcp-test -p`.
+ o Added picture rate constants to AS_DCP.h (23.976, 24, 48).
+ o Added sample rate constant to AS_DCP.h (48k).
+ o Changed asdcp-test to encrypt picture headers by default
+   (plaintext offset will be 0), added -E option to allow
+   plaintext headers.
+
+
+2005.04.28 - bug fixes v0.9.15
+ o The XML descriptors for the crypto DMS have moved in mxflib to
+   the file DMS_Crypto.xml (they were in DMS_DCPENC.xml).  Older
+   installations should update the file from mxflib.
+ o Added Close() and Seek() to ~MyFileWriter(), cleaned up headers
+ o Added UUID generator output mode (-u).
+ o Added -S option to extract PCM essence into stereo wav files
+ o Added more UL testing and conformance checking.
+ o Added macro SMPTE_LABELS which causes the library to be built
+   with SMPTE (as opposed to MXF Interop) labels. This is not
+   set by default, and currently only affects the PCM container
+   label and encrypted element label.
+ o Cleaned up the GNUmakefile test targets, the source files
+   are now named with the TEST_FILE_PREFIX macro.
+ o enabled 23.976-framed PCM (2002 samples per frame)
+ o The size of the asdcp-test frame buffer for picture essence
+   may now be set from the command line (-b).  The default is 4MB.
+ o h__Reader::ReadEKLVPacket() now tests the UL (duh) and switches
+   on the value, allowing plaintext and ciphertext frames to
+   be mixed in the file.
+ o Fixed error in UUID generator format.
+ o JP2K files now use the GenericPictureDescriptor to store
+   ContainerDuration and SampleRate. SampleRate is mapped
+   to EditRate in the PictureDescriptor struct. This fixes
+   the second caveat from the 0.8.13 release.
+ o Fxed bug in PCMParserList that was miscalculating the extent
+   of a PCM sample.  This bug did not affect API users, it was
+   only present in asdcp-test.
+ o Fixed EditRate on PCM files (was showing sample rate)
+ o Fixed Encrypted Essence Container UL
+ o Fixed BlockAlign value for PCM essence
+
+ - The following changes were provided by Jeff Loewenguth
+ - Thanks Jeff!
+ o Moved the DMS CryptographicFramework entry from the material
+   package to the source package
+ o Fixed erroneous Source Essence Container Label value
+ o Fixed broken sort of JP2K frames in JP2K parser
+ o Added FindFrameGOPStart() method to the MPEG2 MXFReader
+ o Added missing length values for EKLV packets without HMAC
+ o -x with JP2K essence writes to files with 6 digit names
+   (up from 5 digits).
+ o The Key ID may now be specified as an argument to asdcp-test
+    (-j <key-id-string>)
+
+
+2004.12.30 - bug fixes + wav files v0.8.14
+ o Added WAV file write to asdcp-test (uses mxflib::waveheader_t).
+ o Three-partition files reading properly.  adscplib still writes
+   two-partition files.
+ o Changes in the mxflib WAV essence parser API had broken
+   asdcplib's ability to read essence from a WAV file.  I have
+   fixed this bug, but at the expense of breaking compatibility
+   with older versions of mxflib. Beware!
+ o Removed redundant (but working) bin-text-bin conversions.
+
+
+2004.12.23 - JPEG 2000 support v0.8.13
+ o Reads/writes JPEG 2000 essence in plaintext and ciphertext
+   with the following caveats:
+    - The Picture Essence Descriptor is empty.
+    - Because there is no essence descriptor, the reader code
+      in asdcp-test has no idea how many frames are in the file
+      and ends with an out-of-bounds frame error.  This error
+      is being suppressed in asdcp-test for the current release.
+ o Still broken when reading three-partition files.
+
+
+2004.10.22 - fixes and UL updates v0.7.11
+ WARNING: COMPATIBILITY BREAKPOINT
+ Files created with this and future versions of this library are
+ not compatible with previous versions of this library.  As you
+ might suspect, files created with previous versions of this
+ library are not compatible with  this and future versions.
+
+ o h__Reader will now open a three-partitition file (untested)
+ o Moved DMS from Material partition to File partition
+ o Added length fields to appropriate places in EKLV packet 
+
+
+2004.10.22 - fixes and UL updates v0.7.10
+ o fixed frame buffer handling of externally allocated buffer,
+   created unit test (asdcp-mem-test)
+ o added operator==() and operator!=() to Rational type
+ o fixed some type-related compiler warnings
+ o asdcp-test -p now works on unwrap
+ o updated some ULs to match documentation (thanks to Arun
+   for the submission)
+ o canonicalized line endings
+
+
+2004.07.02 - full plaintext + ciphertext read/write v0.6.9
+ o HMAC, plaintext offest and raw ciphertext read supported
+ o back to proper CBR index
+ o MPEG temporal offset working
+
+
+2004.07.01 - plaintext + ciphertext read/write v0.5.8
+ o encryption of MPEG and PCM essence supported with the
+   following caveats:
+   - no HMAC support
+   - no plaintext offest support
+   - no raw ciphertext read support
+ o moved to reflecting the whole KLV triplet in the CBR
+   index (now incompatible with mxflib, still searching
+   for info about what's "right")
+ o awaitng the following fixes/features:
+   - retrieve Temporal Offset from index in MPEG2::Reader
+   - test for correct ULs when reading frame triplets
+   - fix header metadata items for encrypted files
+   - HMAC support
+   - plaintext offest support
+   - raw ciphertext read support
+
+
+2004.06.14 - plaintext read/write w/key generator v0.4.5
+ o Project now uses OpenSSL (tested with 0.9.7d on win32, Linux, Darwin)
+   Use `make ASDCP_WITHOUT_OPENSSL=1` to make plaintext-only version
+ o Accepts interior I frames when parsing MPEG2 VES
+ o Improved error reporting on format errors
+ o Added support for encryption to asdcp-test
+ o Added RNG for asdcp-test (non-production use only, see notes in FortunaRNG.h)
+ o Implemented CBC encrypt, decrypt module
+ o Added partial TemporalOffset retrieval from MPEG2 parser
+ o Fixed win32 binmode bug
+
+
+2004.05.12 - plaintext read/write v0.3.4
+ o Full read/write of plaintext MPEG-2 VES and WAV files
+   (does not yet support mux from or demux to 2 channel pairs)
+ o Builds with autoconf-based mxflib
+ o Added ASDCP_ prefix to macros
+ o Updated documentation, fixed documentation errors
+ o Simplified API for MXF writer setup
+ o Decoupled essence parsers from MXF writers
+ o added raw ciphertext support to FrameBuffer
+ o Cleaned up Get/Set naming confusion
+ o Added missing const qualifiers
+
+
+2004.04.27 - preview release v0.2.1
+ o hasty release for quick review
+ o this release may not build with mxflib using autoconf.
+ o writes plaintext AS-DCP MPEG2 essence files
+ o tested under win32 and linux. FreeBSD and Darwin do not work
+
+
+2004.02.04 - First release (v0.1.1):
+ o asdcp-test is mostly complete. It should correctly provide
+   access to the read and info capabilities of the library.
+ o The MPEG2 reader is functional but not fully tested.
+ o Some file format integrity tests remain to be coded.
+ o The PCM reader is mostly complete, I am having difficulty
+   getting a suitable test file from mxfwrap.
+ o The makefile creates a static library module. The API
+   will cleanly support a DSO (or DLL). Let me know if DSO
+   support is important to you.
+ o Nothing is thread safe. Thread safety was not a requirement
+   in the initial project definition. Thread safety may be added
+   above the mxflib/klvlib level. Let me know if it is important
+   to you.
+ o The files xmldict.xml and types.xml must be in the current
+   directory when the program is run. The files are supplied
+   with mxflib. Runtime location of the files is not currently
+   a project goal. Comments on how best to handle this situation
+   would be appreciated. See AS_DCP.cpp at init_mxf_types()
+   for a more detailed discussion.
+
+--

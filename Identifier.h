@@ -1,0 +1,178 @@
+//
+// Identifier.h
+//
+
+#ifndef _IDENTIFIER_H_
+#define _IDENTIFIER_H_
+
+namespace ASDCP
+{
+  // the base of all identifier classes
+  template <ui32_t SIZE>
+    class Identifier : public IArchive
+    {
+    protected:
+      byte_t m_Value[SIZE];
+
+    public:
+      Identifier() {
+	memset(m_Value, 0, SIZE);
+      }
+
+      //
+      inline Result_t Set(const byte_t* value) {
+	ASDCP_TEST_NULL(value);
+	memcpy(m_Value, value, SIZE);
+	return RESULT_OK;
+      }
+
+      //
+      inline Result_t ReadFrom(ASDCP::MemIOReader& Reader) {
+	Reader.ReadRaw(m_Value, SIZE);
+	return RESULT_OK;
+      }
+
+      //
+      inline Result_t WriteTo(ASDCP::MemIOWriter& Writer) {
+	Writer.WriteRaw(m_Value, SIZE);
+	return RESULT_OK;
+      }
+
+      inline const byte_t* Data() const { return m_Value; }
+
+      inline ui32_t Size() const { return SIZE; }
+
+      //
+      inline bool operator<(const Identifier& rhs) const
+	{
+	  for ( ui32_t i = 0; i < SIZE; i++ )
+	    {
+	      if ( m_Value[i] != rhs.m_Value[i] )
+		return m_Value[i] < rhs.m_Value[i];
+	    }
+
+	  return false;
+	}
+
+      //
+      inline bool operator==(const Identifier& rhs) const
+      {
+	if ( rhs.Size() != SIZE )
+	  return false;
+
+	return ( memcmp(m_Value, rhs.m_Value, SIZE) == 0 );
+      }
+
+      //
+      // todo: refactor characrer insertion back to bin2hex()
+      const char* ToString(char* str_buf) const
+	{
+	  char* p = str_buf;
+
+	  for ( ui32_t i = 0; i < SIZE; i++ )
+	    {
+	      *p = (m_Value[i] >> 4) & 0x0f;
+	      *p += *p < 10 ? 0x30 : 0x61 - 10;
+	      p++;
+
+	      *p = m_Value[i] & 0x0f;
+	      *p += *p < 10 ? 0x30 : 0x61 - 10;
+	      p++;
+
+	      *p = ' ';
+	      p++;
+	    }
+
+	  *p = 0;
+	  return str_buf;
+	}
+    };
+
+
+  class UL;
+  class UUID;
+
+  // UID - either a UL or a UUID
+  class UID : public Identifier<SMPTE_UL_LENGTH>
+    {
+      friend class ASDCP::UL;
+      friend class ASDCP::UUID;
+
+    public:
+      UID() {}
+      UID(const UID& rhs) {
+	memcpy(m_Value, rhs.m_Value, SMPTE_UL_LENGTH);
+      }
+    };
+
+  // Universal Label
+  class UL : public Identifier<SMPTE_UL_LENGTH>
+    {
+    public:
+      UL() {}
+      UL(const UL& rhs) {
+	memcpy(m_Value, rhs.m_Value, SMPTE_UL_LENGTH);
+      }
+
+      UL(const UID& rhs) {
+	memcpy(m_Value, rhs.m_Value, SMPTE_UL_LENGTH);
+      }
+
+      UL(const byte_t* value) {
+	assert(value);
+	memcpy(m_Value, value, SMPTE_UL_LENGTH);
+      }
+
+      bool operator==(const UL& rhs) const {
+	return ( memcmp(m_Value, rhs.m_Value, SMPTE_UL_LENGTH) == 0 ) ? true : false;
+      }
+    };
+
+  // UUID
+  class UUID : public Identifier<SMPTE_UL_LENGTH>
+    {
+    public:
+      UUID() {}
+      UUID(const UUID& rhs) {
+	memcpy(m_Value, rhs.m_Value, SMPTE_UL_LENGTH);
+      }
+#if 0
+      UUID(const UID& rhs) {
+	memcpy(m_Value, rhs.m_Value + 8, 8);
+	memcpy(m_Value + 8, rhs.m_Value, 8);
+      }
+#endif
+      void GenRandomValue();
+    };
+
+  // UMID
+  class UMID : public Identifier<SMPTE_UMID_LENGTH>
+    {
+    public:
+      UMID() {}
+      UMID(const UMID &rhs) {
+	memcpy(m_Value, rhs.m_Value, SMPTE_UMID_LENGTH);
+      };
+
+      void MakeUMID(int Type);
+
+      void MakeUMID(int Type, const UUID& ID);
+
+      void SetMaterial(UL& aUL);
+
+      void SetInstance(int Instance, int Method = -1);
+
+      ui32_t GetInstance(void) const
+	{
+	  assert(0);
+	  return ( m_Value[13] << 16 ) | ( m_Value[14] << 8 ) | m_Value[15];
+	}
+    };
+
+} // namespace mxflib
+
+#endif // _IDENTIFIER_H_
+
+//
+// end Identifier.h
+//
