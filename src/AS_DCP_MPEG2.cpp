@@ -40,8 +40,26 @@ ASDCP::Result_t
 ASDCP::MD_to_MPEG2_VDesc(MXF::MPEG2VideoDescriptor* VDescObj, MPEG2::VideoDescriptor& VDesc)
 {
   ASDCP_TEST_NULL(VDescObj);
-  VDesc = *((MPEG2::VideoDescriptor*)VDescObj);
-  VDesc.FrameRate = 0;
+
+  VDesc.SampleRate             = VDescObj->SampleRate;
+  VDesc.EditRate               = VDescObj->SampleRate;
+  VDesc.FrameRate              = VDescObj->SampleRate.Numerator;
+  VDesc.ContainerDuration      = VDescObj->ContainerDuration;
+
+  VDesc.FrameLayout            = VDescObj->FrameLayout;
+  VDesc.StoredWidth            = VDescObj->StoredWidth;
+  VDesc.StoredHeight           = VDescObj->StoredHeight;
+  VDesc.AspectRatio            = VDescObj->AspectRatio;
+
+  VDesc.ComponentDepth         = VDescObj->ComponentDepth;
+  VDesc.HorizontalSubsampling  = VDescObj->HorizontalSubsampling;
+  VDesc.VerticalSubsampling    = VDescObj->VerticalSubsampling;
+  VDesc.ColorSiting            = VDescObj->ColorSiting;
+  VDesc.CodedContentType       = VDescObj->CodedContentType;
+
+  VDesc.LowDelay               = VDescObj->LowDelay;
+  VDesc.BitRate                = VDescObj->BitRate;
+  VDesc.ProfileAndLevel        = VDescObj->ProfileAndLevel;
   return RESULT_OK;
 }
 

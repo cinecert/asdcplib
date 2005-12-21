@@ -185,9 +185,11 @@ namespace ASDCP
 	public:
 	  IPrimerLookup* m_Lookup;
 	  UID            InstanceUID;
+	  UUID           GenerationUID;
 
 	  InterchangeObject() : m_Lookup(0) {}
 	  virtual ~InterchangeObject() {}
+          virtual Result_t InitFromTLVSet(TLVReader& TLVSet);
 	  virtual Result_t WriteToBuffer(ASDCP::FrameBuffer&);
 	  virtual bool     IsA(const byte_t* label);
 

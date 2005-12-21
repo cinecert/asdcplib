@@ -929,6 +929,15 @@ ASDCP::MXF::OPAtomIndexFooter::Lookup(ui32_t frame_num, IndexTableSegment::Index
 
 //
 ASDCP::Result_t
+ASDCP::MXF::InterchangeObject::InitFromTLVSet(TLVReader& TLVSet)
+{
+  Result_t result = TLVSet.ReadObject(OBJ_READ_ARGS(InterchangeObject, InstanceUID));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(GenerationInterchangeObject, GenerationUID));
+  return result;
+}
+
+//
+ASDCP::Result_t
 ASDCP::MXF::InterchangeObject::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 {
   if ( Buffer.Capacity() < (Buffer.Size() + m_KLLength + m_ValueLength) )
