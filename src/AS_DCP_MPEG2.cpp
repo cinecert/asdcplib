@@ -65,6 +65,14 @@ ASDCP::MD_to_MPEG2_VDesc(MXF::MPEG2VideoDescriptor* VDescObj, MPEG2::VideoDescri
 
 
 //
+ASDCP::Result_t
+ASDCP::MPEG2_VDesc_to_MD(MPEG2::VideoDescriptor&, MXF::MPEG2VideoDescriptor*)
+{
+  return RESULT_OK;
+}
+
+
+//
 void
 ASDCP::MPEG2::VideoDescriptorDump(const VideoDescriptor& VDesc, FILE* stream)
 {
@@ -350,8 +358,6 @@ ASDCP::MPEG2::MXFReader::DumpIndex(FILE* stream) const
 
 
 //------------------------------------------------------------------------------------------
-#if 0
-
 
 //
 class ASDCP::MPEG2::MXFWriter::h__Writer : public ASDCP::h__Writer
@@ -380,13 +386,11 @@ ASDCP::MPEG2::MXFWriter::h__Writer::OpenWrite(const char* filename, ui32_t Heade
   if ( ! m_State.Test_BEGIN() )
     return RESULT_STATE;
 
-  m_File = new MXFFile;
-
-  Result_t result = m_File->OpenWrite(filename);
+  Result_t result = m_File.OpenWrite(filename);
 
   if ( ASDCP_SUCCESS(result) )
     {
-      m_EssenceDescriptor = new MDObject("MPEG2VideoDescriptor");
+      //      m_EssenceDescriptor = new MDObject("MPEG2VideoDescriptor");
       result = m_State.Goto_INIT();
     }
 
@@ -401,7 +405,7 @@ ASDCP::MPEG2::MXFWriter::h__Writer::SetSourceStream(const VideoDescriptor& VDesc
     return RESULT_STATE;
 
   m_VDesc = VDesc;
-  Result_t result = MPEG2_VDesc_to_MD(m_VDesc, *m_EssenceDescriptor);
+  Result_t result = RESULT_OK; // MPEG2_VDesc_to_MD(m_VDesc, *m_EssenceDescriptor);
 
   if ( ASDCP_SUCCESS(result) )
     result = WriteMXFHeader(ESS_MPEG2_VES, m_VDesc.EditRate, 24 /* TCFrameRate */);
@@ -454,9 +458,11 @@ ASDCP::MPEG2::MXFWriter::h__Writer::WriteFrame(const FrameBuffer& FrameBuf, AESE
     }
 
   // update the index manager
+#if 0
   m_IndexMan->OfferEditUnit(0, m_FramesWritten, m_GOPOffset, Flags);
   m_IndexMan->OfferTemporalOffset(m_FramesWritten, m_GOPOffset - FrameBuf.TemporalOffset());
   m_IndexMan->OfferOffset(0, m_FramesWritten, ThisOffset);
+#endif
 
   m_FramesWritten++;
   m_GOPOffset++;
@@ -472,9 +478,6 @@ ASDCP::MPEG2::MXFWriter::h__Writer::Finalize()
 {
   if ( ! m_State.Test_RUNNING() )
     return RESULT_STATE;
-
-  if ( ! m_File )
-    return RESULT_INIT;
 
   m_State.Goto_FINAL();
 
@@ -540,7 +543,7 @@ ASDCP::MPEG2::MXFWriter::Finalize()
 
   return m_Writer->Finalize();
 }
-#endif
+
 
 //
 // end AS_DCP_MPEG2.cpp

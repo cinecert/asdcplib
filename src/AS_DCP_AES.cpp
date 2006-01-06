@@ -37,7 +37,6 @@ using namespace ASDCP;
 const int KEY_SIZE_BITS = 128;
 
 
-#ifndef ASDCP_WITHOUT_OPENSSL
 #include <openssl/aes.h>
 #include <openssl/sha.h>
 #include <openssl/err.h>
@@ -50,16 +49,9 @@ print_ssl_error()
   DefaultLogSink().Error("OpenSSL: %s\n", ERR_error_string(errval, err_buf));
 }
 
-#endif
-
-
 //------------------------------------------------------------------------------------------
 
-#ifdef ASDCP_WITHOUT_OPENSSL
-class ASDCP::AESEncContext::h__AESContext
-#else
 class ASDCP::AESEncContext::h__AESContext : public AES_KEY
-#endif
 {
 public:
   byte_t m_IVec[CBC_BLOCK_SIZE];
@@ -79,7 +71,6 @@ ASDCP::AESEncContext::InitKey(const byte_t* key)
   if ( m_Context )
     return RESULT_INIT;
 
-#ifndef ASDCP_WITHOUT_OPENSSL
   m_Context = new h__AESContext;
 
   if ( AES_set_encrypt_key(key, KEY_SIZE_BITS, m_Context) )
@@ -89,9 +80,6 @@ ASDCP::AESEncContext::InitKey(const byte_t* key)
     }
 
   return RESULT_OK;
-#else // ASDCP_WITHOUT_OPENSSL
-  return RESULT_FAIL;
-#endif // ASDCP_WITHOUT_OPENSSL
 }
 
 
@@ -106,12 +94,8 @@ ASDCP::AESEncContext::SetIVec(const byte_t* i_vec)
   if ( ! m_Context )
     return  RESULT_INIT;
 
-#ifndef ASDCP_WITHOUT_OPENSSL
   memcpy(m_Context->m_IVec, i_vec, CBC_BLOCK_SIZE);
   return RESULT_OK;
-#else // ASDCP_WITHOUT_OPENSSL
-  return RESULT_FAIL;
-#endif // ASDCP_WITHOUT_OPENSSL
 }
 
 
@@ -125,12 +109,8 @@ ASDCP::AESEncContext::GetIVec(byte_t* i_vec) const
   if ( ! m_Context )
     return  RESULT_INIT;
 
-#ifndef ASDCP_WITHOUT_OPENSSL
   memcpy(i_vec, m_Context->m_IVec, CBC_BLOCK_SIZE);
   return RESULT_OK;
-#else // ASDCP_WITHOUT_OPENSSL
-  return RESULT_FAIL;
-#endif // ASDCP_WITHOUT_OPENSSL
 }
 
 
@@ -147,7 +127,6 @@ ASDCP::AESEncContext::EncryptBlock(const byte_t* pt_buf, byte_t* ct_buf, ui32_t 
   if ( m_Context.empty() )
     return  RESULT_INIT;
 
-#ifndef ASDCP_WITHOUT_OPENSSL
   h__AESContext* Ctx = m_Context;
   byte_t tmp_buf[CBC_BLOCK_SIZE];
   const byte_t* in_p = pt_buf;
@@ -168,19 +147,12 @@ ASDCP::AESEncContext::EncryptBlock(const byte_t* pt_buf, byte_t* ct_buf, ui32_t 
     }
 
   return RESULT_OK;
-#else // ASDCP_WITHOUT_OPENSSL
-  return RESULT_FAIL;
-#endif // ASDCP_WITHOUT_OPENSSL
 }
 
 
 //------------------------------------------------------------------------------------------
 
-#ifdef ASDCP_WITHOUT_OPENSSL
-class ASDCP::AESDecContext::h__AESContext
-#else
 class ASDCP::AESDecContext::h__AESContext : public AES_KEY
-#endif
 {
 public:
   byte_t m_IVec[CBC_BLOCK_SIZE];
@@ -200,7 +172,6 @@ ASDCP::AESDecContext::InitKey(const byte_t* key)
   if ( m_Context )
     return  RESULT_INIT;
 
-#ifndef ASDCP_WITHOUT_OPENSSL
   m_Context = new h__AESContext;
 
   if ( AES_set_decrypt_key(key, KEY_SIZE_BITS, m_Context) )
@@ -210,9 +181,6 @@ ASDCP::AESDecContext::InitKey(const byte_t* key)
     }
 
   return RESULT_OK;
-#else // ASDCP_WITHOUT_OPENSSL
-  return RESULT_FAIL;
-#endif // ASDCP_WITHOUT_OPENSSL
 }
 
 // Initializes 16 byte CBC Initialization Vector. This operation may be performed
@@ -226,12 +194,8 @@ ASDCP::AESDecContext::SetIVec(const byte_t* i_vec)
   if ( ! m_Context )
     return  RESULT_INIT;
 
-#ifndef ASDCP_WITHOUT_OPENSSL
   memcpy(m_Context->m_IVec, i_vec, CBC_BLOCK_SIZE);
   return RESULT_OK;
-#else // ASDCP_WITHOUT_OPENSSL
-  return RESULT_FAIL;
-#endif // ASDCP_WITHOUT_OPENSSL
 }
 
 // Decrypt a 16 byte block of data.
@@ -247,7 +211,6 @@ ASDCP::AESDecContext::DecryptBlock(const byte_t* ct_buf, byte_t* pt_buf, ui32_t 
   if ( m_Context.empty() )
     return  RESULT_INIT;
 
-#ifndef ASDCP_WITHOUT_OPENSSL
   register h__AESContext* Ctx = m_Context;
 
   const byte_t* in_p = ct_buf;
@@ -268,9 +231,6 @@ ASDCP::AESDecContext::DecryptBlock(const byte_t* ct_buf, byte_t* pt_buf, ui32_t 
     }
 
   return RESULT_OK;
-#else // ASDCP_WITHOUT_OPENSSL
-  return RESULT_FAIL;
-#endif // ASDCP_WITHOUT_OPENSSL
 }
 
 //------------------------------------------------------------------------------------------
@@ -284,9 +244,7 @@ static byte_t opad[KeyLen] = { 0x5c, 0x5c, 0x5c, 0x5c, 0x5c, 0x5c, 0x5c, 0x5c,
 
 class HMACContext::h__HMACContext
 {
-#ifndef ASDCP_WITHOUT_OPENSSL
   SHA_CTX m_SHA;
-#endif // ASDCP_WITHOUT_OPENSSL
   byte_t m_key[KeyLen];
   ASDCP_NO_COPY_CONSTRUCT(h__HMACContext);
 
@@ -302,7 +260,6 @@ public:
   {
     static byte_t key_nonce[KeyLen] = { 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 
 					0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff };
-#ifndef ASDCP_WITHOUT_OPENSSL
     byte_t sha_buf[SHA_DIGEST_LENGTH];
 
     // 7.10: MICKey = trunc( SHA1 ( key, key_nonce ) )
@@ -314,13 +271,11 @@ public:
     memcpy(m_key, sha_buf, KeyLen);
 
     Reset();
-#endif // ASDCP_WITHOUT_OPENSSL
   }
 
   void
   Reset()
   {
-#ifndef ASDCP_WITHOUT_OPENSSL
     byte_t xor_buf[KeyLen];
     memset(sha_value, 0, HMAC_SIZE);
     m_Final = false;
@@ -332,25 +287,21 @@ public:
       xor_buf[i] = m_key[i] ^ ipad[i];
 
     SHA1_Update(&m_SHA, xor_buf, KeyLen);
-#endif // ASDCP_WITHOUT_OPENSSL
   }
 
   //
   void
   Update(const byte_t* buf, ui32_t buf_len)
   {
-#ifndef ASDCP_WITHOUT_OPENSSL
     // H(K XOR opad, H(K XOR ipad, text))
     //                             ^^^^
     SHA1_Update(&m_SHA, buf, buf_len);
-#endif // ASDCP_WITHOUT_OPENSSL
   }
 
   //
   void
   Finalize()
   {
-#ifndef ASDCP_WITHOUT_OPENSSL
     // H(K XOR opad, H(K XOR ipad, text))
     // ^^^^^^^^^^^^^^^
     SHA1_Final(sha_value, &m_SHA);
@@ -368,7 +319,6 @@ public:
 
     SHA1_Final(sha_value, &SHA);
     m_Final = true;
-#endif // ASDCP_WITHOUT_OPENSSL
   }
 };
 

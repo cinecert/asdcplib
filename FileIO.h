@@ -121,7 +121,7 @@ namespace ASDCP {
       // platforms that support it. For each call to Writev(const byte_t*, ui32_t, ui32_t*),
       // the given buffer is added to an internal iovec struct. All items on the list
       // are written to disk by a call to Writev();
-      Result_t Writev(const byte_t*, ui32_t);                       // queue buffer for "gather" write
+      Result_t Writev(const byte_t*, ui32_t);                       // queue buffer for write
       Result_t Writev(ui32_t* = 0);                                 // write all queued buffers
 
       // if you call this while there are unwritten items on the iovec list,

@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2004-2005, John Hurst
+Copyright (c) 2004-2006, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -164,25 +164,15 @@ namespace ASDCP
   //------------------------------------------------------------------------------------------
   //
 
-  //  MDObject* GetMDObjectByPath(MDObject&, const std::string);
-  //  MDObject* GetMDObjectByType(MDObject&, const std::string);
-  //  void DumpMDObject(MDObject&, std::string = " ", FILE* = 0);
-  //  void DumpHeader(Partition&, FILE* = 0);
-  //  void DumpIndexTable(IndexTablePtr, ui64_t = 0, FILE* = 0);
-  //  Result_t init_mxf_types();
   Result_t MD_to_MPEG2_VDesc(MXF::MPEG2VideoDescriptor*, MPEG2::VideoDescriptor&);
   Result_t MD_to_JP2K_PDesc(MXF::RGBAEssenceDescriptor*, JP2K::PictureDescriptor&);
   Result_t MD_to_PCM_ADesc(MXF::WaveAudioDescriptor*, PCM::AudioDescriptor&);
   Result_t MD_to_WriterInfo(MXF::Identification*, WriterInfo&);
   Result_t MD_to_CryptoInfo(MXF::CryptographicContext*, WriterInfo&);
-
-#if 0
-  Result_t MPEG2_VDesc_to_MD(MPEG2::VideoDescriptor&, MDObject&);
-  Result_t JP2K_PDesc_to_MD(JP2K::PictureDescriptor&, MDObject&);
-  Result_t PCM_ADesc_to_MD(PCM::AudioDescriptor&, MDObject&);
-  void AddDMScrypt(PackagePtr, WriterInfo&, const byte_t*);
-#endif
-
+  Result_t MPEG2_VDesc_to_MD(MPEG2::VideoDescriptor&, MXF::MPEG2VideoDescriptor*);
+  Result_t JP2K_PDesc_to_MD(JP2K::PictureDescriptor&, MXF::RGBAEssenceDescriptor*);
+  Result_t PCM_ADesc_to_MD(PCM::AudioDescriptor&, MXF::WaveAudioDescriptor*);
+  //  void AddDMScrypt(PackagePtr, WriterInfo&, const byte_t*);
   Result_t EncryptFrameBuffer(const ASDCP::FrameBuffer&, ASDCP::FrameBuffer&, AESEncContext*);
   Result_t DecryptFrameBuffer(const ASDCP::FrameBuffer&, ASDCP::FrameBuffer&, AESDecContext*);
 
@@ -212,9 +202,7 @@ namespace ASDCP
 
       h__Reader();
       virtual ~h__Reader();
-      //
-      //      MDObject* GetMDObjectByType(const std::string ObjName);
-      //      MDObject* GetMDObjectByPath(const std::string ObjPath);
+
       Result_t InitInfo(WriterInfo& Info);
       Result_t OpenMXFRead(const char* filename);
       Result_t InitMXFIndex();
@@ -222,6 +210,93 @@ namespace ASDCP
 			      const byte_t* EssenceUL, AESDecContext* Ctx, HMACContext* HMAC);
       void     Close();
     };
+
+
+  // state machine for mxf writer
+  enum WriterState_t {
+    ST_BEGIN,   // waiting for Open()
+    ST_INIT,    // waiting for SetSourceStream()
+    ST_READY,   // ready to write frames
+    ST_RUNNING, // one or more frames written
+    ST_FINAL,   // index written, file closed
+  };
+
+  // implementation of h__WriterState class Goto_* methods
+#define Goto_body(s1,s2) if ( m_State != (s1) ) \
+                           return RESULT_STATE; \
+                         m_State = (s2); \
+                         return RESULT_OK
+  //
+  class h__WriterState
+    {
+      ASDCP_NO_COPY_CONSTRUCT(h__WriterState);
+
+    public:
+      WriterState_t m_State;
+      h__WriterState() : m_State(ST_BEGIN) {}
+      ~h__WriterState() {}
+
+      inline bool     Test_BEGIN()   { return m_State == ST_BEGIN; }
+      inline bool     Test_INIT()    { return m_State == ST_INIT; }
+      inline bool     Test_READY()   { return m_State == ST_READY;}
+      inline bool     Test_RUNNING() { return m_State == ST_RUNNING; }
+      inline bool     Test_FINAL()   { return m_State == ST_FINAL; }
+      inline Result_t Goto_INIT()    { Goto_body(ST_BEGIN,   ST_INIT); }
+      inline Result_t Goto_READY()   { Goto_body(ST_INIT,    ST_READY); }
+      inline Result_t Goto_RUNNING() { Goto_body(ST_READY,   ST_RUNNING); }
+      inline Result_t Goto_FINAL()   { Goto_body(ST_RUNNING, ST_FINAL); }
+    };
+
+  //
+  class h__Writer
+    {
+      ASDCP_NO_COPY_CONSTRUCT(h__Writer);
+
+    public:
+      FileWriter         m_File;
+      OPAtomHeader       m_HeaderPart;
+      Partition          m_BodyPart;
+      OPAtomIndexFooter  m_FooterPart;
+
+#if 0
+      ui64_t             m_EssenceStart;
+      WriterInfo         m_Info;
+      ASDCP::FrameBuffer m_CtFrameBuf;
+
+      mem_ptr<MXFFile> m_File;
+      mem_ptr<Metadata>     m_Metadata;
+      mem_ptr<Package>      m_FilePackage;
+      mem_ptr<Partition>    m_HeaderPart;
+      mem_ptr<MDObject>     m_EssenceDescriptor;
+      mem_ptr<Package>      m_MaterialPackage;
+      mem_ptr<Track>        m_MPTrack;			//! Material Package track for each essence stream
+      mem_ptr<Track>        m_FPTrack;			//! File Package track for each essence stream
+      mem_ptr<TimecodeComponent> m_MPTimecode;
+      mem_ptr<TimecodeComponent> m_FPTimecode;
+      mem_ptr<IndexManager> m_IndexMan;
+      SourceClip*           m_MPClip;			//! Material Package SourceClip for each essence stream 
+      SourceClip*           m_FPClip;			//! File Package SourceClip for each essence stream 
+#endif
+
+      i32_t                 m_EssenceID;		//! Essence stream ID for each essence stream
+      ui32_t                m_FramesWritten;
+      ui64_t                m_StreamOffset;
+      ASDCP::FrameBuffer    m_CtFrameBuf;
+      h__WriterState        m_State;
+      WriterInfo            m_Info;
+      FrameBuffer           m_CryptFrameBuf;
+
+      h__Writer();
+      virtual ~h__Writer();
+
+      Result_t WriteMXFHeader(EssenceType_t EssenceType, Rational& EditRate,
+			      ui32_t TCFrameRate, ui32_t BytesPerEditUnit = 0);
+      Result_t WriteEKLVPacket(const ASDCP::FrameBuffer& FrameBuf,
+			       const byte_t* EssenceUL, AESEncContext* Ctx, HMACContext* HMAC);
+      Result_t WriteMXFFooter(EssenceType_t EssenceType);
+
+   };
+
 
   // helper class for calculating Integrity Packs, used by WriteEKLVPacket() below.
   //
@@ -258,35 +333,6 @@ namespace ASDCP
       inline const ui64_t  Length() { return m_Length; }
       inline const ui64_t  KLLength() { return m_BERLength + klv_key_size; }
       Result_t ReadKLFromFile(ASDCP::FileReader& Reader);
-#if 0
-      //
-        {
-          ui32_t read_count;
-          m_HeaderLength = klv_key_size + klv_length_size;
-          Result_t result = Reader.Read(m_Key, m_HeaderLength, &read_count);
-          assert(read_count == m_HeaderLength);
-
-          if ( ASDCP_SUCCESS(result) )
-            {
-              m_BERLength = BER_length(m_Key + klv_key_size);
-          
-              if ( m_BERLength != klv_length_size )
-                {
-		  ASDCP::DefaultLogSink().Error("Found packet with BER length %lu; being less efficient...\n",
-                                                m_BERLength);
-                  // TODO: recover the correct BER value
-                  // and reposition the file pointer
-                  assert(0);
-                }
-
-              if ( ! read_BER(m_Key + klv_key_size, &m_Length) )
-                return RESULT_FAIL;
-            }
-
-          return result;
-        }
-#endif
-
     };
 
 } // namespace ASDCP

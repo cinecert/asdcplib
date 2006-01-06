@@ -269,24 +269,8 @@ public:
 	      case 'V': version_flag = true; break;
 	      case 'h': help_flag = true; break;
 	      case 'v': verbose_flag = true; break;
-	      case 'g':
-#ifdef ASDCP_WITHOUT_OPENSSL
-		fputs("Program compiled without encryption support.\n", stderr);
-		return;
-#else
-		genkey_flag = true;
-#endif
-		break;
-
-	      case 'u':
-#ifdef ASDCP_WITHOUT_OPENSSL
-		fputs("Program compiled without encryption support.\n", stderr);
-		return;
-#else
-		genid_flag = true;
-#endif
-		break;
-
+	      case 'g': genkey_flag = true; break;
+	      case 'u':	genid_flag = true; break;
 	      case 'e': encrypt_header_flag = true; break;
 	      case 'E': encrypt_header_flag = false; break;
 	      case 'M': write_hmac = false; break;
@@ -305,10 +289,6 @@ public:
 		break;
 
 	      case 'k': key_flag = true;
-#ifdef ASDCP_WITHOUT_OPENSSL
-		fputs("Program compiled without encryption support.\n", stderr);
-		return;
-#else
 		TEST_EXTRA_ARG(i, 'k');
 		{
 		  ui32_t length;
@@ -320,14 +300,9 @@ public:
 		      return;
 		    }
 		}
-#endif
 		break;
 
 	      case 'j': key_id_flag = true;
-#ifdef ASDCP_WITHOUT_OPENSSL
-		fputs("Program compiled without encryption support.\n", stderr);
-		return;
-#else
 		TEST_EXTRA_ARG(i, 'j');
 		{
 		  ui32_t length;
@@ -339,7 +314,6 @@ public:
 		      return;
 		    }
 		}
-#endif
 		break;
 
 	      case 'f':
@@ -410,7 +384,7 @@ public:
 
 //------------------------------------------------------------------------------------------
 // MPEG2 essence
-#if 0
+
 // Write a plaintext MPEG2 Video Elementary Stream to a plaintext ASDCP file
 // Write a plaintext MPEG2 Video Elementary Stream to a ciphertext ASDCP file
 //
@@ -423,11 +397,8 @@ write_MPEG2_file(CommandOptions& Options)
   MPEG2::Parser      Parser;
   MPEG2::MXFWriter   Writer;
   MPEG2::VideoDescriptor VDesc;
-
-#ifndef ASDCP_WITHOUT_OPENSSL
   byte_t             IV_buf[CBC_BLOCK_SIZE];
   FortunaRNG         RNG;
-#endif
 
   // set up essence parser
   Result_t result = Parser.OpenRead(Options.filenames[0]);
@@ -449,7 +420,6 @@ write_MPEG2_file(CommandOptions& Options)
   if ( ASDCP_SUCCESS(result) && ! Options.no_write_flag )
     {
       WriterInfo Info = s_MyInfo;  // fill in your favorite identifiers here
-#ifndef ASDCP_WITHOUT_OPENSSL
       GenRandomUUID(RNG, Info.AssetUUID);
 
       // configure encryption
@@ -476,7 +446,6 @@ write_MPEG2_file(CommandOptions& Options)
 	      result = HMAC->InitKey(Options.key_value);
 	    }
 	}
-#endif // ASDCP_WITHOUT_OPENSSL
 
       if ( ASDCP_SUCCESS(result) )
 	result = Writer.OpenWrite(Options.out_file, Info, VDesc);
@@ -508,14 +477,12 @@ write_MPEG2_file(CommandOptions& Options)
 	    {
 	      result = Writer.WriteFrame(FrameBuffer, Context, HMAC);
 
-#ifndef ASDCP_WITHOUT_OPENSSL
 	      // The Writer class will forward the last block of ciphertext
 	      // to the encryption context for use as the IV for the next
 	      // frame. If you want to use non-sequitur IV values, un-comment
 	      // the following  line of code.
 	      // if ( ASDCP_SUCCESS(result) && Options.key_flag )
 	      //   Context->SetIVec(RNG.FillRandom(IV_buf, CBC_BLOCK_SIZE));
-#endif
 	    }
 	}
 
@@ -528,7 +495,6 @@ write_MPEG2_file(CommandOptions& Options)
 
   return result;
 }
-#endif
 
 // Read a plaintext MPEG2 Video Elementary Stream from a plaintext ASDCP file
 // Read a plaintext MPEG2 Video Elementary Stream from a ciphertext ASDCP file
@@ -658,7 +624,6 @@ gop_start_test(CommandOptions& Options)
   return result;
 }
 
-#if 0
 //------------------------------------------------------------------------------------------
 // JPEG 2000 essence
 
@@ -674,11 +639,8 @@ write_JP2K_file(CommandOptions& Options)
   JP2K::FrameBuffer       FrameBuffer(Options.fb_size);
   JP2K::PictureDescriptor PDesc;
   JP2K::SequenceParser    Parser;
-
-#ifndef ASDCP_WITHOUT_OPENSSL
   byte_t           IV_buf[CBC_BLOCK_SIZE];
   FortunaRNG       RNG;
-#endif
 
   // set up essence parser
   Result_t result = Parser.OpenRead(Options.filenames[0]);
@@ -701,7 +663,6 @@ write_JP2K_file(CommandOptions& Options)
   if ( ASDCP_SUCCESS(result) && ! Options.no_write_flag )
     {
       WriterInfo Info = s_MyInfo;  // fill in your favorite identifiers here
-#ifndef ASDCP_WITHOUT_OPENSSL
       GenRandomUUID(RNG, Info.AssetUUID);
 
       // configure encryption
@@ -728,7 +689,6 @@ write_JP2K_file(CommandOptions& Options)
 	      result = HMAC->InitKey(Options.key_value);
 	    }
 	}
-#endif // ASDCP_WITHOUT_OPENSSL
 
       if ( ASDCP_SUCCESS(result) )
 	result = Writer.OpenWrite(Options.out_file, Info, PDesc);
@@ -758,14 +718,13 @@ write_JP2K_file(CommandOptions& Options)
 	  if ( ASDCP_SUCCESS(result) && ! Options.no_write_flag )
 	    {
 	      result = Writer.WriteFrame(FrameBuffer, Context, HMAC);
-#ifndef ASDCP_WITHOUT_OPENSSL
+
 	      // The Writer class will forward the last block of ciphertext
 	      // to the encryption context for use as the IV for the next
 	      // frame. If you want to use non-sequitur IV values, un-comment
 	      // the following  line of code.
 	      // if ( ASDCP_SUCCESS(result) && Options.key_flag )
 	      //   Context->SetIVec(RNG.FillRandom(IV_buf, CBC_BLOCK_SIZE));
-#endif
 	    }
 	}
 
@@ -778,7 +737,6 @@ write_JP2K_file(CommandOptions& Options)
 
   return result;
 }
-#endif
 
 // Read one or more plaintext JPEG 2000 codestreams from a plaintext ASDCP file
 // Read one or more plaintext JPEG 2000 codestreams from a ciphertext ASDCP file
@@ -858,7 +816,6 @@ read_JP2K_file(CommandOptions& Options)
   return result;
 }
 
-#if 0
 //------------------------------------------------------------------------------------------
 // PCM essence
 
@@ -876,11 +833,8 @@ write_PCM_file(CommandOptions& Options)
   PCM::FrameBuffer FrameBuffer;
   PCM::AudioDescriptor ADesc;
   Rational         PictureRate = Options.PictureRate();
-
-#ifndef ASDCP_WITHOUT_OPENSSL
   byte_t           IV_buf[CBC_BLOCK_SIZE];
   FortunaRNG       RNG;
-#endif
 
   // set up essence parser
   Result_t result = Parser.OpenRead(Options.file_count, Options.filenames, PictureRate);
@@ -906,7 +860,6 @@ write_PCM_file(CommandOptions& Options)
   if ( ASDCP_SUCCESS(result) && ! Options.no_write_flag )
     {
       WriterInfo Info = s_MyInfo;  // fill in your favorite identifiers here
-#ifndef ASDCP_WITHOUT_OPENSSL
       GenRandomUUID(RNG, Info.AssetUUID);
 
       // configure encryption
@@ -933,7 +886,6 @@ write_PCM_file(CommandOptions& Options)
 	      result = HMAC->InitKey(Options.key_value);
 	    }
 	}
-#endif // ASDCP_WITHOUT_OPENSSL
 
       if ( ASDCP_SUCCESS(result) )
 	result = Writer.OpenWrite(Options.out_file, Info, ADesc);
@@ -965,14 +917,12 @@ write_PCM_file(CommandOptions& Options)
 		{
 		  result = Writer.WriteFrame(FrameBuffer, Context, HMAC);
 
-#ifndef ASDCP_WITHOUT_OPENSSL
 		  // The Writer class will forward the last block of ciphertext
 		  // to the encryption context for use as the IV for the next
 		  // frame. If you want to use non-sequitur IV values, un-comment
 		  // the following  line of code.
 		  // if ( ASDCP_SUCCESS(result) && Options.key_flag )
 		  //   Context->SetIVec(RNG.FillRandom(IV_buf, CBC_BLOCK_SIZE));
-#endif
 		}
 	    }
 	}
@@ -986,7 +936,6 @@ write_PCM_file(CommandOptions& Options)
 
   return result;
 }
-#endif
 
 // Read one or more plaintext PCM audio streams from a plaintext ASDCP file
 // Read one or more plaintext PCM audio streams from a ciphertext ASDCP file
@@ -1253,7 +1202,6 @@ main(int argc, const char** argv)
     {
       result = gop_start_test(Options);
     }
-#ifndef ASDCP_WITHOUT_OPENSSL
   else if ( Options.genkey_flag )
     {
       FortunaRNG RNG;
@@ -1273,7 +1221,6 @@ main(int argc, const char** argv)
       bin2hex(bin_buf, KeyLen, str_buf, 40);
       printf("%s\n", hyphenate_UUID(str_buf, 40));
     }
-#endif // ASDCP_WITHOUT_OPENSSL
   else if ( Options.extract_flag )
     {
       EssenceType_t EssenceType;
@@ -1307,7 +1254,6 @@ main(int argc, const char** argv)
     {
       fprintf(stderr, "ATTENTION! This version of asdcplib does not support writing MXF files.\n");
 
-#if 0
       if ( Options.do_repeat && ! Options.duration_flag )
 	{
 	  fputs("Option -R requires -d <duration>\n", stderr);
@@ -1341,7 +1287,6 @@ main(int argc, const char** argv)
 	      return 5;
 	    }
 	}
-#endif
     }
 
   if ( result != RESULT_OK )

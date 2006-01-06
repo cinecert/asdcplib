@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2004-2005, John Hurst
+Copyright (c) 2004-2006, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -32,15 +32,16 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "AS_DCP_internal.h"
 #include "MemIO.h"
 #include "Timecode.h"
+#include "KLV.h"
+#include "MDD.h"
 #include <assert.h>
 
-using namespace mxflib;
 using namespace ASDCP;
+using namespace ASDCP::MXF;
 
 
 ASDCP::h__Writer::h__Writer() : m_FramesWritten(0), m_StreamOffset(0)
 {
-  init_mxf_types();
 }
 
 ASDCP::h__Writer::~h__Writer()
@@ -52,6 +53,7 @@ Result_t
 ASDCP::h__Writer::WriteMXFHeader(EssenceType_t EssenceType, ASDCP::Rational& EditRate,
 			  ui32_t TCFrameRate, ui32_t BytesPerEditUnit)
 {
+#if 0
   // write the stream metadata
   m_Metadata = new Metadata();
   assert(m_Metadata);
@@ -73,18 +75,10 @@ ASDCP::h__Writer::WriteMXFHeader(EssenceType_t EssenceType, ASDCP::Rational& Edi
   UMID PackageUMID;
   PackageUMID.MakeUMID(0x0d); // mixed type
 
-#if ASDCP_USE_MXFLIB
-  mxflib::Rational EditRate_;
-  EditRate_.Numerator = EditRate.Numerator;
-  EditRate_.Denominator = EditRate.Denominator;
-#else
-#define EditRate_ EditRate
-#endif
-
   m_MaterialPackage = m_Metadata->AddMaterialPackage("AS-DCP Material Package", PackageUMID);
   m_Metadata->SetPrimaryPackage(m_MaterialPackage);	// This will be overwritten for OP-Atom
   
-  TrackPtr MPTimecodeTrack = m_MaterialPackage->AddTimecodeTrack(EditRate_);
+  TrackPtr MPTimecodeTrack = m_MaterialPackage->AddTimecodeTrack(EditRate);
   m_MPTimecode = MPTimecodeTrack->AddTimecodeComponent(TCFrameRate, 0, 0);
 
   TrackPtr FPTimecodeTrack = 0;
@@ -97,29 +91,29 @@ ASDCP::h__Writer::WriteMXFHeader(EssenceType_t EssenceType, ASDCP::Rational& Edi
     case ESS_MPEG2_VES:
       PackageUMID.MakeUMID(0x0f, assetUUID);
       m_FilePackage = m_Metadata->AddFilePackage(1, MPEG_PACKAGE_LABEL, PackageUMID);
-      m_MPTrack = m_MaterialPackage->AddPictureTrack(EditRate_);
-      m_FPTrack = m_FilePackage->AddPictureTrack(0, EditRate_);
+      m_MPTrack = m_MaterialPackage->AddPictureTrack(EditRate);
+      m_FPTrack = m_FilePackage->AddPictureTrack(0, EditRate);
       break;
 	  
     case ESS_JPEG_2000:
       PackageUMID.MakeUMID(0x0f, assetUUID);
       m_FilePackage = m_Metadata->AddFilePackage(1, JP2K_PACKAGE_LABEL, PackageUMID);
-      m_MPTrack = m_MaterialPackage->AddPictureTrack(EditRate_);
-      m_FPTrack = m_FilePackage->AddPictureTrack(0, EditRate_);
+      m_MPTrack = m_MaterialPackage->AddPictureTrack(EditRate);
+      m_FPTrack = m_FilePackage->AddPictureTrack(0, EditRate);
       break;
 	  
     case ESS_PCM_24b_48k:
       PackageUMID.MakeUMID(0x0f, assetUUID);
       m_FilePackage = m_Metadata->AddFilePackage(1, PCM_PACKAGE_LABEL, PackageUMID);
-      m_MPTrack = m_MaterialPackage->AddSoundTrack(EditRate_);
-      m_FPTrack = m_FilePackage->AddSoundTrack(0, EditRate_);
+      m_MPTrack = m_MaterialPackage->AddSoundTrack(EditRate);
+      m_FPTrack = m_FilePackage->AddSoundTrack(0, EditRate);
       break;
 
     default: return RESULT_RAW_ESS;
     }
 
   // Add an essence element
-  FPTimecodeTrack = m_FilePackage->AddTimecodeTrack(EditRate_);
+  FPTimecodeTrack = m_FilePackage->AddTimecodeTrack(EditRate);
   m_FPTimecode = FPTimecodeTrack->AddTimecodeComponent(TCFrameRate, 0/* NDF */,
 						       tc_to_frames(TCFrameRate, 1, 0, 0, 0) );
   
@@ -243,7 +237,8 @@ ASDCP::h__Writer::WriteMXFHeader(EssenceType_t EssenceType, ASDCP::Rational& Edi
 
   m_IndexMan->SetBodySID(1);
   m_IndexMan->SetIndexSID(129);
-  m_IndexMan->SetEditRate(EditRate_);
+  m_IndexMan->SetEditRate(EditRate);
+#endif
 
   return RESULT_OK;
 }
@@ -306,14 +301,14 @@ ASDCP::h__Writer::WriteEKLVPacket(const ASDCP::FrameBuffer& FrameBuf, const byte
 	  Overhead.WriteUi64BE(FrameBuf.Size());                         // write SourceLength
 	  Overhead.WriteBER(m_CtFrameBuf.Size(), klv_length_size);       // write ESV length
 
-	  result = m_File->Writev(Overhead.Data(), Overhead.Size());
+	  result = m_File.Writev(Overhead.Data(), Overhead.Size());
 	}
 
       if ( ASDCP_SUCCESS(result) )
 	{
 	  m_StreamOffset += Overhead.Size();
 	  // write encrypted source value
-	  result = m_File->Writev((byte_t*)m_CtFrameBuf.RoData(), m_CtFrameBuf.Size());
+	  result = m_File.Writev((byte_t*)m_CtFrameBuf.RoData(), m_CtFrameBuf.Size());
 	}
 
       if ( ASDCP_SUCCESS(result) )
@@ -335,7 +330,7 @@ ASDCP::h__Writer::WriteEKLVPacket(const ASDCP::FrameBuffer& FrameBuf, const byte
 	    }
 
 	  // write HMAC
-	  result = m_File->Writev(HMACOverhead.Data(), HMACOverhead.Size());
+	  result = m_File.Writev(HMACOverhead.Data(), HMACOverhead.Size());
 	  m_StreamOffset += HMACOverhead.Size();
 	}
     }
@@ -343,17 +338,17 @@ ASDCP::h__Writer::WriteEKLVPacket(const ASDCP::FrameBuffer& FrameBuf, const byte
     {
       Overhead.WriteRaw((byte_t*)EssenceUL, klv_key_size);
       Overhead.WriteBER(FrameBuf.Size(), klv_length_size);
-      result = m_File->Writev(Overhead.Data(), Overhead.Size());
+      result = m_File.Writev(Overhead.Data(), Overhead.Size());
  
       if ( ASDCP_SUCCESS(result) )
-	result = m_File->Writev((byte_t*)FrameBuf.RoData(), FrameBuf.Size());
+	result = m_File.Writev((byte_t*)FrameBuf.RoData(), FrameBuf.Size());
 
       if ( ASDCP_SUCCESS(result) )
 	m_StreamOffset += Overhead.Size() + FrameBuf.Size();
     }
 
   if ( ASDCP_SUCCESS(result) )
-    result = m_File->Writev();
+    result = m_File.Writev();
 
   return result;
 }
@@ -364,6 +359,7 @@ ASDCP::h__Writer::WriteEKLVPacket(const ASDCP::FrameBuffer& FrameBuf, const byte
 Result_t
 ASDCP::h__Writer::WriteMXFFooter(EssenceType_t EssenceType)
 {
+#if 0
   // write the index
   DataChunk IndexChunk;
   ui32_t IndexSID = 0;
@@ -429,10 +425,10 @@ ASDCP::h__Writer::WriteMXFFooter(EssenceType_t EssenceType)
   m_HeaderPart->UpdateMetadata(m_Metadata);
 
   // Actually write the footer
-  m_File->WritePartitionWithIndex(*m_HeaderPart, &IndexChunk, false);
+  m_File.WritePartitionWithIndex(*m_HeaderPart, &IndexChunk, false);
 
   // Add a RIP
-  m_File->WriteRIP();
+  m_File.WriteRIP();
 
   //
   // ** Update the header ** 
@@ -441,15 +437,15 @@ ASDCP::h__Writer::WriteMXFFooter(EssenceType_t EssenceType)
   // For OP-Atom re-write the entire header
   //
   ASDCP::fpos_t FooterPos = m_HeaderPart->GetUint64("FooterPartition");
-  m_File->Seek(0);
+  m_File.Seek(0);
 
   m_HeaderPart->ChangeType("ClosedCompleteHeader");
   m_HeaderPart->SetUint64("FooterPartition", FooterPos);
   m_HeaderPart->SetUint64("BodySID", 1);
 
-  m_File->ReWritePartition(*m_HeaderPart);
-  m_File->Close();
-  
+  m_File.ReWritePartition(*m_HeaderPart);
+  m_File.Close();
+#endif
   return RESULT_OK;
 }
 

@@ -83,11 +83,6 @@ drwxr-xr-x   56 jhurst   None         0 Feb  2 16:35 openssl
 I have tested this build on win32, Linux and Darwin platforms.
 Others may work as well.
 
-If you do not want to use or do not have OpenSSL, invoke
-make with ASDCP_WITHOUT_OPENSSL defined:
- 
-  make ASDCP_WITHOUT_OPENSSL=1
-
 
 Build Versions
 
@@ -118,6 +113,10 @@ examples. More detailed documentation will be written RSN.
 
 
 Change History
+2006.01.04 - full read-write
+ o Removed ASDCP_WITHOUT_OPENSSL compile-time option.
+
+
 2005.00.00 - A New Hope
  o The temporary mxf-lite has been removed. MXF files are now 
    managed via the objects in KLV.h, MXFTypes.h MXF.h and
