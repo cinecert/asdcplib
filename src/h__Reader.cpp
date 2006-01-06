@@ -75,7 +75,7 @@ ASDCP::h__Reader::InitInfo(WriterInfo& Info)
   if( ASDCP_SUCCESS(result) )
     {
       SourcePackage* SP = (SourcePackage*)Object;
-      memcpy(Info.AssetUUID, SP->PackageUID.Data() + 16, UUIDlen);
+      memcpy(Info.AssetUUID, SP->PackageUID.Value() + 16, UUIDlen);
     }
 
   // optional CryptographicContext

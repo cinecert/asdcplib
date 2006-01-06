@@ -57,7 +57,7 @@ namespace ASDCP
 
 	    inline const char* ToString(char* str_buf) const {
 	      char intbuf[IntBufferLen];
-	      sprintf(str_buf, "%-6lu: %s", BodySID, ui64sz(ByteOffset, intbuf));
+	      snprintf(str_buf, IdentBufferLen, "%-6lu: %s", BodySID, ui64sz(ByteOffset, intbuf));
 	      return str_buf;
 	    }
 
@@ -134,7 +134,7 @@ namespace ASDCP
 	      ASDCP::UL   UL;
 
 	      inline const char* ToString(char* str_buf) const {
-		sprintf(str_buf, "%02x %02x: ", Tag.a, Tag.b);
+		snprintf(str_buf, IdentBufferLen, "%02x %02x: ", Tag.a, Tag.b);
 		UL.ToString(str_buf + strlen(str_buf));
 		return str_buf;
 	      }
@@ -192,10 +192,7 @@ namespace ASDCP
           virtual Result_t InitFromTLVSet(TLVReader& TLVSet);
 	  virtual Result_t WriteToBuffer(ASDCP::FrameBuffer&);
 	  virtual bool     IsA(const byte_t* label);
-
-	  virtual void Dump(FILE* stream = 0) {
-	    KLVPacket::Dump(stream, true);
-	  }
+	  virtual void     Dump(FILE* stream = 0);
 	};
 
       //

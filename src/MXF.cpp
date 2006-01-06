@@ -31,9 +31,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #define ASDCP_DECLARE_MDD
 #include "MDD.h"
-#include "Mutex.h"
 #include "MXF.h"
-#include "Metadata.h"
 #include <hex_utils.h>
 
 //------------------------------------------------------------------------------------------
@@ -362,7 +360,7 @@ ASDCP::MXF::Primer::InsertTag(const ASDCP::UL& Key, ASDCP::TagValue& Tag)
 
   if ( i == m_Lookup->end() )
     {
-      const MDDEntry* mdde = GetMDDEntry(Key.Data());
+      const MDDEntry* mdde = GetMDDEntry(Key.Value());
       assert(mdde);
 
       LocalTagEntry TmpEntry;
@@ -413,7 +411,7 @@ ASDCP::MXF::Primer::Dump(FILE* stream)
   Batch<LocalTagEntry>::iterator i = LocalTagEntryBatch.begin();
   for ( ; i != LocalTagEntryBatch.end(); i++ )
     {
-      const MDDEntry* Entry = GetMDDEntry((*i).UL.Data());
+      const MDDEntry* Entry = GetMDDEntry((*i).UL.Value());
       fprintf(stream, "  %s %s\n", (*i).ToString(identbuf), (Entry ? Entry->name : "Unknown"));
     }
 
@@ -914,7 +912,7 @@ ASDCP::MXF::OPAtomIndexFooter::Lookup(ui32_t frame_num, IndexTableSegment::Index
 	  else if ( (ui64_t)frame_num >= start_pos
 		    && (ui64_t)frame_num < (start_pos + Segment->IndexDuration) )
 	    {
-	      Entry = Segment->IndexEntryArray[frame_num];
+	      Entry = Segment->IndexEntryArray[frame_num-start_pos];
 	      return RESULT_OK;
 	    }
 	}
@@ -959,6 +957,18 @@ ASDCP::MXF::InterchangeObject::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 }
 
 //
+void
+ASDCP::MXF::InterchangeObject::Dump(FILE* stream)
+{
+  char identbuf[IdentBufferLen];
+
+  fputc('\n', stream);
+  KLVPacket::Dump(stream, false);
+  fprintf(stream, "             InstanceUID = %s\n",  InstanceUID.ToString(identbuf));
+  fprintf(stream, "           GenerationUID = %s\n",  GenerationUID.ToString(identbuf));
+}
+
+//
 bool
 ASDCP::MXF::InterchangeObject::IsA(const byte_t* label)
 {
@@ -968,126 +978,6 @@ ASDCP::MXF::InterchangeObject::IsA(const byte_t* label)
   return ( memcmp(label, m_KeyStart, SMPTE_UL_LENGTH) == 0 );
 }
 
-
-//------------------------------------------------------------------------------------------
-//
-
-//
-enum FLT_t
-  {
-    FLT_Preface,
-    FLT_Identification,
-    FLT_ContentStorage,
-    FLT_MaterialPackage,
-    FLT_SourcePackage,
-    FLT_Track,
-    FLT_Sequence,
-    FLT_SourceClip,
-    FLT_TimecodeComponent,
-    FLT_FileDescriptor,
-    FLT_WaveAudioDescriptor,
-    FLT_GenericPictureEssenceDescriptor,
-    FLT_MPEG2VideoDescriptor,
-    FLT_RGBAEssenceDescriptor,
-    FLT_JPEG2000PictureSubDescriptor,
-    FLT_IndexTableSegment,
-    FLT_CryptographicFramework,
-    FLT_CryptographicContext
-  };
-
-//
-typedef std::map<ASDCP::UL, FLT_t>::iterator FLi_t;
-
-class FactoryList : public std::map<ASDCP::UL, FLT_t>
-{
-  ASDCP::Mutex m_Lock;
-
-public:
-  FactoryList() {}
-  ~FactoryList() {}
-
-  bool Empty() {
-    ASDCP::AutoMutex BlockLock(m_Lock);
-    return empty();
-  }
-
-  FLi_t Find(const byte_t* label) {
-    ASDCP::AutoMutex BlockLock(m_Lock);
-    return find(label);
-  }
-
-  FLi_t End() {
-    ASDCP::AutoMutex BlockLock(m_Lock);
-    return end();
-  }
-
-};
-
-//
-static FactoryList s_FactoryList;
-
-#define SETUP_IDX(t) const ui32_t FLT_##t = v;
-#define SETUP_FACTORY(t) s_FactoryList.insert(FactoryList::value_type(s_MDD_Table[MDDindex_##t].ul, FLT_##t));
-#define CASE_FACTORY(t)  case FLT_##t: return new t
-
-//
-ASDCP::MXF::InterchangeObject*
-ASDCP::MXF::CreateObject(const byte_t* label)
-{
-  if ( label == 0 )
-    return 0;
-
-  if ( s_FactoryList.empty() )
-    {
-      SETUP_FACTORY(Preface);
-      SETUP_FACTORY(Identification);
-      SETUP_FACTORY(ContentStorage);
-      SETUP_FACTORY(MaterialPackage);
-      SETUP_FACTORY(SourcePackage);
-      SETUP_FACTORY(Track);
-      SETUP_FACTORY(Sequence);
-      SETUP_FACTORY(SourceClip);
-      SETUP_FACTORY(TimecodeComponent);
-      SETUP_FACTORY(FileDescriptor);
-      SETUP_FACTORY(WaveAudioDescriptor);
-      SETUP_FACTORY(GenericPictureEssenceDescriptor);
-      SETUP_FACTORY(MPEG2VideoDescriptor);
-      SETUP_FACTORY(RGBAEssenceDescriptor);
-      SETUP_FACTORY(JPEG2000PictureSubDescriptor);
-      SETUP_FACTORY(IndexTableSegment);
-      SETUP_FACTORY(CryptographicFramework);
-      SETUP_FACTORY(CryptographicContext);
-    }
-
-  FLi_t i = s_FactoryList.find(label);
-
-  if ( i == s_FactoryList.end() )
-    return new InterchangeObject;
-
-  switch ( i->second )
-    {
-      CASE_FACTORY(Preface);
-      CASE_FACTORY(Identification);
-      CASE_FACTORY(ContentStorage);
-      CASE_FACTORY(MaterialPackage);
-      CASE_FACTORY(SourcePackage);
-      CASE_FACTORY(Track);
-      CASE_FACTORY(Sequence);
-      CASE_FACTORY(SourceClip);
-      CASE_FACTORY(TimecodeComponent);
-      CASE_FACTORY(FileDescriptor);
-      CASE_FACTORY(WaveAudioDescriptor);
-      CASE_FACTORY(GenericPictureEssenceDescriptor);
-      CASE_FACTORY(MPEG2VideoDescriptor);
-      CASE_FACTORY(RGBAEssenceDescriptor);
-      CASE_FACTORY(JPEG2000PictureSubDescriptor);
-      CASE_FACTORY(IndexTableSegment);
-      CASE_FACTORY(CryptographicFramework);
-      CASE_FACTORY(CryptographicContext);
-    }
-  
-  return new InterchangeObject;
-}
 
 //
 // end MXF.cpp

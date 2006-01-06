@@ -93,7 +93,7 @@ ASDCP::MD_to_WriterInfo(Identification* InfoObj, WriterInfo& Info)
   InfoObj->CompanyName.ToString(tmp_str);
   if ( *tmp_str ) Info.CompanyName = tmp_str;
 
-  memcpy(Info.ProductUUID, InfoObj->ProductUID.Data(), UUIDlen);
+  memcpy(Info.ProductUUID, InfoObj->ProductUID.Value(), UUIDlen);
 
   return RESULT_OK;
 }
@@ -106,8 +106,8 @@ ASDCP::MD_to_CryptoInfo(CryptographicContext* InfoObj, WriterInfo& Info)
   ASDCP_TEST_NULL(InfoObj);
 
   Info.EncryptedEssence = true;
-  memcpy(Info.ContextID, InfoObj->ContextID.Data(), UUIDlen);
-  memcpy(Info.CryptographicKeyID, InfoObj->CryptographicKeyID.Data(), UUIDlen);
+  memcpy(Info.ContextID, InfoObj->ContextID.Value(), UUIDlen);
+  memcpy(Info.CryptographicKeyID, InfoObj->CryptographicKeyID.Value(), UUIDlen);
 
   UL MIC_SHA1(MICAlgorithm_HMAC_SHA1);
   UL MIC_NONE(MICAlgorithm_NONE);

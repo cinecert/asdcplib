@@ -221,8 +221,9 @@ namespace ASDCP
 
 	  //
 	  inline const char* ToString(char* str_buf) const {
-	    sprintf(str_buf, "%04hu-%02hu-%02hu %02hu:%02hu:%02hu.%03hu",
-		    Year, Month, Day, Hour, Minute, Second, mSec_4);
+	    snprintf(str_buf, IdentBufferLen,
+		     "%04hu-%02hu-%02hu %02hu:%02hu:%02hu.%03hu",
+		     Year, Month, Day, Hour, Minute, Second, mSec_4);
 	    return str_buf;
 	  }
 
@@ -276,7 +277,7 @@ namespace ASDCP
 
 	  //
 	  const char* ToString(char* str_buf) const {
-	    sprintf(str_buf, "%lu/%lu", Numerator, Denominator);
+	    snprintf(str_buf, IdentBufferLen, "%lu/%lu", Numerator, Denominator);
 	    return str_buf;
 	  }
 

@@ -153,7 +153,7 @@ ASDCP::MXF::IndexTableSegment::Dump(FILE* stream)
 const char*
 ASDCP::MXF::IndexTableSegment::DeltaEntry::ToString(char* str_buf) const
 {
-  sprintf(str_buf, "%3i %-3hu %-3lu", PosTableIndex, Slice, ElementData);
+  snprintf(str_buf, IdentBufferLen, "%3i %-3hu %-3lu", PosTableIndex, Slice, ElementData);
   return str_buf;
 }
 
@@ -203,7 +203,7 @@ ASDCP::MXF::IndexTableSegment::IndexEntry::ToString(char* str_buf) const
   txt_flags[3] = ( (Flags & 0x10) != 0 ) ? 'b' : ' ';
   txt_flags[4] = ( (Flags & 0x0f) == 3 ) ? 'B' : ( (Flags & 0x0f) == 2 ) ? 'P' : 'I';
 
-  sprintf(str_buf, "%3i %-3hu %s %s",
+  snprintf(str_buf, IdentBufferLen, "%3i %-3hu %s %s",
 	  TemporalOffset, KeyFrameOffset, txt_flags,
 	  i64sz(StreamOffset, intbuf));
 

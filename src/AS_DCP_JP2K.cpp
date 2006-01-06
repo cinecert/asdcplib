@@ -50,10 +50,10 @@ ASDCP::JP2K_PDesc_to_MD(JP2K::PictureDescriptor& PDesc, MDObject& PDescObj)
 
   PDescObj.SetValue("Codec", DataChunk(klv_key_size, JP2KEssenceCompressionLabel));
 
-  sprintf(text_buf, "%ld/%ld", PDesc.EditRate.Numerator, PDesc.EditRate.Denominator);
+  snprintf(text_buf, 32, "%ld/%ld", PDesc.EditRate.Numerator, PDesc.EditRate.Denominator);
   PDescObj.SetString("SampleRate", text_buf);
 
-  sprintf(text_buf, "%ld/%ld", PDesc.AspectRatio.Numerator, PDesc.AspectRatio.Denominator);
+  snprintf(text_buf, 32, "%ld/%ld", PDesc.AspectRatio.Numerator, PDesc.AspectRatio.Denominator);
   PDescObj.SetString("AspectRatio", text_buf);
 
   PDescObj.SetUint("FrameLayout", 0);
@@ -100,31 +100,15 @@ ASDCP::Result_t
 ASDCP::MD_to_JP2K_PDesc(MXF::RGBAEssenceDescriptor* PDescObj, JP2K::PictureDescriptor& PDesc)
 {
   ASDCP_TEST_NULL(PDescObj);
-  PDesc.CodingStyleLength = PDesc.QuantDefaultLength = 0;
+  memset(&PDesc, 0, sizeof(PDesc));
+
+  PDesc.EditRate           = PDescObj->SampleRate;
+  PDesc.ContainerDuration  = PDescObj->ContainerDuration;
+  PDesc.StoredWidth        = PDescObj->StoredWidth;
+  PDesc.StoredHeight       = PDescObj->StoredHeight;
+  PDesc.AspectRatio        = PDescObj->AspectRatio;
 
 #if 0
-  PDesc.StoredWidth   = PDescObj.GetUint("StoredWidth");
-  PDesc.StoredHeight   = PDescObj.GetUint("StoredHeight");
-  PDesc.ContainerDuration = PDescObj.GetUint("ContainerDuration");
-
-  //
-  MDObject* Ptr = PDescObj["SampleRate"]; // should be EditRate
-
-  if ( Ptr )
-    {
-      PDesc.EditRate.Numerator = Ptr->GetInt("Numerator");
-      PDesc.EditRate.Denominator = Ptr->GetInt("Denominator");
-    }
-
-  //
-  Ptr = PDescObj["AspectRatio"];
-
-  if ( Ptr )
-    {
-      PDesc.AspectRatio.Numerator = Ptr->GetInt("Numerator");
-      PDesc.AspectRatio.Denominator = Ptr->GetInt("Denominator");
-    }
-
   MDObject* PSubDescObj = GetMDObjectByType(PDescObj, "JPEG2000PictureSubDescriptor");
 
   if ( PSubDescObj == 0 )
@@ -133,23 +117,17 @@ ASDCP::MD_to_JP2K_PDesc(MXF::RGBAEssenceDescriptor* PDescObj, JP2K::PictureDescr
       return RESULT_FALSE;
     }
 
-  PDesc.Rsize   = PSubDescObj->GetUint("Rsize");
-  PDesc.Xsize   = PSubDescObj->GetUint("Xsize");
-  PDesc.Ysize   = PSubDescObj->GetUint("Ysize");
-  PDesc.XOsize  = PSubDescObj->GetUint("XOsize");
-  PDesc.YOsize  = PSubDescObj->GetUint("YOsize");
-  PDesc.XTsize  = PSubDescObj->GetUint("XTsize");
-  PDesc.YTsize  = PSubDescObj->GetUint("YTsize");
-  PDesc.XTOsize = PSubDescObj->GetUint("XTOsize");
-  PDesc.YTOsize = PSubDescObj->GetUint("YTOsize");
-  PDesc.Csize   = PSubDescObj->GetUint("Csize");
-
-  //
-  Ptr = (*PSubDescObj)["PictureComponentSizing"];
-
-  if ( Ptr )
-    {
-      DataChunk DC3 = Ptr->GetData();
+  PDesc.Rsize   = PSubDescObj->Rsize;
+  PDesc.Xsize   = PSubDescObj->Xsize;
+  PDesc.Ysize   = PSubDescObj->Ysize;
+  PDesc.XOsize  = PSubDescObj->XOsize;
+  PDesc.YOsize  = PSubDescObj->YOsize;
+  PDesc.XTsize  = PSubDescObj->XTsize;
+  PDesc.YTsize  = PSubDescObj->YTsize;
+  PDesc.XTOsize = PSubDescObj->XTOsize;
+  PDesc.YTOsize = PSubDescObj->YTOsize;
+  PDesc.Csize   = PSubDescObj->Csize;
+  // PictureComponentSizing
 
       if ( DC3.Size == 17 ) // ( 2* sizeof(ui32_t) ) + 3 components * 3 byte each
 	{
@@ -159,28 +137,16 @@ ASDCP::MD_to_JP2K_PDesc(MXF::RGBAEssenceDescriptor* PDescObj, JP2K::PictureDescr
 	{
 	  DefaultLogSink().Error("Unexpected PictureComponentSizing size: %lu, should be 17\n", DC3.Size);
 	}
-    }
-
-  //
-  Ptr = (*PSubDescObj)["CodingStyleDefault"];
-
-  if ( Ptr )
-    {
-      DataChunk DC1 = Ptr->GetData();
-      PDesc.CodingStyleLength = DC1.Size;
-      memcpy(PDesc.CodingStyle, DC1.Data, DC1.Size);
-    }
-
-  //
-  Ptr = (*PSubDescObj)["QuantizationDefault"];
-
-  if ( Ptr )
-    {
-      DataChunk DC2 = Ptr->GetData();
-      PDesc.QuantDefaultLength = DC2.Size;
-      memcpy(PDesc.QuantDefault, DC2.Data, DC2.Size);
-    }
 #endif
+
+  // CodingStyleDefault
+      //      PDesc.CodingStyleLength = DC1.Size;
+      //      memcpy(PDesc.CodingStyle, DC1.Data, DC1.Size);
+
+  // QuantizationDefault
+      //      PDesc.QuantDefaultLength = DC2.Size;
+      //      memcpy(PDesc.QuantDefault, DC2.Data, DC2.Size);
+
   return RESULT_OK;
 }
 

@@ -173,7 +173,7 @@ const char*
 ASDCP::Version()
 {
   static char ver[16];
-  sprintf(ver, "%lu.%lu.%lu", VERSION_MAJOR, VERSION_APIMINOR, VERSION_IMPMINOR);
+  snprintf(ver, 16, "%lu.%lu.%lu", VERSION_MAJOR, VERSION_APIMINOR, VERSION_IMPMINOR);
   return ver;
 }
 

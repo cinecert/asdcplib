@@ -149,9 +149,9 @@ namespace ASDCP {
     { 
       assert(buf);
 #ifdef WIN32
-      sprintf(buf, "%I64d", i);
+      snprintf(buf, IntBufferLen, "%I64d", i);
 #else
-      sprintf(buf, "%lld", i);
+      snprintf(buf, IntBufferLen, "%lld", i);
 #endif
       return buf;
     }
@@ -160,9 +160,9 @@ namespace ASDCP {
     { 
       assert(buf);
 #ifdef WIN32
-      sprintf(buf, "%I64u", i);
+      snprintf(buf, IntBufferLen, "%I64u", i);
 #else
-      sprintf(buf, "%llu", i);
+      snprintf(buf, IntBufferLen, "%llu", i);
 #endif
       return buf;
     }
@@ -172,9 +172,9 @@ namespace ASDCP {
       assert(buf);
       if ( digits > 30 ) digits = 30;
 #ifdef WIN32
-      sprintf(buf,"%0*I64x", digits, i);
+      snprintf(buf, IntBufferLen, "%0*I64x", digits, i);
 #else
-      sprintf(buf,"%0*llx", digits, i);
+      snprintf(buf, IntBufferLen, "%0*llx", digits, i);
 #endif
       return buf;
     }

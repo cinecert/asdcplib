@@ -48,9 +48,13 @@ namespace ASDCP
           } PictureElement[8];
           RGBLayout() { memset(PictureElement, 0, sizeof(PictureElement)); }
 
-	 //
-         Result_t ReadFrom(ASDCP::MemIOReader& Reader) { return RESULT_OK; }
-	 Result_t WriteTo(ASDCP::MemIOWriter& Writer) { return RESULT_OK; }
+	  //
+          Result_t ReadFrom(ASDCP::MemIOReader& Reader) { return RESULT_OK; }
+	  Result_t WriteTo(ASDCP::MemIOWriter& Writer) { return RESULT_OK; }
+          inline const char* ToString(char* str_buf) const {
+            snprintf(str_buf, IdentBufferLen, "RGBLayout: <PictureElement[8]>\n");
+            return str_buf;
+          }
         };
 
       class Raw : public IArchive
@@ -62,9 +66,13 @@ namespace ASDCP
 	  Raw() {}
 	  ~Raw() {}
 
-	 //
-         Result_t ReadFrom(ASDCP::MemIOReader& Reader) { return RESULT_OK; }
-	 Result_t WriteTo(ASDCP::MemIOWriter& Writer) { return RESULT_OK; }
+	  //
+          Result_t ReadFrom(ASDCP::MemIOReader& Reader) { return RESULT_OK; }
+	  Result_t WriteTo(ASDCP::MemIOWriter& Writer) { return RESULT_OK; }
+          inline const char* ToString(char* str_buf) const {
+            snprintf(str_buf, IdentBufferLen, "RAW\n");
+            return str_buf;
+          }
 	};
 
       //
@@ -88,9 +96,9 @@ namespace ASDCP
 	  Identification() : ProductVersion(0), ToolkitVersion(0) {}
 	  virtual ~Identification() {}
           virtual Result_t InitFromTLVSet(TLVReader& TLVSet);
+	  virtual void     Dump(FILE* = 0);
 	  virtual Result_t InitFromBuffer(const byte_t* p, ui32_t l);
 	  virtual Result_t WriteToBuffer(ASDCP::FrameBuffer&);
-	  virtual void     Dump(FILE* = 0);
 	};
 
       //
@@ -105,9 +113,9 @@ namespace ASDCP
 	  ContentStorage() {}
 	  virtual ~ContentStorage() {}
           virtual Result_t InitFromTLVSet(TLVReader& TLVSet);
+	  virtual void     Dump(FILE* = 0);
 	  virtual Result_t InitFromBuffer(const byte_t* p, ui32_t l);
 	  virtual Result_t WriteToBuffer(ASDCP::FrameBuffer&);
-	  virtual void     Dump(FILE* = 0);
 	};
 
       //
@@ -125,6 +133,7 @@ namespace ASDCP
 	  GenericPackage() {}
 	  virtual ~GenericPackage() {}
           virtual Result_t InitFromTLVSet(TLVReader& TLVSet);
+	  virtual void     Dump(FILE* = 0);
 	};
 
       //
@@ -137,9 +146,9 @@ namespace ASDCP
 	  MaterialPackage() {}
 	  virtual ~MaterialPackage() {}
           virtual Result_t InitFromTLVSet(TLVReader& TLVSet);
+	  virtual void     Dump(FILE* = 0);
 	  virtual Result_t InitFromBuffer(const byte_t* p, ui32_t l);
 	  virtual Result_t WriteToBuffer(ASDCP::FrameBuffer&);
-	  virtual void     Dump(FILE* = 0);
 	};
 
       //
@@ -152,9 +161,9 @@ namespace ASDCP
 	  SourcePackage() {}
 	  virtual ~SourcePackage() {}
           virtual Result_t InitFromTLVSet(TLVReader& TLVSet);
+	  virtual void     Dump(FILE* = 0);
 	  virtual Result_t InitFromBuffer(const byte_t* p, ui32_t l);
 	  virtual Result_t WriteToBuffer(ASDCP::FrameBuffer&);
-	  virtual void     Dump(FILE* = 0);
 	};
 
       //
@@ -171,6 +180,7 @@ namespace ASDCP
 	  GenericTrack() : TrackID(0), TrackNumber(0) {}
 	  virtual ~GenericTrack() {}
           virtual Result_t InitFromTLVSet(TLVReader& TLVSet);
+	  virtual void     Dump(FILE* = 0);
 	};
 
       //
@@ -185,9 +195,9 @@ namespace ASDCP
 	  Track() : Origin(0) {}
 	  virtual ~Track() {}
           virtual Result_t InitFromTLVSet(TLVReader& TLVSet);
+	  virtual void     Dump(FILE* = 0);
 	  virtual Result_t InitFromBuffer(const byte_t* p, ui32_t l);
 	  virtual Result_t WriteToBuffer(ASDCP::FrameBuffer&);
-	  virtual void     Dump(FILE* = 0);
 	};
 
       //
@@ -202,6 +212,7 @@ namespace ASDCP
 	  StructuralComponent() : Duration(0) {}
 	  virtual ~StructuralComponent() {}
           virtual Result_t InitFromTLVSet(TLVReader& TLVSet);
+	  virtual void     Dump(FILE* = 0);
 	};
 
       //
@@ -215,9 +226,9 @@ namespace ASDCP
 	  Sequence() {}
 	  virtual ~Sequence() {}
           virtual Result_t InitFromTLVSet(TLVReader& TLVSet);
+	  virtual void     Dump(FILE* = 0);
 	  virtual Result_t InitFromBuffer(const byte_t* p, ui32_t l);
 	  virtual Result_t WriteToBuffer(ASDCP::FrameBuffer&);
-	  virtual void     Dump(FILE* = 0);
 	};
 
       //
@@ -233,9 +244,9 @@ namespace ASDCP
 	  SourceClip() : StartPosition(0), SourceTrackID(0) {}
 	  virtual ~SourceClip() {}
           virtual Result_t InitFromTLVSet(TLVReader& TLVSet);
+	  virtual void     Dump(FILE* = 0);
 	  virtual Result_t InitFromBuffer(const byte_t* p, ui32_t l);
 	  virtual Result_t WriteToBuffer(ASDCP::FrameBuffer&);
-	  virtual void     Dump(FILE* = 0);
 	};
 
       //
@@ -251,9 +262,9 @@ namespace ASDCP
 	  TimecodeComponent() : RoundedTimecodeBase(0), StartTimecode(0), DropFrame(0) {}
 	  virtual ~TimecodeComponent() {}
           virtual Result_t InitFromTLVSet(TLVReader& TLVSet);
+	  virtual void     Dump(FILE* = 0);
 	  virtual Result_t InitFromBuffer(const byte_t* p, ui32_t l);
 	  virtual Result_t WriteToBuffer(ASDCP::FrameBuffer&);
-	  virtual void     Dump(FILE* = 0);
 	};
 
       //
@@ -268,6 +279,7 @@ namespace ASDCP
 	  GenericDescriptor() {}
 	  virtual ~GenericDescriptor() {}
           virtual Result_t InitFromTLVSet(TLVReader& TLVSet);
+	  virtual void     Dump(FILE* = 0);
 	};
 
       //
@@ -285,9 +297,9 @@ namespace ASDCP
 	  FileDescriptor() : LinkedTrackID(0), ContainerDuration(0) {}
 	  virtual ~FileDescriptor() {}
           virtual Result_t InitFromTLVSet(TLVReader& TLVSet);
+	  virtual void     Dump(FILE* = 0);
 	  virtual Result_t InitFromBuffer(const byte_t* p, ui32_t l);
 	  virtual Result_t WriteToBuffer(ASDCP::FrameBuffer&);
-	  virtual void     Dump(FILE* = 0);
 	};
 
       //
@@ -308,9 +320,9 @@ namespace ASDCP
 	  GenericSoundEssenceDescriptor() : Locked(0), AudioRefLevel(0), ElectroSpatialFormulation(0), ChannelCount(0), QuantizationBits(0), DialNorm(0) {}
 	  virtual ~GenericSoundEssenceDescriptor() {}
           virtual Result_t InitFromTLVSet(TLVReader& TLVSet);
+	  virtual void     Dump(FILE* = 0);
 	  virtual Result_t InitFromBuffer(const byte_t* p, ui32_t l);
 	  virtual Result_t WriteToBuffer(ASDCP::FrameBuffer&);
-	  virtual void     Dump(FILE* = 0);
 	};
 
       //
@@ -326,9 +338,9 @@ namespace ASDCP
 	  WaveAudioDescriptor() : BlockAlign(0), SequenceOffset(0), AvgBps(0) {}
 	  virtual ~WaveAudioDescriptor() {}
           virtual Result_t InitFromTLVSet(TLVReader& TLVSet);
+	  virtual void     Dump(FILE* = 0);
 	  virtual Result_t InitFromBuffer(const byte_t* p, ui32_t l);
 	  virtual Result_t WriteToBuffer(ASDCP::FrameBuffer&);
-	  virtual void     Dump(FILE* = 0);
 	};
 
       //
@@ -349,9 +361,9 @@ namespace ASDCP
 	  GenericPictureEssenceDescriptor() : FrameLayout(0), StoredWidth(0), StoredHeight(0), DisplayWidth(0), DisplayHeight(0) {}
 	  virtual ~GenericPictureEssenceDescriptor() {}
           virtual Result_t InitFromTLVSet(TLVReader& TLVSet);
+	  virtual void     Dump(FILE* = 0);
 	  virtual Result_t InitFromBuffer(const byte_t* p, ui32_t l);
 	  virtual Result_t WriteToBuffer(ASDCP::FrameBuffer&);
-	  virtual void     Dump(FILE* = 0);
 	};
 
       //
@@ -367,9 +379,9 @@ namespace ASDCP
 	  RGBAEssenceDescriptor() : ComponentMaxRef(0), ComponentMinRef(0) {}
 	  virtual ~RGBAEssenceDescriptor() {}
           virtual Result_t InitFromTLVSet(TLVReader& TLVSet);
+	  virtual void     Dump(FILE* = 0);
 	  virtual Result_t InitFromBuffer(const byte_t* p, ui32_t l);
 	  virtual Result_t WriteToBuffer(ASDCP::FrameBuffer&);
-	  virtual void     Dump(FILE* = 0);
 	};
 
       //
@@ -395,9 +407,9 @@ namespace ASDCP
 	  JPEG2000PictureSubDescriptor() : Rsize(0), Xsize(0), Ysize(0), XOsize(0), YOsize(0), XTsize(0), YTsize(0), XTOsize(0), YTOsize(0), Csize(0) {}
 	  virtual ~JPEG2000PictureSubDescriptor() {}
           virtual Result_t InitFromTLVSet(TLVReader& TLVSet);
+	  virtual void     Dump(FILE* = 0);
 	  virtual Result_t InitFromBuffer(const byte_t* p, ui32_t l);
 	  virtual Result_t WriteToBuffer(ASDCP::FrameBuffer&);
-	  virtual void     Dump(FILE* = 0);
 	};
 
       //
@@ -418,9 +430,9 @@ namespace ASDCP
 	  CDCIEssenceDescriptor() : ComponentDepth(0), HorizontalSubsampling(0), VerticalSubsampling(0), ColorSiting(0), ReversedByteOrder(0), BlackRefLevel(0), WhiteReflevel(0), ColorRange(0) {}
 	  virtual ~CDCIEssenceDescriptor() {}
           virtual Result_t InitFromTLVSet(TLVReader& TLVSet);
+	  virtual void     Dump(FILE* = 0);
 	  virtual Result_t InitFromBuffer(const byte_t* p, ui32_t l);
 	  virtual Result_t WriteToBuffer(ASDCP::FrameBuffer&);
-	  virtual void     Dump(FILE* = 0);
 	};
 
       //
@@ -437,9 +449,9 @@ namespace ASDCP
 	  MPEG2VideoDescriptor() : CodedContentType(0), LowDelay(0), BitRate(0), ProfileAndLevel(0) {}
 	  virtual ~MPEG2VideoDescriptor() {}
           virtual Result_t InitFromTLVSet(TLVReader& TLVSet);
+	  virtual void     Dump(FILE* = 0);
 	  virtual Result_t InitFromBuffer(const byte_t* p, ui32_t l);
 	  virtual Result_t WriteToBuffer(ASDCP::FrameBuffer&);
-	  virtual void     Dump(FILE* = 0);
 	};
 
       //
@@ -453,9 +465,9 @@ namespace ASDCP
 	  CryptographicFramework() {}
 	  virtual ~CryptographicFramework() {}
           virtual Result_t InitFromTLVSet(TLVReader& TLVSet);
+	  virtual void     Dump(FILE* = 0);
 	  virtual Result_t InitFromBuffer(const byte_t* p, ui32_t l);
 	  virtual Result_t WriteToBuffer(ASDCP::FrameBuffer&);
-	  virtual void     Dump(FILE* = 0);
 	};
 
       //
@@ -473,9 +485,9 @@ namespace ASDCP
 	  CryptographicContext() {}
 	  virtual ~CryptographicContext() {}
           virtual Result_t InitFromTLVSet(TLVReader& TLVSet);
+	  virtual void     Dump(FILE* = 0);
 	  virtual Result_t InitFromBuffer(const byte_t* p, ui32_t l);
 	  virtual Result_t WriteToBuffer(ASDCP::FrameBuffer&);
-	  virtual void     Dump(FILE* = 0);
 	};
 
     } // namespace MXF

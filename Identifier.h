@@ -65,7 +65,7 @@ namespace ASDCP
 	return RESULT_OK;
       }
 
-      inline const byte_t* Data() const { return m_Value; }
+      inline const byte_t* Value() const { return m_Value; }
 
       inline ui32_t Size() const { return SIZE; }
 

@@ -29,9 +29,9 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     \brief   KLV+MXF test
 */
 
-#include <AS_DCP.h>
-#include <MXF.h>
-#include <hex_utils.h>
+#include "AS_DCP.h"
+#include "MXF.h"
+#include "hex_utils.h"
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>

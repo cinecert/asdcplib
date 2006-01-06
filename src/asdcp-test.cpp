@@ -85,7 +85,7 @@ public:
       ProductName = "asdcp-test";
 
       char s_buf[128];
-      sprintf(s_buf, "%lu.%lu.%lu", VERSION_MAJOR, VERSION_APIMINOR, VERSION_IMPMINOR);
+      snprintf(s_buf, 128, "%lu.%lu.%lu", VERSION_MAJOR, VERSION_APIMINOR, VERSION_IMPMINOR);
       ProductVersion = s_buf;
   }
 } s_MyInfo;
@@ -562,7 +562,7 @@ read_MPEG2_file(CommandOptions& Options)
   if ( ASDCP_SUCCESS(result) )
     {
       char filename[256];
-      sprintf(filename, "%s.ves", Options.file_root);
+      snprintf(filename, 256, "%s.ves", Options.file_root);
       result = OutFile.OpenWrite(filename);
     }
 
@@ -844,7 +844,7 @@ read_JP2K_file(CommandOptions& Options)
 	  FileWriter OutFile;
 	  char filename[256];
 	  ui32_t write_count;
-	  sprintf(filename, "%s%06lu.j2c", Options.file_root, i);
+	  snprintf(filename, 256, "%s%06lu.j2c", Options.file_root, i);
 	  result = OutFile.OpenWrite(filename);
 
 	  if ( ASDCP_SUCCESS(result) )
