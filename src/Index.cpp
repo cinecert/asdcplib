@@ -29,13 +29,14 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     \brief   MXF index segment objects
 */
 
-#include "MDD.h"
 #include "MXF.h"
+const ui32_t kl_length = ASDCP::SMPTE_UL_LENGTH + ASDCP::MXF_BER_LENGTH;
+
 
 //
 ASDCP::MXF::IndexTableSegment::IndexTableSegment() :
   IndexStartPosition(0), IndexDuration(0), EditUnitByteCount(0),
-  IndexSID(0), BodySID(0), SliceCount(0), PosTableCount(0)
+  IndexSID(129), BodySID(1), SliceCount(0), PosTableCount(0)
 {
 }
 
@@ -46,29 +47,21 @@ ASDCP::MXF::IndexTableSegment::~IndexTableSegment()
 
 //
 ASDCP::Result_t
-ASDCP::MXF::IndexTableSegment::InitFromBuffer(const byte_t* p, ui32_t l)
+ASDCP::MXF::IndexTableSegment::InitFromTLVSet(TLVReader& TLVSet)
 {
-  ASDCP_TEST_NULL(p);
+  Result_t result = InterchangeObject::InitFromTLVSet(TLVSet);
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(IndexTableSegmentBase, IndexEditRate));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadUi64(OBJ_READ_ARGS(IndexTableSegmentBase, IndexStartPosition));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadUi64(OBJ_READ_ARGS(IndexTableSegmentBase, IndexDuration));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadUi32(OBJ_READ_ARGS(IndexTableSegmentBase, EditUnitByteCount));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadUi32(OBJ_READ_ARGS(IndexTableSegmentBase, IndexSID));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadUi32(OBJ_READ_ARGS(IndexTableSegmentBase, BodySID));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadUi8(OBJ_READ_ARGS(IndexTableSegmentBase, SliceCount));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadUi8(OBJ_READ_ARGS(IndexTableSegmentBase, PosTableCount));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(IndexTableSegment, DeltaEntryArray));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(IndexTableSegment, IndexEntryArray));
 
-  Result_t result = KLVPacket::InitFromBuffer(p, l, s_MDD_Table[MDDindex_IndexTableSegment].ul);
-
-  if ( ASDCP_SUCCESS(result) )
-    {
-      TLVReader MemRDR(m_ValueStart, m_ValueLength, m_Lookup);
-
-      result = MemRDR.ReadObject(OBJ_READ_ARGS(InterchangeObject, InstanceUID));
-      if ( ASDCP_SUCCESS(result) ) result = MemRDR.ReadObject(OBJ_READ_ARGS(IndexTableSegmentBase, IndexEditRate));
-      if ( ASDCP_SUCCESS(result) ) result = MemRDR.ReadUi64(OBJ_READ_ARGS(IndexTableSegmentBase, IndexStartPosition));
-      if ( ASDCP_SUCCESS(result) ) result = MemRDR.ReadUi64(OBJ_READ_ARGS(IndexTableSegmentBase, IndexDuration));
-      if ( ASDCP_SUCCESS(result) ) result = MemRDR.ReadUi32(OBJ_READ_ARGS(IndexTableSegmentBase, EditUnitByteCount));
-      if ( ASDCP_SUCCESS(result) ) result = MemRDR.ReadUi32(OBJ_READ_ARGS(IndexTableSegmentBase, IndexSID));
-      if ( ASDCP_SUCCESS(result) ) result = MemRDR.ReadUi32(OBJ_READ_ARGS(IndexTableSegmentBase, BodySID));
-      if ( ASDCP_SUCCESS(result) ) result = MemRDR.ReadUi8(OBJ_READ_ARGS(IndexTableSegmentBase, SliceCount));
-      if ( ASDCP_SUCCESS(result) ) result = MemRDR.ReadUi8(OBJ_READ_ARGS(IndexTableSegmentBase, PosTableCount));
-      if ( ASDCP_SUCCESS(result) ) result = MemRDR.ReadObject(OBJ_READ_ARGS(IndexTableSegment, DeltaEntryArray));
-      if ( ASDCP_SUCCESS(result) ) result = MemRDR.ReadObject(OBJ_READ_ARGS(IndexTableSegment, IndexEntryArray));
-    }
-
+#if 0
   if ( ASDCP_SUCCESS(result) )
     {
       Batch<IndexEntry>::iterator i;
@@ -81,37 +74,43 @@ ASDCP::MXF::IndexTableSegment::InitFromBuffer(const byte_t* p, ui32_t l)
 	  (*i).KeyFrameOffset = offset++;
 	}
     }
+#endif
 
   return result;
 }
 
 //
 ASDCP::Result_t
+ASDCP::MXF::IndexTableSegment::WriteToTLVSet(TLVWriter& TLVSet)
+{
+  Result_t result = InterchangeObject::WriteToTLVSet(TLVSet);
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(IndexTableSegmentBase, IndexEditRate));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi64(OBJ_WRITE_ARGS(IndexTableSegmentBase, IndexStartPosition));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi64(OBJ_WRITE_ARGS(IndexTableSegmentBase, IndexDuration));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi32(OBJ_WRITE_ARGS(IndexTableSegmentBase, EditUnitByteCount));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi32(OBJ_WRITE_ARGS(IndexTableSegmentBase, IndexSID));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi32(OBJ_WRITE_ARGS(IndexTableSegmentBase, BodySID));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi8(OBJ_WRITE_ARGS(IndexTableSegmentBase, SliceCount));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi8(OBJ_WRITE_ARGS(IndexTableSegmentBase, PosTableCount));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(IndexTableSegment, DeltaEntryArray));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(IndexTableSegment, IndexEntryArray));
+  return result;
+}
+
+//
+ASDCP::Result_t
+ASDCP::MXF::IndexTableSegment::InitFromBuffer(const byte_t* p, ui32_t l)
+{
+  m_Typeinfo = &Dict::Type(MDD_IndexTableSegment);
+  return InterchangeObject::InitFromBuffer(p, l);
+}
+
+//
+ASDCP::Result_t
 ASDCP::MXF::IndexTableSegment::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 {
-  return WriteKLToBuffer(Buffer, s_MDD_Table[MDDindex_IndexTableSegment].ul, 0);
-#if 0
-  Result_t result = KLVPacket::InitFromBuffer(p, l, s_MDD_Table[MDDindex_IndexTableSegment].ul);
-
-  if ( ASDCP_SUCCESS(result) )
-    {
-      TLVWriter MemRDR(m_ValueStart, m_ValueLength, m_Lookup);
-
-      result = MemRDR.ReadObject(OBJ_READ_ARGS(InterchangeObject, InstanceUID));
-      if ( ASDCP_SUCCESS(result) ) result = MemRDR.ReadObject(OBJ_READ_ARGS(IndexTableSegmentBase, IndexEditRate));
-      if ( ASDCP_SUCCESS(result) ) result = MemRDR.ReadUi64(OBJ_READ_ARGS(IndexTableSegmentBase, IndexStartPosition));
-      if ( ASDCP_SUCCESS(result) ) result = MemRDR.ReadUi64(OBJ_READ_ARGS(IndexTableSegmentBase, IndexDuration));
-      if ( ASDCP_SUCCESS(result) ) result = MemRDR.ReadUi32(OBJ_READ_ARGS(IndexTableSegmentBase, EditUnitByteCount));
-      if ( ASDCP_SUCCESS(result) ) result = MemRDR.ReadUi32(OBJ_READ_ARGS(IndexTableSegmentBase, IndexSID));
-      if ( ASDCP_SUCCESS(result) ) result = MemRDR.ReadUi32(OBJ_READ_ARGS(IndexTableSegmentBase, BodySID));
-      if ( ASDCP_SUCCESS(result) ) result = MemRDR.ReadUi8(OBJ_READ_ARGS(IndexTableSegmentBase, SliceCount));
-      if ( ASDCP_SUCCESS(result) ) result = MemRDR.ReadUi8(OBJ_READ_ARGS(IndexTableSegmentBase, PosTableCount));
-      if ( ASDCP_SUCCESS(result) ) result = MemRDR.ReadObject(OBJ_READ_ARGS(IndexTableSegment, DeltaEntryArray));
-      if ( ASDCP_SUCCESS(result) ) result = MemRDR.ReadObject(OBJ_READ_ARGS(IndexTableSegment, IndexEntryArray));
-    }
-
-  return result;
-#endif
+  m_Typeinfo = &Dict::Type(MDD_IndexTableSegment);
+  return InterchangeObject::WriteToBuffer(Buffer);
 }
 
 //
@@ -123,8 +122,7 @@ ASDCP::MXF::IndexTableSegment::Dump(FILE* stream)
   if ( stream == 0 )
     stream = stderr;
 
-  KLVPacket::Dump(stream, false);
-  fprintf(stream, "  InstanceUID        = %s\n",  InstanceUID.ToString(identbuf));
+  InterchangeObject::Dump(stream);
   fprintf(stream, "  IndexEditRate      = %s\n",  IndexEditRate.ToString(identbuf));
   fprintf(stream, "  IndexStartPosition = %s\n",  i64sz(IndexStartPosition, identbuf));
   fprintf(stream, "  IndexDuration      = %s\n",  i64sz(IndexDuration, identbuf));
@@ -145,9 +143,10 @@ ASDCP::MXF::IndexTableSegment::Dump(FILE* stream)
     {
       fprintf(stream, "  IndexEntryArray: %lu entries\n", IndexEntryArray.size());
     }
-
-  fputs("==========================================================================\n", stream);
 }
+
+//------------------------------------------------------------------------------------------
+//
 
 //
 const char*
@@ -159,7 +158,7 @@ ASDCP::MXF::IndexTableSegment::DeltaEntry::ToString(char* str_buf) const
 
 //
 ASDCP::Result_t
-ASDCP::MXF::IndexTableSegment::DeltaEntry::ReadFrom(ASDCP::MemIOReader& Reader)
+ASDCP::MXF::IndexTableSegment::DeltaEntry::Unarchive(ASDCP::MemIOReader& Reader)
 {
   Result_t result = Reader.ReadUi8((ui8_t*)&PosTableIndex);
   if ( ASDCP_SUCCESS(result) ) result = Reader.ReadUi8(&Slice);
@@ -169,13 +168,16 @@ ASDCP::MXF::IndexTableSegment::DeltaEntry::ReadFrom(ASDCP::MemIOReader& Reader)
 
 //
 ASDCP::Result_t
-ASDCP::MXF::IndexTableSegment::DeltaEntry::WriteTo(ASDCP::MemIOWriter& Writer)
+ASDCP::MXF::IndexTableSegment::DeltaEntry::Archive(ASDCP::MemIOWriter& Writer)
 {
   Result_t result = Writer.WriteUi8((ui8_t)PosTableIndex);
   if ( ASDCP_SUCCESS(result) ) result = Writer.WriteUi8(Slice);
   if ( ASDCP_SUCCESS(result) ) result = Writer.WriteUi32BE(ElementData);
   return result;
 }
+
+//------------------------------------------------------------------------------------------
+//
 
 // Flags:
 // Bit 7: Random Access
@@ -195,13 +197,13 @@ ASDCP::MXF::IndexTableSegment::IndexEntry::ToString(char* str_buf) const
 {
   char intbuf[IntBufferLen];
   char txt_flags[6];
-  txt_flags[5] = 0;
 
   txt_flags[0] = ( (Flags & 0x80) != 0 ) ? 'r' : ' ';
   txt_flags[1] = ( (Flags & 0x40) != 0 ) ? 's' : ' ';
   txt_flags[2] = ( (Flags & 0x20) != 0 ) ? 'f' : ' ';
   txt_flags[3] = ( (Flags & 0x10) != 0 ) ? 'b' : ' ';
   txt_flags[4] = ( (Flags & 0x0f) == 3 ) ? 'B' : ( (Flags & 0x0f) == 2 ) ? 'P' : 'I';
+  txt_flags[5] = 0;
 
   snprintf(str_buf, IdentBufferLen, "%3i %-3hu %s %s",
 	  TemporalOffset, KeyFrameOffset, txt_flags,
@@ -212,7 +214,7 @@ ASDCP::MXF::IndexTableSegment::IndexEntry::ToString(char* str_buf) const
 
 //
 ASDCP::Result_t
-ASDCP::MXF::IndexTableSegment::IndexEntry::ReadFrom(ASDCP::MemIOReader& Reader)
+ASDCP::MXF::IndexTableSegment::IndexEntry::Unarchive(ASDCP::MemIOReader& Reader)
 {
   Result_t result = Reader.ReadUi8((ui8_t*)&TemporalOffset);
   if ( ASDCP_SUCCESS(result) ) result = Reader.ReadUi8((ui8_t*)&KeyFrameOffset);
@@ -223,7 +225,7 @@ ASDCP::MXF::IndexTableSegment::IndexEntry::ReadFrom(ASDCP::MemIOReader& Reader)
 
 //
 ASDCP::Result_t
-ASDCP::MXF::IndexTableSegment::IndexEntry::WriteTo(ASDCP::MemIOWriter& Writer)
+ASDCP::MXF::IndexTableSegment::IndexEntry::Archive(ASDCP::MemIOWriter& Writer)
 {
   Result_t result = Writer.WriteUi8((ui8_t)TemporalOffset);
   if ( ASDCP_SUCCESS(result) ) result = Writer.WriteUi8((ui8_t)KeyFrameOffset);

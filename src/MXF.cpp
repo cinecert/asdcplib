@@ -29,16 +29,14 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     \brief   MXF objects
 */
 
-#define ASDCP_DECLARE_MDD
-#include "MDD.h"
 #include "MXF.h"
-#include <hex_utils.h>
+#include "hex_utils.h"
 
 //------------------------------------------------------------------------------------------
 //
 
 const ui32_t kl_length = ASDCP::SMPTE_UL_LENGTH + ASDCP::MXF_BER_LENGTH;
-
+#if 0
 const byte_t mdd_key[] = { 0x06, 0x0e, 0x2b, 0x34 };
 
 //
@@ -84,7 +82,7 @@ ASDCP::GetMDDEntry(const byte_t* ul_buf)
 
   return (s_MDD_Table[t_idx].ul == 0 ? 0 : &s_MDD_Table[t_idx]);
 }
-
+#endif
 //------------------------------------------------------------------------------------------
 //
 
@@ -139,12 +137,12 @@ ASDCP::MXF::SeekToRIP(const ASDCP::FileReader& Reader)
 ASDCP::Result_t
 ASDCP::MXF::RIP::InitFromFile(const ASDCP::FileReader& Reader)
 {
-  Result_t result = KLVFilePacket::InitFromFile(Reader, s_MDD_Table[MDDindex_RandomIndexMetadata].ul);
+  Result_t result = KLVFilePacket::InitFromFile(Reader, Dict::ul(MDD_RandomIndexMetadata));
 
   if ( ASDCP_SUCCESS(result) )
     {
       MemIOReader MemRDR(m_ValueStart, m_ValueLength - 4);
-      result =  PairArray.ReadFrom(MemRDR);
+      result =  PairArray.Unarchive(MemRDR);
     }
 
   if ( ASDCP_FAILURE(result) )
@@ -157,7 +155,28 @@ ASDCP::MXF::RIP::InitFromFile(const ASDCP::FileReader& Reader)
 ASDCP::Result_t
 ASDCP::MXF::RIP::WriteToFile(ASDCP::FileWriter& Writer)
 {
-  Result_t result = WriteKLToFile(Writer, s_MDD_Table[MDDindex_RandomIndexMetadata].ul, 0);
+  ASDCP::FrameBuffer Buffer;
+  ui32_t RIPSize = ( PairArray.size() * (sizeof(ui32_t) + sizeof(ui64_t)) ) + 4;
+  Result_t result = Buffer.Capacity(RIPSize);
+
+  if ( ASDCP_SUCCESS(result) )
+    result = WriteKLToFile(Writer, Dict::ul(MDD_RandomIndexMetadata), RIPSize);
+
+  if ( ASDCP_SUCCESS(result) )
+    {
+      MemIOWriter MemWRT(Buffer.Data(), Buffer.Capacity());
+      result =  PairArray.Archive(MemWRT);
+
+      if ( ASDCP_SUCCESS(result) )
+	MemWRT.WriteUi32BE(RIPSize + 20);
+
+      if ( ASDCP_SUCCESS(result) )
+	Buffer.Size(MemWRT.Size());
+    }
+
+  if ( ASDCP_SUCCESS(result) )
+    result = Writer.Write(Buffer.RoData(), Buffer.Size());
+
   return result;
 }
 
@@ -176,6 +195,78 @@ ASDCP::MXF::RIP::Dump(FILE* stream)
 
 //------------------------------------------------------------------------------------------
 //
+
+//
+class ASDCP::MXF::Partition::h__PacketList
+{
+public:
+  std::list<InterchangeObject*> m_List;
+  std::map<UUID, InterchangeObject*> m_Map;
+
+  ~h__PacketList() {
+    while ( ! m_List.empty() )
+      {
+	delete m_List.back();
+	m_List.pop_back();
+      }
+  }
+
+  //
+  void AddPacket(InterchangeObject* ThePacket)
+  {
+    assert(ThePacket);
+    m_Map.insert(std::map<UUID, InterchangeObject*>::value_type(ThePacket->InstanceUID, ThePacket));
+    m_List.push_back(ThePacket);
+  }
+
+  //
+  Result_t GetMDObjectByType(const byte_t* ObjectID, InterchangeObject** Object)
+  {
+    ASDCP_TEST_NULL(ObjectID);
+    ASDCP_TEST_NULL(Object);
+    std::list<InterchangeObject*>::iterator li;
+    *Object = 0;
+
+    for ( li = m_List.begin(); li != m_List.end(); li++ )
+      {
+	if ( (*li)->HasUL(ObjectID) )
+	  {
+	    *Object = *li;
+	    return RESULT_OK;
+	  }
+      }
+
+    return RESULT_FAIL;
+  }
+};
+
+//------------------------------------------------------------------------------------------
+//
+
+
+ASDCP::MXF::Partition::Partition() :
+  MajorVersion(1), MinorVersion(2),
+  KAGSize(1), ThisPartition(0), PreviousPartition(0),
+  FooterPartition(0), HeaderByteCount(0), IndexByteCount(0), IndexSID(0),
+  BodyOffset(0), BodySID(1)
+{
+  m_PacketList = new h__PacketList;
+}
+
+ASDCP::MXF::Partition::~Partition()
+{
+}
+
+//
+void
+ASDCP::MXF::Partition::AddChildObject(InterchangeObject* Object)
+{
+  assert(Object);
+  UUID TmpID;
+  TmpID.GenRandomValue();
+  Object->InstanceUID = TmpID;
+  m_PacketList->AddPacket(Object);
+}
 
 //
 ASDCP::Result_t
@@ -199,8 +290,8 @@ ASDCP::MXF::Partition::InitFromFile(const ASDCP::FileReader& Reader)
       if ( ASDCP_SUCCESS(result) )  result = MemRDR.ReadUi32BE(&IndexSID);
       if ( ASDCP_SUCCESS(result) )  result = MemRDR.ReadUi64BE(&BodyOffset);
       if ( ASDCP_SUCCESS(result) )  result = MemRDR.ReadUi32BE(&BodySID);
-      if ( ASDCP_SUCCESS(result) )  result = OperationalPattern.ReadFrom(MemRDR);
-      if ( ASDCP_SUCCESS(result) )  result = EssenceContainers.ReadFrom(MemRDR);
+      if ( ASDCP_SUCCESS(result) )  result = OperationalPattern.Unarchive(MemRDR);
+      if ( ASDCP_SUCCESS(result) )  result = EssenceContainers.Unarchive(MemRDR);
     }
 
   if ( ASDCP_FAILURE(result) )
@@ -211,13 +302,14 @@ ASDCP::MXF::Partition::InitFromFile(const ASDCP::FileReader& Reader)
 
 //
 ASDCP::Result_t
-ASDCP::MXF::Partition::WriteToFile(ASDCP::FileWriter& Writer)
+ASDCP::MXF::Partition::WriteToFile(ASDCP::FileWriter& Writer, UL& PartitionLabel)
 {
-  Result_t result = m_Buffer.Capacity(1024);
+  ASDCP::FrameBuffer Buffer;
+  Result_t result = Buffer.Capacity(1024);
 
   if ( ASDCP_SUCCESS(result) )
     {
-      MemIOWriter MemWRT(m_Buffer.Data(), m_Buffer.Capacity());
+      MemIOWriter MemWRT(Buffer.Data(), Buffer.Capacity());
       result = MemWRT.WriteUi16BE(MajorVersion);
       if ( ASDCP_SUCCESS(result) )  result = MemWRT.WriteUi16BE(MinorVersion);
       if ( ASDCP_SUCCESS(result) )  result = MemWRT.WriteUi32BE(KAGSize);
@@ -229,18 +321,18 @@ ASDCP::MXF::Partition::WriteToFile(ASDCP::FileWriter& Writer)
       if ( ASDCP_SUCCESS(result) )  result = MemWRT.WriteUi32BE(IndexSID);
       if ( ASDCP_SUCCESS(result) )  result = MemWRT.WriteUi64BE(BodyOffset);
       if ( ASDCP_SUCCESS(result) )  result = MemWRT.WriteUi32BE(BodySID);
-      if ( ASDCP_SUCCESS(result) )  result = OperationalPattern.WriteTo(MemWRT);
-      if ( ASDCP_SUCCESS(result) )  result = EssenceContainers.WriteTo(MemWRT);
-      if ( ASDCP_SUCCESS(result) )  m_Buffer.Size(MemWRT.Size());
+      if ( ASDCP_SUCCESS(result) )  result = OperationalPattern.Archive(MemWRT);
+      if ( ASDCP_SUCCESS(result) )  result = EssenceContainers.Archive(MemWRT);
+      if ( ASDCP_SUCCESS(result) )  Buffer.Size(MemWRT.Size());
     }
 
   if ( ASDCP_SUCCESS(result) )
     {
       ui32_t write_count; // this is subclassed, so the UL is only right some of the time
-      result = WriteKLToFile(Writer, s_MDD_Table[MDDindex_ClosedCompleteHeader].ul, m_Buffer.Size());
+      result = WriteKLToFile(Writer, PartitionLabel.Value(), Buffer.Size());
 
       if ( ASDCP_SUCCESS(result) )
-	result = Writer.Write(m_Buffer.RoData(), m_Buffer.Size(), &write_count);
+	result = Writer.Write(Buffer.RoData(), Buffer.Size(), &write_count);
     }
 
   return result;
@@ -292,7 +384,7 @@ public:
 
 
 //
-ASDCP::MXF::Primer::Primer() {}
+ASDCP::MXF::Primer::Primer() : m_LocalTag(0xff) {}
 
 //
 ASDCP::MXF::Primer::~Primer() {}
@@ -309,12 +401,12 @@ ASDCP::MXF::Primer::ClearTagList()
 ASDCP::Result_t
 ASDCP::MXF::Primer::InitFromBuffer(const byte_t* p, ui32_t l)
 {
-  Result_t result = KLVPacket::InitFromBuffer(p, l, s_MDD_Table[MDDindex_Primer].ul);
+  Result_t result = KLVPacket::InitFromBuffer(p, l, Dict::ul(MDD_Primer));
 
   if ( ASDCP_SUCCESS(result) )
     {
       MemIOReader MemRDR(m_ValueStart, m_ValueLength);
-      result = LocalTagEntryBatch.ReadFrom(MemRDR);
+      result = LocalTagEntryBatch.Unarchive(MemRDR);
     }
 
   if ( ASDCP_SUCCESS(result) )
@@ -331,44 +423,71 @@ ASDCP::MXF::Primer::InitFromBuffer(const byte_t* p, ui32_t l)
 
 //
 ASDCP::Result_t
-ASDCP::MXF::Primer::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
+ASDCP::MXF::Primer::WriteToFile(ASDCP::FileWriter& Writer)
 {
-  MemIOWriter MemWRT(Buffer.Data(), Buffer.Capacity());
-  Result_t result = LocalTagEntryBatch.WriteTo(MemWRT);
-  Buffer.Size(MemWRT.Size());
-#if 0
-  if ( ASDCP_SUCCESS(result) )
-    {
-      ui32_t write_count;
-      result = WriteKLToFile(Writer, s_MDD_Table[MDDindex_Primer].ul, Buffer.Size());
+  ASDCP::FrameBuffer Buffer;
+  Result_t result = Buffer.Capacity(128*1024);
 
-      if ( ASDCP_SUCCESS(result) )
-	result = Writer.Write(Buffer.RoData(), Buffer.Size(), &write_count);
-    }
-#endif
+  if ( ASDCP_SUCCESS(result) )
+    result = WriteToBuffer(Buffer);
+
+  if ( ASDCP_SUCCESS(result) )
+  result = Writer.Write(Buffer.RoData(), Buffer.Size());
 
   return result;
 }
 
 //
 ASDCP::Result_t
-ASDCP::MXF::Primer::InsertTag(const ASDCP::UL& Key, ASDCP::TagValue& Tag)
+ASDCP::MXF::Primer::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
+{
+  ASDCP::FrameBuffer LocalTagBuffer;
+  MemIOWriter MemWRT(Buffer.Data() + kl_length, Buffer.Capacity() - kl_length);
+  Result_t result = LocalTagEntryBatch.Archive(MemWRT);
+
+  if ( ASDCP_SUCCESS(result) )
+    {
+      ui32_t packet_length = MemWRT.Size();
+      result = WriteKLToBuffer(Buffer, Dict::ul(MDD_Primer), packet_length);
+
+      if ( ASDCP_SUCCESS(result) )
+	Buffer.Size(Buffer.Size() + packet_length);
+    }
+
+  return result;
+}
+
+//
+ASDCP::Result_t
+ASDCP::MXF::Primer::InsertTag(const MDDEntry& Entry, ASDCP::TagValue& Tag)
 {
   assert(m_Lookup);
-
-  std::map<UL, TagValue>::iterator i = m_Lookup->find(Key);
+  UL TestUL(Entry.ul);
+  std::map<UL, TagValue>::iterator i = m_Lookup->find(TestUL);
 
   if ( i == m_Lookup->end() )
     {
-      const MDDEntry* mdde = GetMDDEntry(Key.Value());
-      assert(mdde);
+      if ( Entry.tag.a == 0 && Entry.tag.b == 0 )
+	{
+	  Tag.a = 0xff;
+	  Tag.b = m_LocalTag--;
+	}
+      else
+	{
+	  Tag.a = Entry.tag.a;
+	  Tag.b = Entry.tag.b;
+	}
 
       LocalTagEntry TmpEntry;
-      TmpEntry.UL = Key;
-      TmpEntry.Tag = mdde->tag;
+      TmpEntry.UL = TestUL;
+      TmpEntry.Tag = Tag;
 
       LocalTagEntryBatch.push_back(TmpEntry);
       m_Lookup->insert(std::map<UL, TagValue>::value_type(TmpEntry.UL, TmpEntry.Tag));
+    }
+  else
+    {
+      Tag = (*i).second;
     }
    
   return RESULT_OK;
@@ -411,7 +530,7 @@ ASDCP::MXF::Primer::Dump(FILE* stream)
   Batch<LocalTagEntry>::iterator i = LocalTagEntryBatch.begin();
   for ( ; i != LocalTagEntryBatch.end(); i++ )
     {
-      const MDDEntry* Entry = GetMDDEntry((*i).UL.Value());
+      const MDDEntry* Entry = Dict::FindUL((*i).UL.Value());
       fprintf(stream, "  %s %s\n", (*i).ToString(identbuf), (Entry ? Entry->name : "Unknown"));
     }
 
@@ -424,62 +543,52 @@ ASDCP::MXF::Primer::Dump(FILE* stream)
 
 //
 ASDCP::Result_t
+ASDCP::MXF::Preface::InitFromTLVSet(TLVReader& TLVSet)
+{
+  Result_t result = InterchangeObject::InitFromTLVSet(TLVSet);
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(Preface, LastModifiedDate));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadUi16(OBJ_READ_ARGS(Preface, Version));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadUi32(OBJ_READ_ARGS(Preface, ObjectModelVersion));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(Preface, PrimaryPackage));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(Preface, Identifications));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(Preface, ContentStorage));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(Preface, OperationalPattern));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(Preface, EssenceContainers));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(Preface, DMSchemes));
+  return result;
+}
+
+//
+ASDCP::Result_t
+ASDCP::MXF::Preface::WriteToTLVSet(TLVWriter& TLVSet)
+{
+  Result_t result = InterchangeObject::WriteToTLVSet(TLVSet);
+  if ( ASDCP_SUCCESS(result) )  result = TLVSet.WriteObject(OBJ_WRITE_ARGS(Preface, LastModifiedDate));
+  if ( ASDCP_SUCCESS(result) )  result = TLVSet.WriteUi16(OBJ_WRITE_ARGS(Preface, Version));
+  if ( ASDCP_SUCCESS(result) )  result = TLVSet.WriteUi32(OBJ_WRITE_ARGS(Preface, ObjectModelVersion));
+  if ( ASDCP_SUCCESS(result) )  result = TLVSet.WriteObject(OBJ_WRITE_ARGS(Preface, PrimaryPackage));
+  if ( ASDCP_SUCCESS(result) )  result = TLVSet.WriteObject(OBJ_WRITE_ARGS(Preface, Identifications));
+  if ( ASDCP_SUCCESS(result) )  result = TLVSet.WriteObject(OBJ_WRITE_ARGS(Preface, ContentStorage));
+  if ( ASDCP_SUCCESS(result) )  result = TLVSet.WriteObject(OBJ_WRITE_ARGS(Preface, OperationalPattern));
+  if ( ASDCP_SUCCESS(result) )  result = TLVSet.WriteObject(OBJ_WRITE_ARGS(Preface, EssenceContainers));
+  if ( ASDCP_SUCCESS(result) )  result = TLVSet.WriteObject(OBJ_WRITE_ARGS(Preface, DMSchemes));
+  return result;
+}
+
+//
+ASDCP::Result_t
 ASDCP::MXF::Preface::InitFromBuffer(const byte_t* p, ui32_t l)
 {
-  ASDCP_TEST_NULL(p);
-
-  Result_t result = KLVPacket::InitFromBuffer(p, l, s_MDD_Table[MDDindex_Preface].ul);
-
-  if ( ASDCP_SUCCESS(result) )
-    {
-      TLVReader MemRDR(m_ValueStart, m_ValueLength, m_Lookup);
-
-      result = MemRDR.ReadObject(OBJ_READ_ARGS(InterchangeObject, InstanceUID));
-      if ( ASDCP_SUCCESS(result) ) result = MemRDR.ReadObject(OBJ_READ_ARGS(GenerationInterchangeObject, GenerationUID));
-      if ( ASDCP_SUCCESS(result) ) result = MemRDR.ReadObject(OBJ_READ_ARGS(Preface, LastModifiedDate));
-      if ( ASDCP_SUCCESS(result) ) result = MemRDR.ReadUi16(OBJ_READ_ARGS(Preface, Version));
-      if ( ASDCP_SUCCESS(result) ) result = MemRDR.ReadUi32(OBJ_READ_ARGS(Preface, ObjectModelVersion));
-      if ( ASDCP_SUCCESS(result) ) result = MemRDR.ReadObject(OBJ_READ_ARGS(Preface, PrimaryPackage));
-      if ( ASDCP_SUCCESS(result) ) result = MemRDR.ReadObject(OBJ_READ_ARGS(Preface, Identifications));
-      if ( ASDCP_SUCCESS(result) ) result = MemRDR.ReadObject(OBJ_READ_ARGS(Preface, ContentStorage));
-      if ( ASDCP_SUCCESS(result) ) result = MemRDR.ReadObject(OBJ_READ_ARGS(Preface, OperationalPattern));
-      if ( ASDCP_SUCCESS(result) ) result = MemRDR.ReadObject(OBJ_READ_ARGS(Preface, EssenceContainers));
-      if ( ASDCP_SUCCESS(result) ) result = MemRDR.ReadObject(OBJ_READ_ARGS(Preface, DMSchemes));
-    }
-
-  if ( ASDCP_FAILURE(result) )
-    DefaultLogSink().Error("Failed to initialize Preface\n");
-
-  return result;
+  m_Typeinfo = &Dict::Type(MDD_Preface);
+  return InterchangeObject::InitFromBuffer(p, l);
 }
 
 //
 ASDCP::Result_t
 ASDCP::MXF::Preface::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 {
-  TLVWriter MemWRT(Buffer.Data() + kl_length, Buffer.Capacity() - kl_length, m_Lookup);
-  Result_t result = MemWRT.WriteObject(OBJ_WRITE_ARGS(InterchangeObject, InstanceUID));
-  if ( ASDCP_SUCCESS(result) )  result = MemWRT.WriteObject(OBJ_WRITE_ARGS(GenerationInterchangeObject, GenerationUID));
-  if ( ASDCP_SUCCESS(result) )  result = MemWRT.WriteObject(OBJ_WRITE_ARGS(Preface, LastModifiedDate));
-  if ( ASDCP_SUCCESS(result) )  result = MemWRT.WriteUi16(OBJ_WRITE_ARGS(Preface, Version));
-  if ( ASDCP_SUCCESS(result) )  result = MemWRT.WriteUi32(OBJ_WRITE_ARGS(Preface, ObjectModelVersion));
-  if ( ASDCP_SUCCESS(result) )  result = MemWRT.WriteObject(OBJ_WRITE_ARGS(Preface, PrimaryPackage));
-  if ( ASDCP_SUCCESS(result) )  result = MemWRT.WriteObject(OBJ_WRITE_ARGS(Preface, Identifications));
-  if ( ASDCP_SUCCESS(result) )  result = MemWRT.WriteObject(OBJ_WRITE_ARGS(Preface, ContentStorage));
-  if ( ASDCP_SUCCESS(result) )  result = MemWRT.WriteObject(OBJ_WRITE_ARGS(Preface, OperationalPattern));
-  if ( ASDCP_SUCCESS(result) )  result = MemWRT.WriteObject(OBJ_WRITE_ARGS(Preface, EssenceContainers));
-  if ( ASDCP_SUCCESS(result) )  result = MemWRT.WriteObject(OBJ_WRITE_ARGS(Preface, DMSchemes));
-
-  if ( ASDCP_SUCCESS(result) )
-    {
-      ui32_t packet_length = MemWRT.Size();
-      result = WriteKLToBuffer(Buffer, s_MDD_Table[MDDindex_Preface].ul, packet_length);
-
-      if ( ASDCP_SUCCESS(result) )
-	Buffer.Size(Buffer.Size() + packet_length);
-    }
-
-  return result;
+  m_Typeinfo = &Dict::Type(MDD_Preface);
+  return InterchangeObject::WriteToBuffer(Buffer);
 }
 
 //
@@ -491,83 +600,25 @@ ASDCP::MXF::Preface::Dump(FILE* stream)
   if ( stream == 0 )
     stream = stderr;
 
-  KLVPacket::Dump(stream, false);
-  fprintf(stream, "  InstanceUID        = %s\n",  InstanceUID.ToString(identbuf));
-  fprintf(stream, "  GenerationUID      = %s\n",  GenerationUID.ToString(identbuf));
-  fprintf(stream, "  LastModifiedDate   = %s\n",  LastModifiedDate.ToString(identbuf));
-  fprintf(stream, "  Version            = %hu\n", Version);
-  fprintf(stream, "  ObjectModelVersion = %lu\n", ObjectModelVersion);
-  fprintf(stream, "  PrimaryPackage     = %s\n",  PrimaryPackage.ToString(identbuf));
-  fprintf(stream, "  Identifications:\n");  Identifications.Dump(stream);
-  fprintf(stream, "  ContentStorage     = %s\n",  ContentStorage.ToString(identbuf));
-  fprintf(stream, "  OperationalPattern = %s\n",  OperationalPattern.ToString(identbuf));
-  fprintf(stream, "  EssenceContainers:\n");  EssenceContainers.Dump(stream);
-  fprintf(stream, "  DMSchemes:\n");  DMSchemes.Dump(stream);
-
-  fputs("==========================================================================\n", stream);
+  InterchangeObject::Dump(stream);
+  fprintf(stream, "  %22s = %s\n",  "LastModifiedDate", LastModifiedDate.ToString(identbuf));
+  fprintf(stream, "  %22s = %hu\n", "Version", Version);
+  fprintf(stream, "  %22s = %lu\n", "ObjectModelVersion", ObjectModelVersion);
+  fprintf(stream, "  %22s = %s\n",  "PrimaryPackage", PrimaryPackage.ToString(identbuf));
+  fprintf(stream, "  %22s:\n", "Identifications");  Identifications.Dump(stream);
+  fprintf(stream, "  %22s = %s\n",  "ContentStorage", ContentStorage.ToString(identbuf));
+  fprintf(stream, "  %22s = %s\n",  "OperationalPattern", OperationalPattern.ToString(identbuf));
+  fprintf(stream, "  %22s:\n", "EssenceContainers");  EssenceContainers.Dump(stream);
+  fprintf(stream, "  %22s:\n", "DMSchemes");  DMSchemes.Dump(stream);
 }
 
 //------------------------------------------------------------------------------------------
 //
 
+ASDCP::MXF::OPAtomHeader::OPAtomHeader() : m_Preface(0), m_HasRIP(false) {}
+ASDCP::MXF::OPAtomHeader::~OPAtomHeader() {}
+
 //
-class ASDCP::MXF::h__PacketList
-{
-public:
-  std::list<InterchangeObject*> m_List;
-  std::map<UL, InterchangeObject*> m_Map;
-
-  ~h__PacketList() {
-    while ( ! m_List.empty() )
-      {
-	delete m_List.back();
-	m_List.pop_back();
-      }
-  }
-
-  //
-  void AddPacket(InterchangeObject* ThePacket)
-  {
-    assert(ThePacket);
-    m_Map.insert(std::map<UID, InterchangeObject*>::value_type(ThePacket->InstanceUID, ThePacket));
-    m_List.push_back(ThePacket);
-  }
-
-  //
-  Result_t GetMDObjectByType(const byte_t* ObjectID, InterchangeObject** Object)
-  {
-    ASDCP_TEST_NULL(ObjectID);
-    ASDCP_TEST_NULL(Object);
-    std::list<InterchangeObject*>::iterator li;
-    *Object = 0;
-
-    for ( li = m_List.begin(); li != m_List.end(); li++ )
-      {
-	if ( (*li)->HasUL(ObjectID) )
-	  {
-	    *Object = *li;
-	    return RESULT_OK;
-	  }
-      }
-
-    return RESULT_FAIL;
-  }
-};
-
-//------------------------------------------------------------------------------------------
-//
-
-ASDCP::MXF::OPAtomHeader::OPAtomHeader() : m_Preface(0), m_HasRIP(false)
-{
-  m_PacketList = new h__PacketList;
-}
-
-
-ASDCP::MXF::OPAtomHeader::~OPAtomHeader()
-{
-}
-
-
 ASDCP::Result_t
 ASDCP::MXF::OPAtomHeader::InitFromFile(const ASDCP::FileReader& Reader)
 {
@@ -600,8 +651,15 @@ ASDCP::MXF::OPAtomHeader::InitFromFile(const ASDCP::FileReader& Reader)
 
   if ( ASDCP_SUCCESS(result) )
     {
-      ui32_t buf_len = HeaderByteCount;
-      result = m_Buffer.Capacity(buf_len);
+      ui32_t here = (ui32_t)Reader.Tell();
+
+      if ( HeaderByteCount < here )
+	{
+	  DefaultLogSink().Error("HeaderByteCount less than Partition size\n");
+	  return RESULT_FAIL;
+	}
+
+      result = m_Buffer.Capacity(HeaderByteCount - here);
     }
 
   if ( ASDCP_SUCCESS(result) )
@@ -631,18 +689,19 @@ ASDCP::MXF::OPAtomHeader::InitFromFile(const ASDCP::FileReader& Reader)
 
       if ( ASDCP_SUCCESS(result) )
 	{
-	  if ( object->IsA(s_MDD_Table[MDDindex_KLVFill].ul) )
+	  if ( object->IsA(Dict::ul(MDD_KLVFill)) )
 	    {
 	      delete object;
 	    }
-	  else if ( object->IsA(s_MDD_Table[MDDindex_Primer].ul) )
+	  else if ( object->IsA(Dict::ul(MDD_Primer)) )
 	    {
 	      delete object;
 	      result = m_Primer.InitFromBuffer(redo_p, end_p - redo_p);
 	    }
-	  else if ( object->IsA(s_MDD_Table[MDDindex_Preface].ul) )
+	  else if ( object->IsA(Dict::ul(MDD_Preface)) )
 	    {
-	      m_Preface = object;
+	      assert(m_Preface == 0);
+	      m_Preface = (Preface*)object;
 	    }
 	  else  
 	    {
@@ -699,37 +758,41 @@ ASDCP::MXF::OPAtomHeader::GetSourcePackage()
 ASDCP::Result_t
 ASDCP::MXF::OPAtomHeader::WriteToFile(ASDCP::FileWriter& Writer, ui32_t HeaderSize)
 {
+  if ( m_Preface == 0 )
+    return RESULT_STATE;
+
   if ( HeaderSize < 4096 ) 
     {
-      DefaultLogSink().Error("HeaderSize %lu is too small. Must be >= 4096\n");
+      DefaultLogSink().Error("HeaderSize %lu is too small. Must be >= 4096\n", HeaderSize);
       return RESULT_FAIL;
     }
 
   ASDCP::FrameBuffer HeaderBuffer;
-
-  Result_t result = HeaderBuffer.Capacity(HeaderSize);
   HeaderByteCount = HeaderSize;
+  Result_t result = HeaderBuffer.Capacity(HeaderSize); 
+  m_Preface->m_Lookup = &m_Primer;
 
-  if ( ASDCP_SUCCESS(result) )
-    {
-      assert(m_Preface);
-      m_Preface->m_Lookup = &m_Primer;
-      result = m_Preface->WriteToBuffer(HeaderBuffer);
-    }
-#if 0
   std::list<InterchangeObject*>::iterator pl_i = m_PacketList->m_List.begin();
   for ( ; pl_i != m_PacketList->m_List.end() && ASDCP_SUCCESS(result); pl_i++ )
     {
       InterchangeObject* object = *pl_i;
       object->m_Lookup = &m_Primer;
-      result = object->WriteToBuffer(HeaderBuffer);
-    }
-#endif
-  if ( ASDCP_SUCCESS(result) )
-    result = Partition::WriteToFile(Writer);
 
-  //  if ( ASDCP_SUCCESS(result) )
-    //    result = m_Primer.WriteToFile(Writer);
+      ASDCP::FrameBuffer WriteWrapper;
+      WriteWrapper.SetData(HeaderBuffer.Data() + HeaderBuffer.Size(),
+			   HeaderBuffer.Capacity() - HeaderBuffer.Size());
+      result = object->WriteToBuffer(WriteWrapper);
+      HeaderBuffer.Size(HeaderBuffer.Size() + WriteWrapper.Size());
+    }
+
+  if ( ASDCP_SUCCESS(result) )
+    {
+      UL TmpUL(Dict::ul(MDD_ClosedCompleteHeader));
+      result = Partition::WriteToFile(Writer, TmpUL);
+    }
+
+  if ( ASDCP_SUCCESS(result) )
+    result = m_Primer.WriteToFile(Writer);
 
   if ( ASDCP_SUCCESS(result) )
     {
@@ -762,7 +825,7 @@ ASDCP::MXF::OPAtomHeader::WriteToFile(ASDCP::FileWriter& Writer, ui32_t HeaderSi
 	}
 
       klv_fill_length -= kl_length;
-      result = WriteKLToFile(Writer, s_MDD_Table[MDDindex_KLVFill].ul, klv_fill_length);
+      result = WriteKLToFile(Writer, Dict::ul(MDD_KLVFill), klv_fill_length);
 
       if ( ASDCP_SUCCESS(result) )
 	result = NilBuf.Capacity(klv_fill_length);
@@ -791,8 +854,11 @@ ASDCP::MXF::OPAtomHeader::Dump(FILE* stream)
 
   Partition::Dump(stream);
   m_Primer.Dump(stream);
-  assert(m_Preface);
-  m_Preface->Dump(stream);
+
+  if ( m_Preface == 0 )
+    fputs("No Preface loaded\n", stream);
+  else
+    m_Preface->Dump(stream);
 
   std::list<InterchangeObject*>::iterator i = m_PacketList->m_List.begin();
   for ( ; i != m_PacketList->m_List.end(); i++ )
@@ -802,15 +868,15 @@ ASDCP::MXF::OPAtomHeader::Dump(FILE* stream)
 //------------------------------------------------------------------------------------------
 //
 
-ASDCP::MXF::OPAtomIndexFooter::OPAtomIndexFooter() : m_Lookup(0)
+ASDCP::MXF::OPAtomIndexFooter::OPAtomIndexFooter() :
+  m_CurrentSegment(0), m_BytesPerEditUnit(0), m_BodySID(0),
+  m_ECOffset(0), m_Lookup(0)
 {
-  m_PacketList = new h__PacketList;
+  BodySID = 0;
+  IndexSID = 129;
 }
 
-
-ASDCP::MXF::OPAtomIndexFooter::~OPAtomIndexFooter()
-{
-}
+ASDCP::MXF::OPAtomIndexFooter::~OPAtomIndexFooter() {}
 
 
 ASDCP::Result_t
@@ -866,9 +932,60 @@ ASDCP::MXF::OPAtomIndexFooter::InitFromFile(const ASDCP::FileReader& Reader)
 
 //
 ASDCP::Result_t
-ASDCP::MXF::OPAtomIndexFooter::WriteToFile(ASDCP::FileWriter& Writer)
+ASDCP::MXF::OPAtomIndexFooter::WriteToFile(ASDCP::FileWriter& Writer, ui64_t duration)
 {
-  Result_t result = WriteKLToFile(Writer, s_MDD_Table[MDDindex_CompleteFooter].ul, 0);
+  ASDCP::FrameBuffer FooterBuffer;
+  ui32_t   footer_size = m_PacketList->m_List.size() * MaxIndexSegmentSize; // segment-count * max-segment-size
+  Result_t result = FooterBuffer.Capacity(footer_size); 
+  ui32_t   iseg_count = 0;
+
+  if ( m_CurrentSegment != 0 )
+    {
+      m_CurrentSegment->IndexDuration = m_CurrentSegment->IndexEntryArray.size();
+      m_CurrentSegment = 0;
+    }
+
+  std::list<InterchangeObject*>::iterator pl_i = m_PacketList->m_List.begin();
+  for ( ; pl_i != m_PacketList->m_List.end() && ASDCP_SUCCESS(result); pl_i++ )
+    {
+      if ( (*pl_i)->IsA(OBJ_TYPE_ARGS(IndexTableSegment)) )
+	{
+	  iseg_count++;
+	  IndexTableSegment* Segment = (IndexTableSegment*)(*pl_i);
+
+	  if ( m_BytesPerEditUnit != 0 )
+	    {
+	      if ( iseg_count != 1 )
+		return RESULT_STATE;
+
+	      Segment->IndexDuration = duration;
+	    }
+	}
+
+      InterchangeObject* object = *pl_i;
+      object->m_Lookup = m_Lookup;
+
+      ASDCP::FrameBuffer WriteWrapper;
+      WriteWrapper.SetData(FooterBuffer.Data() + FooterBuffer.Size(),
+			   FooterBuffer.Capacity() - FooterBuffer.Size());
+      result = object->WriteToBuffer(WriteWrapper);
+      FooterBuffer.Size(FooterBuffer.Size() + WriteWrapper.Size());
+    }
+
+  if ( ASDCP_SUCCESS(result) )
+    {
+      IndexByteCount = FooterBuffer.Size();
+      UL FooterUL(Dict::ul(MDD_CompleteFooter));
+      result = Partition::WriteToFile(Writer, FooterUL);
+    }
+
+  if ( ASDCP_SUCCESS(result) )
+    {
+      ui32_t write_count;
+      Writer.Write(FooterBuffer.RoData(), FooterBuffer.Size(), &write_count);
+      assert(write_count == FooterBuffer.Size());
+    }
+
   return result;
 }
 
@@ -921,6 +1038,67 @@ ASDCP::MXF::OPAtomIndexFooter::Lookup(ui32_t frame_num, IndexTableSegment::Index
   return RESULT_FAIL;
 }
 
+//
+void
+ASDCP::MXF::OPAtomIndexFooter::SetIndexParamsCBR(IPrimerLookup* lookup, ui32_t size, const Rational& Rate)
+{
+  assert(lookup);
+  m_Lookup = lookup;
+  m_BytesPerEditUnit = size;
+  m_EditRate = Rate;
+
+  IndexTableSegment* Index = new IndexTableSegment;
+  AddChildObject(Index);
+  Index->EditUnitByteCount = m_BytesPerEditUnit;
+  Index->IndexEditRate = Rate;
+}
+
+//
+void
+ASDCP::MXF::OPAtomIndexFooter::SetIndexParamsVBR(IPrimerLookup* lookup, const Rational& Rate, fpos_t offset)
+{
+  assert(lookup);
+  m_Lookup = lookup;
+  m_BytesPerEditUnit = 0;
+  m_EditRate = Rate;
+  m_ECOffset = offset;
+}
+
+//
+void
+ASDCP::MXF::OPAtomIndexFooter::PushIndexEntry(const IndexTableSegment::IndexEntry& Entry)
+{
+  if ( m_BytesPerEditUnit != 0 )  // are we CBR? that's bad 
+    {
+      DefaultLogSink().Error("Call to PushIndexEntry() failed: index is CBR\n");
+      return;
+    }
+
+  // do we have an available segment?
+  if ( m_CurrentSegment == 0 )
+    {
+      m_CurrentSegment = new IndexTableSegment;
+      assert(m_CurrentSegment);
+      AddChildObject(m_CurrentSegment);
+      m_CurrentSegment->DeltaEntryArray.push_back(IndexTableSegment::DeltaEntry());
+      m_CurrentSegment->IndexEditRate = m_EditRate;
+      m_CurrentSegment->IndexStartPosition = 0;
+    }
+  else if ( m_CurrentSegment->IndexEntryArray.size() >= 1486 ) // 1486 gets us 16K packets
+    {
+      m_CurrentSegment->IndexDuration = m_CurrentSegment->IndexEntryArray.size();
+      ui64_t StartPosition = m_CurrentSegment->IndexStartPosition + m_CurrentSegment->IndexDuration;
+
+      m_CurrentSegment = new IndexTableSegment;
+      assert(m_CurrentSegment);
+      AddChildObject(m_CurrentSegment);
+      m_CurrentSegment->DeltaEntryArray.push_back(IndexTableSegment::DeltaEntry());
+      m_CurrentSegment->IndexEditRate = m_EditRate;
+      m_CurrentSegment->IndexStartPosition = StartPosition;
+    }
+
+  m_CurrentSegment->IndexEntryArray.push_back(Entry);
+}
 
 //------------------------------------------------------------------------------------------
 //
@@ -930,7 +1108,43 @@ ASDCP::Result_t
 ASDCP::MXF::InterchangeObject::InitFromTLVSet(TLVReader& TLVSet)
 {
   Result_t result = TLVSet.ReadObject(OBJ_READ_ARGS(InterchangeObject, InstanceUID));
-  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(GenerationInterchangeObject, GenerationUID));
+  if ( ASDCP_SUCCESS(result) )
+    result = TLVSet.ReadObject(OBJ_READ_ARGS(GenerationInterchangeObject, GenerationUID));
+  return result;
+}
+
+//
+ASDCP::Result_t
+ASDCP::MXF::InterchangeObject::WriteToTLVSet(TLVWriter& TLVSet)
+{
+  Result_t result = TLVSet.WriteObject(OBJ_WRITE_ARGS(InterchangeObject, InstanceUID));
+  if ( ASDCP_SUCCESS(result) )
+    result = TLVSet.WriteObject(OBJ_WRITE_ARGS(GenerationInterchangeObject, GenerationUID));
+  return result;
+}
+
+//
+ASDCP::Result_t
+ASDCP::MXF::InterchangeObject::InitFromBuffer(const byte_t* p, ui32_t l)
+{
+  ASDCP_TEST_NULL(p);
+  Result_t result;
+
+  if ( m_Typeinfo == 0 )
+    {
+      result = KLVPacket::InitFromBuffer(p, l);
+    }
+  else
+    {
+      result = KLVPacket::InitFromBuffer(p, l, m_Typeinfo->ul);
+
+      if ( ASDCP_SUCCESS(result) )
+	{
+	  TLVReader MemRDR(m_ValueStart, m_ValueLength, m_Lookup);
+	  result = InitFromTLVSet(MemRDR);
+	}
+    }
+  
   return result;
 }
 
@@ -938,19 +1152,19 @@ ASDCP::MXF::InterchangeObject::InitFromTLVSet(TLVReader& TLVSet)
 ASDCP::Result_t
 ASDCP::MXF::InterchangeObject::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 {
-  if ( Buffer.Capacity() < (Buffer.Size() + m_KLLength + m_ValueLength) )
-    {
-      DefaultLogSink().Error("InterchangeObject::WriteToBuffer: Buffer too small\n");
-      Dump();
-      return RESULT_READFAIL;
-    }
+  if ( m_Typeinfo == 0 )
+    return RESULT_STATE;
 
-  Result_t result = WriteKLToBuffer(Buffer, m_KeyStart, m_ValueLength);
+  TLVWriter MemWRT(Buffer.Data() + kl_length, Buffer.Capacity() - kl_length, m_Lookup);
+  Result_t result = WriteToTLVSet(MemWRT);
 
   if ( ASDCP_SUCCESS(result) )
     {
-      memcpy(Buffer.Data() + Buffer.Size(), m_ValueStart, m_ValueLength);
-      Buffer.Size(Buffer.Size() + m_ValueLength);
+      ui32_t packet_length = MemWRT.Size();
+      result = WriteKLToBuffer(Buffer, m_Typeinfo->ul, packet_length);
+
+      if ( ASDCP_SUCCESS(result) )
+	Buffer.Size(Buffer.Size() + packet_length);
     }
 
   return result;

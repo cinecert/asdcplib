@@ -30,12 +30,25 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include "AS_DCP_internal.h"
-#include "MDD.h"
-#include <stdio.h>
-#include <stdarg.h>
 #include <map>
 
 //------------------------------------------------------------------------------------------
+
+Result_t
+ASDCP::PCM_ADesc_to_MD(PCM::AudioDescriptor& ADesc, MXF::WaveAudioDescriptor* ADescObj)
+{
+  ASDCP_TEST_NULL(ADescObj);
+  ADescObj->SampleRate = ADesc.SampleRate;
+  ADescObj->AudioSamplingRate = ADesc.AudioSamplingRate;
+  ADescObj->Locked = ADesc.Locked;
+  ADescObj->ChannelCount = ADesc.ChannelCount;
+  ADescObj->QuantizationBits = ADesc.QuantizationBits;
+  ADescObj->BlockAlign = ADesc.BlockAlign;
+  ADescObj->AvgBps = ADesc.AvgBps;
+  ADescObj->LinkedTrackID = ADesc.LinkedTrackID;
+  ADescObj->ContainerDuration = ADesc.ContainerDuration;
+  return RESULT_OK;
+}
 
 //
 ASDCP::Result_t
@@ -289,7 +302,6 @@ ASDCP::PCM::MXFReader::DumpIndex(FILE* stream) const
 
 
 //------------------------------------------------------------------------------------------
-#if 0
 
 //
 class ASDCP::PCM::MXFWriter::h__Writer : public ASDCP::h__Writer
@@ -318,13 +330,11 @@ ASDCP::PCM::MXFWriter::h__Writer::OpenWrite(const char* filename, ui32_t HeaderS
   if ( ! m_State.Test_BEGIN() )
     return RESULT_STATE;
 
-  m_File = new MXFFile;
-
   Result_t result = m_File.OpenWrite(filename);
 
   if ( ASDCP_SUCCESS(result) )
     {
-      m_EssenceDescriptor = new MDObject("WaveAudioDescriptor");
+      m_EssenceDescriptor = new WaveAudioDescriptor;
       result = m_State.Goto_INIT();
     }
 
@@ -356,13 +366,12 @@ ASDCP::PCM::MXFWriter::h__Writer::SetSourceStream(const AudioDescriptor& ADesc)
     }
 
   m_ADesc = ADesc;
-  Result_t result = PCM_ADesc_to_MD(m_ADesc, *m_EssenceDescriptor);
+  Result_t result = PCM_ADesc_to_MD(m_ADesc, (WaveAudioDescriptor*)m_EssenceDescriptor);
   
   if ( ASDCP_SUCCESS(result) )
-    {
-      result = WriteMXFHeader(ESS_PCM_24b_48k, m_ADesc.SampleRate,
-			      24 /* TCFrameRate */, calc_CBR_frame_size(m_Info, m_ADesc));
-    }
+      result = WriteMXFHeader(PCM_PACKAGE_LABEL,
+			      UL(WrappingUL_Data_PCM_24b_48k),
+			      m_ADesc.SampleRate, 24 /* TCFrameRate */, calc_CBR_frame_size(m_Info, m_ADesc));
 
   if ( ASDCP_SUCCESS(result) )
     result = m_State.Goto_READY();
@@ -399,12 +408,9 @@ ASDCP::PCM::MXFWriter::h__Writer::Finalize()
   if ( ! m_State.Test_RUNNING() )
     return RESULT_STATE;
 
-  if ( ! m_File )
-    return RESULT_INIT;
-
   m_State.Goto_FINAL();
 
-  return WriteMXFFooter(ESS_PCM_24b_48k);
+  return WriteMXFFooter();
 }
 
 
@@ -466,8 +472,6 @@ ASDCP::PCM::MXFWriter::Finalize()
 
   return m_Writer->Finalize();
 }
-
-#endif
 
 //
 // end AS_DCP_PCM.cpp

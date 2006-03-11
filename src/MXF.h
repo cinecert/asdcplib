@@ -38,6 +38,8 @@ namespace ASDCP
 {
   namespace MXF
     {
+      class InterchangeObject;
+
       // seek an open file handle to the start of the RIP KLV packet
       Result_t SeekToRIP(const FileReader&);
       
@@ -53,6 +55,9 @@ namespace ASDCP
 	    ui32_t BodySID;
 	    ui64_t ByteOffset;
 
+	    Pair() : BodySID(0), ByteOffset(0) {}
+	    Pair(ui32_t sid, ui64_t offset) : BodySID(sid), ByteOffset(offset) {}
+
 	    ui32_t Size() { return sizeof(ui32_t) + sizeof(ui64_t); }
 
 	    inline const char* ToString(char* str_buf) const {
@@ -61,7 +66,7 @@ namespace ASDCP
 	      return str_buf;
 	    }
 
-	    inline Result_t ReadFrom(ASDCP::MemIOReader& Reader) {
+	    inline Result_t Unarchive(ASDCP::MemIOReader& Reader) {
 	      Result_t result = Reader.ReadUi32BE(&BodySID);
 
 	      if ( ASDCP_SUCCESS(result) )
@@ -70,7 +75,7 @@ namespace ASDCP
 	      return result;
 	    }
 
-	    inline Result_t WriteTo(ASDCP::MemIOWriter& Writer) {
+	    inline Result_t Archive(ASDCP::MemIOWriter& Writer) {
 	      Result_t result = Writer.WriteUi32BE(BodySID);
 
 	      if ( ASDCP_SUCCESS(result) )
@@ -95,6 +100,10 @@ namespace ASDCP
 	{	
 	  ASDCP_NO_COPY_CONSTRUCT(Partition);
 
+	protected:
+	  class h__PacketList;
+	  mem_ptr<h__PacketList> m_PacketList;
+
 	public:
 	  ui16_t    MajorVersion;
 	  ui16_t    MinorVersion;
@@ -110,19 +119,21 @@ namespace ASDCP
 	  UL        OperationalPattern;
 	  Batch<UL> EssenceContainers;
 
-	  Partition() {}
-	  virtual ~Partition() {}
+	  Partition();
+	  virtual ~Partition();
+	  virtual void     AddChildObject(InterchangeObject*);
 	  virtual Result_t InitFromFile(const ASDCP::FileReader& Reader);
-	  virtual Result_t WriteToFile(ASDCP::FileWriter& Writer);
+	  virtual Result_t WriteToFile(ASDCP::FileWriter& Writer, UL& PartitionLabel);
 	  virtual void     Dump(FILE* = 0);
 	};
 
 
       //
-      class Primer : public ASDCP::KLVPacket, public ASDCP::IPrimerLookup
+      class Primer : public ASDCP::KLVFilePacket, public ASDCP::IPrimerLookup
 	{
 	  class h__PrimerLookup;
 	  mem_ptr<h__PrimerLookup> m_Lookup;
+	  ui8_t   m_LocalTag;
 	  ASDCP_NO_COPY_CONSTRUCT(Primer);
 
 	public:
@@ -139,27 +150,17 @@ namespace ASDCP
 		return str_buf;
 	      }
 
-	      inline Result_t ReadFrom(ASDCP::MemIOReader& Reader) {
+	      inline Result_t Unarchive(ASDCP::MemIOReader& Reader) {
 		Result_t result = Reader.ReadUi8(&Tag.a);
-		
-		if ( ASDCP_SUCCESS(result) )
-		  result = Reader.ReadUi8(&Tag.b);
-
-		if ( ASDCP_SUCCESS(result) )
-		  result = UL.ReadFrom(Reader);
-
+		if ( ASDCP_SUCCESS(result) ) result = Reader.ReadUi8(&Tag.b);
+		if ( ASDCP_SUCCESS(result) ) result = UL.Unarchive(Reader);
 		return result;
 	      }
 
-	      inline Result_t WriteTo(ASDCP::MemIOWriter& Writer) {
+	      inline Result_t Archive(ASDCP::MemIOWriter& Writer) {
 		Result_t result = Writer.WriteUi8(Tag.a);
-		
-		if ( ASDCP_SUCCESS(result) )
-		  result = Writer.WriteUi8(Tag.b);
-
-		if ( ASDCP_SUCCESS(result) )
-		  result = UL.WriteTo(Writer);
-
+		if ( ASDCP_SUCCESS(result) ) result = Writer.WriteUi8(Tag.b);
+		if ( ASDCP_SUCCESS(result) ) result = UL.Archive(Writer);
 		return result;
 	      }
 	    };
@@ -170,11 +171,12 @@ namespace ASDCP
 	  virtual ~Primer();
 
 	  virtual void     ClearTagList();
-	  virtual Result_t InsertTag(const ASDCP::UL& Key, ASDCP::TagValue& Tag);
+	  virtual Result_t InsertTag(const MDDEntry& Entry, ASDCP::TagValue& Tag);
 	  virtual Result_t TagForKey(const ASDCP::UL& Key, ASDCP::TagValue& Tag);
 
           virtual Result_t InitFromBuffer(const byte_t* p, ui32_t l);
           virtual Result_t WriteToBuffer(ASDCP::FrameBuffer&);
+	  virtual Result_t WriteToFile(ASDCP::FileWriter& Writer);
 	  virtual void     Dump(FILE* = 0);
 	};
 
@@ -182,22 +184,27 @@ namespace ASDCP
       //
       class InterchangeObject : public ASDCP::KLVPacket
 	{
+	protected:
+	  const MDDEntry* m_Typeinfo;
+
 	public:
 	  IPrimerLookup* m_Lookup;
-	  UID            InstanceUID;
+	  UUID           InstanceUID;
 	  UUID           GenerationUID;
 
-	  InterchangeObject() : m_Lookup(0) {}
+	  InterchangeObject() : m_Typeinfo(0), m_Lookup(0) {}
 	  virtual ~InterchangeObject() {}
           virtual Result_t InitFromTLVSet(TLVReader& TLVSet);
+	  virtual Result_t InitFromBuffer(const byte_t* p, ui32_t l);
+	  virtual Result_t WriteToTLVSet(TLVWriter& TLVSet);
 	  virtual Result_t WriteToBuffer(ASDCP::FrameBuffer&);
 	  virtual bool     IsA(const byte_t* label);
+	  virtual const char* ObjectName() { return "InterchangeObject"; }
 	  virtual void     Dump(FILE* stream = 0);
 	};
 
       //
       InterchangeObject* CreateObject(const byte_t* label);
-
 
       //
       class Preface : public InterchangeObject
@@ -209,19 +216,23 @@ namespace ASDCP
 	  Timestamp    LastModifiedDate;
 	  ui16_t       Version;
 	  ui32_t       ObjectModelVersion;
-	  UID          PrimaryPackage;
-	  Batch<UID>   Identifications;
-	  UID          ContentStorage;
+	  UUID         PrimaryPackage;
+	  Batch<UUID>  Identifications;
+	  UUID         ContentStorage;
 	  UL           OperationalPattern;
 	  Batch<UL>    EssenceContainers;
 	  Batch<UL>    DMSchemes;
 
-	  Preface() {}
+	  Preface() : Version(258), ObjectModelVersion(0) {}
 	  virtual ~Preface() {}
-          virtual Result_t InitFromBuffer(const byte_t* p, ui32_t l);
-	  virtual Result_t WriteToBuffer(ASDCP::FrameBuffer& Buffer);
+          virtual Result_t InitFromTLVSet(TLVReader& TLVSet);
+	  virtual Result_t InitFromBuffer(const byte_t* p, ui32_t l);
+	  virtual Result_t WriteToTLVSet(TLVWriter& TLVSet);
+	  virtual Result_t WriteToBuffer(ASDCP::FrameBuffer&);
 	  virtual void     Dump(FILE* = 0);
 	};
+
+      const ui32_t MaxIndexSegmentSize = 65536;
 
       //
       class IndexTableSegment : public InterchangeObject
@@ -237,9 +248,10 @@ namespace ASDCP
 	      ui8_t   Slice;
 	      ui32_t  ElementData;
 
-	      Result_t ReadFrom(ASDCP::MemIOReader& Reader);
-	      Result_t WriteTo(ASDCP::MemIOWriter& Writer);
-	      inline const char* ToString(char* str_buf) const;
+	      DeltaEntry() : PosTableIndex(-1), Slice(0), ElementData(0) {}
+	      Result_t    Unarchive(ASDCP::MemIOReader& Reader);
+	      Result_t    Archive(ASDCP::MemIOWriter& Writer);
+	      const char* ToString(char* str_buf) const;
 	    };
 
 	  //
@@ -250,12 +262,12 @@ namespace ASDCP
 	      i8_t               KeyFrameOffset;
 	      ui8_t              Flags;
 	      ui64_t             StreamOffset;
-	      std::list<ui32_t>  SliceOffset;
-	      Array<Rational>    PosTable;
+	      //	      std::list<ui32_t>  SliceOffset;
+	      //	      Array<Rational>    PosTable;
 
-	      Result_t ReadFrom(ASDCP::MemIOReader& Reader);
-	      Result_t WriteTo(ASDCP::MemIOWriter& Writer);
-	      inline const char* ToString(char* str_buf) const;
+	      Result_t    Unarchive(ASDCP::MemIOReader& Reader);
+	      Result_t    Archive(ASDCP::MemIOWriter& Writer);
+	      const char* ToString(char* str_buf) const;
 	    };
 
 	  Rational    IndexEditRate;
@@ -271,8 +283,10 @@ namespace ASDCP
 
 	  IndexTableSegment();
 	  virtual ~IndexTableSegment();
+	  virtual Result_t InitFromTLVSet(TLVReader& TLVSet);
 	  virtual Result_t InitFromBuffer(const byte_t* p, ui32_t l);
-	  virtual Result_t WriteToBuffer(ASDCP::FrameBuffer& Buffer);
+	  virtual Result_t WriteToTLVSet(TLVWriter& TLVSet);
+	  virtual Result_t WriteToBuffer(ASDCP::FrameBuffer&);
 	  virtual void     Dump(FILE* = 0);
 	};
 
@@ -285,15 +299,14 @@ namespace ASDCP
       //
       class OPAtomHeader : public Partition
 	{
-	  mem_ptr<h__PacketList>   m_PacketList;
 	  ASDCP_NO_COPY_CONSTRUCT(OPAtomHeader);
 
 	public:
-	  ASDCP::MXF::RIP          m_RIP;
-	  ASDCP::MXF::Primer       m_Primer;
-	  InterchangeObject*       m_Preface;
-	  ASDCP::FrameBuffer       m_Buffer;
-	  bool                     m_HasRIP;
+	  ASDCP::MXF::RIP     m_RIP;
+	  ASDCP::MXF::Primer  m_Primer;
+	  Preface*            m_Preface;
+	  ASDCP::FrameBuffer  m_Buffer;
+	  bool                m_HasRIP;
 
 	  OPAtomHeader();
 	  virtual ~OPAtomHeader();
@@ -308,20 +321,27 @@ namespace ASDCP
       //
       class OPAtomIndexFooter : public Partition
 	{
-	  mem_ptr<h__PacketList>   m_PacketList;
-	  ASDCP::FrameBuffer       m_Buffer;
+	  IndexTableSegment*  m_CurrentSegment;
+	  ASDCP::FrameBuffer  m_Buffer;
+	  ui32_t              m_BytesPerEditUnit;
+	  Rational            m_EditRate;
+	  ui32_t              m_BodySID;
 	  ASDCP_NO_COPY_CONSTRUCT(OPAtomIndexFooter);
 
 	public:
-	  IPrimerLookup* m_Lookup;
+	  fpos_t              m_ECOffset;
+	  IPrimerLookup*      m_Lookup;
 	 
 	  OPAtomIndexFooter();
 	  virtual ~OPAtomIndexFooter();
 	  virtual Result_t InitFromFile(const ASDCP::FileReader& Reader);
-	  virtual Result_t WriteToFile(ASDCP::FileWriter& Writer);
+	  virtual Result_t WriteToFile(ASDCP::FileWriter& Writer, ui64_t duration);
 	  virtual void     Dump(FILE* = 0);
 
 	  virtual Result_t Lookup(ui32_t frame_num, IndexTableSegment::IndexEntry&);
+	  virtual void     PushIndexEntry(const IndexTableSegment::IndexEntry&);
+	  virtual void     SetIndexParamsCBR(IPrimerLookup* lookup, ui32_t size, const Rational& Rate);
+	  virtual void     SetIndexParamsVBR(IPrimerLookup* lookup, const Rational& Rate, fpos_t offset);
 	};
 
     } // namespace MXF

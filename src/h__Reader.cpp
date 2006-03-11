@@ -31,8 +31,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "AS_DCP_internal.h"
 #include "KLV.h"
-#include "MDD.h"
-#include <assert.h>
 
 using namespace ASDCP;
 using namespace ASDCP::MXF;
@@ -95,6 +93,7 @@ ASDCP::h__Reader::InitInfo(WriterInfo& Info)
 Result_t
 ASDCP::h__Reader::OpenMXFRead(const char* filename)
 {
+  m_LastPosition = 0;
   Result_t result = m_File.OpenRead(filename);
 
   if ( ASDCP_SUCCESS(result) )
@@ -145,6 +144,9 @@ ASDCP::h__Reader::InitMXFIndex()
       result = m_FooterPart.InitFromFile(m_File);
     }
 
+  if ( ASDCP_SUCCESS(result) )
+    m_File.Seek(m_EssenceStart);
+
   return result;
 }
 
@@ -164,10 +166,15 @@ ASDCP::h__Reader::ReadEKLVPacket(ui32_t FrameNum, ASDCP::FrameBuffer& FrameBuf,
     }
 
   // get frame position and go read the frame's key and length
+  Result_t result = RESULT_OK;
   ASDCP::KLVReader Reader;
   ASDCP::fpos_t FilePosition = m_EssenceStart + TmpEntry.StreamOffset;
 
-  Result_t result = m_File.Seek(FilePosition);
+  if ( FilePosition != m_LastPosition )
+    {
+      m_LastPosition = FilePosition;
+      result = m_File.Seek(FilePosition);
+    }
 
   if ( ASDCP_SUCCESS(result) )
     result = Reader.ReadKLFromFile(m_File);
@@ -179,6 +186,7 @@ ASDCP::h__Reader::ReadEKLVPacket(ui32_t FrameNum, ASDCP::FrameBuffer& FrameBuf,
   UL InteropRef(CryptEssenceUL_Data);
   UL SMPTERef(CryptEssenceUL_Data);
   ui64_t PacketLength = Reader.Length();
+  m_LastPosition = m_LastPosition + Reader.KLLength() + PacketLength;
 
   if ( Key == InteropRef || Key == SMPTERef )
     {

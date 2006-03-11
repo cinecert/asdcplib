@@ -152,8 +152,9 @@ namespace ASDCP {
   // Encryption keys are passed around as strings of KeyLen bytes
   const ui32_t KeyLen = 16;
 
-  // Encryption key IDs are passed around as strings of KeyIDlen bytes
-  const ui32_t KeyIDlen = 16;
+  // Key IDs are really UUIDs, so it makes no sense to have this value
+  //  // Encryption key IDs are passed around as strings of KeyIDlen bytes
+  //  const ui32_t KeyIDlen = 16;
 
 
   //---------------------------------------------------------------------------------
@@ -256,8 +257,9 @@ namespace ASDCP {
 
 
   // A simple container for rational numbers.
-  struct Rational
+  class Rational
   {
+  public:
     i32_t Numerator;
     i32_t Denominator;
 
@@ -413,7 +415,7 @@ namespace ASDCP {
     byte_t      ProductUUID[UUIDlen];
     byte_t      AssetUUID[UUIDlen];
     byte_t      ContextID[UUIDlen];
-    byte_t      CryptographicKeyID[KeyIDlen];
+    byte_t      CryptographicKeyID[UUIDlen];
     bool        EncryptedEssence; // true if essence data is (or is to be) encrypted
     bool        UsesHMAC;         // true if HMAC exists or is to be calculated
     std::string ProductVersion;
@@ -427,7 +429,7 @@ namespace ASDCP {
       memcpy(ProductUUID, default_ProductUUID_Data, UUIDlen);
       memset(AssetUUID, 0, UUIDlen);
       memset(ContextID, 0, UUIDlen);
-      memset(CryptographicKeyID, 0, KeyIDlen);
+      memset(CryptographicKeyID, 0, UUIDlen);
 
       ProductVersion = "Unreleased ";
       ProductVersion += Version();

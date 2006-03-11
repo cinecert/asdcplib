@@ -123,7 +123,7 @@ ASDCP::KLVPacket::Dump(FILE* stream, bool show_hex)
       for ( ui32_t i = 0; i < SMPTE_UL_LENGTH; i++ )
 	fprintf(stream, "%02x.", m_KeyStart[i]);
 
-      const MDDEntry* Entry = GetMDDEntry(m_KeyStart);
+      const MDDEntry* Entry = Dict::FindUL(m_KeyStart);
       fprintf(stream, "\b  len: %7lu (%s)\n", m_ValueLength, (Entry ? Entry->name : "Unknown"));
 
       if ( show_hex && m_ValueLength < 1000 )

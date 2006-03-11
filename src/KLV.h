@@ -32,8 +32,10 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef _KLV_H_
 #define _KLV_H_
 
-#include <FileIO.h>
-#include <MemIO.h>
+#include "FileIO.h"
+#include "MemIO.h"
+#include "MDD.h"
+
 
 namespace ASDCP
 {
@@ -69,8 +71,8 @@ namespace ASDCP
     {
     public:
       virtual ~IArchive() {}
-      virtual Result_t ReadFrom(ASDCP::MemIOReader& Reader) = 0;
-      virtual Result_t WriteTo(ASDCP::MemIOWriter& Writer) = 0;
+      virtual Result_t Unarchive(ASDCP::MemIOReader& Reader) = 0;
+      virtual Result_t Archive(ASDCP::MemIOWriter& Writer) = 0;
     };
 } // namespace ASDCP
 
@@ -78,16 +80,6 @@ namespace ASDCP
 
 namespace ASDCP
 {
-  //
-  class IPrimerLookup
-    {
-    public:
-      virtual ~IPrimerLookup() {}
-      virtual void     ClearTagList() = 0;
-      virtual Result_t InsertTag(const ASDCP::UL& Key, ASDCP::TagValue& Tag) = 0;
-      virtual Result_t TagForKey(const ASDCP::UL& Key, ASDCP::TagValue& Tag) = 0;
-    };
-
   //
   struct MDDEntry
   {
@@ -99,7 +91,38 @@ namespace ASDCP
   };
 
   //
-  const MDDEntry* GetMDDEntry(const byte_t*);
+  class Dict
+    {
+    public:
+      static const MDDEntry* FindUL(const byte_t*);
+      static const MDDEntry& Type(MDD_t type_id);
+      static bool            Replace(const MDDEntry& Entry);
+      static void            Restore(const byte_t* ul);
+      static void            RestoreAll();
+
+      inline static const byte_t* ul(MDD_t type_id) {
+	return Type(type_id).ul;
+      }
+
+    private:
+      ASDCP_NO_COPY_CONSTRUCT(Dict);
+
+    protected:
+      Dict();
+
+    public:
+      ~Dict();
+    };
+
+  //
+  class IPrimerLookup
+    {
+    public:
+      virtual ~IPrimerLookup() {}
+      virtual void     ClearTagList() = 0;
+      virtual Result_t InsertTag(const MDDEntry& Entry, ASDCP::TagValue& Tag) = 0;
+      virtual Result_t TagForKey(const ASDCP::UL& Key, ASDCP::TagValue& Tag) = 0;
+    };
 
   //
   class KLVPacket

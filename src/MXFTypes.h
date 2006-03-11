@@ -41,12 +41,9 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // used with TLVReader::Read*
 //
 // these are used below to manufacture arguments
-#define OBJ_READ_ARGS(s,l) s_MDD_Table[MDDindex_##s##_##l], &l
-#define OBJ_READ_ARGS_R(s,l,r) s_MDD_Table[MDDindex_##s##_##l], &r
-
-#define OBJ_WRITE_ARGS(s,l) s_MDD_Table[MDDindex_##s##_##l], &l
-
-#define OBJ_TYPE_ARGS(t) s_MDD_Table[MDDindex_##t].ul
+#define OBJ_READ_ARGS(s,l) Dict::Type(MDD_##s##_##l), &l
+#define OBJ_WRITE_ARGS(s,l) Dict::Type(MDD_##s##_##l), &l
+#define OBJ_TYPE_ARGS(t) Dict::Type(MDD_##t).ul
 
 
 namespace ASDCP
@@ -108,7 +105,7 @@ namespace ASDCP
 	  ~Batch() {}
 
 	  //
-	  Result_t ReadFrom(ASDCP::MemIOReader& Reader) {
+	  Result_t Unarchive(ASDCP::MemIOReader& Reader) {
 	    Result_t result = Reader.ReadUi32BE(&ItemCount);
 
 	    if ( ASDCP_SUCCESS(result) )
@@ -120,7 +117,7 @@ namespace ASDCP
 	    for ( ui32_t i = 0; i < ItemCount && ASDCP_SUCCESS(result); i++ )
 	      {
 		T Tmp;
-		result = Tmp.ReadFrom(Reader);
+		result = Tmp.Unarchive(Reader);
 
 		if ( ASDCP_SUCCESS(result) )
 		  push_back(Tmp);
@@ -130,7 +127,7 @@ namespace ASDCP
 	  }
 
 	  //
-	  Result_t WriteTo(ASDCP::MemIOWriter& Writer) {
+	  Result_t Archive(ASDCP::MemIOWriter& Writer) {
 	    Result_t result = Writer.WriteUi32BE(size());
 
 	    if ( ASDCP_SUCCESS(result) )
@@ -138,7 +135,7 @@ namespace ASDCP
 
 	    typename std::vector<T>::iterator l_i = begin();
 	    for ( ; l_i != end() && ASDCP_SUCCESS(result); l_i++ )
-	      result = (*l_i).WriteTo(Writer);
+	      result = (*l_i).Archive(Writer);
 
 	    return result;
 	  }
@@ -166,12 +163,12 @@ namespace ASDCP
 	  ~Array() {}
 
 	  //
-	  Result_t ReadFrom(ASDCP::MemIOReader& Reader)
+	  Result_t Unarchive(ASDCP::MemIOReader& Reader)
 	    {
 	      while ( Reader.Remainder() > 0 )
 		{
 		  T Tmp;
-		  Tmp.ReadFrom(Reader);
+		  Tmp.Unarchive(Reader);
 		  push_back(Tmp);
 		}
 
@@ -179,12 +176,12 @@ namespace ASDCP
 	    }
 
 	  //
-	  Result_t WriteTo(ASDCP::MemIOWriter& Writer) {
+	  Result_t Archive(ASDCP::MemIOWriter& Writer) {
 	    Result_t result = RESULT_OK;
 	    typename std::list<T>::iterator l_i = begin();
 
 	    for ( ; l_i != end() && ASDCP_SUCCESS(result); l_i++ )
-	      result = (*l_i).WriteTo(Writer);
+	      result = (*l_i).Archive(Writer);
 
 	    return result;
 	  }
@@ -213,22 +210,32 @@ namespace ASDCP
 	  ui8_t  Hour;
 	  ui8_t  Minute;
 	  ui8_t  Second;
-	  ui8_t  mSec_4;
+	  ui8_t  Tick;
 
-	  Timestamp() :
-	    Year(0), Month(0),  Day(0),
-	    Hour(0), Minute(0), Second(0), mSec_4(0) {}
+	  Timestamp();
+	  Timestamp(const Timestamp& rhs);
+	  Timestamp(const char* datestr);
+	  virtual ~Timestamp();
+
+	  const Timestamp& operator=(const Timestamp& rhs);
+	  bool operator<(const Timestamp& rhs) const;
+	  bool operator==(const Timestamp& rhs) const;
+	  bool operator!=(const Timestamp& rhs) const;
+
+	  // decode and set value from string formatted by EncodeAsString
+	  Result_t    SetFromString(const char* datestr);
+	  
+	  // add the given number of days or hours to the timestamp value. Values less than zero
+	  // will cause the value to decrease
+	  void AddDays(i32_t);
+	  void AddHours(i32_t);
+
+	  // Write the timestamp value to the given buffer in the form 2004-05-01 13:20:00.000
+	  // returns 0 if the buffer is smaller than DateTimeLen
+	  const char* ToString(char* str_buf) const;
 
 	  //
-	  inline const char* ToString(char* str_buf) const {
-	    snprintf(str_buf, IdentBufferLen,
-		     "%04hu-%02hu-%02hu %02hu:%02hu:%02hu.%03hu",
-		     Year, Month, Day, Hour, Minute, Second, mSec_4);
-	    return str_buf;
-	  }
-
-	  //
-	  inline Result_t ReadFrom(ASDCP::MemIOReader& Reader) {
+	  inline Result_t Unarchive(ASDCP::MemIOReader& Reader) {
 	    Result_t result = Reader.ReadUi16BE(&Year);
 
 	    if ( ASDCP_SUCCESS(result) )
@@ -238,7 +245,7 @@ namespace ASDCP
 	  }
 
 	  //
-	  inline Result_t WriteTo(ASDCP::MemIOWriter& Writer) {
+	  inline Result_t Archive(ASDCP::MemIOWriter& Writer) {
 	    Result_t result = Writer.WriteUi16BE(Year);
 
 	    if ( ASDCP_SUCCESS(result) )
@@ -258,14 +265,16 @@ namespace ASDCP
 	  UTF16String() : m_length(0) { *m_buffer = 0; }
 	  ~UTF16String() {}
 
+	  const UTF16String& operator=(const char*);
+
 	  //
 	  const char* ToString(char* str_buf) const {
 	    strncpy(str_buf, m_buffer, m_length+1);
 	    return str_buf;
 	  }
 
-	  Result_t ReadFrom(ASDCP::MemIOReader& Reader);
-	  Result_t WriteTo(ASDCP::MemIOWriter& Writer);
+	  Result_t Unarchive(ASDCP::MemIOReader& Reader);
+	  Result_t Archive(ASDCP::MemIOWriter& Writer);
 	};
 
       //
@@ -275,13 +284,35 @@ namespace ASDCP
 	  Rational() {}
 	  ~Rational() {}
 
+	  Rational(const Rational& rhs) {
+	    Numerator = rhs.Numerator;
+	    Denominator = rhs.Denominator;
+	  }
+
+	  const Rational& operator=(const Rational& rhs) {
+	    Numerator = rhs.Numerator;
+	    Denominator = rhs.Denominator;
+	    return *this;
+	  }
+
+	  Rational(const ASDCP::Rational& rhs) {
+	    Numerator = rhs.Numerator;
+	    Denominator = rhs.Denominator;
+	  }
+
+	  const Rational& operator=(const ASDCP::Rational& rhs) {
+	    Numerator = rhs.Numerator;
+	    Denominator = rhs.Denominator;
+	    return *this;
+	  }
+
 	  //
 	  const char* ToString(char* str_buf) const {
 	    snprintf(str_buf, IdentBufferLen, "%lu/%lu", Numerator, Denominator);
 	    return str_buf;
 	  }
 
-	  Result_t ReadFrom(ASDCP::MemIOReader& Reader) {
+	  Result_t Unarchive(ASDCP::MemIOReader& Reader) {
 	    Result_t result = Reader.ReadUi32BE((ui32_t*)&Numerator);
 
 	    if ( ASDCP_SUCCESS(result) )
@@ -290,7 +321,7 @@ namespace ASDCP
 	    return result;
 	  }
 
-	  Result_t WriteTo(ASDCP::MemIOWriter& Writer) {
+	  Result_t Archive(ASDCP::MemIOWriter& Writer) {
 	    Result_t result = Writer.WriteUi32BE((ui32_t)Numerator);
 
 	    if ( ASDCP_SUCCESS(result) )
@@ -298,6 +329,91 @@ namespace ASDCP
 	    
 	    return result;
 	  }
+	};
+
+      //
+      class VersionType : public IArchive
+	{
+	  ASDCP_NO_COPY_CONSTRUCT(VersionType);
+
+	public:
+	  enum Release_t { RL_UNKNOWN, RM_RELEASE, RL_DEVELOPMENT, RL_PATCHED, RL_BETA, RL_PRIVATE };
+	  ui16_t Major;
+	  ui16_t Minor;
+	  ui16_t Patch;
+	  ui16_t Build;
+	  ui16_t Release;
+
+	  VersionType() : Major(0), Minor(0), Patch(0), Build(0), Release(RL_UNKNOWN) {}
+	  ~VersionType() {}
+	  void Dump(FILE* = 0);
+
+	  const char* ToString(char* str_buf) const {
+	    snprintf(str_buf, IdentBufferLen, "%hu.%hu.%hu.%hu.%hu", Major, Minor, Patch, Build, Release);
+	    return str_buf;
+	  }
+
+	  Result_t Unarchive(ASDCP::MemIOReader& Reader) {
+	    Result_t result = Reader.ReadUi16BE(&Major);
+	    if ( ASDCP_SUCCESS(result) ) result = Reader.ReadUi16BE(&Minor);
+	    if ( ASDCP_SUCCESS(result) ) result = Reader.ReadUi16BE(&Patch);
+	    if ( ASDCP_SUCCESS(result) ) result = Reader.ReadUi16BE(&Build);
+	    if ( ASDCP_SUCCESS(result) )
+	      {
+		ui16_t tmp_release;
+		result = Reader.ReadUi16BE(&tmp_release);
+		Release = (Release_t)tmp_release;
+	      }
+
+	    return result;
+	  }
+
+	  Result_t Archive(ASDCP::MemIOWriter& Writer) {
+	    Result_t result = Writer.WriteUi32BE(Major);
+	    if ( ASDCP_SUCCESS(result) ) result = Writer.WriteUi32BE(Minor);
+	    if ( ASDCP_SUCCESS(result) ) result = Writer.WriteUi32BE(Patch);
+	    if ( ASDCP_SUCCESS(result) ) result = Writer.WriteUi32BE(Build);
+	    if ( ASDCP_SUCCESS(result) ) result = Writer.WriteUi32BE((ui16_t)(Release & 0x0000ffffL));
+	    return result;
+	  }
+	};
+
+      //
+      class RGBLayout : public IArchive
+        {
+        public:
+          struct element {
+            ui8_t Code;
+            ui8_t Depth;
+          } PictureElement[8];
+          RGBLayout() { memset(PictureElement, 0, sizeof(PictureElement)); }
+
+	  //
+          Result_t Unarchive(ASDCP::MemIOReader& Reader) { return RESULT_OK; }
+	  Result_t Archive(ASDCP::MemIOWriter& Writer) { return RESULT_OK; }
+          inline const char* ToString(char* str_buf) const {
+            snprintf(str_buf, IdentBufferLen, "RGBLayout: <PictureElement[8]>\n");
+            return str_buf;
+          }
+        };
+
+      //
+      class Raw : public IArchive
+	{
+	  ASDCP_NO_COPY_CONSTRUCT(Raw);
+
+	public:
+	  byte_t* data;
+	  Raw() {}
+	  ~Raw() {}
+
+	  //
+          Result_t Unarchive(ASDCP::MemIOReader& Reader) { return RESULT_OK; }
+	  Result_t Archive(ASDCP::MemIOWriter& Writer) { return RESULT_OK; }
+          inline const char* ToString(char* str_buf) const {
+            snprintf(str_buf, IdentBufferLen, "RAW\n");
+            return str_buf;
+          }
 	};
 
     } // namespace MXF

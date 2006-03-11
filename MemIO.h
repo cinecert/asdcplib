@@ -51,7 +51,7 @@ namespace ASDCP
     public:
       MemIOWriter(byte_t* p, ui32_t c) :
 	m_p(p), m_capacity(c), m_size(0) {
-	assert(m_p); assert(m_capacity);
+	assert(m_p);
       }
 
       ~MemIOWriter() {}
@@ -141,7 +141,7 @@ namespace ASDCP
     public:
       MemIOReader(const byte_t* p, ui32_t c) :
 	m_p(p), m_capacity(c), m_size(0) {
-	assert(m_p); assert(m_capacity);
+	assert(m_p);
       }
 
       ~MemIOReader() {}

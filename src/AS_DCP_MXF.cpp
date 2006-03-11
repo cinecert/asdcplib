@@ -34,7 +34,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "DirScanner.h"
 #include "JP2K.h"
 #include "Wav.h"
-#include "MDD.h"
 
 
 //------------------------------------------------------------------------------------------
@@ -127,72 +126,6 @@ ASDCP::MD_to_CryptoInfo(CryptographicContext* InfoObj, WriterInfo& Info)
   return RESULT_OK;
 }
 
-#if 0
-
-
-//
-// add DMS CryptographicFramework entry to source package
-void
-ASDCP::AddDMScrypt(PackagePtr SourcePackage, WriterInfo& Descr, const byte_t* SourceEssenceContainerLabel)
-{
-  assert(SourceEssenceContainerLabel);
-
-  TrackPtr MPDMTrack = SourcePackage->AddDMTrack(); // zero parameters = static
-  DMSegmentPtr MPDMSegment = MPDMTrack->AddDMSegment();
-
-  MDObject* Crypto_DMS_Ptr = new MDObject("CryptographicFramework");
-  MPDMSegment->AddChild("DMFramework")->MakeLink(*Crypto_DMS_Ptr);
-
-  MDObject* Crypto_DMS_BasicPtr = new MDObject("CryptographicContext");		
-  Crypto_DMS_Ptr->AddChild("ContextSR")->MakeLink(*Crypto_DMS_BasicPtr);
-
-  UUID ContextID(Descr.ContextID);
-  Crypto_DMS_BasicPtr->SetValue("ContextID", DataChunk(UUIDlen, ContextID.GetValue())); // UUID
-  Crypto_DMS_BasicPtr->SetValue("SourceEssenceContainer",
-				DataChunk(klv_key_size, SourceEssenceContainerLabel)); // Label
-  Crypto_DMS_BasicPtr->SetValue("CipherAlgorithm", DataChunk(klv_key_size, CipherAlgorithm_AES)); // UL Key
-
-  Crypto_DMS_BasicPtr->SetValue("MICAlgorithm",
-				DataChunk(KeyLen,
-					  (Descr.UsesHMAC ?
-					   MICAlgorithm_HMAC_SHA1
-					   : MICAlgorithm_NONE))); // UL Key
-
-  UUID CryptographicKeyID(Descr.CryptographicKeyID);
-
-  Crypto_DMS_BasicPtr->SetValue("CryptographicKeyID", DataChunk(UUIDlen, CryptographicKeyID.GetValue())); // UUID
-}
-
-
-//
-//
-ASDCP::Result_t
-ASDCP::FindObject(const char* filename, const char* objname, FILE* stream)
-{
-  ASDCP_TEST_NULL_STR(filename);
-  ASDCP_TEST_NULL_STR(objname);
-
-  if ( stream == 0 )
-    stream = stderr;
-
-  ASDCP::h__Reader Reader;
-  Result_t result = Reader.OpenMXFRead(filename);
-
-  if ( ASDCP_FAILURE(result) )
-    return result;
-
-  MDObject* DescObj = Reader.GetMDObjectByType(objname);
-
-  if ( DescObj )
-    {
-      DumpMDObject(*DescObj, " ", stream);
-      return RESULT_OK;
-    }
-
-  return RESULT_FAIL;
-}
-#endif
-
 //
 //
 ASDCP::Result_t
@@ -210,7 +143,7 @@ ASDCP::EssenceType(const char* filename, EssenceType_t& type)
   if ( ASDCP_SUCCESS(result) )
     {
       type = ESS_UNKNOWN;
-      if ( ASDCP_SUCCESS(TestHeader.GetMDObjectByType(OBJ_TYPE_ARGS(JPEG2000PictureSubDescriptor))) )
+      if ( ASDCP_SUCCESS(TestHeader.GetMDObjectByType(OBJ_TYPE_ARGS(RGBAEssenceDescriptor))) )
 	type = ESS_JPEG_2000;
       else
 	{
@@ -544,12 +477,22 @@ ASDCP::KLVReader::ReadKLFromFile(ASDCP::FileReader& Reader)
     {
       m_BERLength = BER_length(m_Key + klv_key_size);
       
+      if ( m_BERLength == 0 )
+	{
+	  char intbuf[IntBufferLen];
+	  ASDCP::DefaultLogSink().Error("KLV format error, zero BER length not allowed at file position %s\n",
+					i64szx((Reader.Tell() - (fpos_t)klv_key_size), 8, intbuf));
+	  return RESULT_FAIL;
+	}
+
       if ( m_BERLength != klv_length_size )
 	{
+
 	  ASDCP::DefaultLogSink().Error("Found packet with BER length %lu; being less efficient...\n",
 					m_BERLength);
 	  // TODO: recover the correct BER value
 	  // and reposition the file pointer
+	  ASDCP::DefaultLogSink().Error("please finish me\n");
 	  assert(0);
 	}
 

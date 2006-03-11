@@ -501,12 +501,8 @@ ASDCP::MPEG2::Parser::h__Parser::ReadFrame(FrameBuffer& FB)
       FB.FrameType(m_ParserDelegate.m_FrameType);
       FB.PlaintextOffset(m_ParserDelegate.m_PlaintextOffset);
       FB.FrameNumber(m_FrameNumber++);
-
-      if ( m_ParserDelegate.m_HasGOP )
-	{
-	  FB.GOPStart(m_ParserDelegate.m_HasGOP);
-	  FB.ClosedGOP(m_ParserDelegate.m_ClosedGOP);
-	}
+      FB.GOPStart(m_ParserDelegate.m_HasGOP);
+      FB.ClosedGOP(m_ParserDelegate.m_ClosedGOP);
     }
 
   return result;

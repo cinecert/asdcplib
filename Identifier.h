@@ -54,13 +54,13 @@ namespace ASDCP
       }
 
       //
-      inline Result_t ReadFrom(ASDCP::MemIOReader& Reader) {
+      inline Result_t Unarchive(ASDCP::MemIOReader& Reader) {
 	Reader.ReadRaw(m_Value, SIZE);
 	return RESULT_OK;
       }
 
       //
-      inline Result_t WriteTo(ASDCP::MemIOWriter& Writer) {
+      inline Result_t Archive(ASDCP::MemIOWriter& Writer) {
 	Writer.WriteRaw(m_Value, SIZE);
 	return RESULT_OK;
       }
@@ -118,6 +118,7 @@ namespace ASDCP
 
   class UL;
   class UUID;
+  class UMID;
 
   // UID - either a UL or a UUID
   class UID : public Identifier<SMPTE_UL_LENGTH>
@@ -130,6 +131,8 @@ namespace ASDCP
       UID(const UID& rhs) {
 	memcpy(m_Value, rhs.m_Value, SMPTE_UL_LENGTH);
       }
+      
+      const UID& operator=(const UMID&);
     };
 
   // Universal Label
@@ -137,6 +140,11 @@ namespace ASDCP
     {
     public:
       UL() {}
+      UL(const byte_t* rhs) {
+	assert(rhs);
+	memcpy(m_Value, rhs, SMPTE_UL_LENGTH);
+      }
+
       UL(const UL& rhs) {
 	memcpy(m_Value, rhs.m_Value, SMPTE_UL_LENGTH);
       }
@@ -145,30 +153,33 @@ namespace ASDCP
 	memcpy(m_Value, rhs.m_Value, SMPTE_UL_LENGTH);
       }
 
-      UL(const byte_t* value) {
-	assert(value);
-	memcpy(m_Value, value, SMPTE_UL_LENGTH);
-      }
-
       bool operator==(const UL& rhs) const {
 	return ( memcmp(m_Value, rhs.m_Value, SMPTE_UL_LENGTH) == 0 ) ? true : false;
       }
     };
 
   // UUID
-  class UUID : public Identifier<SMPTE_UL_LENGTH>
+  class UUID : public Identifier<UUIDlen>
     {
     public:
       UUID() {}
+      UUID(const byte_t* rhs) {
+	assert(rhs);
+	memcpy(m_Value, rhs, UUIDlen);
+      }
+
       UUID(const UUID& rhs) {
-	memcpy(m_Value, rhs.m_Value, SMPTE_UL_LENGTH);
+	memcpy(m_Value, rhs.m_Value, UUIDlen);
       }
-#if 0
+
       UUID(const UID& rhs) {
-	memcpy(m_Value, rhs.m_Value + 8, 8);
-	memcpy(m_Value + 8, rhs.m_Value, 8);
+	memcpy(m_Value, rhs.m_Value, UUIDlen);
       }
-#endif
+      
+      bool operator==(const UID& rhs) const {
+	return ( memcmp(m_Value, rhs.m_Value, UUIDlen) == 0 ) ? true : false;
+      }
+
       void GenRandomValue();
     };
 
@@ -185,9 +196,11 @@ namespace ASDCP
 
       void MakeUMID(int Type, const UUID& ID);
 
-      void SetMaterial(UL& aUL);
+      //      void SetMaterial(UL& aUL);
 
-      void SetInstance(int Instance, int Method = -1);
+      //      void SetInstance(int Instance, int Method = -1);
+
+      const char* ToString(char* str_buf) const;
 
       ui32_t GetInstance(void) const
 	{

@@ -221,7 +221,7 @@ public:
   const char* file_root; // filename pre for files written by the extract mode
   const char* out_file;  // name of mxf file created by create mode
   byte_t key_value[KeyLen];  // value of given encryption key (when key_flag is true)
-  byte_t key_id_value[KeyIDlen];// value of given key ID (when key_id_flag is true)
+  byte_t key_id_value[UUIDlen];// value of given key ID (when key_id_flag is true)
   const char* filenames[MAX_IN_FILES]; // list of filenames to be processed
 
   //
@@ -244,14 +244,15 @@ public:
   CommandOptions(int argc, const char** argv) :
     error_flag(true), info_flag(false), create_flag(false),
     extract_flag(false), genkey_flag(false), genid_flag(false), gop_start_flag(false),
-    key_flag(false), encrypt_header_flag(true), write_hmac(true), read_hmac(false), split_wav(false),
+    key_flag(false), key_id_flag(false), encrypt_header_flag(true),
+    write_hmac(true), read_hmac(false), split_wav(false),
     verbose_flag(false), fb_dump_size(0), showindex_flag(false), showheader_flag(false),
     no_write_flag(false), version_flag(false), help_flag(false), start_frame(0),
     duration(0xffffffff), duration_flag(false), do_repeat(false), picture_rate(24),
     fb_size(FRAME_BUFFER_SIZE), file_count(0), file_root(0), out_file(0)
   {
     memset(key_value, 0, KeyLen);
-    memset(key_id_value, 0, KeyIDlen);
+    memset(key_id_value, 0, UUIDlen);
 
     for ( int i = 1; i < argc; i++ )
       {
@@ -306,11 +307,11 @@ public:
 		TEST_EXTRA_ARG(i, 'j');
 		{
 		  ui32_t length;
-		  hex2bin(argv[i], key_id_value, KeyIDlen, &length);
+		  hex2bin(argv[i], key_id_value, UUIDlen, &length);
 
-		  if ( length != KeyIDlen )
+		  if ( length != UUIDlen )
 		    {
-		      fprintf(stderr, "Unexpected key ID length: %lu, expecting %lu characters.\n", KeyIDlen, length);
+		      fprintf(stderr, "Unexpected key ID length: %lu, expecting %lu characters.\n", UUIDlen, length);
 		      return;
 		    }
 		}
@@ -429,9 +430,9 @@ write_MPEG2_file(CommandOptions& Options)
 	  Info.EncryptedEssence = true;
 
 	  if ( Options.key_id_flag )
-	    memcpy(Info.CryptographicKeyID, Options.key_id_value, KeyIDlen);
+	    memcpy(Info.CryptographicKeyID, Options.key_id_value, UUIDlen);
 	  else
-	    RNG.FillRandom(Info.CryptographicKeyID, KeyIDlen);
+	    RNG.FillRandom(Info.CryptographicKeyID, UUIDlen);
 
 	  Context = new AESEncContext;
 	  result = Context->InitKey(Options.key_value);
@@ -672,9 +673,9 @@ write_JP2K_file(CommandOptions& Options)
 	  Info.EncryptedEssence = true;
 
 	  if ( Options.key_id_flag )
-	    memcpy(Info.CryptographicKeyID, Options.key_id_value, KeyIDlen);
+	    memcpy(Info.CryptographicKeyID, Options.key_id_value, UUIDlen);
 	  else
-	    RNG.FillRandom(Info.CryptographicKeyID, KeyIDlen);
+	    RNG.FillRandom(Info.CryptographicKeyID, UUIDlen);
 
 	  Context = new AESEncContext;
 	  result = Context->InitKey(Options.key_value);
@@ -869,9 +870,9 @@ write_PCM_file(CommandOptions& Options)
 	  Info.EncryptedEssence = true;
 
 	  if ( Options.key_id_flag )
-	    memcpy(Info.CryptographicKeyID, Options.key_id_value, KeyIDlen);
+	    memcpy(Info.CryptographicKeyID, Options.key_id_value, UUIDlen);
 	  else
-	    RNG.FillRandom(Info.CryptographicKeyID, KeyIDlen);
+	    RNG.FillRandom(Info.CryptographicKeyID, UUIDlen);
 
 	  Context = new AESEncContext;
 	  result = Context->InitKey(Options.key_value);
@@ -1252,8 +1253,6 @@ main(int argc, const char** argv)
     }
   else if ( Options.create_flag )
     {
-      fprintf(stderr, "ATTENTION! This version of asdcplib does not support writing MXF files.\n");
-
       if ( Options.do_repeat && ! Options.duration_flag )
 	{
 	  fputs("Option -R requires -d <duration>\n", stderr);

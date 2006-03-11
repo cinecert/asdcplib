@@ -31,10 +31,10 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 #include "Metadata.h"
-#include "MDD.h"
 #include "Mutex.h"
 #include "hex_utils.h"
 
+const ui32_t kl_length = ASDCP::SMPTE_UL_LENGTH + ASDCP::MXF_BER_LENGTH;
 
 //------------------------------------------------------------------------------------------
 
@@ -45,8 +45,10 @@ enum FLT_t
     FLT_IndexTableSegment,
     FLT_Identification,
     FLT_ContentStorage,
+    FLT_EssenceContainerData,
     FLT_MaterialPackage,
     FLT_SourcePackage,
+    FLT_StaticTrack,
     FLT_Track,
     FLT_Sequence,
     FLT_SourceClip,
@@ -59,6 +61,7 @@ enum FLT_t
     FLT_JPEG2000PictureSubDescriptor,
     FLT_CDCIEssenceDescriptor,
     FLT_MPEG2VideoDescriptor,
+    FLT_DMSegment,
     FLT_CryptographicFramework,
     FLT_CryptographicContext,
   };
@@ -103,26 +106,29 @@ ASDCP::MXF::CreateObject(const byte_t* label)
 
   if ( s_FactoryList.empty() )
     {
-      s_FactoryList.insert(FactoryList::value_type(s_MDD_Table[MDDindex_Preface].ul, FLT_Preface));
-      s_FactoryList.insert(FactoryList::value_type(s_MDD_Table[MDDindex_IndexTableSegment].ul, FLT_IndexTableSegment));
-      s_FactoryList.insert(FactoryList::value_type(s_MDD_Table[MDDindex_Identification].ul, FLT_Identification));
-      s_FactoryList.insert(FactoryList::value_type(s_MDD_Table[MDDindex_ContentStorage].ul, FLT_ContentStorage));
-      s_FactoryList.insert(FactoryList::value_type(s_MDD_Table[MDDindex_MaterialPackage].ul, FLT_MaterialPackage));
-      s_FactoryList.insert(FactoryList::value_type(s_MDD_Table[MDDindex_SourcePackage].ul, FLT_SourcePackage));
-      s_FactoryList.insert(FactoryList::value_type(s_MDD_Table[MDDindex_Track].ul, FLT_Track));
-      s_FactoryList.insert(FactoryList::value_type(s_MDD_Table[MDDindex_Sequence].ul, FLT_Sequence));
-      s_FactoryList.insert(FactoryList::value_type(s_MDD_Table[MDDindex_SourceClip].ul, FLT_SourceClip));
-      s_FactoryList.insert(FactoryList::value_type(s_MDD_Table[MDDindex_TimecodeComponent].ul, FLT_TimecodeComponent));
-      s_FactoryList.insert(FactoryList::value_type(s_MDD_Table[MDDindex_FileDescriptor].ul, FLT_FileDescriptor));
-      s_FactoryList.insert(FactoryList::value_type(s_MDD_Table[MDDindex_GenericSoundEssenceDescriptor].ul, FLT_GenericSoundEssenceDescriptor));
-      s_FactoryList.insert(FactoryList::value_type(s_MDD_Table[MDDindex_WaveAudioDescriptor].ul, FLT_WaveAudioDescriptor));
-      s_FactoryList.insert(FactoryList::value_type(s_MDD_Table[MDDindex_GenericPictureEssenceDescriptor].ul, FLT_GenericPictureEssenceDescriptor));
-      s_FactoryList.insert(FactoryList::value_type(s_MDD_Table[MDDindex_RGBAEssenceDescriptor].ul, FLT_RGBAEssenceDescriptor));
-      s_FactoryList.insert(FactoryList::value_type(s_MDD_Table[MDDindex_JPEG2000PictureSubDescriptor].ul, FLT_JPEG2000PictureSubDescriptor));
-      s_FactoryList.insert(FactoryList::value_type(s_MDD_Table[MDDindex_CDCIEssenceDescriptor].ul, FLT_CDCIEssenceDescriptor));
-      s_FactoryList.insert(FactoryList::value_type(s_MDD_Table[MDDindex_MPEG2VideoDescriptor].ul, FLT_MPEG2VideoDescriptor));
-      s_FactoryList.insert(FactoryList::value_type(s_MDD_Table[MDDindex_CryptographicFramework].ul, FLT_CryptographicFramework));
-      s_FactoryList.insert(FactoryList::value_type(s_MDD_Table[MDDindex_CryptographicContext].ul, FLT_CryptographicContext));
+      s_FactoryList.insert(FactoryList::value_type(Dict::ul(MDD_Preface), FLT_Preface));
+      s_FactoryList.insert(FactoryList::value_type(Dict::ul(MDD_IndexTableSegment), FLT_IndexTableSegment));
+      s_FactoryList.insert(FactoryList::value_type(Dict::ul(MDD_Identification), FLT_Identification));
+      s_FactoryList.insert(FactoryList::value_type(Dict::ul(MDD_ContentStorage), FLT_ContentStorage));
+      s_FactoryList.insert(FactoryList::value_type(Dict::ul(MDD_EssenceContainerData), FLT_EssenceContainerData));
+      s_FactoryList.insert(FactoryList::value_type(Dict::ul(MDD_MaterialPackage), FLT_MaterialPackage));
+      s_FactoryList.insert(FactoryList::value_type(Dict::ul(MDD_SourcePackage), FLT_SourcePackage));
+      s_FactoryList.insert(FactoryList::value_type(Dict::ul(MDD_StaticTrack), FLT_StaticTrack));
+      s_FactoryList.insert(FactoryList::value_type(Dict::ul(MDD_Track), FLT_Track));
+      s_FactoryList.insert(FactoryList::value_type(Dict::ul(MDD_Sequence), FLT_Sequence));
+      s_FactoryList.insert(FactoryList::value_type(Dict::ul(MDD_SourceClip), FLT_SourceClip));
+      s_FactoryList.insert(FactoryList::value_type(Dict::ul(MDD_TimecodeComponent), FLT_TimecodeComponent));
+      s_FactoryList.insert(FactoryList::value_type(Dict::ul(MDD_FileDescriptor), FLT_FileDescriptor));
+      s_FactoryList.insert(FactoryList::value_type(Dict::ul(MDD_GenericSoundEssenceDescriptor), FLT_GenericSoundEssenceDescriptor));
+      s_FactoryList.insert(FactoryList::value_type(Dict::ul(MDD_WaveAudioDescriptor), FLT_WaveAudioDescriptor));
+      s_FactoryList.insert(FactoryList::value_type(Dict::ul(MDD_GenericPictureEssenceDescriptor), FLT_GenericPictureEssenceDescriptor));
+      s_FactoryList.insert(FactoryList::value_type(Dict::ul(MDD_RGBAEssenceDescriptor), FLT_RGBAEssenceDescriptor));
+      s_FactoryList.insert(FactoryList::value_type(Dict::ul(MDD_JPEG2000PictureSubDescriptor), FLT_JPEG2000PictureSubDescriptor));
+      s_FactoryList.insert(FactoryList::value_type(Dict::ul(MDD_CDCIEssenceDescriptor), FLT_CDCIEssenceDescriptor));
+      s_FactoryList.insert(FactoryList::value_type(Dict::ul(MDD_MPEG2VideoDescriptor), FLT_MPEG2VideoDescriptor));
+      s_FactoryList.insert(FactoryList::value_type(Dict::ul(MDD_DMSegment), FLT_DMSegment));
+      s_FactoryList.insert(FactoryList::value_type(Dict::ul(MDD_CryptographicFramework), FLT_CryptographicFramework));
+      s_FactoryList.insert(FactoryList::value_type(Dict::ul(MDD_CryptographicContext), FLT_CryptographicContext));
     }
 
   FLi_t i = s_FactoryList.find(label);
@@ -136,8 +142,10 @@ ASDCP::MXF::CreateObject(const byte_t* label)
       case FLT_IndexTableSegment: return new IndexTableSegment;
       case FLT_Identification: return new Identification;
       case FLT_ContentStorage: return new ContentStorage;
+      case FLT_EssenceContainerData: return new EssenceContainerData;
       case FLT_MaterialPackage: return new MaterialPackage;
       case FLT_SourcePackage: return new SourcePackage;
+      case FLT_StaticTrack: return new StaticTrack;
       case FLT_Track: return new Track;
       case FLT_Sequence: return new Sequence;
       case FLT_SourceClip: return new SourceClip;
@@ -150,11 +158,12 @@ ASDCP::MXF::CreateObject(const byte_t* label)
       case FLT_JPEG2000PictureSubDescriptor: return new JPEG2000PictureSubDescriptor;
       case FLT_CDCIEssenceDescriptor: return new CDCIEssenceDescriptor;
       case FLT_MPEG2VideoDescriptor: return new MPEG2VideoDescriptor;
+      case FLT_DMSegment: return new DMSegment;
       case FLT_CryptographicFramework: return new CryptographicFramework;
       case FLT_CryptographicContext: return new CryptographicContext;
     }
-  
-  return new InterchangeObject;
+
+  return 0;
 }
 
 
@@ -174,12 +183,29 @@ ASDCP::MXF::Identification::InitFromTLVSet(TLVReader& TLVSet)
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(Identification, ThisGenerationUID));
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(Identification, CompanyName));
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(Identification, ProductName));
-  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadUi16(OBJ_READ_ARGS(Identification, ProductVersion));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(Identification, ProductVersion));
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(Identification, VersionString));
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(Identification, ProductUID));
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(Identification, ModificationDate));
-  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadUi16(OBJ_READ_ARGS(Identification, ToolkitVersion));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(Identification, ToolkitVersion));
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(Identification, Platform));
+  return result;
+}
+
+//
+ASDCP::Result_t
+ASDCP::MXF::Identification::WriteToTLVSet(TLVWriter& TLVSet)
+{
+  Result_t result = InterchangeObject::WriteToTLVSet(TLVSet);
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(Identification, ThisGenerationUID));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(Identification, CompanyName));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(Identification, ProductName));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(Identification, ProductVersion));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(Identification, VersionString));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(Identification, ProductUID));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(Identification, ModificationDate));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(Identification, ToolkitVersion));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(Identification, Platform));
   return result;
 }
 
@@ -197,11 +223,11 @@ ASDCP::MXF::Identification::Dump(FILE* stream)
   fprintf(stream, "  %22s = %s\n",  "ThisGenerationUID", ThisGenerationUID.ToString(identbuf));
   fprintf(stream, "  %22s = %s\n",  "CompanyName", CompanyName.ToString(identbuf));
   fprintf(stream, "  %22s = %s\n",  "ProductName", ProductName.ToString(identbuf));
-  fprintf(stream, "  %22s = %d\n",  "ProductVersion", ProductVersion);
+  fprintf(stream, "  %22s = %s\n",  "ProductVersion", ProductVersion.ToString(identbuf));
   fprintf(stream, "  %22s = %s\n",  "VersionString", VersionString.ToString(identbuf));
   fprintf(stream, "  %22s = %s\n",  "ProductUID", ProductUID.ToString(identbuf));
   fprintf(stream, "  %22s = %s\n",  "ModificationDate", ModificationDate.ToString(identbuf));
-  fprintf(stream, "  %22s = %d\n",  "ToolkitVersion", ToolkitVersion);
+  fprintf(stream, "  %22s = %s\n",  "ToolkitVersion", ToolkitVersion.ToString(identbuf));
   fprintf(stream, "  %22s = %s\n",  "Platform", Platform.ToString(identbuf));
 }
 
@@ -209,24 +235,16 @@ ASDCP::MXF::Identification::Dump(FILE* stream)
 ASDCP::Result_t
 ASDCP::MXF::Identification::InitFromBuffer(const byte_t* p, ui32_t l)
 {
-  ASDCP_TEST_NULL(p);
-
-  Result_t result = KLVPacket::InitFromBuffer(p, l, s_MDD_Table[MDDindex_Identification].ul);
-
-  if ( ASDCP_SUCCESS(result) )
-    {
-      TLVReader MemRDR(m_ValueStart, m_ValueLength, m_Lookup);
-      result = InitFromTLVSet(MemRDR);
-    }
-
-  return result;
+  m_Typeinfo = &Dict::Type(MDD_Identification);
+  return InterchangeObject::InitFromBuffer(p, l);
 }
 
 //
 ASDCP::Result_t
 ASDCP::MXF::Identification::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 {
-  return WriteKLToBuffer(Buffer, s_MDD_Table[MDDindex_Identification].ul, 0);
+  m_Typeinfo = &Dict::Type(MDD_Identification);
+  return InterchangeObject::WriteToBuffer(Buffer);
 }
 
 //------------------------------------------------------------------------------------------
@@ -243,6 +261,16 @@ ASDCP::MXF::ContentStorage::InitFromTLVSet(TLVReader& TLVSet)
 }
 
 //
+ASDCP::Result_t
+ASDCP::MXF::ContentStorage::WriteToTLVSet(TLVWriter& TLVSet)
+{
+  Result_t result = InterchangeObject::WriteToTLVSet(TLVSet);
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(ContentStorage, Packages));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(ContentStorage, EssenceContainerData));
+  return result;
+}
+
+//
 void
 ASDCP::MXF::ContentStorage::Dump(FILE* stream)
 {
@@ -253,9 +281,9 @@ ASDCP::MXF::ContentStorage::Dump(FILE* stream)
     stream = stderr;
 
   InterchangeObject::Dump(stream);
-  fprintf(stream, "  %s:\n",  "Packages");
+  fprintf(stream, "  %22s:\n",  "Packages");
   Packages.Dump(stream);
-  fprintf(stream, "  %s:\n",  "EssenceContainerData");
+  fprintf(stream, "  %22s:\n",  "EssenceContainerData");
   EssenceContainerData.Dump(stream);
 }
 
@@ -263,24 +291,73 @@ ASDCP::MXF::ContentStorage::Dump(FILE* stream)
 ASDCP::Result_t
 ASDCP::MXF::ContentStorage::InitFromBuffer(const byte_t* p, ui32_t l)
 {
-  ASDCP_TEST_NULL(p);
-
-  Result_t result = KLVPacket::InitFromBuffer(p, l, s_MDD_Table[MDDindex_ContentStorage].ul);
-
-  if ( ASDCP_SUCCESS(result) )
-    {
-      TLVReader MemRDR(m_ValueStart, m_ValueLength, m_Lookup);
-      result = InitFromTLVSet(MemRDR);
-    }
-
-  return result;
+  m_Typeinfo = &Dict::Type(MDD_ContentStorage);
+  return InterchangeObject::InitFromBuffer(p, l);
 }
 
 //
 ASDCP::Result_t
 ASDCP::MXF::ContentStorage::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 {
-  return WriteKLToBuffer(Buffer, s_MDD_Table[MDDindex_ContentStorage].ul, 0);
+  m_Typeinfo = &Dict::Type(MDD_ContentStorage);
+  return InterchangeObject::WriteToBuffer(Buffer);
+}
+
+//------------------------------------------------------------------------------------------
+// EssenceContainerData
+
+//
+ASDCP::Result_t
+ASDCP::MXF::EssenceContainerData::InitFromTLVSet(TLVReader& TLVSet)
+{
+  Result_t result = InterchangeObject::InitFromTLVSet(TLVSet);
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(EssenceContainerData, LinkedPackageUID));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadUi32(OBJ_READ_ARGS(EssenceContainerData, IndexSID));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadUi32(OBJ_READ_ARGS(EssenceContainerData, BodySID));
+  return result;
+}
+
+//
+ASDCP::Result_t
+ASDCP::MXF::EssenceContainerData::WriteToTLVSet(TLVWriter& TLVSet)
+{
+  Result_t result = InterchangeObject::WriteToTLVSet(TLVSet);
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(EssenceContainerData, LinkedPackageUID));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi32(OBJ_WRITE_ARGS(EssenceContainerData, IndexSID));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi32(OBJ_WRITE_ARGS(EssenceContainerData, BodySID));
+  return result;
+}
+
+//
+void
+ASDCP::MXF::EssenceContainerData::Dump(FILE* stream)
+{
+  char identbuf[IdentBufferLen];
+  *identbuf = 0;
+
+  if ( stream == 0 )
+    stream = stderr;
+
+  InterchangeObject::Dump(stream);
+  fprintf(stream, "  %22s = %s\n",  "LinkedPackageUID", LinkedPackageUID.ToString(identbuf));
+  fprintf(stream, "  %22s = %d\n",  "IndexSID", IndexSID);
+  fprintf(stream, "  %22s = %d\n",  "BodySID", BodySID);
+}
+
+//
+ASDCP::Result_t
+ASDCP::MXF::EssenceContainerData::InitFromBuffer(const byte_t* p, ui32_t l)
+{
+  m_Typeinfo = &Dict::Type(MDD_EssenceContainerData);
+  return InterchangeObject::InitFromBuffer(p, l);
+}
+
+//
+ASDCP::Result_t
+ASDCP::MXF::EssenceContainerData::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
+{
+  m_Typeinfo = &Dict::Type(MDD_EssenceContainerData);
+  return InterchangeObject::WriteToBuffer(Buffer);
 }
 
 //------------------------------------------------------------------------------------------
@@ -300,6 +377,19 @@ ASDCP::MXF::GenericPackage::InitFromTLVSet(TLVReader& TLVSet)
 }
 
 //
+ASDCP::Result_t
+ASDCP::MXF::GenericPackage::WriteToTLVSet(TLVWriter& TLVSet)
+{
+  Result_t result = InterchangeObject::WriteToTLVSet(TLVSet);
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(GenericPackage, PackageUID));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(GenericPackage, Name));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(GenericPackage, PackageCreationDate));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(GenericPackage, PackageModifiedDate));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(GenericPackage, Tracks));
+  return result;
+}
+
+//
 void
 ASDCP::MXF::GenericPackage::Dump(FILE* stream)
 {
@@ -314,7 +404,7 @@ ASDCP::MXF::GenericPackage::Dump(FILE* stream)
   fprintf(stream, "  %22s = %s\n",  "Name", Name.ToString(identbuf));
   fprintf(stream, "  %22s = %s\n",  "PackageCreationDate", PackageCreationDate.ToString(identbuf));
   fprintf(stream, "  %22s = %s\n",  "PackageModifiedDate", PackageModifiedDate.ToString(identbuf));
-  fprintf(stream, "  %s:\n",  "Tracks");
+  fprintf(stream, "  %22s:\n",  "Tracks");
   Tracks.Dump(stream);
 }
 
@@ -327,6 +417,14 @@ ASDCP::Result_t
 ASDCP::MXF::MaterialPackage::InitFromTLVSet(TLVReader& TLVSet)
 {
   Result_t result = GenericPackage::InitFromTLVSet(TLVSet);
+  return result;
+}
+
+//
+ASDCP::Result_t
+ASDCP::MXF::MaterialPackage::WriteToTLVSet(TLVWriter& TLVSet)
+{
+  Result_t result = GenericPackage::WriteToTLVSet(TLVSet);
   return result;
 }
 
@@ -347,24 +445,16 @@ ASDCP::MXF::MaterialPackage::Dump(FILE* stream)
 ASDCP::Result_t
 ASDCP::MXF::MaterialPackage::InitFromBuffer(const byte_t* p, ui32_t l)
 {
-  ASDCP_TEST_NULL(p);
-
-  Result_t result = KLVPacket::InitFromBuffer(p, l, s_MDD_Table[MDDindex_MaterialPackage].ul);
-
-  if ( ASDCP_SUCCESS(result) )
-    {
-      TLVReader MemRDR(m_ValueStart, m_ValueLength, m_Lookup);
-      result = InitFromTLVSet(MemRDR);
-    }
-
-  return result;
+  m_Typeinfo = &Dict::Type(MDD_MaterialPackage);
+  return InterchangeObject::InitFromBuffer(p, l);
 }
 
 //
 ASDCP::Result_t
 ASDCP::MXF::MaterialPackage::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 {
-  return WriteKLToBuffer(Buffer, s_MDD_Table[MDDindex_MaterialPackage].ul, 0);
+  m_Typeinfo = &Dict::Type(MDD_MaterialPackage);
+  return InterchangeObject::WriteToBuffer(Buffer);
 }
 
 //------------------------------------------------------------------------------------------
@@ -375,6 +465,16 @@ ASDCP::Result_t
 ASDCP::MXF::SourcePackage::InitFromTLVSet(TLVReader& TLVSet)
 {
   Result_t result = GenericPackage::InitFromTLVSet(TLVSet);
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(SourcePackage, Descriptor));
+  return result;
+}
+
+//
+ASDCP::Result_t
+ASDCP::MXF::SourcePackage::WriteToTLVSet(TLVWriter& TLVSet)
+{
+  Result_t result = GenericPackage::WriteToTLVSet(TLVSet);
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(SourcePackage, Descriptor));
   return result;
 }
 
@@ -389,30 +489,23 @@ ASDCP::MXF::SourcePackage::Dump(FILE* stream)
     stream = stderr;
 
   GenericPackage::Dump(stream);
+  fprintf(stream, "  %22s = %s\n",  "Descriptor", Descriptor.ToString(identbuf));
 }
 
 //
 ASDCP::Result_t
 ASDCP::MXF::SourcePackage::InitFromBuffer(const byte_t* p, ui32_t l)
 {
-  ASDCP_TEST_NULL(p);
-
-  Result_t result = KLVPacket::InitFromBuffer(p, l, s_MDD_Table[MDDindex_SourcePackage].ul);
-
-  if ( ASDCP_SUCCESS(result) )
-    {
-      TLVReader MemRDR(m_ValueStart, m_ValueLength, m_Lookup);
-      result = InitFromTLVSet(MemRDR);
-    }
-
-  return result;
+  m_Typeinfo = &Dict::Type(MDD_SourcePackage);
+  return InterchangeObject::InitFromBuffer(p, l);
 }
 
 //
 ASDCP::Result_t
 ASDCP::MXF::SourcePackage::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 {
-  return WriteKLToBuffer(Buffer, s_MDD_Table[MDDindex_SourcePackage].ul, 0);
+  m_Typeinfo = &Dict::Type(MDD_SourcePackage);
+  return InterchangeObject::WriteToBuffer(Buffer);
 }
 
 //------------------------------------------------------------------------------------------
@@ -427,6 +520,18 @@ ASDCP::MXF::GenericTrack::InitFromTLVSet(TLVReader& TLVSet)
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadUi32(OBJ_READ_ARGS(GenericTrack, TrackNumber));
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(GenericTrack, TrackName));
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(GenericTrack, Sequence));
+  return result;
+}
+
+//
+ASDCP::Result_t
+ASDCP::MXF::GenericTrack::WriteToTLVSet(TLVWriter& TLVSet)
+{
+  Result_t result = InterchangeObject::WriteToTLVSet(TLVSet);
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi32(OBJ_WRITE_ARGS(GenericTrack, TrackID));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi32(OBJ_WRITE_ARGS(GenericTrack, TrackNumber));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(GenericTrack, TrackName));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(GenericTrack, Sequence));
   return result;
 }
 
@@ -449,6 +554,54 @@ ASDCP::MXF::GenericTrack::Dump(FILE* stream)
 
 
 //------------------------------------------------------------------------------------------
+// StaticTrack
+
+//
+ASDCP::Result_t
+ASDCP::MXF::StaticTrack::InitFromTLVSet(TLVReader& TLVSet)
+{
+  Result_t result = GenericTrack::InitFromTLVSet(TLVSet);
+  return result;
+}
+
+//
+ASDCP::Result_t
+ASDCP::MXF::StaticTrack::WriteToTLVSet(TLVWriter& TLVSet)
+{
+  Result_t result = GenericTrack::WriteToTLVSet(TLVSet);
+  return result;
+}
+
+//
+void
+ASDCP::MXF::StaticTrack::Dump(FILE* stream)
+{
+  char identbuf[IdentBufferLen];
+  *identbuf = 0;
+
+  if ( stream == 0 )
+    stream = stderr;
+
+  GenericTrack::Dump(stream);
+}
+
+//
+ASDCP::Result_t
+ASDCP::MXF::StaticTrack::InitFromBuffer(const byte_t* p, ui32_t l)
+{
+  m_Typeinfo = &Dict::Type(MDD_StaticTrack);
+  return InterchangeObject::InitFromBuffer(p, l);
+}
+
+//
+ASDCP::Result_t
+ASDCP::MXF::StaticTrack::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
+{
+  m_Typeinfo = &Dict::Type(MDD_StaticTrack);
+  return InterchangeObject::WriteToBuffer(Buffer);
+}
+
+//------------------------------------------------------------------------------------------
 // Track
 
 //
@@ -458,6 +611,16 @@ ASDCP::MXF::Track::InitFromTLVSet(TLVReader& TLVSet)
   Result_t result = GenericTrack::InitFromTLVSet(TLVSet);
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(Track, EditRate));
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadUi64(OBJ_READ_ARGS(Track, Origin));
+  return result;
+}
+
+//
+ASDCP::Result_t
+ASDCP::MXF::Track::WriteToTLVSet(TLVWriter& TLVSet)
+{
+  Result_t result = GenericTrack::WriteToTLVSet(TLVSet);
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(Track, EditRate));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi64(OBJ_WRITE_ARGS(Track, Origin));
   return result;
 }
 
@@ -480,24 +643,16 @@ ASDCP::MXF::Track::Dump(FILE* stream)
 ASDCP::Result_t
 ASDCP::MXF::Track::InitFromBuffer(const byte_t* p, ui32_t l)
 {
-  ASDCP_TEST_NULL(p);
-
-  Result_t result = KLVPacket::InitFromBuffer(p, l, s_MDD_Table[MDDindex_Track].ul);
-
-  if ( ASDCP_SUCCESS(result) )
-    {
-      TLVReader MemRDR(m_ValueStart, m_ValueLength, m_Lookup);
-      result = InitFromTLVSet(MemRDR);
-    }
-
-  return result;
+  m_Typeinfo = &Dict::Type(MDD_Track);
+  return InterchangeObject::InitFromBuffer(p, l);
 }
 
 //
 ASDCP::Result_t
 ASDCP::MXF::Track::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 {
-  return WriteKLToBuffer(Buffer, s_MDD_Table[MDDindex_Track].ul, 0);
+  m_Typeinfo = &Dict::Type(MDD_Track);
+  return InterchangeObject::WriteToBuffer(Buffer);
 }
 
 //------------------------------------------------------------------------------------------
@@ -510,6 +665,16 @@ ASDCP::MXF::StructuralComponent::InitFromTLVSet(TLVReader& TLVSet)
   Result_t result = InterchangeObject::InitFromTLVSet(TLVSet);
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(StructuralComponent, DataDefinition));
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadUi64(OBJ_READ_ARGS(StructuralComponent, Duration));
+  return result;
+}
+
+//
+ASDCP::Result_t
+ASDCP::MXF::StructuralComponent::WriteToTLVSet(TLVWriter& TLVSet)
+{
+  Result_t result = InterchangeObject::WriteToTLVSet(TLVSet);
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(StructuralComponent, DataDefinition));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi64(OBJ_WRITE_ARGS(StructuralComponent, Duration));
   return result;
 }
 
@@ -542,6 +707,15 @@ ASDCP::MXF::Sequence::InitFromTLVSet(TLVReader& TLVSet)
 }
 
 //
+ASDCP::Result_t
+ASDCP::MXF::Sequence::WriteToTLVSet(TLVWriter& TLVSet)
+{
+  Result_t result = StructuralComponent::WriteToTLVSet(TLVSet);
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(Sequence, StructuralComponents));
+  return result;
+}
+
+//
 void
 ASDCP::MXF::Sequence::Dump(FILE* stream)
 {
@@ -552,7 +726,7 @@ ASDCP::MXF::Sequence::Dump(FILE* stream)
     stream = stderr;
 
   StructuralComponent::Dump(stream);
-  fprintf(stream, "  %s:\n",  "StructuralComponents");
+  fprintf(stream, "  %22s:\n",  "StructuralComponents");
   StructuralComponents.Dump(stream);
 }
 
@@ -560,24 +734,16 @@ ASDCP::MXF::Sequence::Dump(FILE* stream)
 ASDCP::Result_t
 ASDCP::MXF::Sequence::InitFromBuffer(const byte_t* p, ui32_t l)
 {
-  ASDCP_TEST_NULL(p);
-
-  Result_t result = KLVPacket::InitFromBuffer(p, l, s_MDD_Table[MDDindex_Sequence].ul);
-
-  if ( ASDCP_SUCCESS(result) )
-    {
-      TLVReader MemRDR(m_ValueStart, m_ValueLength, m_Lookup);
-      result = InitFromTLVSet(MemRDR);
-    }
-
-  return result;
+  m_Typeinfo = &Dict::Type(MDD_Sequence);
+  return InterchangeObject::InitFromBuffer(p, l);
 }
 
 //
 ASDCP::Result_t
 ASDCP::MXF::Sequence::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 {
-  return WriteKLToBuffer(Buffer, s_MDD_Table[MDDindex_Sequence].ul, 0);
+  m_Typeinfo = &Dict::Type(MDD_Sequence);
+  return InterchangeObject::WriteToBuffer(Buffer);
 }
 
 //------------------------------------------------------------------------------------------
@@ -591,6 +757,17 @@ ASDCP::MXF::SourceClip::InitFromTLVSet(TLVReader& TLVSet)
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadUi64(OBJ_READ_ARGS(SourceClip, StartPosition));
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(SourceClip, SourcePackageID));
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadUi32(OBJ_READ_ARGS(SourceClip, SourceTrackID));
+  return result;
+}
+
+//
+ASDCP::Result_t
+ASDCP::MXF::SourceClip::WriteToTLVSet(TLVWriter& TLVSet)
+{
+  Result_t result = StructuralComponent::WriteToTLVSet(TLVSet);
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi64(OBJ_WRITE_ARGS(SourceClip, StartPosition));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(SourceClip, SourcePackageID));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi32(OBJ_WRITE_ARGS(SourceClip, SourceTrackID));
   return result;
 }
 
@@ -614,24 +791,16 @@ ASDCP::MXF::SourceClip::Dump(FILE* stream)
 ASDCP::Result_t
 ASDCP::MXF::SourceClip::InitFromBuffer(const byte_t* p, ui32_t l)
 {
-  ASDCP_TEST_NULL(p);
-
-  Result_t result = KLVPacket::InitFromBuffer(p, l, s_MDD_Table[MDDindex_SourceClip].ul);
-
-  if ( ASDCP_SUCCESS(result) )
-    {
-      TLVReader MemRDR(m_ValueStart, m_ValueLength, m_Lookup);
-      result = InitFromTLVSet(MemRDR);
-    }
-
-  return result;
+  m_Typeinfo = &Dict::Type(MDD_SourceClip);
+  return InterchangeObject::InitFromBuffer(p, l);
 }
 
 //
 ASDCP::Result_t
 ASDCP::MXF::SourceClip::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 {
-  return WriteKLToBuffer(Buffer, s_MDD_Table[MDDindex_SourceClip].ul, 0);
+  m_Typeinfo = &Dict::Type(MDD_SourceClip);
+  return InterchangeObject::WriteToBuffer(Buffer);
 }
 
 //------------------------------------------------------------------------------------------
@@ -645,6 +814,17 @@ ASDCP::MXF::TimecodeComponent::InitFromTLVSet(TLVReader& TLVSet)
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadUi16(OBJ_READ_ARGS(TimecodeComponent, RoundedTimecodeBase));
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadUi64(OBJ_READ_ARGS(TimecodeComponent, StartTimecode));
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadUi8(OBJ_READ_ARGS(TimecodeComponent, DropFrame));
+  return result;
+}
+
+//
+ASDCP::Result_t
+ASDCP::MXF::TimecodeComponent::WriteToTLVSet(TLVWriter& TLVSet)
+{
+  Result_t result = StructuralComponent::WriteToTLVSet(TLVSet);
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi16(OBJ_WRITE_ARGS(TimecodeComponent, RoundedTimecodeBase));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi64(OBJ_WRITE_ARGS(TimecodeComponent, StartTimecode));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi8(OBJ_WRITE_ARGS(TimecodeComponent, DropFrame));
   return result;
 }
 
@@ -668,24 +848,16 @@ ASDCP::MXF::TimecodeComponent::Dump(FILE* stream)
 ASDCP::Result_t
 ASDCP::MXF::TimecodeComponent::InitFromBuffer(const byte_t* p, ui32_t l)
 {
-  ASDCP_TEST_NULL(p);
-
-  Result_t result = KLVPacket::InitFromBuffer(p, l, s_MDD_Table[MDDindex_TimecodeComponent].ul);
-
-  if ( ASDCP_SUCCESS(result) )
-    {
-      TLVReader MemRDR(m_ValueStart, m_ValueLength, m_Lookup);
-      result = InitFromTLVSet(MemRDR);
-    }
-
-  return result;
+  m_Typeinfo = &Dict::Type(MDD_TimecodeComponent);
+  return InterchangeObject::InitFromBuffer(p, l);
 }
 
 //
 ASDCP::Result_t
 ASDCP::MXF::TimecodeComponent::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 {
-  return WriteKLToBuffer(Buffer, s_MDD_Table[MDDindex_TimecodeComponent].ul, 0);
+  m_Typeinfo = &Dict::Type(MDD_TimecodeComponent);
+  return InterchangeObject::WriteToBuffer(Buffer);
 }
 
 //------------------------------------------------------------------------------------------
@@ -702,6 +874,16 @@ ASDCP::MXF::GenericDescriptor::InitFromTLVSet(TLVReader& TLVSet)
 }
 
 //
+ASDCP::Result_t
+ASDCP::MXF::GenericDescriptor::WriteToTLVSet(TLVWriter& TLVSet)
+{
+  Result_t result = InterchangeObject::WriteToTLVSet(TLVSet);
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(GenericDescriptor, Locators));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(GenericDescriptor, SubDescriptors));
+  return result;
+}
+
+//
 void
 ASDCP::MXF::GenericDescriptor::Dump(FILE* stream)
 {
@@ -712,9 +894,9 @@ ASDCP::MXF::GenericDescriptor::Dump(FILE* stream)
     stream = stderr;
 
   InterchangeObject::Dump(stream);
-  fprintf(stream, "  %s:\n",  "Locators");
+  fprintf(stream, "  %22s:\n",  "Locators");
   Locators.Dump(stream);
-  fprintf(stream, "  %s:\n",  "SubDescriptors");
+  fprintf(stream, "  %22s:\n",  "SubDescriptors");
   SubDescriptors.Dump(stream);
 }
 
@@ -732,6 +914,19 @@ ASDCP::MXF::FileDescriptor::InitFromTLVSet(TLVReader& TLVSet)
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadUi64(OBJ_READ_ARGS(FileDescriptor, ContainerDuration));
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(FileDescriptor, EssenceContainer));
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(FileDescriptor, Codec));
+  return result;
+}
+
+//
+ASDCP::Result_t
+ASDCP::MXF::FileDescriptor::WriteToTLVSet(TLVWriter& TLVSet)
+{
+  Result_t result = GenericDescriptor::WriteToTLVSet(TLVSet);
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi32(OBJ_WRITE_ARGS(FileDescriptor, LinkedTrackID));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(FileDescriptor, SampleRate));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi64(OBJ_WRITE_ARGS(FileDescriptor, ContainerDuration));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(FileDescriptor, EssenceContainer));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(FileDescriptor, Codec));
   return result;
 }
 
@@ -757,24 +952,16 @@ ASDCP::MXF::FileDescriptor::Dump(FILE* stream)
 ASDCP::Result_t
 ASDCP::MXF::FileDescriptor::InitFromBuffer(const byte_t* p, ui32_t l)
 {
-  ASDCP_TEST_NULL(p);
-
-  Result_t result = KLVPacket::InitFromBuffer(p, l, s_MDD_Table[MDDindex_FileDescriptor].ul);
-
-  if ( ASDCP_SUCCESS(result) )
-    {
-      TLVReader MemRDR(m_ValueStart, m_ValueLength, m_Lookup);
-      result = InitFromTLVSet(MemRDR);
-    }
-
-  return result;
+  m_Typeinfo = &Dict::Type(MDD_FileDescriptor);
+  return InterchangeObject::InitFromBuffer(p, l);
 }
 
 //
 ASDCP::Result_t
 ASDCP::MXF::FileDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 {
-  return WriteKLToBuffer(Buffer, s_MDD_Table[MDDindex_FileDescriptor].ul, 0);
+  m_Typeinfo = &Dict::Type(MDD_FileDescriptor);
+  return InterchangeObject::WriteToBuffer(Buffer);
 }
 
 //------------------------------------------------------------------------------------------
@@ -788,11 +975,23 @@ ASDCP::MXF::GenericSoundEssenceDescriptor::InitFromTLVSet(TLVReader& TLVSet)
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(GenericSoundEssenceDescriptor, AudioSamplingRate));
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadUi8(OBJ_READ_ARGS(GenericSoundEssenceDescriptor, Locked));
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadUi8(OBJ_READ_ARGS(GenericSoundEssenceDescriptor, AudioRefLevel));
-  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadUi8(OBJ_READ_ARGS(GenericSoundEssenceDescriptor, ElectroSpatialFormulation));
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadUi32(OBJ_READ_ARGS(GenericSoundEssenceDescriptor, ChannelCount));
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadUi32(OBJ_READ_ARGS(GenericSoundEssenceDescriptor, QuantizationBits));
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadUi8(OBJ_READ_ARGS(GenericSoundEssenceDescriptor, DialNorm));
-  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(GenericSoundEssenceDescriptor, SoundEssenceCompression));
+  return result;
+}
+
+//
+ASDCP::Result_t
+ASDCP::MXF::GenericSoundEssenceDescriptor::WriteToTLVSet(TLVWriter& TLVSet)
+{
+  Result_t result = FileDescriptor::WriteToTLVSet(TLVSet);
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(GenericSoundEssenceDescriptor, AudioSamplingRate));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi8(OBJ_WRITE_ARGS(GenericSoundEssenceDescriptor, Locked));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi8(OBJ_WRITE_ARGS(GenericSoundEssenceDescriptor, AudioRefLevel));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi32(OBJ_WRITE_ARGS(GenericSoundEssenceDescriptor, ChannelCount));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi32(OBJ_WRITE_ARGS(GenericSoundEssenceDescriptor, QuantizationBits));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi8(OBJ_WRITE_ARGS(GenericSoundEssenceDescriptor, DialNorm));
   return result;
 }
 
@@ -810,35 +1009,25 @@ ASDCP::MXF::GenericSoundEssenceDescriptor::Dump(FILE* stream)
   fprintf(stream, "  %22s = %s\n",  "AudioSamplingRate", AudioSamplingRate.ToString(identbuf));
   fprintf(stream, "  %22s = %d\n",  "Locked", Locked);
   fprintf(stream, "  %22s = %d\n",  "AudioRefLevel", AudioRefLevel);
-  fprintf(stream, "  %22s = %d\n",  "ElectroSpatialFormulation", ElectroSpatialFormulation);
   fprintf(stream, "  %22s = %d\n",  "ChannelCount", ChannelCount);
   fprintf(stream, "  %22s = %d\n",  "QuantizationBits", QuantizationBits);
   fprintf(stream, "  %22s = %d\n",  "DialNorm", DialNorm);
-  fprintf(stream, "  %22s = %s\n",  "SoundEssenceCompression", SoundEssenceCompression.ToString(identbuf));
 }
 
 //
 ASDCP::Result_t
 ASDCP::MXF::GenericSoundEssenceDescriptor::InitFromBuffer(const byte_t* p, ui32_t l)
 {
-  ASDCP_TEST_NULL(p);
-
-  Result_t result = KLVPacket::InitFromBuffer(p, l, s_MDD_Table[MDDindex_GenericSoundEssenceDescriptor].ul);
-
-  if ( ASDCP_SUCCESS(result) )
-    {
-      TLVReader MemRDR(m_ValueStart, m_ValueLength, m_Lookup);
-      result = InitFromTLVSet(MemRDR);
-    }
-
-  return result;
+  m_Typeinfo = &Dict::Type(MDD_GenericSoundEssenceDescriptor);
+  return InterchangeObject::InitFromBuffer(p, l);
 }
 
 //
 ASDCP::Result_t
 ASDCP::MXF::GenericSoundEssenceDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 {
-  return WriteKLToBuffer(Buffer, s_MDD_Table[MDDindex_GenericSoundEssenceDescriptor].ul, 0);
+  m_Typeinfo = &Dict::Type(MDD_GenericSoundEssenceDescriptor);
+  return InterchangeObject::WriteToBuffer(Buffer);
 }
 
 //------------------------------------------------------------------------------------------
@@ -852,6 +1041,17 @@ ASDCP::MXF::WaveAudioDescriptor::InitFromTLVSet(TLVReader& TLVSet)
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadUi16(OBJ_READ_ARGS(WaveAudioDescriptor, BlockAlign));
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadUi8(OBJ_READ_ARGS(WaveAudioDescriptor, SequenceOffset));
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadUi32(OBJ_READ_ARGS(WaveAudioDescriptor, AvgBps));
+  return result;
+}
+
+//
+ASDCP::Result_t
+ASDCP::MXF::WaveAudioDescriptor::WriteToTLVSet(TLVWriter& TLVSet)
+{
+  Result_t result = GenericSoundEssenceDescriptor::WriteToTLVSet(TLVSet);
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi16(OBJ_WRITE_ARGS(WaveAudioDescriptor, BlockAlign));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi8(OBJ_WRITE_ARGS(WaveAudioDescriptor, SequenceOffset));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi32(OBJ_WRITE_ARGS(WaveAudioDescriptor, AvgBps));
   return result;
 }
 
@@ -875,24 +1075,16 @@ ASDCP::MXF::WaveAudioDescriptor::Dump(FILE* stream)
 ASDCP::Result_t
 ASDCP::MXF::WaveAudioDescriptor::InitFromBuffer(const byte_t* p, ui32_t l)
 {
-  ASDCP_TEST_NULL(p);
-
-  Result_t result = KLVPacket::InitFromBuffer(p, l, s_MDD_Table[MDDindex_WaveAudioDescriptor].ul);
-
-  if ( ASDCP_SUCCESS(result) )
-    {
-      TLVReader MemRDR(m_ValueStart, m_ValueLength, m_Lookup);
-      result = InitFromTLVSet(MemRDR);
-    }
-
-  return result;
+  m_Typeinfo = &Dict::Type(MDD_WaveAudioDescriptor);
+  return InterchangeObject::InitFromBuffer(p, l);
 }
 
 //
 ASDCP::Result_t
 ASDCP::MXF::WaveAudioDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 {
-  return WriteKLToBuffer(Buffer, s_MDD_Table[MDDindex_WaveAudioDescriptor].ul, 0);
+  m_Typeinfo = &Dict::Type(MDD_WaveAudioDescriptor);
+  return InterchangeObject::WriteToBuffer(Buffer);
 }
 
 //------------------------------------------------------------------------------------------
@@ -906,11 +1098,19 @@ ASDCP::MXF::GenericPictureEssenceDescriptor::InitFromTLVSet(TLVReader& TLVSet)
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadUi8(OBJ_READ_ARGS(GenericPictureEssenceDescriptor, FrameLayout));
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadUi32(OBJ_READ_ARGS(GenericPictureEssenceDescriptor, StoredWidth));
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadUi32(OBJ_READ_ARGS(GenericPictureEssenceDescriptor, StoredHeight));
-  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadUi32(OBJ_READ_ARGS(GenericPictureEssenceDescriptor, DisplayWidth));
-  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadUi32(OBJ_READ_ARGS(GenericPictureEssenceDescriptor, DisplayHeight));
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(GenericPictureEssenceDescriptor, AspectRatio));
-  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(GenericPictureEssenceDescriptor, Gamma));
-  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(GenericPictureEssenceDescriptor, PictureEssenceCoding));
+  return result;
+}
+
+//
+ASDCP::Result_t
+ASDCP::MXF::GenericPictureEssenceDescriptor::WriteToTLVSet(TLVWriter& TLVSet)
+{
+  Result_t result = FileDescriptor::WriteToTLVSet(TLVSet);
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi8(OBJ_WRITE_ARGS(GenericPictureEssenceDescriptor, FrameLayout));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi32(OBJ_WRITE_ARGS(GenericPictureEssenceDescriptor, StoredWidth));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi32(OBJ_WRITE_ARGS(GenericPictureEssenceDescriptor, StoredHeight));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(GenericPictureEssenceDescriptor, AspectRatio));
   return result;
 }
 
@@ -928,35 +1128,23 @@ ASDCP::MXF::GenericPictureEssenceDescriptor::Dump(FILE* stream)
   fprintf(stream, "  %22s = %d\n",  "FrameLayout", FrameLayout);
   fprintf(stream, "  %22s = %d\n",  "StoredWidth", StoredWidth);
   fprintf(stream, "  %22s = %d\n",  "StoredHeight", StoredHeight);
-  fprintf(stream, "  %22s = %d\n",  "DisplayWidth", DisplayWidth);
-  fprintf(stream, "  %22s = %d\n",  "DisplayHeight", DisplayHeight);
   fprintf(stream, "  %22s = %s\n",  "AspectRatio", AspectRatio.ToString(identbuf));
-  fprintf(stream, "  %22s = %s\n",  "Gamma", Gamma.ToString(identbuf));
-  fprintf(stream, "  %22s = %s\n",  "PictureEssenceCoding", PictureEssenceCoding.ToString(identbuf));
 }
 
 //
 ASDCP::Result_t
 ASDCP::MXF::GenericPictureEssenceDescriptor::InitFromBuffer(const byte_t* p, ui32_t l)
 {
-  ASDCP_TEST_NULL(p);
-
-  Result_t result = KLVPacket::InitFromBuffer(p, l, s_MDD_Table[MDDindex_GenericPictureEssenceDescriptor].ul);
-
-  if ( ASDCP_SUCCESS(result) )
-    {
-      TLVReader MemRDR(m_ValueStart, m_ValueLength, m_Lookup);
-      result = InitFromTLVSet(MemRDR);
-    }
-
-  return result;
+  m_Typeinfo = &Dict::Type(MDD_GenericPictureEssenceDescriptor);
+  return InterchangeObject::InitFromBuffer(p, l);
 }
 
 //
 ASDCP::Result_t
 ASDCP::MXF::GenericPictureEssenceDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 {
-  return WriteKLToBuffer(Buffer, s_MDD_Table[MDDindex_GenericPictureEssenceDescriptor].ul, 0);
+  m_Typeinfo = &Dict::Type(MDD_GenericPictureEssenceDescriptor);
+  return InterchangeObject::WriteToBuffer(Buffer);
 }
 
 //------------------------------------------------------------------------------------------
@@ -970,6 +1158,17 @@ ASDCP::MXF::RGBAEssenceDescriptor::InitFromTLVSet(TLVReader& TLVSet)
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadUi32(OBJ_READ_ARGS(RGBAEssenceDescriptor, ComponentMaxRef));
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadUi32(OBJ_READ_ARGS(RGBAEssenceDescriptor, ComponentMinRef));
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(RGBAEssenceDescriptor, PixelLayout));
+  return result;
+}
+
+//
+ASDCP::Result_t
+ASDCP::MXF::RGBAEssenceDescriptor::WriteToTLVSet(TLVWriter& TLVSet)
+{
+  Result_t result = GenericPictureEssenceDescriptor::WriteToTLVSet(TLVSet);
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi32(OBJ_WRITE_ARGS(RGBAEssenceDescriptor, ComponentMaxRef));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi32(OBJ_WRITE_ARGS(RGBAEssenceDescriptor, ComponentMinRef));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(RGBAEssenceDescriptor, PixelLayout));
   return result;
 }
 
@@ -993,24 +1192,16 @@ ASDCP::MXF::RGBAEssenceDescriptor::Dump(FILE* stream)
 ASDCP::Result_t
 ASDCP::MXF::RGBAEssenceDescriptor::InitFromBuffer(const byte_t* p, ui32_t l)
 {
-  ASDCP_TEST_NULL(p);
-
-  Result_t result = KLVPacket::InitFromBuffer(p, l, s_MDD_Table[MDDindex_RGBAEssenceDescriptor].ul);
-
-  if ( ASDCP_SUCCESS(result) )
-    {
-      TLVReader MemRDR(m_ValueStart, m_ValueLength, m_Lookup);
-      result = InitFromTLVSet(MemRDR);
-    }
-
-  return result;
+  m_Typeinfo = &Dict::Type(MDD_RGBAEssenceDescriptor);
+  return InterchangeObject::InitFromBuffer(p, l);
 }
 
 //
 ASDCP::Result_t
 ASDCP::MXF::RGBAEssenceDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 {
-  return WriteKLToBuffer(Buffer, s_MDD_Table[MDDindex_RGBAEssenceDescriptor].ul, 0);
+  m_Typeinfo = &Dict::Type(MDD_RGBAEssenceDescriptor);
+  return InterchangeObject::WriteToBuffer(Buffer);
 }
 
 //------------------------------------------------------------------------------------------
@@ -1034,6 +1225,27 @@ ASDCP::MXF::JPEG2000PictureSubDescriptor::InitFromTLVSet(TLVReader& TLVSet)
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(JPEG2000PictureSubDescriptor, PictureComponentSizing));
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(JPEG2000PictureSubDescriptor, CodingStyleDefault));
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(JPEG2000PictureSubDescriptor, QuantizationDefault));
+  return result;
+}
+
+//
+ASDCP::Result_t
+ASDCP::MXF::JPEG2000PictureSubDescriptor::WriteToTLVSet(TLVWriter& TLVSet)
+{
+  Result_t result = InterchangeObject::WriteToTLVSet(TLVSet);
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi16(OBJ_WRITE_ARGS(JPEG2000PictureSubDescriptor, Rsize));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi32(OBJ_WRITE_ARGS(JPEG2000PictureSubDescriptor, Xsize));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi32(OBJ_WRITE_ARGS(JPEG2000PictureSubDescriptor, Ysize));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi32(OBJ_WRITE_ARGS(JPEG2000PictureSubDescriptor, XOsize));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi32(OBJ_WRITE_ARGS(JPEG2000PictureSubDescriptor, YOsize));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi32(OBJ_WRITE_ARGS(JPEG2000PictureSubDescriptor, XTsize));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi32(OBJ_WRITE_ARGS(JPEG2000PictureSubDescriptor, YTsize));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi32(OBJ_WRITE_ARGS(JPEG2000PictureSubDescriptor, XTOsize));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi32(OBJ_WRITE_ARGS(JPEG2000PictureSubDescriptor, YTOsize));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi16(OBJ_WRITE_ARGS(JPEG2000PictureSubDescriptor, Csize));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(JPEG2000PictureSubDescriptor, PictureComponentSizing));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(JPEG2000PictureSubDescriptor, CodingStyleDefault));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(JPEG2000PictureSubDescriptor, QuantizationDefault));
   return result;
 }
 
@@ -1067,24 +1279,16 @@ ASDCP::MXF::JPEG2000PictureSubDescriptor::Dump(FILE* stream)
 ASDCP::Result_t
 ASDCP::MXF::JPEG2000PictureSubDescriptor::InitFromBuffer(const byte_t* p, ui32_t l)
 {
-  ASDCP_TEST_NULL(p);
-
-  Result_t result = KLVPacket::InitFromBuffer(p, l, s_MDD_Table[MDDindex_JPEG2000PictureSubDescriptor].ul);
-
-  if ( ASDCP_SUCCESS(result) )
-    {
-      TLVReader MemRDR(m_ValueStart, m_ValueLength, m_Lookup);
-      result = InitFromTLVSet(MemRDR);
-    }
-
-  return result;
+  m_Typeinfo = &Dict::Type(MDD_JPEG2000PictureSubDescriptor);
+  return InterchangeObject::InitFromBuffer(p, l);
 }
 
 //
 ASDCP::Result_t
 ASDCP::MXF::JPEG2000PictureSubDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 {
-  return WriteKLToBuffer(Buffer, s_MDD_Table[MDDindex_JPEG2000PictureSubDescriptor].ul, 0);
+  m_Typeinfo = &Dict::Type(MDD_JPEG2000PictureSubDescriptor);
+  return InterchangeObject::WriteToBuffer(Buffer);
 }
 
 //------------------------------------------------------------------------------------------
@@ -1099,10 +1303,18 @@ ASDCP::MXF::CDCIEssenceDescriptor::InitFromTLVSet(TLVReader& TLVSet)
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadUi32(OBJ_READ_ARGS(CDCIEssenceDescriptor, HorizontalSubsampling));
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadUi32(OBJ_READ_ARGS(CDCIEssenceDescriptor, VerticalSubsampling));
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadUi8(OBJ_READ_ARGS(CDCIEssenceDescriptor, ColorSiting));
-  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadUi8(OBJ_READ_ARGS(CDCIEssenceDescriptor, ReversedByteOrder));
-  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadUi32(OBJ_READ_ARGS(CDCIEssenceDescriptor, BlackRefLevel));
-  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadUi32(OBJ_READ_ARGS(CDCIEssenceDescriptor, WhiteReflevel));
-  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadUi32(OBJ_READ_ARGS(CDCIEssenceDescriptor, ColorRange));
+  return result;
+}
+
+//
+ASDCP::Result_t
+ASDCP::MXF::CDCIEssenceDescriptor::WriteToTLVSet(TLVWriter& TLVSet)
+{
+  Result_t result = GenericPictureEssenceDescriptor::WriteToTLVSet(TLVSet);
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi32(OBJ_WRITE_ARGS(CDCIEssenceDescriptor, ComponentDepth));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi32(OBJ_WRITE_ARGS(CDCIEssenceDescriptor, HorizontalSubsampling));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi32(OBJ_WRITE_ARGS(CDCIEssenceDescriptor, VerticalSubsampling));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi8(OBJ_WRITE_ARGS(CDCIEssenceDescriptor, ColorSiting));
   return result;
 }
 
@@ -1121,34 +1333,22 @@ ASDCP::MXF::CDCIEssenceDescriptor::Dump(FILE* stream)
   fprintf(stream, "  %22s = %d\n",  "HorizontalSubsampling", HorizontalSubsampling);
   fprintf(stream, "  %22s = %d\n",  "VerticalSubsampling", VerticalSubsampling);
   fprintf(stream, "  %22s = %d\n",  "ColorSiting", ColorSiting);
-  fprintf(stream, "  %22s = %d\n",  "ReversedByteOrder", ReversedByteOrder);
-  fprintf(stream, "  %22s = %d\n",  "BlackRefLevel", BlackRefLevel);
-  fprintf(stream, "  %22s = %d\n",  "WhiteReflevel", WhiteReflevel);
-  fprintf(stream, "  %22s = %d\n",  "ColorRange", ColorRange);
 }
 
 //
 ASDCP::Result_t
 ASDCP::MXF::CDCIEssenceDescriptor::InitFromBuffer(const byte_t* p, ui32_t l)
 {
-  ASDCP_TEST_NULL(p);
-
-  Result_t result = KLVPacket::InitFromBuffer(p, l, s_MDD_Table[MDDindex_CDCIEssenceDescriptor].ul);
-
-  if ( ASDCP_SUCCESS(result) )
-    {
-      TLVReader MemRDR(m_ValueStart, m_ValueLength, m_Lookup);
-      result = InitFromTLVSet(MemRDR);
-    }
-
-  return result;
+  m_Typeinfo = &Dict::Type(MDD_CDCIEssenceDescriptor);
+  return InterchangeObject::InitFromBuffer(p, l);
 }
 
 //
 ASDCP::Result_t
 ASDCP::MXF::CDCIEssenceDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 {
-  return WriteKLToBuffer(Buffer, s_MDD_Table[MDDindex_CDCIEssenceDescriptor].ul, 0);
+  m_Typeinfo = &Dict::Type(MDD_CDCIEssenceDescriptor);
+  return InterchangeObject::WriteToBuffer(Buffer);
 }
 
 //------------------------------------------------------------------------------------------
@@ -1163,6 +1363,18 @@ ASDCP::MXF::MPEG2VideoDescriptor::InitFromTLVSet(TLVReader& TLVSet)
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadUi8(OBJ_READ_ARGS(MPEG2VideoDescriptor, LowDelay));
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadUi32(OBJ_READ_ARGS(MPEG2VideoDescriptor, BitRate));
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadUi8(OBJ_READ_ARGS(MPEG2VideoDescriptor, ProfileAndLevel));
+  return result;
+}
+
+//
+ASDCP::Result_t
+ASDCP::MXF::MPEG2VideoDescriptor::WriteToTLVSet(TLVWriter& TLVSet)
+{
+  Result_t result = CDCIEssenceDescriptor::WriteToTLVSet(TLVSet);
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi8(OBJ_WRITE_ARGS(MPEG2VideoDescriptor, CodedContentType));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi8(OBJ_WRITE_ARGS(MPEG2VideoDescriptor, LowDelay));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi32(OBJ_WRITE_ARGS(MPEG2VideoDescriptor, BitRate));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi8(OBJ_WRITE_ARGS(MPEG2VideoDescriptor, ProfileAndLevel));
   return result;
 }
 
@@ -1187,24 +1399,73 @@ ASDCP::MXF::MPEG2VideoDescriptor::Dump(FILE* stream)
 ASDCP::Result_t
 ASDCP::MXF::MPEG2VideoDescriptor::InitFromBuffer(const byte_t* p, ui32_t l)
 {
-  ASDCP_TEST_NULL(p);
-
-  Result_t result = KLVPacket::InitFromBuffer(p, l, s_MDD_Table[MDDindex_MPEG2VideoDescriptor].ul);
-
-  if ( ASDCP_SUCCESS(result) )
-    {
-      TLVReader MemRDR(m_ValueStart, m_ValueLength, m_Lookup);
-      result = InitFromTLVSet(MemRDR);
-    }
-
-  return result;
+  m_Typeinfo = &Dict::Type(MDD_MPEG2VideoDescriptor);
+  return InterchangeObject::InitFromBuffer(p, l);
 }
 
 //
 ASDCP::Result_t
 ASDCP::MXF::MPEG2VideoDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 {
-  return WriteKLToBuffer(Buffer, s_MDD_Table[MDDindex_MPEG2VideoDescriptor].ul, 0);
+  m_Typeinfo = &Dict::Type(MDD_MPEG2VideoDescriptor);
+  return InterchangeObject::WriteToBuffer(Buffer);
+}
+
+//------------------------------------------------------------------------------------------
+// DMSegment
+
+//
+ASDCP::Result_t
+ASDCP::MXF::DMSegment::InitFromTLVSet(TLVReader& TLVSet)
+{
+  Result_t result = InterchangeObject::InitFromTLVSet(TLVSet);
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadUi64(OBJ_READ_ARGS(DMSegment, EventStartPosition));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(DMSegment, EventComment));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(DMSegment, DMFramework));
+  return result;
+}
+
+//
+ASDCP::Result_t
+ASDCP::MXF::DMSegment::WriteToTLVSet(TLVWriter& TLVSet)
+{
+  Result_t result = InterchangeObject::WriteToTLVSet(TLVSet);
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi64(OBJ_WRITE_ARGS(DMSegment, EventStartPosition));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(DMSegment, EventComment));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(DMSegment, DMFramework));
+  return result;
+}
+
+//
+void
+ASDCP::MXF::DMSegment::Dump(FILE* stream)
+{
+  char identbuf[IdentBufferLen];
+  *identbuf = 0;
+
+  if ( stream == 0 )
+    stream = stderr;
+
+  InterchangeObject::Dump(stream);
+  fprintf(stream, "  %22s = %s\n",  "EventStartPosition", i64sz(EventStartPosition, identbuf));
+  fprintf(stream, "  %22s = %s\n",  "EventComment", EventComment.ToString(identbuf));
+  fprintf(stream, "  %22s = %s\n",  "DMFramework", DMFramework.ToString(identbuf));
+}
+
+//
+ASDCP::Result_t
+ASDCP::MXF::DMSegment::InitFromBuffer(const byte_t* p, ui32_t l)
+{
+  m_Typeinfo = &Dict::Type(MDD_DMSegment);
+  return InterchangeObject::InitFromBuffer(p, l);
+}
+
+//
+ASDCP::Result_t
+ASDCP::MXF::DMSegment::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
+{
+  m_Typeinfo = &Dict::Type(MDD_DMSegment);
+  return InterchangeObject::WriteToBuffer(Buffer);
 }
 
 //------------------------------------------------------------------------------------------
@@ -1216,6 +1477,15 @@ ASDCP::MXF::CryptographicFramework::InitFromTLVSet(TLVReader& TLVSet)
 {
   Result_t result = InterchangeObject::InitFromTLVSet(TLVSet);
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(CryptographicFramework, ContextSR));
+  return result;
+}
+
+//
+ASDCP::Result_t
+ASDCP::MXF::CryptographicFramework::WriteToTLVSet(TLVWriter& TLVSet)
+{
+  Result_t result = InterchangeObject::WriteToTLVSet(TLVSet);
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(CryptographicFramework, ContextSR));
   return result;
 }
 
@@ -1237,24 +1507,16 @@ ASDCP::MXF::CryptographicFramework::Dump(FILE* stream)
 ASDCP::Result_t
 ASDCP::MXF::CryptographicFramework::InitFromBuffer(const byte_t* p, ui32_t l)
 {
-  ASDCP_TEST_NULL(p);
-
-  Result_t result = KLVPacket::InitFromBuffer(p, l, s_MDD_Table[MDDindex_CryptographicFramework].ul);
-
-  if ( ASDCP_SUCCESS(result) )
-    {
-      TLVReader MemRDR(m_ValueStart, m_ValueLength, m_Lookup);
-      result = InitFromTLVSet(MemRDR);
-    }
-
-  return result;
+  m_Typeinfo = &Dict::Type(MDD_CryptographicFramework);
+  return InterchangeObject::InitFromBuffer(p, l);
 }
 
 //
 ASDCP::Result_t
 ASDCP::MXF::CryptographicFramework::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 {
-  return WriteKLToBuffer(Buffer, s_MDD_Table[MDDindex_CryptographicFramework].ul, 0);
+  m_Typeinfo = &Dict::Type(MDD_CryptographicFramework);
+  return InterchangeObject::WriteToBuffer(Buffer);
 }
 
 //------------------------------------------------------------------------------------------
@@ -1270,6 +1532,19 @@ ASDCP::MXF::CryptographicContext::InitFromTLVSet(TLVReader& TLVSet)
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(CryptographicContext, CipherAlgorithm));
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(CryptographicContext, MICAlgorithm));
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(CryptographicContext, CryptographicKeyID));
+  return result;
+}
+
+//
+ASDCP::Result_t
+ASDCP::MXF::CryptographicContext::WriteToTLVSet(TLVWriter& TLVSet)
+{
+  Result_t result = InterchangeObject::WriteToTLVSet(TLVSet);
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(CryptographicContext, ContextID));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(CryptographicContext, SourceEssenceContainer));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(CryptographicContext, CipherAlgorithm));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(CryptographicContext, MICAlgorithm));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(CryptographicContext, CryptographicKeyID));
   return result;
 }
 
@@ -1295,24 +1570,16 @@ ASDCP::MXF::CryptographicContext::Dump(FILE* stream)
 ASDCP::Result_t
 ASDCP::MXF::CryptographicContext::InitFromBuffer(const byte_t* p, ui32_t l)
 {
-  ASDCP_TEST_NULL(p);
-
-  Result_t result = KLVPacket::InitFromBuffer(p, l, s_MDD_Table[MDDindex_CryptographicContext].ul);
-
-  if ( ASDCP_SUCCESS(result) )
-    {
-      TLVReader MemRDR(m_ValueStart, m_ValueLength, m_Lookup);
-      result = InitFromTLVSet(MemRDR);
-    }
-
-  return result;
+  m_Typeinfo = &Dict::Type(MDD_CryptographicContext);
+  return InterchangeObject::InitFromBuffer(p, l);
 }
 
 //
 ASDCP::Result_t
 ASDCP::MXF::CryptographicContext::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 {
-  return WriteKLToBuffer(Buffer, s_MDD_Table[MDDindex_CryptographicContext].ul, 0);
+  m_Typeinfo = &Dict::Type(MDD_CryptographicContext);
+  return InterchangeObject::WriteToBuffer(Buffer);
 }
 
 //

@@ -43,6 +43,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define VC_EXTRALEAN
 #include <windows.h>
 #pragma warning(disable:4786)			// Ignore "identifer > 255 characters" warning
+#define snprintf _snprintf
 
 #ifndef ASDCP_NO_BASE_TYPES
 typedef unsigned __int64   ui64_t;

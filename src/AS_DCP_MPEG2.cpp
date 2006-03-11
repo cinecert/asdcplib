@@ -30,7 +30,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include "AS_DCP_internal.h"
-#include "MDD.h"
 
 
 //------------------------------------------------------------------------------------------
@@ -57,7 +56,7 @@ ASDCP::MD_to_MPEG2_VDesc(MXF::MPEG2VideoDescriptor* VDescObj, MPEG2::VideoDescri
   VDesc.ColorSiting            = VDescObj->ColorSiting;
   VDesc.CodedContentType       = VDescObj->CodedContentType;
 
-  VDesc.LowDelay               = VDescObj->LowDelay;
+  VDesc.LowDelay               = VDescObj->LowDelay == 0 ? false : true;
   VDesc.BitRate                = VDescObj->BitRate;
   VDesc.ProfileAndLevel        = VDescObj->ProfileAndLevel;
   return RESULT_OK;
@@ -66,8 +65,28 @@ ASDCP::MD_to_MPEG2_VDesc(MXF::MPEG2VideoDescriptor* VDescObj, MPEG2::VideoDescri
 
 //
 ASDCP::Result_t
-ASDCP::MPEG2_VDesc_to_MD(MPEG2::VideoDescriptor&, MXF::MPEG2VideoDescriptor*)
+ASDCP::MPEG2_VDesc_to_MD(MPEG2::VideoDescriptor& VDesc, MXF::MPEG2VideoDescriptor* VDescObj)
 {
+  ASDCP_TEST_NULL(VDescObj);
+
+  VDescObj->SampleRate = VDesc.SampleRate;
+  VDescObj->SampleRate.Numerator = VDesc.FrameRate;
+  VDescObj->ContainerDuration = VDesc.ContainerDuration;
+
+  VDescObj->FrameLayout = VDesc.FrameLayout;
+  VDescObj->StoredWidth = VDesc.StoredWidth;
+  VDescObj->StoredHeight = VDesc.StoredHeight;
+  VDescObj->AspectRatio = VDesc.AspectRatio;
+
+  VDescObj->ComponentDepth = VDesc.ComponentDepth;
+  VDescObj->HorizontalSubsampling = VDesc.HorizontalSubsampling;
+  VDescObj->VerticalSubsampling = VDesc.VerticalSubsampling;
+  VDescObj->ColorSiting = VDesc.ColorSiting;
+  VDescObj->CodedContentType = VDesc.CodedContentType;
+
+  VDescObj->LowDelay = VDesc.LowDelay ? 1 : 0;
+  VDescObj->BitRate = VDesc.BitRate;
+  VDescObj->ProfileAndLevel = VDesc.ProfileAndLevel;
   return RESULT_OK;
 }
 
@@ -390,7 +409,7 @@ ASDCP::MPEG2::MXFWriter::h__Writer::OpenWrite(const char* filename, ui32_t Heade
 
   if ( ASDCP_SUCCESS(result) )
     {
-      //      m_EssenceDescriptor = new MDObject("MPEG2VideoDescriptor");
+      m_EssenceDescriptor = new MPEG2VideoDescriptor;
       result = m_State.Goto_INIT();
     }
 
@@ -405,10 +424,12 @@ ASDCP::MPEG2::MXFWriter::h__Writer::SetSourceStream(const VideoDescriptor& VDesc
     return RESULT_STATE;
 
   m_VDesc = VDesc;
-  Result_t result = RESULT_OK; // MPEG2_VDesc_to_MD(m_VDesc, *m_EssenceDescriptor);
+  Result_t result = MPEG2_VDesc_to_MD(m_VDesc, (MPEG2VideoDescriptor*)m_EssenceDescriptor);
 
   if ( ASDCP_SUCCESS(result) )
-    result = WriteMXFHeader(ESS_MPEG2_VES, m_VDesc.EditRate, 24 /* TCFrameRate */);
+      result = WriteMXFHeader(MPEG_PACKAGE_LABEL,
+			      UL(WrappingUL_Data_MPEG2_VES),
+			      m_VDesc.EditRate, 24 /* TCFrameRate */);
 
   if ( ASDCP_SUCCESS(result) )
     result = m_State.Goto_READY();
@@ -430,7 +451,7 @@ ASDCP::MPEG2::MXFWriter::h__Writer::WriteFrame(const FrameBuffer& FrameBuf, AESE
   if ( m_State.Test_READY() )
     result = m_State.Goto_RUNNING(); // first time through, get the body location
 
-  ui64_t ThisOffset = m_StreamOffset;
+  ui64_t ThisOffset = m_File.Tell();
 
   if ( ASDCP_SUCCESS(result) )
     result = WriteEKLVPacket(FrameBuf, MPEGEssenceUL_Data, Ctx, HMAC);
@@ -458,12 +479,12 @@ ASDCP::MPEG2::MXFWriter::h__Writer::WriteFrame(const FrameBuffer& FrameBuf, AESE
     }
 
   // update the index manager
-#if 0
-  m_IndexMan->OfferEditUnit(0, m_FramesWritten, m_GOPOffset, Flags);
-  m_IndexMan->OfferTemporalOffset(m_FramesWritten, m_GOPOffset - FrameBuf.TemporalOffset());
-  m_IndexMan->OfferOffset(0, m_FramesWritten, ThisOffset);
-#endif
-
+  IndexTableSegment::IndexEntry Entry;
+  Entry.TemporalOffset = - FrameBuf.TemporalOffset();
+  Entry.KeyFrameOffset = m_GOPOffset;
+  Entry.Flags = Flags;
+  Entry.StreamOffset = ThisOffset - m_FooterPart.m_ECOffset;
+  m_FooterPart.PushIndexEntry(Entry);
   m_FramesWritten++;
   m_GOPOffset++;
 
@@ -481,7 +502,7 @@ ASDCP::MPEG2::MXFWriter::h__Writer::Finalize()
 
   m_State.Goto_FINAL();
 
-  return WriteMXFFooter(ESS_MPEG2_VES);
+  return WriteMXFFooter();
 }
 
 

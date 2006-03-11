@@ -84,7 +84,7 @@ main(int argc, char** argv)
 	result = Header.InitFromFile(Reader);
 
       //      if ( ASDCP_SUCCESS(result) )
-      Header.Dump();
+      Header.Dump(stdout);
 
       if ( ASDCP_SUCCESS(result) )
 	{
@@ -98,7 +98,7 @@ main(int argc, char** argv)
 	    }
 
 	  if ( ASDCP_SUCCESS(result) )
-	    Index.Dump();
+	    Index.Dump(stdout);
 	}
     }
   else if ( rewrite_mxf )
@@ -148,7 +148,7 @@ main(int argc, char** argv)
 
       while ( ASDCP_SUCCESS(result) )
 	{
-	  KP.Dump(stderr, true);
+	  KP.Dump(stdout, true);
 	  result = KP.InitFromFile(Reader);
 	}
 
@@ -156,7 +156,7 @@ main(int argc, char** argv)
 	result = RESULT_OK;
     }
 
-  if ( result != RESULT_OK )
+  if ( ASDCP_FAILURE(result) )
     {
       fputs("Program stopped on error.\n", stderr);
 
@@ -176,13 +176,3 @@ main(int argc, char** argv)
 //
 // end klvwalk.cpp
 //
-
-
-
-
-
-
-
-
-
-

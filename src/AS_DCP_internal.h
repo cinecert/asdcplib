@@ -172,7 +172,6 @@ namespace ASDCP
   Result_t MPEG2_VDesc_to_MD(MPEG2::VideoDescriptor&, MXF::MPEG2VideoDescriptor*);
   Result_t JP2K_PDesc_to_MD(JP2K::PictureDescriptor&, MXF::RGBAEssenceDescriptor*);
   Result_t PCM_ADesc_to_MD(PCM::AudioDescriptor&, MXF::WaveAudioDescriptor*);
-  //  void AddDMScrypt(PackagePtr, WriterInfo&, const byte_t*);
   Result_t EncryptFrameBuffer(const ASDCP::FrameBuffer&, ASDCP::FrameBuffer&, AESEncContext*);
   Result_t DecryptFrameBuffer(const ASDCP::FrameBuffer&, ASDCP::FrameBuffer&, AESDecContext*);
 
@@ -199,6 +198,7 @@ namespace ASDCP
       ui64_t             m_EssenceStart;
       WriterInfo         m_Info;
       ASDCP::FrameBuffer m_CtFrameBuf;
+      fpos_t             m_LastPosition;
 
       h__Reader();
       virtual ~h__Reader();
@@ -257,43 +257,35 @@ namespace ASDCP
       OPAtomHeader       m_HeaderPart;
       Partition          m_BodyPart;
       OPAtomIndexFooter  m_FooterPart;
-
-#if 0
       ui64_t             m_EssenceStart;
-      WriterInfo         m_Info;
+
+      MaterialPackage*   m_MaterialPackage;
+      TimecodeComponent* m_MPTimecode;
+      SourceClip*        m_MPClip;			//! Material Package SourceClip for each essence stream 
+
+      SourcePackage*     m_FilePackage;
+      TimecodeComponent* m_FPTimecode;
+      SourceClip*        m_FPClip;			//! File Package SourceClip for each essence stream 
+
+      FileDescriptor*    m_EssenceDescriptor;
+
+      ui32_t             m_FramesWritten;
+      ui64_t             m_StreamOffset;
       ASDCP::FrameBuffer m_CtFrameBuf;
-
-      mem_ptr<MXFFile> m_File;
-      mem_ptr<Metadata>     m_Metadata;
-      mem_ptr<Package>      m_FilePackage;
-      mem_ptr<Partition>    m_HeaderPart;
-      mem_ptr<MDObject>     m_EssenceDescriptor;
-      mem_ptr<Package>      m_MaterialPackage;
-      mem_ptr<Track>        m_MPTrack;			//! Material Package track for each essence stream
-      mem_ptr<Track>        m_FPTrack;			//! File Package track for each essence stream
-      mem_ptr<TimecodeComponent> m_MPTimecode;
-      mem_ptr<TimecodeComponent> m_FPTimecode;
-      mem_ptr<IndexManager> m_IndexMan;
-      SourceClip*           m_MPClip;			//! Material Package SourceClip for each essence stream 
-      SourceClip*           m_FPClip;			//! File Package SourceClip for each essence stream 
-#endif
-
-      i32_t                 m_EssenceID;		//! Essence stream ID for each essence stream
-      ui32_t                m_FramesWritten;
-      ui64_t                m_StreamOffset;
-      ASDCP::FrameBuffer    m_CtFrameBuf;
-      h__WriterState        m_State;
-      WriterInfo            m_Info;
-      FrameBuffer           m_CryptFrameBuf;
+      h__WriterState     m_State;
+      WriterInfo         m_Info;
 
       h__Writer();
       virtual ~h__Writer();
 
-      Result_t WriteMXFHeader(EssenceType_t EssenceType, Rational& EditRate,
+      Result_t WriteMXFHeader(const std::string& PackageLabel, const UL& WrappingUL,
+			      const MXF::Rational& EditRate,
 			      ui32_t TCFrameRate, ui32_t BytesPerEditUnit = 0);
+
       Result_t WriteEKLVPacket(const ASDCP::FrameBuffer& FrameBuf,
 			       const byte_t* EssenceUL, AESEncContext* Ctx, HMACContext* HMAC);
-      Result_t WriteMXFFooter(EssenceType_t EssenceType);
+
+      Result_t WriteMXFFooter();
 
    };
 

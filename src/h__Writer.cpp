@@ -33,14 +33,19 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "MemIO.h"
 #include "Timecode.h"
 #include "KLV.h"
-#include "MDD.h"
-#include <assert.h>
 
 using namespace ASDCP;
 using namespace ASDCP::MXF;
 
+// a magic number identifying asdcplib
+#ifndef WM_BUILD_NUMBER
+#define WM_BUILD_NUMBER 0x4A48
+#endif
 
-ASDCP::h__Writer::h__Writer() : m_FramesWritten(0), m_StreamOffset(0)
+
+
+//
+ASDCP::h__Writer::h__Writer() : m_EssenceDescriptor(0), m_FramesWritten(0), m_StreamOffset(0)
 {
 }
 
@@ -48,200 +53,264 @@ ASDCP::h__Writer::~h__Writer()
 {
 }
 
-// standard method of writing the header of a new MXF file
-Result_t
-ASDCP::h__Writer::WriteMXFHeader(EssenceType_t EssenceType, ASDCP::Rational& EditRate,
-			  ui32_t TCFrameRate, ui32_t BytesPerEditUnit)
+
+const byte_t PictDD_Data[SMPTE_UL_LENGTH] = {
+  0x06, 0x0e, 0x2b, 0x34, 0x04, 0x01, 0x01, 0x01,
+  0x01, 0x03, 0x02, 0x02, 0x01, 0x00, 0x00, 0x00 };
+
+const byte_t SoundDD_Data[SMPTE_UL_LENGTH] = {
+  0x06, 0x0e, 0x2b, 0x34, 0x04, 0x01, 0x01, 0x01,
+  0x01, 0x03, 0x02, 0x02, 0x02, 0x00, 0x00, 0x00 };
+
+const byte_t TCDD_Data[SMPTE_UL_LENGTH] = {
+  0x06, 0x0e, 0x2b, 0x34, 0x04, 0x01, 0x01, 0x01,
+  0x01, 0x03, 0x02, 0x01, 0x01, 0x00, 0x00, 0x00 };
+
+const byte_t DMDD_Data[SMPTE_UL_LENGTH] = {
+  0x06, 0x0e, 0x2b, 0x34, 0x04, 0x01, 0x01, 0x01,
+  0x01, 0x03, 0x02, 0x01, 0x10, 0x00, 0x00, 0x00 };
+
+
+//
+// add DMS CryptographicFramework entry to source package
+void
+AddDMScrypt(Partition& HeaderPart, SourcePackage& Package, WriterInfo& Descr, const UL& WrappingUL)
 {
-#if 0
-  // write the stream metadata
-  m_Metadata = new Metadata();
-  assert(m_Metadata);
-  assert(m_Metadata->m_Object);
+  // Essence Track
+  StaticTrack* NewTrack = new StaticTrack;
+  HeaderPart.AddChildObject(NewTrack);
+  Package.Tracks.push_back(NewTrack->InstanceUID);
+  NewTrack->TrackName = "Descriptive Track";
+  NewTrack->TrackID = 3;
 
-  if ( m_Info.EncryptedEssence )
-    {
-      UL DMSUL(CryptoFrameworkUL_Data);
-      m_Metadata->AddDMScheme(DMSUL);
-    }
+  Sequence* Seq = new Sequence;
+  HeaderPart.AddChildObject(Seq);
+  NewTrack->Sequence = Seq->InstanceUID;
+  Seq->DataDefinition = UL(DMDD_Data);
 
-  // Set the OP label
-  // If we are writing OP-Atom we write the header as OP1a initially as another process
-  // may try to read the file before it is complete and then it will NOT be a valid OP-Atom file
-  m_Metadata->SetOP(OP1aUL);
+  DMSegment* Segment = new DMSegment;
+  HeaderPart.AddChildObject(Segment);
+  Seq->StructuralComponents.push_back(Segment->InstanceUID);
+  Segment->EventComment = "AS-DCP KLV Encryption";
+  
+  CryptographicFramework* CFW = new CryptographicFramework;
+  HeaderPart.AddChildObject(CFW);
+  Segment->DMFramework = CFW->InstanceUID;
 
-  // Build the Material Package
-  // DRAGONS: We should really try and determine the UMID type rather than cop-out!
+  CryptographicContext* Context = new CryptographicContext;
+  HeaderPart.AddChildObject(Context);
+  CFW->ContextSR = Context->InstanceUID;
+
+  Context->ContextID.Set(Descr.ContextID);
+  Context->SourceEssenceContainer = WrappingUL; // ??????
+  Context->CipherAlgorithm.Set(CipherAlgorithm_AES);
+  Context->MICAlgorithm.Set( Descr.UsesHMAC ? MICAlgorithm_HMAC_SHA1 : MICAlgorithm_NONE );
+  Context->CryptographicKeyID.Set(Descr.CryptographicKeyID);
+}
+
+//
+Result_t
+ASDCP::h__Writer::WriteMXFHeader(const std::string& PackageLabel, const UL& WrappingUL,
+				 const MXF::Rational& EditRate,
+				 ui32_t TCFrameRate, ui32_t BytesPerEditUnit)
+{
+  ASDCP_TEST_NULL(m_EssenceDescriptor);
+
+  m_HeaderPart.m_Primer.ClearTagList();
+  m_HeaderPart.m_Preface = new Preface;
+  m_HeaderPart.AddChildObject(m_HeaderPart.m_Preface);
+
+  // Set the Operational Pattern label -- we're just starting and have no RIP or index,
+  // so we tell the world by using OP1a
+  m_HeaderPart.m_Preface->OperationalPattern = UL(OP1aUL);
+  m_HeaderPart.OperationalPattern = m_HeaderPart.m_Preface->OperationalPattern;
+  m_HeaderPart.m_RIP.PairArray.push_back(RIP::Pair(1, 0)); // First RIP Entry
+
+  //
+  // Identification
+  //
+  Identification* Ident = new Identification;
+  m_HeaderPart.AddChildObject(Ident);
+  m_HeaderPart.m_Preface->Identifications.push_back(Ident->InstanceUID);
+
+  Ident->ThisGenerationUID.GenRandomValue();
+  Ident->CompanyName = m_Info.CompanyName.c_str();
+  Ident->ProductName = m_Info.ProductName.c_str();
+  Ident->VersionString = m_Info.ProductVersion.c_str();
+  Ident->ProductUID.Set(m_Info.ProductUUID);
+  // Ident->Platform = WM_PLATFORM;
+  Ident->ToolkitVersion.Release = VersionType::RL_DEVELOPMENT;
+  Ident->ToolkitVersion.Major = VERSION_MAJOR;
+  Ident->ToolkitVersion.Minor = VERSION_APIMINOR;
+  Ident->ToolkitVersion.Patch = VERSION_IMPMINOR;
+  Ident->ToolkitVersion.Build = WM_BUILD_NUMBER;
+
+  //
+  ContentStorage* Storage = new ContentStorage;
+  m_HeaderPart.AddChildObject(Storage);
+  m_HeaderPart.m_Preface->ContentStorage = Storage->InstanceUID;
+
+  EssenceContainerData* ECD = new EssenceContainerData;
+  m_HeaderPart.AddChildObject(ECD);
+  Storage->EssenceContainerData.push_back(ECD->InstanceUID);
+  ECD->IndexSID = 129;
+  ECD->BodySID = 1;
+
+  //
+  // Material Package
+  //
   UMID PackageUMID;
-  PackageUMID.MakeUMID(0x0d); // mixed type
+  PackageUMID.MakeUMID(0x0d); // Using mixed type. What is the actual type?
 
-  m_MaterialPackage = m_Metadata->AddMaterialPackage("AS-DCP Material Package", PackageUMID);
-  m_Metadata->SetPrimaryPackage(m_MaterialPackage);	// This will be overwritten for OP-Atom
-  
-  TrackPtr MPTimecodeTrack = m_MaterialPackage->AddTimecodeTrack(EditRate);
-  m_MPTimecode = MPTimecodeTrack->AddTimecodeComponent(TCFrameRate, 0, 0);
+  m_MaterialPackage = new MaterialPackage;
+  m_MaterialPackage->Name = "AS-DCP Material Package";
+  m_MaterialPackage->PackageUID = PackageUMID;
 
-  TrackPtr FPTimecodeTrack = 0;
-  mxflib::UUID assetUUID(m_Info.AssetUUID);
+  m_HeaderPart.AddChildObject(m_MaterialPackage);
+  Storage->Packages.push_back(m_MaterialPackage->InstanceUID);
 
-  UMID EssenceUMID;
-  
-  switch ( EssenceType )
-    {
-    case ESS_MPEG2_VES:
-      PackageUMID.MakeUMID(0x0f, assetUUID);
-      m_FilePackage = m_Metadata->AddFilePackage(1, MPEG_PACKAGE_LABEL, PackageUMID);
-      m_MPTrack = m_MaterialPackage->AddPictureTrack(EditRate);
-      m_FPTrack = m_FilePackage->AddPictureTrack(0, EditRate);
-      break;
-	  
-    case ESS_JPEG_2000:
-      PackageUMID.MakeUMID(0x0f, assetUUID);
-      m_FilePackage = m_Metadata->AddFilePackage(1, JP2K_PACKAGE_LABEL, PackageUMID);
-      m_MPTrack = m_MaterialPackage->AddPictureTrack(EditRate);
-      m_FPTrack = m_FilePackage->AddPictureTrack(0, EditRate);
-      break;
-	  
-    case ESS_PCM_24b_48k:
-      PackageUMID.MakeUMID(0x0f, assetUUID);
-      m_FilePackage = m_Metadata->AddFilePackage(1, PCM_PACKAGE_LABEL, PackageUMID);
-      m_MPTrack = m_MaterialPackage->AddSoundTrack(EditRate);
-      m_FPTrack = m_FilePackage->AddSoundTrack(0, EditRate);
-      break;
+  // Timecode Track
+  Track* NewTrack = new Track;
+  m_HeaderPart.AddChildObject(NewTrack);
+  NewTrack->EditRate = EditRate;
+  m_MaterialPackage->Tracks.push_back(NewTrack->InstanceUID);
+  NewTrack->TrackID = 1;
+  NewTrack->TrackName = "Timecode Track";
 
-    default: return RESULT_RAW_ESS;
-    }
+  Sequence* Seq = new Sequence;
+  m_HeaderPart.AddChildObject(Seq);
+  NewTrack->Sequence = Seq->InstanceUID;
+  Seq->DataDefinition = UL(TCDD_Data);
 
-  // Add an essence element
-  FPTimecodeTrack = m_FilePackage->AddTimecodeTrack(EditRate);
-  m_FPTimecode = FPTimecodeTrack->AddTimecodeComponent(TCFrameRate, 0/* NDF */,
-						       tc_to_frames(TCFrameRate, 1, 0, 0, 0) );
-  
-  // Add a single Component to this Track of the Material Package
-  m_MPClip = m_MPTrack->AddSourceClip();
-  
-  // Add a single Component to this Track of the File Package
-  m_FPClip = m_FPTrack->AddSourceClip();
-  const byte_t* SourceEssenceContainerLabel = 0;
+  m_MPTimecode = new TimecodeComponent;
+  m_HeaderPart.AddChildObject(m_MPTimecode);
+  Seq->StructuralComponents.push_back(m_MPTimecode->InstanceUID);
+  m_MPTimecode->RoundedTimecodeBase = TCFrameRate;
+  m_MPTimecode->StartTimecode = ui64_C(0);
+  m_MPTimecode->DataDefinition = UL(TCDD_Data);
 
-  // Frame wrapping
+  // Essence Track
+  NewTrack = new Track;
+  m_HeaderPart.AddChildObject(NewTrack);
+  NewTrack->EditRate = EditRate;
+  m_MaterialPackage->Tracks.push_back(NewTrack->InstanceUID);
+  NewTrack->TrackID = 2;
+  NewTrack->TrackName = "Essence Track";
+
+  Seq = new Sequence;
+  m_HeaderPart.AddChildObject(Seq);
+  NewTrack->Sequence = Seq->InstanceUID;
+
+  m_MPClip = new SourceClip;
+  m_HeaderPart.AddChildObject(m_MPClip);
+  Seq->StructuralComponents.push_back(m_MPClip->InstanceUID);
+
+  //
+  // File (Source) Package
+  //
+  UUID assetUUID(m_Info.AssetUUID);
+  PackageUMID.MakeUMID(0x0f, assetUUID);
+
+  m_FilePackage = new SourcePackage;
+  m_FilePackage->Name = PackageLabel.c_str();
+  m_FilePackage->PackageUID = PackageUMID;
+  ECD->LinkedPackageUID = PackageUMID;
+  m_MPClip->SourcePackageID = PackageUMID;
+  m_MPClip->SourceTrackID = 1;
+
+  m_HeaderPart.AddChildObject(m_FilePackage);
+  Storage->Packages.push_back(m_FilePackage->InstanceUID);
+
+  // Timecode Track
+  NewTrack = new Track;
+  m_HeaderPart.AddChildObject(NewTrack);
+  NewTrack->EditRate = EditRate;
+  m_FilePackage->Tracks.push_back(NewTrack->InstanceUID);
+  NewTrack->TrackID = 1;
+  NewTrack->TrackName = "Timecode Track";
+
+  Seq = new Sequence;
+  m_HeaderPart.AddChildObject(Seq);
+  NewTrack->Sequence = Seq->InstanceUID;
+  Seq->DataDefinition = UL(TCDD_Data);
+
+  m_FPTimecode = new TimecodeComponent;
+  m_HeaderPart.AddChildObject(m_FPTimecode);
+  Seq->StructuralComponents.push_back(m_FPTimecode->InstanceUID);
+  m_FPTimecode->RoundedTimecodeBase = TCFrameRate;
+  m_FPTimecode->StartTimecode = ui64_C(86400); // 01:00:00:00
+  m_FPTimecode->DataDefinition = UL(TCDD_Data);
+
+  // Essence Track
+  NewTrack = new Track;
+  m_HeaderPart.AddChildObject(NewTrack);
+  NewTrack->EditRate = EditRate;
+  m_FilePackage->Tracks.push_back(NewTrack->InstanceUID);
+  NewTrack->TrackID = 2;
+  NewTrack->TrackName = "Essence Track";
+
+  Seq = new Sequence;
+  m_HeaderPart.AddChildObject(Seq);
+  NewTrack->Sequence = Seq->InstanceUID;
+
+  m_FPClip = new SourceClip;
+  m_HeaderPart.AddChildObject(m_FPClip);
+  Seq->StructuralComponents.push_back(m_FPClip->InstanceUID);
+
+  //
+  // Essence Descriptor
+  //
+  m_EssenceDescriptor->EssenceContainer = WrappingUL;
+  m_EssenceDescriptor->LinkedTrackID = NewTrack->TrackID;
+
+  // link the Material Package to the File Package ?????????????????????????????????
+  Seq->StructuralComponents.push_back(NewTrack->InstanceUID);
+  m_HeaderPart.m_Preface->PrimaryPackage = m_FilePackage->InstanceUID;
+
+  //
+  // Encryption Descriptor
+  //
   if ( m_Info.EncryptedEssence )
     {
-      switch ( EssenceType )
-	{
-	case ESS_MPEG2_VES:
-	  SourceEssenceContainerLabel = WrappingUL_Data_MPEG2_VES;
-          break;
-	  
-	case ESS_JPEG_2000:
-	  SourceEssenceContainerLabel = WrappingUL_Data_JPEG_2000;
-          break;
-	    
-	case ESS_PCM_24b_48k:
-	  SourceEssenceContainerLabel = WrappingUL_Data_PCM_24b_48k;
-          break;
-	  
-	default:
-	  return RESULT_RAW_ESS;
-	}
-    }
-
-  mem_ptr<UL> WrappingUL;
-  switch ( EssenceType )
-    {
-    case ESS_MPEG2_VES:
-      WrappingUL = new UL(WrappingUL_Data_MPEG2_VES); // memchk TESTED
-      break;
-        
-    case ESS_JPEG_2000:
-      WrappingUL = new UL(WrappingUL_Data_JPEG_2000); // memchk TESTED
-      break;
-        
-    case ESS_PCM_24b_48k:
-      WrappingUL = new UL(WrappingUL_Data_PCM_24b_48k); // memchk TESTED
-      break;
-      
-    default:
-      return RESULT_RAW_ESS;
-    }
-  assert(!WrappingUL.empty());
-  m_EssenceDescriptor->SetValue("EssenceContainer", DataChunk(klv_key_size, WrappingUL->GetValue()));
-  
-  // Write a File Descriptor only on the internally ref'ed Track 
-  m_EssenceDescriptor->SetUint("LinkedTrackID", m_FPTrack->GetUint("TrackID"));
-  m_FilePackage->AddChild("Descriptor")->MakeLink(*m_EssenceDescriptor);
-
-  UL CryptEssenceUL(WrappingUL_Data_Crypt);
-
-  if ( m_Info.EncryptedEssence )
-    {
-      m_Metadata->AddEssenceType(CryptEssenceUL);
+      UL CryptEssenceUL(WrappingUL_Data_Crypt);
+      m_HeaderPart.EssenceContainers.push_back(CryptEssenceUL);
+      m_HeaderPart.m_Preface->EssenceContainers.push_back(CryptEssenceUL);
+      m_HeaderPart.m_Preface->DMSchemes.push_back(UL(CryptoFrameworkUL_Data));
+      AddDMScrypt(m_HeaderPart, *m_FilePackage, m_Info, WrappingUL);
     }
   else
     {
       UL GCUL(GCMulti_Data);
-      m_Metadata->AddEssenceType(GCUL);
-      m_Metadata->AddEssenceType(*WrappingUL);
+      m_HeaderPart.EssenceContainers.push_back(GCUL);
+      m_HeaderPart.EssenceContainers.push_back(WrappingUL);
+      m_HeaderPart.m_Preface->EssenceContainers = m_HeaderPart.EssenceContainers;
     }
 
-  // Link the MP to the FP
-  m_MPClip->MakeLink(m_FPTrack, 0);
-
-  //
-  // ** Write out the header **
-  //
-
-  m_HeaderPart = new Partition("OpenHeader");
-  assert(m_HeaderPart);
-  m_HeaderPart->SetKAG(1);			// Everything else can stay at default
-  m_HeaderPart->SetUint("BodySID", 1);
-  
-  m_HeaderPart->AddMetadata(m_Metadata);
-
-  // Build an Ident set describing us and link into the metadata
-  MDObject* Ident = new MDObject("Identification");
-  assert(Ident);
-  Ident->SetString("CompanyName", m_Info.CompanyName);
-  Ident->SetString("ProductName", m_Info.ProductName);
-  Ident->SetString("VersionString", m_Info.ProductVersion);
-  UUID ProductUID(m_Info.ProductUUID);
-  Ident->SetValue("ProductUID", DataChunk(UUIDlen, ProductUID.GetValue()));
-
-  // TODO: get Oliver to show me how this works
-  //      Ident->SetString("ToolkitVersion", ?);
-
-  m_Metadata->UpdateGenerations(*Ident);
-
-  if ( m_Info.EncryptedEssence )
-    AddDMScrypt(m_FilePackage, m_Info, SourceEssenceContainerLabel);
+  m_HeaderPart.AddChildObject(m_EssenceDescriptor);
+  m_FilePackage->Descriptor = m_EssenceDescriptor->InstanceUID;
 
   // Write the header partition
-  m_File->WritePartition(*m_HeaderPart, HeaderPadding);
-      
-  // set up the index
-  switch ( EssenceType )
-    {
-    case ESS_MPEG2_VES:
-    case ESS_JPEG_2000:
-      m_IndexMan = new IndexManager(0, 0);
-      m_IndexMan->SetPosTableIndex(0, -1);
-      break;
+  Result_t result = m_HeaderPart.WriteToFile(m_File, HeaderPadding);
 
-    case ESS_PCM_24b_48k:
-      m_IndexMan = new IndexManager(0, BytesPerEditUnit);
-      break;
+  //
+  // Body Partition
+  //
 
-    case ESS_UNKNOWN:
-      return RESULT_INIT;
-    }
 
-  m_IndexMan->SetBodySID(1);
-  m_IndexMan->SetIndexSID(129);
-  m_IndexMan->SetEditRate(EditRate);
-#endif
+  //
+  // Index setup
+  //
+  fpos_t ECoffset = m_File.Tell();
 
-  return RESULT_OK;
+  if ( BytesPerEditUnit == 0 )
+    m_FooterPart.SetIndexParamsVBR(&m_HeaderPart.m_Primer, EditRate, ECoffset);
+  else
+    m_FooterPart.SetIndexParamsCBR(&m_HeaderPart.m_Primer, BytesPerEditUnit, EditRate);
+
+  return result;
 }
+
+
 
 // standard method of writing a plaintext or encrypted frame
 Result_t
@@ -357,96 +426,41 @@ ASDCP::h__Writer::WriteEKLVPacket(const ASDCP::FrameBuffer& FrameBuf, const byte
 // standard method of writing the header and footer of a completed MXF file
 //
 Result_t
-ASDCP::h__Writer::WriteMXFFooter(EssenceType_t EssenceType)
+ASDCP::h__Writer::WriteMXFFooter()
 {
-#if 0
-  // write the index
-  DataChunk IndexChunk;
-  ui32_t IndexSID = 0;
-
-  // Find all essence container data sets so we can update "IndexSID"
-  MDObjectListPtr ECDataSets = 0;
-  MDObject* Ptr = (*m_Metadata)["ContentStorage"];
-  if ( Ptr )
-    Ptr = Ptr->GetLink();
-  if ( Ptr )
-    Ptr = (*Ptr)["EssenceContainerData"];
-  if ( Ptr )
-    ECDataSets = Ptr->ChildList("EssenceContainer");
-
-  // ** Handle full index tables next **
-  // ***********************************
-      
-  // Make an index table containing all available entries
-  IndexTablePtr Index = m_IndexMan->MakeIndex();
-  m_IndexMan->AddEntriesToIndex(Index);
-      
-  // Write the index table
-  Index->WriteIndex(IndexChunk);
-				
-  // Record the IndexSID for when the index is written
-  IndexSID = Index->IndexSID;
-
-  // Update IndexSID in essence container data set
-  MDObjectList::iterator ECD_it = ECDataSets->begin();
-  while(ECD_it != ECDataSets->end())
-    {
-      if((*ECD_it)->GetLink())
-	{
-	  if((*ECD_it)->GetLink()->GetUint("BodySID") == m_IndexMan->GetBodySID())
-	    {
-	      (*ECD_it)->GetLink()->SetUint("IndexSID", m_IndexMan->GetIndexSID());
-	      break;
-	    }
-	}
-
-      ECD_it++;
-    }
-
-  // If we are writing OP-Atom this is the first place we can claim it
-  m_Metadata->SetOP(OPAtomUL);
-  
   // Set top-level file package correctly for OP-Atom
-  m_Metadata->SetPrimaryPackage(m_FilePackage);
-  
-  m_Metadata->SetTime();
-  m_MPTimecode->SetDuration(m_FramesWritten);
+  m_MPTimecode->Duration = m_FramesWritten;
+  m_MPClip->Duration = m_FramesWritten;
+  m_FPTimecode->Duration = m_FramesWritten;
+  m_FPClip->Duration = m_FramesWritten;
+  m_EssenceDescriptor->ContainerDuration = m_FramesWritten;
 
-  m_MPClip->SetDuration(m_FramesWritten);
-  m_FPTimecode->SetDuration(m_FramesWritten);
-  m_FPClip->SetDuration(m_FramesWritten);
-  m_EssenceDescriptor->SetInt64("ContainerDuration", m_FramesWritten);
+  fpos_t here = m_File.Tell();
+  m_HeaderPart.m_RIP.PairArray.push_back(RIP::Pair(1, here)); // Third RIP Entry
+  m_HeaderPart.FooterPartition = here;
+  m_HeaderPart.BodySID = 1;
+  m_HeaderPart.IndexSID = m_FooterPart.IndexSID;
+  m_HeaderPart.OperationalPattern = UL(OPAtomUL);
+  m_HeaderPart.m_Preface->OperationalPattern = m_HeaderPart.OperationalPattern;
 
-  // Turn the header or body partition into a footer
-  m_HeaderPart->ChangeType("CompleteFooter");
-  m_HeaderPart->SetUint("IndexSID",  IndexSID);
+  m_FooterPart.OperationalPattern = m_HeaderPart.OperationalPattern;
+  m_FooterPart.EssenceContainers = m_HeaderPart.EssenceContainers;
+  m_FooterPart.FooterPartition = here;
+  m_FooterPart.ThisPartition = here;
 
-  // Make sure any new sets are linked in
-  m_HeaderPart->UpdateMetadata(m_Metadata);
+  Result_t result = m_FooterPart.WriteToFile(m_File, m_FramesWritten);
 
-  // Actually write the footer
-  m_File.WritePartitionWithIndex(*m_HeaderPart, &IndexChunk, false);
+  if ( ASDCP_SUCCESS(result) )
+    result = m_HeaderPart.m_RIP.WriteToFile(m_File);
 
-  // Add a RIP
-  m_File.WriteRIP();
+  if ( ASDCP_SUCCESS(result) )
+    result = m_File.Seek(0);
 
-  //
-  // ** Update the header ** 
-  //
-  // For generalized OPs update the value of "FooterPartition" in the header pack
-  // For OP-Atom re-write the entire header
-  //
-  ASDCP::fpos_t FooterPos = m_HeaderPart->GetUint64("FooterPartition");
-  m_File.Seek(0);
+  if ( ASDCP_SUCCESS(result) )
+    result = m_HeaderPart.WriteToFile(m_File, HeaderPadding);
 
-  m_HeaderPart->ChangeType("ClosedCompleteHeader");
-  m_HeaderPart->SetUint64("FooterPartition", FooterPos);
-  m_HeaderPart->SetUint64("BodySID", 1);
-
-  m_File.ReWritePartition(*m_HeaderPart);
   m_File.Close();
-#endif
-  return RESULT_OK;
+  return result;
 }
 
 //
