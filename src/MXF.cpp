@@ -32,59 +32,11 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "MXF.h"
 #include "hex_utils.h"
 
+
 //------------------------------------------------------------------------------------------
 //
 
 const ui32_t kl_length = ASDCP::SMPTE_UL_LENGTH + ASDCP::MXF_BER_LENGTH;
-#if 0
-const byte_t mdd_key[] = { 0x06, 0x0e, 0x2b, 0x34 };
-
-//
-const ASDCP::MDDEntry*
-ASDCP::GetMDDEntry(const byte_t* ul_buf)
-{
-  ui32_t t_idx = 0;
-  ui32_t k_idx = 8;
-
-  // must be a pointer to a SMPTE UL
-  if ( ul_buf == 0 || memcmp(mdd_key, ul_buf, 4) != 0 )
-    return 0;
-
-  // advance to first matching element
-  // TODO: optimize using binary search
-  while ( s_MDD_Table[t_idx].ul != 0
-  	  && s_MDD_Table[t_idx].ul[k_idx] != ul_buf[k_idx] )
-    t_idx++;
-
-  if ( s_MDD_Table[t_idx].ul == 0 )
-    return 0;
-
-  // match successive elements
-  while ( s_MDD_Table[t_idx].ul != 0
-	  && k_idx < SMPTE_UL_LENGTH - 1
-	  && s_MDD_Table[t_idx].ul[k_idx] == ul_buf[k_idx] )
-    {
-      if ( s_MDD_Table[t_idx].ul[k_idx+1] == ul_buf[k_idx+1] )
-	{
-	  k_idx++;
-	}
-      else
-	{
-	  while ( s_MDD_Table[t_idx].ul != 0
-		  && s_MDD_Table[t_idx].ul[k_idx] == ul_buf[k_idx]
-		  && s_MDD_Table[t_idx].ul[k_idx+1] != ul_buf[k_idx+1] )
-	    t_idx++;
-	      
-	  while ( s_MDD_Table[t_idx].ul[k_idx] != ul_buf[k_idx] )
-	    k_idx--;
-	}
-    }
-
-  return (s_MDD_Table[t_idx].ul == 0 ? 0 : &s_MDD_Table[t_idx]);
-}
-#endif
-//------------------------------------------------------------------------------------------
-//
 
 //
 ASDCP::Result_t
@@ -328,7 +280,7 @@ ASDCP::MXF::Partition::WriteToFile(ASDCP::FileWriter& Writer, UL& PartitionLabel
 
   if ( ASDCP_SUCCESS(result) )
     {
-      ui32_t write_count; // this is subclassed, so the UL is only right some of the time
+      ui32_t write_count;
       result = WriteKLToFile(Writer, PartitionLabel.Value(), Buffer.Size());
 
       if ( ASDCP_SUCCESS(result) )
@@ -336,6 +288,21 @@ ASDCP::MXF::Partition::WriteToFile(ASDCP::FileWriter& Writer, UL& PartitionLabel
     }
 
   return result;
+}
+
+//
+ui32_t
+ASDCP::MXF::Partition::ArchiveSize()
+{
+  return ( kl_length
+	   + sizeof(ui16_t) + sizeof(ui16_t)
+	   + sizeof(ui32_t)
+	   + sizeof(ui64_t) + sizeof(ui64_t) + sizeof(ui64_t) + sizeof(ui64_t) + sizeof(ui64_t)
+	   + sizeof(ui32_t)
+	   + sizeof(ui64_t)
+	   + sizeof(ui32_t)
+	   + SMPTE_UL_LENGTH
+	   + sizeof(ui32_t) + sizeof(ui32_t) + ( UUIDlen * EssenceContainers.size() ) );
 }
 
 //
@@ -524,8 +491,8 @@ ASDCP::MXF::Primer::Dump(FILE* stream)
 
   KLVPacket::Dump(stream, false);
   fprintf(stream, "Primer: %lu %s\n",
-	  LocalTagEntryBatch.ItemCount,
-	  ( LocalTagEntryBatch.ItemCount == 1 ? "entry" : "entries" ));
+	  LocalTagEntryBatch.size(),
+	  ( LocalTagEntryBatch.size() == 1 ? "entry" : "entries" ));
   
   Batch<LocalTagEntry>::iterator i = LocalTagEntryBatch.begin();
   for ( ; i != LocalTagEntryBatch.end(); i++ )
@@ -628,15 +595,39 @@ ASDCP::MXF::OPAtomHeader::InitFromFile(const ASDCP::FileReader& Reader)
   if ( ASDCP_SUCCESS(result) )
     {
       result = m_RIP.InitFromFile(Reader);
+      ui32_t test_s = m_RIP.PairArray.size();
 
       if ( ASDCP_FAILURE(result) )
 	{
 	  DefaultLogSink().Error("File contains no RIP\n");
 	  result = RESULT_OK;
 	}
+      else if ( test_s == 0 )
+	{
+	  DefaultLogSink().Error("RIP contains no Pairs.\n");
+	  result = RESULT_FORMAT;
+	}
+      else if ( test_s < 2 || test_s > 3 )
+	{
+	  // OP-Atom states that there will be either two or three partitions,
+	  // one closed header and one closed footer with an optional body
+	  DefaultLogSink().Error("RIP count is not 2 or 3: %lu\n", test_s);
+	  return RESULT_FORMAT;
+	}
       else
 	{
 	  m_HasRIP = true;
+	}
+    }
+
+  if ( ASDCP_SUCCESS(result) )
+    {
+      Array<RIP::Pair>::iterator r_i = m_RIP.PairArray.begin();
+      
+      if ( (*r_i).ByteOffset !=  0 )
+	{
+	  DefaultLogSink().Error("First Partition in RIP is not at offset 0.\n");
+	  result = RESULT_FORMAT;
 	}
     }
 
@@ -646,30 +637,39 @@ ASDCP::MXF::OPAtomHeader::InitFromFile(const ASDCP::FileReader& Reader)
   if ( ASDCP_SUCCESS(result) )
     result = Partition::InitFromFile(Reader); // test UL and OP
 
-  // slurp up the remainder of the header
-  ui32_t read_count;
+  // is it really OP-Atom?
+  UL OPAtomUL(Dict::ul(MDD_OPAtom));
 
+  if ( ! ( OperationalPattern == OPAtomUL ) )
+    {
+      char strbuf[IntBufferLen];
+      const MDDEntry* Entry = Dict::FindUL(m_KeyStart);
+      if ( Entry == 0 )
+	DefaultLogSink().Warn("Operational pattern is not OP-Atom: %s.\n", OperationalPattern.ToString(strbuf));
+      else
+	DefaultLogSink().Warn("Operational pattern is not OP-Atom: %s.\n", Entry->name);
+    }
+
+  // slurp up the remainder of the header
   if ( ASDCP_SUCCESS(result) )
     {
-      ui32_t here = (ui32_t)Reader.Tell();
+      if ( HeaderByteCount < 1024 )
+	DefaultLogSink().Warn("Improbably small HeaderByteCount value: %lu\n", HeaderByteCount);
 
-      if ( HeaderByteCount < here )
-	{
-	  DefaultLogSink().Error("HeaderByteCount less than Partition size\n");
-	  return RESULT_FAIL;
-	}
-
-      result = m_Buffer.Capacity(HeaderByteCount - here);
+      result = m_Buffer.Capacity(HeaderByteCount);
     }
 
   if ( ASDCP_SUCCESS(result) )
-    result = Reader.Read(m_Buffer.Data(), m_Buffer.Capacity(), &read_count);
-
-  if ( ASDCP_SUCCESS(result) && read_count != m_Buffer.Capacity() )
     {
-      DefaultLogSink().Error("Short read of OP-Atom header metadata; wanted %lu, got %lu\n",
-			     m_Buffer.Capacity(), read_count);
-      return RESULT_FAIL;
+      ui32_t read_count;
+      result = Reader.Read(m_Buffer.Data(), m_Buffer.Capacity(), &read_count);
+
+      if ( ASDCP_SUCCESS(result) && read_count != m_Buffer.Capacity() )
+	{
+	  DefaultLogSink().Error("Short read of OP-Atom header metadata; wanted %lu, got %lu\n",
+				 m_Buffer.Capacity(), read_count);
+	  return RESULT_FAIL;
+	}
     }
 
   const byte_t* p = m_Buffer.RoData();
@@ -754,6 +754,7 @@ ASDCP::MXF::OPAtomHeader::GetSourcePackage()
   return 0;
 }
 
+
 //
 ASDCP::Result_t
 ASDCP::MXF::OPAtomHeader::WriteToFile(ASDCP::FileWriter& Writer, ui32_t HeaderSize)
@@ -768,8 +769,8 @@ ASDCP::MXF::OPAtomHeader::WriteToFile(ASDCP::FileWriter& Writer, ui32_t HeaderSi
     }
 
   ASDCP::FrameBuffer HeaderBuffer;
-  HeaderByteCount = HeaderSize;
-  Result_t result = HeaderBuffer.Capacity(HeaderSize); 
+  HeaderByteCount = HeaderSize - ArchiveSize();
+  Result_t result = HeaderBuffer.Capacity(HeaderByteCount); 
   m_Preface->m_Lookup = &m_Primer;
 
   std::list<InterchangeObject*>::iterator pl_i = m_PacketList->m_List.begin();
@@ -806,7 +807,7 @@ ASDCP::MXF::OPAtomHeader::WriteToFile(ASDCP::FileWriter& Writer, ui32_t HeaderSi
     {
       ASDCP::fpos_t pos = Writer.Tell();
 
-      if ( pos > HeaderSize )
+      if ( pos > (ASDCP::fpos_t)HeaderByteCount )
 	{
 	  char intbuf[IntBufferLen];
 	  DefaultLogSink().Error("Header size %s exceeds specified value %lu\n",
@@ -1076,7 +1077,7 @@ ASDCP::MXF::OPAtomIndexFooter::PushIndexEntry(const IndexTableSegment::IndexEntr
 
   // do we have an available segment?
   if ( m_CurrentSegment == 0 )
-    {
+    { // no, set up a new segment
       m_CurrentSegment = new IndexTableSegment;
       assert(m_CurrentSegment);
       AddChildObject(m_CurrentSegment);
@@ -1085,7 +1086,7 @@ ASDCP::MXF::OPAtomIndexFooter::PushIndexEntry(const IndexTableSegment::IndexEntr
       m_CurrentSegment->IndexStartPosition = 0;
     }
   else if ( m_CurrentSegment->IndexEntryArray.size() >= 1486 ) // 1486 gets us 16K packets
-    {
+    { // no, this one is full, start another
       m_CurrentSegment->IndexDuration = m_CurrentSegment->IndexEntryArray.size();
       ui64_t StartPosition = m_CurrentSegment->IndexStartPosition + m_CurrentSegment->IndexDuration;
 

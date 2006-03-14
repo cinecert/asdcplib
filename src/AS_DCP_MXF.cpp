@@ -108,8 +108,8 @@ ASDCP::MD_to_CryptoInfo(CryptographicContext* InfoObj, WriterInfo& Info)
   memcpy(Info.ContextID, InfoObj->ContextID.Value(), UUIDlen);
   memcpy(Info.CryptographicKeyID, InfoObj->CryptographicKeyID.Value(), UUIDlen);
 
-  UL MIC_SHA1(MICAlgorithm_HMAC_SHA1);
-  UL MIC_NONE(MICAlgorithm_NONE);
+  UL MIC_SHA1(Dict::ul(MDD_MICAlgorithm_HMAC_SHA1));
+  UL MIC_NONE(Dict::ul(MDD_MICAlgorithm_NONE));
 
   if ( InfoObj->MICAlgorithm == MIC_SHA1 )
     Info.UsesHMAC = true;
@@ -185,6 +185,7 @@ ASDCP::RawEssenceType(const char* filename, EssenceType_t& type)
       if ( ASDCP_SUCCESS(result) )
 	{
 	  ASDCP::Wav::SimpleWaveHeader WavHeader;
+	  ASDCP::AIFF::SimpleAIFFHeader AIFFHeader;
 	  ui32_t data_offset;
 	  const byte_t* p = FB.RoData();
 
@@ -192,6 +193,9 @@ ASDCP::RawEssenceType(const char* filename, EssenceType_t& type)
 	    type = ESS_MPEG2_VES;
 
 	  else if ( ASDCP_SUCCESS(WavHeader.ReadFromBuffer(p, read_count, &data_offset)) )
+	    type = ESS_PCM_24b_48k;
+
+	  else if ( ASDCP_SUCCESS(AIFFHeader.ReadFromBuffer(p, read_count, &data_offset)) )
 	    type = ESS_PCM_24b_48k;
 	}
     }
@@ -370,33 +374,33 @@ ASDCP::IntegrityPack::CalcValues(const ASDCP::FrameBuffer& FB, byte_t* AssetID,
   byte_t* p = Data;
   HMAC->Reset();
 
-  static byte_t ber_4[klv_length_size] = {0x83, 0};
+  static byte_t ber_4[MXF_BER_LENGTH] = {0x83, 0};
 
   // update HMAC with essence data
   HMAC->Update(FB.RoData(), FB.Size());
 
   // track file ID length
-  memcpy(p, ber_4, klv_length_size);
+  memcpy(p, ber_4, MXF_BER_LENGTH);
   *(p+3) = UUIDlen;;
-  p += klv_length_size;
+  p += MXF_BER_LENGTH;
 
   // track file ID
   memcpy(p, AssetID, UUIDlen);
   p += UUIDlen;
 
   // sequence length
-  memcpy(p, ber_4, klv_length_size);
+  memcpy(p, ber_4, MXF_BER_LENGTH);
   *(p+3) = sizeof(ui64_t);
-  p += klv_length_size;
+  p += MXF_BER_LENGTH;
 
   // sequence number
   i2p<ui64_t>(ASDCP_i64_BE(sequence), p);
   p += sizeof(ui64_t);
 
   // HMAC length
-  memcpy(p, ber_4, klv_length_size);
+  memcpy(p, ber_4, MXF_BER_LENGTH);
   *(p+3) = HMAC_SIZE;
-  p += klv_length_size;
+  p += MXF_BER_LENGTH;
 
   // update HMAC with intpack values
   HMAC->Update(Data, klv_intpack_size - HMAC_SIZE);
@@ -469,23 +473,23 @@ ASDCP::Result_t
 ASDCP::KLVReader::ReadKLFromFile(ASDCP::FileReader& Reader)
 {
   ui32_t read_count;
-  m_HeaderLength = klv_key_size + klv_length_size;
+  m_HeaderLength = SMPTE_UL_LENGTH + MXF_BER_LENGTH;
   Result_t result = Reader.Read(m_Key, m_HeaderLength, &read_count);
   assert(read_count == m_HeaderLength);
 
   if ( ASDCP_SUCCESS(result) )
     {
-      m_BERLength = BER_length(m_Key + klv_key_size);
+      m_BERLength = BER_length(m_Key + SMPTE_UL_LENGTH);
       
       if ( m_BERLength == 0 )
 	{
 	  char intbuf[IntBufferLen];
 	  ASDCP::DefaultLogSink().Error("KLV format error, zero BER length not allowed at file position %s\n",
-					i64szx((Reader.Tell() - (fpos_t)klv_key_size), 8, intbuf));
+					i64szx((Reader.Tell() - (fpos_t)SMPTE_UL_LENGTH), 8, intbuf));
 	  return RESULT_FAIL;
 	}
 
-      if ( m_BERLength != klv_length_size )
+      if ( m_BERLength != MXF_BER_LENGTH )
 	{
 
 	  ASDCP::DefaultLogSink().Error("Found packet with BER length %lu; being less efficient...\n",
@@ -496,7 +500,7 @@ ASDCP::KLVReader::ReadKLFromFile(ASDCP::FileReader& Reader)
 	  assert(0);
 	}
 
-      if ( ! read_BER(m_Key + klv_key_size, &m_Length) )
+      if ( ! read_BER(m_Key + SMPTE_UL_LENGTH, &m_Length) )
 	return RESULT_FAIL;
     }
   

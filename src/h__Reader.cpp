@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2004-2005, John Hurst
+Copyright (c) 2004-2006, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -99,23 +99,9 @@ ASDCP::h__Reader::OpenMXFRead(const char* filename)
   if ( ASDCP_SUCCESS(result) )
     result = m_HeaderPart.InitFromFile(m_File);
 
-  // OP-Atom states that there will be either two or three partitions,
-  // one closed header and one closed footer with an optional body
-  ui32_t test_s = m_HeaderPart.m_RIP.PairArray.size();
-
-  if ( test_s < 2 || test_s > 3 )
-    {
-      DefaultLogSink().Error("RIP count is not 2 or 3: %lu\n", test_s);
-      return RESULT_FORMAT;
-    }
-
-  // it really OP-Atom?
-  //  MDObject* OpPattern = GetMDObjectByType("OperationalPattern");
-  // TODO: check the label
-
   // if this is a three partition file, go to the body
   // partition and read off the partition pack
-  if ( test_s == 3 )
+  if ( m_HeaderPart.m_RIP.PairArray.size() == 3 )
     {
       DefaultLogSink().Error("RIP count is 3: must write code...\n");
       return RESULT_FORMAT;
@@ -183,12 +169,11 @@ ASDCP::h__Reader::ReadEKLVPacket(ui32_t FrameNum, ASDCP::FrameBuffer& FrameBuf,
     return result;
 
   UL Key(Reader.Key());
-  UL InteropRef(CryptEssenceUL_Data);
-  UL SMPTERef(CryptEssenceUL_Data);
+  UL CryptEssenceUL(Dict::ul(MDD_CryptEssence));
   ui64_t PacketLength = Reader.Length();
   m_LastPosition = m_LastPosition + Reader.KLLength() + PacketLength;
 
-  if ( Key == InteropRef || Key == SMPTERef )
+  if ( Key == CryptEssenceUL )
     {
       if ( ! m_Info.EncryptedEssence )
 	{
@@ -235,11 +220,11 @@ ASDCP::h__Reader::ReadEKLVPacket(ui32_t FrameNum, ASDCP::FrameBuffer& FrameBuf,
       ess_p += sizeof(ui64_t);
 
       // read essence UL length
-      if ( ! read_test_BER(&ess_p, klv_key_size) )
+      if ( ! read_test_BER(&ess_p, SMPTE_UL_LENGTH) )
 	return RESULT_FORMAT;
 
       // TODO: test essence UL
-      ess_p += klv_key_size;
+      ess_p += SMPTE_UL_LENGTH;
 
       // read SourceLength length
       if ( ! read_test_BER(&ess_p, sizeof(ui64_t)) )
@@ -336,7 +321,12 @@ ASDCP::h__Reader::ReadEKLVPacket(ui32_t FrameNum, ASDCP::FrameBuffer& FrameBuf,
     }
   else
     {
-      DefaultLogSink().Error("Unexpected UL found.\n");
+      char strbuf[IntBufferLen];
+      const MDDEntry* Entry = Dict::FindUL(Key.Value());
+      if ( Entry == 0 )
+        DefaultLogSink().Warn("Unexpected Essence UL found: %s.\n", Key.ToString(strbuf));
+      else
+        DefaultLogSink().Warn("Unexpected Essence UL found: %s.\n", Entry->name);
       return RESULT_FORMAT;
     }
 

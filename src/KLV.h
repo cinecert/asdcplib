@@ -72,7 +72,8 @@ namespace ASDCP
     public:
       virtual ~IArchive() {}
       virtual Result_t Unarchive(ASDCP::MemIOReader& Reader) = 0;
-      virtual Result_t Archive(ASDCP::MemIOWriter& Writer) = 0;
+      virtual bool     HasValue() const = 0;
+      virtual Result_t Archive(ASDCP::MemIOWriter& Writer) const = 0;
     };
 } // namespace ASDCP
 
@@ -87,7 +88,6 @@ namespace ASDCP
     TagValue      tag;
     bool          optional;
     const char*   name;
-    const char*   detail;
   };
 
   //
@@ -95,6 +95,7 @@ namespace ASDCP
     {
     public:
       static const MDDEntry* FindUL(const byte_t*);
+      static const MDDEntry* FindName(const char*);
       static const MDDEntry& Type(MDD_t type_id);
       static bool            Replace(const MDDEntry& Entry);
       static void            Restore(const byte_t* ul);
@@ -105,6 +106,7 @@ namespace ASDCP
       }
 
     private:
+      Dict* m_Dict;
       ASDCP_NO_COPY_CONSTRUCT(Dict);
 
     protected:

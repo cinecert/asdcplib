@@ -35,12 +35,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //------------------------------------------------------------------------------------------
 //
 
-const ASDCP::UID&
-ASDCP::UID::operator=(const UMID& rhs)
-{
-  // TODO
-  return *this;
-}
 
 //
 void
@@ -58,21 +52,14 @@ ASDCP::UMID::MakeUMID(int Type, const UUID& AssetID)
   // Set the non-varying base of the UMID
   static const byte_t UMIDBase[10] = { 0x06, 0x0a, 0x2b, 0x34, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01 };
   memcpy(m_Value, UMIDBase, 10);
+  m_Value[10] = Type;  // Material Type
+  m_Value[12] = 0x13;  // length
 
-  // Correct to v5 dictionary for new (330M-2003) types
-  if( Type > 4 )
-    m_Value[7] = 5;
+  // preserved for compatibility with mfxlib
+  if( Type > 4 ) m_Value[7] = 5;
+  m_Value[11] = 0x20; // UUID/UL method, number gen undefined
 
-  // Set the type
-  m_Value[10] = Type;
-
-  // We are using a GUID for material number, and no defined instance method
-  m_Value[11] = 0x20;
-
-  // Length of UMID "Value" is 19 bytes
-  m_Value[12] = 0x13;
-
-  // Set instance number to zero as this is the first instance of this material
+  // Instance Number
   m_Value[13] = m_Value[14] = m_Value[15] = 0;
   
   memcpy(&m_Value[16], AssetID.Value(), AssetID.Size());
@@ -87,8 +74,10 @@ ASDCP::UMID::ToString(char* str_buf) const
   assert(str_buf);
 
   snprintf(str_buf, IdentBufferLen, "[%02x%02x%02x%02x.%02x%02x.%02x%02x.%02x%02x%02x%02x],%02x,%02x,%02x,%02x,",
-	   m_Value[0],  m_Value[1],  m_Value[2],  m_Value[3],  m_Value[4],  m_Value[5],  m_Value[6],  m_Value[7],
-	   m_Value[8],  m_Value[9],  m_Value[10], m_Value[11], m_Value[12], m_Value[13], m_Value[14], m_Value[15]
+	   m_Value[0],  m_Value[1],  m_Value[2],  m_Value[3],
+	   m_Value[4],  m_Value[5],  m_Value[6],  m_Value[7],
+	   m_Value[8],  m_Value[9],  m_Value[10], m_Value[11],
+	   m_Value[12], m_Value[13], m_Value[14], m_Value[15]
 	   );
 
   ui32_t offset = strlen(str_buf);
@@ -98,8 +87,10 @@ ASDCP::UMID::ToString(char* str_buf) const
       // half-swapped UL, use [bbaa9988.ddcc.ffee.00010203.04050607]
       snprintf(str_buf + offset, IdentBufferLen - offset,
 	       "[%02x%02x%02x%02x.%02x%02x.%02x%02x.%02x%02x%02x%02x.%02x%02x%02x%02x]",
-               m_Value[24], m_Value[25], m_Value[26], m_Value[27], m_Value[28], m_Value[29], m_Value[30], m_Value[31],
-               m_Value[16], m_Value[17], m_Value[18], m_Value[19], m_Value[20], m_Value[21], m_Value[22], m_Value[23]
+               m_Value[24], m_Value[25], m_Value[26], m_Value[27],
+	       m_Value[28], m_Value[29], m_Value[30], m_Value[31],
+               m_Value[16], m_Value[17], m_Value[18], m_Value[19],
+	       m_Value[20], m_Value[21], m_Value[22], m_Value[23]
                );
     }
   else
@@ -107,8 +98,10 @@ ASDCP::UMID::ToString(char* str_buf) const
       // UUID, use {00112233-4455-6677-8899-aabbccddeeff}
       snprintf(str_buf + offset, IdentBufferLen - offset,
 	       "{%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x}",
-               m_Value[16], m_Value[17], m_Value[18], m_Value[19], m_Value[20], m_Value[21], m_Value[22], m_Value[23],
-               m_Value[24], m_Value[25], m_Value[26], m_Value[27], m_Value[28], m_Value[29], m_Value[30], m_Value[31]
+               m_Value[16], m_Value[17], m_Value[18], m_Value[19],
+	       m_Value[20], m_Value[21], m_Value[22], m_Value[23],
+               m_Value[24], m_Value[25], m_Value[26], m_Value[27],
+	       m_Value[28], m_Value[29], m_Value[30], m_Value[31]
                );
     }
 
@@ -125,6 +118,7 @@ ASDCP::UUID::GenRandomValue()
   m_Value[6] |= 0x40; // set UUID version
   m_Value[8] &= 0x3f; // clear bits 6&7
   m_Value[8] |= 0x80; // set bit 7
+  //  m_HasValue = true;
 }
 
 
@@ -155,9 +149,8 @@ ASDCP::MXF::UTF16String::operator=(const char* sz)
 ASDCP::Result_t
 ASDCP::MXF::UTF16String::Unarchive(ASDCP::MemIOReader& Reader)
 {
-  const byte_t* p = Reader.Data() + Reader.Offset();
-  /// cheating - for all use cases, we know the previous two bytes are the length
-  m_length = ASDCP_i16_BE(cp2i<ui16_t>(p-2));
+  const byte_t* p = Reader.CurrentData();
+  m_length = Reader.Remainder();
   assert(m_length % 2 == 0);
   m_length /= 2;
   assert(IdentBufferLen >= m_length);
@@ -174,17 +167,16 @@ ASDCP::MXF::UTF16String::Unarchive(ASDCP::MemIOReader& Reader)
 
 //
 ASDCP::Result_t
-ASDCP::MXF::UTF16String::Archive(ASDCP::MemIOWriter& Writer)
+ASDCP::MXF::UTF16String::Archive(ASDCP::MemIOWriter& Writer) const
 {
   byte_t* p = Writer.Data() + Writer.Size();
   ui32_t i = 0;
-  m_length = strlen(m_buffer);
-  memset(p, 0, m_length*2);
+  memset(p, 0, (m_length*2)+2);
 
   for ( i = 0; i < m_length; i++ )
     p[(i*2)+1] = m_buffer[i];
 
-  Writer.AddOffset(m_length * 2 );
+  Writer.AddOffset(m_length * 2);
   return RESULT_OK;
 }
 
@@ -505,7 +497,10 @@ ASDCP::MXF::TLVReader::ReadObject(const MDDEntry& Entry, IArchive* Object)
   ASDCP_TEST_NULL(Object);
 
   if ( FindTL(Entry) )
-    return Object->Unarchive(*this);
+    {
+      if ( m_size < m_capacity ) // don't try to unarchive an empty item
+	return Object->Unarchive(*this);
+    }
 
   return RESULT_FALSE;
 }
@@ -596,6 +591,10 @@ ASDCP::Result_t
 ASDCP::MXF::TLVWriter::WriteObject(const MDDEntry& Entry, IArchive* Object)
 {
   ASDCP_TEST_NULL(Object);
+
+  if ( Entry.optional && ! Object->HasValue() )
+    return RESULT_OK;
+
   Result_t result = WriteTag(Entry);
 
   // write a temp length
@@ -658,6 +657,56 @@ ASDCP::MXF::TLVWriter::WriteUi64(const MDDEntry& Entry, ui64_t* value)
   if ( ASDCP_SUCCESS(result) ) MemIOWriter::WriteUi16BE(sizeof(ui64_t));
   if ( ASDCP_SUCCESS(result) ) MemIOWriter::WriteUi64BE(*value);
   return result;
+}
+
+
+//----------------------------------------------------------------------------------------------------
+//
+
+ASDCP::MXF::Raw::Raw()
+{
+  Capacity(256);
+}
+
+ASDCP::MXF::Raw::~Raw()
+{
+}
+
+//
+ASDCP::Result_t
+ASDCP::MXF::Raw::Unarchive(ASDCP::MemIOReader& Reader)
+{
+  ui32_t payload_size = Reader.Remainder();
+
+  if ( payload_size == 0 )
+    return RESULT_OK;
+
+  Result_t result = Capacity(payload_size);
+
+  if ( ASDCP_SUCCESS(result) )
+    {
+      memcpy(Data(), Reader.CurrentData(), payload_size);
+      Size(payload_size);
+    }
+
+  return result;
+}
+
+//
+ASDCP::Result_t
+ASDCP::MXF::Raw::Archive(ASDCP::MemIOWriter& Writer) const
+{
+  return Writer.WriteRaw(RoData(), Size());
+}
+
+//
+const char*
+ASDCP::MXF::Raw::ToString(char* str_buf) const
+{
+  *str_buf = 0;
+  bin2hex(RoData(), Size(), str_buf, IdentBufferLen);
+  snprintf(str_buf, IdentBufferLen, "%s\n", str_buf);
+  return str_buf;
 }
 
 //

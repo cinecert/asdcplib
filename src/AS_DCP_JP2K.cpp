@@ -34,12 +34,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 //------------------------------------------------------------------------------------------
 
-//
-const byte_t JP2KEssenceCompressionLabel[klv_key_size] =
-{
-  0x06, 0x0e, 0x2b, 0x34, 0x04, 0x01, 0x01, 0x09,
-  0x04, 0x01, 0x02, 0x02, 0x03, 0x01, 0x01, 0x01 };
-
+static std::string JP2K_PACKAGE_LABEL = "File Package: SMPTE XXXM frame wrapping of JPEG 2000 codestreams";
+static std::string PICT_DEF_LABEL = "Picture Track";
 
 //
 void
@@ -101,7 +97,7 @@ ContainerDuration: %lu\n",
 	    );
 
   if ( PDesc.QuantDefaultLength )
-    fprintf(stream, "Default Coding (%lu): %s\n",
+    fprintf(stream, "Quantization Default (%lu): %s\n",
 	    PDesc.QuantDefaultLength,
 	    bin2hex(PDesc.QuantDefault, PDesc.QuantDefaultLength,
 		    tmp_buf, tmp_buf_len)
@@ -114,24 +110,27 @@ ContainerDuration: %lu\n",
 
 class ASDCP::JP2K::MXFReader::h__Reader : public ASDCP::h__Reader
 {
+  RGBAEssenceDescriptor*        m_EssenceDescriptor;
+  JPEG2000PictureSubDescriptor* m_EssenceSubDescriptor;
+
   ASDCP_NO_COPY_CONSTRUCT(h__Reader);
 
 public:
   PictureDescriptor m_PDesc;        // codestream parameter list
 
-  h__Reader() {}
+  h__Reader() : m_EssenceDescriptor(0), m_EssenceSubDescriptor(0) {}
   Result_t    OpenRead(const char*);
   Result_t    ReadFrame(ui32_t, FrameBuffer&, AESDecContext*, HMACContext*);
   Result_t    ReadFrameGOPStart(ui32_t, FrameBuffer&, AESDecContext*, HMACContext*);
-  Result_t    MD_to_JP2K_PDesc(MXF::RGBAEssenceDescriptor* PDescObj, JP2K::PictureDescriptor& PDesc);
+  Result_t    MD_to_JP2K_PDesc(JP2K::PictureDescriptor& PDesc);
 };
 
 //
 ASDCP::Result_t
-ASDCP::JP2K::MXFReader::h__Reader::MD_to_JP2K_PDesc(MXF::RGBAEssenceDescriptor* PDescObj, JP2K::PictureDescriptor& PDesc)
+ASDCP::JP2K::MXFReader::h__Reader::MD_to_JP2K_PDesc(JP2K::PictureDescriptor& PDesc)
 {
-  ASDCP_TEST_NULL(PDescObj);
   memset(&PDesc, 0, sizeof(PDesc));
+  MXF::RGBAEssenceDescriptor* PDescObj = (MXF::RGBAEssenceDescriptor*)m_EssenceDescriptor;
 
   PDesc.EditRate           = PDescObj->SampleRate;
   PDesc.ContainerDuration  = PDescObj->ContainerDuration;
@@ -139,49 +138,36 @@ ASDCP::JP2K::MXFReader::h__Reader::MD_to_JP2K_PDesc(MXF::RGBAEssenceDescriptor* 
   PDesc.StoredHeight       = PDescObj->StoredHeight;
   PDesc.AspectRatio        = PDescObj->AspectRatio;
 
-  InterchangeObject* MDObject;
-  if ( ASDCP_SUCCESS(m_HeaderPart.GetMDObjectByType(OBJ_TYPE_ARGS(JPEG2000PictureSubDescriptor), &MDObject)) )
+  if ( m_EssenceSubDescriptor != 0 )
     {
-      if ( MDObject == 0 )
-	{
-	  DefaultLogSink().Error("Unable to locate JPEG2000PictureSubDescriptor");
-	  return RESULT_FALSE;
-	}
+      PDesc.Rsize   = m_EssenceSubDescriptor->Rsize;
+      PDesc.Xsize   = m_EssenceSubDescriptor->Xsize;
+      PDesc.Ysize   = m_EssenceSubDescriptor->Ysize;
+      PDesc.XOsize  = m_EssenceSubDescriptor->XOsize;
+      PDesc.YOsize  = m_EssenceSubDescriptor->YOsize;
+      PDesc.XTsize  = m_EssenceSubDescriptor->XTsize;
+      PDesc.YTsize  = m_EssenceSubDescriptor->YTsize;
+      PDesc.XTOsize = m_EssenceSubDescriptor->XTOsize;
+      PDesc.YTOsize = m_EssenceSubDescriptor->YTOsize;
+      PDesc.Csize   = m_EssenceSubDescriptor->Csize;
 
-      JPEG2000PictureSubDescriptor* PSubDescObj = (JPEG2000PictureSubDescriptor*)MDObject;
-
-      PDesc.Rsize   = PSubDescObj->Rsize;
-      PDesc.Xsize   = PSubDescObj->Xsize;
-      PDesc.Ysize   = PSubDescObj->Ysize;
-      PDesc.XOsize  = PSubDescObj->XOsize;
-      PDesc.YOsize  = PSubDescObj->YOsize;
-      PDesc.XTsize  = PSubDescObj->XTsize;
-      PDesc.YTsize  = PSubDescObj->YTsize;
-      PDesc.XTOsize = PSubDescObj->XTOsize;
-      PDesc.YTOsize = PSubDescObj->YTOsize;
-      PDesc.Csize   = PSubDescObj->Csize;
-    }
-
-#if 0
       // PictureComponentSizing
+      ui32_t tmp_size = m_EssenceSubDescriptor->PictureComponentSizing.Size();
 
-      if ( DC3.Size == 17 ) // ( 2* sizeof(ui32_t) ) + 3 components * 3 byte each
-	{
-	  memcpy(&PDesc.ImageComponents, DC3.Data + 8, DC3.Size - 8);
-	}
+      if ( tmp_size == 17 ) // ( 2 * sizeof(ui32_t) ) + 3 components * 3 byte each
+	memcpy(&PDesc.ImageComponents, m_EssenceSubDescriptor->PictureComponentSizing.RoData() + 8, tmp_size - 8);
+
       else
-	{
-	  DefaultLogSink().Error("Unexpected PictureComponentSizing size: %lu, should be 17\n", DC3.Size);
-	}
-#endif
+	DefaultLogSink().Error("Unexpected PictureComponentSizing size: %lu, should be 17\n", tmp_size);
 
-  // CodingStyleDefault
-      //      PDesc.CodingStyleLength = DC1.Size;
-      //      memcpy(PDesc.CodingStyle, DC1.Data, DC1.Size);
+      // CodingStyleDefault
+      if ( ( PDesc.CodingStyleLength = m_EssenceSubDescriptor->CodingStyleDefault.Size() ) != 0 )
+	memcpy(PDesc.CodingStyle, m_EssenceSubDescriptor->CodingStyleDefault.RoData(), PDesc.CodingStyleLength);
 
-  // QuantizationDefault
-      //      PDesc.QuantDefaultLength = DC2.Size;
-      //      memcpy(PDesc.QuantDefault, DC2.Data, DC2.Size);
+      // QuantizationDefault
+      if ( ( PDesc.QuantDefaultLength = m_EssenceSubDescriptor->QuantizationDefault.Size() ) != 0 )
+	memcpy(PDesc.QuantDefault, m_EssenceSubDescriptor->QuantizationDefault.RoData(), PDesc.QuantDefaultLength);
+    }
 
   return RESULT_OK;
 }
@@ -195,12 +181,13 @@ ASDCP::JP2K::MXFReader::h__Reader::OpenRead(const char* filename)
 
   if( ASDCP_SUCCESS(result) )
     {
-      InterchangeObject* Object;
-      if ( ASDCP_SUCCESS(m_HeaderPart.GetMDObjectByType(OBJ_TYPE_ARGS(RGBAEssenceDescriptor), &Object)) )
+      if ( m_EssenceDescriptor == 0 )
 	{
-	  assert(Object);
-	  result = MD_to_JP2K_PDesc((MXF::RGBAEssenceDescriptor*)Object, m_PDesc);
+	  m_HeaderPart.GetMDObjectByType(OBJ_TYPE_ARGS(RGBAEssenceDescriptor), (InterchangeObject**)&m_EssenceDescriptor);
+	  m_HeaderPart.GetMDObjectByType(OBJ_TYPE_ARGS(JPEG2000PictureSubDescriptor), (InterchangeObject**)&m_EssenceSubDescriptor);
 	}
+
+      result = MD_to_JP2K_PDesc(m_PDesc);
     }
 
   if( ASDCP_SUCCESS(result) )
@@ -221,7 +208,7 @@ ASDCP::JP2K::MXFReader::h__Reader::ReadFrame(ui32_t FrameNum, FrameBuffer& Frame
   if ( ! m_File.IsOpen() )
     return RESULT_INIT;
 
-  return ReadEKLVPacket(FrameNum, FrameBuf, JP2KEssenceUL_Data, Ctx, HMAC);
+  return ReadEKLVPacket(FrameNum, FrameBuf, Dict::ul(MDD_JPEG2000Essence), Ctx, HMAC);
 }
 
 //------------------------------------------------------------------------------------------
@@ -329,28 +316,33 @@ ASDCP::JP2K::MXFReader::DumpIndex(FILE* stream) const
 //
 class ASDCP::JP2K::MXFWriter::h__Writer : public ASDCP::h__Writer
 {
+  JPEG2000PictureSubDescriptor* m_EssenceSubDescriptor;
+
 public:
   PictureDescriptor m_PDesc;
-  ui32_t            m_GOPOffset;
 
   ASDCP_NO_COPY_CONSTRUCT(h__Writer);
 
-  h__Writer() : m_GOPOffset(0) {}
+  h__Writer() : m_EssenceSubDescriptor(0) {}
   ~h__Writer(){}
 
   Result_t OpenWrite(const char*, ui32_t HeaderSize);
   Result_t SetSourceStream(const PictureDescriptor&);
   Result_t WriteFrame(const FrameBuffer&, AESEncContext* = 0, HMACContext* = 0);
   Result_t Finalize();
-  Result_t JP2K_PDesc_to_MD(JP2K::PictureDescriptor& PDesc, MXF::RGBAEssenceDescriptor* PDescObj);
+  Result_t JP2K_PDesc_to_MD(JP2K::PictureDescriptor& PDesc);
 };
 
 
 //
 ASDCP::Result_t
-ASDCP::JP2K::MXFWriter::h__Writer::JP2K_PDesc_to_MD(JP2K::PictureDescriptor& PDesc, MXF::RGBAEssenceDescriptor* PDescObj)
+ASDCP::JP2K::MXFWriter::h__Writer::JP2K_PDesc_to_MD(JP2K::PictureDescriptor& PDesc)
 {
-  // Codec
+  assert(m_EssenceDescriptor);
+  assert(m_EssenceSubDescriptor);
+  MXF::RGBAEssenceDescriptor* PDescObj = (MXF::RGBAEssenceDescriptor*)m_EssenceDescriptor;
+
+  PDescObj->Codec.Set(Dict::ul(MDD_JP2KEssenceCompression));
   PDescObj->SampleRate = PDesc.EditRate;
   PDescObj->ContainerDuration = PDesc.ContainerDuration;
   PDescObj->StoredWidth = PDesc.StoredWidth;
@@ -358,24 +350,17 @@ ASDCP::JP2K::MXFWriter::h__Writer::JP2K_PDesc_to_MD(JP2K::PictureDescriptor& PDe
   PDescObj->AspectRatio = PDesc.AspectRatio;
   PDescObj->FrameLayout = 0;
 
-  InterchangeObject* MDObject;
-  if ( ASDCP_SUCCESS(m_HeaderPart.GetMDObjectByType(OBJ_TYPE_ARGS(JPEG2000PictureSubDescriptor), &MDObject)) )
-    {
-      assert(MDObject);
-      JPEG2000PictureSubDescriptor* PSubDescObj = (JPEG2000PictureSubDescriptor*)MDObject;
+  m_EssenceSubDescriptor->Rsize = PDesc.Rsize;
+  m_EssenceSubDescriptor->Xsize = PDesc.Xsize;
+  m_EssenceSubDescriptor->Ysize = PDesc.Ysize;
+  m_EssenceSubDescriptor->XOsize = PDesc.XOsize;
+  m_EssenceSubDescriptor->YOsize = PDesc.YOsize;
+  m_EssenceSubDescriptor->XTsize = PDesc.XTsize;
+  m_EssenceSubDescriptor->YTsize = PDesc.YTsize;
+  m_EssenceSubDescriptor->XTOsize = PDesc.XTOsize;
+  m_EssenceSubDescriptor->YTOsize = PDesc.YTOsize;
+  m_EssenceSubDescriptor->Csize = PDesc.Csize;
 
-      PSubDescObj->Rsize = PDesc.Rsize;
-      PSubDescObj->Xsize = PDesc.Xsize;
-      PSubDescObj->Ysize = PDesc.Ysize;
-      PSubDescObj->XOsize = PDesc.XOsize;
-      PSubDescObj->YOsize = PDesc.YOsize;
-      PSubDescObj->XTsize = PDesc.XTsize;
-      PSubDescObj->YTsize = PDesc.YTsize;
-      PSubDescObj->XTOsize = PDesc.XTOsize;
-      PSubDescObj->YTOsize = PDesc.YTOsize;
-      PSubDescObj->Csize = PDesc.Csize;
-    }
-#if 0
   const ui32_t tmp_buffer_len = 64;
   byte_t tmp_buffer[tmp_buffer_len];
 
@@ -383,10 +368,14 @@ ASDCP::JP2K::MXFWriter::h__Writer::JP2K_PDesc_to_MD(JP2K::PictureDescriptor& PDe
   *(ui32_t*)(tmp_buffer+4) = ASDCP_i32_BE(3L);
   memcpy(tmp_buffer + 8, &PDesc.ImageComponents, sizeof(ASDCP::JP2K::ImageComponent) * 3L);
 
-  PSubDescObj->SetValue("PictureComponentSizing", DataChunk(17, tmp_buffer));
-  PSubDescObj->SetValue("CodingStyleDefault", DataChunk(PDesc.CodingStyleLength, PDesc.CodingStyle));
-  PSubDescObj->SetValue("QuantizationDefault", DataChunk(PDesc.QuantDefaultLength, PDesc.QuantDefault));
-#endif
+  memcpy(m_EssenceSubDescriptor->PictureComponentSizing.Data(), tmp_buffer, 17);
+  m_EssenceSubDescriptor->PictureComponentSizing.Size(17);
+
+  memcpy(m_EssenceSubDescriptor->CodingStyleDefault.Data(), PDesc.CodingStyle, PDesc.CodingStyleLength);
+  m_EssenceSubDescriptor->CodingStyleDefault.Size(PDesc.CodingStyleLength);
+
+  memcpy(m_EssenceSubDescriptor->QuantizationDefault.Data(), PDesc.QuantDefault, PDesc.QuantDefaultLength);
+  m_EssenceSubDescriptor->QuantizationDefault.Size(PDesc.QuantDefaultLength);
 
   return RESULT_OK;
 }
@@ -404,13 +393,11 @@ ASDCP::JP2K::MXFWriter::h__Writer::OpenWrite(const char* filename, ui32_t Header
 
   if ( ASDCP_SUCCESS(result) )
     {
-      RGBAEssenceDescriptor* rgbDesc = new RGBAEssenceDescriptor;
-
-      JPEG2000PictureSubDescriptor* jp2kSubDesc = new JPEG2000PictureSubDescriptor;
-      m_HeaderPart.AddChildObject(jp2kSubDesc);
-      rgbDesc->SubDescriptors.push_back(jp2kSubDesc->InstanceUID);
-
-      m_EssenceDescriptor = rgbDesc;
+      m_HeaderSize = HeaderSize;
+      m_EssenceDescriptor = new RGBAEssenceDescriptor;
+      m_EssenceSubDescriptor = new JPEG2000PictureSubDescriptor;
+      m_HeaderPart.AddChildObject(m_EssenceSubDescriptor);
+      m_EssenceDescriptor->SubDescriptors.push_back(m_EssenceSubDescriptor->InstanceUID);
       result = m_State.Goto_INIT();
     }
 
@@ -425,11 +412,11 @@ ASDCP::JP2K::MXFWriter::h__Writer::SetSourceStream(const PictureDescriptor& PDes
     return RESULT_STATE;
 
   m_PDesc = PDesc;
-  Result_t result = JP2K_PDesc_to_MD(m_PDesc, (RGBAEssenceDescriptor*)m_EssenceDescriptor);
+  Result_t result = JP2K_PDesc_to_MD(m_PDesc);
 
   if ( ASDCP_SUCCESS(result) )
-      result = WriteMXFHeader(JP2K_PACKAGE_LABEL,
-			      UL(WrappingUL_Data_JPEG_2000),
+      result = WriteMXFHeader(JP2K_PACKAGE_LABEL, UL(Dict::ul(MDD_JPEG_2000Wrapping)),
+			      PICT_DEF_LABEL,     UL(Dict::ul(MDD_PictureDataDef)),
 			      m_PDesc.EditRate, 24 /* TCFrameRate */);
 
   if ( ASDCP_SUCCESS(result) )
@@ -451,16 +438,15 @@ ASDCP::JP2K::MXFWriter::h__Writer::WriteFrame(const FrameBuffer& FrameBuf, AESEn
 
   if ( m_State.Test_READY() )
     result = m_State.Goto_RUNNING(); // first time through
-
-  fpos_t ThisOffset = m_StreamOffset;
  
+  IndexTableSegment::IndexEntry Entry;
+  Entry.StreamOffset = m_StreamOffset;
+
   if ( ASDCP_SUCCESS(result) )
-    result = WriteEKLVPacket(FrameBuf, JP2KEssenceUL_Data, Ctx, HMAC);
+    result = WriteEKLVPacket(FrameBuf, Dict::ul(MDD_JPEG2000Essence), Ctx, HMAC);
 
   if ( ASDCP_SUCCESS(result) )
     {  
-      IndexTableSegment::IndexEntry Entry;
-      Entry.StreamOffset = ThisOffset - m_FooterPart.m_ECOffset;
       m_FooterPart.PushIndexEntry(Entry);
       m_FramesWritten++;
     }

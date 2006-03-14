@@ -168,7 +168,7 @@ ASDCP::MXF::IndexTableSegment::DeltaEntry::Unarchive(ASDCP::MemIOReader& Reader)
 
 //
 ASDCP::Result_t
-ASDCP::MXF::IndexTableSegment::DeltaEntry::Archive(ASDCP::MemIOWriter& Writer)
+ASDCP::MXF::IndexTableSegment::DeltaEntry::Archive(ASDCP::MemIOWriter& Writer) const
 {
   Result_t result = Writer.WriteUi8((ui8_t)PosTableIndex);
   if ( ASDCP_SUCCESS(result) ) result = Writer.WriteUi8(Slice);
@@ -225,7 +225,7 @@ ASDCP::MXF::IndexTableSegment::IndexEntry::Unarchive(ASDCP::MemIOReader& Reader)
 
 //
 ASDCP::Result_t
-ASDCP::MXF::IndexTableSegment::IndexEntry::Archive(ASDCP::MemIOWriter& Writer)
+ASDCP::MXF::IndexTableSegment::IndexEntry::Archive(ASDCP::MemIOWriter& Writer) const
 {
   Result_t result = Writer.WriteUi8((ui8_t)TemporalOffset);
   if ( ASDCP_SUCCESS(result) ) result = Writer.WriteUi8((ui8_t)KeyFrameOffset);

@@ -34,9 +34,12 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 //------------------------------------------------------------------------------------------
 
+static std::string MPEG_PACKAGE_LABEL = "File Package: SMPTE 381M frame wrapping of MPEG2 video elementary stream";
+static std::string PICT_DEF_LABEL = "Picture Track";
+
 //
 ASDCP::Result_t
-ASDCP::MD_to_MPEG2_VDesc(MXF::MPEG2VideoDescriptor* VDescObj, MPEG2::VideoDescriptor& VDesc)
+MD_to_MPEG2_VDesc(MXF::MPEG2VideoDescriptor* VDescObj, MPEG2::VideoDescriptor& VDesc)
 {
   ASDCP_TEST_NULL(VDescObj);
 
@@ -65,7 +68,7 @@ ASDCP::MD_to_MPEG2_VDesc(MXF::MPEG2VideoDescriptor* VDescObj, MPEG2::VideoDescri
 
 //
 ASDCP::Result_t
-ASDCP::MPEG2_VDesc_to_MD(MPEG2::VideoDescriptor& VDesc, MXF::MPEG2VideoDescriptor* VDescObj)
+MPEG2_VDesc_to_MD(MPEG2::VideoDescriptor& VDesc, MXF::MPEG2VideoDescriptor* VDescObj)
 {
   ASDCP_TEST_NULL(VDescObj);
 
@@ -228,7 +231,7 @@ ASDCP::MPEG2::MXFReader::h__Reader::ReadFrame(ui32_t FrameNum, FrameBuffer& Fram
   if ( ! m_File.IsOpen() )
     return RESULT_INIT;
 
-  Result_t result = ReadEKLVPacket(FrameNum, FrameBuf, MPEGEssenceUL_Data, Ctx, HMAC);
+  Result_t result = ReadEKLVPacket(FrameNum, FrameBuf, Dict::ul(MDD_MPEG2Essence), Ctx, HMAC);
 
   if ( ASDCP_FAILURE(result) )
     return result;
@@ -409,6 +412,7 @@ ASDCP::MPEG2::MXFWriter::h__Writer::OpenWrite(const char* filename, ui32_t Heade
 
   if ( ASDCP_SUCCESS(result) )
     {
+      m_HeaderSize = HeaderSize;
       m_EssenceDescriptor = new MPEG2VideoDescriptor;
       result = m_State.Goto_INIT();
     }
@@ -427,8 +431,8 @@ ASDCP::MPEG2::MXFWriter::h__Writer::SetSourceStream(const VideoDescriptor& VDesc
   Result_t result = MPEG2_VDesc_to_MD(m_VDesc, (MPEG2VideoDescriptor*)m_EssenceDescriptor);
 
   if ( ASDCP_SUCCESS(result) )
-      result = WriteMXFHeader(MPEG_PACKAGE_LABEL,
-			      UL(WrappingUL_Data_MPEG2_VES),
+      result = WriteMXFHeader(MPEG_PACKAGE_LABEL, UL(Dict::ul(MDD_MPEG2_VESWrapping)), 
+			      PICT_DEF_LABEL,     UL(Dict::ul(MDD_PictureDataDef)),
 			      m_VDesc.EditRate, 24 /* TCFrameRate */);
 
   if ( ASDCP_SUCCESS(result) )
@@ -451,10 +455,11 @@ ASDCP::MPEG2::MXFWriter::h__Writer::WriteFrame(const FrameBuffer& FrameBuf, AESE
   if ( m_State.Test_READY() )
     result = m_State.Goto_RUNNING(); // first time through, get the body location
 
-  ui64_t ThisOffset = m_File.Tell();
+  IndexTableSegment::IndexEntry Entry;
+  Entry.StreamOffset = m_StreamOffset;
 
   if ( ASDCP_SUCCESS(result) )
-    result = WriteEKLVPacket(FrameBuf, MPEGEssenceUL_Data, Ctx, HMAC);
+    result = WriteEKLVPacket(FrameBuf, Dict::ul(MDD_MPEG2Essence), Ctx, HMAC);
 
   if ( ASDCP_FAILURE(result) )
     return result;
@@ -479,11 +484,9 @@ ASDCP::MPEG2::MXFWriter::h__Writer::WriteFrame(const FrameBuffer& FrameBuf, AESE
     }
 
   // update the index manager
-  IndexTableSegment::IndexEntry Entry;
   Entry.TemporalOffset = - FrameBuf.TemporalOffset();
   Entry.KeyFrameOffset = m_GOPOffset;
   Entry.Flags = Flags;
-  Entry.StreamOffset = ThisOffset - m_FooterPart.m_ECOffset;
   m_FooterPart.PushIndexEntry(Entry);
   m_FramesWritten++;
   m_GOPOffset++;

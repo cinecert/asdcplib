@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2004-2005, John Hurst
+Copyright (c) 2004-2006, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -34,8 +34,12 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 //------------------------------------------------------------------------------------------
 
+static std::string PCM_PACKAGE_LABEL = "File Package: SMPTE 382M frame wrapping of wave audio";
+static std::string SOUND_DEF_LABEL = "Sound Track";
+
+//
 Result_t
-ASDCP::PCM_ADesc_to_MD(PCM::AudioDescriptor& ADesc, MXF::WaveAudioDescriptor* ADescObj)
+PCM_ADesc_to_MD(PCM::AudioDescriptor& ADesc, MXF::WaveAudioDescriptor* ADescObj)
 {
   ASDCP_TEST_NULL(ADescObj);
   ADescObj->SampleRate = ADesc.SampleRate;
@@ -52,7 +56,7 @@ ASDCP::PCM_ADesc_to_MD(PCM::AudioDescriptor& ADesc, MXF::WaveAudioDescriptor* AD
 
 //
 ASDCP::Result_t
-ASDCP::MD_to_PCM_ADesc(MXF::WaveAudioDescriptor* ADescObj, PCM::AudioDescriptor& ADesc)
+MD_to_PCM_ADesc(MXF::WaveAudioDescriptor* ADescObj, PCM::AudioDescriptor& ADesc)
 {
   ASDCP_TEST_NULL(ADescObj);
   ADesc.SampleRate = ADescObj->SampleRate;
@@ -106,15 +110,15 @@ calc_CBR_frame_size(ASDCP::WriterInfo& Info, const ASDCP::PCM::AudioDescriptor& 
   if ( Info.EncryptedEssence )
     {
       CBR_frame_size =
-	klv_key_size
-	+ klv_length_size
+	SMPTE_UL_LENGTH
+	+ MXF_BER_LENGTH
 	+ klv_cryptinfo_size
 	+ calc_esv_length(ASDCP::PCM::CalcFrameBufferSize(ADesc), 0)
-	+ ( Info.UsesHMAC ? klv_intpack_size : (klv_length_size * 3) );
+	+ ( Info.UsesHMAC ? klv_intpack_size : (MXF_BER_LENGTH * 3) );
     }
   else
     {
-      CBR_frame_size = ASDCP::PCM::CalcFrameBufferSize(ADesc) + klv_key_size + klv_length_size;
+      CBR_frame_size = ASDCP::PCM::CalcFrameBufferSize(ADesc) + SMPTE_UL_LENGTH + MXF_BER_LENGTH;
     }
 
   return CBR_frame_size;
@@ -198,7 +202,7 @@ ASDCP::PCM::MXFReader::h__Reader::ReadFrame(ui32_t FrameNum, FrameBuffer& FrameB
   if ( ! m_File.IsOpen() )
     return RESULT_INIT;
 
-  return ReadEKLVPacket(FrameNum, FrameBuf, WAVEssenceUL_Data, Ctx, HMAC);
+  return ReadEKLVPacket(FrameNum, FrameBuf, Dict::ul(MDD_WAVEssence), Ctx, HMAC);
 }
 
 //------------------------------------------------------------------------------------------
@@ -334,6 +338,7 @@ ASDCP::PCM::MXFWriter::h__Writer::OpenWrite(const char* filename, ui32_t HeaderS
 
   if ( ASDCP_SUCCESS(result) )
     {
+      m_HeaderSize = HeaderSize;
       m_EssenceDescriptor = new WaveAudioDescriptor;
       result = m_State.Goto_INIT();
     }
@@ -369,8 +374,8 @@ ASDCP::PCM::MXFWriter::h__Writer::SetSourceStream(const AudioDescriptor& ADesc)
   Result_t result = PCM_ADesc_to_MD(m_ADesc, (WaveAudioDescriptor*)m_EssenceDescriptor);
   
   if ( ASDCP_SUCCESS(result) )
-      result = WriteMXFHeader(PCM_PACKAGE_LABEL,
-			      UL(WrappingUL_Data_PCM_24b_48k),
+      result = WriteMXFHeader(PCM_PACKAGE_LABEL, UL(Dict::ul(MDD_WAVWrapping)),
+			      SOUND_DEF_LABEL,   UL(Dict::ul(MDD_SoundDataDef)),
 			      m_ADesc.SampleRate, 24 /* TCFrameRate */, calc_CBR_frame_size(m_Info, m_ADesc));
 
   if ( ASDCP_SUCCESS(result) )
@@ -392,7 +397,7 @@ ASDCP::PCM::MXFWriter::h__Writer::WriteFrame(const FrameBuffer& FrameBuf, AESEnc
     result = m_State.Goto_RUNNING(); // first time through
 
   if ( ASDCP_SUCCESS(result) )
-    result = WriteEKLVPacket(FrameBuf, WAVEssenceUL_Data, Ctx, HMAC);
+    result = WriteEKLVPacket(FrameBuf, Dict::ul(MDD_WAVEssence), Ctx, HMAC);
 
   if ( ASDCP_SUCCESS(result) )
     m_FramesWritten++;

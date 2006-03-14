@@ -94,21 +94,41 @@ ASDCP::Result_t
 ASDCP::PCM::WAVParser::h__WAVParser::OpenRead(const char* filename, const Rational& PictureRate)
 {
   ASDCP_TEST_NULL_STR(filename);
-  SimpleWaveHeader WavHeader;
 
   Result_t result = m_FileReader.OpenRead(filename);
 
   if ( ASDCP_SUCCESS(result) )
-    result = WavHeader.ReadFromFile(m_FileReader, &m_DataStart);
-  
-  if ( ASDCP_SUCCESS(result) )
     {
-      WavHeader.FillADesc(m_ADesc, PictureRate);
-      m_FrameBufferSize = ASDCP::PCM::CalcFrameBufferSize(m_ADesc);
-      m_DataLength = WavHeader.data_len;
-      m_ADesc.ContainerDuration = m_DataLength / m_FrameBufferSize;
-      Reset();
+      SimpleWaveHeader WavHeader;
+      result = WavHeader.ReadFromFile(m_FileReader, &m_DataStart);
+  
+      if ( ASDCP_SUCCESS(result) )
+	{
+	  WavHeader.FillADesc(m_ADesc, PictureRate);
+	  m_FrameBufferSize = ASDCP::PCM::CalcFrameBufferSize(m_ADesc);
+	  m_DataLength = WavHeader.data_len;
+	  m_ADesc.ContainerDuration = m_DataLength / m_FrameBufferSize;
+	  Reset();
+	}
+      else
+	{
+	  ASDCP::AIFF::SimpleAIFFHeader AIFFHeader;
+	  m_FileReader.Seek(0);
+
+	  result = AIFFHeader.ReadFromFile(m_FileReader, &m_DataStart);
+
+	  if ( ASDCP_SUCCESS(result) )
+	    {
+	      AIFFHeader.FillADesc(m_ADesc, PictureRate);
+	      m_FrameBufferSize = ASDCP::PCM::CalcFrameBufferSize(m_ADesc);
+	      m_DataLength = AIFFHeader.data_len;
+	      m_ADesc.ContainerDuration = m_DataLength / m_FrameBufferSize;
+	      Reset();
+	    }
+	}
     }
+
+  AudioDescriptorDump(m_ADesc);
 
   return result;
 }

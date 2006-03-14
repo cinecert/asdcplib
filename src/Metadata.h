@@ -401,7 +401,6 @@ namespace ASDCP
 	public:
           ui32_t ComponentMaxRef;
           ui32_t ComponentMinRef;
-          RGBLayout PixelLayout;
 
 	  RGBAEssenceDescriptor() : ComponentMaxRef(0), ComponentMinRef(0) {}
 	  virtual ~RGBAEssenceDescriptor() {}

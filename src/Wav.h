@@ -36,10 +36,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 namespace ASDCP
 {
-namespace Wav
-{
-  const ui32_t MaxWavHeader = 1024*32; // must find "data" within this space or no happy
-
   //
   class fourcc
     {
@@ -55,37 +51,69 @@ namespace Wav
       inline bool operator!=(const fourcc &rhs)  { return memcmp(data, rhs.data, 4) != 0 ? true : false; }
     };
 
-  const fourcc FCC_RIFF("RIFF");
-  const fourcc FCC_WAVE("WAVE");
-  const fourcc FCC_fmt_("fmt ");
-  const fourcc FCC_data("data");
-
-  //
-  class SimpleWaveHeader
+  namespace AIFF
     {
-    public:
-      ui16_t	format;
-      ui16_t	nchannels;
-      ui32_t	samplespersec;
-      ui32_t	avgbps;
-      ui16_t	blockalign;
-      ui16_t	bitspersample;
-      ui16_t	cbsize;
-      ui32_t	data_len;
+      const fourcc FCC_FORM("FORM");
+      const fourcc FCC_AIFF("AIFF");
+      const fourcc FCC_COMM("COMM");
+      const fourcc FCC_SSND("SSND");
 
-      SimpleWaveHeader() :
-	format(0), nchannels(0), samplespersec(0), avgbps(0),
-	blockalign(0), bitspersample(0), cbsize(0), data_len(0) {}
+      class SimpleAIFFHeader
+	{
+	public:
+	  ui16_t  numChannels;
+	  ui32_t  numSampleFrames;
+	  ui16_t  sampleSize;
+	  byte_t  sampleRate[10]; // 80-bit IEEE 754 float
+	  ui32_t  data_len;
+
+	  SimpleAIFFHeader() :
+	    numChannels(0), numSampleFrames(0), sampleSize(0), data_len(0) {
+	    memset(sampleRate, 0, 10);
+	  }
+      	  
+	  Result_t  ReadFromBuffer(const byte_t* buf, ui32_t buf_len, ui32_t* data_start);
+	  Result_t  ReadFromFile(const ASDCP::FileReader& InFile, ui32_t* data_start);
+	  void      FillADesc(ASDCP::PCM::AudioDescriptor& ADesc, Rational PictureRate) const;
+	};
+
+    } // namespace AIFF
+
+  namespace Wav
+    {
+      const ui32_t MaxWavHeader = 1024*32; // must find "data" within this space or no happy
+
+      const fourcc FCC_RIFF("RIFF");
+      const fourcc FCC_WAVE("WAVE");
+      const fourcc FCC_fmt_("fmt ");
+      const fourcc FCC_data("data");
+
+      //
+      class SimpleWaveHeader
+	{
+	public:
+	  ui16_t	format;
+	  ui16_t	nchannels;
+	  ui32_t	samplespersec;
+	  ui32_t	avgbps;
+	  ui16_t	blockalign;
+	  ui16_t	bitspersample;
+	  ui16_t	cbsize;
+	  ui32_t	data_len;
+
+	  SimpleWaveHeader() :
+	    format(0), nchannels(0), samplespersec(0), avgbps(0),
+	    blockalign(0), bitspersample(0), cbsize(0), data_len(0) {}
       
-      SimpleWaveHeader(ASDCP::PCM::AudioDescriptor& ADesc);
+	  SimpleWaveHeader(ASDCP::PCM::AudioDescriptor& ADesc);
+	  
+	  Result_t  ReadFromBuffer(const byte_t* buf, ui32_t buf_len, ui32_t* data_start);
+	  Result_t  ReadFromFile(const ASDCP::FileReader& InFile, ui32_t* data_start);
+	  Result_t  WriteToFile(ASDCP::FileWriter& OutFile) const;
+	  void      FillADesc(ASDCP::PCM::AudioDescriptor& ADesc, Rational PictureRate) const;
+	};
 
-      Result_t  ReadFromBuffer(const byte_t* buf, ui32_t buf_len, ui32_t* data_start);
-      Result_t  ReadFromFile(const ASDCP::FileReader& InFile, ui32_t* data_start);
-      Result_t  WriteToFile(ASDCP::FileWriter& OutFile) const;
-      void      FillADesc(ASDCP::PCM::AudioDescriptor& ADesc, Rational PictureRate) const;
-   };
-
-} // namespace Wav
+    } // namespace Wav
 } // namespace ASDCP
 
 #endif // _WAV_H_

@@ -98,14 +98,12 @@ namespace ASDCP
 	class Batch : public std::vector<T>, public IArchive
 	{
 	public:
-	  ui32_t ItemCount;
-	  ui32_t ItemSize;
-
-	  Batch() : ItemCount(0), ItemSize(0) { ItemSize = sizeof(T); }
+	  Batch() {}
 	  ~Batch() {}
 
 	  //
 	  Result_t Unarchive(ASDCP::MemIOReader& Reader) {
+	    ui32_t ItemCount, ItemSize;
 	    Result_t result = Reader.ReadUi32BE(&ItemCount);
 
 	    if ( ASDCP_SUCCESS(result) )
@@ -126,14 +124,28 @@ namespace ASDCP
 	    return result;
 	  }
 
+	  inline bool HasValue() const { return ! empty(); }
+
 	  //
-	  Result_t Archive(ASDCP::MemIOWriter& Writer) {
+	  Result_t Archive(ASDCP::MemIOWriter& Writer) const {
 	    Result_t result = Writer.WriteUi32BE(size());
+	    byte_t* p = Writer.CurrentData();
 
 	    if ( ASDCP_SUCCESS(result) )
-	      result = Writer.WriteUi32BE(ItemSize);
+	      result = Writer.WriteUi32BE(0);
 
-	    typename std::vector<T>::iterator l_i = begin();
+	    if ( ASDCP_FAILURE(result) || empty() )
+	      return result;
+	    
+	    typename std::vector<T>::const_iterator l_i = begin();
+	    assert(l_i != end());
+
+	    ui32_t ItemSize = Writer.Remainder();
+	    result = (*l_i).Archive(Writer);
+	    ItemSize -= Writer.Remainder();
+	    i2p<ui32_t>(ASDCP_i32_BE(ItemSize), p);
+	    l_i++;
+
 	    for ( ; l_i != end() && ASDCP_SUCCESS(result); l_i++ )
 	      result = (*l_i).Archive(Writer);
 
@@ -175,10 +187,12 @@ namespace ASDCP
 	      return RESULT_OK;
 	    }
 
+	  inline bool HasValue() const { return ! empty(); }
+
 	  //
-	  Result_t Archive(ASDCP::MemIOWriter& Writer) {
+	  Result_t Archive(ASDCP::MemIOWriter& Writer) const {
 	    Result_t result = RESULT_OK;
-	    typename std::list<T>::iterator l_i = begin();
+	    typename std::list<T>::const_iterator l_i = begin();
 
 	    for ( ; l_i != end() && ASDCP_SUCCESS(result); l_i++ )
 	      result = (*l_i).Archive(Writer);
@@ -244,8 +258,10 @@ namespace ASDCP
 	    return result;
 	  }
 
+	  inline bool HasValue() const { return true; }
+
 	  //
-	  inline Result_t Archive(ASDCP::MemIOWriter& Writer) {
+	  inline Result_t Archive(ASDCP::MemIOWriter& Writer) const {
 	    Result_t result = Writer.WriteUi16BE(Year);
 
 	    if ( ASDCP_SUCCESS(result) )
@@ -260,6 +276,7 @@ namespace ASDCP
 	{
 	  ui16_t m_length;
 	  char   m_buffer[IdentBufferLen];
+	  ASDCP_NO_COPY_CONSTRUCT(UTF16String);
 	  
 	public:
 	  UTF16String() : m_length(0) { *m_buffer = 0; }
@@ -274,7 +291,8 @@ namespace ASDCP
 	  }
 
 	  Result_t Unarchive(ASDCP::MemIOReader& Reader);
-	  Result_t Archive(ASDCP::MemIOWriter& Writer);
+	  inline bool HasValue() const { return true; }
+	  Result_t Archive(ASDCP::MemIOWriter& Writer) const;
 	};
 
       //
@@ -321,7 +339,9 @@ namespace ASDCP
 	    return result;
 	  }
 
-	  Result_t Archive(ASDCP::MemIOWriter& Writer) {
+	  inline bool HasValue() const { return true; }
+
+	  Result_t Archive(ASDCP::MemIOWriter& Writer) const {
 	    Result_t result = Writer.WriteUi32BE((ui32_t)Numerator);
 
 	    if ( ASDCP_SUCCESS(result) )
@@ -349,7 +369,7 @@ namespace ASDCP
 	  void Dump(FILE* = 0);
 
 	  const char* ToString(char* str_buf) const {
-	    snprintf(str_buf, IdentBufferLen, "%hu.%hu.%hu.%hu.%hu", Major, Minor, Patch, Build, Release);
+	    snprintf(str_buf, IdentBufferLen, "%hu.%hu.%hu.%hur%hu", Major, Minor, Patch, Build, Release);
 	    return str_buf;
 	  }
 
@@ -368,52 +388,32 @@ namespace ASDCP
 	    return result;
 	  }
 
-	  Result_t Archive(ASDCP::MemIOWriter& Writer) {
-	    Result_t result = Writer.WriteUi32BE(Major);
-	    if ( ASDCP_SUCCESS(result) ) result = Writer.WriteUi32BE(Minor);
-	    if ( ASDCP_SUCCESS(result) ) result = Writer.WriteUi32BE(Patch);
-	    if ( ASDCP_SUCCESS(result) ) result = Writer.WriteUi32BE(Build);
-	    if ( ASDCP_SUCCESS(result) ) result = Writer.WriteUi32BE((ui16_t)(Release & 0x0000ffffL));
+	  inline bool HasValue() const { return true; }
+
+	  Result_t Archive(ASDCP::MemIOWriter& Writer) const {
+	    Result_t result = Writer.WriteUi16BE(Major);
+	    if ( ASDCP_SUCCESS(result) ) result = Writer.WriteUi16BE(Minor);
+	    if ( ASDCP_SUCCESS(result) ) result = Writer.WriteUi16BE(Patch);
+	    if ( ASDCP_SUCCESS(result) ) result = Writer.WriteUi16BE(Build);
+	    if ( ASDCP_SUCCESS(result) ) result = Writer.WriteUi16BE((ui16_t)(Release & 0x0000ffffL));
 	    return result;
 	  }
 	};
 
       //
-      class RGBLayout : public IArchive
-        {
-        public:
-          struct element {
-            ui8_t Code;
-            ui8_t Depth;
-          } PictureElement[8];
-          RGBLayout() { memset(PictureElement, 0, sizeof(PictureElement)); }
-
-	  //
-          Result_t Unarchive(ASDCP::MemIOReader& Reader) { return RESULT_OK; }
-	  Result_t Archive(ASDCP::MemIOWriter& Writer) { return RESULT_OK; }
-          inline const char* ToString(char* str_buf) const {
-            snprintf(str_buf, IdentBufferLen, "RGBLayout: <PictureElement[8]>\n");
-            return str_buf;
-          }
-        };
-
-      //
-      class Raw : public IArchive
+      class Raw : public ASDCP::FrameBuffer, public IArchive
 	{
 	  ASDCP_NO_COPY_CONSTRUCT(Raw);
 
 	public:
-	  byte_t* data;
-	  Raw() {}
-	  ~Raw() {}
+	  Raw();
+	  ~Raw();
 
 	  //
-          Result_t Unarchive(ASDCP::MemIOReader& Reader) { return RESULT_OK; }
-	  Result_t Archive(ASDCP::MemIOWriter& Writer) { return RESULT_OK; }
-          inline const char* ToString(char* str_buf) const {
-            snprintf(str_buf, IdentBufferLen, "RAW\n");
-            return str_buf;
-          }
+          Result_t    Unarchive(ASDCP::MemIOReader& Reader);
+	  inline bool HasValue() const { return true; }
+	  Result_t    Archive(ASDCP::MemIOWriter& Writer) const;
+	  const char* ToString(char* str_buf) const;
 	};
 
     } // namespace MXF

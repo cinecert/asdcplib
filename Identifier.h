@@ -40,9 +40,10 @@ namespace ASDCP
     {
     protected:
       byte_t m_Value[SIZE];
+      bool   m_HasValue;
 
     public:
-      Identifier() {
+      Identifier() : m_HasValue(false) {
 	memset(m_Value, 0, SIZE);
       }
 
@@ -50,19 +51,29 @@ namespace ASDCP
       inline Result_t Set(const byte_t* value) {
 	ASDCP_TEST_NULL(value);
 	memcpy(m_Value, value, SIZE);
+	m_HasValue = true;
 	return RESULT_OK;
+      }
+
+      //
+      inline Identifier& operator=(const Identifier& rhs)
+      {
+	Set(rhs.m_Value);
+	return *this;
       }
 
       //
       inline Result_t Unarchive(ASDCP::MemIOReader& Reader) {
-	Reader.ReadRaw(m_Value, SIZE);
-	return RESULT_OK;
+	Result_t result = Reader.ReadRaw(m_Value, SIZE);
+	if ( ASDCP_SUCCESS(result) ) m_HasValue = true;
+	return result;
       }
 
+      inline bool HasValue() const { return m_HasValue; }
+
       //
-      inline Result_t Archive(ASDCP::MemIOWriter& Writer) {
-	Writer.WriteRaw(m_Value, SIZE);
-	return RESULT_OK;
+      inline Result_t Archive(ASDCP::MemIOWriter& Writer) const {
+	return Writer.WriteRaw(m_Value, SIZE);
       }
 
       inline const byte_t* Value() const { return m_Value; }
@@ -120,21 +131,6 @@ namespace ASDCP
   class UUID;
   class UMID;
 
-  // UID - either a UL or a UUID
-  class UID : public Identifier<SMPTE_UL_LENGTH>
-    {
-      friend class ASDCP::UL;
-      friend class ASDCP::UUID;
-
-    public:
-      UID() {}
-      UID(const UID& rhs) {
-	memcpy(m_Value, rhs.m_Value, SMPTE_UL_LENGTH);
-      }
-      
-      const UID& operator=(const UMID&);
-    };
-
   // Universal Label
   class UL : public Identifier<SMPTE_UL_LENGTH>
     {
@@ -142,15 +138,11 @@ namespace ASDCP
       UL() {}
       UL(const byte_t* rhs) {
 	assert(rhs);
-	memcpy(m_Value, rhs, SMPTE_UL_LENGTH);
+	Set(rhs);
       }
 
       UL(const UL& rhs) {
-	memcpy(m_Value, rhs.m_Value, SMPTE_UL_LENGTH);
-      }
-
-      UL(const UID& rhs) {
-	memcpy(m_Value, rhs.m_Value, SMPTE_UL_LENGTH);
+	Set(rhs.m_Value);
       }
 
       bool operator==(const UL& rhs) const {
@@ -165,19 +157,11 @@ namespace ASDCP
       UUID() {}
       UUID(const byte_t* rhs) {
 	assert(rhs);
-	memcpy(m_Value, rhs, UUIDlen);
+	Set(rhs);
       }
 
       UUID(const UUID& rhs) {
-	memcpy(m_Value, rhs.m_Value, UUIDlen);
-      }
-
-      UUID(const UID& rhs) {
-	memcpy(m_Value, rhs.m_Value, UUIDlen);
-      }
-      
-      bool operator==(const UID& rhs) const {
-	return ( memcmp(m_Value, rhs.m_Value, UUIDlen) == 0 ) ? true : false;
+	Set(rhs.m_Value);
       }
 
       void GenRandomValue();
@@ -189,24 +173,12 @@ namespace ASDCP
     public:
       UMID() {}
       UMID(const UMID &rhs) {
-	memcpy(m_Value, rhs.m_Value, SMPTE_UMID_LENGTH);
+	Set(rhs.m_Value);
       };
 
       void MakeUMID(int Type);
-
       void MakeUMID(int Type, const UUID& ID);
-
-      //      void SetMaterial(UL& aUL);
-
-      //      void SetInstance(int Instance, int Method = -1);
-
       const char* ToString(char* str_buf) const;
-
-      ui32_t GetInstance(void) const
-	{
-	  assert(0);
-	  return ( m_Value[13] << 16 ) | ( m_Value[14] << 8 ) | m_Value[15];
-	}
     };
 
 } // namespace mxflib

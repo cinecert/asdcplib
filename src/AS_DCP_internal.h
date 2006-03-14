@@ -45,135 +45,25 @@ using namespace ASDCP::MXF;
 namespace ASDCP
 {
   // constant values used to calculate KLV and EKLV packet sizes
-  static const ui32_t klv_key_size = 16;
-  static const ui32_t klv_length_size = 4;
 
   static const ui32_t klv_cryptinfo_size =
-    klv_length_size
+    MXF_BER_LENGTH
     + UUIDlen /* ContextID */
-    + klv_length_size
+    + MXF_BER_LENGTH
     + sizeof(ui64_t) /* PlaintextOffset */
-    + klv_length_size
-    + klv_key_size /* SourceKey */
-    + klv_length_size
+    + MXF_BER_LENGTH
+    + SMPTE_UL_LENGTH /* SourceKey */
+    + MXF_BER_LENGTH
     + sizeof(ui64_t) /* SourceLength */
-    + klv_length_size /* ESV length */ ;
+    + MXF_BER_LENGTH /* ESV length */ ;
 
   static const ui32_t klv_intpack_size =
-    klv_length_size
+    MXF_BER_LENGTH
     + UUIDlen /* TrackFileID */
-    + klv_length_size
+    + MXF_BER_LENGTH
     + sizeof(ui64_t) /* SequenceNumber */
-    + klv_length_size
+    + MXF_BER_LENGTH
     + 20; /* HMAC length*/
-
-  // why this value? i dunno. it was peeled from mxflib.
-  static const ui32_t HeaderPadding = 16384;
-  
-  const byte_t GCMulti_Data[16] =
-  { 0x06, 0x0E, 0x2B, 0x34, 0x04, 0x01, 0x01, 0x03,
-    0x0d, 0x01, 0x03, 0x01, 0x02, 0x7F, 0x01, 0x00 };
-
-  static const byte_t CipherAlgorithm_AES[klv_key_size] =
-  { 0x06, 0x0e, 0x2b, 0x34, 0x04, 0x01, 0x01, 0x07,
-    0x02, 0x09, 0x02, 0x01, 0x01, 0x00, 0x00, 0x00 };
-
-  static const byte_t MICAlgorithm_NONE[klv_key_size] = {0};
-  static const byte_t MICAlgorithm_HMAC_SHA1[klv_key_size] = 
-  { 0x06, 0x0e, 0x2b, 0x34, 0x04, 0x01, 0x01, 0x07,
-    0x02, 0x09, 0x02, 0x02, 0x01, 0x00, 0x00, 0x00 };
-
-#ifdef SMPTE_LABELS
-  static byte_t OPAtom_Data[klv_key_size] =
-  { 0x06, 0x0e, 0x2b, 0x34, 0x04, 0x01, 0x01, 0x02,
-    0x0d, 0x01, 0x02, 0x01, 0x10, 0x00, 0x00, 0x00 };
-  static UL OPAtomUL(OPAtom_Data);
-#else
-  static byte_t OPAtom_Data[klv_key_size] =
-  { 0x06, 0x0e, 0x2b, 0x34, 0x04, 0x01, 0x01, 0x01,
-    0x0d, 0x01, 0x02, 0x01, 0x10, 0x00, 0x00, 0x00 };
-  static UL OPAtomUL(OPAtom_Data);
-#endif
-
-  static const byte_t OP1a_Data[klv_key_size] =
-  { 0x06, 0x0e, 0x2b, 0x34, 0x04, 0x01, 0x01, 0x01,
-    0x0d, 0x01, 0x02, 0x01, 0x01, 0x01, 0x01, 0x00 };
-  static UL OP1aUL(OP1a_Data);
-  
-  // Essence element labels
-  static const byte_t WAVEssenceUL_Data[klv_key_size] =
-  { 0x06, 0x0e, 0x2b, 0x34, 0x01, 0x02, 0x01, 0x01,
-    0x0d, 0x01, 0x03, 0x01, 0x16, 0x01, 0x01, 0x00 };
-
-  static const byte_t MPEGEssenceUL_Data[klv_key_size] =
-  { 0x06, 0x0e, 0x2b, 0x34, 0x01, 0x02, 0x01, 0x01,
-    0x0d, 0x01, 0x03, 0x01, 0x15, 0x01, 0x05, 0x00 };
-
-  static const byte_t JP2KEssenceUL_Data[klv_key_size] =
-  { 0x06, 0x0e, 0x2b, 0x34, 0x01, 0x02, 0x01, 0x01,
-    0x0d, 0x01, 0x03, 0x01, 0x15, 0x01, 0x08, 0x01 };
-
-#ifdef SMPTE_LABELS
-  static const byte_t CryptEssenceUL_Data[klv_key_size] =
-  { 0x06, 0x0e, 0x2b, 0x34, 0x02, 0x04, 0x01, 0x01,
-    0x0d, 0x01, 0x03, 0x01, 0x02, 0x7e, 0x01, 0x00 };
-#else
-  static const byte_t CryptEssenceUL_Data[klv_key_size] =
-  { 0x06, 0x0e, 0x2b, 0x34, 0x02, 0x04, 0x01, 0x07,
-    0x0d, 0x01, 0x03, 0x01, 0x02, 0x7e, 0x01, 0x00 };
-#endif
-
-  // Essence Container Labels
-  static const byte_t WrappingUL_Data_PCM_24b_48k[klv_key_size] =
-  { 0x06, 0x0e, 0x2b, 0x34, 0x04, 0x01, 0x01, 0x01,
-    0x0d, 0x01, 0x03, 0x01, 0x02, 0x06, 0x01, 0x00 };
-
-  static const byte_t WrappingUL_Data_MPEG2_VES[klv_key_size] =
-  { 0x06, 0x0e, 0x2b, 0x34, 0x04, 0x01, 0x01, 0x02,
-    0x0d, 0x01, 0x03, 0x01, 0x02, 0x04, 0x60, 0x01 };
-
-  static const byte_t WrappingUL_Data_JPEG_2000[klv_key_size] =
-  { 0x06, 0x0e, 0x2b, 0x34, 0x04, 0x01, 0x01, 0x07,
-    0x0d, 0x01, 0x03, 0x01, 0x02, 0x0c, 0x01, 0x00 };
-
-  static const byte_t WrappingUL_Data_Crypt[klv_key_size] =
-  { 0x06, 0x0e, 0x2b, 0x34, 0x04, 0x01, 0x01, 0x07,
-    0x0d, 0x01, 0x03, 0x01, 0x02, 0x0b, 0x01, 0x00 };
-
-
-  // the label for the Cryptographic Framework DM scheme
-  static const byte_t CryptoFrameworkUL_Data[klv_key_size] =
-  { 0x06, 0x0e, 0x2b, 0x34, 0x04, 0x01, 0x01, 0x07,
-    0x0d, 0x01, 0x04, 0x01, 0x02, 0x01, 0x01, 0x00 };
-
-  // the check value for EKLV packets
-  // CHUKCHUKCHUKCHUK
-  static const byte_t ESV_CheckValue[CBC_BLOCK_SIZE] =
-  { 0x43, 0x48, 0x55, 0x4b, 0x43, 0x48, 0x55, 0x4b,
-    0x43, 0x48, 0x55, 0x4b, 0x43, 0x48, 0x55, 0x4b };
-
-  // labels used for FilePackages
-  static std::string MPEG_PACKAGE_LABEL = "File Package: SMPTE 381M frame wrapping of MPEG2 video elementary stream";
-  static std::string JP2K_PACKAGE_LABEL = "File Package: SMPTE XXXM frame wrapping of JPEG 2000 codestreams";
-  static std::string PCM_PACKAGE_LABEL = "File Package: SMPTE 382M frame wrapping of wave audio";
-
-  // GetMDObjectByPath() allows searching for metadata object by pathname
-  // This character separates the path elements.
-  static const char OBJECT_PATH_SEPARATOR = '.';
-
-  //------------------------------------------------------------------------------------------
-  //
-
-  Result_t MD_to_MPEG2_VDesc(MXF::MPEG2VideoDescriptor*, MPEG2::VideoDescriptor&);
-  Result_t MD_to_JP2K_PDesc(MXF::RGBAEssenceDescriptor*, JP2K::PictureDescriptor&);
-  Result_t MD_to_PCM_ADesc(MXF::WaveAudioDescriptor*, PCM::AudioDescriptor&);
-  Result_t MD_to_WriterInfo(MXF::Identification*, WriterInfo&);
-  Result_t MD_to_CryptoInfo(MXF::CryptographicContext*, WriterInfo&);
-  Result_t MPEG2_VDesc_to_MD(MPEG2::VideoDescriptor&, MXF::MPEG2VideoDescriptor*);
-  Result_t JP2K_PDesc_to_MD(JP2K::PictureDescriptor&, MXF::RGBAEssenceDescriptor*);
-  Result_t PCM_ADesc_to_MD(PCM::AudioDescriptor&, MXF::WaveAudioDescriptor*);
-  Result_t EncryptFrameBuffer(const ASDCP::FrameBuffer&, ASDCP::FrameBuffer&, AESEncContext*);
-  Result_t DecryptFrameBuffer(const ASDCP::FrameBuffer&, ASDCP::FrameBuffer&, AESDecContext*);
 
   // calculate size of encrypted essence with IV, CheckValue, and padding
   inline ui32_t
@@ -184,6 +74,31 @@ namespace ASDCP
       ui32_t block_size = ct_size - diff;
       return plaintext_offset + block_size + (CBC_BLOCK_SIZE * 3);
     }
+
+  // Interop labels
+
+  static byte_t OPAtom_Data[SMPTE_UL_LENGTH] =
+  { 0x06, 0x0e, 0x2b, 0x34, 0x04, 0x01, 0x01, 0x01,
+    0x0d, 0x01, 0x02, 0x01, 0x10, 0x00, 0x00, 0x00 };
+  static UL OPAtomUL(OPAtom_Data);
+
+  static const byte_t CryptEssenceUL_Data[SMPTE_UL_LENGTH] =
+  { 0x06, 0x0e, 0x2b, 0x34, 0x02, 0x04, 0x01, 0x07,
+    0x0d, 0x01, 0x03, 0x01, 0x02, 0x7e, 0x01, 0x00 };
+
+  // the check value for EKLV packets
+  // CHUKCHUKCHUKCHUK
+  static const byte_t ESV_CheckValue[CBC_BLOCK_SIZE] =
+  { 0x43, 0x48, 0x55, 0x4b, 0x43, 0x48, 0x55, 0x4b,
+    0x43, 0x48, 0x55, 0x4b, 0x43, 0x48, 0x55, 0x4b };
+
+  //------------------------------------------------------------------------------------------
+  //
+
+  Result_t MD_to_WriterInfo(MXF::Identification*, WriterInfo&);
+  Result_t MD_to_CryptoInfo(MXF::CryptographicContext*, WriterInfo&);
+  Result_t EncryptFrameBuffer(const ASDCP::FrameBuffer&, ASDCP::FrameBuffer&, AESEncContext*);
+  Result_t DecryptFrameBuffer(const ASDCP::FrameBuffer&, ASDCP::FrameBuffer&, AESDecContext*);
 
   //
   class h__Reader
@@ -254,17 +169,22 @@ namespace ASDCP
 
     public:
       FileWriter         m_File;
+      ui32_t             m_HeaderSize;
       OPAtomHeader       m_HeaderPart;
       Partition          m_BodyPart;
       OPAtomIndexFooter  m_FooterPart;
       ui64_t             m_EssenceStart;
 
       MaterialPackage*   m_MaterialPackage;
+      Sequence*          m_MPTCSequence;
       TimecodeComponent* m_MPTimecode;
+      Sequence*          m_MPClSequence;
       SourceClip*        m_MPClip;			//! Material Package SourceClip for each essence stream 
 
       SourcePackage*     m_FilePackage;
+      Sequence*          m_FPTCSequence;
       TimecodeComponent* m_FPTimecode;
+      Sequence*          m_FPClSequence;
       SourceClip*        m_FPClip;			//! File Package SourceClip for each essence stream 
 
       FileDescriptor*    m_EssenceDescriptor;
@@ -279,6 +199,7 @@ namespace ASDCP
       virtual ~h__Writer();
 
       Result_t WriteMXFHeader(const std::string& PackageLabel, const UL& WrappingUL,
+			      const std::string& TrackName, const UL& DataDefinition,
 			      const MXF::Rational& EditRate,
 			      ui32_t TCFrameRate, ui32_t BytesPerEditUnit = 0);
 
@@ -323,7 +244,7 @@ namespace ASDCP
 
       inline const byte_t* Key() { return m_Key; }
       inline const ui64_t  Length() { return m_Length; }
-      inline const ui64_t  KLLength() { return m_BERLength + klv_key_size; }
+      inline const ui64_t  KLLength() { return m_BERLength + SMPTE_UL_LENGTH; }
       Result_t ReadKLFromFile(ASDCP::FileReader& Reader);
     };
 

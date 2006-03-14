@@ -50,40 +50,43 @@ namespace ASDCP
 
 	public:
 	  //
-	  class Pair {
-	  public:
-	    ui32_t BodySID;
-	    ui64_t ByteOffset;
+	  class Pair : public IArchive
+	    {
+	    public:
+	      ui32_t BodySID;
+	      ui64_t ByteOffset;
 
-	    Pair() : BodySID(0), ByteOffset(0) {}
-	    Pair(ui32_t sid, ui64_t offset) : BodySID(sid), ByteOffset(offset) {}
+	      Pair() : BodySID(0), ByteOffset(0) {}
+	      Pair(ui32_t sid, ui64_t offset) : BodySID(sid), ByteOffset(offset) {}
 
-	    ui32_t Size() { return sizeof(ui32_t) + sizeof(ui64_t); }
+	      ui32_t Size() { return sizeof(ui32_t) + sizeof(ui64_t); }
 
-	    inline const char* ToString(char* str_buf) const {
-	      char intbuf[IntBufferLen];
-	      snprintf(str_buf, IdentBufferLen, "%-6lu: %s", BodySID, ui64sz(ByteOffset, intbuf));
-	      return str_buf;
-	    }
+	      inline const char* ToString(char* str_buf) const {
+		char intbuf[IntBufferLen];
+		snprintf(str_buf, IdentBufferLen, "%-6lu: %s", BodySID, ui64sz(ByteOffset, intbuf));
+		return str_buf;
+	      }
 
-	    inline Result_t Unarchive(ASDCP::MemIOReader& Reader) {
-	      Result_t result = Reader.ReadUi32BE(&BodySID);
+	      inline Result_t Unarchive(ASDCP::MemIOReader& Reader) {
+		Result_t result = Reader.ReadUi32BE(&BodySID);
 
-	      if ( ASDCP_SUCCESS(result) )
-		result = Reader.ReadUi64BE(&ByteOffset);
+		if ( ASDCP_SUCCESS(result) )
+		  result = Reader.ReadUi64BE(&ByteOffset);
 
-	      return result;
-	    }
+		return result;
+	      }
+	      
+	      inline bool HasValue() const { return true; }
+	  
+	      inline Result_t Archive(ASDCP::MemIOWriter& Writer) const {
+		Result_t result = Writer.WriteUi32BE(BodySID);
 
-	    inline Result_t Archive(ASDCP::MemIOWriter& Writer) {
-	      Result_t result = Writer.WriteUi32BE(BodySID);
+		if ( ASDCP_SUCCESS(result) )
+		  result = Writer.WriteUi64BE(ByteOffset);
 
-	      if ( ASDCP_SUCCESS(result) )
-		result = Writer.WriteUi64BE(ByteOffset);
-
-	      return result;
-	    }
-	  };
+		return result;
+	      }
+	    };
 
 	  Array<Pair> PairArray;
 
@@ -124,6 +127,7 @@ namespace ASDCP
 	  virtual void     AddChildObject(InterchangeObject*);
 	  virtual Result_t InitFromFile(const ASDCP::FileReader& Reader);
 	  virtual Result_t WriteToFile(ASDCP::FileWriter& Writer, UL& PartitionLabel);
+	  virtual ui32_t   ArchiveSize(); // returns the size of the archived structure
 	  virtual void     Dump(FILE* = 0);
 	};
 
@@ -157,7 +161,7 @@ namespace ASDCP
 		return result;
 	      }
 
-	      inline Result_t Archive(ASDCP::MemIOWriter& Writer) {
+	      inline Result_t Archive(ASDCP::MemIOWriter& Writer) const {
 		Result_t result = Writer.WriteUi8(Tag.a);
 		if ( ASDCP_SUCCESS(result) ) result = Writer.WriteUi8(Tag.b);
 		if ( ASDCP_SUCCESS(result) ) result = UL.Archive(Writer);
@@ -250,7 +254,7 @@ namespace ASDCP
 
 	      DeltaEntry() : PosTableIndex(-1), Slice(0), ElementData(0) {}
 	      Result_t    Unarchive(ASDCP::MemIOReader& Reader);
-	      Result_t    Archive(ASDCP::MemIOWriter& Writer);
+	      Result_t    Archive(ASDCP::MemIOWriter& Writer) const;
 	      const char* ToString(char* str_buf) const;
 	    };
 
@@ -265,8 +269,9 @@ namespace ASDCP
 	      //	      std::list<ui32_t>  SliceOffset;
 	      //	      Array<Rational>    PosTable;
 
+	      IndexEntry() : TemporalOffset(0), KeyFrameOffset(0), Flags(0), StreamOffset() {}
 	      Result_t    Unarchive(ASDCP::MemIOReader& Reader);
-	      Result_t    Archive(ASDCP::MemIOWriter& Writer);
+	      Result_t    Archive(ASDCP::MemIOWriter& Writer) const;
 	      const char* ToString(char* str_buf) const;
 	    };
 

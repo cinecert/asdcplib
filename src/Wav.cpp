@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2005, John Hurst
+Copyright (c) 2005-2006, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -29,11 +29,12 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     \brief   Wave file common elements
 */
 
-#include <Wav.h>
+#include "Wav.h"
+#include "hex_utils.h"
 #include <assert.h>
 
 
-const ui32_t SimpleHeaderLength = 46;
+const ui32_t SimpleWavHeaderLength = 46;
 
 //
 ASDCP::Wav::SimpleWaveHeader::SimpleWaveHeader(ASDCP::PCM::AudioDescriptor& ADesc)
@@ -71,7 +72,7 @@ ASDCP::Result_t
 ASDCP::Wav::SimpleWaveHeader::WriteToFile(ASDCP::FileWriter& OutFile) const
 {
   ui32_t write_count;
-  byte_t tmp_header[SimpleHeaderLength];
+  byte_t tmp_header[SimpleWavHeaderLength];
   byte_t* p = tmp_header;
 
   static ui32_t fmt_len =
@@ -83,7 +84,7 @@ ASDCP::Wav::SimpleWaveHeader::WriteToFile(ASDCP::FileWriter& OutFile) const
     + sizeof(bitspersample)
     + sizeof(cbsize);
 
-  ui32_t RIFF_len = data_len + SimpleHeaderLength - 8;
+  ui32_t RIFF_len = data_len + SimpleWavHeaderLength - 8;
 
   memcpy(p, &FCC_RIFF, sizeof(fourcc)); p += 4;
   *((ui32_t*)p) = ASDCP_i32_LE(RIFF_len); p += 4;
@@ -100,7 +101,7 @@ ASDCP::Wav::SimpleWaveHeader::WriteToFile(ASDCP::FileWriter& OutFile) const
   memcpy(p, &FCC_data, sizeof(fourcc)); p += 4;
   *((ui32_t*)p) = ASDCP_i32_LE(data_len); p += 4;
 
-  return OutFile.Write(tmp_header, SimpleHeaderLength, &write_count);
+  return OutFile.Write(tmp_header, SimpleWavHeaderLength, &write_count);
 }
 
 //
@@ -125,7 +126,7 @@ ASDCP::Wav::SimpleWaveHeader::ReadFromFile(const ASDCP::FileReader& InFile, ui32
 ASDCP::Result_t
 ASDCP::Wav::SimpleWaveHeader::ReadFromBuffer(const byte_t* buf, ui32_t buf_len, ui32_t* data_start)
 {
-  if ( buf_len < SimpleHeaderLength )
+  if ( buf_len < SimpleWavHeaderLength )
     return RESULT_SMALLBUF;
 
   *data_start = 0;
@@ -135,7 +136,7 @@ ASDCP::Wav::SimpleWaveHeader::ReadFromBuffer(const byte_t* buf, ui32_t buf_len, 
   fourcc test_RIFF(p); p += 4;
   if ( test_RIFF != FCC_RIFF )
     {
-      DefaultLogSink().Error("Files does not begin with RIFF header\n");      
+      DefaultLogSink().Error("File does not begin with RIFF header\n");      
       return RESULT_RAW_FORMAT;
     }
 
@@ -144,7 +145,7 @@ ASDCP::Wav::SimpleWaveHeader::ReadFromBuffer(const byte_t* buf, ui32_t buf_len, 
   fourcc test_WAVE(p); p += 4;
   if ( test_WAVE != FCC_WAVE )
     {
-      DefaultLogSink().Error("Files does not begin with WAVE header\n");
+      DefaultLogSink().Error("File does not contain a WAVE header\n");
       return RESULT_RAW_FORMAT;
     }
 
@@ -184,6 +185,166 @@ ASDCP::Wav::SimpleWaveHeader::ReadFromBuffer(const byte_t* buf, ui32_t buf_len, 
 	  blockalign = ASDCP_i16_LE(*(ui16_t*)p); p += 2;
 	  bitspersample = ASDCP_i16_LE(*(ui16_t*)p); p += 2;
 	  p += chunk_size - 16;
+	}
+      else
+	{
+	  p += chunk_size;
+	}
+    }
+
+  if ( *data_start == 0 ) // can't have no data!
+    {
+      DefaultLogSink().Error("No data chunk found, file contains no essence\n");
+      return RESULT_RAW_FORMAT;
+    }
+
+  return RESULT_OK;
+}
+
+//------------------------------------------------------------------------------------------
+// conversion algorithms from http://www.borg.com/~jglatt/tech/aiff.htm
+
+//
+void
+Rat_to_extended(ASDCP::Rational rate, byte_t* buf)
+{
+  memset(buf, 0, 10);
+  ui32_t value = (ui32_t)ceil(rate.Quotient()); 
+  ui32_t exp = value;
+  exp >>= 1;
+  ui8_t i = 0;
+
+  for ( ; i < 32; i++ )
+    {
+      exp >>= 1;
+      if ( ! exp )
+	break;
+    }
+
+  *(buf+1) = i;
+
+   for ( i = 32; i != 0 ; i-- )
+     {
+       if ( value & 0x80000000 )
+	 break;
+       value <<= 1;
+     }
+
+   *(ui32_t*)(buf+2) = ASDCP_i32_BE(value);
+}
+
+//
+ASDCP::Rational
+extended_to_Rat(const byte_t* buf)
+{
+  ui32_t last = 0;
+  ui32_t mantissa = ASDCP_i32_BE(*(ui32_t*)(buf+2));
+
+  byte_t exp = 30 - *(buf+1);
+
+  while ( exp-- )
+    {
+      last = mantissa;
+      mantissa >>= 1;
+    }
+
+  if ( last & 0x00000001 )
+    mantissa++;
+
+  return ASDCP::Rational(mantissa, 1);
+}
+
+//
+void
+ASDCP::AIFF::SimpleAIFFHeader::FillADesc(ASDCP::PCM::AudioDescriptor& ADesc, ASDCP::Rational PictureRate) const
+{
+  ADesc.SampleRate = PictureRate;
+
+  ADesc.ChannelCount = numChannels;
+  ADesc.AudioSamplingRate = extended_to_Rat(sampleRate);
+  ADesc.QuantizationBits = sampleSize;
+  ADesc.BlockAlign = sampleSize / 8;
+  ADesc.AvgBps = ADesc.BlockAlign * (ui32_t)ceil(ADesc.AudioSamplingRate.Quotient());
+  ui32_t FrameBufferSize = ASDCP::PCM::CalcFrameBufferSize(ADesc);
+  ADesc.ContainerDuration = data_len / FrameBufferSize;
+}
+
+//
+ASDCP::Result_t
+ASDCP::AIFF::SimpleAIFFHeader::ReadFromFile(const ASDCP::FileReader& InFile, ui32_t* data_start)
+{
+  ui32_t read_count = 0;
+  ui32_t local_data_start = 0;
+  ASDCP::PCM::FrameBuffer TmpBuffer(Wav::MaxWavHeader);
+
+  if ( data_start == 0 )
+    data_start = &local_data_start;
+
+  Result_t result = InFile.Read(TmpBuffer.Data(), TmpBuffer.Capacity(), &read_count);
+
+  if ( ASDCP_SUCCESS(result) )
+    result = ReadFromBuffer(TmpBuffer.RoData(), read_count, data_start);
+
+    return result;
+}
+
+//
+ASDCP::Result_t
+ASDCP::AIFF::SimpleAIFFHeader::ReadFromBuffer(const byte_t* buf, ui32_t buf_len, ui32_t* data_start)
+{
+  if ( buf_len < 32 )
+    return RESULT_SMALLBUF;
+
+  *data_start = 0;
+  const byte_t* p = buf;
+  const byte_t* end_p = p + buf_len;
+
+  fourcc test_FORM(p); p += 4;
+  if ( test_FORM != FCC_FORM )
+    {
+      DefaultLogSink().Error("File does not begin with FORM header\n");
+      return RESULT_RAW_FORMAT;
+    }
+
+  ui32_t RIFF_len = ASDCP_i32_BE(*(ui32_t*)p); p += 4;
+
+  fourcc test_AIFF(p); p += 4;
+  if ( test_AIFF != FCC_AIFF )
+    {
+      DefaultLogSink().Error("File does not contain an AIFF header\n");
+      return RESULT_RAW_FORMAT;
+    }
+
+  fourcc test_fcc;
+
+  while ( p < end_p )
+    {
+      test_fcc = fourcc(p); p += 4;
+      ui32_t chunk_size = ASDCP_i32_BE(*(ui32_t*)p); p += 4;
+
+      if ( test_fcc == FCC_COMM )
+	{
+	  numChannels = ASDCP_i16_BE(*(ui16_t*)p); p += 2;
+	  numSampleFrames = ASDCP_i32_BE(*(ui32_t*)p); p += 4;
+	  sampleSize = ASDCP_i16_BE(*(ui16_t*)p); p += 2;
+	  memcpy(sampleRate, p, 10);
+	  p += 10;
+	}
+      else if ( test_fcc == FCC_SSND )
+	{
+	  if ( chunk_size > RIFF_len )
+            {
+              DefaultLogSink().Error("Chunk size %lu larger than file: %lu\n", chunk_size, RIFF_len);
+              return RESULT_RAW_FORMAT;
+            }
+
+	  ui32_t offset = ASDCP_i32_BE(*(ui32_t*)p); p += 4;
+	  p += 4; // blockSize;
+
+	  data_len = chunk_size - 8;
+	  *data_start = (p - buf) + offset;
+	  fprintf(stderr, "*data_start: %p\n", *data_start);
+	  break;
 	}
       else
 	{

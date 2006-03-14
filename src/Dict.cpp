@@ -36,8 +36,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //------------------------------------------------------------------------------------------
 // singleton wrapper
 
-const byte_t mdd_key[] = { 0x06, 0x0e, 0x2b, 0x34 };
-
 //
 const ASDCP::MDDEntry&
 ASDCP::Dict::Type(MDD_t type_id)
@@ -53,7 +51,7 @@ ASDCP::Dict::FindUL(const byte_t* ul_buf)
   ui32_t k_idx = 8;
 
   // must be a pointer to a SMPTE UL
-  if ( ul_buf == 0 || memcmp(mdd_key, ul_buf, 4) != 0 )
+  if ( ul_buf == 0 || memcmp(SMPTE_UL_START, ul_buf, 4) != 0 )
     return 0;
 
   // advance to first matching element

@@ -1157,7 +1157,6 @@ ASDCP::MXF::RGBAEssenceDescriptor::InitFromTLVSet(TLVReader& TLVSet)
   Result_t result = GenericPictureEssenceDescriptor::InitFromTLVSet(TLVSet);
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadUi32(OBJ_READ_ARGS(RGBAEssenceDescriptor, ComponentMaxRef));
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadUi32(OBJ_READ_ARGS(RGBAEssenceDescriptor, ComponentMinRef));
-  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(RGBAEssenceDescriptor, PixelLayout));
   return result;
 }
 
@@ -1168,7 +1167,6 @@ ASDCP::MXF::RGBAEssenceDescriptor::WriteToTLVSet(TLVWriter& TLVSet)
   Result_t result = GenericPictureEssenceDescriptor::WriteToTLVSet(TLVSet);
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi32(OBJ_WRITE_ARGS(RGBAEssenceDescriptor, ComponentMaxRef));
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi32(OBJ_WRITE_ARGS(RGBAEssenceDescriptor, ComponentMinRef));
-  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(RGBAEssenceDescriptor, PixelLayout));
   return result;
 }
 
@@ -1185,7 +1183,6 @@ ASDCP::MXF::RGBAEssenceDescriptor::Dump(FILE* stream)
   GenericPictureEssenceDescriptor::Dump(stream);
   fprintf(stream, "  %22s = %d\n",  "ComponentMaxRef", ComponentMaxRef);
   fprintf(stream, "  %22s = %d\n",  "ComponentMinRef", ComponentMinRef);
-  fprintf(stream, "  %22s = %s\n",  "PixelLayout", PixelLayout.ToString(identbuf));
 }
 
 //

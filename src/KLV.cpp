@@ -131,7 +131,7 @@ ASDCP::KLVPacket::Dump(FILE* stream, bool show_hex)
     }
   else
     {
-      fprintf(stream, "*** Malformed packet ***\n");
+      fprintf(stream, "*** Malformed KLV packet ***\n");
     }
 }
 
