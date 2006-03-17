@@ -102,20 +102,20 @@ ASDCP::MPEG2::VideoDescriptorDump(const VideoDescriptor& VDesc, FILE* stream)
     stream = stderr;
 
   fprintf(stream, "\
-           SampleRate: %lu/%lu\n\
-          FrameLayout: %lu\n\
-          StoredWidth: %lu\n\
-         StoredHeight: %lu\n\
-          AspectRatio: %lu/%lu\n\
-       ComponentDepth: %lu\n\
-HorizontalSubsampling: %lu\n\
-  VerticalSubsampling: %lu\n\
-          ColorSiting: %lu\n\
-     CodedContentType: %lu\n\
-             LowDelay: %lu\n\
-              BitRate: %lu\n\
-      ProfileAndLevel: %lu\n\
-    ContainerDuration: %lu\n",
+        SampleRate: %lu/%lu\n\
+       FrameLayout: %lu\n\
+       StoredWidth: %lu\n\
+      StoredHeight: %lu\n\
+       AspectRatio: %lu/%lu\n\
+    ComponentDepth: %lu\n\
+ HorizontalSubsmpl: %lu\n\
+   VerticalSubsmpl: %lu\n\
+       ColorSiting: %lu\n\
+  CodedContentType: %lu\n\
+          LowDelay: %lu\n\
+           BitRate: %lu\n\
+   ProfileAndLevel: %lu\n\
+ ContainerDuration: %lu\n",
 	  VDesc.SampleRate.Numerator ,VDesc.SampleRate.Denominator,
 	  VDesc.FrameLayout,
 	  VDesc.StoredWidth,
@@ -174,7 +174,7 @@ ASDCP::MPEG2::MXFReader::h__Reader::OpenRead(const char* filename)
     result = InitMXFIndex();
 
   if( ASDCP_SUCCESS(result) )
-    result = InitInfo(m_Info);
+    result = InitInfo();
 
   return result;
 }

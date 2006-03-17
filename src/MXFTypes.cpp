@@ -118,7 +118,7 @@ ASDCP::UUID::GenRandomValue()
   m_Value[6] |= 0x40; // set UUID version
   m_Value[8] &= 0x3f; // clear bits 6&7
   m_Value[8] |= 0x80; // set bit 7
-  //  m_HasValue = true;
+  m_HasValue = true;
 }
 
 

@@ -83,26 +83,6 @@ I have tested this build on win32, Linux and Darwin platforms.
 Others may work as well.
 
 
-Build Versions
-
-There are two flavors of build: the default build and the
-"SMPTE_LABELS" build. Unless you are specifically  working on
-emerging SMPTE standards for D-Cinema content, you will certainly
-want the default build. If you are developing support for the MXF
-Interop Initiative standards, the default build is for you!
-
-If you are not aiming for MXF Interop and if you are working
-on developing support for the very latest versions of the SMPTE
-draft standards, then you want the SMPTE_LABELS build:
-
-  make SMPTE_LABELS=1
-
-NOTE: If you choose the SMPTE_LABELS build, you will be creating
-files that may not work on MXF Interop systems. In the case of
-encryption, incompatibility with MXF Interop is guaranteed! You
-have been warned!
-
-
 Documentation
 
 Currently, the documentation is mostly in AS_DCP.h. Read
@@ -112,9 +92,19 @@ examples. More detailed documentation will be written RSN.
 
 
 Change History
+2006.03.16 - bug fixes plus
+ o Removed SMPTE_LABELS compile-time option. The reader will now
+   silently accept either SMPTE or MXF Interop labels, the writer
+   can be instructed which to use at runtime. Default is Interop.
+ o Added an AIFF reader. Support is preliminary, it works with the
+   AIFF files I have on hand.
+ o More code refactoring. More to come.
+
+
 2006.03.09 - full read-write
  o Removed ASDCP_WITHOUT_OPENSSL compile-time option.
  o Full read/write now working on new MXF library
+
 
 2005.00.00 - A New Hope
  o The temporary mxf-lite has been removed. MXF files are now 

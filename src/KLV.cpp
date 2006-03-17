@@ -69,6 +69,20 @@ ASDCP::KLVPacket::InitFromBuffer(const byte_t* buf, ui32_t buf_len)
       return RESULT_FAIL;
     }
 
+  ui32_t ber_len = BER_length(buf + SMPTE_UL_LENGTH);
+
+  if ( ber_len > ( buf_len - SMPTE_UL_LENGTH ) )
+    {
+      DefaultLogSink().Error("BER encoding length exceeds buffer size\n");
+      return RESULT_FAIL;
+    }
+
+  if ( ber_len == 0 )
+    {
+      ASDCP::DefaultLogSink().Error("KLV format error, zero BER length not allowed\n");
+      return RESULT_FAIL;
+    }
+
   ui64_t tmp_size;
   if ( ! read_BER(buf + SMPTE_UL_LENGTH, &tmp_size) )
        return RESULT_FAIL;
@@ -148,7 +162,7 @@ ASDCP::KLVFilePacket::InitFromFile(const FileReader& Reader, const byte_t* label
   return result;
 }
 
-//
+// TODO: refactor to use InitFromBuffer
 ASDCP::Result_t
 ASDCP::KLVFilePacket::InitFromFile(const FileReader& Reader)
 {

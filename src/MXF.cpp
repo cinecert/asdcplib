@@ -639,15 +639,16 @@ ASDCP::MXF::OPAtomHeader::InitFromFile(const ASDCP::FileReader& Reader)
 
   // is it really OP-Atom?
   UL OPAtomUL(Dict::ul(MDD_OPAtom));
+  UL InteropOPAtomUL(Dict::ul(MDD_MXFInterop_OPAtom));
 
-  if ( ! ( OperationalPattern == OPAtomUL ) )
+  if ( ! ( OperationalPattern == OPAtomUL  || OperationalPattern == InteropOPAtomUL ) )
     {
       char strbuf[IntBufferLen];
-      const MDDEntry* Entry = Dict::FindUL(m_KeyStart);
+      const MDDEntry* Entry = Dict::FindUL(OperationalPattern.Value());
       if ( Entry == 0 )
-	DefaultLogSink().Warn("Operational pattern is not OP-Atom: %s.\n", OperationalPattern.ToString(strbuf));
+	DefaultLogSink().Warn("Operational pattern is not OP-Atom: %s\n", OperationalPattern.ToString(strbuf));
       else
-	DefaultLogSink().Warn("Operational pattern is not OP-Atom: %s.\n", Entry->name);
+	DefaultLogSink().Warn("Operational pattern is not OP-Atom: %s\n", Entry->name);
     }
 
   // slurp up the remainder of the header

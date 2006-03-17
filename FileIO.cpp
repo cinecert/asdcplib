@@ -362,13 +362,12 @@ ASDCP::FileWriter::Writev(ui32_t* bytes_written)
 				   (DWORD*)&tmp_count,
 				   NULL);
 
-      if ( wr_result == 0 )
+      if ( wr_result == 0 || iov->m_iovec[i].iov_len != tmp_count)
 	{
 	  result = ASDCP::RESULT_WRITEFAIL;
 	  break;
 	}
 
-      assert(iov->m_iovec[i].iov_len == tmp_count);
       *bytes_written += tmp_count;
     }
 

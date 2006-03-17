@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2003-2005, John Hurst
+Copyright (c) 2003-2006, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -164,6 +164,7 @@ Read/Write Options:\n\
   -f <frame-num>  - starting frame number, default 0\n\
   -d <duration>   - number of frames to process, default all\n\
   -p <rate>       - fps of picture when wrapping PCM or JP2K:, use one of [23|24|48], 24 is default\n\
+  -L              - Write SMPTE UL values instead of MXF Interop\n\
   -R              - Repeat the first frame over the entire file (picture essence only, requires -c, -d)\n\
   -S              - Split Wave essence to stereo WAV files during extract (default = multichannel WAV)\n\
   -W              - read input file only, do not write source file\n\
@@ -215,6 +216,7 @@ public:
   ui32_t duration;       // number of frames to be processed
   bool   duration_flag;  // true if duration argument given
   bool   do_repeat;      // if true and -c -d, repeat first input frame
+  bool   use_smpte_labels; // if true, SMPTE UL values will be written instead of MXF Interop values
   ui32_t picture_rate;   // fps of picture when wrapping PCM
   ui32_t fb_size;        // size of picture frame buffer
   ui32_t file_count;     // number of elements in filenames[]
@@ -248,8 +250,8 @@ public:
     write_hmac(true), read_hmac(false), split_wav(false),
     verbose_flag(false), fb_dump_size(0), showindex_flag(false), showheader_flag(false),
     no_write_flag(false), version_flag(false), help_flag(false), start_frame(0),
-    duration(0xffffffff), duration_flag(false), do_repeat(false), picture_rate(24),
-    fb_size(FRAME_BUFFER_SIZE), file_count(0), file_root(0), out_file(0)
+    duration(0xffffffff), duration_flag(false), do_repeat(false), use_smpte_labels(false),
+    picture_rate(24), fb_size(FRAME_BUFFER_SIZE), file_count(0), file_root(0), out_file(0)
   {
     memset(key_value, 0, KeyLen);
     memset(key_id_value, 0, UUIDlen);
@@ -276,6 +278,7 @@ public:
 	      case 'E': encrypt_header_flag = false; break;
 	      case 'M': write_hmac = false; break;
 	      case 'm': read_hmac = true; break;
+	      case 'L': use_smpte_labels = true; break;
 
 	      case 'c':
 		TEST_SET_MAJOR_MODE(create_flag);
@@ -422,6 +425,12 @@ write_MPEG2_file(CommandOptions& Options)
     {
       WriterInfo Info = s_MyInfo;  // fill in your favorite identifiers here
       GenRandomUUID(RNG, Info.AssetUUID);
+
+      if ( Options.use_smpte_labels )
+	{
+	  Info.LabelSetType = LS_MXF_INTEROP;
+	  fprintf(stderr, "ATTENTION! Writing SMPTE Universal Labels\n");
+	}
 
       // configure encryption
       if( Options.key_flag )
@@ -666,6 +675,12 @@ write_JP2K_file(CommandOptions& Options)
       WriterInfo Info = s_MyInfo;  // fill in your favorite identifiers here
       GenRandomUUID(RNG, Info.AssetUUID);
 
+      if ( Options.use_smpte_labels )
+	{
+	  Info.LabelSetType = LS_MXF_INTEROP;
+	  fprintf(stderr, "ATTENTION! Writing SMPTE Universal Labels\n");
+	}
+
       // configure encryption
       if( Options.key_flag )
 	{
@@ -862,6 +877,12 @@ write_PCM_file(CommandOptions& Options)
     {
       WriterInfo Info = s_MyInfo;  // fill in your favorite identifiers here
       GenRandomUUID(RNG, Info.AssetUUID);
+
+      if ( Options.use_smpte_labels )
+	{
+	  Info.LabelSetType = LS_MXF_INTEROP;
+	  fprintf(stderr, "ATTENTION! Writing SMPTE Universal Labels\n");
+	}
 
       // configure encryption
       if( Options.key_flag )
@@ -1226,9 +1247,7 @@ main(int argc, const char** argv)
     {
       EssenceType_t EssenceType;
       result = ASDCP::EssenceType(Options.filenames[0], EssenceType);
-#ifdef SMPTE_LABELS
-      fprintf(stderr, "ATTENTION! Expecting SMPTE Universal Labels\n");
-#endif
+
       if ( ASDCP_SUCCESS(result) )
 	{
 	  switch ( EssenceType )
@@ -1261,9 +1280,7 @@ main(int argc, const char** argv)
 
       EssenceType_t EssenceType;
       result = ASDCP::RawEssenceType(Options.filenames[0], EssenceType);
-#ifdef SMPTE_LABELS
-      fprintf(stderr, "ATTENTION! Writing SMPTE Universal Labels\n");
-#endif
+
       if ( ASDCP_SUCCESS(result) )
 	{
 	  switch ( EssenceType )

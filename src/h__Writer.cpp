@@ -336,7 +336,10 @@ ASDCP::h__Writer::WriteEKLVPacket(const ASDCP::FrameBuffer& FrameBuf, const byte
 
       if ( ASDCP_SUCCESS(result) )
 	{ // write UL
-	  Overhead.WriteRaw(Dict::ul(MDD_CryptEssence), SMPTE_UL_LENGTH);
+	  if ( m_Info.LabelSetType == LS_MXF_INTEROP )
+	    Overhead.WriteRaw(Dict::ul(MDD_MXFInterop_CryptEssence), SMPTE_UL_LENGTH);
+	  else
+	    Overhead.WriteRaw(Dict::ul(MDD_CryptEssence), SMPTE_UL_LENGTH);
 
 	  // construct encrypted triplet header
 	  ui32_t ETLength = klv_cryptinfo_size + m_CtFrameBuf.Size();
@@ -430,8 +433,14 @@ ASDCP::h__Writer::WriteMXFFooter()
   m_HeaderPart.m_RIP.PairArray.push_back(RIP::Pair(1, here)); // Third RIP Entry
   m_HeaderPart.FooterPartition = here;
   m_HeaderPart.BodySID = 1;
-  //  m_HeaderPart.IndexSID = m_FooterPart.IndexSID;
-  m_HeaderPart.OperationalPattern = UL(Dict::ul(MDD_OPAtom));
+
+  // re-label the partition
+  UL OPAtomUL(Dict::ul(MDD_OPAtom));
+
+  if ( m_Info.LabelSetType == LS_MXF_INTEROP )
+    OPAtomUL.Set(Dict::ul(MDD_MXFInterop_OPAtom));
+  
+  m_HeaderPart.OperationalPattern = OPAtomUL;
   m_HeaderPart.m_Preface->OperationalPattern = m_HeaderPart.OperationalPattern;
 
   m_FooterPart.OperationalPattern = m_HeaderPart.OperationalPattern;

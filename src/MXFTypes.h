@@ -291,7 +291,7 @@ namespace ASDCP
 	  }
 
 	  Result_t Unarchive(ASDCP::MemIOReader& Reader);
-	  inline bool HasValue() const { return true; }
+	  inline bool HasValue() const { return m_length > 0; }
 	  Result_t Archive(ASDCP::MemIOWriter& Writer) const;
 	};
 
@@ -411,7 +411,7 @@ namespace ASDCP
 
 	  //
           Result_t    Unarchive(ASDCP::MemIOReader& Reader);
-	  inline bool HasValue() const { return true; }
+	  inline bool HasValue() const { return Size() > 0; }
 	  Result_t    Archive(ASDCP::MemIOWriter& Writer) const;
 	  const char* ToString(char* str_buf) const;
 	};

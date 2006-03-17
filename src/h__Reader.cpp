@@ -56,9 +56,18 @@ ASDCP::h__Reader::Close()
 
 //
 Result_t
-ASDCP::h__Reader::InitInfo(WriterInfo& Info)
+ASDCP::h__Reader::InitInfo()
 {
   InterchangeObject* Object;
+
+  m_Info.LabelSetType = LS_MXF_UNKNOWN;
+  UL OPAtomUL(Dict::ul(MDD_OPAtom));
+  UL Interop_OPAtomUL(Dict::ul(MDD_MXFInterop_OPAtom));
+
+  if ( m_HeaderPart.OperationalPattern == Interop_OPAtomUL )
+    m_Info.LabelSetType = LS_MXF_INTEROP;
+  else if ( m_HeaderPart.OperationalPattern == OPAtomUL )
+    m_Info.LabelSetType = LS_MXF_SMPTE;
 
   // Identification
   Result_t result = m_HeaderPart.GetMDObjectByType(OBJ_TYPE_ARGS(Identification), &Object);
@@ -73,7 +82,7 @@ ASDCP::h__Reader::InitInfo(WriterInfo& Info)
   if( ASDCP_SUCCESS(result) )
     {
       SourcePackage* SP = (SourcePackage*)Object;
-      memcpy(Info.AssetUUID, SP->PackageUID.Value() + 16, UUIDlen);
+      memcpy(m_Info.AssetUUID, SP->PackageUID.Value() + 16, UUIDlen);
     }
 
   // optional CryptographicContext
@@ -136,6 +145,36 @@ ASDCP::h__Reader::InitMXFIndex()
   return result;
 }
 
+//
+class KLReader : public ASDCP::KLVPacket
+{
+  ASDCP_NO_COPY_CONSTRUCT(KLReader);
+  byte_t m_KeyBuf[32];
+
+public:
+  KLReader() {}
+  ~KLReader() {}
+
+  inline const byte_t* Key() { return m_KeyBuf; }
+  inline const ui64_t  Length() { return m_ValueLength; }
+  inline const ui64_t  KLLength() { return m_KLLength; }
+
+  Result_t ReadKLFromFile(ASDCP::FileReader& Reader)
+  {
+    ui32_t read_count;
+    ui32_t header_length = SMPTE_UL_LENGTH + MXF_BER_LENGTH;
+    Result_t result = Reader.Read(m_KeyBuf, header_length, &read_count);
+
+    if ( read_count != header_length )
+      return RESULT_READFAIL;
+  
+    if ( ASDCP_SUCCESS(result) )
+      result = InitFromBuffer(m_KeyBuf, header_length);
+
+    return result;
+  }
+};
+
 
 // standard method of reading a plaintext or encrypted frame
 Result_t
@@ -153,7 +192,7 @@ ASDCP::h__Reader::ReadEKLVPacket(ui32_t FrameNum, ASDCP::FrameBuffer& FrameBuf,
 
   // get frame position and go read the frame's key and length
   Result_t result = RESULT_OK;
-  ASDCP::KLVReader Reader;
+  KLReader Reader;
   ASDCP::fpos_t FilePosition = m_EssenceStart + TmpEntry.StreamOffset;
 
   if ( FilePosition != m_LastPosition )
@@ -170,10 +209,11 @@ ASDCP::h__Reader::ReadEKLVPacket(ui32_t FrameNum, ASDCP::FrameBuffer& FrameBuf,
 
   UL Key(Reader.Key());
   UL CryptEssenceUL(Dict::ul(MDD_CryptEssence));
+  UL InteropCryptEssenceUL(Dict::ul(MDD_MXFInterop_CryptEssence));
   ui64_t PacketLength = Reader.Length();
   m_LastPosition = m_LastPosition + Reader.KLLength() + PacketLength;
 
-  if ( Key == CryptEssenceUL )
+  if ( Key == InteropCryptEssenceUL || Key == CryptEssenceUL )
     {
       if ( ! m_Info.EncryptedEssence )
 	{

@@ -75,17 +75,6 @@ namespace ASDCP
       return plaintext_offset + block_size + (CBC_BLOCK_SIZE * 3);
     }
 
-  // Interop labels
-
-  static byte_t OPAtom_Data[SMPTE_UL_LENGTH] =
-  { 0x06, 0x0e, 0x2b, 0x34, 0x04, 0x01, 0x01, 0x01,
-    0x0d, 0x01, 0x02, 0x01, 0x10, 0x00, 0x00, 0x00 };
-  static UL OPAtomUL(OPAtom_Data);
-
-  static const byte_t CryptEssenceUL_Data[SMPTE_UL_LENGTH] =
-  { 0x06, 0x0e, 0x2b, 0x34, 0x02, 0x04, 0x01, 0x07,
-    0x0d, 0x01, 0x03, 0x01, 0x02, 0x7e, 0x01, 0x00 };
-
   // the check value for EKLV packets
   // CHUKCHUKCHUKCHUK
   static const byte_t ESV_CheckValue[CBC_BLOCK_SIZE] =
@@ -118,7 +107,7 @@ namespace ASDCP
       h__Reader();
       virtual ~h__Reader();
 
-      Result_t InitInfo(WriterInfo& Info);
+      Result_t InitInfo();
       Result_t OpenMXFRead(const char* filename);
       Result_t InitMXFIndex();
       Result_t ReadEKLVPacket(ui32_t FrameNum, ASDCP::FrameBuffer& FrameBuf,
@@ -228,25 +217,6 @@ namespace ASDCP
       Result_t TestValues(const ASDCP::FrameBuffer&, byte_t* AssetID, ui32_t sequence, HMACContext* HMAC);
     };
 
-  //
-  class KLVReader
-    {
-      byte_t m_Key[32];
-      ui64_t m_Length;
-      ui32_t m_BERLength;
-      ui32_t m_HeaderLength;
-
-      ASDCP_NO_COPY_CONSTRUCT(KLVReader);
-
-    public:
-      KLVReader() : m_Length(0), m_BERLength(0), m_HeaderLength(0) {}
-      ~KLVReader() {}
-
-      inline const byte_t* Key() { return m_Key; }
-      inline const ui64_t  Length() { return m_Length; }
-      inline const ui64_t  KLLength() { return m_BERLength + SMPTE_UL_LENGTH; }
-      Result_t ReadKLFromFile(ASDCP::FileReader& Reader);
-    };
 
 } // namespace ASDCP
 

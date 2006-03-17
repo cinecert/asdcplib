@@ -45,20 +45,20 @@ ASDCP::JP2K::PictureDescriptorDump(const PictureDescriptor& PDesc, FILE* stream)
     stream = stderr;
 
   fprintf(stream, "\
-      AspectRatio: %lu/%lu\n\
-         EditRate: %lu/%lu\n\
-      StoredWidth: %lu\n\
-     StoredHeight: %lu\n\
-            Rsize: %lu\n\
-            Xsize: %lu\n\
-            Ysize: %lu\n\
-           XOsize: %lu\n\
-           YOsize: %lu\n\
-           XTsize: %lu\n\
-           YTsize: %lu\n\
-          XTOsize: %lu\n\
-          YTOsize: %lu\n\
-ContainerDuration: %lu\n",
+       AspectRatio: %lu/%lu\n\
+          EditRate: %lu/%lu\n\
+       StoredWidth: %lu\n\
+      StoredHeight: %lu\n\
+             Rsize: %lu\n\
+             Xsize: %lu\n\
+             Ysize: %lu\n\
+            XOsize: %lu\n\
+            YOsize: %lu\n\
+            XTsize: %lu\n\
+            YTsize: %lu\n\
+           XTOsize: %lu\n\
+           YTOsize: %lu\n\
+ ContainerDuration: %lu\n",
 	  PDesc.AspectRatio.Numerator ,PDesc.AspectRatio.Denominator,
 	  PDesc.EditRate.Numerator ,PDesc.EditRate.Denominator,
 	  PDesc.StoredWidth,
@@ -194,7 +194,7 @@ ASDCP::JP2K::MXFReader::h__Reader::OpenRead(const char* filename)
     result = InitMXFIndex();
 
   if( ASDCP_SUCCESS(result) )
-    result = InitInfo(m_Info);
+    result = InitInfo();
 
   return result;
 }

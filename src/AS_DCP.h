@@ -143,7 +143,7 @@ namespace ASDCP {
   // 1.0.1. If changes were also required in AS_DCP.h, the new version would be 1.1.1.
   const ui32_t VERSION_MAJOR = 1;
   const ui32_t VERSION_APIMINOR = 0;
-  const ui32_t VERSION_IMPMINOR = 4;
+  const ui32_t VERSION_IMPMINOR = 5;
   const char* Version();
 
   // UUIDs are passed around as strings of UUIDlen bytes
@@ -151,11 +151,6 @@ namespace ASDCP {
 
   // Encryption keys are passed around as strings of KeyLen bytes
   const ui32_t KeyLen = 16;
-
-  // Key IDs are really UUIDs, so it makes no sense to have this value
-  //  // Encryption key IDs are passed around as strings of KeyIDlen bytes
-  //  const ui32_t KeyIDlen = 16;
-
 
   //---------------------------------------------------------------------------------
   // message logging
@@ -240,7 +235,6 @@ namespace ASDCP {
     ESS_PCM_24b_48k  // the file contains one or more PCM audio pairs
   };
 
-
   // Determine the type of essence contained in the given MXF file. RESULT_OK
   // is returned if the file is successfully opened and contains a valid MXF
   // stream. If there is an error, the result code will indicate the reason.
@@ -251,10 +245,9 @@ namespace ASDCP {
   // stream type. If there is an error, the result code will indicate the reason.
   Result_t RawEssenceType(const char* filename, EssenceType_t& type);
 
-  // Locate the named object in the file header and dump it to the given stream.
-  // The default dump stream is stderr.
-  Result_t FindObject(const char* filename, const char* objname, FILE* = 0);
 
+  //---------------------------------------------------------------------------------
+  // base types
 
   // A simple container for rational numbers.
   class Rational
@@ -410,21 +403,48 @@ namespace ASDCP {
   // WriterInfo class - encapsulates writer identification details used for
   // OpenWrite() calls.  Replace these values at runtime to identify your product.
   //
+  // MXF files use SMPTE Universal Labels to identify data items. The set of Labels
+  // in a file is determined by the MXF Operational Pattern and any constraining
+  // documentation. There are currently two flavors of AS-DCP file in use: MXF Interop
+  // and SMPTE. The two differ only in the values of two labels:
+  //
+  //   OP Atom     / Interop : 06 0e 2b 34 04 01 01 01  0d 01 02 01 10 00 00 00
+  //   OP Atom     / SMPTE   : 06 0e 2b 34 04 01 01 02  0d 01 02 01 10 00 00 00
+  // and 
+  //   EKLV Packet / Interop : 06 0e 2b 34 02 04 01 07  0d 01 03 01 02 7e 01 00
+  //   EKLV Packet / SMPTE   : 06 0e 2b 34 02 04 01 01  0d 01 03 01 02 7e 01 00
+  //
+  // asdcplib will read any (otherwise valid) file which has any combination of the
+  // above values. When writing files, MXF Interop labels are used by default. To
+  // write a file containing SMPTE labels, replace the default label set value in
+  // the WriterInfo before calling OpenWrite()
+  //
+  enum LabelSet_t
+  {
+    LS_MXF_UNKNOWN,
+    LS_MXF_INTEROP,
+    LS_MXF_SMPTE
+  };
+
+  //
   struct WriterInfo
   {
     byte_t      ProductUUID[UUIDlen];
     byte_t      AssetUUID[UUIDlen];
     byte_t      ContextID[UUIDlen];
     byte_t      CryptographicKeyID[UUIDlen];
-    bool        EncryptedEssence; // true if essence data is (or is to be) encrypted
+    bool        EncryptedEssence; // true if essence data is (or is going to be) encrypted
     bool        UsesHMAC;         // true if HMAC exists or is to be calculated
     std::string ProductVersion;
     std::string CompanyName;
     std::string ProductName;
-    
-    WriterInfo() : EncryptedEssence(false), UsesHMAC(false) {
-      static byte_t default_ProductUUID_Data[UUIDlen] = { 0x43, 0x05, 0x9a, 0x1d, 0x04, 0x32, 0x41, 0x01,
-							  0xb8, 0x3f, 0x73, 0x68, 0x15, 0xac, 0xf3, 0x1d };
+    LabelSet_t  LabelSetType;
+
+    WriterInfo() : EncryptedEssence(false), UsesHMAC(false), LabelSetType(LS_MXF_INTEROP)
+    {
+      static byte_t default_ProductUUID_Data[UUIDlen] = {
+	0x43, 0x05, 0x9a, 0x1d, 0x04, 0x32, 0x41, 0x01,
+	0xb8, 0x3f, 0x73, 0x68, 0x15, 0xac, 0xf3, 0x1d };
       
       memcpy(ProductUUID, default_ProductUUID_Data, UUIDlen);
       memset(AssetUUID, 0, UUIDlen);

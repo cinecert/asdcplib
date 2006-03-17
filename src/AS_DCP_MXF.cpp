@@ -69,6 +69,9 @@ ASDCP::WriterInfoDump(const WriterInfo& Info, FILE* stream)
     }
 
   fprintf(stream,"         AssetUUID: %s\n", bin2hex(Info.AssetUUID, 16, str_buf, 40));
+  fprintf(stream,"    Label Set Type: %s\n", ( Info.LabelSetType == LS_MXF_SMPTE ? "SMPTE" :
+					       ( Info.LabelSetType == LS_MXF_INTEROP ? "MXF Interop" :
+						 "Unknown" ) ));
 }
 
 //
@@ -462,49 +465,6 @@ ASDCP::IntegrityPack::TestValues(const ASDCP::FrameBuffer& FB, byte_t* AssetID,
   HMAC->Finalize();
 
   return HMAC->TestHMACValue(p);
-}
-
-//------------------------------------------------------------------------------------------
-//
-
-
-//
-ASDCP::Result_t
-ASDCP::KLVReader::ReadKLFromFile(ASDCP::FileReader& Reader)
-{
-  ui32_t read_count;
-  m_HeaderLength = SMPTE_UL_LENGTH + MXF_BER_LENGTH;
-  Result_t result = Reader.Read(m_Key, m_HeaderLength, &read_count);
-  assert(read_count == m_HeaderLength);
-
-  if ( ASDCP_SUCCESS(result) )
-    {
-      m_BERLength = BER_length(m_Key + SMPTE_UL_LENGTH);
-      
-      if ( m_BERLength == 0 )
-	{
-	  char intbuf[IntBufferLen];
-	  ASDCP::DefaultLogSink().Error("KLV format error, zero BER length not allowed at file position %s\n",
-					i64szx((Reader.Tell() - (fpos_t)SMPTE_UL_LENGTH), 8, intbuf));
-	  return RESULT_FAIL;
-	}
-
-      if ( m_BERLength != MXF_BER_LENGTH )
-	{
-
-	  ASDCP::DefaultLogSink().Error("Found packet with BER length %lu; being less efficient...\n",
-					m_BERLength);
-	  // TODO: recover the correct BER value
-	  // and reposition the file pointer
-	  ASDCP::DefaultLogSink().Error("please finish me\n");
-	  assert(0);
-	}
-
-      if ( ! read_BER(m_Key + SMPTE_UL_LENGTH, &m_Length) )
-	return RESULT_FAIL;
-    }
-  
-  return result;
 }
 
 //

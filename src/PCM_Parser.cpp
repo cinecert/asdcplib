@@ -128,8 +128,6 @@ ASDCP::PCM::WAVParser::h__WAVParser::OpenRead(const char* filename, const Ration
 	}
     }
 
-  AudioDescriptorDump(m_ADesc);
-
   return result;
 }
 

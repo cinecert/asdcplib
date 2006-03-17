@@ -32,6 +32,10 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "KLV.h"
 #include "MDD.cpp"
+#include <map>
+ 
+static bool    s_md_init = false;
+static std::map<ASDCP::UL, ui32_t> s_md_lookup;
 
 //------------------------------------------------------------------------------------------
 // singleton wrapper
@@ -43,57 +47,24 @@ ASDCP::Dict::Type(MDD_t type_id)
   return s_MDD_Table[type_id];
 }
 
+
 //
 const ASDCP::MDDEntry*
 ASDCP::Dict::FindUL(const byte_t* ul_buf)
 {
-  ui32_t t_idx = 0;
-  ui32_t k_idx = 8;
-
-  // must be a pointer to a SMPTE UL
-  if ( ul_buf == 0 || memcmp(SMPTE_UL_START, ul_buf, 4) != 0 )
-    return 0;
-
-  // advance to first matching element
-  // TODO: optimize using binary search
-  while ( s_MDD_Table[t_idx].ul != 0
-  	  && s_MDD_Table[t_idx].ul[k_idx] != ul_buf[k_idx] )
-    t_idx++;
-
-  if ( s_MDD_Table[t_idx].ul == 0 )
-    return 0;
-
-  // match successive elements
-  while ( s_MDD_Table[t_idx].ul != 0
-	  && k_idx < SMPTE_UL_LENGTH - 1
-	  && s_MDD_Table[t_idx].ul[k_idx] == ul_buf[k_idx] )
+  if ( ! s_md_init )
     {
-      if ( s_MDD_Table[t_idx].ul[k_idx+1] == ul_buf[k_idx+1] )
-	{
-	  k_idx++;
-	}
-      else
-	{
-	  while ( s_MDD_Table[t_idx].ul != 0
-		  && s_MDD_Table[t_idx].ul[k_idx] == ul_buf[k_idx]
-		  && s_MDD_Table[t_idx].ul[k_idx+1] != ul_buf[k_idx+1] )
-	    t_idx++;
-	      
-	  while ( s_MDD_Table[t_idx].ul[k_idx] != ul_buf[k_idx] )
-	    k_idx--;
-	}
+      for ( ui32_t x = 0; x < s_MDD_Table_size; x++ )
+	s_md_lookup.insert(std::map<UL, ui32_t>::value_type(UL(s_MDD_Table[x].ul), x));
     }
 
-  return (s_MDD_Table[t_idx].ul == 0 ? 0 : &s_MDD_Table[t_idx]);
+  std::map<UL, ui32_t>::iterator i = s_md_lookup.find(UL(ul_buf));
+  
+  if ( i == s_md_lookup.end() )
+    return 0;
+
+  return &s_MDD_Table[(*i).second];
 }
-
-
-//
-// implementation
-
-ASDCP::Dict::Dict() { DefaultLogSink().Warn("new Dict\n"); }
-ASDCP::Dict::~Dict() {}
-
 
 
 //

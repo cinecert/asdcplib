@@ -185,7 +185,7 @@ ASDCP::PCM::MXFReader::h__Reader::OpenRead(const char* filename)
     result = InitMXFIndex();
 
   if( ASDCP_SUCCESS(result) )
-    result = InitInfo(m_Info);
+    result = InitInfo();
 
   // TODO: test file for sane CBR index BytesPerEditUnit
 
