@@ -200,7 +200,7 @@ ASDCP::MXF::Partition::Partition() :
   MajorVersion(1), MinorVersion(2),
   KAGSize(1), ThisPartition(0), PreviousPartition(0),
   FooterPartition(0), HeaderByteCount(0), IndexByteCount(0), IndexSID(0),
-  BodyOffset(0), BodySID(1)
+  BodyOffset(0), BodySID(0)
 {
   m_PacketList = new h__PacketList;
 }
@@ -636,6 +636,8 @@ ASDCP::MXF::OPAtomHeader::InitFromFile(const ASDCP::FileReader& Reader)
 
   if ( ASDCP_SUCCESS(result) )
     result = Partition::InitFromFile(Reader); // test UL and OP
+
+  Partition::Dump();
 
   // is it really OP-Atom?
   UL OPAtomUL(Dict::ul(MDD_OPAtom));

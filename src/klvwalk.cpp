@@ -55,7 +55,6 @@ main(int argc, char** argv)
 {
   Result_t result = RESULT_OK;
   bool read_mxf = false;
-  bool rewrite_mxf = false;
   int arg_i = 1;
   set_debug_mode(true, true);
 
@@ -63,12 +62,6 @@ main(int argc, char** argv)
     {
       read_mxf = true;
       arg_i++;
-    }
-  else if ( strcmp(argv[1], "-w") == 0 )
-    {
-      rewrite_mxf = true;
-      arg_i++;
-      assert(argc - arg_i == 2);
     }
 
   fprintf(stderr, "Opening file %s\n", argv[arg_i]);
@@ -83,7 +76,6 @@ main(int argc, char** argv)
       if ( ASDCP_SUCCESS(result) )
 	result = Header.InitFromFile(Reader);
 
-      //      if ( ASDCP_SUCCESS(result) )
       Header.Dump(stdout);
 
       if ( ASDCP_SUCCESS(result) )
@@ -100,41 +92,6 @@ main(int argc, char** argv)
 	  if ( ASDCP_SUCCESS(result) )
 	    Index.Dump(stdout);
 	}
-    }
-  else if ( rewrite_mxf )
-    {
-      ASDCP::FileReader        Reader;
-      ASDCP::FileWriter        Writer;
-      ASDCP::MXF::OPAtomHeader Header;
-      ASDCP::MXF::OPAtomIndexFooter Index;
-
-      result = Reader.OpenRead(argv[arg_i++]);
-
-      if ( ASDCP_SUCCESS(result) )
-	result = Header.InitFromFile(Reader);
-
-      if ( ASDCP_SUCCESS(result) )
-	result = Reader.Seek(Header.FooterPartition);
-
-      if ( ASDCP_SUCCESS(result) )
-	result = Index.InitFromFile(Reader);
-
-      Header.m_Primer.ClearTagList();
-
-      if ( ASDCP_SUCCESS(result) )
-	result = Writer.OpenWrite(argv[arg_i]);
-
-      if ( ASDCP_SUCCESS(result) )
-	result = Header.WriteToFile(Writer);
-
-//      if ( ASDCP_SUCCESS(result) )
-//	result = Index.WriteToFile(Writer);
-
-      // essence packets
-
-      // index
-
-      // RIP
     }
   else // dump klv
     {

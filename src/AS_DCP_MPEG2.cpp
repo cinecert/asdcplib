@@ -387,10 +387,14 @@ class ASDCP::MPEG2::MXFWriter::h__Writer : public ASDCP::h__Writer
 public:
   VideoDescriptor m_VDesc;
   ui32_t          m_GOPOffset;
+  byte_t          m_EssenceUL[SMPTE_UL_LENGTH];
 
   ASDCP_NO_COPY_CONSTRUCT(h__Writer);
 
-  h__Writer() : m_GOPOffset(0) {}
+  h__Writer() : m_GOPOffset(0) {
+    memset(m_EssenceUL, 0, SMPTE_UL_LENGTH);
+  }
+
   ~h__Writer(){}
 
   Result_t OpenWrite(const char*, ui32_t HeaderSize);
@@ -436,7 +440,11 @@ ASDCP::MPEG2::MXFWriter::h__Writer::SetSourceStream(const VideoDescriptor& VDesc
 			      m_VDesc.EditRate, 24 /* TCFrameRate */);
 
   if ( ASDCP_SUCCESS(result) )
-    result = m_State.Goto_READY();
+    {
+      memcpy(m_EssenceUL, Dict::ul(MDD_MPEG2Essence), SMPTE_UL_LENGTH);
+      m_EssenceUL[SMPTE_UL_LENGTH-1] = 1; // first (and only) essence container
+      result = m_State.Goto_READY();
+    }
 
   return result;
 }
@@ -459,7 +467,7 @@ ASDCP::MPEG2::MXFWriter::h__Writer::WriteFrame(const FrameBuffer& FrameBuf, AESE
   Entry.StreamOffset = m_StreamOffset;
 
   if ( ASDCP_SUCCESS(result) )
-    result = WriteEKLVPacket(FrameBuf, Dict::ul(MDD_MPEG2Essence), Ctx, HMAC);
+    result = WriteEKLVPacket(FrameBuf, m_EssenceUL, Ctx, HMAC);
 
   if ( ASDCP_FAILURE(result) )
     return result;

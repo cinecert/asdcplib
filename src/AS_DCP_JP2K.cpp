@@ -320,10 +320,14 @@ class ASDCP::JP2K::MXFWriter::h__Writer : public ASDCP::h__Writer
 
 public:
   PictureDescriptor m_PDesc;
+  byte_t            m_EssenceUL[SMPTE_UL_LENGTH];
 
   ASDCP_NO_COPY_CONSTRUCT(h__Writer);
 
-  h__Writer() : m_EssenceSubDescriptor(0) {}
+  h__Writer() : m_EssenceSubDescriptor(0) {
+    memset(m_EssenceUL, 0, SMPTE_UL_LENGTH);
+  }
+
   ~h__Writer(){}
 
   Result_t OpenWrite(const char*, ui32_t HeaderSize);
@@ -420,7 +424,11 @@ ASDCP::JP2K::MXFWriter::h__Writer::SetSourceStream(const PictureDescriptor& PDes
 			      m_PDesc.EditRate, 24 /* TCFrameRate */);
 
   if ( ASDCP_SUCCESS(result) )
-    result = m_State.Goto_READY();
+    {
+      memcpy(m_EssenceUL, Dict::ul(MDD_JPEG2000Essence), SMPTE_UL_LENGTH);
+      m_EssenceUL[SMPTE_UL_LENGTH-1] = 1; // first (and only) essence container
+      result = m_State.Goto_READY();
+    }
 
   return result;
 }
@@ -443,7 +451,7 @@ ASDCP::JP2K::MXFWriter::h__Writer::WriteFrame(const FrameBuffer& FrameBuf, AESEn
   Entry.StreamOffset = m_StreamOffset;
 
   if ( ASDCP_SUCCESS(result) )
-    result = WriteEKLVPacket(FrameBuf, Dict::ul(MDD_JPEG2000Essence), Ctx, HMAC);
+    result = WriteEKLVPacket(FrameBuf, m_EssenceUL, Ctx, HMAC);
 
   if ( ASDCP_SUCCESS(result) )
     {  

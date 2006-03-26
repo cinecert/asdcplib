@@ -38,7 +38,7 @@ using namespace ASDCP::MXF;
 
 // a magic number identifying asdcplib
 #ifndef ASDCP_BUILD_NUMBER
-#define ASDCP_BUILD_NUMBER 0x4A48
+#define ASDCP_BUILD_NUMBER 0x6A68
 #endif
 
 
@@ -111,7 +111,7 @@ ASDCP::h__Writer::WriteMXFHeader(const std::string& PackageLabel, const UL& Wrap
   // so we tell the world by using OP1a
   m_HeaderPart.m_Preface->OperationalPattern = UL(Dict::ul(MDD_OP1a));
   m_HeaderPart.OperationalPattern = m_HeaderPart.m_Preface->OperationalPattern;
-  m_HeaderPart.m_RIP.PairArray.push_back(RIP::Pair(1, 0)); // First RIP Entry
+  m_HeaderPart.m_RIP.PairArray.push_back(RIP::Pair(0, 0)); // First RIP Entry
 
   //
   // Identification
@@ -125,7 +125,7 @@ ASDCP::h__Writer::WriteMXFHeader(const std::string& PackageLabel, const UL& Wrap
   Ident->ProductName = m_Info.ProductName.c_str();
   Ident->VersionString = m_Info.ProductVersion.c_str();
   Ident->ProductUID.Set(m_Info.ProductUUID);
-  //  Ident->Platform = "Foonix"; // ASDCP_PLATFORM;
+  Ident->Platform = ASDCP_PLATFORM;
   Ident->ToolkitVersion.Major = VERSION_MAJOR;
   Ident->ToolkitVersion.Minor = VERSION_APIMINOR;
   Ident->ToolkitVersion.Patch = VERSION_IMPMINOR;
@@ -148,11 +148,9 @@ ASDCP::h__Writer::WriteMXFHeader(const std::string& PackageLabel, const UL& Wrap
   //
   UMID PackageUMID;
   PackageUMID.MakeUMID(0x0f); // unidentified essence
-
   m_MaterialPackage = new MaterialPackage;
   m_MaterialPackage->Name = "AS-DCP Material Package";
   m_MaterialPackage->PackageUID = PackageUMID;
-
   m_HeaderPart.AddChildObject(m_MaterialPackage);
   Storage->Packages.push_back(m_MaterialPackage->InstanceUID);
 
@@ -262,7 +260,6 @@ ASDCP::h__Writer::WriteMXFHeader(const std::string& PackageLabel, const UL& Wrap
     {
       UL CryptEssenceUL(Dict::ul(MDD_EncryptedContainerLabel));
       m_HeaderPart.EssenceContainers.push_back(CryptEssenceUL);
-      m_HeaderPart.m_Preface->EssenceContainers.push_back(CryptEssenceUL);
       m_HeaderPart.m_Preface->DMSchemes.push_back(UL(Dict::ul(MDD_CryptographicFrameworkLabel)));
       AddDMScrypt(m_HeaderPart, *m_FilePackage, m_Info, WrappingUL);
     }
@@ -270,29 +267,43 @@ ASDCP::h__Writer::WriteMXFHeader(const std::string& PackageLabel, const UL& Wrap
     {
       m_HeaderPart.EssenceContainers.push_back(UL(Dict::ul(MDD_GCMulti)));
       m_HeaderPart.EssenceContainers.push_back(WrappingUL);
-      m_HeaderPart.m_Preface->EssenceContainers = m_HeaderPart.EssenceContainers;
     }
 
+  m_HeaderPart.m_Preface->EssenceContainers = m_HeaderPart.EssenceContainers;
   m_HeaderPart.AddChildObject(m_EssenceDescriptor);
   m_FilePackage->Descriptor = m_EssenceDescriptor->InstanceUID;
 
   // Write the header partition
   Result_t result = m_HeaderPart.WriteToFile(m_File, m_HeaderSize);
 
-  //
-  // Body Partition
-  //
+  if ( ASDCP_SUCCESS(result) )
+    {
+      // Body Partition
+      m_BodyPart.EssenceContainers = m_HeaderPart.EssenceContainers;
+      m_BodyPart.ThisPartition = m_File.Tell();
+      m_BodyPart.BodySID = 1;
+      UL OPAtomUL(Dict::ul(MDD_OPAtom));
 
+      if ( m_Info.LabelSetType == LS_MXF_INTEROP )
+	OPAtomUL.Set(Dict::ul(MDD_MXFInterop_OPAtom));
 
-  //
-  // Index setup
-  //
-  fpos_t ECoffset = m_File.Tell();
+      m_BodyPart.OperationalPattern = OPAtomUL;
+      m_HeaderPart.m_RIP.PairArray.push_back(RIP::Pair(1, m_BodyPart.ThisPartition)); // Second RIP Entry
+      
+      UL BodyUL(Dict::ul(MDD_ClosedCompleteBodyPartition));
+      result = m_BodyPart.WriteToFile(m_File, BodyUL);
+    }
 
-  if ( BytesPerEditUnit == 0 )
-    m_FooterPart.SetIndexParamsVBR(&m_HeaderPart.m_Primer, EditRate, ECoffset);
-  else
-    m_FooterPart.SetIndexParamsCBR(&m_HeaderPart.m_Primer, BytesPerEditUnit, EditRate);
+  if ( ASDCP_SUCCESS(result) )
+    {
+      // Index setup
+      fpos_t ECoffset = m_File.Tell();
+
+      if ( BytesPerEditUnit == 0 )
+	m_FooterPart.SetIndexParamsVBR(&m_HeaderPart.m_Primer, EditRate, ECoffset);
+      else
+	m_FooterPart.SetIndexParamsCBR(&m_HeaderPart.m_Primer, BytesPerEditUnit, EditRate);
+    }
 
   return result;
 }
@@ -419,20 +430,14 @@ Result_t
 ASDCP::h__Writer::WriteMXFFooter()
 {
   // Set top-level file package correctly for OP-Atom
-  m_MPTCSequence->Duration = m_FramesWritten;
-  m_MPTimecode->Duration = m_FramesWritten;
-  m_MPClSequence->Duration = m_FramesWritten;
-  m_MPClip->Duration = m_FramesWritten;
-  m_FPTCSequence->Duration = m_FramesWritten;
-  m_FPTimecode->Duration = m_FramesWritten;
-  m_FPClSequence->Duration = m_FramesWritten;
-  m_FPClip->Duration = m_FramesWritten;
-  m_EssenceDescriptor->ContainerDuration = m_FramesWritten;
+
+  m_MPTCSequence->Duration = m_MPTimecode->Duration = m_MPClSequence->Duration = m_MPClip->Duration = 
+    m_FPTCSequence->Duration = m_FPTimecode->Duration = m_FPClSequence->Duration = m_FPClip->Duration = 
+    m_EssenceDescriptor->ContainerDuration = m_FramesWritten;
 
   fpos_t here = m_File.Tell();
-  m_HeaderPart.m_RIP.PairArray.push_back(RIP::Pair(1, here)); // Third RIP Entry
+  m_HeaderPart.m_RIP.PairArray.push_back(RIP::Pair(0, here)); // Third RIP Entry
   m_HeaderPart.FooterPartition = here;
-  m_HeaderPart.BodySID = 1;
 
   // re-label the partition
   UL OPAtomUL(Dict::ul(MDD_OPAtom));
@@ -443,6 +448,7 @@ ASDCP::h__Writer::WriteMXFFooter()
   m_HeaderPart.OperationalPattern = OPAtomUL;
   m_HeaderPart.m_Preface->OperationalPattern = m_HeaderPart.OperationalPattern;
 
+  m_FooterPart.PreviousPartition = m_BodyPart.ThisPartition;
   m_FooterPart.OperationalPattern = m_HeaderPart.OperationalPattern;
   m_FooterPart.EssenceContainers = m_HeaderPart.EssenceContainers;
   m_FooterPart.FooterPartition = here;

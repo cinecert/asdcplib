@@ -112,14 +112,18 @@ ASDCP::h__Reader::OpenMXFRead(const char* filename)
   // partition and read off the partition pack
   if ( m_HeaderPart.m_RIP.PairArray.size() == 3 )
     {
-      DefaultLogSink().Error("RIP count is 3: must write code...\n");
-      return RESULT_FORMAT;
+      fprintf(stderr, "Three part!\n");
+      Array<RIP::Pair>::iterator r_i = m_HeaderPart.m_RIP.PairArray.begin();
+      r_i++;
+      m_File.Seek((*r_i).ByteOffset);
+
+      result = m_BodyPart.InitFromFile(m_File);
+      m_BodyPart.Dump();
+      // TODO: check the partition pack to make sure it is
+      //       really a body with a single essence container
     }
-  // TODO: check the partition pack to make sure it is
-  //       really a body with a single essence container
 
   m_EssenceStart = m_File.Tell();
-
   return RESULT_OK;
 }
 
@@ -208,12 +212,11 @@ ASDCP::h__Reader::ReadEKLVPacket(ui32_t FrameNum, ASDCP::FrameBuffer& FrameBuf,
     return result;
 
   UL Key(Reader.Key());
-  UL CryptEssenceUL(Dict::ul(MDD_CryptEssence));
-  UL InteropCryptEssenceUL(Dict::ul(MDD_MXFInterop_CryptEssence));
   ui64_t PacketLength = Reader.Length();
   m_LastPosition = m_LastPosition + Reader.KLLength() + PacketLength;
 
-  if ( Key == InteropCryptEssenceUL || Key == CryptEssenceUL )
+  if ( memcmp(Key.Value(), Dict::ul(MDD_CryptEssence), Key.Size() - 1) == 0  // ignore the stream numbers
+       || memcmp(Key.Value(), Dict::ul(MDD_MXFInterop_CryptEssence), Key.Size() - 1) == 0 )
     {
       if ( ! m_Info.EncryptedEssence )
 	{
@@ -263,7 +266,17 @@ ASDCP::h__Reader::ReadEKLVPacket(ui32_t FrameNum, ASDCP::FrameBuffer& FrameBuf,
       if ( ! read_test_BER(&ess_p, SMPTE_UL_LENGTH) )
 	return RESULT_FORMAT;
 
-      // TODO: test essence UL
+      // test essence UL
+      if ( memcmp(ess_p, EssenceUL, SMPTE_UL_LENGTH - 1) != 0 ) // ignore the stream number
+	{
+	  char strbuf[IntBufferLen];
+	  const MDDEntry* Entry = Dict::FindUL(Key.Value());
+	  if ( Entry == 0 )
+	    DefaultLogSink().Warn("Unexpected Essence UL found: %s.\n", Key.ToString(strbuf));
+	  else
+	    DefaultLogSink().Warn("Unexpected Essence UL found: %s.\n", Entry->name);
+	  return RESULT_FORMAT;
+	}
       ess_p += SMPTE_UL_LENGTH;
 
       // read SourceLength length
@@ -328,7 +341,7 @@ ASDCP::h__Reader::ReadEKLVPacket(ui32_t FrameNum, ASDCP::FrameBuffer& FrameBuf,
 	  FrameBuf.PlaintextOffset(PlaintextOffset);
 	}
     }
-  else if ( Key == EssenceUL )
+  else if ( memcmp(Key.Value(), EssenceUL, Key.Size() - 1) == 0 ) // ignore the stream number
     { // read plaintext frame
        if ( FrameBuf.Capacity() < PacketLength )
 	{

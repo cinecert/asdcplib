@@ -312,10 +312,15 @@ class ASDCP::PCM::MXFWriter::h__Writer : public ASDCP::h__Writer
 {
 public:
   AudioDescriptor m_ADesc;
+  byte_t          m_EssenceUL[SMPTE_UL_LENGTH];
+
 
   ASDCP_NO_COPY_CONSTRUCT(h__Writer);
   
-  h__Writer(){}
+  h__Writer(){
+    memset(m_EssenceUL, 0, SMPTE_UL_LENGTH);
+  }
+
   ~h__Writer(){}
 
   Result_t OpenWrite(const char*, ui32_t HeaderSize);
@@ -379,7 +384,11 @@ ASDCP::PCM::MXFWriter::h__Writer::SetSourceStream(const AudioDescriptor& ADesc)
 			      m_ADesc.SampleRate, 24 /* TCFrameRate */, calc_CBR_frame_size(m_Info, m_ADesc));
 
   if ( ASDCP_SUCCESS(result) )
-    result = m_State.Goto_READY();
+    {
+      memcpy(m_EssenceUL, Dict::ul(MDD_WAVEssence), SMPTE_UL_LENGTH);
+      m_EssenceUL[SMPTE_UL_LENGTH-1] = 1; // first (and only) essence container
+      result = m_State.Goto_READY();
+    }
 
   return result;
 }
@@ -397,7 +406,7 @@ ASDCP::PCM::MXFWriter::h__Writer::WriteFrame(const FrameBuffer& FrameBuf, AESEnc
     result = m_State.Goto_RUNNING(); // first time through
 
   if ( ASDCP_SUCCESS(result) )
-    result = WriteEKLVPacket(FrameBuf, Dict::ul(MDD_WAVEssence), Ctx, HMAC);
+    result = WriteEKLVPacket(FrameBuf, m_EssenceUL, Ctx, HMAC);
 
   if ( ASDCP_SUCCESS(result) )
     m_FramesWritten++;

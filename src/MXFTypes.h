@@ -124,7 +124,7 @@ namespace ASDCP
 	    return result;
 	  }
 
-	  inline bool HasValue() const { return ! empty(); }
+	  inline bool HasValue() const { return ! this->empty(); }
 
 	  //
 	  Result_t Archive(ASDCP::MemIOWriter& Writer) const {
@@ -134,11 +134,11 @@ namespace ASDCP
 	    if ( ASDCP_SUCCESS(result) )
 	      result = Writer.WriteUi32BE(0);
 
-	    if ( ASDCP_FAILURE(result) || empty() )
+	    if ( ASDCP_FAILURE(result) || this->empty() )
 	      return result;
 	    
-	    typename std::vector<T>::const_iterator l_i = begin();
-	    assert(l_i != end());
+	    typename std::vector<T>::const_iterator l_i = this->begin();
+	    assert(l_i != this->end());
 
 	    ui32_t ItemSize = Writer.Remainder();
 	    result = (*l_i).Archive(Writer);
@@ -146,7 +146,7 @@ namespace ASDCP
 	    i2p<ui32_t>(ASDCP_i32_BE(ItemSize), p);
 	    l_i++;
 
-	    for ( ; l_i != end() && ASDCP_SUCCESS(result); l_i++ )
+	    for ( ; l_i != this->end() && ASDCP_SUCCESS(result); l_i++ )
 	      result = (*l_i).Archive(Writer);
 
 	    return result;
@@ -187,14 +187,14 @@ namespace ASDCP
 	      return RESULT_OK;
 	    }
 
-	  inline bool HasValue() const { return ! empty(); }
+	  inline bool HasValue() const { return ! this->empty(); }
 
 	  //
 	  Result_t Archive(ASDCP::MemIOWriter& Writer) const {
 	    Result_t result = RESULT_OK;
-	    typename std::list<T>::const_iterator l_i = begin();
+	    typename std::list<T>::const_iterator l_i = this->begin();
 
-	    for ( ; l_i != end() && ASDCP_SUCCESS(result); l_i++ )
+	    for ( ; l_i != this->end() && ASDCP_SUCCESS(result); l_i++ )
 	      result = (*l_i).Archive(Writer);
 
 	    return result;

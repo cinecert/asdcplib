@@ -30,10 +30,12 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 
+#include "Mutex.h"
 #include "KLV.h"
 #include "MDD.cpp"
 #include <map>
  
+static ASDCP::Mutex s_Lock;
 static bool    s_md_init = false;
 static std::map<ASDCP::UL, ui32_t> s_md_lookup;
 
@@ -54,14 +56,29 @@ ASDCP::Dict::FindUL(const byte_t* ul_buf)
 {
   if ( ! s_md_init )
     {
-      for ( ui32_t x = 0; x < s_MDD_Table_size; x++ )
-	s_md_lookup.insert(std::map<UL, ui32_t>::value_type(UL(s_MDD_Table[x].ul), x));
+      AutoMutex AL(s_Lock);
+      if ( ! s_md_init )
+	{
+	  for ( ui32_t x = 0; x < s_MDD_Table_size; x++ )
+	    s_md_lookup.insert(std::map<UL, ui32_t>::value_type(UL(s_MDD_Table[x].ul), x));
+
+	  s_md_init = true;
+	}
     }
 
   std::map<UL, ui32_t>::iterator i = s_md_lookup.find(UL(ul_buf));
   
   if ( i == s_md_lookup.end() )
-    return 0;
+    {
+      byte_t tmp_ul[SMPTE_UL_LENGTH];
+      memcpy(tmp_ul, ul_buf, SMPTE_UL_LENGTH);
+      tmp_ul[SMPTE_UL_LENGTH-1] = 0;
+
+      i = s_md_lookup.find(UL(tmp_ul));
+
+      if ( i == s_md_lookup.end() )
+	return 0;
+    }
 
   return &s_MDD_Table[(*i).second];
 }
