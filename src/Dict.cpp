@@ -30,12 +30,12 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 
-#include "Mutex.h"
+#include "KM_mutex.h"
 #include "KLV.h"
 #include "MDD.cpp"
 #include <map>
  
-static ASDCP::Mutex s_Lock;
+static Kumu::Mutex s_Lock;
 static bool    s_md_init = false;
 static std::map<ASDCP::UL, ui32_t> s_md_lookup;
 
@@ -56,7 +56,8 @@ ASDCP::Dict::FindUL(const byte_t* ul_buf)
 {
   if ( ! s_md_init )
     {
-      AutoMutex AL(s_Lock);
+      Kumu::AutoMutex AL(s_Lock);
+
       if ( ! s_md_init )
 	{
 	  for ( ui32_t x = 0; x < s_MDD_Table_size; x++ )

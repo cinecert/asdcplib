@@ -30,8 +30,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include "MXF.h"
-#include "hex_utils.h"
-
+#include <KM_log.h>
+using Kumu::DefaultLogSink;
 
 //------------------------------------------------------------------------------------------
 //
@@ -40,12 +40,12 @@ const ui32_t kl_length = ASDCP::SMPTE_UL_LENGTH + ASDCP::MXF_BER_LENGTH;
 
 //
 ASDCP::Result_t
-ASDCP::MXF::SeekToRIP(const ASDCP::FileReader& Reader)
+ASDCP::MXF::SeekToRIP(const Kumu::FileReader& Reader)
 {
-  ASDCP::fpos_t end_pos;
+  Kumu::fpos_t end_pos;
 
   // go to the end - 4 bytes
-  Result_t result = Reader.Seek(0, ASDCP::SP_END);
+  Result_t result = Reader.Seek(0, Kumu::SP_END);
 
   if ( ASDCP_SUCCESS(result) )
     result = Reader.Tell(&end_pos);
@@ -72,7 +72,7 @@ ASDCP::MXF::SeekToRIP(const ASDCP::FileReader& Reader)
 
   if ( ASDCP_SUCCESS(result) )
     {
-      rip_size = ASDCP_i32_BE(cp2i<ui32_t>(intbuf));
+      rip_size = KM_i32_BE(Kumu::cp2i<ui32_t>(intbuf));
 
       if ( rip_size > end_pos ) // RIP can't be bigger than the file
 	return RESULT_FAIL;
@@ -87,14 +87,14 @@ ASDCP::MXF::SeekToRIP(const ASDCP::FileReader& Reader)
 
 //
 ASDCP::Result_t
-ASDCP::MXF::RIP::InitFromFile(const ASDCP::FileReader& Reader)
+ASDCP::MXF::RIP::InitFromFile(const Kumu::FileReader& Reader)
 {
   Result_t result = KLVFilePacket::InitFromFile(Reader, Dict::ul(MDD_RandomIndexMetadata));
 
   if ( ASDCP_SUCCESS(result) )
     {
-      MemIOReader MemRDR(m_ValueStart, m_ValueLength - 4);
-      result =  PairArray.Unarchive(MemRDR);
+      Kumu::MemIOReader MemRDR(m_ValueStart, m_ValueLength - 4);
+      result = PairArray.Unarchive(&MemRDR) ? RESULT_OK : RESULT_KLV_CODING;
     }
 
   if ( ASDCP_FAILURE(result) )
@@ -105,7 +105,7 @@ ASDCP::MXF::RIP::InitFromFile(const ASDCP::FileReader& Reader)
 
 //
 ASDCP::Result_t
-ASDCP::MXF::RIP::WriteToFile(ASDCP::FileWriter& Writer)
+ASDCP::MXF::RIP::WriteToFile(Kumu::FileWriter& Writer)
 {
   ASDCP::FrameBuffer Buffer;
   ui32_t RIPSize = ( PairArray.size() * (sizeof(ui32_t) + sizeof(ui64_t)) ) + 4;
@@ -116,14 +116,15 @@ ASDCP::MXF::RIP::WriteToFile(ASDCP::FileWriter& Writer)
 
   if ( ASDCP_SUCCESS(result) )
     {
-      MemIOWriter MemWRT(Buffer.Data(), Buffer.Capacity());
-      result =  PairArray.Archive(MemWRT);
+      result = RESULT_KLV_CODING;
 
-      if ( ASDCP_SUCCESS(result) )
-	MemWRT.WriteUi32BE(RIPSize + 20);
-
-      if ( ASDCP_SUCCESS(result) )
-	Buffer.Size(MemWRT.Size());
+      Kumu::MemIOWriter MemWRT(Buffer.Data(), Buffer.Capacity());
+      if ( PairArray.Archive(&MemWRT) )
+	if ( MemWRT.WriteUi32BE(RIPSize + 20) )
+	  {
+	    Buffer.Size(MemWRT.Length());
+	    result = RESULT_OK;
+	  }
     }
 
   if ( ASDCP_SUCCESS(result) )
@@ -215,14 +216,14 @@ ASDCP::MXF::Partition::AddChildObject(InterchangeObject* Object)
 {
   assert(Object);
   UUID TmpID;
-  TmpID.GenRandomValue();
+  Kumu::GenRandomValue(TmpID);
   Object->InstanceUID = TmpID;
   m_PacketList->AddPacket(Object);
 }
 
 //
 ASDCP::Result_t
-ASDCP::MXF::Partition::InitFromFile(const ASDCP::FileReader& Reader)
+ASDCP::MXF::Partition::InitFromFile(const Kumu::FileReader& Reader)
 {
   Result_t result = KLVFilePacket::InitFromFile(Reader);
   // test the UL
@@ -230,20 +231,23 @@ ASDCP::MXF::Partition::InitFromFile(const ASDCP::FileReader& Reader)
 
   if ( ASDCP_SUCCESS(result) )
     {
-      MemIOReader MemRDR(m_ValueStart, m_ValueLength);
-      result = MemRDR.ReadUi16BE(&MajorVersion);
-      if ( ASDCP_SUCCESS(result) )  result = MemRDR.ReadUi16BE(&MinorVersion);
-      if ( ASDCP_SUCCESS(result) )  result = MemRDR.ReadUi32BE(&KAGSize);
-      if ( ASDCP_SUCCESS(result) )  result = MemRDR.ReadUi64BE(&ThisPartition);
-      if ( ASDCP_SUCCESS(result) )  result = MemRDR.ReadUi64BE(&PreviousPartition);
-      if ( ASDCP_SUCCESS(result) )  result = MemRDR.ReadUi64BE(&FooterPartition);
-      if ( ASDCP_SUCCESS(result) )  result = MemRDR.ReadUi64BE(&HeaderByteCount);
-      if ( ASDCP_SUCCESS(result) )  result = MemRDR.ReadUi64BE(&IndexByteCount);
-      if ( ASDCP_SUCCESS(result) )  result = MemRDR.ReadUi32BE(&IndexSID);
-      if ( ASDCP_SUCCESS(result) )  result = MemRDR.ReadUi64BE(&BodyOffset);
-      if ( ASDCP_SUCCESS(result) )  result = MemRDR.ReadUi32BE(&BodySID);
-      if ( ASDCP_SUCCESS(result) )  result = OperationalPattern.Unarchive(MemRDR);
-      if ( ASDCP_SUCCESS(result) )  result = EssenceContainers.Unarchive(MemRDR);
+      Kumu::MemIOReader MemRDR(m_ValueStart, m_ValueLength);
+      result = RESULT_KLV_CODING;
+
+      if ( MemRDR.ReadUi16BE(&MajorVersion) )
+	if ( MemRDR.ReadUi16BE(&MinorVersion) )
+	  if ( MemRDR.ReadUi32BE(&KAGSize) )
+	    if ( MemRDR.ReadUi64BE(&ThisPartition) )
+	      if ( MemRDR.ReadUi64BE(&PreviousPartition) )
+		if ( MemRDR.ReadUi64BE(&FooterPartition) )
+		  if ( MemRDR.ReadUi64BE(&HeaderByteCount) )
+		    if ( MemRDR.ReadUi64BE(&IndexByteCount) )
+		      if ( MemRDR.ReadUi32BE(&IndexSID) )
+			if ( MemRDR.ReadUi64BE(&BodyOffset) )
+			  if ( MemRDR.ReadUi32BE(&BodySID) )
+			    if ( OperationalPattern.Unarchive(&MemRDR) )
+			      if ( EssenceContainers.Unarchive(&MemRDR) )
+				result = RESULT_OK;
     }
 
   if ( ASDCP_FAILURE(result) )
@@ -254,28 +258,32 @@ ASDCP::MXF::Partition::InitFromFile(const ASDCP::FileReader& Reader)
 
 //
 ASDCP::Result_t
-ASDCP::MXF::Partition::WriteToFile(ASDCP::FileWriter& Writer, UL& PartitionLabel)
+ASDCP::MXF::Partition::WriteToFile(Kumu::FileWriter& Writer, UL& PartitionLabel)
 {
   ASDCP::FrameBuffer Buffer;
   Result_t result = Buffer.Capacity(1024);
 
   if ( ASDCP_SUCCESS(result) )
     {
-      MemIOWriter MemWRT(Buffer.Data(), Buffer.Capacity());
-      result = MemWRT.WriteUi16BE(MajorVersion);
-      if ( ASDCP_SUCCESS(result) )  result = MemWRT.WriteUi16BE(MinorVersion);
-      if ( ASDCP_SUCCESS(result) )  result = MemWRT.WriteUi32BE(KAGSize);
-      if ( ASDCP_SUCCESS(result) )  result = MemWRT.WriteUi64BE(ThisPartition);
-      if ( ASDCP_SUCCESS(result) )  result = MemWRT.WriteUi64BE(PreviousPartition);
-      if ( ASDCP_SUCCESS(result) )  result = MemWRT.WriteUi64BE(FooterPartition);
-      if ( ASDCP_SUCCESS(result) )  result = MemWRT.WriteUi64BE(HeaderByteCount);
-      if ( ASDCP_SUCCESS(result) )  result = MemWRT.WriteUi64BE(IndexByteCount);
-      if ( ASDCP_SUCCESS(result) )  result = MemWRT.WriteUi32BE(IndexSID);
-      if ( ASDCP_SUCCESS(result) )  result = MemWRT.WriteUi64BE(BodyOffset);
-      if ( ASDCP_SUCCESS(result) )  result = MemWRT.WriteUi32BE(BodySID);
-      if ( ASDCP_SUCCESS(result) )  result = OperationalPattern.Archive(MemWRT);
-      if ( ASDCP_SUCCESS(result) )  result = EssenceContainers.Archive(MemWRT);
-      if ( ASDCP_SUCCESS(result) )  Buffer.Size(MemWRT.Size());
+      Kumu::MemIOWriter MemWRT(Buffer.Data(), Buffer.Capacity());
+      result = RESULT_KLV_CODING;
+      if ( MemWRT.WriteUi16BE(MajorVersion) )
+	if ( MemWRT.WriteUi16BE(MinorVersion) )
+	  if ( MemWRT.WriteUi32BE(KAGSize) )
+	    if ( MemWRT.WriteUi64BE(ThisPartition) )
+	      if ( MemWRT.WriteUi64BE(PreviousPartition) )
+		if ( MemWRT.WriteUi64BE(FooterPartition) )
+		  if ( MemWRT.WriteUi64BE(HeaderByteCount) )
+		    if ( MemWRT.WriteUi64BE(IndexByteCount) )
+		      if ( MemWRT.WriteUi32BE(IndexSID) )
+			if ( MemWRT.WriteUi64BE(BodyOffset) )
+			  if ( MemWRT.WriteUi32BE(BodySID) )
+			    if ( OperationalPattern.Archive(&MemWRT) )
+			      if ( EssenceContainers.Archive(&MemWRT) )
+				{
+				  Buffer.Size(MemWRT.Length());
+				  result = RESULT_OK;
+				}
     }
 
   if ( ASDCP_SUCCESS(result) )
@@ -310,7 +318,6 @@ void
 ASDCP::MXF::Partition::Dump(FILE* stream)
 {
   char identbuf[IdentBufferLen];
-  char intbuf[IntBufferLen];
 
   if ( stream == 0 )
     stream = stderr;
@@ -319,15 +326,15 @@ ASDCP::MXF::Partition::Dump(FILE* stream)
   fprintf(stream, "  MajorVersion       = %hu\n", MajorVersion);
   fprintf(stream, "  MinorVersion       = %hu\n", MinorVersion);
   fprintf(stream, "  KAGSize            = %lu\n", KAGSize);
-  fprintf(stream, "  ThisPartition      = %s\n",  ui64sz(ThisPartition, intbuf));
-  fprintf(stream, "  PreviousPartition  = %s\n",  ui64sz(PreviousPartition, intbuf));
-  fprintf(stream, "  FooterPartition    = %s\n",  ui64sz(FooterPartition, intbuf));
-  fprintf(stream, "  HeaderByteCount    = %s\n",  ui64sz(HeaderByteCount, intbuf));
-  fprintf(stream, "  IndexByteCount     = %s\n",  ui64sz(IndexByteCount, intbuf));
+  fprintf(stream, "  ThisPartition      = %s\n",  ui64sz(ThisPartition, identbuf));
+  fprintf(stream, "  PreviousPartition  = %s\n",  ui64sz(PreviousPartition, identbuf));
+  fprintf(stream, "  FooterPartition    = %s\n",  ui64sz(FooterPartition, identbuf));
+  fprintf(stream, "  HeaderByteCount    = %s\n",  ui64sz(HeaderByteCount, identbuf));
+  fprintf(stream, "  IndexByteCount     = %s\n",  ui64sz(IndexByteCount, identbuf));
   fprintf(stream, "  IndexSID           = %lu\n", IndexSID);
-  fprintf(stream, "  BodyOffset         = %s\n",  ui64sz(BodyOffset, intbuf));
+  fprintf(stream, "  BodyOffset         = %s\n",  ui64sz(BodyOffset, identbuf));
   fprintf(stream, "  BodySID            = %lu\n", BodySID);
-  fprintf(stream, "  OperationalPattern = %s\n",  OperationalPattern.ToString(identbuf));
+  fprintf(stream, "  OperationalPattern = %s\n",  OperationalPattern.EncodeString(identbuf, IdentBufferLen));
   fputs("Essence Containers:\n", stream); EssenceContainers.Dump(stream, false);
 
   fputs("==========================================================================\n", stream);
@@ -372,8 +379,8 @@ ASDCP::MXF::Primer::InitFromBuffer(const byte_t* p, ui32_t l)
 
   if ( ASDCP_SUCCESS(result) )
     {
-      MemIOReader MemRDR(m_ValueStart, m_ValueLength);
-      result = LocalTagEntryBatch.Unarchive(MemRDR);
+      Kumu::MemIOReader MemRDR(m_ValueStart, m_ValueLength);
+      result = LocalTagEntryBatch.Unarchive(&MemRDR) ? RESULT_OK : RESULT_KLV_CODING;
     }
 
   if ( ASDCP_SUCCESS(result) )
@@ -390,7 +397,7 @@ ASDCP::MXF::Primer::InitFromBuffer(const byte_t* p, ui32_t l)
 
 //
 ASDCP::Result_t
-ASDCP::MXF::Primer::WriteToFile(ASDCP::FileWriter& Writer)
+ASDCP::MXF::Primer::WriteToFile(Kumu::FileWriter& Writer)
 {
   ASDCP::FrameBuffer Buffer;
   Result_t result = Buffer.Capacity(128*1024);
@@ -409,12 +416,12 @@ ASDCP::Result_t
 ASDCP::MXF::Primer::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 {
   ASDCP::FrameBuffer LocalTagBuffer;
-  MemIOWriter MemWRT(Buffer.Data() + kl_length, Buffer.Capacity() - kl_length);
-  Result_t result = LocalTagEntryBatch.Archive(MemWRT);
+  Kumu::MemIOWriter MemWRT(Buffer.Data() + kl_length, Buffer.Capacity() - kl_length);
+  Result_t result = LocalTagEntryBatch.Archive(&MemWRT) ? RESULT_OK : RESULT_KLV_CODING;
 
   if ( ASDCP_SUCCESS(result) )
     {
-      ui32_t packet_length = MemWRT.Size();
+      ui32_t packet_length = MemWRT.Length();
       result = WriteKLToBuffer(Buffer, Dict::ul(MDD_Primer), packet_length);
 
       if ( ASDCP_SUCCESS(result) )
@@ -498,7 +505,7 @@ ASDCP::MXF::Primer::Dump(FILE* stream)
   for ( ; i != LocalTagEntryBatch.end(); i++ )
     {
       const MDDEntry* Entry = Dict::FindUL((*i).UL.Value());
-      fprintf(stream, "  %s %s\n", (*i).ToString(identbuf), (Entry ? Entry->name : "Unknown"));
+      fprintf(stream, "  %s %s\n", (*i).EncodeString(identbuf, IdentBufferLen), (Entry ? Entry->name : "Unknown"));
     }
 
   fputs("==========================================================================\n", stream);
@@ -568,13 +575,13 @@ ASDCP::MXF::Preface::Dump(FILE* stream)
     stream = stderr;
 
   InterchangeObject::Dump(stream);
-  fprintf(stream, "  %22s = %s\n",  "LastModifiedDate", LastModifiedDate.ToString(identbuf));
+  fprintf(stream, "  %22s = %s\n",  "LastModifiedDate", LastModifiedDate.EncodeString(identbuf, IdentBufferLen));
   fprintf(stream, "  %22s = %hu\n", "Version", Version);
   fprintf(stream, "  %22s = %lu\n", "ObjectModelVersion", ObjectModelVersion);
-  fprintf(stream, "  %22s = %s\n",  "PrimaryPackage", PrimaryPackage.ToString(identbuf));
+  fprintf(stream, "  %22s = %s\n",  "PrimaryPackage", PrimaryPackage.EncodeHex(identbuf, IdentBufferLen));
   fprintf(stream, "  %22s:\n", "Identifications");  Identifications.Dump(stream);
-  fprintf(stream, "  %22s = %s\n",  "ContentStorage", ContentStorage.ToString(identbuf));
-  fprintf(stream, "  %22s = %s\n",  "OperationalPattern", OperationalPattern.ToString(identbuf));
+  fprintf(stream, "  %22s = %s\n",  "ContentStorage", ContentStorage.EncodeHex(identbuf, IdentBufferLen));
+  fprintf(stream, "  %22s = %s\n",  "OperationalPattern", OperationalPattern.EncodeString(identbuf, IdentBufferLen));
   fprintf(stream, "  %22s:\n", "EssenceContainers");  EssenceContainers.Dump(stream);
   fprintf(stream, "  %22s:\n", "DMSchemes");  DMSchemes.Dump(stream);
 }
@@ -587,7 +594,7 @@ ASDCP::MXF::OPAtomHeader::~OPAtomHeader() {}
 
 //
 ASDCP::Result_t
-ASDCP::MXF::OPAtomHeader::InitFromFile(const ASDCP::FileReader& Reader)
+ASDCP::MXF::OPAtomHeader::InitFromFile(const Kumu::FileReader& Reader)
 {
   m_HasRIP = false;
   Result_t result = SeekToRIP(Reader);
@@ -637,18 +644,16 @@ ASDCP::MXF::OPAtomHeader::InitFromFile(const ASDCP::FileReader& Reader)
   if ( ASDCP_SUCCESS(result) )
     result = Partition::InitFromFile(Reader); // test UL and OP
 
-  Partition::Dump();
-
   // is it really OP-Atom?
   UL OPAtomUL(Dict::ul(MDD_OPAtom));
   UL InteropOPAtomUL(Dict::ul(MDD_MXFInterop_OPAtom));
 
   if ( ! ( OperationalPattern == OPAtomUL  || OperationalPattern == InteropOPAtomUL ) )
     {
-      char strbuf[IntBufferLen];
+      char strbuf[IdentBufferLen];
       const MDDEntry* Entry = Dict::FindUL(OperationalPattern.Value());
       if ( Entry == 0 )
-	DefaultLogSink().Warn("Operational pattern is not OP-Atom: %s\n", OperationalPattern.ToString(strbuf));
+	DefaultLogSink().Warn("Operational pattern is not OP-Atom: %s\n", OperationalPattern.EncodeString(strbuf, IdentBufferLen));
       else
 	DefaultLogSink().Warn("Operational pattern is not OP-Atom: %s\n", Entry->name);
     }
@@ -760,7 +765,7 @@ ASDCP::MXF::OPAtomHeader::GetSourcePackage()
 
 //
 ASDCP::Result_t
-ASDCP::MXF::OPAtomHeader::WriteToFile(ASDCP::FileWriter& Writer, ui32_t HeaderSize)
+ASDCP::MXF::OPAtomHeader::WriteToFile(Kumu::FileWriter& Writer, ui32_t HeaderSize)
 {
   if ( m_Preface == 0 )
     return RESULT_STATE;
@@ -808,9 +813,9 @@ ASDCP::MXF::OPAtomHeader::WriteToFile(ASDCP::FileWriter& Writer, ui32_t HeaderSi
   // KLV Fill
   if ( ASDCP_SUCCESS(result) )
     {
-      ASDCP::fpos_t pos = Writer.Tell();
+      Kumu::fpos_t pos = Writer.Tell();
 
-      if ( pos > (ASDCP::fpos_t)HeaderByteCount )
+      if ( pos > (Kumu::fpos_t)HeaderByteCount )
 	{
 	  char intbuf[IntBufferLen];
 	  DefaultLogSink().Error("Header size %s exceeds specified value %lu\n",
@@ -884,7 +889,7 @@ ASDCP::MXF::OPAtomIndexFooter::~OPAtomIndexFooter() {}
 
 
 ASDCP::Result_t
-ASDCP::MXF::OPAtomIndexFooter::InitFromFile(const ASDCP::FileReader& Reader)
+ASDCP::MXF::OPAtomIndexFooter::InitFromFile(const Kumu::FileReader& Reader)
 {
   Result_t result = Partition::InitFromFile(Reader); // test UL and OP
 
@@ -936,7 +941,7 @@ ASDCP::MXF::OPAtomIndexFooter::InitFromFile(const ASDCP::FileReader& Reader)
 
 //
 ASDCP::Result_t
-ASDCP::MXF::OPAtomIndexFooter::WriteToFile(ASDCP::FileWriter& Writer, ui64_t duration)
+ASDCP::MXF::OPAtomIndexFooter::WriteToFile(Kumu::FileWriter& Writer, ui64_t duration)
 {
   ASDCP::FrameBuffer FooterBuffer;
   ui32_t   footer_size = m_PacketList->m_List.size() * MaxIndexSegmentSize; // segment-count * max-segment-size
@@ -1059,7 +1064,7 @@ ASDCP::MXF::OPAtomIndexFooter::SetIndexParamsCBR(IPrimerLookup* lookup, ui32_t s
 
 //
 void
-ASDCP::MXF::OPAtomIndexFooter::SetIndexParamsVBR(IPrimerLookup* lookup, const Rational& Rate, fpos_t offset)
+ASDCP::MXF::OPAtomIndexFooter::SetIndexParamsVBR(IPrimerLookup* lookup, const Rational& Rate, Kumu::fpos_t offset)
 {
   assert(lookup);
   m_Lookup = lookup;
@@ -1132,7 +1137,7 @@ ASDCP::Result_t
 ASDCP::MXF::InterchangeObject::InitFromBuffer(const byte_t* p, ui32_t l)
 {
   ASDCP_TEST_NULL(p);
-  Result_t result;
+  Result_t result = RESULT_FALSE;
 
   if ( m_Typeinfo == 0 )
     {
@@ -1164,7 +1169,7 @@ ASDCP::MXF::InterchangeObject::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 
   if ( ASDCP_SUCCESS(result) )
     {
-      ui32_t packet_length = MemWRT.Size();
+      ui32_t packet_length = MemWRT.Length();
       result = WriteKLToBuffer(Buffer, m_Typeinfo->ul, packet_length);
 
       if ( ASDCP_SUCCESS(result) )
@@ -1182,8 +1187,8 @@ ASDCP::MXF::InterchangeObject::Dump(FILE* stream)
 
   fputc('\n', stream);
   KLVPacket::Dump(stream, false);
-  fprintf(stream, "             InstanceUID = %s\n",  InstanceUID.ToString(identbuf));
-  fprintf(stream, "           GenerationUID = %s\n",  GenerationUID.ToString(identbuf));
+  fprintf(stream, "             InstanceUID = %s\n",  InstanceUID.EncodeHex(identbuf, IdentBufferLen));
+  fprintf(stream, "           GenerationUID = %s\n",  GenerationUID.EncodeHex(identbuf, IdentBufferLen));
 }
 
 //

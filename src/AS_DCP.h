@@ -72,9 +72,10 @@ This project depends upon the following library:
 
 */
 
-#ifndef _AS_DCP_H__
-#define _AS_DCP_H__
+#ifndef _AS_DCP_H_
+#define _AS_DCP_H_
 
+#include <KM_error.h>
 #include <stdio.h>
 #include <stdarg.h>
 #include <iostream>
@@ -128,7 +129,6 @@ typedef unsigned int   ui32_t;
           T(const T&); \
           T& operator=(const T&)
 
-
 //--------------------------------------------------------------------------------
 // All library components are defined in the namespace ASDCP
 //
@@ -142,8 +142,8 @@ namespace ASDCP {
   // in file format, and if no changes were made to AS_DCP.h, the new version would be
   // 1.0.1. If changes were also required in AS_DCP.h, the new version would be 1.1.1.
   const ui32_t VERSION_MAJOR = 1;
-  const ui32_t VERSION_APIMINOR = 0;
-  const ui32_t VERSION_IMPMINOR = 5;
+  const ui32_t VERSION_APIMINOR = 1;
+  const ui32_t VERSION_IMPMINOR = 7;
   const char* Version();
 
   // UUIDs are passed around as strings of UUIDlen bytes
@@ -153,75 +153,42 @@ namespace ASDCP {
   const ui32_t KeyLen = 16;
 
   //---------------------------------------------------------------------------------
-  // message logging
-
-  // Error and debug messages will be delivered to an object having this interface.
-  // The default implementation sends only LOG_ERROR and LOG_WARN messages to stderr.
-  // To receive LOG_INFO or LOG_DEBUG messages, or to send messages somewhere other
-  // than stderr, implement this interface and register an instance of your new class
-  // by calling SetDefaultLogSink().
-  class ILogSink
-    {
-    public:
-      enum LogType_t { LOG_ERROR, LOG_WARN, LOG_INFO, LOG_DEBUG };
-      
-      virtual ~ILogSink() {}
-      virtual void Error(const char*, ...) = 0; // receives error messges
-      virtual void Warn(const char*, ...) = 0;  // receives warning messges
-      virtual void Info(const char*, ...) = 0;  // receives info messages
-      virtual void Debug(const char*, ...) = 0; // receives debug messages
-      virtual void Logf(LogType_t, const char*, ...) = 0; // log a formatted string with positional parameters
-      virtual void vLogf(LogType_t, const char*, va_list*) = 0; // log a formatted string with a va_list struct
-    };
-
-  // Sets the internal default sink to the given receiver. If the given value
-  // is zero, sets the default sink to the internally allocated stderr sink.
-  void SetDefaultLogSink(ILogSink* = 0);
-
-  // Returns the internal default sink.
-  ILogSink& DefaultLogSink();
-
-  //---------------------------------------------------------------------------------
   // return values
 
-  // Each method or subroutine in this library that is not void or does not directly
-  // return a value will instead return a result code from this enumeration.
-  enum Result_t {
-    RESULT_FALSE      =  1,   // successful but negative
-    RESULT_OK         =  0,   // No errors detected
-    RESULT_FAIL       = -1,   // An undefined error was detected
-    RESULT_PTR        = -2,   // An unexpected NULL pointer was given
-    RESULT_NULL_STR   = -3,   // An unexpected empty string was given
-    RESULT_SMALLBUF   = -4,   // The given frame buffer is too small
-    RESULT_INIT       = -5,   // The object is not yet initialized
-    RESULT_NOT_FOUND  = -6,   // The requested file does not exist on the system
-    RESULT_NO_PERM    = -7,   // Insufficient privilege exists to perform the operation
-    RESULT_FILEOPEN   = -8,   // Failure opening file
-    RESULT_FORMAT     = -9,   // The file format is not proper OP-Atom/AS-DCP
-    RESULT_BADSEEK    = -10,  // An invalid file location was requested
-    RESULT_READFAIL   = -11,  // File read error
-    RESULT_WRITEFAIL  = -12,  // File write error
-    RESULT_RAW_ESS    = -13,  // Unknown raw essence file type
-    RESULT_RAW_FORMAT = -14,  // Raw essence format invalid
-    RESULT_STATE      = -15,  // Object state error
-    RESULT_ENDOFFILE  = -16,  // Attempt to read past end of file
-    RESULT_CONFIG     = -17,  // Invalid configuration option detected
-    RESULT_RANGE      = -18,  // Frame number out of range
-    RESULT_CRYPT_CTX  = -19,  // AESEncContext required when writing to encrypted file
-    RESULT_LARGE_PTO  = -20,  // Plaintext offset exceeds frame buffer size
-    RESULT_ALLOC      = -21,  // Error allocating memory
-    RESULT_CAPEXTMEM  = -22,  // Cannot resize externally allocated memory
-    RESULT_CHECKFAIL  = -23,  // The check value did not decrypt correctly
-    RESULT_HMACFAIL   = -24,  // HMAC authentication failure
-    RESULT_HMAC_CTX   = -25,  // HMAC context required
-    RESULT_CRYPT_INIT = -26,  // Error initializing block cipher context
-    RESULT_EMPTY_FB   = -27,  // Attempted to write an empty frame buffer
-  };
+  using Kumu::Result_t;
 
-  // Returns a pointer to an English language string describing the given result code.
-  // If the result code is not a valid member of the Result_t enum, the string
-  // "**UNKNOWN**" will be returned.
-  const char* GetResultString(Result_t);
+  using Kumu::RESULT_FALSE;
+  using Kumu::RESULT_OK;
+  using Kumu::RESULT_FAIL;
+  using Kumu::RESULT_PTR;
+  using Kumu::RESULT_NULL_STR;
+  using Kumu::RESULT_ALLOC;
+  using Kumu::RESULT_PARAM;
+  using Kumu::RESULT_SMALLBUF;
+  using Kumu::RESULT_INIT;
+  using Kumu::RESULT_NOT_FOUND;
+  using Kumu::RESULT_NO_PERM;
+  using Kumu::RESULT_FILEOPEN;
+  using Kumu::RESULT_BADSEEK;
+  using Kumu::RESULT_READFAIL;
+  using Kumu::RESULT_WRITEFAIL;
+  using Kumu::RESULT_STATE;
+  using Kumu::RESULT_ENDOFFILE;
+  using Kumu::RESULT_CONFIG;
+
+  const Kumu::Result_t RESULT_FORMAT     (-101, "The file format is not proper OP-Atom/AS-DCP.");
+  const Kumu::Result_t RESULT_RAW_ESS    (-102, "Unknown raw essence file type.");
+  const Kumu::Result_t RESULT_RAW_FORMAT (-103, "Raw essence format invalid.");
+  const Kumu::Result_t RESULT_RANGE      (-104, "Frame number out of range.");
+  const Kumu::Result_t RESULT_CRYPT_CTX  (-105, "AESEncContext required when writing to encrypted file.");
+  const Kumu::Result_t RESULT_LARGE_PTO  (-106, "Plaintext offset exceeds frame buffer size.");
+  const Kumu::Result_t RESULT_CAPEXTMEM  (-107, "Cannot resize externally allocated memory.");
+  const Kumu::Result_t RESULT_CHECKFAIL  (-108, "The check value did not decrypt correctly.");
+  const Kumu::Result_t RESULT_HMACFAIL   (-109, "HMAC authentication failure.");
+  const Kumu::Result_t RESULT_HMAC_CTX   (-110, "HMAC context required.");
+  const Kumu::Result_t RESULT_CRYPT_INIT (-111, "Error initializing block cipher context.");
+  const Kumu::Result_t RESULT_EMPTY_FB   (-112, "Empty frame buffer.");
+  const Kumu::Result_t RESULT_KLV_CODING (-113, "KLV coding error.");
 
   //---------------------------------------------------------------------------------
   // file identification
@@ -232,7 +199,10 @@ namespace ASDCP {
     ESS_UNKNOWN,     // the file is not a supported AS-DCP essence container
     ESS_MPEG2_VES,   // the file contains an MPEG video elementary stream
     ESS_JPEG_2000,   // the file contains one or more JPEG 2000 codestreams
-    ESS_PCM_24b_48k  // the file contains one or more PCM audio pairs
+    ESS_PCM_24b_48k, // the file contains one or more PCM audio pairs
+    ESS_PCM_24b_96k, // the file contains one or more PCM audio pairs
+    ESS_UTF8_XML,    // the file contains UTF-8 encoded XML data
+    ESS_PNG          // the file contains a Portable Network Graphics image
   };
 
   // Determine the type of essence contained in the given MXF file. RESULT_OK
@@ -300,6 +270,69 @@ namespace ASDCP {
       inline void release()          { m_p = 0; }
       inline bool empty()      const { return m_p == 0; }
     };
+
+
+  //---------------------------------------------------------------------------------
+  // WriterInfo class - encapsulates writer identification details used for
+  // OpenWrite() calls.  Replace these values at runtime to identify your product.
+  //
+  // MXF files use SMPTE Universal Labels to identify data items. The set of Labels
+  // in a file is determined by the MXF Operational Pattern and any constraining
+  // documentation. There are currently two flavors of AS-DCP file in use: MXF Interop
+  // and SMPTE. The two differ only in the values of two labels:
+  //
+  //   OP Atom     / Interop : 06 0e 2b 34 04 01 01 01  0d 01 02 01 10 00 00 00
+  //   OP Atom     / SMPTE   : 06 0e 2b 34 04 01 01 02  0d 01 02 01 10 00 00 00
+  // and 
+  //   EKLV Packet / Interop : 06 0e 2b 34 02 04 01 07  0d 01 03 01 02 7e 01 00
+  //   EKLV Packet / SMPTE   : 06 0e 2b 34 02 04 01 01  0d 01 03 01 02 7e 01 00
+  //
+  // asdcplib will read any (otherwise valid) file which has any combination of the
+  // above values. When writing files, MXF Interop labels are used by default. To
+  // write a file containing SMPTE labels, replace the default label set value in
+  // the WriterInfo before calling OpenWrite()
+  //
+  enum LabelSet_t
+  {
+    LS_MXF_UNKNOWN,
+    LS_MXF_INTEROP,
+    LS_MXF_SMPTE
+  };
+
+  //
+  struct WriterInfo
+  {
+    byte_t      ProductUUID[UUIDlen];
+    byte_t      AssetUUID[UUIDlen];
+    byte_t      ContextID[UUIDlen];
+    byte_t      CryptographicKeyID[UUIDlen];
+    bool        EncryptedEssence; // true if essence data is (or is going to be) encrypted
+    bool        UsesHMAC;         // true if HMAC exists or is to be calculated
+    std::string ProductVersion;
+    std::string CompanyName;
+    std::string ProductName;
+    LabelSet_t  LabelSetType;
+
+    WriterInfo() : EncryptedEssence(false), UsesHMAC(false), LabelSetType(LS_MXF_INTEROP)
+    {
+      static byte_t default_ProductUUID_Data[UUIDlen] = {
+	0x43, 0x05, 0x9a, 0x1d, 0x04, 0x32, 0x41, 0x01,
+	0xb8, 0x3f, 0x73, 0x68, 0x15, 0xac, 0xf3, 0x1d };
+      
+      memcpy(ProductUUID, default_ProductUUID_Data, UUIDlen);
+      memset(AssetUUID, 0, UUIDlen);
+      memset(ContextID, 0, UUIDlen);
+      memset(CryptographicKeyID, 0, UUIDlen);
+
+      ProductVersion = "Unreleased ";
+      ProductVersion += Version();
+      CompanyName = "DCI";
+      ProductName = "asdcplib";
+    }
+  };
+
+  // Print WriterInfo to stream, stderr by default.
+  void WriterInfoDump(const WriterInfo&, FILE* = 0);
 
   //---------------------------------------------------------------------------------
   // cryptographic support
@@ -376,7 +409,7 @@ namespace ASDCP {
       // Initializes HMAC context. The key argument must point to a binary
       // key that is CBC_KEY_SIZE bytes in length. Returns error if the key
       // argument is NULL.
-      Result_t InitKey(const byte_t* key);
+      Result_t InitKey(const byte_t* key, LabelSet_t = LS_MXF_INTEROP);
 
       // Reset internal state, allows repeated cycles of Update -> Finalize
       void Reset();
@@ -398,68 +431,6 @@ namespace ASDCP {
       // Returns error if the buf argument is NULL or if the values do ot match.
       Result_t TestHMACValue(const byte_t* buf) const;
     };
-
-  //---------------------------------------------------------------------------------
-  // WriterInfo class - encapsulates writer identification details used for
-  // OpenWrite() calls.  Replace these values at runtime to identify your product.
-  //
-  // MXF files use SMPTE Universal Labels to identify data items. The set of Labels
-  // in a file is determined by the MXF Operational Pattern and any constraining
-  // documentation. There are currently two flavors of AS-DCP file in use: MXF Interop
-  // and SMPTE. The two differ only in the values of two labels:
-  //
-  //   OP Atom     / Interop : 06 0e 2b 34 04 01 01 01  0d 01 02 01 10 00 00 00
-  //   OP Atom     / SMPTE   : 06 0e 2b 34 04 01 01 02  0d 01 02 01 10 00 00 00
-  // and 
-  //   EKLV Packet / Interop : 06 0e 2b 34 02 04 01 07  0d 01 03 01 02 7e 01 00
-  //   EKLV Packet / SMPTE   : 06 0e 2b 34 02 04 01 01  0d 01 03 01 02 7e 01 00
-  //
-  // asdcplib will read any (otherwise valid) file which has any combination of the
-  // above values. When writing files, MXF Interop labels are used by default. To
-  // write a file containing SMPTE labels, replace the default label set value in
-  // the WriterInfo before calling OpenWrite()
-  //
-  enum LabelSet_t
-  {
-    LS_MXF_UNKNOWN,
-    LS_MXF_INTEROP,
-    LS_MXF_SMPTE
-  };
-
-  //
-  struct WriterInfo
-  {
-    byte_t      ProductUUID[UUIDlen];
-    byte_t      AssetUUID[UUIDlen];
-    byte_t      ContextID[UUIDlen];
-    byte_t      CryptographicKeyID[UUIDlen];
-    bool        EncryptedEssence; // true if essence data is (or is going to be) encrypted
-    bool        UsesHMAC;         // true if HMAC exists or is to be calculated
-    std::string ProductVersion;
-    std::string CompanyName;
-    std::string ProductName;
-    LabelSet_t  LabelSetType;
-
-    WriterInfo() : EncryptedEssence(false), UsesHMAC(false), LabelSetType(LS_MXF_INTEROP)
-    {
-      static byte_t default_ProductUUID_Data[UUIDlen] = {
-	0x43, 0x05, 0x9a, 0x1d, 0x04, 0x32, 0x41, 0x01,
-	0xb8, 0x3f, 0x73, 0x68, 0x15, 0xac, 0xf3, 0x1d };
-      
-      memcpy(ProductUUID, default_ProductUUID_Data, UUIDlen);
-      memset(AssetUUID, 0, UUIDlen);
-      memset(ContextID, 0, UUIDlen);
-      memset(CryptographicKeyID, 0, UUIDlen);
-
-      ProductVersion = "Unreleased ";
-      ProductVersion += Version();
-      CompanyName = "DCI";
-      ProductName = "asdcplib";
-    }
-  };
-
-  // Print WriterInfo to stream, stderr by default.
-  void WriterInfoDump(const WriterInfo&, FILE* = 0);
 
   //---------------------------------------------------------------------------------
   // frame buffer base class
@@ -1103,7 +1074,7 @@ namespace ASDCP {
 } // namespace ASDCP
 
 
-#endif // _AS_DCP_H__
+#endif // _AS_DCP_H_
 
 //
 // end AS_DCP.h

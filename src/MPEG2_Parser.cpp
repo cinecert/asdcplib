@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2004, John Hurst
+Copyright (c) 2004-2006, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -29,14 +29,17 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     \brief   AS-DCP library, MPEG2 raw essence reader implementation
 */
 
-#include <FileIO.h>
+#include <KM_fileio.h>
 #include <MPEG.h>
+
+#include <KM_log.h>
+using Kumu::DefaultLogSink;
 
 using namespace ASDCP;
 using namespace ASDCP::MPEG2;
 
 // data will be read from a VES file in chunks of this size
-const ui32_t VESReadSize = 4096;
+const ui32_t VESReadSize = 4 * Kumu::Kilobyte;
 
 
 //------------------------------------------------------------------------------------------
@@ -59,11 +62,11 @@ class h__ParserState
   ASDCP_NO_COPY_CONSTRUCT(h__ParserState);
 
  public:
-  h__ParserState() : m_State(::ST_INIT) {}
+  h__ParserState() : m_State(ST_INIT) {}
   ~h__ParserState() {}
 
-  bool Test_SLICE() { return m_State == ST_SLICE; }
-  void Reset() { m_State = ST_INIT; }
+  inline bool Test_SLICE() { return m_State == ST_SLICE; }
+  inline void Reset() { m_State = ST_INIT; }
 
   //
   inline Result_t Goto_SEQ()
@@ -75,6 +78,7 @@ class h__ParserState
 	  return RESULT_OK;
 	}
       
+      DefaultLogSink().Error("SEQ follows 0x%02x\n", m_State);
       return RESULT_STATE;
     }
 
@@ -90,6 +94,7 @@ class h__ParserState
 	  return RESULT_OK;
 	}
       
+      DefaultLogSink().Error("Slice follows 0x%02x\n", m_State);
       return RESULT_STATE;
     }
 
@@ -107,23 +112,25 @@ class h__ParserState
 	  return RESULT_OK;
 	}
       
+      DefaultLogSink().Error("PIC follows 0x%02x\n", m_State);
       return RESULT_STATE;
     }
 
 
   //
   inline Result_t Goto_GOP()
-    {
-      switch ( m_State )
-	{
-	case ST_EXT:
-	case ST_SEQ:
-	  m_State = ST_GOP;
-	  return RESULT_OK;
-	}
-      
-      return RESULT_STATE;
-    }
+  {
+    switch ( m_State )
+      {
+      case ST_EXT:
+      case ST_SEQ:
+	m_State = ST_GOP;
+	return RESULT_OK;
+      }
+    
+    DefaultLogSink().Error("GOP follows 0x%02x\n", m_State);
+    return RESULT_STATE;
+  }
 
   //
   inline Result_t Goto_EXT()
@@ -138,6 +145,7 @@ class h__ParserState
 	  return RESULT_OK;
       }
 
+    DefaultLogSink().Error("EXT follows 0x%02x\n", m_State);
     return RESULT_STATE;
   }
 };
@@ -216,8 +224,8 @@ public:
 
   Result_t GOP(VESParser*, const byte_t*, ui32_t)     { return RESULT_FALSE; }
   Result_t Picture(VESParser*, const byte_t*, ui32_t) { return RESULT_FALSE; }
-  Result_t Slice(VESParser*)                          { return RESULT_FALSE; }
-  Result_t Data(VESParser*, const byte_t*, ui32_t)    { return RESULT_OK; }
+  Result_t Slice(VESParser*, byte_t)                  { return RESULT_FALSE; }
+  Result_t Data(VESParser*, const byte_t*, i32_t)     { return RESULT_OK; }
 };
 
 
@@ -258,7 +266,7 @@ public:
     m_PlaintextOffset = 0;
     m_FrameType = FRAME_U;
     m_State.Reset();
-  }
+ }
 
   Result_t Sequence(VESParser*, const byte_t* b, ui32_t s)
   {
@@ -287,10 +295,15 @@ public:
     return m_State.Goto_PIC();
   }
 
-  Result_t Slice(VESParser*)
+  Result_t Slice(VESParser*, byte_t slice_id)
   {
-    m_PlaintextOffset = m_FrameSize;
-    return m_State.Goto_SLICE();
+    if ( slice_id == FIRST_SLICE )
+      {
+	m_PlaintextOffset = m_FrameSize;
+	return m_State.Goto_SLICE();
+      }
+
+    return m_State.Test_SLICE() ? RESULT_OK : RESULT_FAIL;
   }
 
   Result_t Extension(VESParser*, const byte_t* b, ui32_t s)
@@ -308,7 +321,7 @@ public:
     return m_State.Goto_GOP();
   }
 
-  Result_t Data(VESParser*, const byte_t* b, ui32_t s)
+  Result_t Data(VESParser*, const byte_t* b, i32_t s)
   {
     m_FrameSize += s;
     return RESULT_OK;
@@ -324,13 +337,12 @@ public:
 // - any frame that begins with a picture header is either an I, B or P frame
 //   and is assumed to contain a complete picture header and picture data
 
-
 class ASDCP::MPEG2::Parser::h__Parser
 {
   StreamParams     m_ParamsDelegate;
   FrameParser      m_ParserDelegate;
   VESParser        m_Parser;
-  FileReader       m_FileReader;
+  Kumu::FileReader m_FileReader;
   ui32_t           m_FrameNumber;
   bool             m_EOF;
   ASDCP::MPEG2::FrameBuffer  m_TmpBuffer;
@@ -387,9 +399,9 @@ ASDCP::MPEG2::Parser::h__Parser::OpenRead(const char* filename)
       // Since no one complained and that's the easiest thing to implement,
       // I have left it that way. Let me know if you want to be able to
       // locate the first GOP in the stream.
-      if ( p[0] != 0 || p[1] != 0 || p[2] != 1 )
+      if ( p[0] != 0 || p[1] != 0 || p[2] != 1 || ! ( p[3] == SEQ_START || p[3] == PIC_START ) )
 	{
-	  DefaultLogSink().Error("Frame buffer does not begin with a start code.\n");
+	  DefaultLogSink().Error("Frame buffer does not begin with a PIC or SEQ start code.\n");
 	  return RESULT_RAW_FORMAT;
 	}
 
@@ -412,8 +424,8 @@ ASDCP::MPEG2::Parser::h__Parser::OpenRead(const char* filename)
       m_FileReader.Close();
     }
 
-  return result;
-}
+  return result;}
+
 
 //
 //
@@ -434,6 +446,7 @@ ASDCP::MPEG2::Parser::h__Parser::ReadFrame(FrameBuffer& FB)
   // the input file is exhausted. The partial next frame is cached for the
   // next call.
   m_ParserDelegate.Reset();
+  m_Parser.Reset();
 
   if ( m_TmpBuffer.Size() > 0 )
     {
@@ -443,7 +456,7 @@ ASDCP::MPEG2::Parser::h__Parser::ReadFrame(FrameBuffer& FB)
       m_TmpBuffer.Size(0);
     }
 
-  while ( ! m_ParserDelegate.m_CompletePicture && ASDCP_SUCCESS(result) )
+  while ( ! m_ParserDelegate.m_CompletePicture && result == RESULT_OK )
     {
       if ( FB.Capacity() < ( write_offset + VESReadSize ) )
 	{
@@ -454,7 +467,7 @@ ASDCP::MPEG2::Parser::h__Parser::ReadFrame(FrameBuffer& FB)
 
       result = m_FileReader.Read(FB.Data() + write_offset, VESReadSize, &read_count);
 
-      if ( result == RESULT_ENDOFFILE )
+      if ( result == RESULT_ENDOFFILE || read_count == 0 )
 	{
 	  m_EOF = true;
 
@@ -471,6 +484,7 @@ ASDCP::MPEG2::Parser::h__Parser::ReadFrame(FrameBuffer& FB)
       if ( m_EOF )
 	break;
     }
+  assert(m_ParserDelegate.m_FrameSize <= write_offset);
 
   if ( ASDCP_SUCCESS(result)
        && m_ParserDelegate.m_FrameSize < write_offset )
@@ -478,21 +492,20 @@ ASDCP::MPEG2::Parser::h__Parser::ReadFrame(FrameBuffer& FB)
       assert(m_TmpBuffer.Size() == 0);
       ui32_t diff = write_offset - m_ParserDelegate.m_FrameSize;
       assert(diff <= m_TmpBuffer.Capacity());
+
       memcpy(m_TmpBuffer.Data(), FB.RoData() + m_ParserDelegate.m_FrameSize, diff);
       m_TmpBuffer.Size(diff);
     }
 
-#ifndef NDEBUG
   if ( ASDCP_SUCCESS(result) )
     {
       const byte_t* p = FB.RoData();
-      if ( p[0] != 0 || p[1] != 0 || p[2] != 1 )
-	{
-	  DefaultLogSink().Error("Parsed frame buffer does not begin with a start code.\n");
-	  return RESULT_RAW_FORMAT;
-	}
+      if ( p[0] != 0 || p[1] != 0 || p[2] != 1 || ! ( p[3] == SEQ_START || p[3] == PIC_START ) )
+        {
+          DefaultLogSink().Error("Frame buffer does not begin with a PIC or SEQ start code.\n");
+          return RESULT_RAW_FORMAT;
+        }
     }
-#endif
 
   if ( ASDCP_SUCCESS(result) )
     {
@@ -573,5 +586,5 @@ ASDCP::MPEG2::Parser::FillVideoDescriptor(VideoDescriptor& VDesc) const
 }
 
 //
-// end AS_DCP_MPEG2_Parser.cpp
+// end MPEG2_Parser.cpp
 //

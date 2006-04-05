@@ -54,7 +54,7 @@ namespace ASDCP
       typedef std::map<TagValue, ItemInfo> TagMap;
 
       //      
-      class TLVReader : public ASDCP::MemIOReader
+      class TLVReader : public Kumu::MemIOReader
 	{
 
 	  TagMap         m_ElementMap;
@@ -66,7 +66,7 @@ namespace ASDCP
 
 	public:
 	  TLVReader(const byte_t* p, ui32_t c, IPrimerLookup* = 0);
-	  Result_t ReadObject(const MDDEntry&, IArchive*);
+	  Result_t ReadObject(const MDDEntry&, Kumu::IArchive*);
 	  Result_t ReadUi8(const MDDEntry&, ui8_t*);
 	  Result_t ReadUi16(const MDDEntry&, ui16_t*);
 	  Result_t ReadUi32(const MDDEntry&, ui32_t*);
@@ -74,7 +74,7 @@ namespace ASDCP
 	};
 
       //      
-      class TLVWriter : public ASDCP::MemIOWriter
+      class TLVWriter : public Kumu::MemIOWriter
 	{
 
 	  TagMap         m_ElementMap;
@@ -86,7 +86,7 @@ namespace ASDCP
 
 	public:
 	  TLVWriter(byte_t* p, ui32_t c, IPrimerLookup* = 0);
-	  Result_t WriteObject(const MDDEntry&, IArchive*);
+	  Result_t WriteObject(const MDDEntry&, Kumu::IArchive*);
 	  Result_t WriteUi8(const MDDEntry&, ui8_t*);
 	  Result_t WriteUi16(const MDDEntry&, ui16_t*);
 	  Result_t WriteUi32(const MDDEntry&, ui32_t*);
@@ -95,58 +95,55 @@ namespace ASDCP
 
       //
       template <class T>
-	class Batch : public std::vector<T>, public IArchive
+	class Batch : public std::vector<T>, public Kumu::IArchive
 	{
 	public:
 	  Batch() {}
 	  ~Batch() {}
 
 	  //
-	  Result_t Unarchive(ASDCP::MemIOReader& Reader) {
+	  virtual bool Unarchive(Kumu::MemIOReader* Reader) {
 	    ui32_t ItemCount, ItemSize;
-	    Result_t result = Reader.ReadUi32BE(&ItemCount);
-
-	    if ( ASDCP_SUCCESS(result) )
-	      result = Reader.ReadUi32BE(&ItemSize);
+	    if ( ! Reader->ReadUi32BE(&ItemCount) ) return false;
+	    if ( ! Reader->ReadUi32BE(&ItemSize) ) return false;
 
 	    if ( ( ItemCount > 65536 ) || ( ItemSize > 1024 ) )
-	      return RESULT_FAIL;
+	      return false;
 
-	    for ( ui32_t i = 0; i < ItemCount && ASDCP_SUCCESS(result); i++ )
+	    bool result = true;
+	    for ( ui32_t i = 0; i < ItemCount && result; i++ )
 	      {
 		T Tmp;
 		result = Tmp.Unarchive(Reader);
 
-		if ( ASDCP_SUCCESS(result) )
+		if ( result )
 		  push_back(Tmp);
 	      }
 
 	    return result;
 	  }
 
-	  inline bool HasValue() const { return ! this->empty(); }
+	  inline virtual bool HasValue() const { return ! this->empty(); }
 
 	  //
-	  Result_t Archive(ASDCP::MemIOWriter& Writer) const {
-	    Result_t result = Writer.WriteUi32BE(size());
-	    byte_t* p = Writer.CurrentData();
+	  virtual bool Archive(Kumu::MemIOWriter* Writer) const {
+	    if ( ! Writer->WriteUi32BE(this->size()) ) return false;
+	    byte_t* p = Writer->CurrentData();
 
-	    if ( ASDCP_SUCCESS(result) )
-	      result = Writer.WriteUi32BE(0);
-
-	    if ( ASDCP_FAILURE(result) || this->empty() )
-	      return result;
+	    if ( ! Writer->WriteUi32BE(0) ) return false;
+	    if ( this->empty() ) return true;
 	    
 	    typename std::vector<T>::const_iterator l_i = this->begin();
 	    assert(l_i != this->end());
 
-	    ui32_t ItemSize = Writer.Remainder();
-	    result = (*l_i).Archive(Writer);
-	    ItemSize -= Writer.Remainder();
-	    i2p<ui32_t>(ASDCP_i32_BE(ItemSize), p);
+	    ui32_t ItemSize = Writer->Remainder();
+	    if ( ! (*l_i).Archive(Writer) ) return false;
+	    ItemSize -= Writer->Remainder();
+	    Kumu::i2p<ui32_t>(KM_i32_BE(ItemSize), p);
 	    l_i++;
 
-	    for ( ; l_i != this->end() && ASDCP_SUCCESS(result); l_i++ )
+	    bool result = true;
+	    for ( ; l_i != this->end() && result; l_i++ )
 	      result = (*l_i).Archive(Writer);
 
 	    return result;
@@ -162,39 +159,41 @@ namespace ASDCP
 
 	      typename std::vector<T>::iterator i = this->begin();
 	      for ( ; i != this->end(); i++ )
-		fprintf(stream, "  %s\n", (*i).ToString(identbuf));
+		fprintf(stream, "  %s\n", (*i).EncodeString(identbuf, IdentBufferLen));
 	    }
 	};
 
       //
       template <class T>
-	class Array : public std::list<T>, public IArchive
+	class Array : public std::list<T>, public Kumu::IArchive
 	{
 	public:
 	  Array() {}
 	  ~Array() {}
 
 	  //
-	  Result_t Unarchive(ASDCP::MemIOReader& Reader)
+	  virtual bool Unarchive(Kumu::MemIOReader* Reader)
 	    {
-	      while ( Reader.Remainder() > 0 )
+	      bool result = true;
+
+	      while ( Reader->Remainder() > 0 && result )
 		{
 		  T Tmp;
-		  Tmp.Unarchive(Reader);
+		  result = Tmp.Unarchive(Reader);
 		  push_back(Tmp);
 		}
 
-	      return RESULT_OK;
+	      return result;
 	    }
 
-	  inline bool HasValue() const { return ! this->empty(); }
+	  inline virtual bool HasValue() const { return ! this->empty(); }
 
 	  //
-	  Result_t Archive(ASDCP::MemIOWriter& Writer) const {
-	    Result_t result = RESULT_OK;
+	  virtual bool Archive(Kumu::MemIOWriter* Writer) const {
+	    bool result = true;
 	    typename std::list<T>::const_iterator l_i = this->begin();
 
-	    for ( ; l_i != this->end() && ASDCP_SUCCESS(result); l_i++ )
+	    for ( ; l_i != this->end() && result; l_i++ )
 	      result = (*l_i).Archive(Writer);
 
 	    return result;
@@ -210,12 +209,12 @@ namespace ASDCP
 
 	      typename std::list<T>::iterator i = this->begin();
 	      for ( ; i != this->end(); i++ )
-		fprintf(stream, "  %s\n", (*i).ToString(identbuf));
+		fprintf(stream, "  %s\n", (*i).EncodeString(identbuf, IdentBufferLen));
 	    }
 	};
 
       //
-      class Timestamp : public IArchive
+      class Timestamp : public Kumu::IArchive
 	{
 	public:
 	  ui16_t Year;
@@ -246,33 +245,27 @@ namespace ASDCP
 
 	  // Write the timestamp value to the given buffer in the form 2004-05-01 13:20:00.000
 	  // returns 0 if the buffer is smaller than DateTimeLen
-	  const char* ToString(char* str_buf) const;
+	  const char* EncodeString(char* str_buf, ui32_t buf_len) const;
 
 	  //
-	  inline Result_t Unarchive(ASDCP::MemIOReader& Reader) {
-	    Result_t result = Reader.ReadUi16BE(&Year);
-
-	    if ( ASDCP_SUCCESS(result) )
-	      result = Reader.ReadRaw(&Month, 6);
-
-	    return result;
+	  inline virtual bool Unarchive(Kumu::MemIOReader* Reader) {
+	    if ( ! Reader->ReadUi16BE(&Year) ) return false;
+	    if ( ! Reader->ReadRaw(&Month, 6) ) return false;
+	    return true;
 	  }
 
-	  inline bool HasValue() const { return true; }
+	  inline virtual bool HasValue() const { return true; }
 
 	  //
-	  inline Result_t Archive(ASDCP::MemIOWriter& Writer) const {
-	    Result_t result = Writer.WriteUi16BE(Year);
-
-	    if ( ASDCP_SUCCESS(result) )
-	      result = Writer.WriteRaw(&Month, 6);
-
-	    return result;
+	  inline virtual bool Archive(Kumu::MemIOWriter* Writer) const {
+	    if ( ! Writer->WriteUi16BE(Year) ) return false;
+	    if ( ! Writer->WriteRaw(&Month, 6) ) return false;
+	    return true;
 	  }
 	};
 
       //
-      class UTF16String : public IArchive
+      class UTF16String : public Kumu::IArchive
 	{
 	  ui16_t m_length;
 	  char   m_buffer[IdentBufferLen];
@@ -285,18 +278,19 @@ namespace ASDCP
 	  const UTF16String& operator=(const char*);
 
 	  //
-	  const char* ToString(char* str_buf) const {
-	    strncpy(str_buf, m_buffer, m_length+1);
+	  const char* EncodeString(char* str_buf, ui32_t buf_len) const {
+	    strncpy(str_buf, m_buffer, Kumu::xmin(buf_len, ((ui32_t)m_length+1)));
+	    str_buf[buf_len-1] = 0;
 	    return str_buf;
 	  }
 
-	  Result_t Unarchive(ASDCP::MemIOReader& Reader);
-	  inline bool HasValue() const { return m_length > 0; }
-	  Result_t Archive(ASDCP::MemIOWriter& Writer) const;
+	  virtual bool Unarchive(Kumu::MemIOReader* Reader);
+	  inline virtual bool HasValue() const { return m_length > 0; }
+	  virtual bool Archive(Kumu::MemIOWriter* Writer) const;
 	};
 
       //
-      class Rational : public ASDCP::Rational, public IArchive
+      class Rational : public ASDCP::Rational, public Kumu::IArchive
 	{
 	public:
 	  Rational() {}
@@ -325,34 +319,28 @@ namespace ASDCP
 	  }
 
 	  //
-	  const char* ToString(char* str_buf) const {
-	    snprintf(str_buf, IdentBufferLen, "%lu/%lu", Numerator, Denominator);
+	  inline const char* EncodeString(char* str_buf, ui32_t buf_len) const {
+	    snprintf(str_buf, buf_len, "%lu/%lu", Numerator, Denominator);
 	    return str_buf;
 	  }
 
-	  Result_t Unarchive(ASDCP::MemIOReader& Reader) {
-	    Result_t result = Reader.ReadUi32BE((ui32_t*)&Numerator);
-
-	    if ( ASDCP_SUCCESS(result) )
-	      result = Reader.ReadUi32BE((ui32_t*)&Denominator);
-	    
-	    return result;
+	  inline virtual bool Unarchive(Kumu::MemIOReader* Reader) {
+	    if ( ! Reader->ReadUi32BE((ui32_t*)&Numerator) ) return false;
+	    if ( ! Reader->ReadUi32BE((ui32_t*)&Denominator) ) return false;
+	    return true;
 	  }
 
-	  inline bool HasValue() const { return true; }
+	  inline virtual bool HasValue() const { return true; }
 
-	  Result_t Archive(ASDCP::MemIOWriter& Writer) const {
-	    Result_t result = Writer.WriteUi32BE((ui32_t)Numerator);
-
-	    if ( ASDCP_SUCCESS(result) )
-	      result = Writer.WriteUi32BE((ui32_t)Denominator);
-	    
-	    return result;
+	  inline virtual bool Archive(Kumu::MemIOWriter* Writer) const {
+	    if ( ! Writer->WriteUi32BE((ui32_t)Numerator) ) return false;
+	    if ( ! Writer->WriteUi32BE((ui32_t)Denominator) ) return false;
+	    return true;
 	  }
 	};
 
       //
-      class VersionType : public IArchive
+      class VersionType : public Kumu::IArchive
 	{
 	  ASDCP_NO_COPY_CONSTRUCT(VersionType);
 
@@ -368,40 +356,36 @@ namespace ASDCP
 	  ~VersionType() {}
 	  void Dump(FILE* = 0);
 
-	  const char* ToString(char* str_buf) const {
-	    snprintf(str_buf, IdentBufferLen, "%hu.%hu.%hu.%hur%hu", Major, Minor, Patch, Build, Release);
+	  const char* EncodeString(char* str_buf, ui32_t buf_len) const {
+	    snprintf(str_buf, buf_len, "%hu.%hu.%hu.%hur%hu", Major, Minor, Patch, Build, Release);
 	    return str_buf;
 	  }
 
-	  Result_t Unarchive(ASDCP::MemIOReader& Reader) {
-	    Result_t result = Reader.ReadUi16BE(&Major);
-	    if ( ASDCP_SUCCESS(result) ) result = Reader.ReadUi16BE(&Minor);
-	    if ( ASDCP_SUCCESS(result) ) result = Reader.ReadUi16BE(&Patch);
-	    if ( ASDCP_SUCCESS(result) ) result = Reader.ReadUi16BE(&Build);
-	    if ( ASDCP_SUCCESS(result) )
-	      {
-		ui16_t tmp_release;
-		result = Reader.ReadUi16BE(&tmp_release);
-		Release = (Release_t)tmp_release;
-	      }
-
-	    return result;
+	  virtual bool Unarchive(Kumu::MemIOReader* Reader) {
+	    if ( ! Reader->ReadUi16BE(&Major) ) return false;
+	    if ( ! Reader->ReadUi16BE(&Minor) ) return false;
+	    if ( ! Reader->ReadUi16BE(&Patch) ) return false;
+	    if ( ! Reader->ReadUi16BE(&Build) ) return false;
+	    ui16_t tmp_release;
+	    if ( ! Reader->ReadUi16BE(&tmp_release) ) return false;
+	    Release = (Release_t)tmp_release;
+	    return true;
 	  }
 
-	  inline bool HasValue() const { return true; }
+	  inline virtual bool HasValue() const { return true; }
 
-	  Result_t Archive(ASDCP::MemIOWriter& Writer) const {
-	    Result_t result = Writer.WriteUi16BE(Major);
-	    if ( ASDCP_SUCCESS(result) ) result = Writer.WriteUi16BE(Minor);
-	    if ( ASDCP_SUCCESS(result) ) result = Writer.WriteUi16BE(Patch);
-	    if ( ASDCP_SUCCESS(result) ) result = Writer.WriteUi16BE(Build);
-	    if ( ASDCP_SUCCESS(result) ) result = Writer.WriteUi16BE((ui16_t)(Release & 0x0000ffffL));
-	    return result;
+	  virtual bool Archive(Kumu::MemIOWriter* Writer) const {
+	    if ( ! Writer->WriteUi16BE(Major) ) return false;
+	    if ( ! Writer->WriteUi16BE(Minor) ) return false;
+	    if ( ! Writer->WriteUi16BE(Patch) ) return false;
+	    if ( ! Writer->WriteUi16BE(Build) ) return false;
+	    if ( ! Writer->WriteUi16BE((ui16_t)(Release & 0x0000ffffL)) ) return false;
+	    return true;
 	  }
 	};
 
       //
-      class Raw : public ASDCP::FrameBuffer, public IArchive
+      class Raw : public Kumu::ByteString, public Kumu::IArchive
 	{
 	  ASDCP_NO_COPY_CONSTRUCT(Raw);
 
@@ -410,10 +394,10 @@ namespace ASDCP
 	  ~Raw();
 
 	  //
-          Result_t    Unarchive(ASDCP::MemIOReader& Reader);
-	  inline bool HasValue() const { return Size() > 0; }
-	  Result_t    Archive(ASDCP::MemIOWriter& Writer) const;
-	  const char* ToString(char* str_buf) const;
+          virtual bool Unarchive(Kumu::MemIOReader* Reader);
+	  inline virtual bool HasValue() const { return Length() > 0; }
+	  virtual bool Archive(Kumu::MemIOWriter* Writer) const;
+	  const char* EncodeString(char* str_buf, ui32_t buf_len) const;
 	};
 
     } // namespace MXF

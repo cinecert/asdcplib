@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2004, John Hurst
+Copyright (c) 2004-2006, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -32,6 +32,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <assert.h>
 #include <AS_DCP.h>
+#include <KM_log.h>
+using Kumu::DefaultLogSink;
 
 using namespace ASDCP;
 const int KEY_SIZE_BITS = 128;
@@ -39,6 +41,7 @@ const int KEY_SIZE_BITS = 128;
 
 #include <openssl/aes.h>
 #include <openssl/sha.h>
+#include <openssl/bn.h>
 #include <openssl/err.h>
 
 void
@@ -255,8 +258,75 @@ public:
   h__HMACContext() : m_Final(false) {}
   ~h__HMACContext() {}
 
-  //
+  // SMPTE 429.6 MIC key generation
   void SetKey(const byte_t* key)
+  {
+    // FIPS 186-2 Sec. 3.1 as modified by Change 1, section entitled "General Purpose Random Number Generation"
+    //
+
+    static byte_t t[SHA_DIGEST_LENGTH] = {
+      0x67, 0x45, 0x23, 0x01, 0xef, 0xcd, 0xab, 0x89,
+      0x98, 0xba, 0xdc, 0xfe, 0x10, 0x32, 0x54, 0x76,
+      0xc3, 0xd2, 0xe1, 0xf0
+    };
+
+    byte_t sha_buf0[SHA_DIGEST_LENGTH];
+    byte_t sha_buf1[SHA_DIGEST_LENGTH];
+    SHA_CTX SHA;
+    BN_CTX* ctx1 = BN_CTX_new(); // used by BN_* functions
+    assert(ctx1);
+
+    // create the 2^160 constant
+    BIGNUM c_2powb, c_2, c_160;
+    BN_init(&c_2powb);  BN_init(&c_2);  BN_init(&c_160);
+    BN_set_word(&c_2, 2);
+    BN_set_word(&c_160, 160);
+    BN_exp(&c_2powb, &c_2, &c_160, ctx1);
+
+    // ROUND 1
+    // step a -- SMPTE 429.6 sets XSEED = 0, so no need to do anything for this step
+    // step b -- (key mod 2^160) is moot because the input value is only 128 bits in length
+
+    // step c -- x = G(t,xkey)
+    SHA1_Init(&SHA);
+    SHA1_Update(&SHA, t, SHA_DIGEST_LENGTH);
+    SHA1_Update(&SHA, key, KeyLen);
+    SHA1_Final(sha_buf0, &SHA);
+
+    // step d ...
+    BIGNUM xkey1, xkey2, x0;
+    BN_init(&xkey1);  BN_init(&xkey2);    BN_init(&x0);
+
+    BN_bin2bn(key, KeyLen, &xkey1);
+    BN_bin2bn(sha_buf0, SHA_DIGEST_LENGTH, &x0);
+    BN_add_word(&xkey1, 1);            // xkey += 1
+    BN_add(&xkey2, &xkey1, &x0);       // xkey += x
+    BN_mod(&xkey1, &xkey2, &c_2powb, ctx1);  // xkey = xkey mod (2^160)
+
+    // ROUND 2
+    // step a -- SMPTE 429.6 sets XSEED = 0, so no need to do anything for this step
+    // step b -- (key mod 2^160) is moot because xkey1 is the result of the same operation
+
+    byte_t bin_buf[SHA_DIGEST_LENGTH+1]; // we need xkey1 in bin form for use by SHA1_Update
+    ui32_t bin_buf_len = BN_num_bytes(&xkey1);
+    assert(bin_buf_len < SHA_DIGEST_LENGTH+1);
+    BN_bn2bin(&xkey1, bin_buf);
+
+    // step c -- x = G(t,xkey)
+    SHA1_Init(&SHA);
+    SHA1_Update(&SHA, t, SHA_DIGEST_LENGTH);
+    SHA1_Update(&SHA, bin_buf, bin_buf_len);
+    SHA1_Final(sha_buf1, &SHA);
+
+    assert(memcmp(sha_buf1, sha_buf0, SHA_DIGEST_LENGTH) != 0); // are x0 and x1 different?
+
+    BN_CTX_free(ctx1);
+    memcpy(m_key, sha_buf1, KeyLen);
+    Reset();
+  }
+
+  // MXF Interop MIC key generation
+  void SetInteropKey(const byte_t* key)
   {
     static byte_t key_nonce[KeyLen] = { 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 
 					0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff };
@@ -334,12 +404,21 @@ HMACContext::~HMACContext()
 
 //
 Result_t
-HMACContext::InitKey(const byte_t* key)
+HMACContext::InitKey(const byte_t* key, LabelSet_t SetType)
 {
   ASDCP_TEST_NULL(key);
 
   m_Context = new h__HMACContext;
-  m_Context->SetKey(key);
+
+  switch ( SetType )
+    {
+    case LS_MXF_INTEROP: m_Context->SetInteropKey(key); break;
+    case LS_MXF_SMPTE:   m_Context->SetKey(key); break;
+    default:
+      m_Context = 0;
+      return RESULT_INIT;
+    }
+
   return RESULT_OK;
 }
 

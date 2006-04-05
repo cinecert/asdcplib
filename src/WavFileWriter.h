@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2005, John Hurst
+Copyright (c) 2005-2006, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -29,7 +29,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     \brief   demux and write PCM data to WAV file(s)
 */
 
-#include <FileIO.h>
+#include <KM_fileio.h>
 #include <Wav.h>
 #include <list>
 
@@ -40,7 +40,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 class WavFileWriter
 {
   ASDCP::PCM::AudioDescriptor m_ADesc;
-  std::list<ASDCP::FileWriter*> m_OutFile;
+  std::list<Kumu::FileWriter*> m_OutFile;
   ASDCP_NO_COPY_CONSTRUCT(WavFileWriter);
 
  public:
@@ -73,7 +73,7 @@ class WavFileWriter
       for ( ui32_t i = 0; i < file_count && ASDCP_SUCCESS(result); i++ )
 	{
 	  snprintf(filename, 256, "%s_%lu.wav", file_root, (i + 1));
-	  m_OutFile.push_back(new ASDCP::FileWriter);
+	  m_OutFile.push_back(new Kumu::FileWriter);
 	  result = m_OutFile.back()->OpenWrite(filename);
 
 	  if ( ASDCP_SUCCESS(result) )
@@ -91,7 +91,7 @@ class WavFileWriter
     {
       ui32_t write_count;
       ASDCP::Result_t result = ASDCP::RESULT_OK;
-      std::list<ASDCP::FileWriter*>::iterator fi;
+      std::list<Kumu::FileWriter*>::iterator fi;
       assert(! m_OutFile.empty());
 
       ui32_t sample_size = ASDCP::PCM::CalcSampleSize(m_ADesc);

@@ -219,7 +219,7 @@ ASDCP::PCM::FrameBuffer::Dump(FILE* stream, ui32_t dump_len) const
 	  m_FrameNumber, m_Size);
 
   if ( dump_len )
-    hexdump(m_Data, dump_len, stream);
+    Kumu::hexdump(m_Data, dump_len, stream);
 }
 
 //------------------------------------------------------------------------------------------

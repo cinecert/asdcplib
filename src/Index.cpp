@@ -60,22 +60,6 @@ ASDCP::MXF::IndexTableSegment::InitFromTLVSet(TLVReader& TLVSet)
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadUi8(OBJ_READ_ARGS(IndexTableSegmentBase, PosTableCount));
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(IndexTableSegment, DeltaEntryArray));
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(IndexTableSegment, IndexEntryArray));
-
-#if 0
-  if ( ASDCP_SUCCESS(result) )
-    {
-      Batch<IndexEntry>::iterator i;
-      ui32_t offset = 0;
-      for ( i = IndexEntryArray.begin(); i != IndexEntryArray.end(); i++ )
-	{
-	  if ( (*i).Flags == 0x40 )
-	    offset = 0;
-
-	  (*i).KeyFrameOffset = offset++;
-	}
-    }
-#endif
-
   return result;
 }
 
@@ -123,7 +107,7 @@ ASDCP::MXF::IndexTableSegment::Dump(FILE* stream)
     stream = stderr;
 
   InterchangeObject::Dump(stream);
-  fprintf(stream, "  IndexEditRate      = %s\n",  IndexEditRate.ToString(identbuf));
+  fprintf(stream, "  IndexEditRate      = %s\n",  IndexEditRate.EncodeString(identbuf, IdentBufferLen));
   fprintf(stream, "  IndexStartPosition = %s\n",  i64sz(IndexStartPosition, identbuf));
   fprintf(stream, "  IndexDuration      = %s\n",  i64sz(IndexDuration, identbuf));
   fprintf(stream, "  EditUnitByteCount  = %lu\n", EditUnitByteCount);
@@ -150,30 +134,30 @@ ASDCP::MXF::IndexTableSegment::Dump(FILE* stream)
 
 //
 const char*
-ASDCP::MXF::IndexTableSegment::DeltaEntry::ToString(char* str_buf) const
+ASDCP::MXF::IndexTableSegment::DeltaEntry::EncodeString(char* str_buf, ui32_t buf_len) const
 {
-  snprintf(str_buf, IdentBufferLen, "%3i %-3hu %-3lu", PosTableIndex, Slice, ElementData);
+  snprintf(str_buf, buf_len, "%3i %-3hu %-3lu", PosTableIndex, Slice, ElementData);
   return str_buf;
 }
 
 //
-ASDCP::Result_t
-ASDCP::MXF::IndexTableSegment::DeltaEntry::Unarchive(ASDCP::MemIOReader& Reader)
+bool
+ASDCP::MXF::IndexTableSegment::DeltaEntry::Unarchive(Kumu::MemIOReader* Reader)
 {
-  Result_t result = Reader.ReadUi8((ui8_t*)&PosTableIndex);
-  if ( ASDCP_SUCCESS(result) ) result = Reader.ReadUi8(&Slice);
-  if ( ASDCP_SUCCESS(result) ) result = Reader.ReadUi32BE(&ElementData);
-  return result;
+  if ( ! Reader->ReadUi8((ui8_t*)&PosTableIndex) ) return false;
+  if ( ! Reader->ReadUi8(&Slice) ) return false;
+  if ( ! Reader->ReadUi32BE(&ElementData) ) return false;
+  return true;
 }
 
 //
-ASDCP::Result_t
-ASDCP::MXF::IndexTableSegment::DeltaEntry::Archive(ASDCP::MemIOWriter& Writer) const
+bool
+ASDCP::MXF::IndexTableSegment::DeltaEntry::Archive(Kumu::MemIOWriter* Writer) const
 {
-  Result_t result = Writer.WriteUi8((ui8_t)PosTableIndex);
-  if ( ASDCP_SUCCESS(result) ) result = Writer.WriteUi8(Slice);
-  if ( ASDCP_SUCCESS(result) ) result = Writer.WriteUi32BE(ElementData);
-  return result;
+  if ( ! Writer->WriteUi8((ui8_t)PosTableIndex) ) return false;
+  if ( ! Writer->WriteUi8(Slice) ) return false;
+  if ( ! Writer->WriteUi32BE(ElementData) ) return false;
+  return true;
 }
 
 //------------------------------------------------------------------------------------------
@@ -193,7 +177,7 @@ ASDCP::MXF::IndexTableSegment::DeltaEntry::Archive(ASDCP::MemIOWriter& Writer) c
 
 //
 const char*
-ASDCP::MXF::IndexTableSegment::IndexEntry::ToString(char* str_buf) const
+ASDCP::MXF::IndexTableSegment::IndexEntry::EncodeString(char* str_buf, ui32_t buf_len) const
 {
   char intbuf[IntBufferLen];
   char txt_flags[6];
@@ -205,33 +189,33 @@ ASDCP::MXF::IndexTableSegment::IndexEntry::ToString(char* str_buf) const
   txt_flags[4] = ( (Flags & 0x0f) == 3 ) ? 'B' : ( (Flags & 0x0f) == 2 ) ? 'P' : 'I';
   txt_flags[5] = 0;
 
-  snprintf(str_buf, IdentBufferLen, "%3i %-3hu %s %s",
-	  TemporalOffset, KeyFrameOffset, txt_flags,
-	  i64sz(StreamOffset, intbuf));
+  snprintf(str_buf, buf_len, "%3i %-3hu %s %s",
+	   TemporalOffset, KeyFrameOffset, txt_flags,
+	   i64sz(StreamOffset, intbuf));
 
   return str_buf;
 }
 
 //
-ASDCP::Result_t
-ASDCP::MXF::IndexTableSegment::IndexEntry::Unarchive(ASDCP::MemIOReader& Reader)
+bool
+ASDCP::MXF::IndexTableSegment::IndexEntry::Unarchive(Kumu::MemIOReader* Reader)
 {
-  Result_t result = Reader.ReadUi8((ui8_t*)&TemporalOffset);
-  if ( ASDCP_SUCCESS(result) ) result = Reader.ReadUi8((ui8_t*)&KeyFrameOffset);
-  if ( ASDCP_SUCCESS(result) ) result = Reader.ReadUi8(&Flags);
-  if ( ASDCP_SUCCESS(result) ) result = Reader.ReadUi64BE(&StreamOffset);
-  return result;
+  if ( ! Reader->ReadUi8((ui8_t*)&TemporalOffset) ) return false;
+  if ( ! Reader->ReadUi8((ui8_t*)&KeyFrameOffset) ) return false;
+  if ( ! Reader->ReadUi8(&Flags) ) return false;
+  if ( ! Reader->ReadUi64BE(&StreamOffset) ) return false;
+  return true;
 }
 
 //
-ASDCP::Result_t
-ASDCP::MXF::IndexTableSegment::IndexEntry::Archive(ASDCP::MemIOWriter& Writer) const
+bool
+ASDCP::MXF::IndexTableSegment::IndexEntry::Archive(Kumu::MemIOWriter* Writer) const
 {
-  Result_t result = Writer.WriteUi8((ui8_t)TemporalOffset);
-  if ( ASDCP_SUCCESS(result) ) result = Writer.WriteUi8((ui8_t)KeyFrameOffset);
-  if ( ASDCP_SUCCESS(result) ) result = Writer.WriteUi8(Flags);
-  if ( ASDCP_SUCCESS(result) ) result = Writer.WriteUi64BE(StreamOffset);
-  return result;
+  if ( ! Writer->WriteUi8((ui8_t)TemporalOffset) ) return false;
+  if ( ! Writer->WriteUi8((ui8_t)KeyFrameOffset) ) return false;
+  if ( ! Writer->WriteUi8(Flags) ) return false;
+  if ( ! Writer->WriteUi64BE(StreamOffset) ) return false;
+  return true;
 }
 
 

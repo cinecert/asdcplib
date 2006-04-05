@@ -30,8 +30,9 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include "Wav.h"
-#include "hex_utils.h"
 #include <assert.h>
+#include <KM_log.h>
+using Kumu::DefaultLogSink;
 
 
 const ui32_t SimpleWavHeaderLength = 46;
@@ -69,7 +70,7 @@ ASDCP::Wav::SimpleWaveHeader::FillADesc(ASDCP::PCM::AudioDescriptor& ADesc, ASDC
 
 //
 ASDCP::Result_t
-ASDCP::Wav::SimpleWaveHeader::WriteToFile(ASDCP::FileWriter& OutFile) const
+ASDCP::Wav::SimpleWaveHeader::WriteToFile(Kumu::FileWriter& OutFile) const
 {
   ui32_t write_count;
   byte_t tmp_header[SimpleWavHeaderLength];
@@ -87,26 +88,26 @@ ASDCP::Wav::SimpleWaveHeader::WriteToFile(ASDCP::FileWriter& OutFile) const
   ui32_t RIFF_len = data_len + SimpleWavHeaderLength - 8;
 
   memcpy(p, &FCC_RIFF, sizeof(fourcc)); p += 4;
-  *((ui32_t*)p) = ASDCP_i32_LE(RIFF_len); p += 4;
+  *((ui32_t*)p) = KM_i32_LE(RIFF_len); p += 4;
   memcpy(p, &FCC_WAVE, sizeof(fourcc)); p += 4;
   memcpy(p, &FCC_fmt_, sizeof(fourcc)); p += 4;
-  *((ui32_t*)p) = ASDCP_i32_LE(fmt_len); p += 4;
-  *((ui16_t*)p) = ASDCP_i16_LE(format); p += 2;
-  *((ui16_t*)p) = ASDCP_i16_LE(nchannels); p += 2;
-  *((ui32_t*)p) = ASDCP_i32_LE(samplespersec); p += 4;
-  *((ui32_t*)p) = ASDCP_i32_LE(avgbps); p += 4;
-  *((ui16_t*)p) = ASDCP_i16_LE(blockalign); p += 2;
-  *((ui16_t*)p) = ASDCP_i16_LE(bitspersample); p += 2;
-  *((ui16_t*)p) = ASDCP_i16_LE(cbsize); p += 2;
+  *((ui32_t*)p) = KM_i32_LE(fmt_len); p += 4;
+  *((ui16_t*)p) = KM_i16_LE(format); p += 2;
+  *((ui16_t*)p) = KM_i16_LE(nchannels); p += 2;
+  *((ui32_t*)p) = KM_i32_LE(samplespersec); p += 4;
+  *((ui32_t*)p) = KM_i32_LE(avgbps); p += 4;
+  *((ui16_t*)p) = KM_i16_LE(blockalign); p += 2;
+  *((ui16_t*)p) = KM_i16_LE(bitspersample); p += 2;
+  *((ui16_t*)p) = KM_i16_LE(cbsize); p += 2;
   memcpy(p, &FCC_data, sizeof(fourcc)); p += 4;
-  *((ui32_t*)p) = ASDCP_i32_LE(data_len); p += 4;
+  *((ui32_t*)p) = KM_i32_LE(data_len); p += 4;
 
   return OutFile.Write(tmp_header, SimpleWavHeaderLength, &write_count);
 }
 
 //
 ASDCP::Result_t
-ASDCP::Wav::SimpleWaveHeader::ReadFromFile(const ASDCP::FileReader& InFile, ui32_t* data_start)
+ASDCP::Wav::SimpleWaveHeader::ReadFromFile(const Kumu::FileReader& InFile, ui32_t* data_start)
 {
   ui32_t read_count = 0;
   ui32_t local_data_start = 0;
@@ -140,7 +141,7 @@ ASDCP::Wav::SimpleWaveHeader::ReadFromBuffer(const byte_t* buf, ui32_t buf_len, 
       return RESULT_RAW_FORMAT;
     }
 
-  ui32_t RIFF_len = ASDCP_i32_LE(*(ui32_t*)p); p += 4;
+  ui32_t RIFF_len = KM_i32_LE(*(ui32_t*)p); p += 4;
 
   fourcc test_WAVE(p); p += 4;
   if ( test_WAVE != FCC_WAVE )
@@ -154,7 +155,7 @@ ASDCP::Wav::SimpleWaveHeader::ReadFromBuffer(const byte_t* buf, ui32_t buf_len, 
   while ( p < end_p )
     {
       test_fcc = fourcc(p); p += 4;
-      ui32_t chunk_size = ASDCP_i32_LE(*(ui32_t*)p); p += 4;
+      ui32_t chunk_size = KM_i32_LE(*(ui32_t*)p); p += 4;
 
       if ( test_fcc == FCC_data )
 	{
@@ -171,7 +172,7 @@ ASDCP::Wav::SimpleWaveHeader::ReadFromBuffer(const byte_t* buf, ui32_t buf_len, 
 
       if ( test_fcc == FCC_fmt_ )
 	{
-	  ui16_t format = ASDCP_i16_LE(*(ui16_t*)p); p += 2;
+	  ui16_t format = KM_i16_LE(*(ui16_t*)p); p += 2;
 
 	  if ( format != 1 )
 	    {
@@ -179,11 +180,11 @@ ASDCP::Wav::SimpleWaveHeader::ReadFromBuffer(const byte_t* buf, ui32_t buf_len, 
 	      return RESULT_RAW_FORMAT;
 	    }
 
-	  nchannels = ASDCP_i16_LE(*(ui16_t*)p); p += 2;
-	  samplespersec = ASDCP_i32_LE(*(ui32_t*)p); p += 4;
-	  avgbps = ASDCP_i32_LE(*(ui32_t*)p); p += 4;
-	  blockalign = ASDCP_i16_LE(*(ui16_t*)p); p += 2;
-	  bitspersample = ASDCP_i16_LE(*(ui16_t*)p); p += 2;
+	  nchannels = KM_i16_LE(*(ui16_t*)p); p += 2;
+	  samplespersec = KM_i32_LE(*(ui32_t*)p); p += 4;
+	  avgbps = KM_i32_LE(*(ui32_t*)p); p += 4;
+	  blockalign = KM_i16_LE(*(ui16_t*)p); p += 2;
+	  bitspersample = KM_i16_LE(*(ui16_t*)p); p += 2;
 	  p += chunk_size - 16;
 	}
       else
@@ -230,7 +231,7 @@ Rat_to_extended(ASDCP::Rational rate, byte_t* buf)
        value <<= 1;
      }
 
-   *(ui32_t*)(buf+2) = ASDCP_i32_BE(value);
+   *(ui32_t*)(buf+2) = KM_i32_BE(value);
 }
 
 //
@@ -238,7 +239,7 @@ ASDCP::Rational
 extended_to_Rat(const byte_t* buf)
 {
   ui32_t last = 0;
-  ui32_t mantissa = ASDCP_i32_BE(*(ui32_t*)(buf+2));
+  ui32_t mantissa = KM_i32_BE(*(ui32_t*)(buf+2));
 
   byte_t exp = 30 - *(buf+1);
 
@@ -271,7 +272,7 @@ ASDCP::AIFF::SimpleAIFFHeader::FillADesc(ASDCP::PCM::AudioDescriptor& ADesc, ASD
 
 //
 ASDCP::Result_t
-ASDCP::AIFF::SimpleAIFFHeader::ReadFromFile(const ASDCP::FileReader& InFile, ui32_t* data_start)
+ASDCP::AIFF::SimpleAIFFHeader::ReadFromFile(const Kumu::FileReader& InFile, ui32_t* data_start)
 {
   ui32_t read_count = 0;
   ui32_t local_data_start = 0;
@@ -306,7 +307,7 @@ ASDCP::AIFF::SimpleAIFFHeader::ReadFromBuffer(const byte_t* buf, ui32_t buf_len,
       return RESULT_RAW_FORMAT;
     }
 
-  ui32_t RIFF_len = ASDCP_i32_BE(*(ui32_t*)p); p += 4;
+  ui32_t RIFF_len = KM_i32_BE(*(ui32_t*)p); p += 4;
 
   fourcc test_AIFF(p); p += 4;
   if ( test_AIFF != FCC_AIFF )
@@ -320,13 +321,13 @@ ASDCP::AIFF::SimpleAIFFHeader::ReadFromBuffer(const byte_t* buf, ui32_t buf_len,
   while ( p < end_p )
     {
       test_fcc = fourcc(p); p += 4;
-      ui32_t chunk_size = ASDCP_i32_BE(*(ui32_t*)p); p += 4;
+      ui32_t chunk_size = KM_i32_BE(*(ui32_t*)p); p += 4;
 
       if ( test_fcc == FCC_COMM )
 	{
-	  numChannels = ASDCP_i16_BE(*(ui16_t*)p); p += 2;
-	  numSampleFrames = ASDCP_i32_BE(*(ui32_t*)p); p += 4;
-	  sampleSize = ASDCP_i16_BE(*(ui16_t*)p); p += 2;
+	  numChannels = KM_i16_BE(*(ui16_t*)p); p += 2;
+	  numSampleFrames = KM_i32_BE(*(ui32_t*)p); p += 4;
+	  sampleSize = KM_i16_BE(*(ui16_t*)p); p += 2;
 	  memcpy(sampleRate, p, 10);
 	  p += 10;
 	}
@@ -338,7 +339,7 @@ ASDCP::AIFF::SimpleAIFFHeader::ReadFromBuffer(const byte_t* buf, ui32_t buf_len,
               return RESULT_RAW_FORMAT;
             }
 
-	  ui32_t offset = ASDCP_i32_BE(*(ui32_t*)p); p += 4;
+	  ui32_t offset = KM_i32_BE(*(ui32_t*)p); p += 4;
 	  p += 4; // blockSize;
 
 	  data_len = chunk_size - 8;

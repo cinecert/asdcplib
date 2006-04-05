@@ -30,7 +30,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include "KLV.h"
-#include <hex_utils.h>
+#include <KM_log.h>
+using Kumu::DefaultLogSink;
 
 
 // This is how much we read when we're reading from a file and we don't know
@@ -69,7 +70,7 @@ ASDCP::KLVPacket::InitFromBuffer(const byte_t* buf, ui32_t buf_len)
       return RESULT_FAIL;
     }
 
-  ui32_t ber_len = BER_length(buf + SMPTE_UL_LENGTH);
+  ui32_t ber_len = Kumu::BER_length(buf + SMPTE_UL_LENGTH);
 
   if ( ber_len > ( buf_len - SMPTE_UL_LENGTH ) )
     {
@@ -79,16 +80,16 @@ ASDCP::KLVPacket::InitFromBuffer(const byte_t* buf, ui32_t buf_len)
 
   if ( ber_len == 0 )
     {
-      ASDCP::DefaultLogSink().Error("KLV format error, zero BER length not allowed\n");
+      DefaultLogSink().Error("KLV format error, zero BER length not allowed\n");
       return RESULT_FAIL;
     }
 
   ui64_t tmp_size;
-  if ( ! read_BER(buf + SMPTE_UL_LENGTH, &tmp_size) )
+  if ( ! Kumu::read_BER(buf + SMPTE_UL_LENGTH, &tmp_size) )
        return RESULT_FAIL;
 
   m_ValueLength = tmp_size;
-  m_KLLength = SMPTE_UL_LENGTH + BER_length(buf + SMPTE_UL_LENGTH);
+  m_KLLength = SMPTE_UL_LENGTH + Kumu::BER_length(buf + SMPTE_UL_LENGTH);
   m_KeyStart = buf;
   m_ValueStart = buf + m_KLLength;
   return RESULT_OK;
@@ -116,7 +117,7 @@ ASDCP::KLVPacket::WriteKLToBuffer(ASDCP::FrameBuffer& Buffer, const byte_t* labe
   
   memcpy(Buffer.Data() + Buffer.Size(), label, SMPTE_UL_LENGTH);
 
-  if ( ! write_BER(Buffer.Data() + Buffer.Size() + SMPTE_UL_LENGTH, length, MXF_BER_LENGTH) )
+  if ( ! Kumu::write_BER(Buffer.Data() + Buffer.Size() + SMPTE_UL_LENGTH, length, MXF_BER_LENGTH) )
     return RESULT_FAIL;
 
   Buffer.Size(Buffer.Size() + kl_length);
@@ -141,7 +142,7 @@ ASDCP::KLVPacket::Dump(FILE* stream, bool show_hex)
       fprintf(stream, "\b  len: %7lu (%s)\n", m_ValueLength, (Entry ? Entry->name : "Unknown"));
 
       if ( show_hex && m_ValueLength < 1000 )
-	hexdump(m_ValueStart, ASDCP::xmin(m_ValueLength, (ui32_t)64), stream);
+	Kumu::hexdump(m_ValueStart, Kumu::xmin(m_ValueLength, (ui32_t)64), stream);
     }
   else
     {
@@ -151,7 +152,7 @@ ASDCP::KLVPacket::Dump(FILE* stream, bool show_hex)
 
 // 
 ASDCP::Result_t
-ASDCP::KLVFilePacket::InitFromFile(const FileReader& Reader, const byte_t* label)
+ASDCP::KLVFilePacket::InitFromFile(const Kumu::FileReader& Reader, const byte_t* label)
 {
   Result_t result = KLVFilePacket::InitFromFile(Reader);
 
@@ -164,7 +165,7 @@ ASDCP::KLVFilePacket::InitFromFile(const FileReader& Reader, const byte_t* label
 
 // TODO: refactor to use InitFromBuffer
 ASDCP::Result_t
-ASDCP::KLVFilePacket::InitFromFile(const FileReader& Reader)
+ASDCP::KLVFilePacket::InitFromFile(const Kumu::FileReader& Reader)
 {
   ui32_t read_count;
   byte_t tmp_data[tmp_read_size];
@@ -191,7 +192,7 @@ ASDCP::KLVFilePacket::InitFromFile(const FileReader& Reader)
       return RESULT_FAIL;
     }
 
-  if ( ! read_BER(tmp_data + SMPTE_UL_LENGTH, &tmp_size) )
+  if ( ! Kumu::read_BER(tmp_data + SMPTE_UL_LENGTH, &tmp_size) )
     {
       DefaultLogSink().Error("BER Length decoding error\n");
       return RESULT_FAIL;
@@ -199,14 +200,13 @@ ASDCP::KLVFilePacket::InitFromFile(const FileReader& Reader)
 
   if ( tmp_size > MAX_KLV_PACKET_LENGTH )
     {
-      char intbuf[IntBufferLen];
-      DefaultLogSink().Error("Packet length %s exceeds internal limit\n",
-			     ui64sz(tmp_size, intbuf));
+      Kumu::ui64Printer tmp_size_str(tmp_size);
+      DefaultLogSink().Error("Packet length %s exceeds internal limit\n", tmp_size_str.c_str());
       return RESULT_FAIL;
     }
 
   ui32_t remainder = 0;
-  ui32_t ber_len = BER_length(tmp_data + SMPTE_UL_LENGTH);
+  ui32_t ber_len = Kumu::BER_length(tmp_data + SMPTE_UL_LENGTH);
   m_KLLength = SMPTE_UL_LENGTH + ber_len;
   m_ValueLength = tmp_size;
   ui32_t packet_length = m_ValueLength + m_KLLength;
@@ -229,7 +229,7 @@ ASDCP::KLVFilePacket::InitFromFile(const FileReader& Reader)
       if ( (remainder = read_count - packet_length) != 0 )
 	{
 	  DefaultLogSink().Warn("Repositioning pointer for short packet\n");
-	  ASDCP::fpos_t pos = Reader.Tell();
+	  Kumu::fpos_t pos = Reader.Tell();
 	  assert(pos > remainder);
 	  result = Reader.Seek(pos - remainder);
 	}
@@ -264,12 +264,12 @@ ASDCP::KLVFilePacket::InitFromFile(const FileReader& Reader)
 
 //
 ASDCP::Result_t
-ASDCP::KLVFilePacket::WriteKLToFile(FileWriter& Writer, const byte_t* label, ui32_t length)
+ASDCP::KLVFilePacket::WriteKLToFile(Kumu::FileWriter& Writer, const byte_t* label, ui32_t length)
 {
   byte_t buffer[kl_length];
   memcpy(buffer, label, SMPTE_UL_LENGTH);
 
-  if ( ! write_BER(buffer+SMPTE_UL_LENGTH, length, MXF_BER_LENGTH) )
+  if ( ! Kumu::write_BER(buffer+SMPTE_UL_LENGTH, length, MXF_BER_LENGTH) )
     return RESULT_FAIL;
 
   ui32_t write_count;

@@ -30,8 +30,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include <AS_DCP.h>
-#include <FileIO.h>
-#include <DirScanner.h>
+#include <KM_fileio.h>
 #include <list>
 #include <string>
 #include <algorithm>
@@ -54,8 +53,8 @@ public:
   //
   Result_t InitFromDirectory(const char* path)
   {
-    char next_file[ASDCP_MAX_PATH];
-    DirScanner Scanner;
+    char next_file[Kumu::MaxFilePath];
+    Kumu::DirScanner Scanner;
 
     Result_t result = Scanner.Open(path);
 
@@ -139,7 +138,7 @@ ASDCP::JP2K::SequenceParser::h__SequenceParser::OpenRead(const char* filename)
       CodestreamParser Parser;
       FrameBuffer TmpBuffer;
 
-      fsize_t file_size = FileSize((*m_CurrentFile).c_str());
+      Kumu::fsize_t file_size = Kumu::FileSize((*m_CurrentFile).c_str());
 
       if ( file_size == 0 )
 	result = RESULT_NOT_FOUND;

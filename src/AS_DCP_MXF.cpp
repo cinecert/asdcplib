@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2004-2005, John Hurst
+Copyright (c) 2004-2006, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -29,9 +29,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     \brief   AS-DCP library, misc classes and subroutines
 */
 
+#include <KM_fileio.h>
 #include "AS_DCP_internal.h"
-#include "FileIO.h"
-#include "DirScanner.h"
 #include "JP2K.h"
 #include "Wav.h"
 
@@ -49,7 +48,7 @@ ASDCP::WriterInfoDump(const WriterInfo& Info, FILE* stream)
 
   char str_buf[40];
 
-  fprintf(stream,"       ProductUUID: %s\n", bin2hex(Info.ProductUUID, 16, str_buf, 40));
+  fprintf(stream,"       ProductUUID: %s\n", UUID(Info.ProductUUID).EncodeHex(str_buf, 40));
   fprintf(stream,"\
     ProductVersion: %s\n\
        CompanyName: %s\n\
@@ -64,11 +63,11 @@ ASDCP::WriterInfoDump(const WriterInfo& Info, FILE* stream)
   if ( Info.EncryptedEssence )
     {
       fprintf(stream, "              HMAC: %s\n", ( Info.UsesHMAC ? "Yes" : "No"));
-      fprintf(stream, "         ContextID: %s\n", bin2hex(Info.ContextID, 16, str_buf, 40));
-      fprintf(stream, "CryptographicKeyID: %s\n", bin2hex(Info.CryptographicKeyID, 16, str_buf, 40));
+      fprintf(stream, "         ContextID: %s\n", UUID(Info.ContextID).EncodeHex(str_buf, 40));
+      fprintf(stream, "CryptographicKeyID: %s\n", UUID(Info.CryptographicKeyID).EncodeHex(str_buf, 40));
     }
 
-  fprintf(stream,"         AssetUUID: %s\n", bin2hex(Info.AssetUUID, 16, str_buf, 40));
+  fprintf(stream,"         AssetUUID: %s\n", UUID(Info.AssetUUID).EncodeHex(str_buf, 40));
   fprintf(stream,"    Label Set Type: %s\n", ( Info.LabelSetType == LS_MXF_SMPTE ? "SMPTE" :
 					       ( Info.LabelSetType == LS_MXF_INTEROP ? "MXF Interop" :
 						 "Unknown" ) ));
@@ -86,13 +85,13 @@ ASDCP::MD_to_WriterInfo(Identification* InfoObj, WriterInfo& Info)
   Info.CompanyName = "Unknown Company";
   memset(Info.ProductUUID, 0, UUIDlen);
 
-  InfoObj->ProductName.ToString(tmp_str);
+  InfoObj->ProductName.EncodeString(tmp_str, IdentBufferLen);
   if ( *tmp_str ) Info.ProductName = tmp_str;
 
-  InfoObj->VersionString.ToString(tmp_str);
+  InfoObj->VersionString.EncodeString(tmp_str, IdentBufferLen);
   if ( *tmp_str ) Info.ProductVersion = tmp_str;
 
-  InfoObj->CompanyName.ToString(tmp_str);
+  InfoObj->CompanyName.EncodeString(tmp_str, IdentBufferLen);
   if ( *tmp_str ) Info.CompanyName = tmp_str;
 
   memcpy(Info.ProductUUID, InfoObj->ProductUID.Value(), UUIDlen);
@@ -135,7 +134,7 @@ ASDCP::Result_t
 ASDCP::EssenceType(const char* filename, EssenceType_t& type)
 {
   ASDCP_TEST_NULL_STR(filename);
-  FileReader   Reader;
+  Kumu::FileReader   Reader;
   OPAtomHeader TestHeader;
 
   Result_t result = Reader.OpenRead(filename);
@@ -163,7 +162,6 @@ ASDCP::EssenceType(const char* filename, EssenceType_t& type)
   return result;
 }
 
-
 //
 ASDCP::Result_t
 ASDCP::RawEssenceType(const char* filename, EssenceType_t& type)
@@ -171,11 +169,11 @@ ASDCP::RawEssenceType(const char* filename, EssenceType_t& type)
   ASDCP_TEST_NULL_STR(filename);
   type = ESS_UNKNOWN;
   ASDCP::FrameBuffer FB;
-  FileReader Reader;
+  Kumu::FileReader Reader;
   ui32_t read_count;
   Result_t result = FB.Capacity(Wav::MaxWavHeader); // using Wav max because everything else is much smaller
 
-  if ( ASDCP::PathIsFile(filename) )
+  if ( Kumu::PathIsFile(filename) )
     {
       result = Reader.OpenRead(filename);
 
@@ -202,10 +200,10 @@ ASDCP::RawEssenceType(const char* filename, EssenceType_t& type)
 	    type = ESS_PCM_24b_48k;
 	}
     }
-  else if ( ASDCP::PathIsDirectory(filename) )
+  else if ( Kumu::PathIsDirectory(filename) )
     {
-      char next_file[ASDCP_MAX_PATH];
-      DirScanner Scanner;
+      char next_file[Kumu::MaxFilePath];
+      Kumu::DirScanner Scanner;
       Result_t result = Scanner.Open(filename);
 
       if ( ASDCP_SUCCESS(result) )
@@ -397,7 +395,7 @@ ASDCP::IntegrityPack::CalcValues(const ASDCP::FrameBuffer& FB, byte_t* AssetID,
   p += MXF_BER_LENGTH;
 
   // sequence number
-  i2p<ui64_t>(ASDCP_i64_BE(sequence), p);
+  Kumu::i2p<ui64_t>(KM_i64_BE(sequence), p);
   p += sizeof(ui64_t);
 
   // HMAC length
@@ -429,7 +427,7 @@ ASDCP::IntegrityPack::TestValues(const ASDCP::FrameBuffer& FB, byte_t* AssetID,
   byte_t* p = (byte_t*)FB.RoData() + ( FB.Size() - klv_intpack_size );
 
   // test the AssetID length
-  if ( ! read_test_BER(&p, UUIDlen) )
+  if ( ! Kumu::read_test_BER(&p, UUIDlen) )
         return RESULT_HMACFAIL;
 
   // test the AssetID
@@ -441,10 +439,10 @@ ASDCP::IntegrityPack::TestValues(const ASDCP::FrameBuffer& FB, byte_t* AssetID,
   p += UUIDlen;
   
   // test the sequence length
-  if ( ! read_test_BER(&p, sizeof(ui64_t)) )
+  if ( ! Kumu::read_test_BER(&p, sizeof(ui64_t)) )
         return RESULT_HMACFAIL;
 
-  ui32_t test_sequence = (ui32_t)ASDCP_i64_BE(cp2i<ui64_t>(p));
+  ui32_t test_sequence = (ui32_t)KM_i64_BE(Kumu::cp2i<ui64_t>(p));
 
   // test the sequence value
   if ( test_sequence != sequence )
@@ -456,7 +454,7 @@ ASDCP::IntegrityPack::TestValues(const ASDCP::FrameBuffer& FB, byte_t* AssetID,
   p += sizeof(ui64_t);
 
   // test the HMAC length
-  if ( ! read_test_BER(&p, HMAC_SIZE) )
+  if ( ! Kumu::read_test_BER(&p, HMAC_SIZE) )
         return RESULT_HMACFAIL;
 
   // test the HMAC

@@ -112,15 +112,11 @@ ASDCP::h__Reader::OpenMXFRead(const char* filename)
   // partition and read off the partition pack
   if ( m_HeaderPart.m_RIP.PairArray.size() == 3 )
     {
-      fprintf(stderr, "Three part!\n");
       Array<RIP::Pair>::iterator r_i = m_HeaderPart.m_RIP.PairArray.begin();
       r_i++;
       m_File.Seek((*r_i).ByteOffset);
 
       result = m_BodyPart.InitFromFile(m_File);
-      m_BodyPart.Dump();
-      // TODO: check the partition pack to make sure it is
-      //       really a body with a single essence container
     }
 
   m_EssenceStart = m_File.Tell();
@@ -163,7 +159,7 @@ public:
   inline const ui64_t  Length() { return m_ValueLength; }
   inline const ui64_t  KLLength() { return m_KLLength; }
 
-  Result_t ReadKLFromFile(ASDCP::FileReader& Reader)
+  Result_t ReadKLFromFile(Kumu::FileReader& Reader)
   {
     ui32_t read_count;
     ui32_t header_length = SMPTE_UL_LENGTH + MXF_BER_LENGTH;
@@ -197,7 +193,7 @@ ASDCP::h__Reader::ReadEKLVPacket(ui32_t FrameNum, ASDCP::FrameBuffer& FrameBuf,
   // get frame position and go read the frame's key and length
   Result_t result = RESULT_OK;
   KLReader Reader;
-  ASDCP::fpos_t FilePosition = m_EssenceStart + TmpEntry.StreamOffset;
+  Kumu::fpos_t FilePosition = m_EssenceStart + TmpEntry.StreamOffset;
 
   if ( FilePosition != m_LastPosition )
     {
@@ -244,7 +240,7 @@ ASDCP::h__Reader::ReadEKLVPacket(ui32_t FrameNum, ASDCP::FrameBuffer& FrameBuf,
       byte_t* ess_p = m_CtFrameBuf.Data();
 
       // read context ID length
-      if ( ! read_test_BER(&ess_p, UUIDlen) )
+      if ( ! Kumu::read_test_BER(&ess_p, UUIDlen) )
 	return RESULT_FORMAT;
 
       // test the context ID
@@ -256,14 +252,14 @@ ASDCP::h__Reader::ReadEKLVPacket(ui32_t FrameNum, ASDCP::FrameBuffer& FrameBuf,
       ess_p += UUIDlen;
 
       // read PlaintextOffset length
-      if ( ! read_test_BER(&ess_p, sizeof(ui64_t)) )
+      if ( ! Kumu::read_test_BER(&ess_p, sizeof(ui64_t)) )
 	return RESULT_FORMAT;
 
-      ui32_t PlaintextOffset = (ui32_t)ASDCP_i64_BE(cp2i<ui64_t>(ess_p));
+      ui32_t PlaintextOffset = (ui32_t)KM_i64_BE(Kumu::cp2i<ui64_t>(ess_p));
       ess_p += sizeof(ui64_t);
 
       // read essence UL length
-      if ( ! read_test_BER(&ess_p, SMPTE_UL_LENGTH) )
+      if ( ! Kumu::read_test_BER(&ess_p, SMPTE_UL_LENGTH) )
 	return RESULT_FORMAT;
 
       // test essence UL
@@ -272,7 +268,7 @@ ASDCP::h__Reader::ReadEKLVPacket(ui32_t FrameNum, ASDCP::FrameBuffer& FrameBuf,
 	  char strbuf[IntBufferLen];
 	  const MDDEntry* Entry = Dict::FindUL(Key.Value());
 	  if ( Entry == 0 )
-	    DefaultLogSink().Warn("Unexpected Essence UL found: %s.\n", Key.ToString(strbuf));
+	    DefaultLogSink().Warn("Unexpected Essence UL found: %s.\n", Key.EncodeString(strbuf, IntBufferLen));
 	  else
 	    DefaultLogSink().Warn("Unexpected Essence UL found: %s.\n", Entry->name);
 	  return RESULT_FORMAT;
@@ -280,10 +276,10 @@ ASDCP::h__Reader::ReadEKLVPacket(ui32_t FrameNum, ASDCP::FrameBuffer& FrameBuf,
       ess_p += SMPTE_UL_LENGTH;
 
       // read SourceLength length
-      if ( ! read_test_BER(&ess_p, sizeof(ui64_t)) )
+      if ( ! Kumu::read_test_BER(&ess_p, sizeof(ui64_t)) )
 	return RESULT_FORMAT;
 
-      ui32_t SourceLength = (ui32_t)ASDCP_i64_BE(cp2i<ui64_t>(ess_p));
+      ui32_t SourceLength = (ui32_t)KM_i64_BE(Kumu::cp2i<ui64_t>(ess_p));
       ess_p += sizeof(ui64_t);
       assert(SourceLength);
 	  
@@ -296,7 +292,7 @@ ASDCP::h__Reader::ReadEKLVPacket(ui32_t FrameNum, ASDCP::FrameBuffer& FrameBuf,
       ui32_t esv_length = calc_esv_length(SourceLength, PlaintextOffset);
 
       // read ESV length
-      if ( ! read_test_BER(&ess_p, esv_length) )
+      if ( ! Kumu::read_test_BER(&ess_p, esv_length) )
 	{
 	  DefaultLogSink().Error("read_test_BER did not return %lu\n", esv_length);
 	  return RESULT_FORMAT;
@@ -377,7 +373,7 @@ ASDCP::h__Reader::ReadEKLVPacket(ui32_t FrameNum, ASDCP::FrameBuffer& FrameBuf,
       char strbuf[IntBufferLen];
       const MDDEntry* Entry = Dict::FindUL(Key.Value());
       if ( Entry == 0 )
-        DefaultLogSink().Warn("Unexpected Essence UL found: %s.\n", Key.ToString(strbuf));
+        DefaultLogSink().Warn("Unexpected Essence UL found: %s.\n", Key.EncodeString(strbuf, IntBufferLen));
       else
         DefaultLogSink().Warn("Unexpected Essence UL found: %s.\n", Entry->name);
       return RESULT_FORMAT;

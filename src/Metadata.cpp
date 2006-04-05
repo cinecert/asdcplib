@@ -30,9 +30,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 
+#include <KM_mutex.h>
 #include "Metadata.h"
-#include "Mutex.h"
-#include "hex_utils.h"
 
 const ui32_t kl_length = ASDCP::SMPTE_UL_LENGTH + ASDCP::MXF_BER_LENGTH;
 
@@ -71,24 +70,24 @@ typedef std::map<ASDCP::UL, FLT_t>::iterator FLi_t;
 
 class FactoryList : public std::map<ASDCP::UL, FLT_t>
 {
-  ASDCP::Mutex m_Lock;
+  Kumu::Mutex m_Lock;
 
 public:
   FactoryList() {}
   ~FactoryList() {}
 
   bool Empty() {
-    ASDCP::AutoMutex BlockLock(m_Lock);
+    Kumu::AutoMutex BlockLock(m_Lock);
     return empty();
   }
 
   FLi_t Find(const byte_t* label) {
-    ASDCP::AutoMutex BlockLock(m_Lock);
+    Kumu::AutoMutex BlockLock(m_Lock);
     return find(label);
   }
 
   FLi_t End() {
-    ASDCP::AutoMutex BlockLock(m_Lock);
+    Kumu::AutoMutex BlockLock(m_Lock);
     return end();
   }
 
@@ -220,15 +219,15 @@ ASDCP::MXF::Identification::Dump(FILE* stream)
     stream = stderr;
 
   InterchangeObject::Dump(stream);
-  fprintf(stream, "  %22s = %s\n",  "ThisGenerationUID", ThisGenerationUID.ToString(identbuf));
-  fprintf(stream, "  %22s = %s\n",  "CompanyName", CompanyName.ToString(identbuf));
-  fprintf(stream, "  %22s = %s\n",  "ProductName", ProductName.ToString(identbuf));
-  fprintf(stream, "  %22s = %s\n",  "ProductVersion", ProductVersion.ToString(identbuf));
-  fprintf(stream, "  %22s = %s\n",  "VersionString", VersionString.ToString(identbuf));
-  fprintf(stream, "  %22s = %s\n",  "ProductUID", ProductUID.ToString(identbuf));
-  fprintf(stream, "  %22s = %s\n",  "ModificationDate", ModificationDate.ToString(identbuf));
-  fprintf(stream, "  %22s = %s\n",  "ToolkitVersion", ToolkitVersion.ToString(identbuf));
-  fprintf(stream, "  %22s = %s\n",  "Platform", Platform.ToString(identbuf));
+  fprintf(stream, "  %22s = %s\n",  "ThisGenerationUID", ThisGenerationUID.EncodeString(identbuf, IdentBufferLen));
+  fprintf(stream, "  %22s = %s\n",  "CompanyName", CompanyName.EncodeString(identbuf, IdentBufferLen));
+  fprintf(stream, "  %22s = %s\n",  "ProductName", ProductName.EncodeString(identbuf, IdentBufferLen));
+  fprintf(stream, "  %22s = %s\n",  "ProductVersion", ProductVersion.EncodeString(identbuf, IdentBufferLen));
+  fprintf(stream, "  %22s = %s\n",  "VersionString", VersionString.EncodeString(identbuf, IdentBufferLen));
+  fprintf(stream, "  %22s = %s\n",  "ProductUID", ProductUID.EncodeString(identbuf, IdentBufferLen));
+  fprintf(stream, "  %22s = %s\n",  "ModificationDate", ModificationDate.EncodeString(identbuf, IdentBufferLen));
+  fprintf(stream, "  %22s = %s\n",  "ToolkitVersion", ToolkitVersion.EncodeString(identbuf, IdentBufferLen));
+  fprintf(stream, "  %22s = %s\n",  "Platform", Platform.EncodeString(identbuf, IdentBufferLen));
 }
 
 //
@@ -339,7 +338,7 @@ ASDCP::MXF::EssenceContainerData::Dump(FILE* stream)
     stream = stderr;
 
   InterchangeObject::Dump(stream);
-  fprintf(stream, "  %22s = %s\n",  "LinkedPackageUID", LinkedPackageUID.ToString(identbuf));
+  fprintf(stream, "  %22s = %s\n",  "LinkedPackageUID", LinkedPackageUID.EncodeString(identbuf, IdentBufferLen));
   fprintf(stream, "  %22s = %d\n",  "IndexSID", IndexSID);
   fprintf(stream, "  %22s = %d\n",  "BodySID", BodySID);
 }
@@ -400,10 +399,10 @@ ASDCP::MXF::GenericPackage::Dump(FILE* stream)
     stream = stderr;
 
   InterchangeObject::Dump(stream);
-  fprintf(stream, "  %22s = %s\n",  "PackageUID", PackageUID.ToString(identbuf));
-  fprintf(stream, "  %22s = %s\n",  "Name", Name.ToString(identbuf));
-  fprintf(stream, "  %22s = %s\n",  "PackageCreationDate", PackageCreationDate.ToString(identbuf));
-  fprintf(stream, "  %22s = %s\n",  "PackageModifiedDate", PackageModifiedDate.ToString(identbuf));
+  fprintf(stream, "  %22s = %s\n",  "PackageUID", PackageUID.EncodeString(identbuf, IdentBufferLen));
+  fprintf(stream, "  %22s = %s\n",  "Name", Name.EncodeString(identbuf, IdentBufferLen));
+  fprintf(stream, "  %22s = %s\n",  "PackageCreationDate", PackageCreationDate.EncodeString(identbuf, IdentBufferLen));
+  fprintf(stream, "  %22s = %s\n",  "PackageModifiedDate", PackageModifiedDate.EncodeString(identbuf, IdentBufferLen));
   fprintf(stream, "  %22s:\n",  "Tracks");
   Tracks.Dump(stream);
 }
@@ -489,7 +488,7 @@ ASDCP::MXF::SourcePackage::Dump(FILE* stream)
     stream = stderr;
 
   GenericPackage::Dump(stream);
-  fprintf(stream, "  %22s = %s\n",  "Descriptor", Descriptor.ToString(identbuf));
+  fprintf(stream, "  %22s = %s\n",  "Descriptor", Descriptor.EncodeString(identbuf, IdentBufferLen));
 }
 
 //
@@ -548,8 +547,8 @@ ASDCP::MXF::GenericTrack::Dump(FILE* stream)
   InterchangeObject::Dump(stream);
   fprintf(stream, "  %22s = %d\n",  "TrackID", TrackID);
   fprintf(stream, "  %22s = %d\n",  "TrackNumber", TrackNumber);
-  fprintf(stream, "  %22s = %s\n",  "TrackName", TrackName.ToString(identbuf));
-  fprintf(stream, "  %22s = %s\n",  "Sequence", Sequence.ToString(identbuf));
+  fprintf(stream, "  %22s = %s\n",  "TrackName", TrackName.EncodeString(identbuf, IdentBufferLen));
+  fprintf(stream, "  %22s = %s\n",  "Sequence", Sequence.EncodeString(identbuf, IdentBufferLen));
 }
 
 
@@ -635,7 +634,7 @@ ASDCP::MXF::Track::Dump(FILE* stream)
     stream = stderr;
 
   GenericTrack::Dump(stream);
-  fprintf(stream, "  %22s = %s\n",  "EditRate", EditRate.ToString(identbuf));
+  fprintf(stream, "  %22s = %s\n",  "EditRate", EditRate.EncodeString(identbuf, IdentBufferLen));
   fprintf(stream, "  %22s = %s\n",  "Origin", i64sz(Origin, identbuf));
 }
 
@@ -689,7 +688,7 @@ ASDCP::MXF::StructuralComponent::Dump(FILE* stream)
     stream = stderr;
 
   InterchangeObject::Dump(stream);
-  fprintf(stream, "  %22s = %s\n",  "DataDefinition", DataDefinition.ToString(identbuf));
+  fprintf(stream, "  %22s = %s\n",  "DataDefinition", DataDefinition.EncodeString(identbuf, IdentBufferLen));
   fprintf(stream, "  %22s = %s\n",  "Duration", i64sz(Duration, identbuf));
 }
 
@@ -783,7 +782,7 @@ ASDCP::MXF::SourceClip::Dump(FILE* stream)
 
   StructuralComponent::Dump(stream);
   fprintf(stream, "  %22s = %s\n",  "StartPosition", i64sz(StartPosition, identbuf));
-  fprintf(stream, "  %22s = %s\n",  "SourcePackageID", SourcePackageID.ToString(identbuf));
+  fprintf(stream, "  %22s = %s\n",  "SourcePackageID", SourcePackageID.EncodeString(identbuf, IdentBufferLen));
   fprintf(stream, "  %22s = %d\n",  "SourceTrackID", SourceTrackID);
 }
 
@@ -942,10 +941,10 @@ ASDCP::MXF::FileDescriptor::Dump(FILE* stream)
 
   GenericDescriptor::Dump(stream);
   fprintf(stream, "  %22s = %d\n",  "LinkedTrackID", LinkedTrackID);
-  fprintf(stream, "  %22s = %s\n",  "SampleRate", SampleRate.ToString(identbuf));
+  fprintf(stream, "  %22s = %s\n",  "SampleRate", SampleRate.EncodeString(identbuf, IdentBufferLen));
   fprintf(stream, "  %22s = %s\n",  "ContainerDuration", i64sz(ContainerDuration, identbuf));
-  fprintf(stream, "  %22s = %s\n",  "EssenceContainer", EssenceContainer.ToString(identbuf));
-  fprintf(stream, "  %22s = %s\n",  "Codec", Codec.ToString(identbuf));
+  fprintf(stream, "  %22s = %s\n",  "EssenceContainer", EssenceContainer.EncodeString(identbuf, IdentBufferLen));
+  fprintf(stream, "  %22s = %s\n",  "Codec", Codec.EncodeString(identbuf, IdentBufferLen));
 }
 
 //
@@ -1006,7 +1005,7 @@ ASDCP::MXF::GenericSoundEssenceDescriptor::Dump(FILE* stream)
     stream = stderr;
 
   FileDescriptor::Dump(stream);
-  fprintf(stream, "  %22s = %s\n",  "AudioSamplingRate", AudioSamplingRate.ToString(identbuf));
+  fprintf(stream, "  %22s = %s\n",  "AudioSamplingRate", AudioSamplingRate.EncodeString(identbuf, IdentBufferLen));
   fprintf(stream, "  %22s = %d\n",  "Locked", Locked);
   fprintf(stream, "  %22s = %d\n",  "AudioRefLevel", AudioRefLevel);
   fprintf(stream, "  %22s = %d\n",  "ChannelCount", ChannelCount);
@@ -1128,7 +1127,7 @@ ASDCP::MXF::GenericPictureEssenceDescriptor::Dump(FILE* stream)
   fprintf(stream, "  %22s = %d\n",  "FrameLayout", FrameLayout);
   fprintf(stream, "  %22s = %d\n",  "StoredWidth", StoredWidth);
   fprintf(stream, "  %22s = %d\n",  "StoredHeight", StoredHeight);
-  fprintf(stream, "  %22s = %s\n",  "AspectRatio", AspectRatio.ToString(identbuf));
+  fprintf(stream, "  %22s = %s\n",  "AspectRatio", AspectRatio.EncodeString(identbuf, IdentBufferLen));
 }
 
 //
@@ -1267,9 +1266,9 @@ ASDCP::MXF::JPEG2000PictureSubDescriptor::Dump(FILE* stream)
   fprintf(stream, "  %22s = %d\n",  "XTOsize", XTOsize);
   fprintf(stream, "  %22s = %d\n",  "YTOsize", YTOsize);
   fprintf(stream, "  %22s = %d\n",  "Csize", Csize);
-  fprintf(stream, "  %22s = %s\n",  "PictureComponentSizing", PictureComponentSizing.ToString(identbuf));
-  fprintf(stream, "  %22s = %s\n",  "CodingStyleDefault", CodingStyleDefault.ToString(identbuf));
-  fprintf(stream, "  %22s = %s\n",  "QuantizationDefault", QuantizationDefault.ToString(identbuf));
+  fprintf(stream, "  %22s = %s\n",  "PictureComponentSizing", PictureComponentSizing.EncodeString(identbuf, IdentBufferLen));
+  fprintf(stream, "  %22s = %s\n",  "CodingStyleDefault", CodingStyleDefault.EncodeString(identbuf, IdentBufferLen));
+  fprintf(stream, "  %22s = %s\n",  "QuantizationDefault", QuantizationDefault.EncodeString(identbuf, IdentBufferLen));
 }
 
 //
@@ -1445,8 +1444,8 @@ ASDCP::MXF::DMSegment::Dump(FILE* stream)
 
   InterchangeObject::Dump(stream);
   fprintf(stream, "  %22s = %s\n",  "EventStartPosition", i64sz(EventStartPosition, identbuf));
-  fprintf(stream, "  %22s = %s\n",  "EventComment", EventComment.ToString(identbuf));
-  fprintf(stream, "  %22s = %s\n",  "DMFramework", DMFramework.ToString(identbuf));
+  fprintf(stream, "  %22s = %s\n",  "EventComment", EventComment.EncodeString(identbuf, IdentBufferLen));
+  fprintf(stream, "  %22s = %s\n",  "DMFramework", DMFramework.EncodeString(identbuf, IdentBufferLen));
 }
 
 //
@@ -1497,7 +1496,7 @@ ASDCP::MXF::CryptographicFramework::Dump(FILE* stream)
     stream = stderr;
 
   InterchangeObject::Dump(stream);
-  fprintf(stream, "  %22s = %s\n",  "ContextSR", ContextSR.ToString(identbuf));
+  fprintf(stream, "  %22s = %s\n",  "ContextSR", ContextSR.EncodeString(identbuf, IdentBufferLen));
 }
 
 //
@@ -1556,11 +1555,11 @@ ASDCP::MXF::CryptographicContext::Dump(FILE* stream)
     stream = stderr;
 
   InterchangeObject::Dump(stream);
-  fprintf(stream, "  %22s = %s\n",  "ContextID", ContextID.ToString(identbuf));
-  fprintf(stream, "  %22s = %s\n",  "SourceEssenceContainer", SourceEssenceContainer.ToString(identbuf));
-  fprintf(stream, "  %22s = %s\n",  "CipherAlgorithm", CipherAlgorithm.ToString(identbuf));
-  fprintf(stream, "  %22s = %s\n",  "MICAlgorithm", MICAlgorithm.ToString(identbuf));
-  fprintf(stream, "  %22s = %s\n",  "CryptographicKeyID", CryptographicKeyID.ToString(identbuf));
+  fprintf(stream, "  %22s = %s\n",  "ContextID", ContextID.EncodeString(identbuf, IdentBufferLen));
+  fprintf(stream, "  %22s = %s\n",  "SourceEssenceContainer", SourceEssenceContainer.EncodeString(identbuf, IdentBufferLen));
+  fprintf(stream, "  %22s = %s\n",  "CipherAlgorithm", CipherAlgorithm.EncodeString(identbuf, IdentBufferLen));
+  fprintf(stream, "  %22s = %s\n",  "MICAlgorithm", MICAlgorithm.EncodeString(identbuf, IdentBufferLen));
+  fprintf(stream, "  %22s = %s\n",  "CryptographicKeyID", CryptographicKeyID.EncodeString(identbuf, IdentBufferLen));
 }
 
 //
@@ -1580,5 +1579,5 @@ ASDCP::MXF::CryptographicContext::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 }
 
 //
-// end MXF.cpp
+// end Metadata.cpp
 //

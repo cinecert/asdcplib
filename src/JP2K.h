@@ -36,8 +36,9 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define _JP2K_H_
 
 // AS_DCP.h is included only for it's base type definitions.
-#include <AS_DCP_system.h>
-#include <hex_utils.h>
+#include <KM_platform.h>
+#include <KM_util.h>
+#include <AS_DCP.h>
 #include <assert.h>
 
 namespace ASDCP
@@ -76,7 +77,7 @@ namespace JP2K
   //
   class Marker
     {
-      ASDCP_NO_COPY_CONSTRUCT(Marker);
+      KM_NO_COPY_CONSTRUCT(Marker);
 
     public:
       Marker_t m_Type;
@@ -100,7 +101,7 @@ namespace JP2K
       class SIZ
 	{
 	  const byte_t* m_MarkerData;
-	  ASDCP_NO_COPY_CONSTRUCT(SIZ);
+	  KM_NO_COPY_CONSTRUCT(SIZ);
           SIZ();
 
         public:
@@ -112,16 +113,16 @@ namespace JP2K
 
 	  ~SIZ() {}
 
-	  inline ui16_t Rsize()   { return ASDCP_i16_BE(*(ui16_t*)m_MarkerData); }
-	  inline ui32_t Xsize()   { return ASDCP_i32_BE(*(ui32_t*)(m_MarkerData + 2)); }
-	  inline ui32_t Ysize()   { return ASDCP_i32_BE(*(ui32_t*)(m_MarkerData + 6)); }
-	  inline ui32_t XOsize()  { return ASDCP_i32_BE(*(ui32_t*)(m_MarkerData + 10)); }
-	  inline ui32_t YOsize()  { return ASDCP_i32_BE(*(ui32_t*)(m_MarkerData + 14)); }
-	  inline ui32_t XTsize()  { return ASDCP_i32_BE(*(ui32_t*)(m_MarkerData + 18)); }
-	  inline ui32_t YTsize()  { return ASDCP_i32_BE(*(ui32_t*)(m_MarkerData + 22)); }
-	  inline ui32_t XTOsize() { return ASDCP_i32_BE(*(ui32_t*)(m_MarkerData + 26)); }
-	  inline ui32_t YTOsize() { return ASDCP_i32_BE(*(ui32_t*)(m_MarkerData + 30)); }
-	  inline ui16_t Csize()   { return ASDCP_i16_BE(*(ui16_t*)(m_MarkerData + 34)); }
+	  inline ui16_t Rsize()   { return KM_i16_BE(*(ui16_t*)m_MarkerData); }
+	  inline ui32_t Xsize()   { return KM_i32_BE(*(ui32_t*)(m_MarkerData + 2)); }
+	  inline ui32_t Ysize()   { return KM_i32_BE(*(ui32_t*)(m_MarkerData + 6)); }
+	  inline ui32_t XOsize()  { return KM_i32_BE(*(ui32_t*)(m_MarkerData + 10)); }
+	  inline ui32_t YOsize()  { return KM_i32_BE(*(ui32_t*)(m_MarkerData + 14)); }
+	  inline ui32_t XTsize()  { return KM_i32_BE(*(ui32_t*)(m_MarkerData + 18)); }
+	  inline ui32_t YTsize()  { return KM_i32_BE(*(ui32_t*)(m_MarkerData + 22)); }
+	  inline ui32_t XTOsize() { return KM_i32_BE(*(ui32_t*)(m_MarkerData + 26)); }
+	  inline ui32_t YTOsize() { return KM_i32_BE(*(ui32_t*)(m_MarkerData + 30)); }
+	  inline ui16_t Csize()   { return KM_i16_BE(*(ui16_t*)(m_MarkerData + 34)); }
 	  void ReadComponent(ui32_t index, ImageComponent& IC);
 	  void Dump(FILE* stream = 0);
 	};
@@ -133,7 +134,7 @@ namespace JP2K
 	  const byte_t* m_MarkerData;
 	  ui32_t        m_DataSize;
 
-	  ASDCP_NO_COPY_CONSTRUCT(COM);
+	  KM_NO_COPY_CONSTRUCT(COM);
 	  COM();
 
 	public:

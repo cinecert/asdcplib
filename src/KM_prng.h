@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2005, John Hurst
+Copyright (c) 2006, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -24,30 +24,34 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-/*! \file    AS_DCP_UUID.h
+  /*! \file    KM_prng.h
     \version $Id$
-    \brief   UUID generation
-*/
+    \brief   Fortuna pseudo-random number generator
+  */
 
-#ifndef _AS_DCP_UUID_H_
-#define _AS_DCP_UUID_H_
+#ifndef _KM_PRNG_H_
+#define _KM_PRNG_H_
 
-#include <AS_DCP_system.h>
-#include <FortunaRNG.h>
+#include <KM_util.h>
 
-namespace ASDCP
+namespace Kumu
 {
-  void MakeUUID(byte_t* buf);
+  class FortunaRNG
+    {
+      KM_NO_COPY_CONSTRUCT(FortunaRNG);
 
-  void GenRandomUUID(FortunaRNG& RNG, byte_t* buf);
+    public:
+      FortunaRNG();
+      ~FortunaRNG();
+      const byte_t* FillRandom(byte_t* buf, ui32_t len);
+      const byte_t* FillRandom(ByteString&);
+    };
+} // namespace Kumu
 
-  // add UUID hyphens to 32 character hexadecimal string
-  char* hyphenate_UUID(char* str_buf, ui32_t buf_len);
 
-} // namespace ASDCP
 
-#endif //_AS_DCP_UUID_H_
+#endif // _KM_PRNG_H_
 
 //
-// end Timecode.h
+// end KM_prng.h
 //

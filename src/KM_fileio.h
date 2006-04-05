@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2003-2005, John Hurst
+Copyright (c) 2004-2006, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -24,27 +24,64 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-/*! \file    FileIO.h
+  /*! \file    KM_fileio.h
     \version $Id$
-    \brief   Cross-platform, simple file accessors
-*/
+    \brief   portable file i/o
+  */
 
+#ifndef _KM_FILEIO_H_
+#define _KM_FILEIO_H_
 
-#ifndef _FILEIO_H_
-#define _FILEIO_H_
+#include <KM_util.h>
+#include <string>
 
-#include <AS_DCP_system.h>
-#include <sys/stat.h>
-
-#ifdef WIN32
-#include <io.h>
+#ifdef KM_WIN32
+# include <io.h>
 #else
-#include <unistd.h>
-#include <sys/types.h>
+# include <dirent.h>
+# include <unistd.h>
+# include <time.h>
+# include <sys/types.h>
 #endif
 
-namespace ASDCP {
-#ifdef WIN32
+#include <sys/stat.h>
+
+
+
+namespace Kumu
+{
+#ifdef KM_WIN32
+  //
+  class DirScanner
+    {
+    public:
+      __int64               m_Handle;
+      struct _finddatai64_t m_FileInfo;
+
+      DirScanner()  {};
+      ~DirScanner() { Close(); }
+      Result_t Open(const char*);
+      Result_t Close();
+      Result_t GetNext(char*);
+    };
+#else // KM_WIN32
+  // POSIX directory scanner
+  //
+  class DirScanner
+    {
+    public:
+      DIR*       m_Handle;
+
+      DirScanner() : m_Handle(NULL) {}
+      ~DirScanner() { Close(); }
+      
+      Result_t  Open(const char*);
+      Result_t  Close();
+      Result_t  GetNext(char*);
+    };
+#endif // KM_WIN32
+
+#ifdef KM_WIN32
   typedef __int64  fsize_t;
   typedef __int64  fpos_t;
 
@@ -66,14 +103,23 @@ namespace ASDCP {
   };
 #endif
 
-  bool    PathIsFile(const char* pathname);
-  bool    PathIsDirectory(const char* pathname);
-  fsize_t FileSize(const char* pathname);
+  const ui32_t Kilobyte = 1024;
+  const ui32_t Megabyte = Kilobyte * Kilobyte;
+  const ui32_t Gigabyte = Megabyte * Kilobyte;
+
+  const ui32_t MaxFilePath = Kilobyte;
+
+  bool     PathIsFile(const char* pathname);
+  bool     PathIsDirectory(const char* pathname);
+  fsize_t  FileSize(const char* pathname);
+
+  // reads an entire file into a string
+  Result_t ReadFileIntoString(const char* filename, std::string& outString, ui32_t max_size = 256 * Kilobyte);
 
   //
   class FileReader
     {
-      ASDCP_NO_COPY_CONSTRUCT(FileReader);
+      KM_NO_COPY_CONSTRUCT(FileReader);
 
     protected:
       std::string m_Filename;
@@ -86,13 +132,13 @@ namespace ASDCP {
       Result_t OpenRead(const char*) const;                          // open the file for reading
       Result_t Close() const;                                        // close the file
       fsize_t  Size() const;                                         // returns the file's current size
-      Result_t Seek(ASDCP::fpos_t = 0, SeekPos_t = SP_BEGIN) const;  // move the file pointer
-      Result_t Tell(ASDCP::fpos_t* pos) const;                       // report the file pointer's location
+      Result_t Seek(Kumu::fpos_t = 0, SeekPos_t = SP_BEGIN) const;   // move the file pointer
+      Result_t Tell(Kumu::fpos_t* pos) const;                        // report the file pointer's location
       Result_t Read(byte_t*, ui32_t, ui32_t* = 0) const;             // read a buffer of data
 
-      inline ASDCP::fpos_t Tell() const                              // report the file pointer's location
+      inline Kumu::fpos_t Tell() const                               // report the file pointer's location
 	{
-	  ASDCP::fpos_t tmp_pos;
+	  Kumu::fpos_t tmp_pos;
 	  Tell(&tmp_pos);
 	  return tmp_pos;
 	}
@@ -102,13 +148,12 @@ namespace ASDCP {
       }
     };
 
-
   //
   class FileWriter : public FileReader
     {
       class h__iovec;
       mem_ptr<h__iovec>  m_IOVec;
-      ASDCP_NO_COPY_CONSTRUCT(FileWriter);
+      KM_NO_COPY_CONSTRUCT(FileWriter);
 
     public:
       FileWriter();
@@ -121,23 +166,21 @@ namespace ASDCP {
       // platforms that support it. For each call to Writev(const byte_t*, ui32_t, ui32_t*),
       // the given buffer is added to an internal iovec struct. All items on the list
       // are written to disk by a call to Writev();
-      Result_t Writev(const byte_t*, ui32_t);                       // queue buffer for write
+      Result_t Writev(const byte_t*, ui32_t);                       // queue buffer for "gather" write
       Result_t Writev(ui32_t* = 0);                                 // write all queued buffers
 
       // if you call this while there are unwritten items on the iovec list,
-      // the iovec list will be written to disk before the givn buffer,as though
+      // the iovec list will be written to disk before the given buffer,as though
       // you had called Writev() first.
       Result_t Write(const byte_t*, ui32_t, ui32_t* = 0);            // write buffer to disk
-
-
    };
 
-} // namespace ASDCP
+} // namespace Kumu
 
 
-#endif // _FILEREADER_H_
+#endif // _KM_FILEIO_H_
 
 
 //
-// end FileReader.h
+// end KM_fileio.h
 //

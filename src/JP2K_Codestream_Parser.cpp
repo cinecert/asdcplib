@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2004, John Hurst
+Copyright (c) 2004-2006, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -29,10 +29,12 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     \brief   AS-DCP library, JPEG 2000 codestream essence reader implementation
 */
 
+#include <KM_fileio.h>
 #include <AS_DCP.h>
-#include <FileIO.h>
 #include <JP2K.h>
 #include <assert.h>
+#include <KM_log.h>
+using Kumu::DefaultLogSink;
 
 //------------------------------------------------------------------------------------------
 
@@ -42,7 +44,7 @@ class ASDCP::JP2K::CodestreamParser::h__CodestreamParser
 
 public:
   PictureDescriptor  m_PDesc;
-  FileReader         m_File;
+  Kumu::FileReader   m_File;
 
   h__CodestreamParser()
   {
@@ -61,7 +63,7 @@ public:
 
     if ( ASDCP_SUCCESS(result) )
       {
-	fsize_t file_size = m_File.Size();
+	Kumu::fsize_t file_size = m_File.Size();
 
 	if ( FB.Capacity() < file_size )
 	  {

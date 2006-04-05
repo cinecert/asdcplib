@@ -41,7 +41,7 @@ namespace ASDCP
       class InterchangeObject;
 
       // seek an open file handle to the start of the RIP KLV packet
-      Result_t SeekToRIP(const FileReader&);
+      Result_t SeekToRIP(const Kumu::FileReader&);
       
       //
       class RIP : public ASDCP::KLVFilePacket
@@ -50,7 +50,7 @@ namespace ASDCP
 
 	public:
 	  //
-	  class Pair : public IArchive
+	  class Pair : public Kumu::IArchive
 	    {
 	    public:
 	      ui32_t BodySID;
@@ -58,33 +58,28 @@ namespace ASDCP
 
 	      Pair() : BodySID(0), ByteOffset(0) {}
 	      Pair(ui32_t sid, ui64_t offset) : BodySID(sid), ByteOffset(offset) {}
+	      virtual ~Pair() {}
 
 	      ui32_t Size() { return sizeof(ui32_t) + sizeof(ui64_t); }
 
-	      inline const char* ToString(char* str_buf) const {
-		char intbuf[IntBufferLen];
-		snprintf(str_buf, IdentBufferLen, "%-6lu: %s", BodySID, ui64sz(ByteOffset, intbuf));
+	      inline const char* EncodeString(char* str_buf, ui32_t buf_len) const {
+		Kumu::ui64Printer offset_str(ByteOffset);
+		snprintf(str_buf, buf_len, "%-6lu: %s", BodySID, offset_str.c_str());
 		return str_buf;
 	      }
 
-	      inline Result_t Unarchive(ASDCP::MemIOReader& Reader) {
-		Result_t result = Reader.ReadUi32BE(&BodySID);
-
-		if ( ASDCP_SUCCESS(result) )
-		  result = Reader.ReadUi64BE(&ByteOffset);
-
-		return result;
+	      inline virtual bool Unarchive(Kumu::MemIOReader* Reader) {
+		if ( ! Reader->ReadUi32BE(&BodySID) ) return false;
+		if ( ! Reader->ReadUi64BE(&ByteOffset) ) return false;
+		return true;
 	      }
 	      
-	      inline bool HasValue() const { return true; }
+	      inline virtual bool HasValue() const { return true; }
 	  
-	      inline Result_t Archive(ASDCP::MemIOWriter& Writer) const {
-		Result_t result = Writer.WriteUi32BE(BodySID);
-
-		if ( ASDCP_SUCCESS(result) )
-		  result = Writer.WriteUi64BE(ByteOffset);
-
-		return result;
+	      inline virtual bool Archive(Kumu::MemIOWriter* Writer) const {
+		if ( ! Writer->WriteUi32BE(BodySID) ) return false;
+		if ( ! Writer->WriteUi64BE(ByteOffset) ) return false;
+		return true;
 	      }
 	    };
 
@@ -92,15 +87,15 @@ namespace ASDCP
 
 	  RIP() {}
 	  virtual ~RIP() {}
-	  virtual Result_t InitFromFile(const ASDCP::FileReader& Reader);
-	  virtual Result_t WriteToFile(ASDCP::FileWriter& Writer);
+	  virtual Result_t InitFromFile(const Kumu::FileReader& Reader);
+	  virtual Result_t WriteToFile(Kumu::FileWriter& Writer);
 	  virtual void     Dump(FILE* = 0);
 	};
 
 
       //
       class Partition : public ASDCP::KLVFilePacket
-	{	
+	{
 	  ASDCP_NO_COPY_CONSTRUCT(Partition);
 
 	protected:
@@ -125,8 +120,8 @@ namespace ASDCP
 	  Partition();
 	  virtual ~Partition();
 	  virtual void     AddChildObject(InterchangeObject*);
-	  virtual Result_t InitFromFile(const ASDCP::FileReader& Reader);
-	  virtual Result_t WriteToFile(ASDCP::FileWriter& Writer, UL& PartitionLabel);
+	  virtual Result_t InitFromFile(const Kumu::FileReader& Reader);
+	  virtual Result_t WriteToFile(Kumu::FileWriter& Writer, UL& PartitionLabel);
 	  virtual ui32_t   ArchiveSize(); // returns the size of the archived structure
 	  virtual void     Dump(FILE* = 0);
 	};
@@ -148,24 +143,22 @@ namespace ASDCP
 	      TagValue    Tag;
 	      ASDCP::UL   UL;
 
-	      inline const char* ToString(char* str_buf) const {
-		snprintf(str_buf, IdentBufferLen, "%02x %02x: ", Tag.a, Tag.b);
-		UL.ToString(str_buf + strlen(str_buf));
+	      inline const char* EncodeString(char* str_buf, ui32_t buf_len) const {
+		snprintf(str_buf, buf_len, "%02x %02x: ", Tag.a, Tag.b);
+		UL.EncodeString(str_buf + strlen(str_buf), buf_len - strlen(str_buf));
 		return str_buf;
 	      }
 
-	      inline Result_t Unarchive(ASDCP::MemIOReader& Reader) {
-		Result_t result = Reader.ReadUi8(&Tag.a);
-		if ( ASDCP_SUCCESS(result) ) result = Reader.ReadUi8(&Tag.b);
-		if ( ASDCP_SUCCESS(result) ) result = UL.Unarchive(Reader);
-		return result;
+	      inline bool Unarchive(Kumu::MemIOReader* Reader) {
+		if ( ! Reader->ReadUi8(&Tag.a) ) return false;
+		if ( ! Reader->ReadUi8(&Tag.b) ) return false;
+		return UL.Unarchive(Reader);
 	      }
 
-	      inline Result_t Archive(ASDCP::MemIOWriter& Writer) const {
-		Result_t result = Writer.WriteUi8(Tag.a);
-		if ( ASDCP_SUCCESS(result) ) result = Writer.WriteUi8(Tag.b);
-		if ( ASDCP_SUCCESS(result) ) result = UL.Archive(Writer);
-		return result;
+	      inline bool Archive(Kumu::MemIOWriter* Writer) const {
+		if ( ! Writer->WriteUi8(Tag.a) ) return false;
+		if ( ! Writer->WriteUi8(Tag.b) ) return false;
+		return UL.Archive(Writer);
 	      }
 	    };
 
@@ -180,7 +173,7 @@ namespace ASDCP
 
           virtual Result_t InitFromBuffer(const byte_t* p, ui32_t l);
           virtual Result_t WriteToBuffer(ASDCP::FrameBuffer&);
-	  virtual Result_t WriteToFile(ASDCP::FileWriter& Writer);
+	  virtual Result_t WriteToFile(Kumu::FileWriter& Writer);
 	  virtual void     Dump(FILE* = 0);
 	};
 
@@ -253,9 +246,9 @@ namespace ASDCP
 	      ui32_t  ElementData;
 
 	      DeltaEntry() : PosTableIndex(-1), Slice(0), ElementData(0) {}
-	      Result_t    Unarchive(ASDCP::MemIOReader& Reader);
-	      Result_t    Archive(ASDCP::MemIOWriter& Writer) const;
-	      const char* ToString(char* str_buf) const;
+	      bool        Unarchive(Kumu::MemIOReader* Reader);
+	      bool        Archive(Kumu::MemIOWriter* Writer) const;
+	      const char* EncodeString(char* str_buf, ui32_t buf_len) const;
 	    };
 
 	  //
@@ -270,9 +263,9 @@ namespace ASDCP
 	      //	      Array<Rational>    PosTable;
 
 	      IndexEntry() : TemporalOffset(0), KeyFrameOffset(0), Flags(0), StreamOffset() {}
-	      Result_t    Unarchive(ASDCP::MemIOReader& Reader);
-	      Result_t    Archive(ASDCP::MemIOWriter& Writer) const;
-	      const char* ToString(char* str_buf) const;
+	      bool        Unarchive(Kumu::MemIOReader* Reader);
+	      bool        Archive(Kumu::MemIOWriter* Writer) const;
+	      const char* EncodeString(char* str_buf, ui32_t buf_len) const;
 	    };
 
 	  Rational    IndexEditRate;
@@ -315,8 +308,8 @@ namespace ASDCP
 
 	  OPAtomHeader();
 	  virtual ~OPAtomHeader();
-	  virtual Result_t InitFromFile(const ASDCP::FileReader& Reader);
-	  virtual Result_t WriteToFile(ASDCP::FileWriter& Writer, ui32_t HeaderLength = 16384);
+	  virtual Result_t InitFromFile(const Kumu::FileReader& Reader);
+	  virtual Result_t WriteToFile(Kumu::FileWriter& Writer, ui32_t HeaderLength = 16384);
 	  virtual void     Dump(FILE* = 0);
 	  virtual Result_t GetMDObjectByType(const byte_t*, InterchangeObject** = 0);
 	  Identification*  GetIdentification();
@@ -339,8 +332,8 @@ namespace ASDCP
 	 
 	  OPAtomIndexFooter();
 	  virtual ~OPAtomIndexFooter();
-	  virtual Result_t InitFromFile(const ASDCP::FileReader& Reader);
-	  virtual Result_t WriteToFile(ASDCP::FileWriter& Writer, ui64_t duration);
+	  virtual Result_t InitFromFile(const Kumu::FileReader& Reader);
+	  virtual Result_t WriteToFile(Kumu::FileWriter& Writer, ui64_t duration);
 	  virtual void     Dump(FILE* = 0);
 
 	  virtual Result_t Lookup(ui32_t frame_num, IndexTableSegment::IndexEntry&);

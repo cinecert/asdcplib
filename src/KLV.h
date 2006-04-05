@@ -32,8 +32,9 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef _KLV_H_
 #define _KLV_H_
 
-#include "FileIO.h"
-#include "MemIO.h"
+#include <KM_fileio.h>
+#include <KM_memio.h>
+#include "AS_DCP.h"
 #include "MDD.h"
 
 
@@ -47,6 +48,30 @@ namespace ASDCP
   const ui32_t MAX_KLV_PACKET_LENGTH = 1024*1024*64;
 
   const ui32_t IdentBufferLen = 128;
+
+const ui32_t IntBufferLen = 64;
+
+inline const char* i64sz(i64_t i, char* buf)
+{ 
+  assert(buf);
+#ifdef WIN32
+  snprintf(buf, IntBufferLen, "%I64d", i);
+#else
+  snprintf(buf, IntBufferLen, "%lld", i);
+#endif
+  return buf;
+}
+
+inline const char* ui64sz(ui64_t i, char* buf)
+{ 
+  assert(buf);
+#ifdef WIN32
+  snprintf(buf, IntBufferLen, "%I64u", i);
+#else
+  snprintf(buf, IntBufferLen, "%llu", i);
+#endif
+  return buf;
+}
 
   struct TagValue
   {
@@ -66,21 +91,47 @@ namespace ASDCP
     }
   };
 
-  //
-  class IArchive
+  using Kumu::UUID;
+
+  // Universal Label
+  class UL : public Kumu::Identifier<SMPTE_UL_LENGTH>
     {
     public:
-      virtual ~IArchive() {}
-      virtual Result_t Unarchive(ASDCP::MemIOReader& Reader) = 0;
-      virtual bool     HasValue() const = 0;
-      virtual Result_t Archive(ASDCP::MemIOWriter& Writer) const = 0;
+      UL() {}
+      UL(const byte_t* rhs) {
+	assert(rhs);
+	Set(rhs);
+      }
+
+      UL(const UL& rhs) {
+	Set(rhs.m_Value);
+      }
+
+      virtual ~UL() {}
+
+      bool operator==(const UL& rhs) const {
+	return ( memcmp(m_Value, rhs.m_Value, SMPTE_UL_LENGTH) == 0 ) ? true : false;
+      }
+
+      const char* EncodeString(char* str_buf, ui32_t buf_len) const;
     };
-} // namespace ASDCP
 
-#include "Identifier.h"
+  // UMID
+  class UMID : public Kumu::Identifier<SMPTE_UMID_LENGTH>
+    {
+    public:
+      UMID() {}
+      UMID(const UMID &rhs) {
+	Set(rhs.m_Value);
+      };
+      virtual ~UMID() {}
 
-namespace ASDCP
-{
+      void MakeUMID(int Type);
+      void MakeUMID(int Type, const UUID& ID);
+      const char* EncodeString(char* str_buf, ui32_t buf_len) const;
+    };
+
+
   //
   struct MDDEntry
   {
@@ -164,9 +215,9 @@ namespace ASDCP
       KLVFilePacket() {}
       virtual ~KLVFilePacket() {}
 
-      virtual Result_t InitFromFile(const FileReader&);
-      virtual Result_t InitFromFile(const FileReader&, const byte_t* label);
-      virtual Result_t WriteKLToFile(FileWriter& Writer, const byte_t* label, ui32_t length);
+      virtual Result_t InitFromFile(const Kumu::FileReader&);
+      virtual Result_t InitFromFile(const Kumu::FileReader&, const byte_t* label);
+      virtual Result_t WriteKLToFile(Kumu::FileWriter& Writer, const byte_t* label, ui32_t length);
     };
 
 } // namespace ASDCP

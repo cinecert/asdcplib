@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2005, John Hurst
+Copyright (c) 2005-2006, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -30,6 +30,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include <MPEG.h>
+#include <KM_log.h>
+using Kumu::DefaultLogSink;
 
 // walk a buffer stopping at the end of the buffer or the end of a VES
 // start code '00 00 01'.  If successful, returns address of first byte
@@ -103,9 +105,9 @@ public:
   h__StreamState() : m_State(ST_IDLE) {}
   ~h__StreamState() {}
 
-  void Goto_START_HEADER() {    m_State = ST_START_HEADER;  }
-  void Goto_IN_HEADER()    {    m_State = ST_IN_HEADER;  }
-  void Goto_IDLE()         {    m_State = ST_IDLE;  }
+  void Goto_START_HEADER() { m_State = ST_START_HEADER; }
+  void Goto_IN_HEADER()    { m_State = ST_IN_HEADER; }
+  void Goto_IDLE()         { m_State = ST_IDLE; }
   bool Test_IDLE()         { return m_State == ST_IDLE; }
   bool Test_START_HEADER() { return m_State == ST_START_HEADER; }
   bool Test_IN_HEADER()    { return m_State == ST_IN_HEADER; }
@@ -115,7 +117,7 @@ public:
 
 
 ASDCP::MPEG2::VESParser::VESParser() :
-  m_Delegate(0), m_HBufLen(0), m_ZeroCount(0), m_Partial(false)
+  m_Delegate(0), m_HBufLen(0), m_ZeroCount(0)
 {
   m_State = new h__StreamState;
 }
@@ -139,7 +141,6 @@ ASDCP::MPEG2::VESParser::Reset()
   m_State->Goto_IDLE();
   m_HBufLen = 0;
   m_ZeroCount = 0;
-  m_Partial = false;
 }
 
 //
@@ -149,17 +150,18 @@ ASDCP::MPEG2::VESParser::Parse(const byte_t* buf, ui32_t buf_len)
   ASDCP_TEST_NULL(buf);
   ASDCP_TEST_NULL(m_Delegate);
 
-  Result_t result;
-  const byte_t* end_p = buf + buf_len;
-  const byte_t* run_pos = buf; // track runs of uninteresting data as a position and count
-  ui32_t  run_len = 0;
+  Result_t result = RESULT_OK;
+  register const byte_t* end_p = buf + buf_len;
+  register const byte_t* run_pos = buf; // track runs of uninteresting data using a position and count
+  register ui32_t  run_len = 0;
 
   // search for MPEG2 headers
   // copy interesting data to a buffer and pass to delegate for processing
-  for ( const byte_t* p = buf; p < end_p; p++ )
+  for ( register const byte_t* p = buf; p < end_p; p++ )
     {
       if ( m_State->Test_IN_HEADER() )
 	{
+	  assert(run_len==0);
 	  m_HBuf[m_HBufLen++] = *p;
 	  assert(m_HBufLen < VESHeaderBufSize);
 	}
@@ -170,8 +172,44 @@ ASDCP::MPEG2::VESParser::Parse(const byte_t* buf, ui32_t buf_len)
 
       if ( m_State->Test_START_HEADER() ) // *p is a start code
 	{
-	  // Do we already have a header? We need to flush it...
-	  if ( m_HBufLen > 0)
+	  if ( m_HBufLen == 0) // not already collecting a header
+	    {
+	      m_HBuf[0] = m_HBuf[1] = 0; m_HBuf[2] = 1; m_HBuf[3] = *p;
+
+	      // is this one we want?
+	      if ( *p == PIC_START || *p == SEQ_START || *p == EXT_START || *p == GOP_START )
+		{
+		  m_HBufLen = 4;
+		  m_State->Goto_IN_HEADER();
+
+		  switch ( run_len )
+		    {
+		    case 1: // we suppressed writing 001 when exiting from the last call
+		    case 4: // we have exactly 001x
+		      break;
+		    case 2: // we have 1x
+		    case 3: // we have 01x
+		      m_Delegate->Data(this, run_pos, (run_len == 2 ? -2 : -1));
+		      break;
+
+		    default:
+		      m_Delegate->Data(this, run_pos, run_len - 4);
+		    }
+
+		  run_len = 0;
+		}
+	      else
+		{
+		  m_State->Goto_IDLE();
+
+		  if ( run_len == 1 ) // did we suppress writing 001 when exiting from the last call?
+		    {
+		      m_Delegate->Data(this, m_HBuf, 4);
+		      run_len = 0;
+		    }
+		}
+	    }
+	  else // currently collecting a header, requires a flush before handling
 	    {
 	      m_HBufLen -= 3; // remove the current partial start code
 
@@ -189,48 +227,38 @@ ASDCP::MPEG2::VESParser::Parse(const byte_t* buf, ui32_t buf_len)
 		  result = RESULT_RAW_FORMAT;
 		}
 
-	      // the next run starts with the start code that got us here
-	      run_len = 4;
-	      run_pos = p-3;
-	      m_HBufLen = 0;
-
 	      // Parser handlers return RESULT_FALSE to teriminate without error
 	      if ( result != RESULT_OK )
 		{
 		  m_State->Goto_IDLE();
 		  return result;
 		}
-	    }
-
-	  // all headers start with this same start code: 00 00 01 xx
- 	  m_HBuf[0] = m_HBuf[1] = 0; m_HBuf[2] = 1; m_HBuf[3] = *p;
-
-	  // is this a header we want?
-	  if ( *p == PIC_START || *p == SEQ_START || *p == EXT_START || *p == GOP_START )
-	    {
-	      // we're starting a new header, flush the current run
-	      if ( run_len > 4 )
-		{
-		  m_Delegate->Data(this, run_pos, run_len - 4);
-		  run_len = 0;
-		}
-
-	      m_Partial = false;
-	      m_HBufLen = 4;
-	      m_State->Goto_IN_HEADER();
-	    }
-	  else
-	    {
-	      if ( *p == FIRST_SLICE )
-		result = m_Delegate->Slice(this);
-
-	      if ( m_Partial )
-		{
-		  m_Partial = false;
-		  m_Delegate->Data(this, m_HBuf, 3);
-		}
 	      
-	      m_State->Goto_IDLE();
+	      m_HBuf[0] = m_HBuf[1] = 0; m_HBuf[2] = 1; m_HBuf[3] = *p; // 001x
+	      run_len = 0;
+
+	      // is this a header we want?
+	      if ( *p == PIC_START || *p == SEQ_START || *p == EXT_START || *p == GOP_START )
+		{
+		  m_HBufLen = 4;
+		  m_State->Goto_IN_HEADER();
+		}
+	      else
+		{
+		  m_HBufLen = 0;
+		  m_State->Goto_IDLE();
+
+		  if ( *p >= FIRST_SLICE && *p <= LAST_SLICE )
+		    {
+		      result = m_Delegate->Slice(this, *p);
+
+		      if ( result != RESULT_OK )
+			return result;
+		    }
+
+		  m_Delegate->Data(this, m_HBuf, 4);
+		  run_pos = p+1;
+		}
 	    }
 	}
       else if ( *p == 0 )
@@ -248,9 +276,9 @@ ASDCP::MPEG2::VESParser::Parse(const byte_t* buf, ui32_t buf_len)
 
   if ( run_len > 0 )
     {
-      if ( m_State->Test_START_HEADER() )
+      if ( m_State->Test_START_HEADER() && run_len != 0 )
 	{
-	  m_Partial = true; // 'partial' means we have a partial header in progress
+	  assert(run_len > 2);
 	  run_len -= 3;
 	}
 

@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2005, John Hurst
+Copyright (c) 2005-2006, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -33,7 +33,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include <JP2K.h>
-#include <hex_utils.h>
+#include <KM_log.h>
+using Kumu::DefaultLogSink;
 
 
 // when indexed with the second byte of a marker code, this table will procuce one of
@@ -161,7 +162,7 @@ ASDCP::JP2K::Accessor::COM::Dump(FILE* stream)
     }
   else
     {
-      hexdump(CommentData(), CommentSize(), stream);
+      Kumu::hexdump(CommentData(), CommentSize(), stream);
     }
 }
 
@@ -218,5 +219,5 @@ ASDCP::JP2K::GetMarkerString(Marker_t m)
 }
 
 //
-// end 
+// end JP2K.cpp
 //

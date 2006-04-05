@@ -31,7 +31,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "AS_DCP.h"
 #include "MXF.h"
-#include "hex_utils.h"
+#include <KM_log.h>
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
@@ -40,14 +40,13 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <sys/stat.h>
 
 using namespace ASDCP;
+using Kumu::DefaultLogSink;
+
+const char* PACKAGE = "klvwalk";
 
 
 //------------------------------------------------------------------------------------------
 //
-
-// There is no header file thet defines this function.
-// You just have to know it's there...
-void set_debug_mode(bool info_mode, bool debug_mode);
 
 
 int
@@ -56,19 +55,24 @@ main(int argc, char** argv)
   Result_t result = RESULT_OK;
   bool read_mxf = false;
   int arg_i = 1;
-  set_debug_mode(true, true);
 
-  if ( strcmp(argv[1], "-r") == 0 )
+  if ( argc > arg_i && strcmp(argv[1], "-r") == 0 )
     {
       read_mxf = true;
       arg_i++;
+    }
+
+  if ( argc - arg_i != 1 )
+    {
+      fprintf(stderr, "usage: %s [-r] <infile>\n", PACKAGE);
+      return 1;
     }
 
   fprintf(stderr, "Opening file %s\n", argv[arg_i]);
 
   if ( read_mxf )
     {
-      ASDCP::FileReader        Reader;
+      Kumu::FileReader        Reader;
       ASDCP::MXF::OPAtomHeader Header;
 
       result = Reader.OpenRead(argv[arg_i]);
@@ -95,7 +99,7 @@ main(int argc, char** argv)
     }
   else // dump klv
     {
-      ASDCP::FileReader Reader;
+      Kumu::FileReader Reader;
       KLVFilePacket KP;
 
       result = Reader.OpenRead(argv[arg_i]);
@@ -119,7 +123,7 @@ main(int argc, char** argv)
 
       if ( result != RESULT_FAIL )
 	{
-	  fputs(GetResultString(result), stderr);
+	  fputs(result, stderr);
 	  fputc('\n', stderr);
 	}
 

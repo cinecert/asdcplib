@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2004, John Hurst
+Copyright (c) 2004-2006, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -31,6 +31,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <Wav.h>
 #include <assert.h>
+#include <KM_log.h>
+using Kumu::DefaultLogSink;
 
 using namespace ASDCP;
 using namespace ASDCP::PCM;
@@ -42,7 +44,7 @@ using namespace ASDCP::Wav;
 //
 class ASDCP::PCM::WAVParser::h__WAVParser
 {
-  FileReader       m_FileReader;
+  Kumu::FileReader m_FileReader;
   bool             m_EOF;
   ui32_t           m_DataStart;
   ui32_t           m_DataLength;

@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2005-2006, John Hurst
+Copyright (c) 2004-2006, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -24,23 +24,27 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-/*! \file    Mutex.h
+  /*! \file    KM_mutex.h
     \version $Id$
-    \brief   Portable mutex wrapper
-*/
+    \brief   platform portability
+  */
 
-#ifndef _MUTEX_H_
-#define _MUTEX_H_
+#ifndef _KM_MUTEX_H_
+#define _KM_MUTEX_H_
 
-#include "AS_DCP_system.h"
+#include <KM_platform.h>
 
-namespace ASDCP
+#ifndef KM_WIN32
+# include <pthread.h>
+#endif
+
+namespace Kumu
 {
-#ifdef WIN32
+#ifdef KM_WIN32
   class Mutex
     {
       CRITICAL_SECTION m_Mutex;
-      ASDCP_NO_COPY_CONSTRUCT(Mutex);
+      KM_NO_COPY_CONSTRUCT(Mutex);
 
     public:
       inline Mutex()       { ::InitializeCriticalSection(&m_Mutex); }
@@ -48,12 +52,11 @@ namespace ASDCP
       inline void Lock()   { ::EnterCriticalSection(&m_Mutex); }
       inline void Unlock() { ::LeaveCriticalSection(&m_Mutex); }
     };
-#else // WIN32
-#include <pthread.h>
+#else // KM_WIN32
   class Mutex
     {
       pthread_mutex_t m_Mutex;
-      ASDCP_NO_COPY_CONSTRUCT(Mutex);
+      KM_NO_COPY_CONSTRUCT(Mutex);
       
     public:
       inline Mutex()       { pthread_mutex_init(&m_Mutex, 0); }
@@ -61,7 +64,7 @@ namespace ASDCP
       inline void Lock()   { pthread_mutex_lock(&m_Mutex); }
       inline void Unlock() { pthread_mutex_unlock(&m_Mutex); }
     };
-#endif // WIN32
+#endif // KM_WIN32
 
   // automatic Mutex management within a block - 
   // the mutex is created by the constructor and
@@ -70,17 +73,17 @@ namespace ASDCP
     {
       Mutex& m_Mutex;
       AutoMutex();
-      ASDCP_NO_COPY_CONSTRUCT(AutoMutex);
+      KM_NO_COPY_CONSTRUCT(AutoMutex);
 
     public:
       AutoMutex(Mutex& Mtx) : m_Mutex(Mtx) { m_Mutex.Lock(); }
       ~AutoMutex() { m_Mutex.Unlock(); }
     };
 
-} // namespace ASDCP
+} // namespace Kumu
 
-#endif // _MUTEX_H_
+#endif // _KM_MUTEX_H_
 
 //
-// end Mutex.h
+// end KM_mutex.h
 //

@@ -50,11 +50,10 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <iostream>
 #include <assert.h>
 
-#include <FileIO.h>
+#include <KM_fileio.h>
+#include <KM_prng.h>
 #include <PCMParserList.h>
 #include <WavFileWriter.h>
-#include <hex_utils.h>
-#include <AS_DCP_UUID.h>
 #include <MXF.h>
 #include <Metadata.h>
 
@@ -138,46 +137,46 @@ USAGE: %s [-i [-H, -n]|-c <filename> [-p <rate>, -e, -M, -R]|-x <root-name> [-m]
 
   fprintf(stream, "\
 Major modes:\n\
-  -i              - show file info\n\
-  -c <filename>   - create AS-DCP file from input(s)\n\
-  -x <root-name>  - extract essence from AS-DCP file to named file(s)\n\
-  -g              - generate a random 16 byte value to stdout\n\
-  -u              - generate a random UUID value to stdout\n\
+  -i              - Show file info\n\
+  -c <filename>   - Create AS-DCP file from input(s)\n\
+  -x <root-name>  - Extract essence from AS-DCP file to named file(s)\n\
+  -g              - Generate a random 16 byte value to stdout\n\
+  -u              - Generate a random UUID value to stdout\n\
   -G              - Perform GOP start lookup test on MPEG file\n\
-  -V              - show version\n\
-  -h              - show help\n\
+  -V              - Show version\n\
+  -h              - Show help\n\
 \n");
 
   fprintf(stream, "\
 Security Options:\n\
-  -j <key-id-str> - write key ID instead of creating a random value\n\
-  -k <key-string> - use key for ciphertext operations\n\
-  -e              - encrypt MPEG or JP2K headers (default)\n\
-  -E              - do not encrypt MPEG or JP2K headers\n\
-  -M              - do not create HMAC values when writing\n\
+  -j <key-id-str> - Write key ID instead of creating a random value\n\
+  -k <key-string> - Use key for ciphertext operations\n\
+  -e              - Encrypt MPEG or JP2K headers (default)\n\
+  -E              - Do not encrypt MPEG or JP2K headers\n\
+  -M              - Do not create HMAC values when writing\n\
   -m              - verify HMAC values when reading\n\
 \n");
 
   fprintf(stream, "\
 Read/Write Options:\n\
   -b <buf-size>   - Size (in bytes) of the picture frame buffer, default: 2097152 (2MB)\n\
-  -f <frame-num>  - starting frame number, default 0\n\
-  -d <duration>   - number of frames to process, default all\n\
+  -f <frame-num>  - Starting frame number, default 0\n\
+  -d <duration>   - Number of frames to process, default all\n\
   -p <rate>       - fps of picture when wrapping PCM or JP2K:, use one of [23|24|48], 24 is default\n\
   -L              - Write SMPTE UL values instead of MXF Interop\n\
   -R              - Repeat the first frame over the entire file (picture essence only, requires -c, -d)\n\
   -S              - Split Wave essence to stereo WAV files during extract (default = multichannel WAV)\n\
-  -W              - read input file only, do not write source file\n\
+  -W              - Read input file only, do not write source file\n\
 \n");
 
   fprintf(stream, "\
 Info Options:\n\
-  -H              - show MXF header metadata, used with option -i\n\
-  -n              - show index, used with option -i\n\
+  -H              - Show MXF header metadata, used with option -i\n\
+  -n              - Show index, used with option -i\n\
 \n\
 Other Options:\n\
-  -s <number>     - number of bytes of frame buffer to be dumped as hex to stderr (use with -v)\n\
-  -v              - verbose, show extra detail during run\n\
+  -s <number>     - Number of bytes of frame buffer to be dumped as hex to stderr (use with -v)\n\
+  -v              - Verbose, show extra detail during run\n\
 \n\
   NOTES: o There is no option grouping, all options must be distinct arguments.\n\
          o All option arguments must be separated from the option by whitespace.\n\
@@ -296,7 +295,7 @@ public:
 		TEST_EXTRA_ARG(i, 'k');
 		{
 		  ui32_t length;
-		  hex2bin(argv[i], key_value, KeyLen, &length);
+		  Kumu::hex2bin(argv[i], key_value, KeyLen, &length);
 
 		  if ( length != KeyLen )
 		    {
@@ -310,7 +309,7 @@ public:
 		TEST_EXTRA_ARG(i, 'j');
 		{
 		  ui32_t length;
-		  hex2bin(argv[i], key_id_value, UUIDlen, &length);
+		  Kumu::hex2bin(argv[i], key_id_value, UUIDlen, &length);
 
 		  if ( length != UUIDlen )
 		    {
@@ -402,7 +401,7 @@ write_MPEG2_file(CommandOptions& Options)
   MPEG2::MXFWriter   Writer;
   MPEG2::VideoDescriptor VDesc;
   byte_t             IV_buf[CBC_BLOCK_SIZE];
-  FortunaRNG         RNG;
+  Kumu::FortunaRNG   RNG;
 
   // set up essence parser
   Result_t result = Parser.OpenRead(Options.filenames[0]);
@@ -424,18 +423,18 @@ write_MPEG2_file(CommandOptions& Options)
   if ( ASDCP_SUCCESS(result) && ! Options.no_write_flag )
     {
       WriterInfo Info = s_MyInfo;  // fill in your favorite identifiers here
-      GenRandomUUID(RNG, Info.AssetUUID);
+      Kumu::GenRandomUUID(Info.AssetUUID);
 
       if ( Options.use_smpte_labels )
 	{
-	  Info.LabelSetType = LS_MXF_INTEROP;
+	  Info.LabelSetType = LS_MXF_SMPTE;
 	  fprintf(stderr, "ATTENTION! Writing SMPTE Universal Labels\n");
 	}
 
       // configure encryption
       if( Options.key_flag )
 	{
-	  GenRandomUUID(RNG, Info.ContextID);
+	  Kumu::GenRandomUUID(Info.ContextID);
 	  Info.EncryptedEssence = true;
 
 	  if ( Options.key_id_flag )
@@ -453,7 +452,7 @@ write_MPEG2_file(CommandOptions& Options)
 	    {
 	      Info.UsesHMAC = true;
 	      HMAC = new HMACContext;
-	      result = HMAC->InitKey(Options.key_value);
+	      result = HMAC->InitKey(Options.key_value, Info.LabelSetType);
 	    }
 	}
 
@@ -517,7 +516,7 @@ read_MPEG2_file(CommandOptions& Options)
   HMACContext*       HMAC = 0;
   MPEG2::MXFReader   Reader;
   MPEG2::FrameBuffer FrameBuffer(Options.fb_size);
-  FileWriter         OutFile;
+  Kumu::FileWriter   OutFile;
   ui32_t             frame_count = 0;
 
   Result_t result = Reader.OpenRead(Options.filenames[0]);
@@ -555,7 +554,7 @@ read_MPEG2_file(CommandOptions& Options)
 	  if ( Info.UsesHMAC )
 	    {
 	      HMAC = new HMACContext;
-	      result = HMAC->InitKey(Options.key_value);
+	      result = HMAC->InitKey(Options.key_value, Info.LabelSetType);
 	    }
 	  else
 	    {
@@ -649,8 +648,8 @@ write_JP2K_file(CommandOptions& Options)
   JP2K::FrameBuffer       FrameBuffer(Options.fb_size);
   JP2K::PictureDescriptor PDesc;
   JP2K::SequenceParser    Parser;
-  byte_t           IV_buf[CBC_BLOCK_SIZE];
-  FortunaRNG       RNG;
+  byte_t                  IV_buf[CBC_BLOCK_SIZE];
+  Kumu::FortunaRNG        RNG;
 
   // set up essence parser
   Result_t result = Parser.OpenRead(Options.filenames[0]);
@@ -673,18 +672,18 @@ write_JP2K_file(CommandOptions& Options)
   if ( ASDCP_SUCCESS(result) && ! Options.no_write_flag )
     {
       WriterInfo Info = s_MyInfo;  // fill in your favorite identifiers here
-      GenRandomUUID(RNG, Info.AssetUUID);
+      Kumu::GenRandomUUID(Info.AssetUUID);
 
       if ( Options.use_smpte_labels )
 	{
-	  Info.LabelSetType = LS_MXF_INTEROP;
+	  Info.LabelSetType = LS_MXF_SMPTE;
 	  fprintf(stderr, "ATTENTION! Writing SMPTE Universal Labels\n");
 	}
 
       // configure encryption
       if( Options.key_flag )
 	{
-	  GenRandomUUID(RNG, Info.ContextID);
+	  Kumu::GenRandomUUID(Info.ContextID);
 	  Info.EncryptedEssence = true;
 
 	  if ( Options.key_id_flag )
@@ -702,7 +701,7 @@ write_JP2K_file(CommandOptions& Options)
 	    {
 	      Info.UsesHMAC = true;
 	      HMAC = new HMACContext;
-	      result = HMAC->InitKey(Options.key_value);
+	      result = HMAC->InitKey(Options.key_value, Info.LabelSetType);
 	    }
 	}
 
@@ -796,7 +795,7 @@ read_JP2K_file(CommandOptions& Options)
 	  if ( Info.UsesHMAC )
 	    {
 	      HMAC = new HMACContext;
-	      result = HMAC->InitKey(Options.key_value);
+	      result = HMAC->InitKey(Options.key_value, Info.LabelSetType);
 	    }
 	  else
 	    {
@@ -815,7 +814,7 @@ read_JP2K_file(CommandOptions& Options)
 
       if ( ASDCP_SUCCESS(result) )
 	{
-	  FileWriter OutFile;
+	  Kumu::FileWriter OutFile;
 	  char filename[256];
 	  ui32_t write_count;
 	  snprintf(filename, 256, "%s%06lu.j2c", Options.file_root, i);
@@ -842,15 +841,15 @@ read_JP2K_file(CommandOptions& Options)
 Result_t
 write_PCM_file(CommandOptions& Options)
 {
-  AESEncContext*   Context = 0;
-  HMACContext*     HMAC = 0;
-  PCMParserList    Parser;
-  PCM::MXFWriter   Writer;
-  PCM::FrameBuffer FrameBuffer;
+  AESEncContext*    Context = 0;
+  HMACContext*      HMAC = 0;
+  PCMParserList     Parser;
+  PCM::MXFWriter    Writer;
+  PCM::FrameBuffer  FrameBuffer;
   PCM::AudioDescriptor ADesc;
-  Rational         PictureRate = Options.PictureRate();
-  byte_t           IV_buf[CBC_BLOCK_SIZE];
-  FortunaRNG       RNG;
+  Rational          PictureRate = Options.PictureRate();
+  byte_t            IV_buf[CBC_BLOCK_SIZE];
+  Kumu::FortunaRNG  RNG;
 
   // set up essence parser
   Result_t result = Parser.OpenRead(Options.file_count, Options.filenames, PictureRate);
@@ -876,18 +875,18 @@ write_PCM_file(CommandOptions& Options)
   if ( ASDCP_SUCCESS(result) && ! Options.no_write_flag )
     {
       WriterInfo Info = s_MyInfo;  // fill in your favorite identifiers here
-      GenRandomUUID(RNG, Info.AssetUUID);
+      Kumu::GenRandomUUID(Info.AssetUUID);
 
       if ( Options.use_smpte_labels )
 	{
-	  Info.LabelSetType = LS_MXF_INTEROP;
+	  Info.LabelSetType = LS_MXF_SMPTE;
 	  fprintf(stderr, "ATTENTION! Writing SMPTE Universal Labels\n");
 	}
 
       // configure encryption
       if( Options.key_flag )
 	{
-	  GenRandomUUID(RNG, Info.ContextID);
+	  Kumu::GenRandomUUID(Info.ContextID);
 	  Info.EncryptedEssence = true;
 
 	  if ( Options.key_id_flag )
@@ -905,7 +904,7 @@ write_PCM_file(CommandOptions& Options)
 	    {
 	      Info.UsesHMAC = true;
 	      HMAC = new HMACContext;
-	      result = HMAC->InitKey(Options.key_value);
+	      result = HMAC->InitKey(Options.key_value, Info.LabelSetType);
 	    }
 	}
 
@@ -1006,7 +1005,7 @@ read_PCM_file(CommandOptions& Options)
 	      return RESULT_FAIL;
 	    }
 
-	  last_frame = xmin(Options.start_frame + last_frame, ADesc.ContainerDuration);
+	  last_frame = Kumu::xmin(Options.start_frame + last_frame, ADesc.ContainerDuration);
 	}
 
       ADesc.ContainerDuration = last_frame - Options.start_frame;
@@ -1026,7 +1025,7 @@ read_PCM_file(CommandOptions& Options)
 	  if ( Info.UsesHMAC )
 	    {
 	      HMAC = new HMACContext;
-	      result = HMAC->InitKey(Options.key_value);
+	      result = HMAC->InitKey(Options.key_value, Info.LabelSetType);
 	    }
 	  else
 	    {
@@ -1165,7 +1164,7 @@ show_file_info(CommandOptions& Options)
   else
     {
       fprintf(stderr, "File is not AS-DCP: %s\n", Options.filenames[0]);
-      FileReader   Reader;
+      Kumu::FileReader   Reader;
       MXF::OPAtomHeader TestHeader;
 
       result = Reader.OpenRead(Options.filenames[0]);
@@ -1226,22 +1225,19 @@ main(int argc, const char** argv)
     }
   else if ( Options.genkey_flag )
     {
-      FortunaRNG RNG;
+      Kumu::FortunaRNG RNG;
       byte_t bin_buf[KeyLen];
       char   str_buf[40];
 
       RNG.FillRandom(bin_buf, KeyLen);
-      printf("%s\n", bin2hex(bin_buf, KeyLen, str_buf, 40));
+      printf("%s\n", Kumu::bin2hex(bin_buf, KeyLen, str_buf, 40));
     }
   else if ( Options.genid_flag )
     {
-      FortunaRNG RNG;
-      byte_t bin_buf[KeyLen];
+      UUID TmpID;
+      Kumu::GenRandomValue(TmpID);
       char   str_buf[40];
-
-      GenRandomUUID(RNG, bin_buf);
-      bin2hex(bin_buf, KeyLen, str_buf, 40);
-      printf("%s\n", hyphenate_UUID(str_buf, 40));
+      printf("%s\n", TmpID.EncodeHex(str_buf, 40));
     }
   else if ( Options.extract_flag )
     {
@@ -1305,13 +1301,13 @@ main(int argc, const char** argv)
 	}
     }
 
-  if ( result != RESULT_OK )
+  if ( ASDCP_FAILURE(result) )
     {
       fputs("Program stopped on error.\n", stderr);
 
       if ( result != RESULT_FAIL )
 	{
-	  fputs(GetResultString(result), stderr);
+	  fputs(result, stderr);
 	  fputc('\n', stderr);
 	}
 

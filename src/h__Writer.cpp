@@ -30,7 +30,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include "AS_DCP_internal.h"
-#include "MemIO.h"
 #include "KLV.h"
 
 using namespace ASDCP;
@@ -120,7 +119,7 @@ ASDCP::h__Writer::WriteMXFHeader(const std::string& PackageLabel, const UL& Wrap
   m_HeaderPart.AddChildObject(Ident);
   m_HeaderPart.m_Preface->Identifications.push_back(Ident->InstanceUID);
 
-  Ident->ThisGenerationUID.GenRandomValue();
+  Kumu::GenRandomValue(Ident->ThisGenerationUID);
   Ident->CompanyName = m_Info.CompanyName.c_str();
   Ident->ProductName = m_Info.ProductName.c_str();
   Ident->VersionString = m_Info.ProductVersion.c_str();
@@ -315,11 +314,11 @@ Result_t
 ASDCP::h__Writer::WriteEKLVPacket(const ASDCP::FrameBuffer& FrameBuf, const byte_t* EssenceUL,
 				  AESEncContext* Ctx, HMACContext* HMAC)
 {
-  Result_t result;
+  Result_t result = RESULT_OK;
   IntegrityPack IntPack;
 
   byte_t overhead[128];
-  MemIOWriter Overhead(overhead, 128);
+  Kumu::MemIOWriter Overhead(overhead, 128);
 
   if ( FrameBuf.Size() == 0 )
     {
@@ -371,12 +370,12 @@ ASDCP::h__Writer::WriteEKLVPacket(const ASDCP::FrameBuffer& FrameBuf, const byte
 	  Overhead.WriteUi64BE(FrameBuf.Size());                         // write SourceLength
 	  Overhead.WriteBER(m_CtFrameBuf.Size(), MXF_BER_LENGTH);       // write ESV length
 
-	  result = m_File.Writev(Overhead.Data(), Overhead.Size());
+	  result = m_File.Writev(Overhead.Data(), Overhead.Length());
 	}
 
       if ( ASDCP_SUCCESS(result) )
 	{
-	  m_StreamOffset += Overhead.Size();
+	  m_StreamOffset += Overhead.Length();
 	  // write encrypted source value
 	  result = m_File.Writev((byte_t*)m_CtFrameBuf.RoData(), m_CtFrameBuf.Size());
 	}
@@ -386,7 +385,7 @@ ASDCP::h__Writer::WriteEKLVPacket(const ASDCP::FrameBuffer& FrameBuf, const byte
 	  m_StreamOffset += m_CtFrameBuf.Size();
 
 	  byte_t hmoverhead[512];
-	  MemIOWriter HMACOverhead(hmoverhead, 512);
+	  Kumu::MemIOWriter HMACOverhead(hmoverhead, 512);
 
 	  // write the HMAC
 	  if ( m_Info.UsesHMAC )
@@ -400,21 +399,21 @@ ASDCP::h__Writer::WriteEKLVPacket(const ASDCP::FrameBuffer& FrameBuf, const byte
 	    }
 
 	  // write HMAC
-	  result = m_File.Writev(HMACOverhead.Data(), HMACOverhead.Size());
-	  m_StreamOffset += HMACOverhead.Size();
+	  result = m_File.Writev(HMACOverhead.Data(), HMACOverhead.Length());
+	  m_StreamOffset += HMACOverhead.Length();
 	}
     }
   else
     {
       Overhead.WriteRaw((byte_t*)EssenceUL, SMPTE_UL_LENGTH);
       Overhead.WriteBER(FrameBuf.Size(), MXF_BER_LENGTH);
-      result = m_File.Writev(Overhead.Data(), Overhead.Size());
+      result = m_File.Writev(Overhead.Data(), Overhead.Length());
  
       if ( ASDCP_SUCCESS(result) )
 	result = m_File.Writev((byte_t*)FrameBuf.RoData(), FrameBuf.Size());
 
       if ( ASDCP_SUCCESS(result) )
-	m_StreamOffset += Overhead.Size() + FrameBuf.Size();
+	m_StreamOffset += Overhead.Length() + FrameBuf.Size();
     }
 
   if ( ASDCP_SUCCESS(result) )

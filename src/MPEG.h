@@ -29,10 +29,11 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     \brief   MPEG2 VES parser interface
 */
 
-#ifndef _ASDCP_MPEG_H_
-#define _ASDCP_MPEG_H_
+#ifndef _MPEG_H_
+#define _MPEG_H_
 
-#include <AS_DCP_system.h>
+#include <KM_platform.h>
+#include "AS_DCP.h"
 #include <stdio.h>
 #include <assert.h>
 
@@ -48,6 +49,7 @@ namespace ASDCP
 	EXT_START   = 0xb5,
 	GOP_START   = 0xb8,
 	FIRST_SLICE = 0x01,
+	LAST_SLICE  = 0xaf,
 	INVALID     = 0xff
       };
 
@@ -90,7 +92,7 @@ namespace ASDCP
       class VESParser
 	{
 	  class h__StreamState;
-	  mem_ptr<h__StreamState> m_State;
+	  Kumu::mem_ptr<h__StreamState> m_State;
 	  VESParserDelegate*      m_Delegate;
 
 	  ui32_t         m_HBufLen; // temp space for partial header contents
@@ -106,7 +108,7 @@ namespace ASDCP
 
 	  void     SetDelegate(VESParserDelegate*); // you must call this before Parse()
 	  Result_t Parse(const byte_t*, ui32_t);  // call repeatedly
-	  void     Reset(); // resets the internal state machine and counters
+	  void     Reset(); // resets the internal state machine and counters, return to the top of the file
 	};
 
       // Parser Event Delegate Interface
@@ -114,7 +116,7 @@ namespace ASDCP
       // Create a concrete subclass and give it to the parser by calling SetDelegate().
       // The respective method will be called when a header of the named type is found.
       // Handler methods should return RESULT_OK to continue processing or RESULT_FALSE
-      // to stop without error.
+      // to terminate parsing without signaling an error.
       //
       class VESParserDelegate
 	{
@@ -122,17 +124,20 @@ namespace ASDCP
 	  virtual ~VESParserDelegate() {}
 
 	  // header handlers
-	  virtual Result_t Picture(VESParser*, const byte_t*, ui32_t) = 0;
+	  virtual Result_t Picture(VESParser* Caller, const byte_t* header_buf, ui32_t header_len) = 0;
 	  virtual Result_t Extension(VESParser*, const byte_t*, ui32_t) = 0;
 	  virtual Result_t Sequence(VESParser*, const byte_t*, ui32_t) = 0;
 	  virtual Result_t GOP(VESParser*, const byte_t*, ui32_t) = 0;
 
 	  // this is not a header handler, it is a signal that actual picture data
 	  // has started. All Slice data is reported via the Data() method.
-	  virtual Result_t Slice(VESParser*) = 0;
+	  virtual Result_t Slice(VESParser*, byte_t slice_id) = 0;
 
 	  // Any data not given to the header handlers above is reported here
-	  virtual Result_t Data(VESParser*, const byte_t*, ui32_t) = 0;
+	  // This method may be called with a value of -1 or -2. This will happen
+	  // when processing a start code that has one or two leading zeros
+	  // in the preceding buffer
+	  virtual Result_t Data(VESParser*, const byte_t*, i32_t) = 0;
 	};
 
 
@@ -141,7 +146,9 @@ namespace ASDCP
       //
       // For use within parser delegate methods. The constructor expects a pointer to a buffer
       // containing two zero bytes, a one byte, a start code and some number of header bytes.
-      // They are not documented further as they should be self-explanatory.
+      // They are not documented further as it is hoped that they are self-explanatory.
+
+      //
       namespace Accessor
 	{
 	  // decoding tables
@@ -169,7 +176,7 @@ namespace ASDCP
 	    };
 
 	  //
-	  class SequenceEx
+	  class SequenceEx // tension
 	    {
 	      const byte_t* m_p;
 	      ASDCP_NO_COPY_CONSTRUCT(SequenceEx);
@@ -230,7 +237,7 @@ namespace ASDCP
 
 } // namespace ASDCP
 
-#endif // ASDCP_MPEG_H_
+#endif // _MPEG_H_
 
 //
 // end MPEG.h

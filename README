@@ -7,17 +7,15 @@ picture track file formats proposed by the SMPTE working
 group DC-28.20.
 
 This work was originally funded by Digital Cinema
-Initiatives, LLC. Subsequent efforts have been funded by
-Deluxe Laboratories, Doremi Labs, CineCert, LLC. and others.
+Initiatives, LLC (DCI). Subsequent efforts have been funded
+by Deluxe Laboratories, Doremi Labs, CineCert, LLC, Avica
+Technology and others.
 
-**The asdcplib project is housed on SourceForge. The project
-home page is at http://sourceforge.net/projects/asdcplib.
-There is not much there other than CVS because I don't
-really have the time to master SourceForge administration.
-Feel free to email with questions or to request a tar file.
+**The asdcplib project was housed on SourceForge. The project
+will be moving to a new home, to be announced here soon.
 
-The project used to depend upon the mxflib project. Because
-of the focus on covering the whole of the MXF spscifications,
+The project formerly depended upon the mxflib project. Because
+of its focus on covering the whole of the MXF specifications,
 mxflib is considerably larger and more complex that what I
 require for this application. For this reason I have created
 a dedicated MXF implementation that is now part of this
@@ -55,7 +53,9 @@ objects which provide those services.
 AS_DCP.h contains the entire API.  You do not need to read
 any of the other files, except maybe asdcp-test.cpp which
 contains detailed usage examples of each of the API's
-services.
+services. The KM_* files may be of interest for general
+development support, but may be ignored if all you want
+is simple AS-DCP support.
 
 
 Build Instructions
@@ -83,6 +83,21 @@ I have tested this build on win32, Linux and Darwin platforms.
 Others may work as well.
 
 
+Utilities
+
+asdcp-test - Writes, reads and verifies AS-DCP (MXF) track files.
+
+asdcp-lf-test - Writes and verifies large files using a platform-
+independent format. Use it to test issues related to large files.
+
+wavesplit - Splits a WAVE file into two or more output files. Used
+  to untangle incorrectly-paired DCDM sound files.
+
+blackwave - Write a WAVE file full of zeros,  Used to make filler
+  tracks (though you would be better off modifying asdcp-test if
+  this is a common use case).
+
+
 Documentation
 
 Currently, the documentation is mostly in AS_DCP.h. Read
@@ -92,6 +107,41 @@ examples. More detailed documentation will be written RSN.
 
 
 Change History
+2006.04.05 - Bug fixes and new stuff
+ o Fixed a bug in the MPEG parser that caused it to fail when
+   handling start codes spanning buffer boundaries
+ o Added wavesplit and blackwave utility programs
+ o Added support for revised SMPTE HMAC key derivation when
+   using LS_MXF_SMPTE
+ o Refactored platform compatibility and general utilities
+   into a new sub-library "Kumu". There are no new build
+   steps or dependencies, but some important things have
+   changed:
+   + Result_t is no longer an enum, it is now a class.
+     Library result codes are now declared as const objects
+     like this:
+
+     const Kumu::Result_t RESULT_FORMAT (-101, "The file...");
+
+     The macros ASDCP_SUCCESS and ASDCP_FAILURE still work
+     the same thanks to an operator overload for long. See
+     KM_error.h for more information.
+   + The logging interface has been moved out of AS_DCP.h
+     and into KM_log.h
+ o Some of the command line utilities that were using headers
+   other than AS_DCP.h have been changed to us the Kumu
+   equivalents. If you have code based on those utilities, you
+   will have to update by hand.
+ o Added new types to the EssenceType_t enum.
+ o The guard macro for Win32 code has changed from WIN32 to
+   KM_WIN32.
+
+
+2006.03.2x - new stuff
+ o Proper handling of stream-id byte of essence UL values
+ o writes 3-partition files, reads 2-part or 3-part
+
+
 2006.03.16 - bug fixes plus
  o Removed SMPTE_LABELS compile-time option. The reader will now
    silently accept either SMPTE or MXF Interop labels, the writer

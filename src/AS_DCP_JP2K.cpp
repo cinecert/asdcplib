@@ -92,15 +92,13 @@ ASDCP::JP2K::PictureDescriptorDump(const PictureDescriptor& PDesc, FILE* stream)
   if ( PDesc.CodingStyleLength )
     fprintf(stream, "Default Coding (%lu): %s\n",
 	    PDesc.CodingStyleLength,
-	    bin2hex(PDesc.CodingStyle, PDesc.CodingStyleLength,
-		    tmp_buf, tmp_buf_len)
+	    Kumu::bin2hex(PDesc.CodingStyle, PDesc.CodingStyleLength, tmp_buf, tmp_buf_len)
 	    );
 
   if ( PDesc.QuantDefaultLength )
     fprintf(stream, "Quantization Default (%lu): %s\n",
 	    PDesc.QuantDefaultLength,
-	    bin2hex(PDesc.QuantDefault, PDesc.QuantDefaultLength,
-		    tmp_buf, tmp_buf_len)
+	    Kumu::bin2hex(PDesc.QuantDefault, PDesc.QuantDefaultLength, tmp_buf, tmp_buf_len)
 	    );
 }
 
@@ -152,7 +150,7 @@ ASDCP::JP2K::MXFReader::h__Reader::MD_to_JP2K_PDesc(JP2K::PictureDescriptor& PDe
       PDesc.Csize   = m_EssenceSubDescriptor->Csize;
 
       // PictureComponentSizing
-      ui32_t tmp_size = m_EssenceSubDescriptor->PictureComponentSizing.Size();
+      ui32_t tmp_size = m_EssenceSubDescriptor->PictureComponentSizing.Length();
 
       if ( tmp_size == 17 ) // ( 2 * sizeof(ui32_t) ) + 3 components * 3 byte each
 	memcpy(&PDesc.ImageComponents, m_EssenceSubDescriptor->PictureComponentSizing.RoData() + 8, tmp_size - 8);
@@ -161,11 +159,11 @@ ASDCP::JP2K::MXFReader::h__Reader::MD_to_JP2K_PDesc(JP2K::PictureDescriptor& PDe
 	DefaultLogSink().Error("Unexpected PictureComponentSizing size: %lu, should be 17\n", tmp_size);
 
       // CodingStyleDefault
-      if ( ( PDesc.CodingStyleLength = m_EssenceSubDescriptor->CodingStyleDefault.Size() ) != 0 )
+      if ( ( PDesc.CodingStyleLength = m_EssenceSubDescriptor->CodingStyleDefault.Length() ) != 0 )
 	memcpy(PDesc.CodingStyle, m_EssenceSubDescriptor->CodingStyleDefault.RoData(), PDesc.CodingStyleLength);
 
       // QuantizationDefault
-      if ( ( PDesc.QuantDefaultLength = m_EssenceSubDescriptor->QuantizationDefault.Size() ) != 0 )
+      if ( ( PDesc.QuantDefaultLength = m_EssenceSubDescriptor->QuantizationDefault.Length() ) != 0 )
 	memcpy(PDesc.QuantDefault, m_EssenceSubDescriptor->QuantizationDefault.RoData(), PDesc.QuantDefaultLength);
     }
 
@@ -226,7 +224,7 @@ ASDCP::JP2K::FrameBuffer::Dump(FILE* stream, ui32_t dump_len) const
   fputc('\n', stream);
 
   if ( dump_len > 0 )
-    hexdump(m_Data, dump_len, stream);
+    Kumu::hexdump(m_Data, dump_len, stream);
 }
 
 
@@ -368,18 +366,18 @@ ASDCP::JP2K::MXFWriter::h__Writer::JP2K_PDesc_to_MD(JP2K::PictureDescriptor& PDe
   const ui32_t tmp_buffer_len = 64;
   byte_t tmp_buffer[tmp_buffer_len];
 
-  *(ui32_t*)tmp_buffer = ASDCP_i32_BE(3L); // three components
-  *(ui32_t*)(tmp_buffer+4) = ASDCP_i32_BE(3L);
+  *(ui32_t*)tmp_buffer = KM_i32_BE(3L); // three components
+  *(ui32_t*)(tmp_buffer+4) = KM_i32_BE(3L);
   memcpy(tmp_buffer + 8, &PDesc.ImageComponents, sizeof(ASDCP::JP2K::ImageComponent) * 3L);
 
   memcpy(m_EssenceSubDescriptor->PictureComponentSizing.Data(), tmp_buffer, 17);
-  m_EssenceSubDescriptor->PictureComponentSizing.Size(17);
+  m_EssenceSubDescriptor->PictureComponentSizing.Length(17);
 
   memcpy(m_EssenceSubDescriptor->CodingStyleDefault.Data(), PDesc.CodingStyle, PDesc.CodingStyleLength);
-  m_EssenceSubDescriptor->CodingStyleDefault.Size(PDesc.CodingStyleLength);
+  m_EssenceSubDescriptor->CodingStyleDefault.Length(PDesc.CodingStyleLength);
 
   memcpy(m_EssenceSubDescriptor->QuantizationDefault.Data(), PDesc.QuantDefault, PDesc.QuantDefaultLength);
-  m_EssenceSubDescriptor->QuantizationDefault.Size(PDesc.QuantDefaultLength);
+  m_EssenceSubDescriptor->QuantizationDefault.Length(PDesc.QuantDefaultLength);
 
   return RESULT_OK;
 }

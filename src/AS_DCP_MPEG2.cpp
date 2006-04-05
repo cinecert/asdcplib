@@ -273,7 +273,7 @@ ASDCP::MPEG2::FrameBuffer::Dump(FILE* stream, ui32_t dump_len) const
   fputc('\n', stream);
 
   if ( dump_len > 0 )
-    hexdump(m_Data, dump_len, stream);
+    Kumu::hexdump(m_Data, dump_len, stream);
 }
 
 

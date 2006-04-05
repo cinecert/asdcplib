@@ -29,14 +29,16 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     \brief   AS-DCP library, non-public common elements
 */
 
-#ifndef _AS_DCP_INTERNAL_H__
-#define _AS_DCP_INTERNAL_H__
+#ifndef _AS_DCP_INTERNAL_H_
+#define _AS_DCP_INTERNAL_H_
 
-#include "AS_DCP_system.h"
+#include <KM_platform.h>
+#include <KM_util.h>
+#include <KM_log.h>
 #include "Metadata.h"
-#include "hex_utils.h"
 
-using namespace std;
+using Kumu::DefaultLogSink;
+// using namespace std;
 using namespace ASDCP;
 using namespace ASDCP::MXF;
 
@@ -45,7 +47,6 @@ using namespace ASDCP::MXF;
 namespace ASDCP
 {
   // constant values used to calculate KLV and EKLV packet sizes
-
   static const ui32_t klv_cryptinfo_size =
     MXF_BER_LENGTH
     + UUIDlen /* ContextID */
@@ -95,7 +96,7 @@ namespace ASDCP
       ASDCP_NO_COPY_CONSTRUCT(h__Reader);
 
     public:
-      FileReader         m_File;
+      Kumu::FileReader   m_File;
       OPAtomHeader       m_HeaderPart;
       Partition          m_BodyPart;
       OPAtomIndexFooter  m_FooterPart;
@@ -157,7 +158,7 @@ namespace ASDCP
       ASDCP_NO_COPY_CONSTRUCT(h__Writer);
 
     public:
-      FileWriter         m_File;
+      Kumu::FileWriter   m_File;
       ui32_t             m_HeaderSize;
       OPAtomHeader       m_HeaderPart;
       Partition          m_BodyPart;
@@ -220,7 +221,7 @@ namespace ASDCP
 
 } // namespace ASDCP
 
-#endif // _AS_DCP_INTERNAL_H__
+#endif // _AS_DCP_INTERNAL_H_
 
 
 //
