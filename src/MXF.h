@@ -327,7 +327,7 @@ namespace ASDCP
 	  ASDCP_NO_COPY_CONSTRUCT(OPAtomIndexFooter);
 
 	public:
-	  fpos_t              m_ECOffset;
+	  Kumu::fpos_t        m_ECOffset;
 	  IPrimerLookup*      m_Lookup;
 	 
 	  OPAtomIndexFooter();
@@ -339,7 +339,7 @@ namespace ASDCP
 	  virtual Result_t Lookup(ui32_t frame_num, IndexTableSegment::IndexEntry&);
 	  virtual void     PushIndexEntry(const IndexTableSegment::IndexEntry&);
 	  virtual void     SetIndexParamsCBR(IPrimerLookup* lookup, ui32_t size, const Rational& Rate);
-	  virtual void     SetIndexParamsVBR(IPrimerLookup* lookup, const Rational& Rate, fpos_t offset);
+	  virtual void     SetIndexParamsVBR(IPrimerLookup* lookup, const Rational& Rate, Kumu::fpos_t offset);
 	};
 
     } // namespace MXF

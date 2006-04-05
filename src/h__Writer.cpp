@@ -296,7 +296,7 @@ ASDCP::h__Writer::WriteMXFHeader(const std::string& PackageLabel, const UL& Wrap
   if ( ASDCP_SUCCESS(result) )
     {
       // Index setup
-      fpos_t ECoffset = m_File.Tell();
+      Kumu::fpos_t ECoffset = m_File.Tell();
 
       if ( BytesPerEditUnit == 0 )
 	m_FooterPart.SetIndexParamsVBR(&m_HeaderPart.m_Primer, EditRate, ECoffset);
@@ -434,7 +434,7 @@ ASDCP::h__Writer::WriteMXFFooter()
     m_FPTCSequence->Duration = m_FPTimecode->Duration = m_FPClSequence->Duration = m_FPClip->Duration = 
     m_EssenceDescriptor->ContainerDuration = m_FramesWritten;
 
-  fpos_t here = m_File.Tell();
+  Kumu::fpos_t here = m_File.Tell();
   m_HeaderPart.m_RIP.PairArray.push_back(RIP::Pair(0, here)); // Third RIP Entry
   m_HeaderPart.FooterPartition = here;
 

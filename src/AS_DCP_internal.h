@@ -103,7 +103,7 @@ namespace ASDCP
       ui64_t             m_EssenceStart;
       WriterInfo         m_Info;
       ASDCP::FrameBuffer m_CtFrameBuf;
-      fpos_t             m_LastPosition;
+      Kumu::fpos_t       m_LastPosition;
 
       h__Reader();
       virtual ~h__Reader();

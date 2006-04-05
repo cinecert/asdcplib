@@ -606,15 +606,19 @@ ASDCP::MXF::TLVWriter::WriteObject(const MDDEntry& Entry, Kumu::IArchive* Object
 
   Result_t result = WriteTag(Entry);
 
-  // write a temp length
-  byte_t* l_p = CurrentData();
+  if ( ASDCP_SUCCESS(result) )
+    {
+      // write a temp length
+      byte_t* l_p = CurrentData();
 
-  if ( ! MemIOWriter::WriteUi16BE(0) ) return RESULT_KLV_CODING;
+      if ( ! MemIOWriter::WriteUi16BE(0) ) return RESULT_KLV_CODING;
 
-  ui32_t before = Length();
-  if ( ! Object->Archive(this) ) return RESULT_KLV_CODING;
-  Kumu::i2p<ui16_t>(KM_i16_BE( Length() - before), l_p);
-  return RESULT_OK;
+      ui32_t before = Length();
+      if ( ! Object->Archive(this) ) return RESULT_KLV_CODING;
+      Kumu::i2p<ui16_t>(KM_i16_BE( Length() - before), l_p);
+    }
+
+  return result;
 }
 
 //
