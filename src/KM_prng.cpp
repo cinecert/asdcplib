@@ -58,8 +58,6 @@ static byte_t get_perf_byte(byte_t carry)
     }
   
   SHA1_Final(sha_buf, &SHA);
-
-  fprintf(stderr, "0x%02x ", sha_buf[0]);
   return sha_buf[0];
 }
 
