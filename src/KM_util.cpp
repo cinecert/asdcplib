@@ -87,7 +87,7 @@ Kumu::Result_t::Result_t(long v, const char* l) : value(v), label(l)
   while ( s_ResultMap[i].result != 0 && i < MapMax )
     {
       i++;
-      if ( s_ResultMap[i].rcode == v )
+      if ( s_ResultMap[i].rcode == v && s_ResultMap[i].result != 0 )
 	return;
     }
 
