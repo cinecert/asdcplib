@@ -58,6 +58,9 @@ static struct map_entry_t s_ResultMap[MapSize];
 const Kumu::Result_t&
 Kumu::Result_t::Find(long v)
 {
+  if ( v == 0 )
+    return RESULT_OK;
+
   for ( ui32_t i = 0; s_ResultMap[i].result != 0 && i < MapMax; i++ )
     {
       if ( s_ResultMap[i].rcode == v )
@@ -73,6 +76,9 @@ Kumu::Result_t::Result_t(long v, const char* l) : value(v), label(l)
 {
   assert(l);
 
+  if ( v == 0 )
+    return;
+
   if ( ! s_MapInit )
     {
       s_MapInit = true;
@@ -86,9 +92,10 @@ Kumu::Result_t::Result_t(long v, const char* l) : value(v), label(l)
   ui32_t i = 0;
   while ( s_ResultMap[i].result != 0 && i < MapMax )
     {
-      i++;
       if ( s_ResultMap[i].rcode == v && s_ResultMap[i].result != 0 )
 	return;
+
+      i++;
     }
 
   assert(i+2 < MapMax);
