@@ -113,8 +113,11 @@ namespace Kumu
   bool     PathIsDirectory(const char* pathname);
   fsize_t  FileSize(const char* pathname);
 
-  // reads an entire file into a string
+  // Reads an entire file into a string.
   Result_t ReadFileIntoString(const char* filename, std::string& outString, ui32_t max_size = 256 * Kilobyte);
+
+  // Writes a string to a file, overwrites the existing file if present.
+  Result_t WriteStringIntoFile(const char* filename, const std::string& inString);
 
   //
   class FileReader

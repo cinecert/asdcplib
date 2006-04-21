@@ -48,7 +48,11 @@ namespace Kumu
       Result_t();
 
     public:
-      Result_t(long v, const char* l) : value(v), label(l) {}
+      static const Result_t& Find(long);
+
+      Result_t(long v, const char* l);
+      ~Result_t();
+
       inline bool        operator==(const Result_t& rhs) const { return value == rhs.value; }
       inline bool        operator!=(const Result_t& rhs) const { return value != rhs.value; }
       inline bool        Success() { return ( value >= 0 ); }

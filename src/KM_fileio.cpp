@@ -38,6 +38,8 @@ using namespace Kumu;
 
 #ifdef KM_WIN32
 typedef struct _stati64 fstat_t;
+#define S_IFLNK 0
+
 
 // AFAIK, there is no iovec equivalent in the win32 API
 struct iovec {
@@ -107,7 +109,7 @@ Kumu::PathIsFile(const char* pathname)
 
   if ( KM_SUCCESS(do_stat(pathname, &info)) )
     {
-      if ( info.st_mode & S_IFREG )
+      if ( info.st_mode & ( S_IFREG|S_IFLNK ) )
         return true;
     }
 
@@ -141,7 +143,7 @@ Kumu::FileSize(const char* pathname)
 
   if ( KM_SUCCESS(do_stat(pathname, &info)) )
     {
-      if ( info.st_mode & S_IFREG )
+      if ( info.st_mode & ( S_IFREG|S_IFLNK ) )
         return(info.st_size);
     }
 
@@ -175,7 +177,7 @@ Kumu::FileReader::Size() const
 
   if ( KM_SUCCESS(do_fstat(m_Handle, &info)) )
     {
-      if ( info.st_mode & S_IFREG )
+      if ( info.st_mode & ( S_IFREG|S_IFLNK ) )
         return(info.st_size);
     }
 #endif
@@ -612,7 +614,7 @@ Kumu::Result_t
 Kumu::ReadFileIntoString(const char* filename, std::string& outString, ui32_t max_size)
 {
   fsize_t    fsize = 0;
-  ui32_t     read_size;
+  ui32_t     read_size = 0;
   FileReader File;
   ByteString ReadBuf;
 
@@ -624,7 +626,7 @@ Kumu::ReadFileIntoString(const char* filename, std::string& outString, ui32_t ma
     {
       fsize = File.Size();
 
-      if ( fsize > max_size )
+      if ( fsize > (Kumu::fpos_t)max_size )
 	return RESULT_ALLOC;
 
       result = ReadBuf.Capacity((ui32_t)fsize);
@@ -637,6 +639,26 @@ Kumu::ReadFileIntoString(const char* filename, std::string& outString, ui32_t ma
     outString.assign((const char*)ReadBuf.RoData(), read_size);
 
   return result;
+}
+
+
+//
+Kumu::Result_t
+Kumu::WriteStringIntoFile(const char* filename, const std::string& inString)
+{
+  FileWriter File;
+  ui32_t write_count = 0;
+  KM_TEST_NULL_STR(filename);
+
+  Result_t result = File.OpenWrite(filename);
+
+  if ( KM_SUCCESS(result) )
+    result = File.Write((byte_t*)inString.c_str(), inString.length(), &write_count);
+
+  if ( KM_SUCCESS(result) && write_count != inString.length() )
+    return RESULT_WRITEFAIL;
+
+  return RESULT_OK;
 }
 
 

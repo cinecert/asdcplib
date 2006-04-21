@@ -36,7 +36,72 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <KM_log.h>
 #include <ctype.h>
 #include <list>
+#include <map>
 #include <string>
+
+//------------------------------------------------------------------------------------------
+
+// Result_t Internals
+
+struct map_entry_t
+{
+  long            rcode;
+  Kumu::Result_t* result;
+};
+
+const ui32_t MapMax = 512;
+const ui32_t MapSize = MapMax * (sizeof(struct map_entry_t));
+static bool s_MapInit = false;
+static struct map_entry_t s_ResultMap[MapSize];
+
+//
+const Kumu::Result_t&
+Kumu::Result_t::Find(long v)
+{
+  for ( ui32_t i = 0; s_ResultMap[i].result != 0 && i < MapMax; i++ )
+    {
+      if ( s_ResultMap[i].rcode == v )
+	return *s_ResultMap[i].result;
+    }
+
+  DefaultLogSink().Error("Unknown result code: %ld\n", v);
+  return RESULT_FAIL;
+}
+
+//
+Kumu::Result_t::Result_t(long v, const char* l) : value(v), label(l)
+{
+  assert(l);
+
+  if ( ! s_MapInit )
+    {
+      s_MapInit = true;
+      s_ResultMap[0].rcode = v;
+      s_ResultMap[0].result = this;
+      s_ResultMap[1].rcode = 0;
+      s_ResultMap[1].result = 0;
+      return;
+    }
+
+  ui32_t i = 0;
+  while ( s_ResultMap[i].result != 0 && i < MapMax )
+    {
+      i++;
+      if ( s_ResultMap[i].rcode == v )
+	return;
+    }
+
+  assert(i+2 < MapMax);
+
+  s_ResultMap[i].rcode = v;
+  s_ResultMap[i].result = this;
+  s_ResultMap[i+1].rcode = 0;
+  s_ResultMap[i+1].result = 0;
+  return;
+}
+
+Kumu::Result_t::~Result_t() {}
+
 
 //------------------------------------------------------------------------------------------
 
@@ -718,6 +783,49 @@ Kumu::Timestamp::EncodeString(char* str_buf, ui32_t buf_len) const
 	   Year, Month, Day, Hour, Minute, Second);
   
   return str_buf;
+}
+
+//
+bool
+Kumu::Timestamp::DecodeString(const char* datestr)
+{
+  if ( ! ( isdigit(datestr[0]) && isdigit(datestr[1]) && isdigit(datestr[2]) && isdigit(datestr[3]) )
+       || datestr[4] != '-'
+       || ! ( isdigit(datestr[5]) && isdigit(datestr[6]) )
+       || datestr[7] != '-'
+       || ! ( isdigit(datestr[8]) && isdigit(datestr[9]) )
+       || datestr[10] != 'T'
+       || ! ( isdigit(datestr[11]) && isdigit(datestr[12]) )
+       || datestr[13] != ':'
+       || ! ( isdigit(datestr[14]) && isdigit(datestr[15]) )
+       || datestr[16] != ':'
+       || ! ( isdigit(datestr[17]) && isdigit(datestr[18]) )
+       || ! ( datestr[19] == '-' || datestr[19] == '+' )
+       || ! ( isdigit(datestr[20]) && isdigit(datestr[21]) )
+       || datestr[22] != ':'
+       || ! ( isdigit(datestr[23]) && isdigit(datestr[24]) ) )
+    return false;
+
+  // TODO -- test this!
+  Year = atoi(datestr);
+  Month = atoi(datestr + 5);
+  Day = atoi(datestr + 8);
+  Hour = atoi(datestr + 11);
+  Minute = atoi(datestr + 14);
+  Second = atoi(datestr + 17);
+
+  ui32_t TZ_hh = atoi(datestr + 20);
+  ui32_t TZ_mm = atoi(datestr + 23);
+
+  if ( TZ_mm != 0 )
+    DefaultLogSink().Error("Ignoring sub-hours timezone offset: %lu\n", TZ_mm);
+ 
+  if ( TZ_hh > 12 )
+    DefaultLogSink().Error("Ignoring large timezone offset: %s\n", (datestr+19));
+  else 
+    AddHours(TZ_hh);
+
+  return true;
 }
 
 //

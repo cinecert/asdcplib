@@ -43,18 +43,24 @@ using namespace Kumu;
 #ifdef KM_WIN32
 
 //  make up a byte by sampling the perf counter LSB
-static byte_t get_perf_byte()
+static byte_t get_perf_byte(byte_t carry)
 {
   LARGE_INTEGER ticks;
-  byte_t retval;
-  
-  for ( int i = 0; i < 8; i++ )
+  byte_t sha_buf[20];
+  SHA_CTX SHA;
+  SHA1_Init(&SHA);
+  SHA1_Update(&SHA, &carry, sizeof(byte_t));
+
+  for ( int i = 0; i < 128; i++ )
     {
       QueryPerformanceCounter(&ticks);
-      retval |= (ticks.LowPart & 0x00000001) << i;
+      SHA1_Update(&SHA, &ticks.LowPart, sizeof(ticks.LowPart));
     }
   
-  return retval;
+  SHA1_Final(sha_buf, &SHA);
+
+  fprintf(stderr, "0x%02x ", sha_buf[0]);
+  return sha_buf[0];
 }
 
 #else // KM_WIN32
@@ -92,8 +98,10 @@ public:
 
 #ifdef KM_WIN32
       for ( ui32_t i = 0; i < RNG_KEY_SIZE; i++ )
-	rng_key[i] = get_perf_byte();
-
+	{
+	  byte_t carry = ( i == 0 ) ? 0xa3 : rng_key[i-1];
+	  rng_key[i] = get_perf_byte(carry);
+	}
 #else // KM_WIN32
       // on POSIX systems we simply read some seed from /dev/urandom
       FileReader URandom;

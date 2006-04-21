@@ -327,7 +327,7 @@ namespace Kumu
       const char* EncodeString(char* str_buf, ui32_t buf_len) const;
 
       // decode and set value from string formatted by EncodeString
-      Result_t    SetFromString(const char* datestr);
+      bool        DecodeString(const char* datestr);
 
       // add the given number of days or hours to the timestamp value. Values less than zero
       // will cause the value to decrease
