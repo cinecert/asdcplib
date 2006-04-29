@@ -95,6 +95,7 @@ ASDCP::UMID::MakeUMID(int Type, const UUID& AssetID)
   m_Value[13] = m_Value[14] = m_Value[15] = 0;
   
   memcpy(&m_Value[16], AssetID.Value(), AssetID.Size());
+  m_HasValue = true;
 }
 
 

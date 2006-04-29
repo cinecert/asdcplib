@@ -167,21 +167,21 @@ namespace Kumu
   template <ui32_t SIZE>
     class Identifier : public IArchive
     {
+      const Identifier& operator=(const Identifier& rhs);
+
     protected:
       bool   m_HasValue;
       byte_t m_Value[SIZE];
 
     public:
       Identifier() : m_HasValue(false) { memset(m_Value, 0, SIZE); }
-      Identifier(const byte_t* value) : m_HasValue(true)   { memcpy(m_Value, value, SIZE); }
-      Identifier(const Identifier& rhs) : m_HasValue(true) { memcpy(m_Value, rhs.m_Value, SIZE); }
-      virtual ~Identifier() {}
-
-      const Identifier& operator=(const Identifier& rhs) {
-	m_HasValue = true;
-	memcpy(m_Value, rhs.m_Value, SIZE);
-	return *this;
+      Identifier(const byte_t* value) : m_HasValue(true) { memcpy(m_Value, value, SIZE); }
+      Identifier(const Identifier& rhs) {
+	if ( m_HasValue = rhs.m_HasValue )
+	  memcpy(m_Value, rhs.m_Value, SIZE);
       }
+
+      virtual ~Identifier() {}
 
       inline void Set(const byte_t* value) { m_HasValue = true; memcpy(m_Value, value, SIZE); }
       inline const byte_t* Value() const { return m_Value; }
@@ -214,11 +214,8 @@ namespace Kumu
       inline bool DecodeHex(const char* str)
 	{
 	  ui32_t char_count;
-	  if ( hex2bin(str, m_Value, SIZE, &char_count) != 0 )
-	    return false;
-
-	  m_HasValue = true;
-	  return true;
+	  m_HasValue = ( hex2bin(str, m_Value, SIZE, &char_count) == 0 );
+	  return m_HasValue;
 	}
 
       inline const char* EncodeHex(char* buf, ui32_t buf_len) const
@@ -233,11 +230,8 @@ namespace Kumu
       inline bool DecodeBase64(const char* str)
  	{
 	  ui32_t char_count;
-	  if ( base64decode(str, m_Value, SIZE, &char_count) != 0 )
-	    return false;
-
-	  m_HasValue = true;
-	  return true;
+	  m_HasValue = ( base64decode(str, m_Value, SIZE, &char_count) == 0 );
+	  return m_HasValue;
 	}
 
       inline const char* EncodeBase64(char* buf, ui32_t buf_len) const
@@ -245,15 +239,14 @@ namespace Kumu
 	  return base64encode(m_Value, SIZE, buf, buf_len);
 	}
 
-      inline virtual bool HasValue() const { return m_HasValue; }
+      inline bool HasValue() const { return m_HasValue; }
 
-      inline virtual bool Unarchive(Kumu::MemIOReader* Reader) {
-	if ( ! Reader->ReadRaw(m_Value, SIZE) ) return false;
-	m_HasValue = true;
-	return true;
+      inline bool Unarchive(Kumu::MemIOReader* Reader) {
+	m_HasValue = Reader->ReadRaw(m_Value, SIZE);
+	return m_HasValue;
       }
 
-      inline virtual bool Archive(Kumu::MemIOWriter* Writer) const {
+      inline bool Archive(Kumu::MemIOWriter* Writer) const {
 	return Writer->WriteRaw(m_Value, SIZE);
       }
     };
@@ -270,6 +263,12 @@ namespace Kumu
       UUID(const UUID& rhs) : Identifier<UUID_Length>(rhs) {}
       virtual ~UUID() {}
       
+      const UUID& operator=(const UUID& rhs) {
+        if ( m_HasValue = rhs.m_HasValue )
+          memcpy(m_Value, rhs.m_Value, UUID_Length);
+        return *this;
+      }
+
       inline const char* EncodeHex(char* buf, ui32_t buf_len) const {
 	return bin2UUIDhex(m_Value, Size(), buf, buf_len);
       }
@@ -293,6 +292,12 @@ namespace Kumu
       SymmetricKey(const byte_t* value) : Identifier<SymmetricKey_Length>(value) {}
       SymmetricKey(const UUID& rhs) : Identifier<SymmetricKey_Length>(rhs) {}
       virtual ~SymmetricKey() { memcpy(m_Value, NilKey, 16); m_HasValue = false; }
+
+      const SymmetricKey& operator=(const SymmetricKey& rhs) {
+        if ( m_HasValue = rhs.m_HasValue )
+          memcpy(m_Value, rhs.m_Value, SymmetricKey_Length);
+        return *this;
+      }
     };
 
   void GenRandomValue(SymmetricKey&);

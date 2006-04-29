@@ -98,19 +98,14 @@ inline const char* ui64sz(ui64_t i, char* buf)
     {
     public:
       UL() {}
-      UL(const byte_t* rhs) {
-	assert(rhs);
-	Set(rhs);
-      }
-
-      UL(const UL& rhs) {
-	Set(rhs.m_Value);
-      }
-
+      UL(const UL& rhs) : Kumu::Identifier<SMPTE_UL_LENGTH>(rhs) {}
+      UL(const byte_t* value) : Kumu::Identifier<SMPTE_UL_LENGTH>(value) {}
       virtual ~UL() {}
 
-      bool operator==(const UL& rhs) const {
-	return ( memcmp(m_Value, rhs.m_Value, SMPTE_UL_LENGTH) == 0 ) ? true : false;
+      const UL& operator=(const UL& rhs) {
+	if ( m_HasValue = rhs.m_HasValue )
+	  memcpy(m_Value, rhs.m_Value, SMPTE_UL_LENGTH);
+	return *this;
       }
 
       const char* EncodeString(char* str_buf, ui32_t buf_len) const;
@@ -121,10 +116,15 @@ inline const char* ui64sz(ui64_t i, char* buf)
     {
     public:
       UMID() {}
-      UMID(const UMID &rhs) {
-	Set(rhs.m_Value);
-      };
+      UMID(const UMID& rhs) : Kumu::Identifier<SMPTE_UMID_LENGTH>(rhs) {}
+      UMID(const byte_t* value) : Kumu::Identifier<SMPTE_UMID_LENGTH>(value) {}
       virtual ~UMID() {}
+
+      const UMID& operator=(const UMID& rhs) {
+	if ( m_HasValue = rhs.m_HasValue )
+	  memcpy(m_Value, rhs.m_Value, SMPTE_UMID_LENGTH);
+	return *this;
+      }
 
       void MakeUMID(int Type);
       void MakeUMID(int Type, const UUID& ID);
