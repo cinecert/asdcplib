@@ -109,16 +109,16 @@ public:
 // argument begins with '-'.
 #define TEST_EXTRA_ARG(i,c)    if ( ++i >= argc || argv[(i)][0] == '-' ) \
                                  { \
-                                   fprintf(stderr, "Argument not found for option %c.\n", (c)); \
+                                   fprintf(stderr, "Argument not found for option -%c.\n", (c)); \
                                    return; \
                                  }
 //
 void
-banner(FILE* stream = stderr)
+banner(FILE* stream = stdout)
 {
   fprintf(stream, "\n\
 %s (asdcplib %s)\n\n\
-Copyright (c) 2003-2005 John Hurst\n\n\
+Copyright (c) 2003-2006 John Hurst\n\n\
 asdcplib may be copied only under the terms of the license found at\n\
 the top of every file in the asdcplib distribution kit.\n\n\
 Specify the -h (help) option for further information about %s\n\n",
@@ -127,60 +127,79 @@ Specify the -h (help) option for further information about %s\n\n",
 
 //
 void
-usage(FILE* stream = stderr)
+usage(FILE* stream = stdout)
 {
   fprintf(stream, "\
-USAGE: %s [-i [-H, -n]|-c <filename> [-p <rate>, -e, -M, -R]|-x <root-name> [-m][-S]|-g|-u|-G|-V|-h]\n\
-       [-k <key-string>] [-j <key-id-string>] [-f <start-frame-num>] [-d <duration>]\n\
-       [-b <buf-size>] [-W] [-v [-s]] [<filename>, ...]\n\
-\n", PACKAGE);
+USAGE: %s -c <output-file> [-b <buffer-size>] [-d <duration>] [-e|-E]\n\
+       [-f <start-frame>] [-j <key-id-string>] [-k <key-string>] [-L] [-M]\n\
+       [-p <frame-rate>] [-R] [-s <num>] [-v] [-W]\n\
+       <input-file> [<input-file2> ...]\n\
+\n\
+       %s [-h|-help] [-V]\n\
+\n\
+       %s -i [-H] [-n] [-v] <input-file>\n\
+\n\
+       %s -g | -u\n\
+\n\
+       %s -G [-v] <input-file>\n\
+\n\
+       %s -x <file-prefix> [-b <buffer-size>] [-d <duration>]\n\
+       [-f <starting-frame>] [-m] [-p <frame-rate>] [-R] [-s <num>] [-S]\n\
+       [-v] [-W] <input-file>\n\
+\n", PACKAGE, PACKAGE, PACKAGE, PACKAGE, PACKAGE, PACKAGE);
 
   fprintf(stream, "\
 Major modes:\n\
-  -i              - Show file info\n\
-  -c <filename>   - Create AS-DCP file from input(s)\n\
-  -x <root-name>  - Extract essence from AS-DCP file to named file(s)\n\
-  -g              - Generate a random 16 byte value to stdout\n\
-  -u              - Generate a random UUID value to stdout\n\
-  -G              - Perform GOP start lookup test on MPEG file\n\
-  -V              - Show version\n\
-  -h              - Show help\n\
+  -c <output-file>  - Create AS-DCP track file from input(s)\n\
+  -g                - Generate a random 16 byte value to stdout\n\
+  -G                - Perform GOP start lookup test on MXF+Interop MPEG file\n\
+  -h | -help        - Show help\n\
+  -i                - Show file info\n\
+  -u                - Generate a random UUID value to stdout\n\
+  -V                - Show version information\n\
+  -x <root-name>    - Extract essence from AS-DCP file to named file(s)\n\
 \n");
 
   fprintf(stream, "\
 Security Options:\n\
-  -j <key-id-str> - Write key ID instead of creating a random value\n\
-  -k <key-string> - Use key for ciphertext operations\n\
-  -e              - Encrypt MPEG or JP2K headers (default)\n\
-  -E              - Do not encrypt MPEG or JP2K headers\n\
-  -M              - Do not create HMAC values when writing\n\
-  -m              - verify HMAC values when reading\n\
+  -e                - Encrypt MPEG or JP2K headers (default)\n\
+  -E                - Do not encrypt MPEG or JP2K headers\n\
+  -j <key-id-str>   - Write key ID instead of creating a random value\n\
+  -k <key-string>   - Use key for ciphertext operations\n\
+  -m                - verify HMAC values when reading\n\
+  -M                - Do not create HMAC values when writing\n\
 \n");
 
   fprintf(stream, "\
 Read/Write Options:\n\
-  -b <buf-size>   - Size (in bytes) of the picture frame buffer, default: 2097152 (2MB)\n\
-  -f <frame-num>  - Starting frame number, default 0\n\
-  -d <duration>   - Number of frames to process, default all\n\
-  -p <rate>       - fps of picture when wrapping PCM or JP2K:, use one of [23|24|48], 24 is default\n\
-  -L              - Write SMPTE UL values instead of MXF Interop\n\
-  -R              - Repeat the first frame over the entire file (picture essence only, requires -c, -d)\n\
-  -S              - Split Wave essence to stereo WAV files during extract (default = multichannel WAV)\n\
-  -W              - Read input file only, do not write source file\n\
+  -b <buffer-size>  - Specify size in bytes of picture frame buffer.\n\
+                      Defaults to 4,194,304 (4MB)\n\
+  -d <duration>     - Number of frames to process, default all\n\
+  -f <start-frame>  - Starting frame number, default 0\n\
+  -L                - Write SMPTE UL values instead of MXF Interop\n\
+  -p <rate>         - fps of picture when wrapping PCM or JP2K:\n\
+                      Use one of [23|24|48], 24 is default\n\
+  -R                - Repeat the first frame over the entire file (picture\n\
+                      essence only, requires -c, -d)\n\
+  -S                - Split Wave essence to stereo WAV files during extract.\n\
+                      Default is multichannel WAV\n\
+  -W                - Read input file only, do not write source file\n\
 \n");
 
   fprintf(stream, "\
 Info Options:\n\
-  -H              - Show MXF header metadata, used with option -i\n\
-  -n              - Show index, used with option -i\n\
+  -H                - Show MXF header metadata, used with option -i\n\
+  -n                - Show index, used with option -i\n\
 \n\
 Other Options:\n\
-  -s <number>     - Number of bytes of frame buffer to be dumped as hex to stderr (use with -v)\n\
-  -v              - Verbose, show extra detail during run\n\
+  -s <num>          - Number of bytes of frame buffer to be dumped as hex to\n\
+                      stderr, used with option -v\n\
+  -v                - Verbose, prints informative messages to stderr\n\
 \n\
   NOTES: o There is no option grouping, all options must be distinct arguments.\n\
          o All option arguments must be separated from the option by whitespace.\n\
-         o An argument of \"23\" to the -p option will be interpreted as 23000/1001 fps.\n\
+         o An argument of \"23\" to the -p option will be interpreted\n\
+           as 23000/1001 fps.\n\
 \n");
 }
 
@@ -257,6 +276,13 @@ public:
 
     for ( int i = 1; i < argc; i++ )
       {
+
+         if ( (strcmp( argv[i], "-help") == 0) )
+           {
+             help_flag = true;
+             continue;
+           }
+         
 	if ( argv[i][0] == '-' && isalpha(argv[i][1]) && argv[i][2] == 0 )
 	  {
 	    switch ( argv[i][1] )
@@ -350,13 +376,22 @@ public:
 		break;
 
 	      default:
-		fprintf(stderr, "Unrecognized option: %c\n", argv[i][1]);
+		fprintf(stderr, "Unrecognized option: %s\n", argv[i]);
 		return;
 	      }
 	  }
 	else
 	  {
-	    filenames[file_count++] = argv[i];
+
+	    if ( argv[i][0] != '-' )
+	      {
+		filenames[file_count++] = argv[i];
+	      }
+	    else
+	      {
+		fprintf(stderr, "Unrecognized option: %s\n", argv[i]);
+		return;
+	      }
 
 	    if ( file_count >= MAX_IN_FILES )
 	      {
@@ -366,6 +401,9 @@ public:
 	  }
       }
 
+    if ( help_flag || version_flag )
+      return;
+    
     if ( TEST_MAJOR_MODE() )
       {
 	if ( ! genkey_flag && ! genid_flag && file_count == 0 )
@@ -1203,17 +1241,20 @@ main(int argc, const char** argv)
   Result_t result = RESULT_OK;
   CommandOptions Options(argc, argv);
 
-  if ( Options.help_flag )
-    {
-      usage();
-      return 0;
-    }
-
-  if ( Options.error_flag )
-    return 3;
-
   if ( Options.version_flag )
     banner();
+
+  if ( Options.help_flag )
+    usage();
+
+  if ( Options.version_flag || Options.help_flag )
+    return 0;
+
+  if ( Options.error_flag )
+    {
+      fprintf(stderr, "There was a problem. Type %s -h for help.\n", PACKAGE);
+      return 3;
+    }
 
   if ( Options.info_flag )
     {
