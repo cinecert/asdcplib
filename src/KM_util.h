@@ -177,8 +177,8 @@ namespace Kumu
       Identifier() : m_HasValue(false) { memset(m_Value, 0, SIZE); }
       Identifier(const byte_t* value) : m_HasValue(true) { memcpy(m_Value, value, SIZE); }
       Identifier(const Identifier& rhs) {
-	if ( m_HasValue = rhs.m_HasValue )
-	  memcpy(m_Value, rhs.m_Value, SIZE);
+	m_HasValue = rhs.m_HasValue;
+	memcpy(m_Value, rhs.m_Value, SIZE);
       }
 
       virtual ~Identifier() {}
