@@ -64,7 +64,7 @@ namespace ASDCP
 
 	      inline const char* EncodeString(char* str_buf, ui32_t buf_len) const {
 		Kumu::ui64Printer offset_str(ByteOffset);
-		snprintf(str_buf, buf_len, "%-6lu: %s", BodySID, offset_str.c_str());
+		snprintf(str_buf, buf_len, "%-6u: %s", BodySID, offset_str.c_str());
 		return str_buf;
 	      }
 

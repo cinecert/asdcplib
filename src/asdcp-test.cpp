@@ -84,7 +84,7 @@ public:
       ProductName = "asdcp-test";
 
       char s_buf[128];
-      snprintf(s_buf, 128, "%lu.%lu.%lu", VERSION_MAJOR, VERSION_APIMINOR, VERSION_IMPMINOR);
+      snprintf(s_buf, 128, "%u.%u.%u", VERSION_MAJOR, VERSION_APIMINOR, VERSION_IMPMINOR);
       ProductVersion = s_buf;
   }
 } s_MyInfo;
@@ -325,7 +325,7 @@ public:
 
 		  if ( length != KeyLen )
 		    {
-		      fprintf(stderr, "Unexpected key length: %lu, expecting %lu characters.\n", KeyLen, length);
+		      fprintf(stderr, "Unexpected key length: %u, expecting %u characters.\n", KeyLen, length);
 		      return;
 		    }
 		}
@@ -339,7 +339,7 @@ public:
 
 		  if ( length != UUIDlen )
 		    {
-		      fprintf(stderr, "Unexpected key ID length: %lu, expecting %lu characters.\n", UUIDlen, length);
+		      fprintf(stderr, "Unexpected key ID length: %u, expecting %u characters.\n", UUIDlen, length);
 		      return;
 		    }
 		}
@@ -371,7 +371,7 @@ public:
 		fb_size = atoi(argv[i]);
 
 		if ( verbose_flag )
-		  fprintf(stderr, "Frame Buffer size: %lu bytes.\n", fb_size);
+		  fprintf(stderr, "Frame Buffer size: %u bytes.\n", fb_size);
 
 		break;
 
@@ -395,7 +395,7 @@ public:
 
 	    if ( file_count >= MAX_IN_FILES )
 	      {
-		fprintf(stderr, "Filename lists exceeds maximum list size: %lu\n", MAX_IN_FILES);
+		fprintf(stderr, "Filename lists exceeds maximum list size: %u\n", MAX_IN_FILES);
 		return;
 	      }
 	  }
@@ -453,7 +453,7 @@ write_MPEG2_file(CommandOptions& Options)
 	{
 	  fputs("MPEG-2 Pictures\n", stderr);
 	  fputs("VideoDescriptor:\n", stderr);
-	  fprintf(stderr, "Frame Buffer size: %lu\n", Options.fb_size);
+	  fprintf(stderr, "Frame Buffer size: %u\n", Options.fb_size);
 	  MPEG2::VideoDescriptorDump(VDesc);
 	}
     }
@@ -567,7 +567,7 @@ read_MPEG2_file(CommandOptions& Options)
 
       if ( Options.verbose_flag )
 	{
-	  fprintf(stderr, "Frame Buffer size: %lu\n", Options.fb_size);
+	  fprintf(stderr, "Frame Buffer size: %u\n", Options.fb_size);
 	  MPEG2::VideoDescriptorDump(VDesc);
 	}
     }
@@ -643,7 +643,7 @@ gop_start_test(CommandOptions& Options)
 
       if ( Options.verbose_flag )
 	{
-	  fprintf(stderr, "Frame Buffer size: %lu\n", Options.fb_size);
+	  fprintf(stderr, "Frame Buffer size: %u\n", Options.fb_size);
 	  MPEG2::VideoDescriptorDump(VDesc);
 	}
     }
@@ -664,7 +664,7 @@ gop_start_test(CommandOptions& Options)
 	  if ( FrameBuffer.FrameType() != FRAME_I )
 	    fprintf(stderr, "Expecting an I frame, got %c\n", FrameTypeChar(FrameBuffer.FrameType()));
 
-	  fprintf(stderr, "Requested frame %lu, got %lu\n", i, FrameBuffer.FrameNumber());
+	  fprintf(stderr, "Requested frame %u, got %u\n", i, FrameBuffer.FrameNumber());
 	}
     }
 
@@ -702,7 +702,7 @@ write_JP2K_file(CommandOptions& Options)
 	{
 	  fprintf(stderr, "JPEG 2000 pictures\n");
 	  fputs("PictureDescriptor:\n", stderr);
-          fprintf(stderr, "Frame Buffer size: %lu\n", Options.fb_size);
+          fprintf(stderr, "Frame Buffer size: %u\n", Options.fb_size);
 	  JP2K::PictureDescriptorDump(PDesc);
 	}
     }
@@ -815,7 +815,7 @@ read_JP2K_file(CommandOptions& Options)
 
       if ( Options.verbose_flag )
 	{
-	  fprintf(stderr, "Frame Buffer size: %lu\n", Options.fb_size);
+	  fprintf(stderr, "Frame Buffer size: %u\n", Options.fb_size);
 	  JP2K::PictureDescriptorDump(PDesc);
 	}
     }
@@ -855,7 +855,7 @@ read_JP2K_file(CommandOptions& Options)
 	  Kumu::FileWriter OutFile;
 	  char filename[256];
 	  ui32_t write_count;
-	  snprintf(filename, 256, "%s%06lu.j2c", Options.file_root, i);
+	  snprintf(filename, 256, "%s%06u.j2c", Options.file_root, i);
 	  result = OutFile.OpenWrite(filename);
 
 	  if ( ASDCP_SUCCESS(result) )
@@ -902,7 +902,7 @@ write_PCM_file(CommandOptions& Options)
 
       if ( Options.verbose_flag )
 	{
-	  fprintf(stderr, "48Khz PCM Audio, %s fps (%lu spf)\n",
+	  fprintf(stderr, "48Khz PCM Audio, %s fps (%u spf)\n",
 		  Options.szPictureRate(),
 		  PCM::CalcSamplesPerFrame(ADesc));
 	  fputs("AudioDescriptor:\n", stderr);
@@ -964,7 +964,7 @@ write_PCM_file(CommandOptions& Options)
 	      if ( FrameBuffer.Size() != FrameBuffer.Capacity() )
 		{
 		  fprintf(stderr, "WARNING: Last frame read was short, PCM input is possibly not frame aligned.\n");
-		  fprintf(stderr, "Expecting %lu bytes, got %lu.\n", FrameBuffer.Capacity(), FrameBuffer.Size());
+		  fprintf(stderr, "Expecting %u bytes, got %u.\n", FrameBuffer.Capacity(), FrameBuffer.Size());
 		  result = RESULT_ENDOFFILE;
 		  continue;
 		}

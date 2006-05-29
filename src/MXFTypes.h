@@ -320,7 +320,7 @@ namespace ASDCP
 
 	  //
 	  inline const char* EncodeString(char* str_buf, ui32_t buf_len) const {
-	    snprintf(str_buf, buf_len, "%lu/%lu", Numerator, Denominator);
+	    snprintf(str_buf, buf_len, "%d/%d", Numerator, Denominator);
 	    return str_buf;
 	  }
 

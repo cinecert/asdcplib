@@ -110,9 +110,9 @@ ASDCP::MXF::IndexTableSegment::Dump(FILE* stream)
   fprintf(stream, "  IndexEditRate      = %s\n",  IndexEditRate.EncodeString(identbuf, IdentBufferLen));
   fprintf(stream, "  IndexStartPosition = %s\n",  i64sz(IndexStartPosition, identbuf));
   fprintf(stream, "  IndexDuration      = %s\n",  i64sz(IndexDuration, identbuf));
-  fprintf(stream, "  EditUnitByteCount  = %lu\n", EditUnitByteCount);
-  fprintf(stream, "  IndexSID           = %lu\n", IndexSID);
-  fprintf(stream, "  BodySID            = %lu\n", BodySID);
+  fprintf(stream, "  EditUnitByteCount  = %u\n",  EditUnitByteCount);
+  fprintf(stream, "  IndexSID           = %u\n",  IndexSID);
+  fprintf(stream, "  BodySID            = %u\n",  BodySID);
   fprintf(stream, "  SliceCount         = %hu\n", SliceCount);
   fprintf(stream, "  PosTableCount      = %hu\n", PosTableCount);
 
@@ -136,7 +136,7 @@ ASDCP::MXF::IndexTableSegment::Dump(FILE* stream)
 const char*
 ASDCP::MXF::IndexTableSegment::DeltaEntry::EncodeString(char* str_buf, ui32_t buf_len) const
 {
-  snprintf(str_buf, buf_len, "%3i %-3hu %-3lu", PosTableIndex, Slice, ElementData);
+  snprintf(str_buf, buf_len, "%3d %-3hu %-3u", PosTableIndex, Slice, ElementData);
   return str_buf;
 }
 

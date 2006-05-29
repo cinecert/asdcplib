@@ -102,20 +102,20 @@ ASDCP::MPEG2::VideoDescriptorDump(const VideoDescriptor& VDesc, FILE* stream)
     stream = stderr;
 
   fprintf(stream, "\
-        SampleRate: %lu/%lu\n\
-       FrameLayout: %lu\n\
-       StoredWidth: %lu\n\
-      StoredHeight: %lu\n\
-       AspectRatio: %lu/%lu\n\
-    ComponentDepth: %lu\n\
- HorizontalSubsmpl: %lu\n\
-   VerticalSubsmpl: %lu\n\
-       ColorSiting: %lu\n\
-  CodedContentType: %lu\n\
-          LowDelay: %lu\n\
-           BitRate: %lu\n\
-   ProfileAndLevel: %lu\n\
- ContainerDuration: %lu\n",
+        SampleRate: %d/%d\n\
+       FrameLayout: %u\n\
+       StoredWidth: %u\n\
+      StoredHeight: %u\n\
+       AspectRatio: %d/%d\n\
+    ComponentDepth: %u\n\
+ HorizontalSubsmpl: %u\n\
+   VerticalSubsmpl: %u\n\
+       ColorSiting: %u\n\
+  CodedContentType: %u\n\
+          LowDelay: %u\n\
+           BitRate: %u\n\
+   ProfileAndLevel: %u\n\
+ ContainerDuration: %u\n",
 	  VDesc.SampleRate.Numerator ,VDesc.SampleRate.Denominator,
 	  VDesc.FrameLayout,
 	  VDesc.StoredWidth,
@@ -212,7 +212,7 @@ ASDCP::MPEG2::MXFReader::h__Reader::FindFrameGOPStart(ui32_t FrameNum, ui32_t& K
 
   if ( ASDCP_FAILURE(m_FooterPart.Lookup(FrameNum, TmpEntry)) )
     {
-      DefaultLogSink().Error("Frame value out of range: %lu\n", FrameNum);
+      DefaultLogSink().Error("Frame value out of range: %u\n", FrameNum);
       return RESULT_RANGE;
     }
 

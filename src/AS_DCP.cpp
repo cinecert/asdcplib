@@ -36,7 +36,7 @@ const char*
 ASDCP::Version()
 {
   static char ver[16];
-  snprintf(ver, 16, "%lu.%lu.%lu", VERSION_MAJOR, VERSION_APIMINOR, VERSION_IMPMINOR);
+  snprintf(ver, 16, "%u.%u.%u", VERSION_MAJOR, VERSION_APIMINOR, VERSION_IMPMINOR);
   return ver;
 }
 

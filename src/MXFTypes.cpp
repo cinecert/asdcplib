@@ -431,7 +431,7 @@ ASDCP::MXF::Timestamp::EncodeString(char* str_buf, ui32_t buf_len) const
   // 2004-05-01 13:20:00.000
   snprintf(str_buf, buf_len,
 	   "%04hu-%02hu-%02hu %02hu:%02hu:%02hu.000",
-           Year, Month, Day, Hour, Minute, Second, Tick);
+           Year, Month, Day, Hour, Minute, Second);
   
   return str_buf;
 }

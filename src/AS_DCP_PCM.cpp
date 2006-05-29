@@ -78,15 +78,15 @@ ASDCP::PCM::AudioDescriptorDump(const AudioDescriptor& ADesc, FILE* stream)
     stream = stderr;
 
   fprintf(stream, "\
-        SampleRate: %lu/%lu\n\
- AudioSamplingRate: %lu/%lu\n\
-            Locked: %lu\n\
-      ChannelCount: %lu\n\
-  QuantizationBits: %lu\n\
-        BlockAlign: %lu\n\
-            AvgBps: %lu\n\
-     LinkedTrackID: %lu\n\
- ContainerDuration: %lu\n",
+        SampleRate: %d/%d\n\
+ AudioSamplingRate: %d/%d\n\
+            Locked: %u\n\
+      ChannelCount: %u\n\
+  QuantizationBits: %u\n\
+        BlockAlign: %u\n\
+            AvgBps: %u\n\
+     LinkedTrackID: %u\n\
+ ContainerDuration: %u\n",
 	  ADesc.SampleRate.Numerator ,ADesc.SampleRate.Denominator,
 	  ADesc.AudioSamplingRate.Numerator ,ADesc.AudioSamplingRate.Denominator,
 	  ADesc.Locked,
@@ -363,14 +363,14 @@ ASDCP::PCM::MXFWriter::h__Writer::SetSourceStream(const AudioDescriptor& ADesc)
        && ADesc.SampleRate != EditRate_48
        && ADesc.SampleRate != EditRate_23_98 )
     {
-      DefaultLogSink().Error("AudioDescriptor.SampleRate is not 24/1, 48/1 or 24000/1001: %lu/%lu\n",
+      DefaultLogSink().Error("AudioDescriptor.SampleRate is not 24/1, 48/1 or 24000/1001: %d/%d\n",
 			     ADesc.SampleRate.Numerator, ADesc.SampleRate.Denominator);
       return RESULT_RAW_FORMAT;
     }
 
   if ( ADesc.AudioSamplingRate != SampleRate_48k )
     {
-      DefaultLogSink().Error("AudioDescriptor.AudioSamplingRate is not 48000/1: %lu/%lu\n",
+      DefaultLogSink().Error("AudioDescriptor.AudioSamplingRate is not 48000/1: %d/%d\n",
 			     ADesc.AudioSamplingRate.Numerator, ADesc.AudioSamplingRate.Denominator);
       return RESULT_RAW_FORMAT;
     }
