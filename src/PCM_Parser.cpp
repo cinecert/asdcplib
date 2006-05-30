@@ -144,7 +144,7 @@ ASDCP::PCM::WAVParser::h__WAVParser::ReadFrame(FrameBuffer& FB)
 
   if ( FB.Capacity() < m_FrameBufferSize )
     {
-      DefaultLogSink().Error("FrameBuf.Capacity: %lu FrameLength: %lu\n",
+      DefaultLogSink().Error("FrameBuf.Capacity: %u FrameLength: %u\n",
 			     FB.Capacity(), m_FrameBufferSize);
       return RESULT_SMALLBUF;
     }

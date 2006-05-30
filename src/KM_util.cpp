@@ -532,14 +532,14 @@ Kumu::write_BER(byte_t* buf, ui64_t val, ui32_t ber_len)
     { // sanity check BER length
       if ( ber_len > 9 )
         {
-          DefaultLogSink().Error("BER size %lu exceeds maximum size of 9\n", ber_len);
+          DefaultLogSink().Error("BER size %u exceeds maximum size of 9\n", ber_len);
           return false;
         }
       
       if ( val & ber_masks[ber_len - 1] )
         {
 	  ui64Printer tmp_i(val);
-          DefaultLogSink().Error("BER size %lu too small for value %s\n", tmp_i.c_str());
+          DefaultLogSink().Error("BER size %u too small for value %s\n", tmp_i.c_str());
           return false;
         }
     }
@@ -825,7 +825,7 @@ Kumu::Timestamp::DecodeString(const char* datestr)
   ui32_t TZ_mm = atoi(datestr + 23);
 
   if ( TZ_mm != 0 )
-    DefaultLogSink().Error("Ignoring sub-hours timezone offset: %lu\n", TZ_mm);
+    DefaultLogSink().Error("Ignoring sub-hours timezone offset: %u\n", TZ_mm);
  
   if ( TZ_hh > 12 )
     DefaultLogSink().Error("Ignoring large timezone offset: %s\n", (datestr+19));

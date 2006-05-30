@@ -186,7 +186,7 @@ ASDCP::h__Reader::ReadEKLVPacket(ui32_t FrameNum, ASDCP::FrameBuffer& FrameBuf,
 
   if ( ASDCP_FAILURE(m_FooterPart.Lookup(FrameNum, TmpEntry)) )
     {
-      DefaultLogSink().Error("Frame value out of range: %lu\n", FrameNum);
+      DefaultLogSink().Error("Frame value out of range: %u\n", FrameNum);
       return RESULT_RANGE;
     }
 
@@ -285,7 +285,7 @@ ASDCP::h__Reader::ReadEKLVPacket(ui32_t FrameNum, ASDCP::FrameBuffer& FrameBuf,
 	  
       if ( FrameBuf.Capacity() < SourceLength )
 	{
-	  DefaultLogSink().Error("FrameBuf.Capacity: %lu SourceLength: %lu\n", FrameBuf.Capacity(), SourceLength);
+	  DefaultLogSink().Error("FrameBuf.Capacity: %u SourceLength: %u\n", FrameBuf.Capacity(), SourceLength);
 	  return RESULT_SMALLBUF;
 	}
 
@@ -294,7 +294,7 @@ ASDCP::h__Reader::ReadEKLVPacket(ui32_t FrameNum, ASDCP::FrameBuffer& FrameBuf,
       // read ESV length
       if ( ! Kumu::read_test_BER(&ess_p, esv_length) )
 	{
-	  DefaultLogSink().Error("read_test_BER did not return %lu\n", esv_length);
+	  DefaultLogSink().Error("read_test_BER did not return %u\n", esv_length);
 	  return RESULT_FORMAT;
 	}
 
@@ -329,7 +329,12 @@ ASDCP::h__Reader::ReadEKLVPacket(ui32_t FrameNum, ASDCP::FrameBuffer& FrameBuf,
       else // return ciphertext to caller
 	{
 	  if ( FrameBuf.Capacity() < tmp_len )
-	    return RESULT_SMALLBUF;
+	    {
+	      char intbuf[IntBufferLen];
+	      DefaultLogSink().Error("FrameBuf.Capacity: %u FrameLength: %s\n",
+				     FrameBuf.Capacity(), ui64sz(PacketLength, intbuf));
+	      return RESULT_SMALLBUF;
+	    }
 
 	  memcpy(FrameBuf.Data(), ess_p, tmp_len);
 	  FrameBuf.Size(tmp_len);
@@ -342,7 +347,7 @@ ASDCP::h__Reader::ReadEKLVPacket(ui32_t FrameNum, ASDCP::FrameBuffer& FrameBuf,
        if ( FrameBuf.Capacity() < PacketLength )
 	{
 	  char intbuf[IntBufferLen];
-	  DefaultLogSink().Error("FrameBuf.Capacity: %lu FrameLength: %s\n",
+	  DefaultLogSink().Error("FrameBuf.Capacity: %u FrameLength: %s\n",
 				 FrameBuf.Capacity(), ui64sz(PacketLength, intbuf));
 	  return RESULT_SMALLBUF;
 	}

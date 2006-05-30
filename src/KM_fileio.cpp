@@ -200,7 +200,7 @@ Kumu::FileWriter::Writev(const byte_t* buf, ui32_t buf_len)
 
   if ( iov->m_Count >= IOVecMaxEntries )
     {
-      DefaultLogSink().Error("The iovec is full! Only %lu entries allowed before a flush.\n",
+      DefaultLogSink().Error("The iovec is full! Only %u entries allowed before a flush.\n",
 			     IOVecMaxEntries);
       return RESULT_FAIL;
     }

@@ -89,7 +89,7 @@ ASDCP::JP2K::GetNextMarker(const byte_t** buf, JP2K::Marker& Marker)
 
   if ( Marker.m_DataSize != 0 && Marker.m_DataSize < 3 )
     {
-      DefaultLogSink().Error("Illegal data size: %lu\n", Marker.m_DataSize);
+      DefaultLogSink().Error("Illegal data size: %u\n", Marker.m_DataSize);
       return ASDCP::RESULT_FAIL;
     }
 
@@ -120,15 +120,15 @@ ASDCP::JP2K::Accessor::SIZ::Dump(FILE* stream)
 
   fprintf(stream, "SIZ: \n");
   fprintf(stream, "  Rsize: %hu\n", Rsize());
-  fprintf(stream, "  Xsize: %lu\n", Xsize());
-  fprintf(stream, "  Ysize: %lu\n", Xsize());
-  fprintf(stream, " XOsize: %lu\n", XOsize());
-  fprintf(stream, " YOsize: %lu\n", XOsize());
-  fprintf(stream, " XTsize: %lu\n", XTsize());
-  fprintf(stream, " YTsize: %lu\n", XTsize());
-  fprintf(stream, "XTOsize: %lu\n", XTOsize());
-  fprintf(stream, "YTOsize: %lu\n", YTOsize());
-  fprintf(stream, "  Csize: %lu\n", Csize());
+  fprintf(stream, "  Xsize: %u\n", Xsize());
+  fprintf(stream, "  Ysize: %u\n", Xsize());
+  fprintf(stream, " XOsize: %u\n", XOsize());
+  fprintf(stream, " YOsize: %u\n", XOsize());
+  fprintf(stream, " XTsize: %u\n", XTsize());
+  fprintf(stream, " YTsize: %u\n", XTsize());
+  fprintf(stream, "XTOsize: %u\n", XTOsize());
+  fprintf(stream, "YTOsize: %u\n", YTOsize());
+  fprintf(stream, "  Csize: %u\n", Csize());
 
   if ( Csize() > 0 )
     {
@@ -138,8 +138,8 @@ ASDCP::JP2K::Accessor::SIZ::Dump(FILE* stream)
 	{
 	  ImageComponent TmpComp;
 	  ReadComponent(i, TmpComp);
-	  fprintf(stream, "%lu: ", i);
-	  fprintf(stream, "%lu, %lu, %lu\n", TmpComp.Ssize, TmpComp.XRsize, TmpComp.YRsize);
+	  fprintf(stream, "%u: ", i);
+	  fprintf(stream, "%u, %u, %u\n", TmpComp.Ssize, TmpComp.XRsize, TmpComp.YRsize);
 	}
     }
 }

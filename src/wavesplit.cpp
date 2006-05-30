@@ -237,7 +237,7 @@ split_wav_file(CommandOptions& Options)
 
       if ( Options.verbose_flag )
 	{
-	  fprintf(stderr, "48Khz PCM Audio, %s fps (%lu spf)\n", "24",
+	  fprintf(stderr, "48Khz PCM Audio, %s fps (%u spf)\n", "24",
 		  PCM::CalcSamplesPerFrame(ADesc));
 	  fputs("AudioDescriptor:\n", stderr);
 	  PCM::AudioDescriptorDump(ADesc);
@@ -285,7 +285,7 @@ split_wav_file(CommandOptions& Options)
 	  if ( FrameBuffer.Size() != FrameBuffer.Capacity() )
 	    {
 	      fprintf(stderr, "WARNING: Last frame read was short, PCM input is possibly not frame aligned.\n");
-	      fprintf(stderr, "Expecting %lu bytes, got %lu.\n", FrameBuffer.Capacity(), FrameBuffer.Size());
+	      fprintf(stderr, "Expecting %u bytes, got %u.\n", FrameBuffer.Capacity(), FrameBuffer.Size());
 	      result = RESULT_ENDOFFILE;
 	      continue;
 	    }

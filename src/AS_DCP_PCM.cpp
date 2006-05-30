@@ -215,7 +215,7 @@ ASDCP::PCM::FrameBuffer::Dump(FILE* stream, ui32_t dump_len) const
   if ( stream == 0 )
     stream = stderr;
 
-  fprintf(stream, "Frame: %06lu, %7lu bytes\n",
+  fprintf(stream, "Frame: %06u, %7u bytes\n",
 	  m_FrameNumber, m_Size);
 
   if ( dump_len )

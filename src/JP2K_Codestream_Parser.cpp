@@ -67,7 +67,7 @@ public:
 
 	if ( FB.Capacity() < file_size )
 	  {
-	    DefaultLogSink().Error("FrameBuf.Capacity: %lu frame length: %lu\n", FB.Capacity(), (ui32_t)file_size);
+	    DefaultLogSink().Error("FrameBuf.Capacity: %u frame length: %u\n", FB.Capacity(), (ui32_t)file_size);
 	    return RESULT_SMALLBUF;
 	  }
       }
@@ -91,7 +91,7 @@ public:
 	  {
 	    result = GetNextMarker(&p, NextMarker);
 #if 0
-	    fprintf(stderr, "%s Length: %lu\n",
+	    fprintf(stderr, "%s Length: %u\n",
 		    GetMarkerString(NextMarker.m_Type), NextMarker.m_DataSize);
 #endif
 
@@ -121,7 +121,7 @@ public:
 
 		  if ( m_PDesc.Csize != 3 )
 		    {
-		      DefaultLogSink().Error("Unexpected number of components: %lu\n", m_PDesc.Csize);
+		      DefaultLogSink().Error("Unexpected number of components: %u\n", m_PDesc.Csize);
 		      return RESULT_RAW_FORMAT;
 		    }
 
@@ -133,7 +133,7 @@ public:
 	      case MRK_COD:
 		if ( NextMarker.m_DataSize > DefaultCodingDataLength )
 		  {
-		    DefaultLogSink().Error("Unexpectedly large CodingStyle data: %lu\n", NextMarker.m_DataSize);
+		    DefaultLogSink().Error("Unexpectedly large CodingStyle data: %u\n", NextMarker.m_DataSize);
 		    return RESULT_RAW_FORMAT;
 		  }
 
@@ -144,7 +144,7 @@ public:
 	      case MRK_QCD:
 		if ( NextMarker.m_DataSize > DefaultCodingDataLength )
 		  {
-		    DefaultLogSink().Error("Unexpectedly large QuantDefault data: %lu\n", NextMarker.m_DataSize);
+		    DefaultLogSink().Error("Unexpectedly large QuantDefault data: %u\n", NextMarker.m_DataSize);
 		    return RESULT_RAW_FORMAT;
 		  }
 

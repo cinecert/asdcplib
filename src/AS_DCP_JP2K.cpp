@@ -219,7 +219,7 @@ ASDCP::JP2K::FrameBuffer::Dump(FILE* stream, ui32_t dump_len) const
   if ( stream == 0 )
     stream = stderr;
 
-  fprintf(stream, "Frame: %06lu, %7lu bytes", m_FrameNumber, m_Size);
+  fprintf(stream, "Frame: %06u, %7u bytes", m_FrameNumber, m_Size);
   
   fputc('\n', stream);
 

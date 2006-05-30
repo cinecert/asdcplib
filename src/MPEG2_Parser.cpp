@@ -460,7 +460,7 @@ ASDCP::MPEG2::Parser::h__Parser::ReadFrame(FrameBuffer& FB)
     {
       if ( FB.Capacity() < ( write_offset + VESReadSize ) )
 	{
-	  DefaultLogSink().Error("FrameBuf.Capacity: %lu FrameLength: %lu\n",
+	  DefaultLogSink().Error("FrameBuf.Capacity: %u FrameLength: %u\n",
 				 FB.Capacity(), ( write_offset + VESReadSize ));
 	  return RESULT_SMALLBUF;
 	}

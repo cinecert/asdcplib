@@ -325,15 +325,15 @@ ASDCP::MXF::Partition::Dump(FILE* stream)
   KLVFilePacket::Dump(stream, false);
   fprintf(stream, "  MajorVersion       = %hu\n", MajorVersion);
   fprintf(stream, "  MinorVersion       = %hu\n", MinorVersion);
-  fprintf(stream, "  KAGSize            = %lu\n", KAGSize);
+  fprintf(stream, "  KAGSize            = %u\n",  KAGSize);
   fprintf(stream, "  ThisPartition      = %s\n",  ui64sz(ThisPartition, identbuf));
   fprintf(stream, "  PreviousPartition  = %s\n",  ui64sz(PreviousPartition, identbuf));
   fprintf(stream, "  FooterPartition    = %s\n",  ui64sz(FooterPartition, identbuf));
   fprintf(stream, "  HeaderByteCount    = %s\n",  ui64sz(HeaderByteCount, identbuf));
   fprintf(stream, "  IndexByteCount     = %s\n",  ui64sz(IndexByteCount, identbuf));
-  fprintf(stream, "  IndexSID           = %lu\n", IndexSID);
+  fprintf(stream, "  IndexSID           = %u\n",  IndexSID);
   fprintf(stream, "  BodyOffset         = %s\n",  ui64sz(BodyOffset, identbuf));
-  fprintf(stream, "  BodySID            = %lu\n", BodySID);
+  fprintf(stream, "  BodySID            = %u\n",  BodySID);
   fprintf(stream, "  OperationalPattern = %s\n",  OperationalPattern.EncodeString(identbuf, IdentBufferLen));
   fputs("Essence Containers:\n", stream); EssenceContainers.Dump(stream, false);
 
@@ -497,7 +497,7 @@ ASDCP::MXF::Primer::Dump(FILE* stream)
     stream = stderr;
 
   KLVPacket::Dump(stream, false);
-  fprintf(stream, "Primer: %lu %s\n",
+  fprintf(stream, "Primer: %u %s\n",
 	  LocalTagEntryBatch.size(),
 	  ( LocalTagEntryBatch.size() == 1 ? "entry" : "entries" ));
   
@@ -577,7 +577,7 @@ ASDCP::MXF::Preface::Dump(FILE* stream)
   InterchangeObject::Dump(stream);
   fprintf(stream, "  %22s = %s\n",  "LastModifiedDate", LastModifiedDate.EncodeString(identbuf, IdentBufferLen));
   fprintf(stream, "  %22s = %hu\n", "Version", Version);
-  fprintf(stream, "  %22s = %lu\n", "ObjectModelVersion", ObjectModelVersion);
+  fprintf(stream, "  %22s = %u\n", "ObjectModelVersion", ObjectModelVersion);
   fprintf(stream, "  %22s = %s\n",  "PrimaryPackage", PrimaryPackage.EncodeHex(identbuf, IdentBufferLen));
   fprintf(stream, "  %22s:\n", "Identifications");  Identifications.Dump(stream);
   fprintf(stream, "  %22s = %s\n",  "ContentStorage", ContentStorage.EncodeHex(identbuf, IdentBufferLen));
@@ -618,7 +618,7 @@ ASDCP::MXF::OPAtomHeader::InitFromFile(const Kumu::FileReader& Reader)
 	{
 	  // OP-Atom states that there will be either two or three partitions,
 	  // one closed header and one closed footer with an optional body
-	  DefaultLogSink().Error("RIP count is not 2 or 3: %lu\n", test_s);
+	  DefaultLogSink().Error("RIP count is not 2 or 3: %u\n", test_s);
 	  return RESULT_FORMAT;
 	}
       else
@@ -662,7 +662,7 @@ ASDCP::MXF::OPAtomHeader::InitFromFile(const Kumu::FileReader& Reader)
   if ( ASDCP_SUCCESS(result) )
     {
       if ( HeaderByteCount < 1024 )
-	DefaultLogSink().Warn("Improbably small HeaderByteCount value: %lu\n", HeaderByteCount);
+	DefaultLogSink().Warn("Improbably small HeaderByteCount value: %u\n", HeaderByteCount);
 
       result = m_Buffer.Capacity(HeaderByteCount);
     }
@@ -674,7 +674,7 @@ ASDCP::MXF::OPAtomHeader::InitFromFile(const Kumu::FileReader& Reader)
 
       if ( ASDCP_SUCCESS(result) && read_count != m_Buffer.Capacity() )
 	{
-	  DefaultLogSink().Error("Short read of OP-Atom header metadata; wanted %lu, got %lu\n",
+	  DefaultLogSink().Error("Short read of OP-Atom header metadata; wanted %u, got %u\n",
 				 m_Buffer.Capacity(), read_count);
 	  return RESULT_FAIL;
 	}
@@ -772,7 +772,7 @@ ASDCP::MXF::OPAtomHeader::WriteToFile(Kumu::FileWriter& Writer, ui32_t HeaderSiz
 
   if ( HeaderSize < 4096 ) 
     {
-      DefaultLogSink().Error("HeaderSize %lu is too small. Must be >= 4096\n", HeaderSize);
+      DefaultLogSink().Error("HeaderSize %u is too small. Must be >= 4096\n", HeaderSize);
       return RESULT_FAIL;
     }
 
@@ -818,7 +818,7 @@ ASDCP::MXF::OPAtomHeader::WriteToFile(Kumu::FileWriter& Writer, ui32_t HeaderSiz
       if ( pos > (Kumu::fpos_t)HeaderByteCount )
 	{
 	  char intbuf[IntBufferLen];
-	  DefaultLogSink().Error("Header size %s exceeds specified value %lu\n",
+	  DefaultLogSink().Error("Header size %s exceeds specified value %u\n",
 				 ui64sz(pos, intbuf),
 				 HeaderSize);
 	  return RESULT_FAIL;
@@ -904,7 +904,7 @@ ASDCP::MXF::OPAtomIndexFooter::InitFromFile(const Kumu::FileReader& Reader)
 
   if ( ASDCP_SUCCESS(result) && read_count != m_Buffer.Capacity() )
     {
-      DefaultLogSink().Error("Short read of footer partition: got %lu, expecting %lu\n",
+      DefaultLogSink().Error("Short read of footer partition: got %u, expecting %u\n",
 			     read_count, m_Buffer.Capacity());
       return RESULT_FAIL;
     }

@@ -222,7 +222,7 @@ ASDCP::MPEG2::VESParser::Parse(const byte_t* buf, ui32_t buf_len)
 		case GOP_START:   result = m_Delegate->GOP(this, m_HBuf, m_HBufLen);       break;
 
 		default:
-		  DefaultLogSink().Error("Unexpected start code: %02x at byte %lu\n",
+		  DefaultLogSink().Error("Unexpected start code: %02x at byte %u\n",
 					 m_HBuf[3], (ui32_t)(p - buf));
 		  result = RESULT_RAW_FORMAT;
 		}

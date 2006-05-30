@@ -139,7 +139,7 @@ ASDCP::KLVPacket::Dump(FILE* stream, bool show_hex)
 	fprintf(stream, "%02x.", m_KeyStart[i]);
 
       const MDDEntry* Entry = Dict::FindUL(m_KeyStart);
-      fprintf(stream, "\b  len: %7lu (%s)\n", m_ValueLength, (Entry ? Entry->name : "Unknown"));
+      fprintf(stream, "\b  len: %7u (%s)\n", m_ValueLength, (Entry ? Entry->name : "Unknown"));
 
       if ( show_hex && m_ValueLength < 1000 )
 	Kumu::hexdump(m_ValueStart, Kumu::xmin(m_ValueLength, (ui32_t)64), stream);
@@ -181,7 +181,7 @@ ASDCP::KLVFilePacket::InitFromFile(const Kumu::FileReader& Reader)
 
   if ( read_count < (SMPTE_UL_LENGTH + 1) )
     {
-      DefaultLogSink().Error("Short read of Key and Length got %lu\n", read_count);
+      DefaultLogSink().Error("Short read of Key and Length got %u\n", read_count);
       return RESULT_READFAIL;
     }
 
@@ -238,7 +238,7 @@ ASDCP::KLVFilePacket::InitFromFile(const Kumu::FileReader& Reader)
     {
       if ( read_count < tmp_read_size )
 	{
-	  DefaultLogSink().Error("Short read of packet body, expecting %lu, got %lu\n",
+	  DefaultLogSink().Error("Short read of packet body, expecting %u, got %u\n",
 				 m_Buffer.Size(), read_count);
 	  return RESULT_READFAIL;
 	}
@@ -252,7 +252,7 @@ ASDCP::KLVFilePacket::InitFromFile(const Kumu::FileReader& Reader)
       
 	  if ( read_count != remainder )
 	    {
-	      DefaultLogSink().Error("Short read of packet body, expecting %lu, got %lu\n",
+	      DefaultLogSink().Error("Short read of packet body, expecting %u, got %u\n",
 				     remainder+tmp_read_size, read_count+tmp_read_size);
 	      result = RESULT_READFAIL;
 	    }

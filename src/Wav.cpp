@@ -161,7 +161,7 @@ ASDCP::Wav::SimpleWaveHeader::ReadFromBuffer(const byte_t* buf, ui32_t buf_len, 
 	{
 	  if ( chunk_size > RIFF_len )
 	    {
-	      DefaultLogSink().Error("Chunk size %lu larger than file: %lu\n", chunk_size, RIFF_len);
+	      DefaultLogSink().Error("Chunk size %u larger than file: %u\n", chunk_size, RIFF_len);
 	      return RESULT_RAW_FORMAT;
 	    }
 
@@ -335,7 +335,7 @@ ASDCP::AIFF::SimpleAIFFHeader::ReadFromBuffer(const byte_t* buf, ui32_t buf_len,
 	{
 	  if ( chunk_size > RIFF_len )
             {
-              DefaultLogSink().Error("Chunk size %lu larger than file: %lu\n", chunk_size, RIFF_len);
+              DefaultLogSink().Error("Chunk size %u larger than file: %u\n", chunk_size, RIFF_len);
               return RESULT_RAW_FORMAT;
             }
 
@@ -344,7 +344,6 @@ ASDCP::AIFF::SimpleAIFFHeader::ReadFromBuffer(const byte_t* buf, ui32_t buf_len,
 
 	  data_len = chunk_size - 8;
 	  *data_start = (p - buf) + offset;
-	  fprintf(stderr, "*data_start: %p\n", *data_start);
 	  break;
 	}
       else
