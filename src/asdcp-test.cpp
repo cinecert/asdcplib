@@ -277,11 +277,11 @@ public:
     for ( int i = 1; i < argc; i++ )
       {
 
-         if ( (strcmp( argv[i], "-help") == 0) )
-           {
-             help_flag = true;
-             continue;
-           }
+	if ( (strcmp( argv[i], "-help") == 0) )
+	  {
+	    help_flag = true;
+	    continue;
+	  }
          
 	if ( argv[i][0] == '-' && isalpha(argv[i][1]) && argv[i][2] == 0 )
 	  {

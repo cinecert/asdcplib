@@ -169,7 +169,7 @@ make_black_wav_file(CommandOptions& Options)
 
   if ( 1 ) // Options.verbose_flag )
     {
-      fprintf(stderr, "48Khz PCM Audio, %s fps (%lu spf)\n", "24",
+      fprintf(stderr, "48Khz PCM Audio, %s fps (%u spf)\n", "24",
 	      PCM::CalcSamplesPerFrame(ADesc));
       fputs("AudioDescriptor:\n", stderr);
       PCM::AudioDescriptorDump(ADesc);

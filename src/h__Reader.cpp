@@ -108,19 +108,23 @@ ASDCP::h__Reader::OpenMXFRead(const char* filename)
   if ( ASDCP_SUCCESS(result) )
     result = m_HeaderPart.InitFromFile(m_File);
 
-  // if this is a three partition file, go to the body
-  // partition and read off the partition pack
-  if ( m_HeaderPart.m_RIP.PairArray.size() == 3 )
+  if ( ASDCP_SUCCESS(result) )
     {
-      Array<RIP::Pair>::iterator r_i = m_HeaderPart.m_RIP.PairArray.begin();
-      r_i++;
-      m_File.Seek((*r_i).ByteOffset);
+      // if this is a three partition file, go to the body
+      // partition and read the partition pack
+      if ( m_HeaderPart.m_RIP.PairArray.size() == 3 )
+	{
+	  Array<RIP::Pair>::iterator r_i = m_HeaderPart.m_RIP.PairArray.begin();
+	  r_i++;
+	  m_File.Seek((*r_i).ByteOffset);
 
-      result = m_BodyPart.InitFromFile(m_File);
+	  result = m_BodyPart.InitFromFile(m_File);
+	}
+
+      m_EssenceStart = m_File.Tell();
     }
 
-  m_EssenceStart = m_File.Tell();
-  return RESULT_OK;
+  return result;
 }
 
 

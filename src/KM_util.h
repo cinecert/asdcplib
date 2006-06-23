@@ -167,8 +167,6 @@ namespace Kumu
   template <ui32_t SIZE>
     class Identifier : public IArchive
     {
-      const Identifier& operator=(const Identifier& rhs);
-
     protected:
       bool   m_HasValue;
       byte_t m_Value[SIZE];
@@ -182,6 +180,12 @@ namespace Kumu
       }
 
       virtual ~Identifier() {}
+
+      const Identifier& operator=(const Identifier& rhs) {
+	m_HasValue = rhs.m_HasValue;
+	memcpy(m_Value, rhs.m_Value, SIZE);
+        return *this;
+      }
 
       inline void Set(const byte_t* value) { m_HasValue = true; memcpy(m_Value, value, SIZE); }
       inline const byte_t* Value() const { return m_Value; }
@@ -262,19 +266,13 @@ namespace Kumu
       UUID(const byte_t* value) : Identifier<UUID_Length>(value) {}
       UUID(const UUID& rhs) : Identifier<UUID_Length>(rhs) {}
       virtual ~UUID() {}
-      
-      const UUID& operator=(const UUID& rhs) {
-        if ( m_HasValue = rhs.m_HasValue )
-          memcpy(m_Value, rhs.m_Value, UUID_Length);
-        return *this;
-      }
 
       inline const char* EncodeHex(char* buf, ui32_t buf_len) const {
 	return bin2UUIDhex(m_Value, Size(), buf, buf_len);
       }
     };
   
-  void GenRandomUUID(byte_t* buf);
+  void GenRandomUUID(byte_t* buf); // buf must be UUID_Length or longer
   void GenRandomValue(UUID&);
   
   // a self-wiping key container
@@ -292,12 +290,6 @@ namespace Kumu
       SymmetricKey(const byte_t* value) : Identifier<SymmetricKey_Length>(value) {}
       SymmetricKey(const UUID& rhs) : Identifier<SymmetricKey_Length>(rhs) {}
       virtual ~SymmetricKey() { memcpy(m_Value, NilKey, 16); m_HasValue = false; }
-
-      const SymmetricKey& operator=(const SymmetricKey& rhs) {
-        if ( m_HasValue = rhs.m_HasValue )
-          memcpy(m_Value, rhs.m_Value, SymmetricKey_Length);
-        return *this;
-      }
     };
 
   void GenRandomValue(SymmetricKey&);

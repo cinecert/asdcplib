@@ -102,12 +102,6 @@ inline const char* ui64sz(ui64_t i, char* buf)
       UL(const byte_t* value) : Kumu::Identifier<SMPTE_UL_LENGTH>(value) {}
       virtual ~UL() {}
 
-      const UL& operator=(const UL& rhs) {
-	if ( m_HasValue = rhs.m_HasValue )
-	  memcpy(m_Value, rhs.m_Value, SMPTE_UL_LENGTH);
-	return *this;
-      }
-
       const char* EncodeString(char* str_buf, ui32_t buf_len) const;
     };
 
@@ -119,12 +113,6 @@ inline const char* ui64sz(ui64_t i, char* buf)
       UMID(const UMID& rhs) : Kumu::Identifier<SMPTE_UMID_LENGTH>(rhs) {}
       UMID(const byte_t* value) : Kumu::Identifier<SMPTE_UMID_LENGTH>(value) {}
       virtual ~UMID() {}
-
-      const UMID& operator=(const UMID& rhs) {
-	if ( m_HasValue = rhs.m_HasValue )
-	  memcpy(m_Value, rhs.m_Value, SMPTE_UMID_LENGTH);
-	return *this;
-      }
 
       void MakeUMID(int Type);
       void MakeUMID(int Type, const UUID& ID);

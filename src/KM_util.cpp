@@ -433,12 +433,12 @@ Kumu::GenRandomUUID(byte_t* buf)
 
 //
 void
-Kumu::GenRandomValue(SymmetricKey& ID)
+Kumu::GenRandomValue(SymmetricKey& Key)
 {
   byte_t tmp_buf[SymmetricKey_Length];
   FortunaRNG RNG;
   RNG.FillRandom(tmp_buf, SymmetricKey_Length);
-  ID.Set(tmp_buf);
+  Key.Set(tmp_buf);
 }
 
 
@@ -796,41 +796,73 @@ Kumu::Timestamp::EncodeString(char* str_buf, ui32_t buf_len) const
 bool
 Kumu::Timestamp::DecodeString(const char* datestr)
 {
+  Timestamp TmpStamp;
+
   if ( ! ( isdigit(datestr[0]) && isdigit(datestr[1]) && isdigit(datestr[2]) && isdigit(datestr[3]) )
        || datestr[4] != '-'
        || ! ( isdigit(datestr[5]) && isdigit(datestr[6]) )
        || datestr[7] != '-'
-       || ! ( isdigit(datestr[8]) && isdigit(datestr[9]) )
-       || datestr[10] != 'T'
-       || ! ( isdigit(datestr[11]) && isdigit(datestr[12]) )
-       || datestr[13] != ':'
-       || ! ( isdigit(datestr[14]) && isdigit(datestr[15]) )
-       || datestr[16] != ':'
-       || ! ( isdigit(datestr[17]) && isdigit(datestr[18]) )
-       || ! ( datestr[19] == '-' || datestr[19] == '+' )
-       || ! ( isdigit(datestr[20]) && isdigit(datestr[21]) )
-       || datestr[22] != ':'
-       || ! ( isdigit(datestr[23]) && isdigit(datestr[24]) ) )
+       || ! ( isdigit(datestr[8]) && isdigit(datestr[9]) ) )
     return false;
 
-  // TODO -- test this!
-  Year = atoi(datestr);
-  Month = atoi(datestr + 5);
-  Day = atoi(datestr + 8);
-  Hour = atoi(datestr + 11);
-  Minute = atoi(datestr + 14);
-  Second = atoi(datestr + 17);
-
-  ui32_t TZ_hh = atoi(datestr + 20);
-  ui32_t TZ_mm = atoi(datestr + 23);
-
-  if ( TZ_mm != 0 )
-    DefaultLogSink().Error("Ignoring sub-hours timezone offset: %u\n", TZ_mm);
+  TmpStamp.Year = atoi(datestr);
+  TmpStamp.Month = atoi(datestr + 5);
+  TmpStamp.Day = atoi(datestr + 8);
+  TmpStamp.Hour = TmpStamp.Minute = TmpStamp.Second = 0;
  
-  if ( TZ_hh > 12 )
-    DefaultLogSink().Error("Ignoring large timezone offset: %s\n", (datestr+19));
-  else 
-    AddHours(TZ_hh);
+  if ( datestr[10] == 'T' )
+    {
+      if ( ! ( isdigit(datestr[11]) && isdigit(datestr[12]) )
+	   || datestr[13] != ':'
+	   || ! ( isdigit(datestr[14]) && isdigit(datestr[15]) ) )
+	return false;
+
+      TmpStamp.Hour = atoi(datestr + 11);
+      TmpStamp.Minute = atoi(datestr + 14);
+
+      if ( datestr[16] == ':' )
+	{
+	  if ( ! ( isdigit(datestr[17]) && isdigit(datestr[18]) ) )
+	    return false;
+
+	  TmpStamp.Second = atoi(datestr + 17);
+	}
+    }
+
+  if ( datestr[19] == '-' || datestr[19] == '+' )
+    {
+      if ( ! ( isdigit(datestr[20]) && isdigit(datestr[21]) )
+	   || datestr[22] != ':'
+	   || ! ( isdigit(datestr[23]) && isdigit(datestr[24]) ) )
+	return false;
+
+      ui32_t TZ_hh = atoi(datestr + 20);
+      ui32_t TZ_mm = atoi(datestr + 23);
+      
+      if ( TZ_mm != 0 )
+	DefaultLogSink().Error("Ignoring minutes in timezone offset: %u\n", TZ_mm);
+
+      if ( TZ_hh > 12 )
+	return false;
+
+      else 
+	AddHours( (datestr[19] == '-' ? (-TZ_hh) : TZ_hh));
+    }
+
+#ifdef KM_WIN32
+  SYSTEMTIME st;
+  FILETIME ft;
+  TIMESTAMP_TO_SYSTIME(TmpStamp, &st);
+  if ( SystemTimeToFileTime(&st, &ft) == 0 )
+    return false;
+  SYSTIME_TO_TIMESTAMP(&st, *this);
+#else
+  struct tm stm;
+  TIMESTAMP_TO_TM(TmpStamp, &stm);
+  if ( timegm(&stm) == 0 )
+    return false;
+  TM_TO_TIMESTAMP(&stm, *this);
+#endif
 
   return true;
 }

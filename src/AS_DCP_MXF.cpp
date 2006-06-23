@@ -447,7 +447,7 @@ ASDCP::IntegrityPack::TestValues(const ASDCP::FrameBuffer& FB, byte_t* AssetID,
   // test the sequence value
   if ( test_sequence != sequence )
     {
-      DefaultLogSink().Error("IntegrityPack failure: sequence is %lu, expecting %lu.\n", test_sequence, sequence);
+      DefaultLogSink().Error("IntegrityPack failure: sequence is %u, expecting %u.\n", test_sequence, sequence);
       return RESULT_HMACFAIL;
     }
 

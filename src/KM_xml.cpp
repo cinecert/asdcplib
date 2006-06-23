@@ -138,10 +138,12 @@ Kumu::XMLElement::RenderElement(std::string& outbuf, ui32_t depth)
       outbuf += "\"";
     }
 
+  outbuf += ">";
+
   // body contents and children
   if ( ! m_ChildList.empty() )
     {
-      outbuf += ">\n";
+      outbuf += "\n";
 
       // render body
       if ( m_Body.length() > 0 )
@@ -151,22 +153,15 @@ Kumu::XMLElement::RenderElement(std::string& outbuf, ui32_t depth)
 	(*i)->RenderElement(outbuf, depth + 1);
 
       add_spacer(outbuf, depth);
-      outbuf += "</";
-      outbuf += m_Name;
-      outbuf += ">\n";
     }
   else if ( m_Body.length() > 0 )
     {
-      outbuf += ">";
       outbuf += m_Body;
-      outbuf += "</";
-      outbuf += m_Name;
-      outbuf += ">\n";
     }
-  else
-    {
-      outbuf += " />\n";
-    }
+
+  outbuf += "</";
+  outbuf += m_Name;
+  outbuf += ">\n";
 }
 
 

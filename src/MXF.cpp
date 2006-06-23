@@ -577,7 +577,7 @@ ASDCP::MXF::Preface::Dump(FILE* stream)
   InterchangeObject::Dump(stream);
   fprintf(stream, "  %22s = %s\n",  "LastModifiedDate", LastModifiedDate.EncodeString(identbuf, IdentBufferLen));
   fprintf(stream, "  %22s = %hu\n", "Version", Version);
-  fprintf(stream, "  %22s = %u\n", "ObjectModelVersion", ObjectModelVersion);
+  fprintf(stream, "  %22s = %u\n",  "ObjectModelVersion", ObjectModelVersion);
   fprintf(stream, "  %22s = %s\n",  "PrimaryPackage", PrimaryPackage.EncodeHex(identbuf, IdentBufferLen));
   fprintf(stream, "  %22s:\n", "Identifications");  Identifications.Dump(stream);
   fprintf(stream, "  %22s = %s\n",  "ContentStorage", ContentStorage.EncodeHex(identbuf, IdentBufferLen));
