@@ -83,23 +83,26 @@ void
 usage(FILE* stream = stdout)
 {
   fprintf(stream, "\
-USAGE: %s [-c <file-size>][-o <fwd|rev|rand>][-w <filename>][-v]\n\
-       <filename>\n\
+USAGE: %s [-c <file-size>] [-v] <output-file>\n\
+\n\
+       %s [-o <fwd|rev|rand>] [-v] <input-file>\n\
+\n\
+       %s [-w <output-file>] [-v] <input-file>\n\
 \n\
        %s [-h|-help] [-V]\n\
 \n\
-  -c <file-size>  - Create a test file containing <file-size> megabytes of data\n\
-  -h | -help      - Show help\n\
-  -o <order>      - Specify order used when validating a file.\n\
-                    One of fwd|rev|rand, default is rand\n\
-  -v              - Verbose. Prints informative messages to stderr\n\
-  -V              - Show version information\n\
-  -w              - Read-Validate-Write - file is written to <filename>\n\
-                    (sequential read only)\n\
+  -c <file-size>     - Create test file containing <file-size> megabytes of data\n\
+  -h | -help         - Show help\n\
+  -o <fwd|rev|rand>  - Specify order used when validating a file.\n\
+                       One of fwd|rev|rand, default is rand\n\
+  -v                 - Verbose. Prints informative messages to stderr\n\
+  -V                 - Show version information\n\
+  -w <output-file>   - Read-Validate-Write - file is written to <output-file>\n\
+                       (sequential read only)\n\
 \n\
   NOTES: o There is no option grouping, all options must be distinct arguments.\n\
          o All option arguments must be separated from the option by whitespace.\n\
-\n", PACKAGE, PACKAGE);
+\n", PACKAGE, PACKAGE, PACKAGE, PACKAGE);
 }
 
 enum MajorMode_t {
@@ -127,19 +130,19 @@ public:
 
   //
   CommandOptions(int argc, const char** argv) :
-    error_flag(true), order(0), verbose_flag(false), version_flag(false), help_flag(false),
+    error_flag(true), order(""), verbose_flag(false), version_flag(false), help_flag(false),
     filename(""), write_filename(""), chunk_count(0), mode(MMT_VALIDATE)
   {
-    order = "rand";
+    //    order = "rand";
 
     for ( int i = 1; i < argc; i++ )
       {
 
-	 if ( (strcmp( argv[i], "-help") == 0) )
-	   {
-	     help_flag = true;
-	     continue;
-	   }
+	if ( (strcmp( argv[i], "-help") == 0) )
+	  {
+	    help_flag = true;
+	    continue;
+	  }
      
 	if ( argv[i][0] == '-' && isalpha(argv[i][1]) && argv[i][2] == 0 )
 	  {
@@ -200,22 +203,31 @@ public:
 	  }
       }
     
-     if ( help_flag || version_flag )
-       return;
-  
-     if ( strlen ( filename ) == 0 )
+    if ( help_flag || version_flag )
+      return;
+    
+    if ( strlen ( filename ) == 0 )
       {
 	fprintf(stderr, "Filename required.\n");
 	return;
       }
+    
+    if ( mode != MMT_VALIDATE && strcmp(order, "") != 0 )
+      {
+	fprintf(stderr, "-o option not valid with -c or -w options.\n");
+	return;
+      }
+    else
+      if ( strcmp(order, "") == 0 )
+	order = "rand";
 
-   if ( strcmp ( filename, write_filename ) == 0 )
-     {
-       fprintf(stderr, "Output and input files must be different.\n");
-       return;
-     }
-
-   error_flag = false;
+    if ( strcmp ( filename, write_filename ) == 0 )
+      {
+	fprintf(stderr, "Output and input files must be different.\n");
+	return;
+      }
+    
+    error_flag = false;
   }
 };
 

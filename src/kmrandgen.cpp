@@ -67,7 +67,7 @@ void
 usage(FILE* stream = stdout)
 {
   fprintf(stream, "\
-USAGE: %s [-b|-c] [-n] [-s <size>]\n\
+USAGE: %s [-b|-c] [-n] [-s <size>] [-v]\n\
 \n\
        %s [-h|-help] [-V]\n\
 \n\
