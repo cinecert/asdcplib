@@ -41,7 +41,9 @@ typedef struct _stati64 fstat_t;
 #define S_IFLNK 0
 
 
-// AFAIK, there is no iovec equivalent in the win32 API
+// win32 has WriteFileGather() and ReadFileScatter() but they
+// demand page alignment and page sizing, making them unsuitable
+// for use with arbitrary buffer sizes.
 struct iovec {
   char* iov_base; // stupid iovec uses char*
   int   iov_len;
@@ -524,7 +526,7 @@ Kumu::FileWriter::OpenWrite(const char* filename)
 {
   KM_TEST_NULL_STR(filename);
   m_Filename = filename;
-  m_Handle = open(filename, O_RDWR|O_CREAT|O_TRUNC, 0644);
+  m_Handle = open(filename, O_RDWR|O_CREAT|O_TRUNC, 0664);
 
   if ( m_Handle == -1L )
     {
@@ -542,7 +544,7 @@ Kumu::FileWriter::OpenModify(const char* filename)
 {
   KM_TEST_NULL_STR(filename);
   m_Filename = filename;
-  m_Handle = open(filename, O_RDWR|O_CREAT, 0644);
+  m_Handle = open(filename, O_RDWR|O_CREAT, 0664);
 
   if ( m_Handle == -1L )
     {
