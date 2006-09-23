@@ -414,6 +414,7 @@ ASDCP::MPEG2::Parser::h__Parser::OpenRead(const char* filename)
 
   if ( ASDCP_SUCCESS(result) )
     {
+      m_ParamsDelegate.m_VDesc.ContainerDuration = m_FileReader.Size() / 65536; // a gross approximation
       m_Parser.SetDelegate(&m_ParserDelegate);
       m_FileReader.Seek(0);
     }

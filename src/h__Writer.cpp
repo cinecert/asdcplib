@@ -201,8 +201,10 @@ ASDCP::h__Writer::WriteMXFHeader(const std::string& PackageLabel, const UL& Wrap
   m_FilePackage->Name = PackageLabel.c_str();
   m_FilePackage->PackageUID = PackageUMID;
   ECD->LinkedPackageUID = PackageUMID;
-  m_MPClip->SourcePackageID = PackageUMID;
-  m_MPClip->SourceTrackID = 1;
+
+  // for now we do not allow setting this value, so all files will be 'original'
+  m_MPClip->SourcePackageID = NilUMID;
+  m_MPClip->SourceTrackID = 0;
 
   m_HeaderPart.AddChildObject(m_FilePackage);
   Storage->Packages.push_back(m_FilePackage->InstanceUID);

@@ -40,18 +40,29 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 namespace Kumu
 {
 
+  // a class that represents the string form of a value
   template <class T, int SIZE = 16>
     class IntPrinter : public std::string
   {
-    protected:
+    KM_NO_COPY_CONSTRUCT(IntPrinter);
     IntPrinter();
+
+    protected:
+    const char* m_format;
     char m_strbuf[SIZE];
     
     public:
-    inline const char* c_str() { return m_strbuf; }
-    
     IntPrinter(const char* format, T value) {
-      snprintf(m_strbuf, SIZE, format, value);
+      assert(format);
+      m_format = format;
+      snprintf(m_strbuf, SIZE, m_format, value);
+    }
+
+    inline operator const char*() { return m_strbuf; }
+    inline const char* c_str() { return m_strbuf; }
+    inline const char* set_value(T value) {
+      snprintf(m_strbuf, SIZE, m_format, value);
+      return m_strbuf;
     }
   };
 
@@ -152,6 +163,8 @@ namespace Kumu
   //----------------------------------------------------------------
   //
 
+  // an abstract base class that objects implement to serialize state
+  // to and from a binary stream.
   class IArchive
     {
     public:
@@ -163,7 +176,9 @@ namespace Kumu
 
 
   //
-  // the base of all identifier classes
+  // the base of all identifier classes, Identifier is not usually used directly
+  // see UUID and SymmetricKey below for more detail.
+  //
   template <ui32_t SIZE>
     class Identifier : public IArchive
     {
@@ -191,57 +206,51 @@ namespace Kumu
       inline const byte_t* Value() const { return m_Value; }
       inline ui32_t Size() const { return SIZE; }
 
-      inline bool operator<(const Identifier& rhs) const
-	{
-	  ui32_t test_size = xmin(rhs.Size(), SIZE);
-	  for ( ui32_t i = 0; i < test_size; i++ )
-	    {
-	      if ( m_Value[i] != rhs.m_Value[i] )
-		return m_Value[i] < rhs.m_Value[i];
-	    }
+      inline bool operator<(const Identifier& rhs) const {
+	ui32_t test_size = xmin(rhs.Size(), SIZE);
 
-	  return false;
-	}
+	for ( ui32_t i = 0; i < test_size; i++ )
+	  {
+	    if ( m_Value[i] != rhs.m_Value[i] )
+	      return m_Value[i] < rhs.m_Value[i];
+	  }
+	
+	return false;
+      }
 
-      inline bool operator==(const Identifier& rhs) const
-	{
-	  if ( rhs.Size() != SIZE ) return false;
-	  return ( memcmp(m_Value, rhs.m_Value, SIZE) == 0 );
-	}
+      inline bool operator==(const Identifier& rhs) const {
+	if ( rhs.Size() != SIZE ) return false;
+	return ( memcmp(m_Value, rhs.m_Value, SIZE) == 0 );
+      }
 
-      inline bool operator!=(const Identifier& rhs) const
-	{
-	  if ( rhs.Size() != SIZE ) return true;
-	  return ( memcmp(m_Value, rhs.m_Value, SIZE) != 0 );
-	}
+      inline bool operator!=(const Identifier& rhs) const {
+	if ( rhs.Size() != SIZE ) return true;
+	return ( memcmp(m_Value, rhs.m_Value, SIZE) != 0 );
+      }
 
-      inline bool DecodeHex(const char* str)
-	{
-	  ui32_t char_count;
-	  m_HasValue = ( hex2bin(str, m_Value, SIZE, &char_count) == 0 );
-	  return m_HasValue;
-	}
+      inline bool DecodeHex(const char* str) {
+	ui32_t char_count;
+	m_HasValue = ( hex2bin(str, m_Value, SIZE, &char_count) == 0 );
+	return m_HasValue;
+      }
 
-      inline const char* EncodeHex(char* buf, ui32_t buf_len) const
-	{
-	  return bin2hex(m_Value, SIZE, buf, buf_len);
-	}
+      inline const char* EncodeHex(char* buf, ui32_t buf_len) const {
+	return bin2hex(m_Value, SIZE, buf, buf_len);
+      }
 
       inline const char* EncodeString(char* str_buf, ui32_t buf_len) const {
 	return EncodeHex(str_buf, buf_len);
       }
 
-      inline bool DecodeBase64(const char* str)
- 	{
-	  ui32_t char_count;
-	  m_HasValue = ( base64decode(str, m_Value, SIZE, &char_count) == 0 );
-	  return m_HasValue;
-	}
+      inline bool DecodeBase64(const char* str) {
+	ui32_t char_count;
+	m_HasValue = ( base64decode(str, m_Value, SIZE, &char_count) == 0 );
+	return m_HasValue;
+      }
 
-      inline const char* EncodeBase64(char* buf, ui32_t buf_len) const
-	{
-	  return base64encode(m_Value, SIZE, buf, buf_len);
-	}
+      inline const char* EncodeBase64(char* buf, ui32_t buf_len) const {
+	return base64encode(m_Value, SIZE, buf, buf_len);
+      }
 
       inline bool HasValue() const { return m_HasValue; }
 
@@ -326,19 +335,23 @@ namespace Kumu
       // decode and set value from string formatted by EncodeString
       bool        DecodeString(const char* datestr);
 
-      // add the given number of days or hours to the timestamp value. Values less than zero
-      // will cause the value to decrease
+      // Add the given number of days or hours to the timestamp value.
+      // Values less than zero will cause the timestamp to decrease
       void AddDays(i32_t);
       void AddHours(i32_t);
 
-      // Read and write the timestamp value as a byte string
+      // Read and write the timestamp value as a byte string having
+      // the following format:
+      // | 16 bits int, big-endian |    8 bits   |   8 bits  |   8 bits   |    8 bits    |    8 bits    |
+      // |        Year A.D         | Month(1-12) | Day(1-31) | Hour(0-23) | Minute(0-59) | Second(0-59) |
+      //
       virtual bool HasValue() const;
       virtual bool Archive(MemIOWriter* Writer) const;
       virtual bool Unarchive(MemIOReader* Reader);
     };
 
   //
-  class ByteString
+  class ByteString : public IArchive
     {
       KM_NO_COPY_CONSTRUCT(ByteString);
 	
@@ -377,6 +390,23 @@ namespace Kumu
       // copy the given data into the ByteString, set Length value.
       // Returns error if the ByteString is too small.
       Result_t Set(const byte_t* buf, ui32_t buf_len);
+
+      inline virtual bool HasValue() const { return m_Length > 0; }
+
+      inline virtual bool Archive(MemIOWriter* Writer) const {
+	assert(Writer);
+	if ( ! Writer->WriteUi32BE(m_Length) ) return false;
+	if ( ! Writer->WriteRaw(m_Data, m_Length) ) return false;
+	return true;
+      }
+
+      inline virtual bool Unarchive(MemIOReader* Reader) {
+	assert(Reader);
+	if ( ! Reader->ReadUi32BE(&m_Length) ) return false;
+	if ( KM_FAILURE(Capacity(m_Length)) ) return false;
+	if ( ! Reader->ReadRaw(m_Data, m_Length) ) return false;
+	return true;
+      }
     };
 
 } // namespace Kumu

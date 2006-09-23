@@ -62,10 +62,11 @@ namespace ASDCP
   //
   class PCMParserList : public std::vector<ParserInstance*>
     {
+      ASDCP_NO_COPY_CONSTRUCT(PCMParserList);
+
+    protected:
       PCM::AudioDescriptor m_ADesc;
       ui32_t m_ChannelCount;
-
-      ASDCP_NO_COPY_CONSTRUCT(PCMParserList);
 
     public:
       PCMParserList();

@@ -90,6 +90,12 @@ public:
 	while ( p < end_p && ASDCP_SUCCESS(result) )
 	  {
 	    result = GetNextMarker(&p, NextMarker);
+
+	    if ( ASDCP_FAILURE(result) )
+	      {
+		result = RESULT_RAW_ESS;
+		break;
+	      }
 #if 0
 	    fprintf(stderr, "%s Length: %u\n",
 		    GetMarkerString(NextMarker.m_Type), NextMarker.m_DataSize);

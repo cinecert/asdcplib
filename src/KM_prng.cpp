@@ -41,31 +41,10 @@ using namespace Kumu;
 
 
 #ifdef KM_WIN32
-
-//  make up a byte by sampling the perf counter LSB
-static byte_t get_perf_byte(byte_t carry)
-{
-  LARGE_INTEGER ticks;
-  byte_t sha_buf[20];
-  SHA_CTX SHA;
-  SHA1_Init(&SHA);
-  SHA1_Update(&SHA, &carry, sizeof(byte_t));
-
-  for ( int i = 0; i < 128; i++ )
-    {
-      QueryPerformanceCounter(&ticks);
-      SHA1_Update(&SHA, &ticks.LowPart, sizeof(ticks.LowPart));
-    }
-  
-  SHA1_Final(sha_buf, &SHA);
-  return sha_buf[0];
-}
-
+# include <wincrypt.h>
 #else // KM_WIN32
-
-#include <KM_fileio.h>
+# include <KM_fileio.h>
 const char* DEV_URANDOM = "/dev/urandom";
-
 #endif // KM_WIN32
 
 
@@ -95,11 +74,9 @@ public:
       AutoMutex Lock(m_Lock);
 
 #ifdef KM_WIN32
-      for ( ui32_t i = 0; i < RNG_KEY_SIZE; i++ )
-	{
-	  byte_t carry = ( i == 0 ) ? 0xa3 : rng_key[i-1];
-	  rng_key[i] = get_perf_byte(carry);
-	}
+      HCRYPTPROV hProvider = 0;
+      CryptAcquireContext(&hProvider, 0, 0, PROV_RSA_FULL, CRYPT_VERIFYCONTEXT);
+      CryptGenRandom(hProvider, RNG_KEY_SIZE, rng_key);
 #else // KM_WIN32
       // on POSIX systems we simply read some seed from /dev/urandom
       FileReader URandom;

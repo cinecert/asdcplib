@@ -299,7 +299,7 @@ CreateLargeFile(CommandOptions& Options)
   FB.Capacity(Megabyte);
   assert(FB.Capacity() == Megabyte);
 
-  fprintf(stderr, "Writing %lu chunks:\n", Options.chunk_count);
+  fprintf(stderr, "Writing %u chunks:\n", Options.chunk_count);
   s_Nonce = Options.chunk_count;
   Result_t result = Writer.OpenWrite(Options.filename);
 
@@ -312,7 +312,7 @@ CreateLargeFile(CommandOptions& Options)
 	  CTR.FillRandom(FB.Data() + CTR.WriteSize(), Megabyte - CTR.WriteSize());
 	  result = Writer.Write(FB.RoData(), Megabyte, &write_count);
 	  assert(write_count == Megabyte);
-	  fprintf(stderr, "\r%8lu ", ++write_total);
+	  fprintf(stderr, "\r%8u ", ++write_total);
 	}
     }
   
@@ -411,7 +411,7 @@ ReadValidateWriteLargeFile(CommandOptions& Options)
 	{
 	  if ( read_count < Megabyte )
 	    {
-	      fprintf(stderr, "Read() returned short buffer: %lu\n", read_count);
+	      fprintf(stderr, "Read() returned short buffer: %u\n", read_count);
 	      result = RESULT_FAIL;
 	    }
 
@@ -421,7 +421,7 @@ ReadValidateWriteLargeFile(CommandOptions& Options)
 	    {
 	      result = Writer.Write(FB.RoData(), Megabyte, &write_count);
 	      assert(write_count == Megabyte);
-	      fprintf(stderr, "\r%8lu ", ++write_total);
+	      fprintf(stderr, "\r%8u ", ++write_total);
 	    }
 	}
       else if ( result == RESULT_ENDOFFILE )
@@ -461,7 +461,7 @@ ValidateLargeFile(CommandOptions& Options)
 
       if ( read_count < Megabyte )
 	{
-	  fprintf(stderr, "Read() returned short buffer: %lu\n", read_count);
+	  fprintf(stderr, "Read() returned short buffer: %u\n", read_count);
 	  result = RESULT_FAIL;
 	}
       else if ( KM_SUCCESS(result) )
@@ -469,7 +469,7 @@ ValidateLargeFile(CommandOptions& Options)
 
       if ( KM_SUCCESS(result) )
 	{
-	  fprintf(stderr, "Validating %lu chunk%s in %s order:\n",
+	  fprintf(stderr, "Validating %u chunk%s in %s order:\n",
 		  check_total, (check_total == 1 ? "" : "s"), Options.order);
 	  assert(read_list == 0);
 	  read_list = (read_list_t*)malloc(check_total * sizeof(read_list_t));
@@ -510,7 +510,7 @@ ValidateLargeFile(CommandOptions& Options)
 	    read_list_i < check_total && KM_SUCCESS(result);
 	    read_list_i++ )
 	{
-	  fprintf(stderr, "\r%8lu [%8lu] ", read_list_i+1, read_list[read_list_i]);
+	  fprintf(stderr, "\r%8u [%8u] ", read_list_i+1, read_list[read_list_i].nonce);
 	  result = Reader.Seek(read_list[read_list_i].position);
 
 	  if ( KM_SUCCESS(result) )
@@ -521,7 +521,7 @@ ValidateLargeFile(CommandOptions& Options)
 
 	  else if ( read_count < Megabyte )
 	    {
-	      fprintf(stderr, "Read() returned short buffer: %lu\n", read_count);
+	      fprintf(stderr, "Read() returned short buffer: %u\n", read_count);
 	      result = RESULT_FAIL;
 	    }
 	  else if ( KM_SUCCESS(result) )
@@ -530,7 +530,7 @@ ValidateLargeFile(CommandOptions& Options)
 	      
 	      if ( nonce != read_list[read_list_i].nonce )
 		{
-		  fprintf(stderr, "Nonce mismatch: expecting %lu, got %lu\n",
+		  fprintf(stderr, "Nonce mismatch: expecting %u, got %u\n",
 			  nonce, read_list[read_list_i].nonce);
 
 		  return RESULT_FAIL;
@@ -547,7 +547,7 @@ ValidateLargeFile(CommandOptions& Options)
 	result = RESULT_OK;
       else
 	{
-	  fprintf(stderr, "Unexpected chunk count, got %lu, wanted %lu\n",
+	  fprintf(stderr, "Unexpected chunk count, got %u, wanted %u\n",
 		  read_list_i, check_total);
 	  result = RESULT_FAIL;
 	}

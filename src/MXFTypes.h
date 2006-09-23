@@ -385,7 +385,7 @@ namespace ASDCP
 	};
 
       //
-      class Raw : public Kumu::ByteString, public Kumu::IArchive
+      class Raw : public Kumu::ByteString
 	{
 	  ASDCP_NO_COPY_CONSTRUCT(Raw);
 
@@ -395,7 +395,6 @@ namespace ASDCP
 
 	  //
           virtual bool Unarchive(Kumu::MemIOReader* Reader);
-	  inline virtual bool HasValue() const { return Length() > 0; }
 	  virtual bool Archive(Kumu::MemIOWriter* Writer) const;
 	  const char* EncodeString(char* str_buf, ui32_t buf_len) const;
 	};

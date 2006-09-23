@@ -3,12 +3,12 @@ $Id$
 
 The asdcplib library is a set of objects that offer
 simplified access to files conforming to the sound and
-picture track file formats proposed by the SMPTE working
-group DC-28.20.
+picture track file formats developed by the SMPTE Working
+Group DC28.20.
 
 This work was originally funded by Digital Cinema
 Initiatives, LLC (DCI). Subsequent efforts have been funded
-by Deluxe Laboratories, Doremi Labs, CineCert, LLC, Avica
+by Deluxe Laboratories, Doremi Labs, CineCert LLC, Avica
 Technology and others.
 
 **The asdcplib project was housed on SourceForge. The project
@@ -22,7 +22,7 @@ a dedicated MXF implementation that is now part of this
 library. Special thanks to Matt Beard and Oliver Morgan for
 their great work and support.
 
-Thanks also to the members of the SMPTE DC-28.20 packaging
+Thanks also to the members of the SMPTE DC28.20 packaging
 ad-hoc group and the members of the MXF Interop Initiative
 for their encouragement and support. Special thanks to
 Jim Whittlesey and Howard Lukk at DCI for proposing and
@@ -69,26 +69,32 @@ the dep.make file.
 OpenSSL is also required. See http://www.openssl.org
 
 If you are building on win32 or a unix with no OpenSSL library
-support, you will have to also obtain and build OpenSSL (I'm
-using 0.9.7d on win32).  Unpack it into the same parent directory
-as asdcplib/, and rename the directory as (or make a sym link
-named) 'openssl':
+support, you will have to also obtain and build OpenSSL.  Unpack
+it into the same parent directory as asdcplib/, and rename the
+directory as 'openssl':
 
 myhost$ ls -l
 total 1761
 drwxr-xr-x    1 jhurst   None         0 Feb  3 16:37 asdcplib
 drwxr-xr-x   56 jhurst   None         0 Feb  2 16:35 openssl
 
-I have tested this build on win32, Linux and Darwin platforms.
-Others may work as well.
+To build, type 'make'. There are several test targets but you
+need to assemble a set of test files to use them.
+
+I have tested this build on win32, Linux, OpenBSD and Darwin
+platforms. Others may work as well.
+
+
 
 
 Utilities
 
 asdcp-test - Writes, reads and verifies AS-DCP (MXF) track files.
 
-asdcp-lf-test - Writes and verifies large files using a platform-
+kmfilegen - Writes and verifies large files using a platform-
 independent format. Use it to test issues related to large files.
+
+kmuuidgen, kmrandgen - generate UUID values and random numbers
 
 wavesplit - Splits a WAVE file into two or more output files. Used
   to untangle incorrectly-paired DCDM sound files.
@@ -100,14 +106,41 @@ blackwave - Write a WAVE file full of zeros,  Used to make filler
 
 Documentation
 
-Currently, the documentation is mostly in AS_DCP.h. Read
-that file for a detailed description of the library's
-capabilities.  Read asdcp-test.cpp for library usage
-examples. More detailed documentation will be written RSN.
+Currently, the API documentation is mostly in AS_DCP.h. Read
+that file for a detailed description of the library's capabilities.
+Read asdcp-test.cpp for library usage examples. The command-line
+utilities all respond to -h and there are manual pages in man/.
 
 
 Change History
-2006.04.05 - Bug fixes and new stuff
+2006.09.25 - Bug fixes v1.1.9
+ o Fixed SourcePackageID value. All files will be 'original',
+   i.e. SourcePackageID will be all zeros. Let me know if you
+   want to set SourcePackageID.
+ o Fixed compiler warnings on some Linux platforms
+ o Fixed the build so that BUILD_DIR is no longer created
+   as a dependency.
+ o Added duration detection to the raw essence parsers. The
+   MPEG parser uses a nasty approximation so don't use it
+   without paying close attention to the result.
+ o Modified PCMParserList to make it more useful as a base
+   class.
+ o Fixed bugs and re-organized command-line help in asdcp-test
+   and klvwalk.
+ o Fixed two-partition file reads.
+ o Fixed Win32 PRNG initialization.
+ o Renamed asdcp-lf-test as kmfilegen.
+ o Added kmrandgen and kmuuidgen.
+ o Added string retrieval mechanism to Result_t.
+ o Refactored Kumu::Identifier and its sub-classes.
+ o Altered Kumu::PathIsFile to return true when the path
+   is a symbolic link (unix only).
+ o Altered Kumu::FileWriter::OpenWrite to use file creation
+   mode 0664 (was 0644) (unix only).
+ o Added Kumu::WriteStringIntoFile() subroutine.
+
+
+2006.04.05 - Bug fixes and new stuff v1.1.7
  o Fixed a bug in the MPEG parser that caused it to fail when
    handling start codes spanning buffer boundaries
  o Added wavesplit and blackwave utility programs
@@ -124,12 +157,12 @@ Change History
      const Kumu::Result_t RESULT_FORMAT (-101, "The file...");
 
      The macros ASDCP_SUCCESS and ASDCP_FAILURE still work
-     the same thanks to an operator overload for long. See
-     KM_error.h for more information.
+     the same way thanks to an operator overload for type long.
+     See KM_error.h for more information.
    + The logging interface has been moved out of AS_DCP.h
      and into KM_log.h
  o Some of the command line utilities that were using headers
-   other than AS_DCP.h have been changed to us the Kumu
+   other than AS_DCP.h have been changed to use the Kumu
    equivalents. If you have code based on those utilities, you
    will have to update by hand.
  o Added new types to the EssenceType_t enum.

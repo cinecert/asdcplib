@@ -114,7 +114,7 @@ namespace Kumu
   fsize_t  FileSize(const char* pathname);
 
   // Reads an entire file into a string.
-  Result_t ReadFileIntoString(const char* filename, std::string& outString, ui32_t max_size = 256 * Kilobyte);
+  Result_t ReadFileIntoString(const char* filename, std::string& outString, ui32_t max_size = 8 * Megabyte);
 
   // Writes a string to a file, overwrites the existing file if present.
   Result_t WriteStringIntoFile(const char* filename, const std::string& inString);

@@ -629,7 +629,10 @@ Kumu::ReadFileIntoString(const char* filename, std::string& outString, ui32_t ma
       fsize = File.Size();
 
       if ( fsize > (Kumu::fpos_t)max_size )
-	return RESULT_ALLOC;
+	{
+	  DefaultLogSink().Error("%s: exceeds available buffer size (%u)", filename, max_size);
+	  return RESULT_ALLOC;
+	}
 
       result = ReadBuf.Capacity((ui32_t)fsize);
     }

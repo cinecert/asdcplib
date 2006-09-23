@@ -33,7 +33,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define _KM_MEMIO_H_
 
 #include <KM_platform.h>
-#include <string.h>
+#include <string>
 
 namespace Kumu
 {
@@ -206,6 +206,26 @@ namespace Kumu
 	return true;
       }
     };
+
+  //
+  inline bool
+    UnarchiveString(MemIOReader& Reader, std::string& str)
+    {
+      ui32_t str_length;
+      if ( ! Reader.ReadUi32BE(&str_length) ) return false;
+      str.assign((const char*)Reader.CurrentData(), str_length);
+      if ( ! Reader.SkipOffset(str_length) ) return false;
+      return true;
+    }
+
+  //
+  inline bool
+    ArchiveString(MemIOWriter& Writer, const std::string& str)
+    {
+      if ( ! Writer.WriteUi32BE(str.length()) ) return false;
+      if ( ! Writer.WriteRaw((const byte_t*)str.c_str(), str.length()) ) return false;
+      return true;
+    }
 
 } // namespace Kumu
 
