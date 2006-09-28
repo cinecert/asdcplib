@@ -34,7 +34,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 //------------------------------------------------------------------------------------------
 
-static std::string JP2K_PACKAGE_LABEL = "File Package: SMPTE XXXM frame wrapping of JPEG 2000 codestreams";
+static std::string JP2K_PACKAGE_LABEL = "File Package: SMPTE 429-4 frame wrapping of JPEG 2000 codestreams";
 static std::string PICT_DEF_LABEL = "Picture Track";
 
 //

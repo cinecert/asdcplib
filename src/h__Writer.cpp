@@ -129,7 +129,7 @@ ASDCP::h__Writer::WriteMXFHeader(const std::string& PackageLabel, const UL& Wrap
   Ident->ToolkitVersion.Minor = VERSION_APIMINOR;
   Ident->ToolkitVersion.Patch = VERSION_IMPMINOR;
   Ident->ToolkitVersion.Build = ASDCP_BUILD_NUMBER;
-  Ident->ToolkitVersion.Release = VersionType::RL_DEVELOPMENT;
+  Ident->ToolkitVersion.Release = VersionType::RL_RELEASE;
 
   //
   ContentStorage* Storage = new ContentStorage;
@@ -202,9 +202,8 @@ ASDCP::h__Writer::WriteMXFHeader(const std::string& PackageLabel, const UL& Wrap
   m_FilePackage->PackageUID = PackageUMID;
   ECD->LinkedPackageUID = PackageUMID;
 
-  // for now we do not allow setting this value, so all files will be 'original'
-  m_MPClip->SourcePackageID = NilUMID;
-  m_MPClip->SourceTrackID = 0;
+  m_MPClip->SourcePackageID = PackageUMID;
+  m_MPClip->SourceTrackID = 2;
 
   m_HeaderPart.AddChildObject(m_FilePackage);
   Storage->Packages.push_back(m_FilePackage->InstanceUID);
@@ -246,6 +245,10 @@ ASDCP::h__Writer::WriteMXFHeader(const std::string& PackageLabel, const UL& Wrap
   m_HeaderPart.AddChildObject(m_FPClip);
   m_FPClSequence->StructuralComponents.push_back(m_FPClip->InstanceUID);
   m_FPClip->DataDefinition = DataDefinition;
+
+  // for now we do not allow setting this value, so all files will be 'original'
+  m_FPClip->SourceTrackID = 0;
+  m_FPClip->SourcePackageID = NilUMID;
 
   //
   // Essence Descriptor
