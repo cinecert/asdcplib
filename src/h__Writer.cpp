@@ -55,7 +55,6 @@ ASDCP::h__Writer::~h__Writer()
 {
 }
 
-
 //
 // add DMS CryptographicFramework entry to source package
 void
@@ -275,22 +274,24 @@ ASDCP::h__Writer::WriteMXFHeader(const std::string& PackageLabel, const UL& Wrap
 
   m_HeaderPart.m_Preface->EssenceContainers = m_HeaderPart.EssenceContainers;
   m_HeaderPart.AddChildObject(m_EssenceDescriptor);
+
+  std::list<FileDescriptor*>::iterator sdli = m_EssenceSubDescriptorList.begin();
+  for ( ; sdli != m_EssenceSubDescriptorList.end(); sdli++ )
+    m_HeaderPart.AddChildObject(*sdli);
+
   m_FilePackage->Descriptor = m_EssenceDescriptor->InstanceUID;
 
   // Write the header partition
   Result_t result = m_HeaderPart.WriteToFile(m_File, m_HeaderSize);
 
-  if ( ASDCP_SUCCESS(result) )
+  // create a body partition of we're writing proper 429-3/OP-Atom
+  if ( ASDCP_SUCCESS(result) && m_Info.LabelSetType == LS_MXF_SMPTE )
     {
       // Body Partition
       m_BodyPart.EssenceContainers = m_HeaderPart.EssenceContainers;
       m_BodyPart.ThisPartition = m_File.Tell();
       m_BodyPart.BodySID = 1;
       UL OPAtomUL(Dict::ul(MDD_OPAtom));
-
-      if ( m_Info.LabelSetType == LS_MXF_INTEROP )
-	OPAtomUL.Set(Dict::ul(MDD_MXFInterop_OPAtom));
-
       m_BodyPart.OperationalPattern = OPAtomUL;
       m_HeaderPart.m_RIP.PairArray.push_back(RIP::Pair(1, m_BodyPart.ThisPartition)); // Second RIP Entry
       

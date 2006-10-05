@@ -178,6 +178,7 @@ namespace ASDCP
       SourceClip*        m_FPClip;			//! File Package SourceClip for each essence stream 
 
       FileDescriptor*    m_EssenceDescriptor;
+      std::list<FileDescriptor*> m_EssenceSubDescriptorList;
 
       ui32_t             m_FramesWritten;
       ui64_t             m_StreamOffset;

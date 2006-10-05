@@ -398,7 +398,7 @@ ASDCP::JP2K::MXFWriter::h__Writer::OpenWrite(const char* filename, ui32_t Header
       m_HeaderSize = HeaderSize;
       m_EssenceDescriptor = new RGBAEssenceDescriptor;
       m_EssenceSubDescriptor = new JPEG2000PictureSubDescriptor;
-      m_HeaderPart.AddChildObject(m_EssenceSubDescriptor);
+      m_EssenceSubDescriptorList.push_back((FileDescriptor*)m_EssenceSubDescriptor);
       m_EssenceDescriptor->SubDescriptors.push_back(m_EssenceSubDescriptor->InstanceUID);
       result = m_State.Goto_INIT();
     }
