@@ -795,7 +795,7 @@ static const ASDCP::MDDEntry s_MDD_Table[] = {
   { { 0x06, 0x0e, 0x2b, 0x34, 0x01, 0x01, 0x01, 0x09, // 253
       0x02, 0x09, 0x03, 0x01, 0x02, 0x00, 0x00, 0x00 },
       {0}, false, "CryptographicContext_CryptographicKeyID" },
-  { 0, 0, 0 }
+  { {0}, {0}, false, 0 }
 };
 
 const ui32_t s_MDD_Table_size = 254;

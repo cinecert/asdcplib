@@ -253,12 +253,12 @@ split_wav_file(CommandOptions& Options)
   if ( ASDCP_SUCCESS(result) )
     {
       char filename[256];
-      sprintf(filename, "%s_l.wav", Options.file_root);
+      snprintf(filename, 256, "%s_l.wav", Options.file_root);
       result = L_OutFile.OpenWrite(filename);
 
       if ( ASDCP_SUCCESS(result) )
 	{
-	  sprintf(filename, "%s_r.wav", Options.file_root);
+	  snprintf(filename, 256, "%s_r.wav", Options.file_root);
 	  result = R_OutFile.OpenWrite(filename);
 	}
     }

@@ -115,7 +115,7 @@ utilities all respond to -h and there are manual pages in man/.
 Change History
 2006.09.28 - Bug fixes v1.1.10
  o Changed RM_RELEASE to RL_RELEASE in MXFTypes.h.
- o Cahnged the MXF writer to use RL_RELEASE (was RL_DEVELOPMENT).
+ o Changed the MXF writer to use RL_RELEASE (was RL_DEVELOPMENT).
  o Really fixed source reference chain.
  o Updated JP2K file package label.
  o Changed location of JPEG2000PictureSubDescriptor in the

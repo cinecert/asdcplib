@@ -78,8 +78,9 @@ This project depends upon the following library:
 #include <KM_error.h>
 #include <stdio.h>
 #include <stdarg.h>
-#include <iostream>
 #include <math.h>
+#include <iostream>
+#include <string>
 
 //--------------------------------------------------------------------------------
 // common integer types
