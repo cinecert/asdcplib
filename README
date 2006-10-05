@@ -113,7 +113,7 @@ utilities all respond to -h and there are manual pages in man/.
 
 
 Change History
-2006.09.28 - Bug fixes v1.1.10
+2006.10.05 - Bug fixes v1.1.10
  o Changed RM_RELEASE to RL_RELEASE in MXFTypes.h.
  o Changed the MXF writer to use RL_RELEASE (was RL_DEVELOPMENT).
  o Really fixed source reference chain.
