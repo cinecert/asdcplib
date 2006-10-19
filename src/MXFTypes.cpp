@@ -616,7 +616,8 @@ ASDCP::MXF::TLVWriter::WriteObject(const MDDEntry& Entry, Kumu::IArchive* Object
 
       ui32_t before = Length();
       if ( ! Object->Archive(this) ) return RESULT_KLV_CODING;
-      Kumu::i2p<ui16_t>(KM_i16_BE( Length() - before), l_p);
+      if ( (Length() - before) > 0xffffL ) return RESULT_KLV_CODING;
+      Kumu::i2p<ui16_t>(KM_i16_BE(Length() - before), l_p);
     }
 
   return result;

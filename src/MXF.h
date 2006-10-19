@@ -259,6 +259,9 @@ namespace ASDCP
 	      i8_t               KeyFrameOffset;
 	      ui8_t              Flags;
 	      ui64_t             StreamOffset;
+
+	      // if you use these, you will need to change CBRIndexEntriesPerSegment in MXF.cpp
+	      // to a more suitable value
 	      //	      std::list<ui32_t>  SliceOffset;
 	      //	      Array<Rational>    PosTable;
 

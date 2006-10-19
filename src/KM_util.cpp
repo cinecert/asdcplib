@@ -600,6 +600,20 @@ Kumu::Timestamp::operator<(const Timestamp& rhs) const
   return ( CompareFileTime(&lft, &rft) == -1 );
 }
 
+//
+bool
+Kumu::Timestamp::operator>(const Timestamp& rhs) const
+{
+  SYSTEMTIME lhst, rhst;
+  FILETIME lft, rft;
+
+  TIMESTAMP_TO_SYSTIME(*this, &lhst);
+  TIMESTAMP_TO_SYSTIME(rhs, &rhst);
+  SystemTimeToFileTime(&lhst, &lft);
+  SystemTimeToFileTime(&rhst, &rft);
+  return ( CompareFileTime(&lft, &rft) == 1 );
+}
+
 inline ui64_t
 seconds_to_ns100(ui32_t seconds)
 {
@@ -683,6 +697,16 @@ Kumu::Timestamp::operator<(const Timestamp& rhs) const
   TIMESTAMP_TO_TM(*this, &lhtm);
   TIMESTAMP_TO_TM(rhs, &rhtm);
   return ( timegm(&lhtm) < timegm(&rhtm) );
+}
+
+//
+bool
+Kumu::Timestamp::operator>(const Timestamp& rhs) const
+{
+  struct tm lhtm, rhtm;
+  TIMESTAMP_TO_TM(*this, &lhtm);
+  TIMESTAMP_TO_TM(rhs, &rhtm);
+  return ( timegm(&lhtm) > timegm(&rhtm) );
 }
 
 //

@@ -109,7 +109,12 @@ ASDCP::h__Writer::WriteMXFHeader(const std::string& PackageLabel, const UL& Wrap
   // so we tell the world by using OP1a
   m_HeaderPart.m_Preface->OperationalPattern = UL(Dict::ul(MDD_OP1a));
   m_HeaderPart.OperationalPattern = m_HeaderPart.m_Preface->OperationalPattern;
-  m_HeaderPart.m_RIP.PairArray.push_back(RIP::Pair(0, 0)); // First RIP Entry
+
+  // First RIP Entry
+  if ( m_Info.LabelSetType == LS_MXF_SMPTE )
+    m_HeaderPart.m_RIP.PairArray.push_back(RIP::Pair(0, 0)); // 3-part, no essence in header
+  else
+    m_HeaderPart.m_RIP.PairArray.push_back(RIP::Pair(1, 0)); // 2-part, essence in header
 
   //
   // Identification
@@ -298,11 +303,16 @@ ASDCP::h__Writer::WriteMXFHeader(const std::string& PackageLabel, const UL& Wrap
       UL BodyUL(Dict::ul(MDD_ClosedCompleteBodyPartition));
       result = m_BodyPart.WriteToFile(m_File, BodyUL);
     }
+  else
+    {
+      m_HeaderPart.BodySID = 1;
+    }
 
   if ( ASDCP_SUCCESS(result) )
     {
       // Index setup
       Kumu::fpos_t ECoffset = m_File.Tell();
+      m_FooterPart.IndexSID = 129;
 
       if ( BytesPerEditUnit == 0 )
 	m_FooterPart.SetIndexParamsVBR(&m_HeaderPart.m_Primer, EditRate, ECoffset);
@@ -441,7 +451,7 @@ ASDCP::h__Writer::WriteMXFFooter()
     m_EssenceDescriptor->ContainerDuration = m_FramesWritten;
 
   Kumu::fpos_t here = m_File.Tell();
-  m_HeaderPart.m_RIP.PairArray.push_back(RIP::Pair(0, here)); // Third RIP Entry
+  m_HeaderPart.m_RIP.PairArray.push_back(RIP::Pair(0, here)); // Last RIP Entry
   m_HeaderPart.FooterPartition = here;
 
   // re-label the partition
@@ -453,7 +463,11 @@ ASDCP::h__Writer::WriteMXFFooter()
   m_HeaderPart.OperationalPattern = OPAtomUL;
   m_HeaderPart.m_Preface->OperationalPattern = m_HeaderPart.OperationalPattern;
 
-  m_FooterPart.PreviousPartition = m_BodyPart.ThisPartition;
+  if ( m_Info.LabelSetType == LS_MXF_SMPTE )
+    m_FooterPart.PreviousPartition = m_BodyPart.ThisPartition;
+  else
+    m_FooterPart.PreviousPartition = m_HeaderPart.ThisPartition;
+
   m_FooterPart.OperationalPattern = m_HeaderPart.OperationalPattern;
   m_FooterPart.EssenceContainers = m_HeaderPart.EssenceContainers;
   m_FooterPart.FooterPartition = here;

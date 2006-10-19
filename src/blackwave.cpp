@@ -157,8 +157,8 @@ make_black_wav_file(CommandOptions& Options)
   ADesc.Locked = 0;
   ADesc.ChannelCount = 1;
   ADesc.QuantizationBits = 24;
-  ADesc.BlockAlign = 18;
-  ADesc.AvgBps = 86400;
+  ADesc.BlockAlign = 3;
+  ADesc.AvgBps = 14400;
   ADesc.LinkedTrackID = 1;
   ADesc.ContainerDuration = Options.duration;
 

@@ -56,6 +56,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <WavFileWriter.h>
 #include <MXF.h>
 #include <Metadata.h>
+#include <openssl/sha.h>
 
 using namespace ASDCP;
 
@@ -90,19 +91,6 @@ public:
 } s_MyInfo;
 
 
-// Macros used to test command option data state.
-
-// True if a major mode has already been selected.
-#define TEST_MAJOR_MODE()     ( info_flag||create_flag||extract_flag||genkey_flag||genid_flag||gop_start_flag )
-
-// Causes the caller to return if a major mode has already been selected,
-// otherwise sets the given flag.
-#define TEST_SET_MAJOR_MODE(f) if ( TEST_MAJOR_MODE() ) \
-                                 { \
-                                   fputs("Conflicting major mode, choose one of -(gcixG)).\n", stderr); \
-                                   return; \
-                                 } \
-                                 (f) = true;
 
 // Increment the iterator, test for an additional non-option command line argument.
 // Causes the caller to return if there are no remaining arguments or if the next
@@ -143,10 +131,12 @@ USAGE: %s -c <output-file> [-b <buffer-size>] [-d <duration>] [-e|-E]\n\
 \n\
        %s -G [-v] <input-file>\n\
 \n\
+       %s -t <input-file>\n\
+\n\
        %s -x <file-prefix> [-b <buffer-size>] [-d <duration>]\n\
        [-f <starting-frame>] [-m] [-p <frame-rate>] [-R] [-s <num>] [-S]\n\
        [-v] [-W] <input-file>\n\
-\n", PACKAGE, PACKAGE, PACKAGE, PACKAGE, PACKAGE, PACKAGE);
+\n", PACKAGE, PACKAGE, PACKAGE, PACKAGE, PACKAGE, PACKAGE, PACKAGE);
 
   fprintf(stream, "\
 Major modes:\n\
@@ -155,6 +145,7 @@ Major modes:\n\
   -G                - Perform GOP start lookup test on MXF+Interop MPEG file\n\
   -h | -help        - Show help\n\
   -i                - Show file info\n\
+  -t                - Calculate message digest of input file\n\
   -u                - Generate a random UUID value to stdout\n\
   -V                - Show version information\n\
   -x <root-name>    - Extract essence from AS-DCP file to named file(s)\n\
@@ -204,19 +195,28 @@ Other Options:\n\
 }
 
 //
+enum MajorMode_t
+{
+  MMT_NONE,
+  MMT_INFO,
+  MMT_CREATE,
+  MMT_EXTRACT,
+  MMT_GEN_ID,
+  MMT_GEN_KEY,
+  MMT_GOP_START,
+  MMT_DIGEST
+};
+
+
+//
 //
 class CommandOptions
 {
   CommandOptions();
 
 public:
+  MajorMode_t mode;
   bool   error_flag;     // true if the given options are in error or not complete
-  bool   info_flag;      // true if the file info mode was selected
-  bool   create_flag;    // true if the file create mode was selected
-  bool   extract_flag;   // true if the file extract mode was selected
-  bool   genkey_flag;    // true if we are to generate a new key value
-  bool   genid_flag;     // true if we are to generate a new UUID value
-  bool   gop_start_flag; // true if we are to perform a GOP start lookup test
   bool   key_flag;       // true if an encryption key was given
   bool   key_id_flag;    // true if a key ID was given
   bool   encrypt_header_flag; // true if mpeg headers are to be encrypted
@@ -262,9 +262,7 @@ public:
 
   //
   CommandOptions(int argc, const char** argv) :
-    error_flag(true), info_flag(false), create_flag(false),
-    extract_flag(false), genkey_flag(false), genid_flag(false), gop_start_flag(false),
-    key_flag(false), key_id_flag(false), encrypt_header_flag(true),
+    mode(MMT_NONE), error_flag(true), key_flag(false), key_id_flag(false), encrypt_header_flag(true),
     write_hmac(true), read_hmac(false), split_wav(false),
     verbose_flag(false), fb_dump_size(0), showindex_flag(false), showheader_flag(false),
     no_write_flag(false), version_flag(false), help_flag(false), start_frame(0),
@@ -287,8 +285,8 @@ public:
 	  {
 	    switch ( argv[i][1] )
 	      {
-	      case 'i': TEST_SET_MAJOR_MODE(info_flag);	break;
-	      case 'G': TEST_SET_MAJOR_MODE(gop_start_flag); break;
+	      case 'i': mode = MMT_INFO;	break;
+	      case 'G': mode = MMT_GOP_START; break;
 	      case 'W': no_write_flag = true; break;
 	      case 'n': showindex_flag = true; break;
 	      case 'H': showheader_flag = true; break;
@@ -297,8 +295,8 @@ public:
 	      case 'V': version_flag = true; break;
 	      case 'h': help_flag = true; break;
 	      case 'v': verbose_flag = true; break;
-	      case 'g': genkey_flag = true; break;
-	      case 'u':	genid_flag = true; break;
+	      case 'g': mode = MMT_GEN_KEY; break;
+	      case 'u':	mode = MMT_GEN_ID; break;
 	      case 'e': encrypt_header_flag = true; break;
 	      case 'E': encrypt_header_flag = false; break;
 	      case 'M': write_hmac = false; break;
@@ -306,14 +304,14 @@ public:
 	      case 'L': use_smpte_labels = true; break;
 
 	      case 'c':
-		TEST_SET_MAJOR_MODE(create_flag);
 		TEST_EXTRA_ARG(i, 'c');
+		mode = MMT_CREATE;
 		out_file = argv[i];
 		break;
 
 	      case 'x':
-		TEST_SET_MAJOR_MODE(extract_flag);
 		TEST_EXTRA_ARG(i, 'x');
+		mode = MMT_EXTRACT;
 		file_root = argv[i];
 		break;
 
@@ -366,6 +364,8 @@ public:
 		fb_dump_size = atoi(argv[i]);
 		break;
 
+	      case 't': mode = MMT_DIGEST; break;
+
 	      case 'b':
 		TEST_EXTRA_ARG(i, 'b');
 		fb_size = atoi(argv[i]);
@@ -404,18 +404,19 @@ public:
     if ( help_flag || version_flag )
       return;
     
-    if ( TEST_MAJOR_MODE() )
+    if ( ( mode == MMT_INFO
+	   || mode == MMT_CREATE
+	   || mode == MMT_EXTRACT
+	   || mode == MMT_GOP_START
+	   || mode == MMT_DIGEST ) && file_count == 0 )
       {
-	if ( ! genkey_flag && ! genid_flag && file_count == 0 )
-	  {
-	    fputs("Option requires at least one filename argument.\n", stderr);
-	    return;
-	  }
+	fputs("Option requires at least one filename argument.\n", stderr);
+	return;
       }
 
-    if ( ! TEST_MAJOR_MODE() && ! help_flag && ! version_flag )
+    if ( mode == MMT_NONE && ! help_flag && ! version_flag )
       {
-	fputs("No operation selected (use one of -(gcixG) or -h for help).\n", stderr);
+	fputs("No operation selected (use one of -[gGcitux] or -h for help).\n", stderr);
 	return;
       }
 
@@ -1235,6 +1236,48 @@ show_file_info(CommandOptions& Options)
 
 
 //
+Result_t
+digest_file(const char* filename)
+{
+  using namespace Kumu;
+
+  ASDCP_TEST_NULL_STR(filename);
+  FileReader Reader;
+  SHA_CTX Ctx;
+  SHA1_Init(&Ctx);
+  ByteString Buf(8192);
+
+  Result_t result = Reader.OpenRead(filename);
+
+  while ( ASDCP_SUCCESS(result) )
+    {
+      ui32_t read_count = 0;
+      result = Reader.Read(Buf.Data(), Buf.Capacity(), &read_count);
+
+      if ( result == RESULT_ENDOFFILE )
+	{
+	  result = RESULT_OK;
+	  break;
+	}
+
+      if ( ASDCP_SUCCESS(result) )
+	SHA1_Update(&Ctx, Buf.Data(), read_count);
+    }
+
+  if ( ASDCP_SUCCESS(result) )
+    {
+      const ui32_t sha_len = 20;
+      byte_t bin_buf[sha_len];
+      char sha_buf[64];
+      SHA1_Final(bin_buf, &Ctx);
+
+      fprintf(stdout, "%s %s\n", base64encode(bin_buf, sha_len, sha_buf, 64), filename);
+    }
+
+  return result;
+}
+
+//
 int
 main(int argc, const char** argv)
 {
@@ -1256,15 +1299,15 @@ main(int argc, const char** argv)
       return 3;
     }
 
-  if ( Options.info_flag )
+  if ( Options.mode == MMT_INFO )
     {
       result = show_file_info(Options);
     }
-  else if ( Options.gop_start_flag )
+  else if ( Options.mode == MMT_GOP_START )
     {
       result = gop_start_test(Options);
     }
-  else if ( Options.genkey_flag )
+  else if ( Options.mode == MMT_GEN_KEY )
     {
       Kumu::FortunaRNG RNG;
       byte_t bin_buf[KeyLen];
@@ -1273,14 +1316,19 @@ main(int argc, const char** argv)
       RNG.FillRandom(bin_buf, KeyLen);
       printf("%s\n", Kumu::bin2hex(bin_buf, KeyLen, str_buf, 40));
     }
-  else if ( Options.genid_flag )
+  else if ( Options.mode == MMT_GEN_ID )
     {
       UUID TmpID;
       Kumu::GenRandomValue(TmpID);
       char   str_buf[40];
       printf("%s\n", TmpID.EncodeHex(str_buf, 40));
     }
-  else if ( Options.extract_flag )
+  else if ( Options.mode == MMT_DIGEST )
+    {
+      for ( ui32_t i = 0; i < Options.file_count && ASDCP_SUCCESS(result); i++ )
+	result = digest_file(Options.filenames[i]);
+    }
+  else if ( Options.mode == MMT_EXTRACT )
     {
       EssenceType_t EssenceType;
       result = ASDCP::EssenceType(Options.filenames[0], EssenceType);
@@ -1307,7 +1355,7 @@ main(int argc, const char** argv)
 	    }
 	}
     }
-  else if ( Options.create_flag )
+  else if ( Options.mode == MMT_CREATE )
     {
       if ( Options.do_repeat && ! Options.duration_flag )
 	{

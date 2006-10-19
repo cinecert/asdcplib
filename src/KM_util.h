@@ -276,6 +276,10 @@ namespace Kumu
       UUID(const UUID& rhs) : Identifier<UUID_Length>(rhs) {}
       virtual ~UUID() {}
 
+      inline const char* EncodeString(char* buf, ui32_t buf_len) const {
+	return bin2UUIDhex(m_Value, Size(), buf, buf_len);
+      }
+
       inline const char* EncodeHex(char* buf, ui32_t buf_len) const {
 	return bin2UUIDhex(m_Value, Size(), buf, buf_len);
       }
@@ -325,6 +329,7 @@ namespace Kumu
 
       const Timestamp& operator=(const Timestamp& rhs);
       bool operator<(const Timestamp& rhs) const;
+      bool operator>(const Timestamp& rhs) const;
       bool operator==(const Timestamp& rhs) const;
       bool operator!=(const Timestamp& rhs) const;
 

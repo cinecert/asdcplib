@@ -33,6 +33,10 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <KM_log.h>
 using Kumu::DefaultLogSink;
 
+// index segments must be < 64K
+// NOTE: this value may too high if advanced index entry elements are used.
+const ui32_t CBRIndexEntriesPerSegment = 5000;
+
 //------------------------------------------------------------------------------------------
 //
 
@@ -1093,7 +1097,7 @@ ASDCP::MXF::OPAtomIndexFooter::PushIndexEntry(const IndexTableSegment::IndexEntr
       m_CurrentSegment->IndexEditRate = m_EditRate;
       m_CurrentSegment->IndexStartPosition = 0;
     }
-  else if ( m_CurrentSegment->IndexEntryArray.size() >= 1486 ) // 1486 gets us 16K packets
+  else if ( m_CurrentSegment->IndexEntryArray.size() >= CBRIndexEntriesPerSegment )
     { // no, this one is full, start another
       m_CurrentSegment->IndexDuration = m_CurrentSegment->IndexEntryArray.size();
       ui64_t StartPosition = m_CurrentSegment->IndexStartPosition + m_CurrentSegment->IndexDuration;
