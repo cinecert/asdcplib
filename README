@@ -113,7 +113,7 @@ utilities all respond to -h and there are manual pages in man/.
 
 
 Change History
-2006.11.02 - Bug fixes v1.1.11
+2006.11.03 - Bug fixes v1.1.11
  o Increased index table entry list size to 5000.
  o Added length checking to TLV writer (returns error if TLV
    payload exceeds 64kB).
@@ -125,6 +125,9 @@ Change History
  o Added directory-of-wav detection to RawEssenceType()
  o Modified MXF::Partition::AddChildObject() to only generate
    a UUID if the InstanceID is unset.
+ o Added ComponentMaxRef & ComponentMinRef to RGBAEssenceDescriptor.
+   More to follow.
+ o Added detection of 2K/4K jp2c, writing correct 4K metadata.
 
 
 2006.10.05 - Bug fixes v1.1.10

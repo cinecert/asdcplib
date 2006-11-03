@@ -344,7 +344,6 @@ ASDCP::JP2K::MXFWriter::h__Writer::JP2K_PDesc_to_MD(JP2K::PictureDescriptor& PDe
   assert(m_EssenceSubDescriptor);
   MXF::RGBAEssenceDescriptor* PDescObj = (MXF::RGBAEssenceDescriptor*)m_EssenceDescriptor;
 
-  PDescObj->Codec.Set(Dict::ul(MDD_JP2KEssenceCompression));
   PDescObj->SampleRate = PDesc.EditRate;
   PDescObj->ContainerDuration = PDesc.ContainerDuration;
   PDescObj->StoredWidth = PDesc.StoredWidth;
@@ -352,7 +351,17 @@ ASDCP::JP2K::MXFWriter::h__Writer::JP2K_PDesc_to_MD(JP2K::PictureDescriptor& PDe
   PDescObj->AspectRatio = PDesc.AspectRatio;
   PDescObj->FrameLayout = 0;
 
-  m_EssenceSubDescriptor->Rsize = PDesc.Rsize;
+  if ( PDesc.StoredWidth < 2049 )
+    {
+      PDescObj->Codec.Set(Dict::ul(MDD_JP2KEssenceCompression_2K));
+      m_EssenceSubDescriptor->Rsize = 3;
+    }
+  else
+    {
+      PDescObj->Codec.Set(Dict::ul(MDD_JP2KEssenceCompression_4K));
+      m_EssenceSubDescriptor->Rsize = 4;
+    }
+
   m_EssenceSubDescriptor->Xsize = PDesc.Xsize;
   m_EssenceSubDescriptor->Ysize = PDesc.Ysize;
   m_EssenceSubDescriptor->XOsize = PDesc.XOsize;
@@ -396,7 +405,11 @@ ASDCP::JP2K::MXFWriter::h__Writer::OpenWrite(const char* filename, ui32_t Header
   if ( ASDCP_SUCCESS(result) )
     {
       m_HeaderSize = HeaderSize;
-      m_EssenceDescriptor = new RGBAEssenceDescriptor;
+      RGBAEssenceDescriptor* tmp_rgba = new RGBAEssenceDescriptor;
+      tmp_rgba->ComponentMaxRef = 4095;
+      tmp_rgba->ComponentMinRef = 0;
+
+      m_EssenceDescriptor = tmp_rgba;
       m_EssenceSubDescriptor = new JPEG2000PictureSubDescriptor;
       m_EssenceSubDescriptorList.push_back((FileDescriptor*)m_EssenceSubDescriptor);
 
