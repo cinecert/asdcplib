@@ -219,9 +219,10 @@ void
 ASDCP::MXF::Partition::AddChildObject(InterchangeObject* Object)
 {
   assert(Object);
-  UUID TmpID;
-  Kumu::GenRandomValue(TmpID);
-  Object->InstanceUID = TmpID;
+
+  if ( ! Object->InstanceUID.HasValue() )
+    GenRandomValue(Object->InstanceUID);
+
   m_PacketList->AddPacket(Object);
 }
 

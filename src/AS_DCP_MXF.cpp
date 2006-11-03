@@ -170,6 +170,9 @@ ASDCP::RawEssenceType(const char* filename, EssenceType_t& type)
   type = ESS_UNKNOWN;
   ASDCP::FrameBuffer FB;
   Kumu::FileReader Reader;
+  ASDCP::Wav::SimpleWaveHeader WavHeader;
+  ASDCP::AIFF::SimpleAIFFHeader AIFFHeader;
+  ui32_t data_offset;
   ui32_t read_count;
   Result_t result = FB.Capacity(Wav::MaxWavHeader); // using Wav max because everything else is much smaller
 
@@ -185,9 +188,6 @@ ASDCP::RawEssenceType(const char* filename, EssenceType_t& type)
 
       if ( ASDCP_SUCCESS(result) )
 	{
-	  ASDCP::Wav::SimpleWaveHeader WavHeader;
-	  ASDCP::AIFF::SimpleAIFFHeader AIFFHeader;
-	  ui32_t data_offset;
 	  const byte_t* p = FB.RoData();
 
 	  if ( p[0] == 0 &&  p[1] == 0 &&  p[2] == 1 &&  (p[3] == 0xb3 || p[3] == 0) )
@@ -224,9 +224,14 @@ ASDCP::RawEssenceType(const char* filename, EssenceType_t& type)
 		  Reader.Close();
 		}
 
-	      if ( ASDCP_SUCCESS(result)
-		   && ( memcmp(FB.RoData(), ASDCP::JP2K::Magic, sizeof(ASDCP::JP2K::Magic)) == 0 ) )
-		type = ESS_JPEG_2000;
+	      if ( ASDCP_SUCCESS(result) )
+		{
+		  if ( memcmp(FB.RoData(), ASDCP::JP2K::Magic, sizeof(ASDCP::JP2K::Magic)) == 0 )
+		    type = ESS_JPEG_2000;
+
+		  else if ( ASDCP_SUCCESS(WavHeader.ReadFromBuffer(FB.RoData(), read_count, &data_offset)) )
+		    type = ESS_PCM_24b_48k;
+		}
 
 	      break;
 	    }

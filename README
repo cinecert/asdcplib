@@ -113,13 +113,19 @@ utilities all respond to -h and there are manual pages in man/.
 
 
 Change History
-2006.10.18 - Bug fixes v1.1.11
+2006.11.02 - Bug fixes v1.1.11
  o Increased index table entry list size to 5000.
  o Added length checking to TLV writer (returns error if TLV
    payload exceeds 64kB).
  o Fixed partition header and RIP errors related to 2-partition
    files (MXF Interop mode).
  o Added -t option, SHA-1 digest with Base64 output on stdout.
+ o Fixed Sub Descriptor reference bug (Thanks to Denis Leconte
+    for dogged determination).
+ o Added directory-of-wav detection to RawEssenceType()
+ o Modified MXF::Partition::AddChildObject() to only generate
+   a UUID if the InstanceID is unset.
+
 
 2006.10.05 - Bug fixes v1.1.10
  o Changed RM_RELEASE to RL_RELEASE in MXFTypes.h.
