@@ -55,13 +55,13 @@ namespace Kumu
 
       inline bool        operator==(const Result_t& rhs) const { return value == rhs.value; }
       inline bool        operator!=(const Result_t& rhs) const { return value != rhs.value; }
-      inline bool        Success() { return ( value >= 0 ); }
-      inline bool        Failure() { return ( value < 0 ); }
+      inline bool        Success() const { return ( value >= 0 ); }
+      inline bool        Failure() const { return ( value < 0 ); }
 
-      inline long        Value() { return value; }
+      inline long        Value() const { return value; }
       inline operator    long() const { return value; }
 
-      inline const char* Label() { return label; }
+      inline const char* Label() const { return label; }
       inline operator    const char*() const { return label; }
     };
 

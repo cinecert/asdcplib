@@ -134,7 +134,7 @@ USAGE: %s -c <output-file> [-b <buffer-size>] [-d <duration>] [-e|-E]\n\
        %s -t <input-file>\n\
 \n\
        %s -x <file-prefix> [-b <buffer-size>] [-d <duration>]\n\
-       [-f <starting-frame>] [-m] [-p <frame-rate>] [-R] [-s <num>] [-S]\n\
+       [-f <starting-frame>] [-m] [-p <frame-rate>] [-R] [-s <num>] [-S|-1]\n\
        [-v] [-W] <input-file>\n\
 \n", PACKAGE, PACKAGE, PACKAGE, PACKAGE, PACKAGE, PACKAGE, PACKAGE);
 
@@ -173,6 +173,8 @@ Read/Write Options:\n\
   -R                - Repeat the first frame over the entire file (picture\n\
                       essence only, requires -c, -d)\n\
   -S                - Split Wave essence to stereo WAV files during extract.\n\
+                      Default is multichannel WAV\n\
+  -1                - Split Wave essence to mono WAV files during extract.\n\
                       Default is multichannel WAV\n\
   -W                - Read input file only, do not write source file\n\
 \n");
@@ -223,6 +225,7 @@ public:
   bool   write_hmac;     // true if HMAC values are to be generated and written
   bool   read_hmac;      // true if HMAC values are to be validated
   bool   split_wav;      // true if PCM is to be extracted to stereo WAV files
+  bool   mono_wav;       // true if PCM is to be extracted to mono WAV files
   bool   verbose_flag;   // true if the verbose option was selected
   ui32_t fb_dump_size;   // number of bytes of frame buffer to dump
   bool   showindex_flag; // true if index is to be displayed
@@ -263,7 +266,7 @@ public:
   //
   CommandOptions(int argc, const char** argv) :
     mode(MMT_NONE), error_flag(true), key_flag(false), key_id_flag(false), encrypt_header_flag(true),
-    write_hmac(true), read_hmac(false), split_wav(false),
+    write_hmac(true), read_hmac(false), split_wav(false), mono_wav(false),
     verbose_flag(false), fb_dump_size(0), showindex_flag(false), showheader_flag(false),
     no_write_flag(false), version_flag(false), help_flag(false), start_frame(0),
     duration(0xffffffff), duration_flag(false), do_repeat(false), use_smpte_labels(false),
@@ -281,10 +284,14 @@ public:
 	    continue;
 	  }
          
-	if ( argv[i][0] == '-' && isalpha(argv[i][1]) && argv[i][2] == 0 )
+	if ( argv[i][0] == '-'
+	     && ( isalpha(argv[i][1]) || isdigit(argv[i][1]) )
+	     && argv[i][2] == 0 )
 	  {
 	    switch ( argv[i][1] )
 	      {
+	      case '1': mono_wav = true; break;
+	      case '2': split_wav = true; break;
 	      case 'i': mode = MMT_INFO;	break;
 	      case 'G': mode = MMT_GOP_START; break;
 	      case 'W': no_write_flag = true; break;
@@ -389,7 +396,7 @@ public:
 	      }
 	    else
 	      {
-		fprintf(stderr, "Unrecognized option: %s\n", argv[i]);
+		fprintf(stderr, "Unrecognized argument: %s\n", argv[i]);
 		return;
 	      }
 
@@ -1048,7 +1055,9 @@ read_PCM_file(CommandOptions& Options)
 	}
 
       ADesc.ContainerDuration = last_frame - Options.start_frame;
-      OutWave.OpenWrite(ADesc, Options.file_root, Options.split_wav);
+      OutWave.OpenWrite(ADesc, Options.file_root,
+			( Options.split_wav ? WavFileWriter::ST_STEREO : 
+			  ( Options.mono_wav ? WavFileWriter::ST_MONO : WavFileWriter::ST_NONE ) ));
     }
 
   if ( ASDCP_SUCCESS(result) && Options.key_flag )

@@ -167,7 +167,7 @@ make_black_wav_file(CommandOptions& Options)
   memset(FrameBuffer.Data(), 0, FrameBuffer.Capacity());
   FrameBuffer.Size(FrameBuffer.Capacity());
 
-  if ( 1 ) // Options.verbose_flag )
+  if ( Options.verbose_flag )
     {
       fprintf(stderr, "48Khz PCM Audio, %s fps (%u spf)\n", "24",
 	      PCM::CalcSamplesPerFrame(ADesc));

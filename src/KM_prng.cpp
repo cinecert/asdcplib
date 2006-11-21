@@ -135,8 +135,7 @@ public:
       {
 	byte_t tmp[RNG_BLOCK_SIZE];
 	AES_encrypt(m_ctr_buf, tmp, &m_Context);
-	*(ui32_t*)(m_ctr_buf + 12) += 1;
-	memcpy(buf, tmp, len - gen_count);
+	memcpy(buf + gen_count, tmp, len - gen_count);
       }
   }
 };

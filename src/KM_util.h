@@ -117,7 +117,7 @@ namespace Kumu
   i32_t       hex2bin(const char* str, byte_t* buf, ui32_t buf_len, ui32_t* char_count);
 
   // Convert a binary string to NULL-terminated UTF-8 hexadecimal, returns the buffer
-  // if the binary buffer was large enough to hold the result. If the output buffer
+  // if the output buffer was large enough to hold the result. If the output buffer
   // is too small or any of the pointer arguments are NULL, the subroutine will
   // return 0.
   //

@@ -83,7 +83,7 @@ namespace ASDCP
 
       //
       class VESParserDelegate; // the delegate is declared later
-      const ui32_t VESHeaderBufSize = 1024; // should be larger than any expected header
+      const ui32_t VESHeaderBufSize = 1024*16; // should be larger than any expected header
 
       // MPEG VES parser class - call Parse() as many times as you want with buffers
       // of any size. State is maintained between calls. When complete headers are

@@ -67,23 +67,31 @@ void
 usage(FILE* stream = stdout)
 {
   fprintf(stream, "\
-USAGE: %s [-b|-c] [-n] [-s <size>] [-v]\n\
+USAGE: %s [-b|-B|-c|-x] [-n] [-s <size>] [-v]\n\
 \n\
        %s [-h|-help] [-V]\n\
 \n\
   -b          - Output a stream of binary data\n\
+  -B          - Output a Base64 string\n\
   -c          - Output a C-language struct containing the values\n\
   -h | -help  - Show help\n\
   -n          - Suppress newlines\n\
-  -s <size>   - Number of random bytes to generate (default 32, supplied value\n\
-                is rounded up to nearest multiple of 16)\n\
+  -s <size>   - Number of random bytes to generate (default 32)\n\
   -v          - Verbose. Prints informative messages to stderr\n\
   -V          - Show version information\n\
+  -x          - Output hexadecimal (default)\n\
 \n\
   NOTES: o There is no option grouping, all options must be distinct arguments.\n\
          o All option arguments must be separated from the option by whitespace.\n\
 \n", PACKAGE, PACKAGE);
 }
+
+enum OutputFormat_t {
+  OF_HEX,
+  OF_BINARY,
+  OF_BASE64,
+  OF_CSTRUCT
+};
 
 //
 class CommandOptions
@@ -93,20 +101,17 @@ class CommandOptions
 public:
   bool   error_flag;      // true if the given options are in error or not complete
   bool   no_newline_flag; // 
-  bool   c_array_flag;    // 
-  bool   binary_flag;     // 
   bool   verbose_flag;    // true if the verbose option was selected
   bool   version_flag;    // true if the version display option was selected
   bool   help_flag;       // true if the help display option was selected
+  OutputFormat_t format;  // 
   ui32_t request_size;
 
  //
   CommandOptions(int argc, const char** argv) :
-    error_flag(true), no_newline_flag(false), c_array_flag(false), binary_flag(false),
-    verbose_flag(false), version_flag(false), help_flag(false), request_size(32)
+    error_flag(true), no_newline_flag(false), verbose_flag(false),
+    version_flag(false), help_flag(false), format(OF_HEX), request_size(RandBlockSize*2)
   {
-    ui32_t tmp_size = 0, diff = 0;
-
     for ( int i = 1; i < argc; i++ )
       {
 
@@ -120,24 +125,20 @@ public:
 	  {
 	    switch ( argv[i][1] )
 	      {
-	      case 'b': binary_flag = true; break;
-	      case 'c': c_array_flag = true; break;
+	      case 'b': format = OF_BINARY; break;
+	      case 'B': format = OF_BASE64; break;
+	      case 'c': format = OF_CSTRUCT; break;
 	      case 'n': no_newline_flag = true; break;
 	      case 'h': help_flag = true; break;
 
 	      case 's':
 		TEST_EXTRA_ARG(i, 's');
-		tmp_size = atoi(argv[i]);
-		diff = tmp_size % RandBlockSize;
-
-		if ( diff != 0 )
-		  tmp_size += RandBlockSize - diff;
-
-		request_size = tmp_size;
+		request_size = abs(atoi(argv[i]));
 		break;
 
 	      case 'v': verbose_flag = true; break;
 	      case 'V': version_flag = true; break;
+	      case 'x': format = OF_HEX; break;
 
 	      default:
 		fprintf(stderr, "Unrecognized option: %s\n", argv[i]);
@@ -151,14 +152,14 @@ public:
 	  }
       }
 
-	if ( help_flag || version_flag )
-	  return;
+    if ( help_flag || version_flag )
+      return;
 
-	if ( binary_flag && c_array_flag )
-	  {
-	    fprintf(stderr, "Error, must use only one of -b and -c options.\n");
-	    return;
-	  }
+    if ( request_size == 0 )
+      {
+	fprintf(stderr, "Please use a non-zero request size\n");
+	return;
+      }
 
     error_flag = false;
   }
@@ -190,32 +191,41 @@ main(int argc, const char** argv)
   ByteString    Buf(Kumu::Kilobyte);
 
   if ( Options.verbose_flag )
-    fprintf(stderr, "Creating %d random values.\n", Options.request_size);
+    fprintf(stderr, "Generating %d random byte%s.\n", Options.request_size, (Options.request_size == 1 ? "" : "s"));
 
-  if ( Options.binary_flag )
+  if ( Options.format == OF_BINARY )
     {
-      for ( ui32_t i = 0; i < Options.request_size; i += Kumu::Kilobyte )
+      if ( KM_FAILURE(Buf.Capacity(Options.request_size)) )
 	{
-	  RandGen.FillRandom(Buf);
-	  ui32_t write_size = ((i + Kumu::Kilobyte) > Options.request_size) ? Options.request_size - i : Kumu::Kilobyte;
-	  fwrite((byte_t*)Buf.Data(), 1, write_size, stdout);
+	  fprintf(stderr, "randbuf: %s\n", RESULT_ALLOC.Label());
+	  return 1;
 	}
+
+      RandGen.FillRandom(Buf.Data(), Options.request_size);
+      fwrite((byte_t*)Buf.Data(), 1, Options.request_size, stdout);
     }
-  else if ( Options.c_array_flag )
+  else if ( Options.format == OF_CSTRUCT )
     {
+      ui32_t line_count = 0;
       byte_t* p = Buf.Data();
       printf("byte_t rand_buf[%u] = {\n", Options.request_size);
 
+      if ( Options.request_size > 128 )
+	fputs("  // 0x00000000\n", stdout);
+
       while ( Options.request_size > 0 )
 	{
+	  if ( line_count > 0 && (line_count % (RandBlockSize*8)) == 0 )
+	    fprintf(stdout, "  // 0x%08x\n", line_count);
+
 	  RandGen.FillRandom(p, RandBlockSize);
 	  fputc(' ', stdout);
 
-	  for ( ui32_t i = 0; i < RandBlockSize; i++ )
+	  for ( ui32_t i = 0; i < RandBlockSize && Options.request_size > 0; i++, Options.request_size-- )
 	    printf(" 0x%02x,", p[i]);
 
 	  fputc('\n', stdout);
-	  Options.request_size -= RandBlockSize;
+	  line_count += RandBlockSize;
 	}
 
       fputs("};", stdout);
@@ -223,20 +233,54 @@ main(int argc, const char** argv)
       if ( ! Options.no_newline_flag )
 	fputc('\n', stdout);
     }
-  else
+  else if ( Options.format == OF_BASE64 )
     {
-      char hex_buf[64];
-      byte_t* p = Buf.Data();
-
-      for ( ui32_t i = 0; i < Options.request_size; i += RandBlockSize )
+      if ( KM_FAILURE(Buf.Capacity(Options.request_size)) )
 	{
-	  RandGen.FillRandom(p, RandBlockSize);
-	  bin2hex(p, RandBlockSize, hex_buf, 64);
-	  fputs(hex_buf, stdout);
-
-	  if ( ! Options.no_newline_flag )
-	    fputc('\n', stdout);
+	  fprintf(stderr, "randbuf: %s\n", RESULT_ALLOC.Label());
+	  return 1;
 	}
+
+      ByteString Strbuf;
+      ui32_t e_len = base64_encode_length(Options.request_size) + 1;
+
+      if ( KM_FAILURE(Strbuf.Capacity(e_len)) )
+        {
+          fprintf(stderr, "strbuf: %s\n", RESULT_ALLOC.Label());
+          return 1;
+        }
+
+      RandGen.FillRandom(Buf.Data(), Options.request_size);
+
+      if ( base64encode(Buf.RoData(), Options.request_size, (char*)Strbuf.Data(), Strbuf.Capacity()) == 0 )
+	{
+          fprintf(stderr, "encode error\n");
+          return 2;
+        } 
+
+      fputs((const char*)Strbuf.RoData(), stdout);
+
+      if ( ! Options.no_newline_flag )
+	fputs("\n", stdout);
+    }
+  else // OF_HEX
+    {
+      byte_t* p = Buf.Data();
+      char hex_buf[64];
+
+      while ( Options.request_size > 0 )
+	{
+	  ui32_t x_len = xmin(Options.request_size, RandBlockSize);
+	  RandGen.FillRandom(p, RandBlockSize);
+	  bin2hex(p, x_len, hex_buf, 64);
+          fputs(hex_buf, stdout);
+
+          if ( ! Options.no_newline_flag )
+            fputc('\n', stdout);
+
+	  Options.request_size -= x_len;
+        }
+
     }
 
   return 0;

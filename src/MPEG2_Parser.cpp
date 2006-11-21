@@ -54,6 +54,23 @@ enum ParserState_t {
     ST_SLICE,
 };
 
+const char*
+StringParserState(ParserState_t state)
+{
+  switch ( state )
+    {
+    case ST_INIT:  return "INIT";
+    case ST_SEQ:   return "SEQ";
+    case ST_PIC:   return "PIC";
+    case ST_GOP:   return "GOP";
+    case ST_EXT:   return "EXT";
+    case ST_SLICE: return "SLICE";
+    }
+
+  return "*UNKNOWN*";
+}
+
+
 
 //
 class h__ParserState
@@ -74,11 +91,12 @@ class h__ParserState
       switch ( m_State )
 	{
 	case ST_INIT:
+	case ST_EXT:
 	  m_State = ST_SEQ;
 	  return RESULT_OK;
 	}
       
-      DefaultLogSink().Error("SEQ follows 0x%02x\n", m_State);
+      DefaultLogSink().Error("SEQ follows %s\n", StringParserState(m_State));
       return RESULT_STATE;
     }
 
@@ -94,7 +112,7 @@ class h__ParserState
 	  return RESULT_OK;
 	}
       
-      DefaultLogSink().Error("Slice follows 0x%02x\n", m_State);
+      DefaultLogSink().Error("Slice follows %s\n", StringParserState(m_State));
       return RESULT_STATE;
     }
 
@@ -112,7 +130,7 @@ class h__ParserState
 	  return RESULT_OK;
 	}
       
-      DefaultLogSink().Error("PIC follows 0x%02x\n", m_State);
+      DefaultLogSink().Error("PIC follows %s\n", StringParserState(m_State));
       return RESULT_STATE;
     }
 
@@ -128,7 +146,7 @@ class h__ParserState
 	return RESULT_OK;
       }
     
-    DefaultLogSink().Error("GOP follows 0x%02x\n", m_State);
+    DefaultLogSink().Error("GOP follows %s\n", StringParserState(m_State));
     return RESULT_STATE;
   }
 
@@ -145,7 +163,7 @@ class h__ParserState
 	  return RESULT_OK;
       }
 
-    DefaultLogSink().Error("EXT follows 0x%02x\n", m_State);
+    DefaultLogSink().Error("EXT follows %s\n", StringParserState(m_State));
     return RESULT_STATE;
   }
 };
@@ -399,7 +417,10 @@ ASDCP::MPEG2::Parser::h__Parser::OpenRead(const char* filename)
       // Since no one complained and that's the easiest thing to implement,
       // I have left it that way. Let me know if you want to be able to
       // locate the first GOP in the stream.
-      if ( p[0] != 0 || p[1] != 0 || p[2] != 1 || ! ( p[3] == SEQ_START || p[3] == PIC_START ) )
+      ui32_t i = 0;
+      while ( p[i] == 0 ) i++;
+
+      if ( i < 2 || p[i] != 1 || ! ( p[i+1] == SEQ_START || p[i+1] == PIC_START ) )
 	{
 	  DefaultLogSink().Error("Frame buffer does not begin with a PIC or SEQ start code.\n");
 	  return RESULT_RAW_FORMAT;

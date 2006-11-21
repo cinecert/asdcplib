@@ -144,7 +144,7 @@ namespace ASDCP {
   // 1.0.1. If changes were also required in AS_DCP.h, the new version would be 1.1.1.
   const ui32_t VERSION_MAJOR = 1;
   const ui32_t VERSION_APIMINOR = 1;
-  const ui32_t VERSION_IMPMINOR = 11;
+  const ui32_t VERSION_IMPMINOR = 12;
   const char* Version();
 
   // UUIDs are passed around as strings of UUIDlen bytes

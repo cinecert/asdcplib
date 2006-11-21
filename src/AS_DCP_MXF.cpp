@@ -32,6 +32,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <KM_fileio.h>
 #include "AS_DCP_internal.h"
 #include "JP2K.h"
+#include "MPEG.h"
 #include "Wav.h"
 
 
@@ -189,8 +190,10 @@ ASDCP::RawEssenceType(const char* filename, EssenceType_t& type)
       if ( ASDCP_SUCCESS(result) )
 	{
 	  const byte_t* p = FB.RoData();
+	  ui32_t i = 0;
+	  while ( p[i] == 0 ) i++;
 
-	  if ( p[0] == 0 &&  p[1] == 0 &&  p[2] == 1 &&  (p[3] == 0xb3 || p[3] == 0) )
+	  if ( i > 1 && p[i] == 1 &&  (p[i+1] == ASDCP::MPEG2::SEQ_START || p[i+1] == ASDCP::MPEG2::PIC_START) )
 	    type = ESS_MPEG2_VES;
 
 	  else if ( ASDCP_SUCCESS(WavHeader.ReadFromBuffer(p, read_count, &data_offset)) )

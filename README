@@ -113,15 +113,26 @@ utilities all respond to -h and there are manual pages in man/.
 
 
 Change History
+2006.11.19 - Mo better stuff v1.1.12
+ o Changed read-only Result_t accessor methods to const.
+ o Added Base64 (-B) option to kmrandgen.
+ o Removed 16-bit alignment restriction from kmrandgen.
+ o Improved WAV file extraction speed (Thanks to Jim Radford
+   for pointing this out).
+ o Added single-channel split for WAV extraction (asdcp-test -1).
+ o Fixed remainder bug in h__RNG::fill_rand().
+
+
 2006.11.03 - Bug fixes v1.1.11
  o Increased index table entry list size to 5000.
  o Added length checking to TLV writer (returns error if TLV
    payload exceeds 64kB).
  o Fixed partition header and RIP errors related to 2-partition
    files (MXF Interop mode).
- o Added -t option, SHA-1 digest with Base64 output on stdout.
+ o Added -t option to asdcp-test (SHA-1 digest with Base64 output
+   on stdout).
  o Fixed Sub Descriptor reference bug (Thanks to Denis Leconte
-    for dogged determination).
+   for dogged determination).
  o Added directory-of-wav detection to RawEssenceType()
  o Modified MXF::Partition::AddChildObject() to only generate
    a UUID if the InstanceID is unset.
