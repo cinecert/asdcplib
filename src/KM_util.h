@@ -381,10 +381,10 @@ namespace Kumu
       inline ui32_t  Capacity() const { return m_Capacity; }
 
       // returns a const pointer to the essence data
-      inline const byte_t* RoData() const { return m_Data; }
+      inline const byte_t* RoData() const { assert(m_Data); return m_Data; }
 	
       // returns a non-const pointer to the essence data
-      inline byte_t* Data() { return m_Data; }
+      inline byte_t* Data() { assert(m_Data); return m_Data; }
 	
       // set the length of the buffer's contents
       inline ui32_t  Length(ui32_t l) { return m_Length = l; }

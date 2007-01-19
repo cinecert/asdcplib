@@ -38,11 +38,19 @@ using Kumu::DefaultLogSink;
 using namespace ASDCP;
 const int KEY_SIZE_BITS = 128;
 
-
 #include <openssl/aes.h>
 #include <openssl/sha.h>
 #include <openssl/bn.h>
 #include <openssl/err.h>
+
+#if OPENSSL_VERSION_NUMBER < 0x0090804f
+# error OpenSSL version mismatch
+#endif
+
+#ifndef OPENSSL_VERSION_NUMBER
+#error OPENSSL_VERSION_NUMBER not defined
+#endif
+
 
 void
 print_ssl_error()
@@ -69,7 +77,7 @@ ASDCP::AESEncContext::~AESEncContext() {}
 ASDCP::Result_t
 ASDCP::AESEncContext::InitKey(const byte_t* key)
 {
-  ASDCP_TEST_NULL(key);
+  KM_TEST_NULL_L(key);
 
   if ( m_Context )
     return RESULT_INIT;
@@ -92,7 +100,7 @@ ASDCP::AESEncContext::InitKey(const byte_t* key)
 ASDCP::Result_t
 ASDCP::AESEncContext::SetIVec(const byte_t* i_vec)
 {
-  ASDCP_TEST_NULL(i_vec);
+  KM_TEST_NULL_L(i_vec);
 
   if ( ! m_Context )
     return  RESULT_INIT;
@@ -107,7 +115,7 @@ ASDCP::AESEncContext::SetIVec(const byte_t* i_vec)
 ASDCP::Result_t
 ASDCP::AESEncContext::GetIVec(byte_t* i_vec) const
 {
-  ASDCP_TEST_NULL(i_vec);
+  KM_TEST_NULL_L(i_vec);
 
   if ( ! m_Context )
     return  RESULT_INIT;
@@ -122,8 +130,8 @@ ASDCP::AESEncContext::GetIVec(byte_t* i_vec) const
 ASDCP::Result_t
 ASDCP::AESEncContext::EncryptBlock(const byte_t* pt_buf, byte_t* ct_buf, ui32_t block_size)
 {
-  ASDCP_TEST_NULL(pt_buf);
-  ASDCP_TEST_NULL(ct_buf);
+  KM_TEST_NULL_L(pt_buf);
+  KM_TEST_NULL_L(ct_buf);
   assert(block_size > 0);
   assert( block_size % CBC_BLOCK_SIZE == 0 );
 
@@ -170,7 +178,7 @@ ASDCP::AESDecContext::~AESDecContext() {}
 ASDCP::Result_t
 ASDCP::AESDecContext::InitKey(const byte_t* key)
 {
-  ASDCP_TEST_NULL(key);
+  KM_TEST_NULL_L(key);
 
   if ( m_Context )
     return  RESULT_INIT;
@@ -192,7 +200,7 @@ ASDCP::AESDecContext::InitKey(const byte_t* key)
 ASDCP::Result_t
 ASDCP::AESDecContext::SetIVec(const byte_t* i_vec)
 {
-  ASDCP_TEST_NULL(i_vec);
+  KM_TEST_NULL_L(i_vec);
 
   if ( ! m_Context )
     return  RESULT_INIT;
@@ -206,8 +214,8 @@ ASDCP::AESDecContext::SetIVec(const byte_t* i_vec)
 ASDCP::Result_t
 ASDCP::AESDecContext::DecryptBlock(const byte_t* ct_buf, byte_t* pt_buf, ui32_t block_size)
 {
-  ASDCP_TEST_NULL(ct_buf);
-  ASDCP_TEST_NULL(pt_buf);
+  KM_TEST_NULL_L(ct_buf);
+  KM_TEST_NULL_L(pt_buf);
   assert(block_size > 0);
   assert( block_size % CBC_BLOCK_SIZE == 0 );
 
@@ -406,7 +414,7 @@ HMACContext::~HMACContext()
 Result_t
 HMACContext::InitKey(const byte_t* key, LabelSet_t SetType)
 {
-  ASDCP_TEST_NULL(key);
+  KM_TEST_NULL_L(key);
 
   m_Context = new h__HMACContext;
 
@@ -436,7 +444,7 @@ HMACContext::Reset()
 Result_t
 HMACContext::Update(const byte_t* buf, ui32_t buf_len)
 {
-  ASDCP_TEST_NULL(buf);
+  KM_TEST_NULL_L(buf);
 
   if ( m_Context.empty() || m_Context->m_Final )
     return RESULT_INIT;
@@ -462,7 +470,7 @@ HMACContext::Finalize()
 Result_t
 HMACContext::GetHMACValue(byte_t* buf) const
 {
-  ASDCP_TEST_NULL(buf);
+  KM_TEST_NULL_L(buf);
 
   if ( m_Context.empty() || ! m_Context->m_Final )
     return RESULT_INIT;
@@ -476,7 +484,7 @@ HMACContext::GetHMACValue(byte_t* buf) const
 Result_t
 HMACContext::TestHMACValue(const byte_t* buf) const
 {
-  ASDCP_TEST_NULL(buf);
+  KM_TEST_NULL_L(buf);
 
   if ( m_Context.empty() || ! m_Context->m_Final )
     return RESULT_INIT;

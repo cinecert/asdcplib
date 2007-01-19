@@ -144,7 +144,7 @@ namespace ASDCP {
   // 1.0.1. If changes were also required in AS_DCP.h, the new version would be 1.1.1.
   const ui32_t VERSION_MAJOR = 1;
   const ui32_t VERSION_APIMINOR = 1;
-  const ui32_t VERSION_IMPMINOR = 12;
+  const ui32_t VERSION_IMPMINOR = 13;
   const char* Version();
 
   // UUIDs are passed around as strings of UUIDlen bytes
@@ -408,7 +408,7 @@ namespace ASDCP {
       // Initializes HMAC context. The key argument must point to a binary
       // key that is CBC_KEY_SIZE bytes in length. Returns error if the key
       // argument is NULL.
-      Result_t InitKey(const byte_t* key, LabelSet_t = LS_MXF_INTEROP);
+      Result_t InitKey(const byte_t* key, LabelSet_t);
 
       // Reset internal state, allows repeated cycles of Update -> Finalize
       void Reset();

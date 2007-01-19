@@ -41,6 +41,26 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define LOG_MSG_IMPL(t) va_list args; va_start(args, fmt); vLogf((t), fmt, &args); va_end(args)
 
 
+
+// Returns RESULT_PTR if the given argument is NULL.
+# define KM_TEST_NULL_L(p) \
+  if ( (p) == 0  ) { \
+    DefaultLogSink().Error("NULL pointer in file %s, line %d\n", __FILE__, __LINE__); \
+    return Kumu::RESULT_PTR; \
+  }
+
+// Returns RESULT_PTR if the given argument is NULL. It then
+// assumes that the argument is a pointer to a string and returns
+// RESULT_NULL_STR if the first character is '\0'.
+//
+# define KM_TEST_NULL_STR_L(p) \
+  KM_TEST_NULL_L(p); \
+  if ( (p)[0] == '\0' ) { \
+    DefaultLogSink().Error("Empty string in file %s, line %d\n", __FILE__, __LINE__); \
+    return Kumu::RESULT_NULL_STR; \
+  }
+
+
 namespace Kumu
 {
   // no log message will exceed this length

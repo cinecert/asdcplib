@@ -267,9 +267,9 @@ Kumu::base64decode(const char* str, byte_t* buf, ui32_t buf_len, ui32_t* char_co
 i32_t
 Kumu::hex2bin(const char* str, byte_t* buf, ui32_t buf_len, ui32_t* conv_size)
 {
-  KM_TEST_NULL(str);
-  KM_TEST_NULL(buf);
-  KM_TEST_NULL(conv_size);
+  KM_TEST_NULL_L(str);
+  KM_TEST_NULL_L(buf);
+  KM_TEST_NULL_L(conv_size);
 
   *conv_size = 0;
 

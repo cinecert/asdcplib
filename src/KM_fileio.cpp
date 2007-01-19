@@ -57,8 +57,8 @@ typedef struct stat     fstat_t;
 static Kumu::Result_t
 do_stat(const char* path, fstat_t* stat_info)
 {
-  KM_TEST_NULL_STR(path);
-  KM_TEST_NULL(stat_info);
+  KM_TEST_NULL_STR_L(path);
+  KM_TEST_NULL_L(stat_info);
 
   Kumu::Result_t result = Kumu::RESULT_OK;
 
@@ -86,7 +86,7 @@ do_stat(const char* path, fstat_t* stat_info)
 static Kumu::Result_t
 do_fstat(HANDLE handle, fstat_t* stat_info)
 {
-  KM_TEST_NULL(stat_info);
+  KM_TEST_NULL_L(stat_info);
 
   Kumu::Result_t result = Kumu::RESULT_OK;
 
@@ -198,7 +198,7 @@ Kumu::FileWriter::Writev(const byte_t* buf, ui32_t buf_len)
 {
   assert( ! m_IOVec.empty() );
   register h__iovec* iov = m_IOVec;
-  KM_TEST_NULL(buf);
+  KM_TEST_NULL_L(buf);
 
   if ( iov->m_Count >= IOVecMaxEntries )
     {
@@ -222,7 +222,7 @@ Kumu::FileWriter::Writev(const byte_t* buf, ui32_t buf_len)
 Kumu::Result_t
 Kumu::FileReader::OpenRead(const char* filename) const
 {
-  KM_TEST_NULL_STR(filename);
+  KM_TEST_NULL_STR_L(filename);
   const_cast<FileReader*>(this)->m_Filename = filename;
   
   // suppress popup window on error
@@ -285,7 +285,7 @@ Kumu::FileReader::Seek(Kumu::fpos_t position, SeekPos_t whence) const
 Kumu::Result_t
 Kumu::FileReader::Tell(Kumu::fpos_t* pos) const
 {
-  KM_TEST_NULL(pos);
+  KM_TEST_NULL_L(pos);
 
   if ( m_Handle == (HANDLE)-1L )
     return Kumu::RESULT_FILEOPEN;
@@ -310,7 +310,7 @@ Kumu::FileReader::Tell(Kumu::fpos_t* pos) const
 Kumu::Result_t
 Kumu::FileReader::Read(byte_t* buf, ui32_t buf_len, ui32_t* read_count) const
 {
-  KM_TEST_NULL(buf);
+  KM_TEST_NULL_L(buf);
   Result_t result = Kumu::RESULT_OK;
   DWORD    tmp_count;
   ui32_t tmp_int;
@@ -347,7 +347,7 @@ Kumu::FileReader::Read(byte_t* buf, ui32_t buf_len, ui32_t* read_count) const
 Kumu::Result_t
 Kumu::FileWriter::OpenWrite(const char* filename)
 {
-  KM_TEST_NULL_STR(filename);
+  KM_TEST_NULL_STR_L(filename);
   m_Filename = filename;
   
   // suppress popup window on error
@@ -419,7 +419,7 @@ Kumu::FileWriter::Writev(ui32_t* bytes_written)
 Kumu::Result_t
 Kumu::FileWriter::Write(const byte_t* buf, ui32_t buf_len, ui32_t* bytes_written)
 {
-  KM_TEST_NULL(buf);
+  KM_TEST_NULL_L(buf);
   ui32_t tmp_int;
 
   if ( bytes_written == 0 )
@@ -444,7 +444,7 @@ Kumu::FileWriter::Write(const byte_t* buf, ui32_t buf_len, ui32_t* bytes_written
 Kumu::Result_t
 Kumu::FileReader::OpenRead(const char* filename) const
 {
-  KM_TEST_NULL_STR(filename);
+  KM_TEST_NULL_STR_L(filename);
   const_cast<FileReader*>(this)->m_Filename = filename;
   const_cast<FileReader*>(this)->m_Handle = open(filename, O_RDONLY, 0);
   return ( m_Handle == -1L ) ? RESULT_FILEOPEN : RESULT_OK;
@@ -479,7 +479,7 @@ Kumu::FileReader::Seek(Kumu::fpos_t position, SeekPos_t whence) const
 Kumu::Result_t
 Kumu::FileReader::Tell(Kumu::fpos_t* pos) const
 {
-  KM_TEST_NULL(pos);
+  KM_TEST_NULL_L(pos);
 
   if ( m_Handle == -1L )
     return RESULT_FILEOPEN;
@@ -497,7 +497,7 @@ Kumu::FileReader::Tell(Kumu::fpos_t* pos) const
 Kumu::Result_t
 Kumu::FileReader::Read(byte_t* buf, ui32_t buf_len, ui32_t* read_count) const
 {
-  KM_TEST_NULL(buf);
+  KM_TEST_NULL_L(buf);
   i32_t  tmp_count = 0;
   ui32_t tmp_int = 0;
 
@@ -524,7 +524,7 @@ Kumu::FileReader::Read(byte_t* buf, ui32_t buf_len, ui32_t* read_count) const
 Kumu::Result_t
 Kumu::FileWriter::OpenWrite(const char* filename)
 {
-  KM_TEST_NULL_STR(filename);
+  KM_TEST_NULL_STR_L(filename);
   m_Filename = filename;
   m_Handle = open(filename, O_RDWR|O_CREAT|O_TRUNC, 0664);
 
@@ -542,7 +542,7 @@ Kumu::FileWriter::OpenWrite(const char* filename)
 Kumu::Result_t
 Kumu::FileWriter::OpenModify(const char* filename)
 {
-  KM_TEST_NULL_STR(filename);
+  KM_TEST_NULL_STR_L(filename);
   m_Filename = filename;
   m_Handle = open(filename, O_RDWR|O_CREAT, 0664);
 
@@ -584,7 +584,7 @@ Kumu::FileWriter::Writev(ui32_t* bytes_written)
 Kumu::Result_t
 Kumu::FileWriter::Write(const byte_t* buf, ui32_t buf_len, ui32_t* bytes_written)
 {
-  KM_TEST_NULL(buf);
+  KM_TEST_NULL_L(buf);
   ui32_t tmp_int;
 
   if ( bytes_written == 0 )
@@ -620,7 +620,7 @@ Kumu::ReadFileIntoString(const char* filename, std::string& outString, ui32_t ma
   FileReader File;
   ByteString ReadBuf;
 
-  KM_TEST_NULL_STR(filename);
+  KM_TEST_NULL_STR_L(filename);
 
   Result_t result = File.OpenRead(filename);
 
@@ -630,7 +630,13 @@ Kumu::ReadFileIntoString(const char* filename, std::string& outString, ui32_t ma
 
       if ( fsize > (Kumu::fpos_t)max_size )
 	{
-	  DefaultLogSink().Error("%s: exceeds available buffer size (%u)", filename, max_size);
+	  DefaultLogSink().Error("%s: exceeds available buffer size (%u)\n", filename, max_size);
+	  return RESULT_ALLOC;
+	}
+
+      if ( fsize == 0 )
+	{
+	  DefaultLogSink().Error("%s: zero file size\n", filename);
 	  return RESULT_ALLOC;
 	}
 
@@ -653,7 +659,7 @@ Kumu::WriteStringIntoFile(const char* filename, const std::string& inString)
 {
   FileWriter File;
   ui32_t write_count = 0;
-  KM_TEST_NULL_STR(filename);
+  KM_TEST_NULL_STR_L(filename);
 
   Result_t result = File.OpenWrite(filename);
 
@@ -679,7 +685,7 @@ Kumu::WriteStringIntoFile(const char* filename, const std::string& inString)
 Result_t
 Kumu::DirScanner::Open(const char* filename)
 {
-  KM_TEST_NULL_STR(filename);
+  KM_TEST_NULL_STR_L(filename);
 
   // we need to append a '*' to read the entire directory
   ui32_t fn_len = strlen(filename); 
@@ -732,7 +738,7 @@ Kumu::DirScanner::Close()
 Result_t
 Kumu::DirScanner::GetNext(char* filename)
 {
-  KM_TEST_NULL(filename);
+  KM_TEST_NULL_L(filename);
 
   if ( m_Handle == -1 )
     return RESULT_FILEOPEN;
@@ -763,7 +769,7 @@ Kumu::DirScanner::GetNext(char* filename)
 Result_t
 Kumu::DirScanner::Open(const char* filename)
 {
-  KM_TEST_NULL_STR(filename);
+  KM_TEST_NULL_STR_L(filename);
 
   Result_t result = RESULT_OK;
 
@@ -799,7 +805,7 @@ Kumu::DirScanner::Close()
 Result_t
 Kumu::DirScanner::GetNext(char* filename)
 {
-  KM_TEST_NULL(filename);
+  KM_TEST_NULL_L(filename);
 
   if ( m_Handle == NULL )
     return RESULT_FILEOPEN;

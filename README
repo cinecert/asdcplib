@@ -113,6 +113,10 @@ utilities all respond to -h and there are manual pages in man/.
 
 
 Change History
+xxx.xx.xx - Bug fixes v1.1.13
+ o Removed default parameter to HMACContext::InitKey().
+ o Cleaned up messages and CLI arg handling in asdcp-test.
+
 2006.11.19 - Mo better stuff v1.1.12
  o Changed read-only Result_t accessor methods to const.
  o Added Base64 (-B) option to kmrandgen.

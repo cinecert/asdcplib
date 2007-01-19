@@ -330,7 +330,7 @@ public:
 
 		  if ( length != KeyLen )
 		    {
-		      fprintf(stderr, "Unexpected key length: %u, expecting %u characters.\n", KeyLen, length);
+		      fprintf(stderr, "Unexpected key length: %u, expecting %u characters.\n", length, KeyLen);
 		      return;
 		    }
 		}
@@ -344,7 +344,7 @@ public:
 
 		  if ( length != UUIDlen )
 		    {
-		      fprintf(stderr, "Unexpected key ID length: %u, expecting %u characters.\n", UUIDlen, length);
+		      fprintf(stderr, "Unexpected key ID length: %u, expecting %u characters.\n", length, UUIDlen);
 		      return;
 		    }
 		}
@@ -352,30 +352,30 @@ public:
 
 	      case 'f':
 		TEST_EXTRA_ARG(i, 'f');
-		start_frame = atoi(argv[i]); // TODO: test for negative value, should use strtol()
+		start_frame = abs(atoi(argv[i]));
 		break;
 
 	      case 'd':
 		TEST_EXTRA_ARG(i, 'd');
 		duration_flag = true;
-		duration = atoi(argv[i]); // TODO: test for negative value, should use strtol()
+		duration = abs(atoi(argv[i]));
 		break;
 
 	      case 'p':
 		TEST_EXTRA_ARG(i, 'p');
-		picture_rate = atoi(argv[i]);
+		picture_rate = abs(atoi(argv[i]));
 		break;
 
 	      case 's':
 		TEST_EXTRA_ARG(i, 's');
-		fb_dump_size = atoi(argv[i]);
+		fb_dump_size = abs(atoi(argv[i]));
 		break;
 
 	      case 't': mode = MMT_DIGEST; break;
 
 	      case 'b':
 		TEST_EXTRA_ARG(i, 'b');
-		fb_size = atoi(argv[i]);
+		fb_size = abs(atoi(argv[i]));
 
 		if ( verbose_flag )
 		  fprintf(stderr, "Frame Buffer size: %u bytes.\n", fb_size);
