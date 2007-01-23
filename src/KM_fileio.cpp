@@ -106,7 +106,9 @@ do_fstat(HANDLE handle, fstat_t* stat_info)
 bool
 Kumu::PathIsFile(const char* pathname)
 {
-  assert(pathname);
+  if ( pathname == 0 || *pathname == 0 )
+    return false;
+
   fstat_t info;
 
   if ( KM_SUCCESS(do_stat(pathname, &info)) )
@@ -123,7 +125,9 @@ Kumu::PathIsFile(const char* pathname)
 bool
 Kumu::PathIsDirectory(const char* pathname)
 {
-  assert(pathname);
+  if ( pathname == 0 || *pathname == 0 )
+    return false;
+
   fstat_t info;
 
   if ( KM_SUCCESS(do_stat(pathname, &info)) )
@@ -140,7 +144,9 @@ Kumu::PathIsDirectory(const char* pathname)
 Kumu::fsize_t
 Kumu::FileSize(const char* pathname)
 {
-  assert(pathname);
+  if ( pathname == 0 || *pathname == 0 )
+    return false;
+
   fstat_t info;
 
   if ( KM_SUCCESS(do_stat(pathname, &info)) )
