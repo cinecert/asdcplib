@@ -46,6 +46,10 @@ namespace Kumu
       const byte_t* FillRandom(byte_t* buf, ui32_t len);
       const byte_t* FillRandom(ByteString&);
     };
+
+
+  void Gen_FIPS_186_Value(const byte_t* key_in /* 20 bytes */, byte_t* r_out /* 40 bytes */);
+
 } // namespace Kumu
 
 
