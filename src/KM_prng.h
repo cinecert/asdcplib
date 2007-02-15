@@ -48,7 +48,8 @@ namespace Kumu
     };
 
 
-  void Gen_FIPS_186_Value(const byte_t* key_in /* 20 bytes */, byte_t* r_out /* 40 bytes */);
+  // key_len must be <= 64 (larger values will be truncated)
+  void Gen_FIPS_186_Value(const byte_t* key_in, ui32_t key_len, byte_t* buf, ui32_t buf_len);
 
 } // namespace Kumu
 

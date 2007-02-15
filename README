@@ -114,6 +114,9 @@ utilities all respond to -h and there are manual pages in man/.
 
 Change History
 xxx.xx.xx - Bug fixes v1.1.13
+ o Fixed SMPTE 429-6 HMAC -- FIPS 186-2 implementation was
+   laughably incorrect, thanks to Doremi for pointing this
+   out.
  o Removed default parameter to HMACContext::InitKey().
  o Cleaned up messages and CLI arg handling in asdcp-test.
 

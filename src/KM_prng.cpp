@@ -36,6 +36,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <assert.h>
 #include <openssl/aes.h>
 #include <openssl/sha.h>
+#include <openssl/bn.h>
 
 using namespace Kumu;
 
@@ -146,7 +147,7 @@ static h__RNG* s_RNG = 0;
 
 //------------------------------------------------------------------------------------------
 //
-// public interface
+// Fortuna public interface
 
 Kumu::FortunaRNG::FortunaRNG()
 {
@@ -190,6 +191,68 @@ Kumu::FortunaRNG::FillRandom(Kumu::ByteString& Buffer)
   return Buffer.Data();
 }
 
+//------------------------------------------------------------------------------------------
+
+//
+// FIPS 186-2 Sec. 3.1 as modified by Change 1, section entitled "General Purpose Random Number Generation"
+void
+Kumu::Gen_FIPS_186_Value(const byte_t* key, ui32_t key_size, byte_t* out_buf, ui32_t out_buf_len)
+{
+  byte_t sha_buf[SHA_DIGEST_LENGTH];
+  const ui32_t key_buf_len = 64;
+  byte_t key_buf[key_buf_len];
+  SHA_CTX SHA;
+  BN_CTX* ctx1 = BN_CTX_new(); // used by BN_* functions
+  assert(ctx1);
+
+  // init key
+  memset(key_buf, 0, key_buf_len);
+  memcpy(key_buf, key, xmin<ui32_t>(key_buf_len, key_size));
+
+  // create the 2^160 constant
+  BIGNUM c_2powb, c_2, c_160;
+  BN_init(&c_2powb);  BN_init(&c_2);  BN_init(&c_160);
+  BN_set_word(&c_2, 2);
+  BN_set_word(&c_160, 160);
+  BN_exp(&c_2powb, &c_2, &c_160, ctx1);
+
+  for (;;)
+    {
+      // step c -- x = G(t,xkey)
+      SHA1_Init(&SHA);
+      SHA1_Update(&SHA, key_buf, key_buf_len);
+      ui32_t* buf_p = (ui32_t*)sha_buf;
+      *buf_p++ = KM_i32_BE(SHA.h0);
+      *buf_p++ = KM_i32_BE(SHA.h1);
+      *buf_p++ = KM_i32_BE(SHA.h2);
+      *buf_p++ = KM_i32_BE(SHA.h3);
+      *buf_p++ = KM_i32_BE(SHA.h4);
+      memcpy(out_buf, sha_buf, xmin<ui32_t>(out_buf_len, SHA_DIGEST_LENGTH));
+
+      if ( out_buf_len <= SHA_DIGEST_LENGTH )
+	break;
+
+      out_buf_len -= SHA_DIGEST_LENGTH;
+      out_buf += SHA_DIGEST_LENGTH;
+
+      // step d ...
+      BIGNUM xkey1, xkey_buf, x0;
+      BN_init(&xkey1);  BN_init(&xkey_buf);    BN_init(&x0);
+
+      BN_bin2bn(key_buf, SHA_DIGEST_LENGTH, &xkey1);
+      BN_bin2bn(sha_buf, SHA_DIGEST_LENGTH, &x0);
+      BN_add_word(&xkey1, 1);            // xkey += 1
+      BN_add(&xkey_buf, &xkey1, &x0);       // xkey += x
+      BN_mod(&xkey1, &xkey_buf, &c_2powb, ctx1);  // xkey = xkey mod (2^160)
+
+      ui32_t bn_buf_len = BN_num_bytes(&xkey1);
+      assert(bn_buf_len < SHA_DIGEST_LENGTH+1);
+      memset(key_buf, 0, key_buf_len);
+      BN_bn2bin(&xkey1, key_buf);
+    }
+
+  BN_CTX_free(ctx1);
+}
 
 //
 // end KM_prng.cpp

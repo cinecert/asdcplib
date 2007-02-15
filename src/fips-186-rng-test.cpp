@@ -74,7 +74,7 @@ main(int argc, const char** argv)
       return 3;
     }
 
-  Gen_FIPS_186_Value(XKey_buf, X_buf);
+  Gen_FIPS_186_Value(XKey_buf, SHA_DIGEST_LENGTH, X_buf, SHA_DIGEST_LENGTH*2);
 
   if ( memcmp(X_buf, X_test_buf, SHA_DIGEST_LENGTH*2) != 0 )
     {
