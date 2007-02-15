@@ -113,12 +113,24 @@ utilities all respond to -h and there are manual pages in man/.
 
 
 Change History
-xxx.xx.xx - Bug fixes v1.1.13
+2007.02.15 - Bug fixes v1.1.13
+ o Removed 'VDescObj->SampleRate.Numerator = VDesc.FrameRate;'
+   from MPEG2_VDesc_to_MD() in AS_DCP_MPEG2.cpp, was line 76.
+ o Added KM_TEST_NULL_STR_L() and KM_TEST_NULL_L() macros to
+   KM_log.h. These versions log the location of the null value.
+   Macros are now used in any module that includes KM_log.h.
+ o MPEG2 VES with run of zero values at the head is now OK.
+ o Increased VESHeaderBufSize to 16K.
+ o Added makefile support for local OpenSSL in ../openssl, if
+   present.
+ o The Kumu::PathIs*() functions now return false if a null or
+   empty string is given (used to be an assert).
+ o Cleaned up the install target in the makefile.
  o Fixed SMPTE 429-6 HMAC -- FIPS 186-2 implementation was
-   laughably incorrect, thanks to Doremi for pointing this
-   out.
+   laughably incorrect. Thanks to Doremi for pointing this out.
  o Removed default parameter to HMACContext::InitKey().
  o Cleaned up messages and CLI arg handling in asdcp-test.
+
 
 2006.11.19 - Mo better stuff v1.1.12
  o Changed read-only Result_t accessor methods to const.

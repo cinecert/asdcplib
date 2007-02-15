@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2004-2006, John Hurst
+Copyright (c) 2004-2007, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -73,7 +73,6 @@ MPEG2_VDesc_to_MD(MPEG2::VideoDescriptor& VDesc, MXF::MPEG2VideoDescriptor* VDes
   ASDCP_TEST_NULL(VDescObj);
 
   VDescObj->SampleRate = VDesc.SampleRate;
-  VDescObj->SampleRate.Numerator = VDesc.FrameRate;
   VDescObj->ContainerDuration = VDesc.ContainerDuration;
 
   VDescObj->FrameLayout = VDesc.FrameLayout;
