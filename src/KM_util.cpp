@@ -974,7 +974,7 @@ Kumu::MemIOReader::MemIOReader(const ByteString* Buf)
   : m_p(0), m_capacity(0), m_size(0)
 {
   m_p = Buf->RoData();
-  m_capacity = Buf->Capacity();
+  m_capacity = Buf->Length();
   assert(m_p); assert(m_capacity);
 }
 
