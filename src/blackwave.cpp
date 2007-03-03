@@ -38,7 +38,7 @@ using namespace ASDCP;
 //
 // command line option parser class
 
-static const char* PACKAGE = "wavsplit";    // program name for messages
+static const char* PACKAGE = "blackwave";    // program name for messages
 
 // Macros used to test command option data state.
 
