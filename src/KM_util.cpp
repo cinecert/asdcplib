@@ -1026,6 +1026,20 @@ Kumu::ByteString::Set(const byte_t* buf, ui32_t buf_len)
 }
 
 
+// copy the given data into the ByteString, set Length value.
+// Returns error if the ByteString is too small.
+Kumu::Result_t
+Kumu::ByteString::Set(const ByteString& Buf)
+{
+  if ( m_Capacity < Buf.m_Capacity )
+    return RESULT_ALLOC;
+
+  memcpy(m_Data, Buf.m_Data, Buf.m_Length);
+  m_Length = Buf.m_Length;
+  return RESULT_OK;
+}
+
+
 // Sets the size of the internally allocate buffer.
 // Resets content length to zero.
 Kumu::Result_t

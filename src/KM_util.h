@@ -203,6 +203,7 @@ namespace Kumu
       }
 
       inline void Set(const byte_t* value) { m_HasValue = true; memcpy(m_Value, value, SIZE); }
+      inline void Reset() { m_HasValue = false; memset(m_Value, 0, SIZE); }
       inline const byte_t* Value() const { return m_Value; }
       inline ui32_t Size() const { return SIZE; }
 
@@ -395,6 +396,7 @@ namespace Kumu
       // copy the given data into the ByteString, set Length value.
       // Returns error if the ByteString is too small.
       Result_t Set(const byte_t* buf, ui32_t buf_len);
+      Result_t Set(const ByteString& Buf);
 
       inline virtual bool HasValue() const { return m_Length > 0; }
 
