@@ -921,31 +921,6 @@ Kumu::Timestamp::Archive(MemIOWriter* Writer) const
   return true;
 }
 
-#if 0
-//
-bool
-Kumu::UnarchiveString(MemIOReader* Reader, std::string&)
-{
-  assert(Reader);
-  ui32_t str_length;
-  if ( ! Reader->ReadUi32BE(&str_length) ) return false;
-  assign((const char*)Reader->CurrentData(), str_length);
-  if ( ! Reader->SkipOffset(str_length) ) return false;
-  return true;
-}
-
-//
-bool
-Kumu::String::Archive(MemIOWriter* Writer) const
-{
-  assert(Writer);
-  if ( ! Writer->WriteUi32BE(length()) ) return false;
-  if ( ! Writer->WriteRaw((const byte_t*)c_str(), length()) ) return false;
-
-  return true;
-}
-#endif
-
 //------------------------------------------------------------------------------------------
 
 Kumu::MemIOWriter::MemIOWriter(ByteString* Buf)

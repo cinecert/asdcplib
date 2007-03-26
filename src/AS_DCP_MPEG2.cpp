@@ -492,8 +492,15 @@ ASDCP::MPEG2::MXFWriter::h__Writer::WriteFrame(const FrameBuffer& FrameBuf, AESE
 
   // update the index manager
   Entry.TemporalOffset = - FrameBuf.TemporalOffset();
-  Entry.KeyFrameOffset = m_GOPOffset;
+  Entry.KeyFrameOffset = - m_GOPOffset;
   Entry.Flags = Flags;
+  /*
+  fprintf(stderr, "to: %4hd   ko: %4hd   c1: %4hd   c2: %4hd   fl: 0x%02x\n",
+	  Entry.TemporalOffset, Entry.KeyFrameOffset,
+	  m_GOPOffset + Entry.TemporalOffset,
+	  Entry.KeyFrameOffset - Entry.TemporalOffset,
+	  Entry.Flags);
+  */
   m_FooterPart.PushIndexEntry(Entry);
   m_FramesWritten++;
   m_GOPOffset++;

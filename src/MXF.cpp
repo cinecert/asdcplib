@@ -629,17 +629,12 @@ ASDCP::MXF::OPAtomHeader::InitFromFile(const Kumu::FileReader& Reader)
       else
 	{
 	  m_HasRIP = true;
-	}
-    }
-
-  if ( ASDCP_SUCCESS(result) )
-    {
-      Array<RIP::Pair>::iterator r_i = m_RIP.PairArray.begin();
       
-      if ( (*r_i).ByteOffset !=  0 )
-	{
-	  DefaultLogSink().Error("First Partition in RIP is not at offset 0.\n");
-	  result = RESULT_FORMAT;
+	  if ( m_RIP.PairArray.front().ByteOffset !=  0 )
+	    {
+	      DefaultLogSink().Error("First Partition in RIP is not at offset 0.\n");
+	      result = RESULT_FORMAT;
+	    }
 	}
     }
 
@@ -648,6 +643,9 @@ ASDCP::MXF::OPAtomHeader::InitFromFile(const Kumu::FileReader& Reader)
 
   if ( ASDCP_SUCCESS(result) )
     result = Partition::InitFromFile(Reader); // test UL and OP
+
+  if ( ASDCP_FAILURE(result) )
+    return result;
 
   // is it really OP-Atom?
   UL OPAtomUL(Dict::ul(MDD_OPAtom));
@@ -664,24 +662,24 @@ ASDCP::MXF::OPAtomHeader::InitFromFile(const Kumu::FileReader& Reader)
     }
 
   // slurp up the remainder of the header
-  if ( ASDCP_SUCCESS(result) )
-    {
-      if ( HeaderByteCount < 1024 )
-	DefaultLogSink().Warn("Improbably small HeaderByteCount value: %u\n", HeaderByteCount);
+  if ( HeaderByteCount < 1024 )
+    DefaultLogSink().Warn("Improbably small HeaderByteCount value: %u\n", HeaderByteCount);
 
-      result = m_Buffer.Capacity(HeaderByteCount);
-    }
+  result = m_Buffer.Capacity(HeaderByteCount);
 
   if ( ASDCP_SUCCESS(result) )
     {
       ui32_t read_count;
       result = Reader.Read(m_Buffer.Data(), m_Buffer.Capacity(), &read_count);
 
-      if ( ASDCP_SUCCESS(result) && read_count != m_Buffer.Capacity() )
+      if ( ASDCP_FAILURE(result) )
+	return result;
+
+      if ( read_count != m_Buffer.Capacity() )
 	{
 	  DefaultLogSink().Error("Short read of OP-Atom header metadata; wanted %u, got %u\n",
 				 m_Buffer.Capacity(), read_count);
-	  return RESULT_FAIL;
+	  return RESULT_KLV_CODING;
 	}
     }
 

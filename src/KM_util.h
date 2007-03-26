@@ -36,6 +36,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <KM_error.h>
 #include <string.h>
 #include <string>
+#include <list>
 
 namespace Kumu
 {
@@ -265,7 +266,43 @@ namespace Kumu
       }
     };
 
-  
+  //
+  template <class T>
+  class IdentifierList : public std::list<T>, public IArchive
+    {
+    public:
+      IdentifierList() {}
+      virtual ~IdentifierList() {}
+
+      bool HasValue() const { return ! this->empty(); }
+
+      bool Unarchive(Kumu::MemIOReader* Reader)
+	{
+	  if ( Reader == 0 )return false;
+	  ui32_t read_size = 0;
+	  if ( ! Reader->ReadUi32BE(&read_size) ) return false;
+	  for ( ui32_t i = 0; i < read_size; i++ )
+	    {
+	      T TmpTP;
+	      if ( ! TmpTP.Unarchive(Reader) ) return false;
+	      this->push_back(TmpTP);
+	    }
+
+	  return true;
+	}
+
+      bool Archive(Kumu::MemIOWriter* Writer) const
+	{
+	  if ( Writer == 0 )return false;
+	  if ( ! Writer->WriteUi32BE(this->size()) ) return false;
+	  typename IdentifierList<T>::const_iterator i = this->begin();
+	  for ( ; i != this->end(); i++ )
+	    if ( ! (*i).Archive(Writer) ) return false;
+
+	  return true;
+	}
+    };
+
   // UUID
   //
   const ui32_t UUID_Length = 16;

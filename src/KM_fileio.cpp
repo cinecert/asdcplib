@@ -210,7 +210,7 @@ Kumu::FileWriter::Writev(const byte_t* buf, ui32_t buf_len)
     {
       DefaultLogSink().Error("The iovec is full! Only %u entries allowed before a flush.\n",
 			     IOVecMaxEntries);
-      return RESULT_FAIL;
+      return RESULT_WRITEFAIL;
     }
 
   iov->m_iovec[iov->m_Count].iov_base = (char*)buf; // stupid iovec uses char*
@@ -405,13 +405,12 @@ Kumu::FileWriter::Writev(ui32_t* bytes_written)
 				   (DWORD*)&tmp_count,
 				   NULL);
 
-      if ( wr_result == 0 )
+      if ( wr_result == 0 || tmp_count != iov->m_iovec[i].iov_len)
 	{
 	  result = Kumu::RESULT_WRITEFAIL;
 	  break;
 	}
 
-      assert(iov->m_iovec[i].iov_len == tmp_count);
       *bytes_written += tmp_count;
     }
 
@@ -439,7 +438,10 @@ Kumu::FileWriter::Write(const byte_t* buf, ui32_t buf_len, ui32_t* bytes_written
   BOOL result = ::WriteFile(m_Handle, buf, buf_len, (DWORD*)bytes_written, NULL);
   ::SetErrorMode(prev);
 
-  return ( result == 0 ) ? Kumu::RESULT_WRITEFAIL : Kumu::RESULT_OK;
+  if ( result == 0 || bytes_written != buf_len )
+    return Kumu::RESULT_WRITEFAIL;
+
+  return Kumu::RESULT_OK;
 }
 
 #else // KM_WIN32
@@ -576,13 +578,17 @@ Kumu::FileWriter::Writev(ui32_t* bytes_written)
   if ( m_Handle == -1L )
     return RESULT_STATE;
 
-  int read_size = writev(m_Handle, iov->m_iovec, iov->m_Count);
+  int total_size = 0;
+  for ( int i = 0; i < iov->m_Count; i++ )
+    total_size += iov->m_iovec[i].iov_len;
+
+  int write_size = writev(m_Handle, iov->m_iovec, iov->m_Count);
   
-  if ( read_size == -1L )
+  if ( write_size == -1L || write_size != total_size )
     return RESULT_WRITEFAIL;
 
   iov->m_Count = 0;
-  *bytes_written = read_size;  
+  *bytes_written = write_size;  
   return RESULT_OK;
 }
 
@@ -596,18 +602,15 @@ Kumu::FileWriter::Write(const byte_t* buf, ui32_t buf_len, ui32_t* bytes_written
   if ( bytes_written == 0 )
     bytes_written = &tmp_int;
 
-  // TODO: flush iovec
-
-
   if ( m_Handle == -1L )
     return RESULT_STATE;
 
-  int read_size = write(m_Handle, buf, buf_len);
-  
-  if ( read_size == -1L )
+  int write_size = write(m_Handle, buf, buf_len);
+
+  if ( write_size == -1L || (ui32_t)write_size != buf_len )
     return RESULT_WRITEFAIL;
 
-  *bytes_written = read_size;  
+  *bytes_written = write_size;
   return RESULT_OK;
 }
 
@@ -643,7 +646,7 @@ Kumu::ReadFileIntoString(const char* filename, std::string& outString, ui32_t ma
       if ( fsize == 0 )
 	{
 	  DefaultLogSink().Error("%s: zero file size\n", filename);
-	  return RESULT_ALLOC;
+	  return RESULT_READFAIL;
 	}
 
       result = ReadBuf.Capacity((ui32_t)fsize);
@@ -672,10 +675,7 @@ Kumu::WriteStringIntoFile(const char* filename, const std::string& inString)
   if ( KM_SUCCESS(result) )
     result = File.Write((byte_t*)inString.c_str(), inString.length(), &write_count);
 
-  if ( KM_SUCCESS(result) && write_count != inString.length() )
-    return RESULT_WRITEFAIL;
-
-  return RESULT_OK;
+  return result;
 }
 
 
