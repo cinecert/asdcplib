@@ -137,7 +137,7 @@ ASDCP::Wav::SimpleWaveHeader::ReadFromBuffer(const byte_t* buf, ui32_t buf_len, 
   fourcc test_RIFF(p); p += 4;
   if ( test_RIFF != FCC_RIFF )
     {
-      DefaultLogSink().Error("File does not begin with RIFF header\n");      
+      DefaultLogSink().Debug("File does not begin with RIFF header\n");      
       return RESULT_RAW_FORMAT;
     }
 
@@ -146,7 +146,7 @@ ASDCP::Wav::SimpleWaveHeader::ReadFromBuffer(const byte_t* buf, ui32_t buf_len, 
   fourcc test_WAVE(p); p += 4;
   if ( test_WAVE != FCC_WAVE )
     {
-      DefaultLogSink().Error("File does not contain a WAVE header\n");
+      DefaultLogSink().Debug("File does not contain a WAVE header\n");
       return RESULT_RAW_FORMAT;
     }
 
@@ -303,7 +303,7 @@ ASDCP::AIFF::SimpleAIFFHeader::ReadFromBuffer(const byte_t* buf, ui32_t buf_len,
   fourcc test_FORM(p); p += 4;
   if ( test_FORM != FCC_FORM )
     {
-      DefaultLogSink().Error("File does not begin with FORM header\n");
+      DefaultLogSink().Debug("File does not begin with FORM header\n");
       return RESULT_RAW_FORMAT;
     }
 
@@ -312,7 +312,7 @@ ASDCP::AIFF::SimpleAIFFHeader::ReadFromBuffer(const byte_t* buf, ui32_t buf_len,
   fourcc test_AIFF(p); p += 4;
   if ( test_AIFF != FCC_AIFF )
     {
-      DefaultLogSink().Error("File does not contain an AIFF header\n");
+      DefaultLogSink().Debug("File does not contain an AIFF header\n");
       return RESULT_RAW_FORMAT;
     }
 
