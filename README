@@ -113,6 +113,24 @@ utilities all respond to -h and there are manual pages in man/.
 
 
 Change History
+2007.03.29 - Bug fixes v.1.1.14
+ o Fixed KeyFrameOffset value in MPEG wrapping to have negative
+   value. This is probably not yet complete for handling all
+   types of GOPs. Please send chunks of MPEG-2 VES that you
+   find which break this.
+ ** no other file format changes in this release **
+ o Removed asserts from KM_fileio, replaced with RESULT_WRITEFAIL
+   return value statements.
+ o Added -s and -p to the makefile install target.
+ o Altered ByteString behavior to use target Length() in copy
+   operations (instead of Capacity()).
+ o Added new Set() method to ByteString.
+ o Added IdentifierList class to KM_util.
+ o Fixed error in RIP interpretation when reading arbitrary (i.e.,
+   non-MXF) files. Thanks to Mahesh Bajaj for pointing this out.
+ o Changed some Error() messages to Debug() in Wav.cpp
+
+
 2007.02.15 - Bug fixes v1.1.13
  o Removed 'VDescObj->SampleRate.Numerator = VDesc.FrameRate;'
    from MPEG2_VDesc_to_MD() in AS_DCP_MPEG2.cpp, was line 76.
