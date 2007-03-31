@@ -446,9 +446,11 @@ namespace Kumu
 
       inline virtual bool Unarchive(MemIOReader* Reader) {
 	assert(Reader);
-	if ( ! Reader->ReadUi32BE(&m_Length) ) return false;
-	if ( KM_FAILURE(Capacity(m_Length)) ) return false;
-	if ( ! Reader->ReadRaw(m_Data, m_Length) ) return false;
+	ui32_t tmp_len;
+	if ( ! Reader->ReadUi32BE(&tmp_len) ) return false;
+	if ( KM_FAILURE(Capacity(tmp_len)) ) return false;
+	if ( ! Reader->ReadRaw(m_Data, tmp_len) ) return false;
+	m_Length = tmp_len;
 	return true;
       }
     };

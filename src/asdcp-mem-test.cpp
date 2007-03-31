@@ -31,12 +31,14 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 #include <AS_DCP_internal.h>
-#include <FortunaRNG.h>
+//#include <KM_platform.h>
+#include <KM_prng.h>
 
 #include <iostream>
 #include <assert.h>
 
 using namespace ASDCP;
+using namespace Kumu;
 
 const ui32_t buf_size = 1024;
 FortunaRNG RNG;
@@ -101,11 +103,6 @@ int c()
 //
 int d()
 {
-  mem_ptr<DataChunk> Chunk(new DataChunk(1024));
-
-
-#if 0
-
   //  MPEG2::Parser     mPFile;
   MPEG2::MXFReader  mRFile;
   Result_t result = mRFile.OpenRead("../test/write_test_mpeg.mxf");
@@ -120,7 +117,6 @@ int d()
   PCM::WAVParser    pPFile;
   PCM::MXFReader    pRFile;
   PCM::MXFWriter    pWFile;
-#endif
   return 0;
 }
 

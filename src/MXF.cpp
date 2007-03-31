@@ -709,14 +709,15 @@ ASDCP::MXF::OPAtomHeader::InitFromFile(const Kumu::FileReader& Reader)
 	      delete object;
 	      result = m_Primer.InitFromBuffer(redo_p, end_p - redo_p);
 	    }
-	  else if ( object->IsA(Dict::ul(MDD_Preface)) )
-	    {
-	      assert(m_Preface == 0);
-	      m_Preface = (Preface*)object;
-	    }
-	  else  
+	  else
 	    {
 	      m_PacketList->AddPacket(object);
+
+	      if ( object->IsA(Dict::ul(MDD_Preface)) )
+		{
+		  assert(m_Preface == 0);
+		  m_Preface = (Preface*)object;
+		}
 	    }
 	}
       else

@@ -12,7 +12,7 @@ by Deluxe Laboratories, Doremi Labs, CineCert LLC, Avica
 Technology and others.
 
 **The asdcplib project was housed on SourceForge. The project
-will be moving to a new home, to be announced here soon.
+has moved to http://www.cinecert.com/asdcplib/
 
 The project formerly depended upon the mxflib project. Because
 of its focus on covering the whole of the MXF specifications,
@@ -60,18 +60,18 @@ is simple AS-DCP support.
 
 Build Instructions
 
-GNU make is required to build asdcplib. The makefile will
-work on win32 systems that have Cygwin. Other win32 gmake
+GNU make is required to build asdcplib. The makefile will work
+on win32 systems that have Cygwin and MSVC. Other win32 gmake
 packages may or may not work depending upon the availability
 of standard POSIX shell commands. You will need gcc to rebuild
 the dep.make file.
 
-OpenSSL is also required. See http://www.openssl.org
+OpenSSL is also required. See http://www.openssl.org/
 
 If you are building on win32 or a unix with no OpenSSL library
 support, you will have to also obtain and build OpenSSL.  Unpack
-it into the same parent directory as asdcplib/, and rename the
-directory as 'openssl':
+it into the same parent directory as asdcplib/, and rename (or make
+a symlink to) the directory as 'openssl':
 
 myhost$ ls -l
 total 1761
@@ -94,7 +94,7 @@ asdcp-test - Writes, reads and verifies AS-DCP (MXF) track files.
 kmfilegen - Writes and verifies large files using a platform-
 independent format. Use it to test issues related to large files.
 
-kmuuidgen, kmrandgen - generate UUID values and random numbers
+kmuuidgen, kmrandgen - generate UUID values and random numbers.
 
 wavesplit - Splits a WAVE file into two or more output files. Used
   to untangle incorrectly-paired DCDM sound files.
@@ -109,26 +109,34 @@ Documentation
 Currently, the API documentation is mostly in AS_DCP.h. Read
 that file for a detailed description of the library's capabilities.
 Read asdcp-test.cpp for library usage examples. The command-line
-utilities all respond to -h and there are manual pages in man/.
+utilities all respond to -h.
 
 
 Change History
-2007.03.29 - Bug fixes v.1.1.14
+2007.03.31 - Bug fixes v.1.1.14
  o Fixed KeyFrameOffset value in MPEG wrapping to have negative
    value. This is probably not yet complete for handling all
    types of GOPs. Please send chunks of MPEG-2 VES that you
-   find which break this.
+   find which break this. Thanks to Doremi.
  ** no other file format changes in this release **
+ o Fixed error in RIP interpretation when reading arbitrary (i.e.,
+   non-MXF) files.
+ o Fixed a memory leak in ASDCP::MXF::OPAtomHeader when used
+   in read mode. Thanks to Mahesh Bajaj for pointing out this
+   bug and the one above.
  o Removed asserts from KM_fileio, replaced with RESULT_WRITEFAIL
    return value statements.
  o Added -s and -p to the makefile install target.
  o Altered ByteString behavior to use target Length() in copy
    operations (instead of Capacity()).
  o Added new Set() method to ByteString.
+ o Fixed a bug in ByteString::Unarchive() that caused the operation
+   to fail when the buffer was smaller than the read (i.e., when
+   Capacity() was called).
  o Added IdentifierList class to KM_util.
- o Fixed error in RIP interpretation when reading arbitrary (i.e.,
-   non-MXF) files. Thanks to Mahesh Bajaj for pointing this out.
  o Changed some Error() messages to Debug() in Wav.cpp
+ o Revived jp2k-test.cpp and asdcp-mem-test.cpp (they both had
+   stale #includes).
 
 
 2007.02.15 - Bug fixes v1.1.13

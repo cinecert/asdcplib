@@ -30,8 +30,11 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include <AS_DCP.h>
-#include <FileIO.h>
+#include <KM_fileio.h>
+#include <KM_util.h>
 #include <JP2K.h>
+
+using namespace Kumu;
 using namespace ASDCP;
 using namespace ASDCP::JP2K;
 
@@ -56,7 +59,7 @@ main(int argc, const char** argv)
 
       if ( result != RESULT_FAIL )
         {
-          fputs(GetResultString(result), stderr);
+          fputs(result.Label(), stderr);
           fputc('\n', stderr);
         }
 
