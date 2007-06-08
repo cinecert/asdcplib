@@ -144,7 +144,7 @@ namespace ASDCP {
   // 1.0.1. If changes were also required in AS_DCP.h, the new version would be 1.1.1.
   const ui32_t VERSION_MAJOR = 1;
   const ui32_t VERSION_APIMINOR = 1;
-  const ui32_t VERSION_IMPMINOR = 14;
+  const ui32_t VERSION_IMPMINOR = 15;
   const char* Version();
 
   // UUIDs are passed around as strings of UUIDlen bytes
@@ -202,6 +202,7 @@ namespace ASDCP {
     ESS_JPEG_2000,   // the file contains one or more JPEG 2000 codestreams
     ESS_PCM_24b_48k, // the file contains one or more PCM audio pairs
     ESS_PCM_24b_96k, // the file contains one or more PCM audio pairs
+    ESS_TIMED_TEXT,  // the file contains an XML timed text document and one or more resources
   };
 
   // Determine the type of essence contained in the given MXF file. RESULT_OK

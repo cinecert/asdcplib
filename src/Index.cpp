@@ -125,7 +125,7 @@ ASDCP::MXF::IndexTableSegment::Dump(FILE* stream)
     }
   else
     {
-      fprintf(stream, "  IndexEntryArray: %u entries\n", IndexEntryArray.size());
+      fprintf(stream, "  IndexEntryArray: %lu entries\n", IndexEntryArray.size());
     }
 }
 

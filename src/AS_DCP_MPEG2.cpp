@@ -230,7 +230,7 @@ ASDCP::MPEG2::MXFReader::h__Reader::ReadFrame(ui32_t FrameNum, FrameBuffer& Fram
   if ( ! m_File.IsOpen() )
     return RESULT_INIT;
 
-  Result_t result = ReadEKLVPacket(FrameNum, FrameBuf, Dict::ul(MDD_MPEG2Essence), Ctx, HMAC);
+  Result_t result = ReadEKLVFrame(FrameNum, FrameBuf, Dict::ul(MDD_MPEG2Essence), Ctx, HMAC);
 
   if ( ASDCP_FAILURE(result) )
     return result;

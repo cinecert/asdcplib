@@ -290,6 +290,19 @@ namespace ASDCP {
         MDD_CryptographicContext_CipherAlgorithm,  // 252
         MDD_CryptographicContext_MICAlgorithm,  // 253
         MDD_CryptographicContext_CryptographicKeyID,  // 254
+	MDD_DCTimedTextWrapping, // 255
+	MDD_DCTimedTextEssence, // 256
+	MDD_DCTimedTextDescriptor, // 257
+	MDD_DCTimedTextDescriptor_UTFEncoding, // 258
+	MDD_DCTimedTextDescriptor_RootNamespaceName, // 259
+	MDD_DCTimedTextResourceDescriptor, // 260
+	MDD_DCTimedTextResourceDescriptor_ResourcePackageID, // 261
+	MDD_DCTimedTextResourceDescriptor_ResourceMIMEType, // 262
+	MDD_DCTimedTextResourceDescriptor_ResourceSID, //263
+	MDD_GenericStreamPartition, // 264
+	MDD_DMSegment_DataDefinition, // 265
+	MDD_DMSegment_Duration, // 266
+	MDD_DMSegment_TrackIDList, // 267
     }; // enum MDD_t
 } // namespaceASDCP
 

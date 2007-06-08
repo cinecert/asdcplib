@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2003-2006, John Hurst
+Copyright (c) 2003-2007, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -56,6 +56,11 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <WavFileWriter.h>
 #include <MXF.h>
 #include <Metadata.h>
+
+#ifdef ASDCP_WITH_TIMED_TEXT
+#include <AS_DCP_TimedText.h>
+#endif
+
 #include <openssl/sha.h>
 
 using namespace ASDCP;
@@ -1099,6 +1104,201 @@ read_PCM_file(CommandOptions& Options)
 }
 
 
+#ifdef ASDCP_WITH_TIMED_TEXT
+
+//------------------------------------------------------------------------------------------
+// TimedText essence
+
+
+// Write one or more plaintext timed text streams to a plaintext ASDCP file
+// Write one or more plaintext timed text streams to a ciphertext ASDCP file
+//
+Result_t
+write_timed_text_file(CommandOptions& Options)
+{
+  AESEncContext*    Context = 0;
+  HMACContext*      HMAC = 0;
+  TimedText::DCSubtitleParser  Parser;
+  TimedText::MXFWriter    Writer;
+  TimedText::FrameBuffer  FrameBuffer;
+  TimedText::TimedTextDescriptor TDesc;
+  byte_t            IV_buf[CBC_BLOCK_SIZE];
+  Kumu::FortunaRNG  RNG;
+
+  // set up essence parser
+  Result_t result = Parser.OpenRead(Options.filenames[0]);
+
+  // set up MXF writer
+  if ( ASDCP_SUCCESS(result) )
+    {
+      Parser.FillDescriptor(TDesc);
+      FrameBuffer.Capacity(2*Kumu::Megabyte);
+
+      if ( Options.verbose_flag )
+	{
+	  fputs("D-Cinema Timed-Text Descriptor:\n", stderr);
+	  TimedText::DescriptorDump(TDesc);
+	}
+    }
+
+  if ( ASDCP_SUCCESS(result) && ! Options.no_write_flag )
+    {
+      WriterInfo Info = s_MyInfo;  // fill in your favorite identifiers here
+      Kumu::GenRandomUUID(Info.AssetUUID);
+
+      if ( Options.use_smpte_labels )
+	{
+	  Info.LabelSetType = LS_MXF_SMPTE;
+	  fprintf(stderr, "ATTENTION! Writing SMPTE Universal Labels\n");
+	}
+
+      // configure encryption
+      if( Options.key_flag )
+	{
+	  Kumu::GenRandomUUID(Info.ContextID);
+	  Info.EncryptedEssence = true;
+
+	  if ( Options.key_id_flag )
+	    memcpy(Info.CryptographicKeyID, Options.key_id_value, UUIDlen);
+	  else
+	    RNG.FillRandom(Info.CryptographicKeyID, UUIDlen);
+
+	  Context = new AESEncContext;
+	  result = Context->InitKey(Options.key_value);
+
+	  if ( ASDCP_SUCCESS(result) )
+	    result = Context->SetIVec(RNG.FillRandom(IV_buf, CBC_BLOCK_SIZE));
+
+	  if ( ASDCP_SUCCESS(result) && Options.write_hmac )
+	    {
+	      Info.UsesHMAC = true;
+	      HMAC = new HMACContext;
+	      result = HMAC->InitKey(Options.key_value, Info.LabelSetType);
+	    }
+	}
+
+      if ( ASDCP_SUCCESS(result) )
+	result = Writer.OpenWrite(Options.out_file, Info, TDesc);
+    }
+
+  if ( ASDCP_FAILURE(result) )
+    return result;
+
+  std::string XMLDoc;
+  TimedText::ResourceList_t::const_iterator ri;
+
+  result = Parser.ReadTimedTextResource(XMLDoc);
+
+  if ( ASDCP_SUCCESS(result) )
+    result = Writer.WriteTimedTextResource(XMLDoc, Context, HMAC);
+
+  for ( ri = TDesc.ResourceList.begin() ; ri != TDesc.ResourceList.end() && ASDCP_SUCCESS(result); ri++ )
+    {
+      result = Parser.ReadAncillaryResource((*ri).ResourceID, FrameBuffer);
+
+      if ( ASDCP_SUCCESS(result) )
+	{
+	  if ( Options.verbose_flag )
+	    FrameBuffer.Dump(stderr, Options.fb_dump_size);
+
+	  if ( ! Options.no_write_flag )
+	    {
+	      result = Writer.WriteAncillaryResource(FrameBuffer, Context, HMAC);
+	      
+	      // The Writer class will forward the last block of ciphertext
+	      // to the encryption context for use as the IV for the next
+	      // frame. If you want to use non-sequitur IV values, un-comment
+	      // the following  line of code.
+	      // if ( ASDCP_SUCCESS(result) && Options.key_flag )
+	      //   Context->SetIVec(RNG.FillRandom(IV_buf, CBC_BLOCK_SIZE));
+	    }
+	}
+
+      if ( result == RESULT_ENDOFFILE )
+	result = RESULT_OK;
+    }
+
+  if ( ASDCP_SUCCESS(result) && ! Options.no_write_flag )
+    result = Writer.Finalize();
+
+  return result;
+}
+
+
+// Read one or more timed text streams from a plaintext ASDCP file
+// Read one or more timed text streams from a ciphertext ASDCP file
+// Read one or more timed text streams from a ciphertext ASDCP file
+//
+Result_t
+read_timed_text_file(CommandOptions& Options)
+{
+  AESDecContext*     Context = 0;
+  HMACContext*       HMAC = 0;
+  TimedText::MXFReader     Reader;
+  TimedText::FrameBuffer   FrameBuffer;
+  TimedText::TimedTextDescriptor TDesc;
+
+  Result_t result = Reader.OpenRead(Options.filenames[0]);
+
+  if ( ASDCP_SUCCESS(result) )
+    {
+      Reader.FillDescriptor(TDesc);
+      FrameBuffer.Capacity(2*Kumu::Megabyte);
+
+      if ( Options.verbose_flag )
+	TimedText::DescriptorDump(TDesc);
+    }
+
+  if ( ASDCP_SUCCESS(result) && Options.key_flag )
+    {
+      Context = new AESDecContext;
+      result = Context->InitKey(Options.key_value);
+
+      if ( ASDCP_SUCCESS(result) && Options.read_hmac )
+	{
+	  WriterInfo Info;
+	  Reader.FillWriterInfo(Info);
+
+	  if ( Info.UsesHMAC )
+	    {
+	      HMAC = new HMACContext;
+	      result = HMAC->InitKey(Options.key_value, Info.LabelSetType);
+	    }
+	  else
+	    {
+	      fputs("File does not contain HMAC values, ignoring -m option.\n", stderr);
+	    }
+	}
+    }
+
+  if ( ASDCP_FAILURE(result) )
+    return result;
+
+  std::string XMLDoc;
+  TimedText::ResourceList_t::const_iterator ri;
+
+  result = Reader.ReadTimedTextResource(XMLDoc, Context, HMAC);
+
+  // do something with the XML here
+  fprintf(stderr, "XMLDoc size: %lu\n", XMLDoc.size());
+
+  for ( ri = TDesc.ResourceList.begin() ; ri != TDesc.ResourceList.end() && ASDCP_SUCCESS(result); ri++ )
+    {
+      result = Reader.ReadAncillaryResource((*ri).ResourceID, FrameBuffer, Context, HMAC);
+
+      if ( ASDCP_SUCCESS(result) )
+	{
+	  //	  if ( Options.verbose_flag )
+	    FrameBuffer.Dump(stderr, Options.fb_dump_size);
+
+	  // do something with the resource data here
+	}
+    }
+
+  return result;
+}
+#endif // ASDCP_WITH_TIMED_TEXT
+
 //------------------------------------------------------------------------------------------
 //
 
@@ -1143,6 +1343,19 @@ class MyAudioDescriptor : public PCM::AudioDescriptor
   }
 };
 
+#ifdef ASDCP_WITH_TIMED_TEXT
+class MyTextDescriptor : public TimedText::TimedTextDescriptor
+{
+ public:
+  void FillDescriptor(TimedText::MXFReader& Reader) {
+    Reader.FillDescriptor(*this);
+  }
+
+  void Dump(FILE* stream) {
+    TimedText::DescriptorDump(*this, stream);
+  }
+};
+#endif
 
 // MSVC didn't like the function template, so now it's a static class method
 template<class ReaderT, class DescriptorT>
@@ -1209,6 +1422,13 @@ show_file_info(CommandOptions& Options)
       fputs("File essence type is JPEG 2000 pictures.\n", stdout);
       FileInfoWrapper<ASDCP::JP2K::MXFReader, MyPictureDescriptor>::file_info(Options);
     }
+#ifdef ASDCP_WITH_TIMED_TEXT
+  else if ( EssenceType == ESS_TIMED_TEXT )
+    {
+      fputs("File essence type is Timed Text.\n", stdout);
+      FileInfoWrapper<ASDCP::TimedText::MXFReader, MyTextDescriptor>::file_info(Options);
+    }
+#endif
   else
     {
       fprintf(stderr, "File is not AS-DCP: %s\n", Options.filenames[0]);
@@ -1358,6 +1578,14 @@ main(int argc, const char** argv)
 	      result = read_PCM_file(Options);
 	      break;
 
+	    case ESS_TIMED_TEXT:
+#ifdef ASDCP_WITH_TIMED_TEXT
+	      result = read_timed_text_file(Options);
+	      break;
+#else
+	      fprintf(stderr, "asdcplib compiled without timed text support.\n");
+	      return 7;
+#endif
 	    default:
 	      fprintf(stderr, "%s: Unknown file type, not ASDCP essence.\n", Options.filenames[0]);
 	      return 5;
@@ -1390,6 +1618,15 @@ main(int argc, const char** argv)
 	    case ESS_PCM_24b_48k:
 	      result = write_PCM_file(Options);
 	      break;
+
+	    case ESS_TIMED_TEXT:
+#ifdef ASDCP_WITH_TIMED_TEXT
+	      result = write_timed_text_file(Options);
+	      break;
+#else
+	      fprintf(stderr, "asdcplib compiled without timed text support.\n");
+	      return 7;
+#endif
 
 	    default:
 	      fprintf(stderr, "%s: Unknown file type, not ASDCP-compatible essence.\n",

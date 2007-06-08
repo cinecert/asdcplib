@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2005-2006, John Hurst
+Copyright (c) 2005-2007, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -29,8 +29,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     \brief   MXF metadata objects
 */
 
-#ifndef _METADATA_H_
-#define _METADATA_H_
+#ifndef _Metadata_H_
+#define _Metadata_H_
 
 #include "MXF.h"
 
@@ -38,6 +38,8 @@ namespace ASDCP
 {
   namespace MXF
     {
+      void Metadata_InitTypes();
+
       //
 
       //
@@ -490,11 +492,13 @@ namespace ASDCP
 	  ASDCP_NO_COPY_CONSTRUCT(DMSegment);
 
 	public:
+          UL DataDefinition;
           ui64_t EventStartPosition;
+          ui64_t Duration;
           UTF16String EventComment;
           UUID DMFramework;
 
-	  DMSegment() : EventStartPosition(0) {}
+	  DMSegment() : EventStartPosition(0), Duration(0) {}
 	  virtual ~DMSegment() {}
           virtual const char* HasName() { return "DMSegment"; }
           virtual Result_t InitFromTLVSet(TLVReader& TLVSet);
@@ -544,11 +548,67 @@ namespace ASDCP
 	  virtual Result_t WriteToBuffer(ASDCP::FrameBuffer&);
 	};
 
+      //
+      class GenericDataEssenceDescriptor : public FileDescriptor
+	{
+	  ASDCP_NO_COPY_CONSTRUCT(GenericDataEssenceDescriptor);
+
+	public:
+          UL DataEssenceCoding;
+
+	  GenericDataEssenceDescriptor() {}
+	  virtual ~GenericDataEssenceDescriptor() {}
+          virtual const char* HasName() { return "GenericDataEssenceDescriptor"; }
+          virtual Result_t InitFromTLVSet(TLVReader& TLVSet);
+          virtual Result_t WriteToTLVSet(TLVWriter& TLVSet);
+	  virtual void     Dump(FILE* = 0);
+	  virtual Result_t InitFromBuffer(const byte_t* p, ui32_t l);
+	  virtual Result_t WriteToBuffer(ASDCP::FrameBuffer&);
+	};
+
+      //
+      class DCTimedTextDescriptor : public GenericDataEssenceDescriptor
+	{
+	  ASDCP_NO_COPY_CONSTRUCT(DCTimedTextDescriptor);
+
+	public:
+          UTF16String UTFEncoding;
+          UTF16String RootNamespaceName;
+
+	  DCTimedTextDescriptor() {}
+	  virtual ~DCTimedTextDescriptor() {}
+          virtual const char* HasName() { return "DCTimedTextDescriptor"; }
+          virtual Result_t InitFromTLVSet(TLVReader& TLVSet);
+          virtual Result_t WriteToTLVSet(TLVWriter& TLVSet);
+	  virtual void     Dump(FILE* = 0);
+	  virtual Result_t InitFromBuffer(const byte_t* p, ui32_t l);
+	  virtual Result_t WriteToBuffer(ASDCP::FrameBuffer&);
+	};
+
+      //
+      class DCTimedTextResourceDescriptor : public InterchangeObject
+	{
+	  ASDCP_NO_COPY_CONSTRUCT(DCTimedTextResourceDescriptor);
+
+	public:
+          UUID ResourcePackageID;
+          UTF16String ResourceMIMEType;
+          ui32_t ResourceSID;
+
+	  DCTimedTextResourceDescriptor() : ResourceSID(0) {}
+	  virtual ~DCTimedTextResourceDescriptor() {}
+          virtual const char* HasName() { return "DCTimedTextResourceDescriptor"; }
+          virtual Result_t InitFromTLVSet(TLVReader& TLVSet);
+          virtual Result_t WriteToTLVSet(TLVWriter& TLVSet);
+	  virtual void     Dump(FILE* = 0);
+	  virtual Result_t InitFromBuffer(const byte_t* p, ui32_t l);
+	  virtual Result_t WriteToBuffer(ASDCP::FrameBuffer&);
+	};
     } // namespace MXF
 } // namespace ASDCP
 
 
-#endif // _METADATA_H_
+#endif // _Metadata_H_
 
 //
 // end Metadata.h

@@ -265,27 +265,18 @@ namespace ASDCP
 	};
 
       //
-      class UTF16String : public Kumu::IArchive
+    class UTF16String : public std::string, public Kumu::IArchive
 	{
-	  ui16_t m_length;
-	  char   m_buffer[IdentBufferLen];
-	  ASDCP_NO_COPY_CONSTRUCT(UTF16String);
-	  
 	public:
-	  UTF16String() : m_length(0) { *m_buffer = 0; }
+	  UTF16String() {}
 	  ~UTF16String() {}
 
 	  const UTF16String& operator=(const char*);
+	  const UTF16String& operator=(const std::string&);
 
-	  //
-	  const char* EncodeString(char* str_buf, ui32_t buf_len) const {
-	    strncpy(str_buf, m_buffer, Kumu::xmin(buf_len, ((ui32_t)m_length+1)));
-	    str_buf[buf_len-1] = 0;
-	    return str_buf;
-	  }
-
+	  const char* EncodeString(char* str_buf, ui32_t buf_len) const;
 	  virtual bool Unarchive(Kumu::MemIOReader* Reader);
-	  inline virtual bool HasValue() const { return m_length > 0; }
+	  inline virtual bool HasValue() const { return ! empty(); }
 	  virtual bool Archive(Kumu::MemIOWriter* Writer) const;
 	};
 

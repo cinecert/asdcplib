@@ -30,10 +30,36 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include <KM_xml.h>
+#include <KM_log.h>
+#include <stack>
+#include <map>
+
+#ifdef ASDCP_USE_EXPAT
+#include <expat.h>
+#endif
+
+using namespace Kumu;
 
 
+class ns_map : public std::map<std::string, XMLNamespace*>
+{
+public:
+  ns_map() {}
+  ~ns_map()
+  {
+    ns_map::iterator ni = begin();
 
-Kumu::XMLElement::XMLElement(const char* name)
+    while (ni != end() )
+      {
+	//	fprintf(stderr, "deleting namespace %s:%s\n", ni->second->Prefix().c_str(), ni->second->Name().c_str());
+	delete ni->second;
+	ni++;
+      }
+  }
+};
+
+
+Kumu::XMLElement::XMLElement(const char* name) : m_Namespace(0), m_NamespaceOwner(0)
 {
   m_Name = name;
 }
@@ -42,6 +68,9 @@ Kumu::XMLElement::~XMLElement()
 {
   for ( Elem_i i = m_ChildList.begin(); i != m_ChildList.end(); i++ )
     delete *i;
+
+  if ( m_NamespaceOwner != 0 )
+    delete (ns_map*)m_NamespaceOwner;
 }
 
 //
@@ -69,6 +98,13 @@ Kumu::XMLElement*
 Kumu::XMLElement::AddChildWithContent(const char* name, const std::string& value)
 {
   return AddChildWithContent(name, value.c_str());
+}
+
+//
+void
+Kumu::XMLElement::AppendBody(const std::string& value)
+{
+  m_Body += value;
 }
 
 //
@@ -105,7 +141,7 @@ Kumu::XMLElement::AddComment(const char* value)
 
 //
 void
-Kumu::XMLElement::Render(std::string& outbuf)
+Kumu::XMLElement::Render(std::string& outbuf) const
 {
   outbuf = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
   RenderElement(outbuf, 0);
@@ -121,7 +157,7 @@ add_spacer(std::string& outbuf, i32_t depth)
 
 //
 void
-Kumu::XMLElement::RenderElement(std::string& outbuf, ui32_t depth)
+Kumu::XMLElement::RenderElement(std::string& outbuf, ui32_t depth) const
 {
   add_spacer(outbuf, depth);
 
@@ -163,6 +199,293 @@ Kumu::XMLElement::RenderElement(std::string& outbuf, ui32_t depth)
   outbuf += m_Name;
   outbuf += ">\n";
 }
+
+//
+bool
+Kumu::XMLElement::HasName(const char* name) const
+{
+  if ( name == 0 || *name == 0 )
+    return false;
+
+  return (m_Name == name);
+}
+
+
+void
+Kumu::XMLElement::SetName(const char* name)
+{
+  if ( name != 0)
+    m_Name = name;
+}
+
+//
+const char*
+Kumu::XMLElement::GetAttrWithName(const char* name) const
+{
+  for ( Attr_i i = m_AttrList.begin(); i != m_AttrList.end(); i++ )
+    {
+      if ( (*i).name == name )
+	return (*i).value.c_str();
+    }
+
+  return 0;
+}
+
+//
+Kumu::XMLElement*
+Kumu::XMLElement::GetChildWithName(const char* name) const
+{
+  for ( Elem_i i = m_ChildList.begin(); i != m_ChildList.end(); i++ )
+    {
+      if ( (*i)->HasName(name) )
+	return *i;
+    }
+
+  return 0;
+}
+
+//
+const Kumu::ElementList&
+Kumu::XMLElement::GetChildrenWithName(const char* name, ElementList& outList) const
+{
+  assert(name);
+  for ( Elem_i i = m_ChildList.begin(); i != m_ChildList.end(); i++ )
+    {
+      if ( (*i)->HasName(name) )
+	outList.push_back(*i);
+
+      if ( ! (*i)->m_ChildList.empty() )
+	(*i)->GetChildrenWithName(name, outList);
+    }
+
+  return outList;
+}
+
+//----------------------------------------------------------------------------------------------------
+
+#ifdef ASDCP_USE_EXPAT
+
+
+class ExpatParseContext
+{
+  KM_NO_COPY_CONSTRUCT(ExpatParseContext);
+  ExpatParseContext();
+public:
+  ns_map*                  Namespaces;
+  std::stack<XMLElement*>  Scope;
+  XMLElement*              Root;
+
+  ExpatParseContext(XMLElement* root) : Root(root) {
+    Namespaces = new ns_map;
+    assert(Root);
+  }
+
+  ~ExpatParseContext() {}
+};
+
+// expat wrapper functions
+// 
+static void
+xph_start(void* p, const XML_Char* name, const XML_Char** attrs)
+{
+  assert(p);  assert(name);  assert(attrs);
+  ExpatParseContext* Ctx = (ExpatParseContext*)p;
+  XMLElement* Element;
+
+  const char* ns_root = name;
+  const char* local_name = strchr(name, '|');
+  if ( local_name != 0 )
+    name = local_name + 1;
+
+  if ( Ctx->Scope.empty() )
+    {
+      Ctx->Scope.push(Ctx->Root);
+    }
+  else
+    {
+      Element = Ctx->Scope.top();
+      Ctx->Scope.push(Element->AddChild(name));
+    }
+
+  Element = Ctx->Scope.top();
+  Element->SetName(name);
+
+  // map the namespace
+  std::string key;
+  if ( ns_root != name )
+    key.assign(ns_root, name - ns_root - 1);
+  
+  ns_map::iterator ni = Ctx->Namespaces->find(key);
+  if ( ni != Ctx->Namespaces->end() )
+    Element->SetNamespace(ni->second);
+
+  // set attributes
+  for ( int i = 0; attrs[i] != 0; i += 2 )
+    {
+      if ( ( local_name = strchr(attrs[i], '|') ) == 0 )
+	local_name = attrs[i];
+      else
+	local_name++;
+
+      Element->SetAttr(local_name, attrs[i+1]);
+    }
+}
+
+//
+static void
+xph_end(void* p, const XML_Char* name)
+{
+  assert(p);  assert(name);
+  ExpatParseContext* Ctx = (ExpatParseContext*)p;
+  Ctx->Scope.pop();
+}
+
+//
+static void
+xph_char(void* p, const XML_Char* data, int len)
+{
+  assert(p);  assert(data);
+  ExpatParseContext* Ctx = (ExpatParseContext*)p;
+
+  if ( len > 0 )
+    {
+      std::string tmp_str;
+      tmp_str.assign(data, len);
+      Ctx->Scope.top()->AppendBody(tmp_str);
+    }
+}
+
+//
+void
+xph_namespace_start(void* p, const XML_Char* ns_prefix, const XML_Char* ns_name)
+{
+  assert(p);  assert(ns_name);
+  ExpatParseContext* Ctx = (ExpatParseContext*)p;
+  
+  if ( ns_prefix == 0 )
+    ns_prefix = "";
+
+  ns_map::iterator ni = Ctx->Namespaces->find(ns_name);
+
+  if  ( ni != Ctx->Namespaces->end() )
+    {
+      if ( ni->second->Name() != std::string(ns_name) )
+	{
+	  DefaultLogSink().Error("Duplicate prefix: %s\n", ns_prefix);
+	  return;
+	}
+    }
+  else
+    {
+      XMLNamespace* Namespace = new XMLNamespace(ns_prefix, ns_name);
+      Ctx->Namespaces->insert(ns_map::value_type(ns_name, Namespace));
+    }
+}
+
+//
+bool
+Kumu::XMLElement::ParseString(const std::string& document)
+{
+  XML_Parser Parser = XML_ParserCreateNS("UTF-8", '|');
+
+  if ( Parser == 0 )
+    {
+      DefaultLogSink().Error("Error allocating memory for XML parser.\n");
+      return false;
+    }
+
+  ExpatParseContext Ctx(this);
+  XML_SetUserData(Parser, (void*)&Ctx);
+  XML_SetElementHandler(Parser, xph_start, xph_end);
+  XML_SetCharacterDataHandler(Parser, xph_char);
+  XML_SetStartNamespaceDeclHandler(Parser, xph_namespace_start);
+
+  if ( ! XML_Parse(Parser, document.c_str(), document.size(), 1) )
+    {
+      XML_ParserFree(Parser);
+      DefaultLogSink().Error("XML Parse error on line %d: %s\n",
+			     XML_GetCurrentLineNumber(Parser),
+			     XML_ErrorString(XML_GetErrorCode(Parser)));
+      return false;
+    }
+
+  XML_ParserFree(Parser);
+
+  if ( ! Ctx.Namespaces->empty() )
+    m_NamespaceOwner = (void*)Ctx.Namespaces;
+
+  return true;
+}
+
+//------------------------------------------------------------------------------------------
+
+struct xph_test_wrapper
+{
+  XML_Parser Parser;
+  bool  Status;
+
+  xph_test_wrapper(XML_Parser p) : Parser(p), Status(false) {}
+};
+
+// expat wrapper functions, map callbacks to IASAXHandler
+// 
+static void
+xph_test_start(void* p, const XML_Char* name, const XML_Char** attrs)
+{
+  assert(p);
+  xph_test_wrapper* Wrapper = (xph_test_wrapper*)p;
+
+  Wrapper->Status = true;
+  XML_StopParser(Wrapper->Parser, false);
+}
+
+
+//
+bool
+Kumu::XMLElement::TestString(const char* document, ui32_t len)
+{
+  if ( document == 0 )
+    return false;
+
+  if ( len == 0 )
+    len = strlen(document);
+
+  XML_Parser Parser = XML_ParserCreate("UTF-8");
+
+  if ( Parser == 0 )
+    {
+      DefaultLogSink().Error("Error allocating memory for XML parser.\n");
+      return false;
+    }
+
+  xph_test_wrapper Wrapper(Parser);
+  XML_SetUserData(Parser, (void*)&Wrapper);
+  XML_SetStartElementHandler(Parser, xph_test_start);
+
+  XML_Parse(Parser, document, len, 1);
+  XML_ParserFree(Parser);
+  return Wrapper.Status;
+}
+
+#else // no XML parser support
+
+//
+bool
+Kumu::XMLElement::ParseString(const std::string& document)
+{
+  DefaultLogSink().Error("asdcplib compiled without XML parser support.\n");
+  return false;
+}
+
+//
+bool
+Kumu::XMLElement::TestString(const char* document, ui32_t len)
+{
+  DefaultLogSink().Error("asdcplib compiled without XML parser support.\n");
+  return false;
+}
+
+#endif
 
 
 //

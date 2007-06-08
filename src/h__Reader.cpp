@@ -112,7 +112,7 @@ ASDCP::h__Reader::OpenMXFRead(const char* filename)
     {
       // if this is a three partition file, go to the body
       // partition and read the partition pack
-      if ( m_HeaderPart.m_RIP.PairArray.size() == 3 )
+      if ( m_HeaderPart.m_RIP.PairArray.size() > 2 )
 	{
 	  Array<RIP::Pair>::iterator r_i = m_HeaderPart.m_RIP.PairArray.begin();
 	  r_i++;
@@ -182,8 +182,8 @@ public:
 
 // standard method of reading a plaintext or encrypted frame
 Result_t
-ASDCP::h__Reader::ReadEKLVPacket(ui32_t FrameNum, ASDCP::FrameBuffer& FrameBuf,
-				 const byte_t* EssenceUL, AESDecContext* Ctx, HMACContext* HMAC)
+ASDCP::h__Reader::ReadEKLVFrame(ui32_t FrameNum, ASDCP::FrameBuffer& FrameBuf,
+				const byte_t* EssenceUL, AESDecContext* Ctx, HMACContext* HMAC)
 {
   // look up frame index node
   IndexTableSegment::IndexEntry TmpEntry;
@@ -195,9 +195,8 @@ ASDCP::h__Reader::ReadEKLVPacket(ui32_t FrameNum, ASDCP::FrameBuffer& FrameBuf,
     }
 
   // get frame position and go read the frame's key and length
-  Result_t result = RESULT_OK;
-  KLReader Reader;
   Kumu::fpos_t FilePosition = m_EssenceStart + TmpEntry.StreamOffset;
+  Result_t result = RESULT_OK;
 
   if ( FilePosition != m_LastPosition )
     {
@@ -205,8 +204,19 @@ ASDCP::h__Reader::ReadEKLVPacket(ui32_t FrameNum, ASDCP::FrameBuffer& FrameBuf,
       result = m_File.Seek(FilePosition);
     }
 
-  if ( ASDCP_SUCCESS(result) )
-    result = Reader.ReadKLFromFile(m_File);
+  if( ASDCP_SUCCESS(result) )
+    result = ReadEKLVPacket(FrameNum, FrameBuf, EssenceUL, Ctx, HMAC);
+
+  return result;
+}
+
+
+Result_t
+ASDCP::h__Reader::ReadEKLVPacket(ui32_t FrameNum, ASDCP::FrameBuffer& FrameBuf,
+				 const byte_t* EssenceUL, AESDecContext* Ctx, HMACContext* HMAC)
+{
+  KLReader Reader;
+  Result_t result = Reader.ReadKLFromFile(m_File);
 
   if ( ASDCP_FAILURE(result) )
     return result;

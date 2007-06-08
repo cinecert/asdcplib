@@ -202,7 +202,7 @@ ASDCP::PCM::MXFReader::h__Reader::ReadFrame(ui32_t FrameNum, FrameBuffer& FrameB
   if ( ! m_File.IsOpen() )
     return RESULT_INIT;
 
-  return ReadEKLVPacket(FrameNum, FrameBuf, Dict::ul(MDD_WAVEssence), Ctx, HMAC);
+  return ReadEKLVFrame(FrameNum, FrameBuf, Dict::ul(MDD_WAVEssence), Ctx, HMAC);
 }
 
 //------------------------------------------------------------------------------------------

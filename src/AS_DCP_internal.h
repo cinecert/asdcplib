@@ -111,6 +111,12 @@ namespace ASDCP
       Result_t InitInfo();
       Result_t OpenMXFRead(const char* filename);
       Result_t InitMXFIndex();
+
+      // positions file before reading
+      Result_t ReadEKLVFrame(ui32_t FrameNum, ASDCP::FrameBuffer& FrameBuf,
+			     const byte_t* EssenceUL, AESDecContext* Ctx, HMACContext* HMAC);
+
+      // reads from current position
       Result_t ReadEKLVPacket(ui32_t FrameNum, ASDCP::FrameBuffer& FrameBuf,
 			      const byte_t* EssenceUL, AESDecContext* Ctx, HMACContext* HMAC);
       void     Close();
@@ -152,6 +158,8 @@ namespace ASDCP
       inline Result_t Goto_FINAL()   { Goto_body(ST_RUNNING, ST_FINAL); }
     };
 
+  typedef std::list<ui64_t*> DurationElementList_t;
+
   //
   class h__Writer
     {
@@ -166,16 +174,7 @@ namespace ASDCP
       ui64_t             m_EssenceStart;
 
       MaterialPackage*   m_MaterialPackage;
-      Sequence*          m_MPTCSequence;
-      TimecodeComponent* m_MPTimecode;
-      Sequence*          m_MPClSequence;
-      SourceClip*        m_MPClip;			//! Material Package SourceClip for each essence stream 
-
       SourcePackage*     m_FilePackage;
-      Sequence*          m_FPTCSequence;
-      TimecodeComponent* m_FPTimecode;
-      Sequence*          m_FPClSequence;
-      SourceClip*        m_FPClip;			//! File Package SourceClip for each essence stream 
 
       FileDescriptor*    m_EssenceDescriptor;
       std::list<FileDescriptor*> m_EssenceSubDescriptorList;
@@ -185,10 +184,22 @@ namespace ASDCP
       ASDCP::FrameBuffer m_CtFrameBuf;
       h__WriterState     m_State;
       WriterInfo         m_Info;
+      DurationElementList_t m_DurationUpdateList;
 
       h__Writer();
       virtual ~h__Writer();
 
+      void InitHeader();
+      void AddSourceClip(const MXF::Rational& EditRate, ui32_t TCFrameRate,
+			 const std::string& TrackName, const UL& DataDefinition,
+			 const std::string& PackageLabel);
+      void AddDMSegment(const MXF::Rational& EditRate, ui32_t TCFrameRate,
+			 const std::string& TrackName, const UL& DataDefinition,
+			 const std::string& PackageLabel);
+      void AddEssenceDescriptor(const UL& WrappingUL);
+      Result_t CreateBodyPart(const MXF::Rational& EditRate, ui32_t BytesPerEditUnit = 0);
+
+      // all the above for a single source clip
       Result_t WriteMXFHeader(const std::string& PackageLabel, const UL& WrappingUL,
 			      const std::string& TrackName, const UL& DataDefinition,
 			      const MXF::Rational& EditRate,

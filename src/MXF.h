@@ -40,6 +40,16 @@ namespace ASDCP
     {
       class InterchangeObject;
 
+      //
+      typedef ASDCP::MXF::InterchangeObject* (*MXFObjectFactory_t)();
+
+      //
+      void SetObjectFactory(UL label, MXFObjectFactory_t factory);
+
+      //
+      InterchangeObject* CreateObject(const byte_t* label);
+
+
       // seek an open file handle to the start of the RIP KLV packet
       Result_t SeekToRIP(const Kumu::FileReader&);
       
@@ -89,6 +99,7 @@ namespace ASDCP
 	  virtual ~RIP() {}
 	  virtual Result_t InitFromFile(const Kumu::FileReader& Reader);
 	  virtual Result_t WriteToFile(Kumu::FileWriter& Writer);
+	  virtual Result_t GetPairBySID(ui32_t, Pair&) const;
 	  virtual void     Dump(FILE* = 0);
 	};
 
@@ -201,9 +212,6 @@ namespace ASDCP
 	};
 
       //
-      InterchangeObject* CreateObject(const byte_t* label);
-
-      //
       class Preface : public InterchangeObject
 	{
 	  ASDCP_NO_COPY_CONSTRUCT(Preface);
@@ -314,7 +322,9 @@ namespace ASDCP
 	  virtual Result_t InitFromFile(const Kumu::FileReader& Reader);
 	  virtual Result_t WriteToFile(Kumu::FileWriter& Writer, ui32_t HeaderLength = 16384);
 	  virtual void     Dump(FILE* = 0);
+	  virtual Result_t GetMDObjectByID(const UUID&, InterchangeObject** = 0);
 	  virtual Result_t GetMDObjectByType(const byte_t*, InterchangeObject** = 0);
+	  virtual Result_t GetMDObjectsByType(const byte_t* ObjectID, std::list<InterchangeObject*>& ObjectList);
 	  Identification*  GetIdentification();
 	  SourcePackage*   GetSourcePackage();
 	};

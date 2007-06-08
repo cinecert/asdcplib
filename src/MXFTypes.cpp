@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2005-2006, John Hurst
+Copyright (c) 2005-2007, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -32,6 +32,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <KM_prng.h>
 #include "MXFTypes.h"
 #include <KM_log.h>
+
 using Kumu::DefaultLogSink;
 
 //------------------------------------------------------------------------------------------
@@ -144,43 +145,62 @@ ASDCP::UMID::EncodeString(char* str_buf, ui32_t buf_len) const
 //------------------------------------------------------------------------------------------
 //
 
+//
 const ASDCP::MXF::UTF16String&
 ASDCP::MXF::UTF16String::operator=(const char* sz)
 {
   if ( sz == 0 || *sz == 0 )
-    {
-      m_length = 0;
-      *m_buffer = 0;
-    }
+    clear();
+
   else
-    {
-      ui32_t len = Kumu::xmin((ui32_t)strlen(sz), (IdentBufferLen - 1));
-      m_length = len;
-      memcpy(m_buffer, sz, m_length);
-      m_buffer[m_length] = 0;
-    }
+    this->assign(sz);
   
   return *this;
 }
 
+//
+const ASDCP::MXF::UTF16String&
+ASDCP::MXF::UTF16String::operator=(const std::string& str)
+{
+  this->assign(str);
+  return *this;
+}
+
+//
+const char*
+ASDCP::MXF::UTF16String::EncodeString(char* str_buf, ui32_t buf_len) const
+{
+  ui32_t write_len = Kumu::xmin(buf_len - 1, (ui32_t)size());
+  strncpy(str_buf, c_str(), write_len);
+  str_buf[write_len] = 0;
+  return str_buf;
+}
 
 //
 bool
 ASDCP::MXF::UTF16String::Unarchive(Kumu::MemIOReader* Reader)
 {
-  const byte_t* p = Reader->CurrentData();
-  m_length = Reader->Remainder();
-  assert(m_length % 2 == 0);
-  m_length /= 2;
-  assert(IdentBufferLen >= m_length);
-  ui32_t i = 0;
+  clear();
+  const ui16_t* p = (ui16_t*)Reader->CurrentData();
+  ui32_t length = Reader->Remainder() / 2;
+  char mb_buf[MB_LEN_MAX+1];
 
-  for ( i = 0; i < m_length; i++ )
-    m_buffer[i] = p[(i*2)+1];
+  for ( ui32_t i = 0; i < length; i++ )
+    {
+      int count = wctomb(mb_buf, KM_i16_BE(p[i]));
 
-  m_buffer[i] = 0;
+      if ( count == -1 )
+	{
+	  DefaultLogSink().Error("Unable to decode wide character 0x%04hx\n", p[i]);
+	  return false;
+	}
 
-  Reader->SkipOffset(m_length*2);
+      assert(count <= MB_LEN_MAX);
+      mb_buf[count] = 0;
+      this->append(mb_buf);
+    }
+
+  Reader->SkipOffset(length*2);
   return true;
 }
 
@@ -188,14 +208,42 @@ ASDCP::MXF::UTF16String::Unarchive(Kumu::MemIOReader* Reader)
 bool
 ASDCP::MXF::UTF16String::Archive(Kumu::MemIOWriter* Writer) const
 {
-  byte_t* p = Writer->Data() + Writer->Length();
+  if ( size() > IdentBufferLen )
+    {
+      DefaultLogSink().Error("String length exceeds maximum %u bytes\n", IdentBufferLen);
+      return false;
+    }
+
+  const char* mbp = c_str();
+  wchar_t wcp;
+  ui32_t remainder = size();
+  ui32_t length = size();
   ui32_t i = 0;
-  memset(p, 0, (m_length*2)+2);
 
-  for ( i = 0; i < m_length; i++ )
-    p[(i*2)+1] = m_buffer[i];
+  while ( i < length )
+    {
+      int count = mbtowc(&wcp, mbp+i, remainder);
 
-  Writer->AddOffset(m_length * 2);
+      if ( count == -1 )
+	{
+	  DefaultLogSink().Error("Error decoding multi-byte sequence starting at offset %u\n", i);
+	  return false;
+	}
+      else if ( count  == 0 )
+	break;
+
+      bool result = Writer->WriteUi16BE((ui16_t)wcp);
+
+      if ( result == false )
+	{
+	  DefaultLogSink().Error("No more space in memory IO writer\n");
+	  return false;
+	}
+
+      i += count;
+      remainder -= count;
+    }
+
   return true;
 }
 

@@ -32,6 +32,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include <AS_DCP.h>
+#include <list>
 
 
 #ifndef _AS_DCP_SUBTITLE_H_
@@ -43,10 +44,28 @@ namespace ASDCP {
   //
   namespace TimedText
     {
+      enum MIMEType_t { MT_BIN, MT_PNG, MT_OPENTYPE };
+
+      struct TimedTextResourceDescriptor
+      {
+	byte_t      ResourceID[UUIDlen];
+	MIMEType_t  Type;
+
+        TimedTextResourceDescriptor() : Type(MT_BIN) {}
+      };
+
+      typedef std::list<TimedTextResourceDescriptor> ResourceList_t;
+
       struct TimedTextDescriptor
       {
-	std::string NamespaceName;
-	ui32_t      ResourceCount;
+	Rational       EditRate;                // 
+	ui32_t         ContainerDuration;
+	byte_t         AssetID[UUIDlen];
+	std::string    NamespaceName; // NULL-terminated string
+	std::string    EncodingName;
+	ResourceList_t ResourceList;
+
+      TimedTextDescriptor() : ContainerDuration(0), EncodingName("UTF-8") {} // D-Cinema format is always UTF-8
       };
 
       // Print debugging information to stream (stderr default)
@@ -54,49 +73,39 @@ namespace ASDCP {
 
       //
       class FrameBuffer : public ASDCP::FrameBuffer
-	{
-	  ASDCP_NO_COPY_CONSTRUCT(FrameBuffer); // TODO: should have copy construct
+      {
+	ASDCP_NO_COPY_CONSTRUCT(FrameBuffer); // TODO: should have copy construct
 
-	protected:
-	  std::string m_MIMEType;
-	  byte_t      m_AssetID[UUIDlen];
+      protected:
+	byte_t      m_AssetID[UUIDlen];
+	std::string m_MIMEType;
 
-	public:
-	  FrameBuffer() { memset(m_AssetID, 0, UUIDlen); }
-	  FrameBuffer(ui32_t size) { Capacity(size); memset(m_AssetID, 0, UUIDlen); }
-	  virtual ~FrameBuffer() {}
-	
-	  const char*   MIMEType() { return m_MIMEType.c_str(); }
-	  void          MIMEType(const char* s) { m_MIMEType = s; }
-	  const byte_t* AssetID() { return m_AssetID; }
-	  void          AssetID(const byte_t* buf) { memcpy(m_AssetID, buf, UUIDlen); }
+      public:
+	FrameBuffer() { memset(m_AssetID, 0, UUIDlen); }
+	FrameBuffer(ui32_t size) { Capacity(size); memset(m_AssetID, 0, UUIDlen); }
+	virtual ~FrameBuffer() {}
+        
+	inline const byte_t* AssetID() const { return m_AssetID; }
+	inline void          AssetID(const byte_t* buf) { memcpy(m_AssetID, buf, UUIDlen); }
+	inline const char*   MIMEType() const { return m_MIMEType.c_str(); }
+	inline void          MIMEType(const std::string& s) { m_MIMEType = s; }
 
-	  // Print debugging information to stream (stderr default)
-	  void Dump(FILE* = 0, ui32_t dump_bytes = 0) const;
-	};
+	// Print debugging information to stream (stderr default)
+	void Dump(FILE* = 0, ui32_t dump_bytes = 0) const;
+      };
 
       //
-      // NOTE: The ReadFrame() and WriteFrame() methods below do not stricly handle "frames".
-      // They are named for continuity with other AS-DCP lib modules. The methods actually
-      // handle complete assets, such as XML documents, PNG images and fonts.
-      //
-
-      // An object which opens and reads a SMPTE 428-7 (or T.I. CineCanvas (TM)) subtitle file.
-      // The call to OpenRead() reads metadata from the file and populates an internal TimedTextDescriptor
-      // object. The first call to ReadFrame() returns the XML document. Each subsequent call to
-      // ReadFrame() reads exactly one resource file (if any) referenced by the XML into the given
-      // FrameBuffer object.
       class DCSubtitleParser
 	{
-	  class h__DCSubtitleParser;
-	  mem_ptr<h__DCSubtitleParser> m_Parser;
+	  class h__SubtitleParser;
+	  mem_ptr<h__SubtitleParser> m_Parser;
 	  ASDCP_NO_COPY_CONSTRUCT(DCSubtitleParser);
 
 	public:
 	  DCSubtitleParser();
 	  virtual ~DCSubtitleParser();
 
-	  // Opens the XML file for reading, parses enough data to provide a complete
+	  // Opens the XML file for reading, parse data to provide a complete
 	  // set of stream metadata for the MXFWriter below.
 	  Result_t OpenRead(const char* filename) const;
 
@@ -104,15 +113,13 @@ namespace ASDCP {
 	  // Returns RESULT_INIT if the file is not open.
 	  Result_t FillDescriptor(TimedTextDescriptor&) const;
 
-	  // Reset the contents of the internal TimedTextDescriptor
-	  Result_t Reset() const;
+	  // Reads the complete Timed Text Resource into the given string.
+	  Result_t ReadTimedTextResource(std::string&) const;
 
-	  // Reads the next subtitle resource in the list taken from the XML file.
-	  // Fails if the buffer is too small or the file list has been exhausted.
-	  // The XML file itself is returned in the first call.
-	  Result_t ReadFrame(FrameBuffer&) const;
+	  // Reads the Ancillary Resource having the given ID. Fails if the buffer
+	  // is too small or the resource does not exist.
+	  Result_t ReadAncillaryResource(const byte_t* uuid, FrameBuffer&) const;
 	};
-
 
       //
       class MXFWriter
@@ -131,11 +138,21 @@ namespace ASDCP {
 	  Result_t OpenWrite(const char* filename, const WriterInfo&,
 			     const TimedTextDescriptor&, ui32_t HeaderSize = 16384);
 
-	  // Writes a timed-text resource to the MXF file. If the optional AESEncContext
+	  // Writes the Timed-Text Resource to the MXF file. The file must be UTF-8
+	  // encoded. If the optional AESEncContext argument is present, the essence
+	  // is encrypted prior to writing. Fails if the file is not open, is finalized,
+	  // or an operating system error occurs.
+	  // This method may only be called once, and it must be called before any
+	  // call to WriteAncillaryResource(). RESULT_STATE will be returned if these
+	  // conditions are not met.
+	  Result_t WriteTimedTextResource(const std::string& XMLDoc, AESEncContext* = 0, HMACContext* = 0);
+
+	  // Writes an Ancillary Resource to the MXF file. If the optional AESEncContext
 	  // argument is present, the essence is encrypted prior to writing.
 	  // Fails if the file is not open, is finalized, or an operating system
-	  // error occurs.
-	  Result_t WriteFrame(const FrameBuffer&, AESEncContext* = 0, HMACContext* = 0);
+	  // error occurs. RESULT_STATE will be returned if the method is called before
+	  // WriteTimedTextResource()
+	  Result_t WriteAncillaryResource(const FrameBuffer&, AESEncContext* = 0, HMACContext* = 0);
 
 	  // Closes the MXF file, writing the index and revised header.
 	  Result_t Finalize();
@@ -167,14 +184,28 @@ namespace ASDCP {
 	  // Returns RESULT_INIT if the file is not open.
 	  Result_t FillWriterInfo(WriterInfo&) const;
 
-	  // Reads a timed-text resource from the MXF file. If the optional AESEncContext
+	  // Reads the complete Timed Text Resource into the given string. Fails if the resource
+	  // is encrypted and AESDecContext is NULL (use the following method to retrieve the
+	  // raw ciphertet block).
+	  Result_t ReadTimedTextResource(std::string&, AESDecContext* = 0, HMACContext* = 0) const;
+
+	  // Reads the complete Timed Text Resource from the MXF file. If the optional AESEncContext
 	  // argument is present, the resource is decrypted after reading. If the MXF
 	  // file is encrypted and the AESDecContext argument is NULL, the frame buffer
 	  // will contain the ciphertext frame data. If the HMACContext argument is
 	  // not NULL, the HMAC will be calculated (if the file supports it).
 	  // Returns RESULT_INIT if the file is not open, failure if the frame number is
 	  // out of range, or if optional decrypt or HAMC operations fail.
-	  Result_t ReadFrame(ui32_t frame_number, FrameBuffer&, AESDecContext* = 0, HMACContext* = 0) const;
+	  Result_t ReadTimedTextResource(FrameBuffer&, AESDecContext* = 0, HMACContext* = 0) const;
+
+	  // Reads the timed-text resource having the given UUID from the MXF file. If the
+	  // optional AESEncContext argument is present, the resource is decrypted after
+	  // reading. If the MXF file is encrypted and the AESDecContext argument is NULL,
+	  // the frame buffer will contain the ciphertext frame data. If the HMACContext
+	  // argument is not NULL, the HMAC will be calculated (if the file supports it).
+	  // Returns RESULT_INIT if the file is not open, failure if the frame number is
+	  // out of range, or if optional decrypt or HAMC operations fail.
+	  Result_t ReadAncillaryResource(const byte_t* uuid, FrameBuffer&, AESDecContext* = 0, HMACContext* = 0) const;
 
 	  // Print debugging information to stream
 	  void     DumpHeaderMetadata(FILE* = 0) const;

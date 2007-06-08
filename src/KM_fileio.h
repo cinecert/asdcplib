@@ -42,6 +42,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 # include <unistd.h>
 # include <time.h>
 # include <sys/types.h>
+#include <regex.h>
 #endif
 
 #include <sys/stat.h>
@@ -50,36 +51,24 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 namespace Kumu
 {
-#ifdef KM_WIN32
   //
   class DirScanner
     {
     public:
+#ifdef KM_WIN32
       __int64               m_Handle;
       struct _finddatai64_t m_FileInfo;
+#else
+      DIR*       m_Handle;
+#endif
 
       DirScanner()  {};
       ~DirScanner() { Close(); }
+
       Result_t Open(const char*);
       Result_t Close();
       Result_t GetNext(char*);
     };
-#else // KM_WIN32
-  // POSIX directory scanner
-  //
-  class DirScanner
-    {
-    public:
-      DIR*       m_Handle;
-
-      DirScanner() : m_Handle(NULL) {}
-      ~DirScanner() { Close(); }
-      
-      Result_t  Open(const char*);
-      Result_t  Close();
-      Result_t  GetNext(char*);
-    };
-#endif // KM_WIN32
 
 #ifdef KM_WIN32
   typedef __int64  fsize_t;
@@ -109,10 +98,86 @@ namespace Kumu
 
   const ui32_t MaxFilePath = Kilobyte;
 
-  bool     PathIsFile(const char* pathname);
-  bool     PathIsDirectory(const char* pathname);
-  fsize_t  FileSize(const char* pathname);
+  // Path Manglers
+  //
+  typedef std::list<std::string> PathCompList_t; // a list of path components
+  typedef std::list<std::string> PathList_t; // a list of paths
 
+  bool        PathExists(const std::string& Path); // true if the path exists in the filesystem
+  bool        PathIsFile(const std::string& Path); // true if the path exists in the filesystem and is a file
+  bool        PathIsDirectory(const std::string& Path); // true if the path exists in the filesystem and is a directory
+  fsize_t     FileSize(const std::string& Path); // returns the size of a regular file, 0 for a directory or device
+  bool        PathsAreEquivalent(const std::string& lhs, const std::string& rhs); // true if paths point to the same filesystem entry
+
+  // split and reassemble pats as lists of path components
+  PathCompList_t& PathToComponents(const std::string& Path, PathCompList_t& CList, char separator = '/'); // removes '//'
+  std::string ComponentsToPath(const PathCompList_t& CList, char separator = '/');
+  std::string ComponentsToAbsolutePath(const PathCompList_t& CList, char separator = '/'); // add separator to the front
+  bool        PathHasComponents(const std::string& Path, char separator = '/'); // true if paths starts with separator
+
+  bool        PathIsAbsolute(const std::string& Path, char separator = '/'); // true if path begins with separator
+  std::string PathMakeAbsolute(const std::string& Path, char separator = '/'); // compute position of relative path using getcwd()
+  std::string PathMakeLocal(const std::string& Path, const std::string& Parent); // remove Parent from front of Path, if it exists
+  std::string PathMakeCanonical(const std::string& Path, char separator = '/'); // remove '.' and '..'
+
+  std::string PathBasename(const std::string& Path, char separator = '/'); // returns right-most path element (list back())
+  std::string PathDirname(const std::string& Path, char separator = '/'); // returns everything but the right-most element
+  std::string PathGetExtension(const std::string& Path); // returns everything in the right-most element following the right-most '.'
+  std::string PathSetExtension(const std::string& Path, const std::string& Extension); // empty extension removes '.' as well
+
+  //
+  //
+  class IPathMatch
+  {
+  public:
+    virtual ~IPathMatch() {}
+    virtual bool Match(const std::string& s) const = 0;
+  };
+
+ class PathMatchAny : public IPathMatch
+  {
+  public:
+    virtual ~PathMatchAny() {}
+    inline bool Match(const std::string& s) const { return true; }
+  };
+
+ class PathMatchRegex : public IPathMatch
+  {
+    regex_t m_regex;
+    PathMatchRegex();
+    const PathMatchRegex& operator=(const PathMatchRegex&);
+
+  public:
+    PathMatchRegex(const std::string& Pattern);
+    PathMatchRegex(const PathMatchRegex&);
+    virtual ~PathMatchRegex();
+    bool Match(const std::string& s) const;
+  };
+
+ class PathMatchGlob : public IPathMatch
+  {
+    regex_t m_regex;
+    PathMatchGlob();
+    const PathMatchGlob& operator=(const PathMatchGlob&);
+
+  public:
+    PathMatchGlob(const std::string& Pattern);
+    PathMatchGlob(const PathMatchGlob&);
+    virtual ~PathMatchGlob();
+    bool Match(const std::string& s) const;
+  };
+
+  // Search all paths in SearchPaths for filenames matching Pattern (no directories are returned).
+  // Put results in FoundPaths. Returns after first find if one_shot is true.
+  PathList_t& FindInPath(const IPathMatch& Pattern, const std::string& SearchDir,
+			 PathList_t& FoundPaths, bool one_shot, char separator);
+
+  PathList_t& FindInPaths(const IPathMatch& Pattern, const PathList_t& SearchPaths,
+			  PathList_t& FoundPaths, bool one_shot = false, char separator = '/');
+
+
+  // Instant IO for strings
+  //
   // Reads an entire file into a string.
   Result_t ReadFileIntoString(const char* filename, std::string& outString, ui32_t max_size = 8 * Megabyte);
 

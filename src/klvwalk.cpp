@@ -192,7 +192,7 @@ main(int argc, const char** argv)
       if (Options.verbose_flag)
 	fprintf(stderr, "Opening file %s\n", ((*fi).c_str()));
       
-      if ( Options.read_mxf_flag )
+      if ( Options.read_mxf_flag ) // dump MXF
 	{
 	  Kumu::FileReader        Reader;
 	  ASDCP::MXF::OPAtomHeader Header;
@@ -204,6 +204,25 @@ main(int argc, const char** argv)
 	  
 	  Header.Dump(stdout);
 	  
+	  if ( ASDCP_SUCCESS(result) && Header.m_RIP.PairArray.size() > 3 )
+	    {
+	      MXF::Array<MXF::RIP::Pair>::const_iterator pi = Header.m_RIP.PairArray.begin();
+
+	      for ( pi++; pi != Header.m_RIP.PairArray.end() && ASDCP_SUCCESS(result); pi++ )
+		{
+		  result = Reader.Seek((*pi).ByteOffset);
+
+		  if ( ASDCP_SUCCESS(result) )
+		    {
+		      MXF::Partition TmpPart;
+		      result = TmpPart.InitFromFile(Reader);
+
+		      if ( ASDCP_SUCCESS(result) && TmpPart.BodySID > 0 )
+			TmpPart.Dump(stdout);
+		    }
+		}
+	    }
+
 	  if ( ASDCP_SUCCESS(result) )
 	    {
 	      ASDCP::MXF::OPAtomIndexFooter Index;

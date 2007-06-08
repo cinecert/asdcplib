@@ -30,6 +30,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include "MXF.h"
+#include "Metadata.h"
 #include <KM_log.h>
 using Kumu::DefaultLogSink;
 
@@ -87,6 +88,23 @@ ASDCP::MXF::SeekToRIP(const Kumu::FileReader& Reader)
     result = Reader.Seek(end_pos - rip_size);
 
   return result;
+}
+
+//
+ASDCP::Result_t
+ASDCP::MXF::RIP::GetPairBySID(ui32_t SID, Pair& outPair) const
+{
+  Array<Pair>::const_iterator pi = PairArray.begin();
+  for ( ; pi != PairArray.end(); pi++ )
+    {
+      if ( (*pi).BodySID == SID )
+	{
+	  outPair = *pi;
+	  return RESULT_OK;
+	}
+    }
+
+  return RESULT_FAIL;
 }
 
 //
@@ -177,6 +195,23 @@ public:
   }
 
   //
+  Result_t GetMDObjectByID(const UUID& ObjectID, InterchangeObject** Object)
+  {
+    ASDCP_TEST_NULL(Object);
+
+    std::map<UUID, InterchangeObject*>::iterator mi = m_Map.find(ObjectID);
+
+    if ( mi == m_Map.end() )
+      {
+	*Object = 0;
+	return RESULT_FAIL;
+      }
+
+    *Object = (*mi).second;
+    return RESULT_OK;
+  }
+
+  //
   Result_t GetMDObjectByType(const byte_t* ObjectID, InterchangeObject** Object)
   {
     ASDCP_TEST_NULL(ObjectID);
@@ -194,6 +229,21 @@ public:
       }
 
     return RESULT_FAIL;
+  }
+
+  //
+  Result_t GetMDObjectsByType(const byte_t* ObjectID, std::list<InterchangeObject*>& ObjectList)
+  {
+    ASDCP_TEST_NULL(ObjectID);
+    std::list<InterchangeObject*>::iterator li;
+
+    for ( li = m_List.begin(); li != m_List.end(); li++ )
+      {
+	if ( (*li)->HasUL(ObjectID) )
+	  ObjectList.push_back(*li);
+      }
+
+    return ObjectList.empty() ? RESULT_FAIL : RESULT_OK;
   }
 };
 
@@ -503,7 +553,7 @@ ASDCP::MXF::Primer::Dump(FILE* stream)
 
   KLVPacket::Dump(stream, false);
   fprintf(stream, "Primer: %u %s\n",
-	  LocalTagEntryBatch.size(),
+	  (ui32_t)LocalTagEntryBatch.size(),
 	  ( LocalTagEntryBatch.size() == 1 ? "entry" : "entries" ));
   
   Batch<LocalTagEntry>::iterator i = LocalTagEntryBatch.begin();
@@ -619,15 +669,15 @@ ASDCP::MXF::OPAtomHeader::InitFromFile(const Kumu::FileReader& Reader)
 	  DefaultLogSink().Error("RIP contains no Pairs.\n");
 	  result = RESULT_FORMAT;
 	}
-      else if ( test_s < 2 || test_s > 3 )
-	{
-	  // OP-Atom states that there will be either two or three partitions,
-	  // one closed header and one closed footer with an optional body
-	  DefaultLogSink().Error("RIP count is not 2 or 3: %u\n", test_s);
-	  return RESULT_FORMAT;
-	}
       else
 	{
+	  if ( test_s < 2 || test_s > 3 )
+	    {
+	      // OP-Atom states that there will be either two or three partitions:
+	      // one closed header and one closed footer with an optional body
+	      DefaultLogSink().Warn("RIP count is not 2 or 3: %u\n", test_s);
+	    }
+
 	  m_HasRIP = true;
       
 	  if ( m_RIP.PairArray.front().ByteOffset !=  0 )
@@ -730,6 +780,12 @@ ASDCP::MXF::OPAtomHeader::InitFromFile(const Kumu::FileReader& Reader)
   return result;
 }
 
+ASDCP::Result_t
+ASDCP::MXF::OPAtomHeader::GetMDObjectByID(const UUID& ObjectID, InterchangeObject** Object)
+{
+  return m_PacketList->GetMDObjectByID(ObjectID, Object);
+}
+
 //
 ASDCP::Result_t
 ASDCP::MXF::OPAtomHeader::GetMDObjectByType(const byte_t* ObjectID, InterchangeObject** Object)
@@ -740,6 +796,13 @@ ASDCP::MXF::OPAtomHeader::GetMDObjectByType(const byte_t* ObjectID, InterchangeO
     Object = &TmpObject;
 
   return m_PacketList->GetMDObjectByType(ObjectID, Object);
+}
+
+//
+ASDCP::Result_t
+ASDCP::MXF::OPAtomHeader::GetMDObjectsByType(const byte_t* ObjectID, std::list<InterchangeObject*>& ObjectList)
+{
+  return m_PacketList->GetMDObjectsByType(ObjectID, ObjectList);
 }
 
 //
@@ -994,8 +1057,8 @@ ASDCP::MXF::OPAtomIndexFooter::WriteToFile(Kumu::FileWriter& Writer, ui64_t dura
 
   if ( ASDCP_SUCCESS(result) )
     {
-      ui32_t write_count;
-      Writer.Write(FooterBuffer.RoData(), FooterBuffer.Size(), &write_count);
+      ui32_t write_count = 0;
+      result = Writer.Write(FooterBuffer.RoData(), FooterBuffer.Size(), &write_count);
       assert(write_count == FooterBuffer.Size());
     }
 
@@ -1204,6 +1267,84 @@ ASDCP::MXF::InterchangeObject::IsA(const byte_t* label)
 
   return ( memcmp(label, m_KeyStart, SMPTE_UL_LENGTH) == 0 );
 }
+
+
+//------------------------------------------------------------------------------------------
+
+
+typedef std::map<ASDCP::UL, ASDCP::MXF::MXFObjectFactory_t>FactoryMap_t;
+typedef FactoryMap_t::iterator FLi_t;
+
+//
+class FactoryList : public FactoryMap_t
+{
+  Kumu::Mutex m_Lock;
+
+public:
+  FactoryList() {}
+  ~FactoryList() {}
+
+  bool Empty() {
+    Kumu::AutoMutex BlockLock(m_Lock);
+    return empty();
+  }
+
+  FLi_t Find(const byte_t* label) {
+    Kumu::AutoMutex BlockLock(m_Lock);
+    return find(label);
+  }
+
+  FLi_t End() {
+    Kumu::AutoMutex BlockLock(m_Lock);
+    return end();
+  }
+
+  void Insert(ASDCP::UL label, ASDCP::MXF::MXFObjectFactory_t factory) {
+    Kumu::AutoMutex BlockLock(m_Lock);
+    insert(FactoryList::value_type(label, factory));
+  }
+};
+
+//
+static FactoryList s_FactoryList;
+static Kumu::Mutex s_InitLock;
+static bool        s_TypesInit = false;
+
+
+//
+void
+ASDCP::MXF::SetObjectFactory(ASDCP::UL label, ASDCP::MXF::MXFObjectFactory_t factory)
+{
+  s_FactoryList.Insert(label, factory);
+}
+
+
+//
+ASDCP::MXF::InterchangeObject*
+ASDCP::MXF::CreateObject(const byte_t* label)
+{
+  if ( label == 0 )
+    return 0;
+
+  if ( ! s_TypesInit )
+    {
+      Kumu::AutoMutex BlockLock(s_InitLock);
+
+      if ( ! s_TypesInit )
+	{
+	  MXF::Metadata_InitTypes();
+	  s_TypesInit = true;
+	}
+    }
+
+  FLi_t i = s_FactoryList.find(label);
+
+  if ( i == s_FactoryList.end() )
+    return new InterchangeObject;
+
+  return i->second();
+}
+
 
 
 //

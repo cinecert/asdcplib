@@ -41,41 +41,79 @@ namespace Kumu
 {
   class XMLElement;
 
+  //
   struct NVPair
   {
     std::string name;
     std::string value;
   };
 
+  //
   typedef std::list<NVPair> AttributeList;
-  typedef AttributeList::iterator Attr_i;
+  typedef AttributeList::const_iterator Attr_i;
   typedef std::list<XMLElement*> ElementList;
-  typedef ElementList::iterator Elem_i;
+  typedef ElementList::const_iterator Elem_i;
+
+  //
+  class XMLNamespace
+  {
+    std::string   m_Prefix;
+    std::string   m_Name;
+
+    KM_NO_COPY_CONSTRUCT(XMLNamespace);
+    XMLNamespace();
+
+    public:
+  XMLNamespace(const char* prefix, const char* name) : m_Prefix(prefix), m_Name(name) {}
+    ~XMLNamespace() {}
+
+    inline const std::string& Prefix() const { return m_Prefix; }
+    inline const std::string& Name() const { return m_Name; }
+  };
 
   //
   class XMLElement
     {
-      AttributeList m_AttrList;
-      ElementList   m_ChildList;
+      AttributeList       m_AttrList;
+      ElementList         m_ChildList;
+      const XMLNamespace* m_Namespace;
+      void*               m_NamespaceOwner;
+
+      std::string   m_Name;
+      std::string   m_Body;
 
       KM_NO_COPY_CONSTRUCT(XMLElement);
       XMLElement();
 
     public:
-      std::string   m_Name;
-      std::string   m_Body;
-
       XMLElement(const char* name);
       ~XMLElement();
 
+      inline const XMLNamespace* Namespace() const { return m_Namespace; }
+      inline void                SetNamespace(const XMLNamespace* ns) { assert(ns); m_Namespace = ns; }
+
+      bool        ParseString(const std::string& document);
+      bool        TestString(const char* document, ui32_t len = 0);
+
+      // building
+      void        SetName(const char* name);
+      void        AppendBody(const std::string& value);
       void        SetAttr(const char* name, const char* value);
       XMLElement* AddChild(const char* name);
       XMLElement* AddChildWithContent(const char* name, const char* value);
       XMLElement* AddChildWithContent(const char* name, const std::string& value);
       XMLElement* AddChildWithPrefixedContent(const char* name, const char* prefix, const char* value);
       void        AddComment(const char* value);
-      void        Render(std::string&);
-      void        RenderElement(std::string& outbuf, ui32_t depth);
+      void        Render(std::string&) const;
+      void        RenderElement(std::string& outbuf, ui32_t depth) const;
+
+      // querying
+      inline const std::string& GetBody() const { return m_Body; }
+      const char*    GetAttrWithName(const char* name) const;
+      XMLElement*    GetChildWithName(const char* name) const;
+      const ElementList& GetChildrenWithName(const char* name, ElementList& outList) const;
+      bool           HasName(const char* name) const;
+
     };
 } // namespace Kumu
 

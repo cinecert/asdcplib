@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2004-2006, John Hurst
+Copyright (c) 2004-2007, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -30,6 +30,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include <KM_fileio.h>
+#include <KM_xml.h>
 #include "AS_DCP_internal.h"
 #include "JP2K.h"
 #include "MPEG.h"
@@ -156,6 +157,11 @@ ASDCP::EssenceType(const char* filename, EssenceType_t& type)
 	    {
 	      if ( ASDCP_SUCCESS(TestHeader.GetMDObjectByType(OBJ_TYPE_ARGS(MPEG2VideoDescriptor))) )
 		type = ESS_MPEG2_VES;
+	      else
+		{
+		  if ( ASDCP_SUCCESS(TestHeader.GetMDObjectByType(OBJ_TYPE_ARGS(DCTimedTextDescriptor))) )
+		    type = ESS_TIMED_TEXT;
+		}
 	    }
 	}
     }
@@ -173,6 +179,8 @@ ASDCP::RawEssenceType(const char* filename, EssenceType_t& type)
   Kumu::FileReader Reader;
   ASDCP::Wav::SimpleWaveHeader WavHeader;
   ASDCP::AIFF::SimpleAIFFHeader AIFFHeader;
+  Kumu::XMLElement TmpElement("Tmp");
+
   ui32_t data_offset;
   ui32_t read_count;
   Result_t result = FB.Capacity(Wav::MaxWavHeader); // using Wav max because everything else is much smaller
@@ -190,11 +198,16 @@ ASDCP::RawEssenceType(const char* filename, EssenceType_t& type)
       if ( ASDCP_SUCCESS(result) )
 	{
 	  const byte_t* p = FB.RoData();
+	  FB.Size(read_count);
+
 	  ui32_t i = 0;
 	  while ( p[i] == 0 ) i++;
 
 	  if ( i > 1 && p[i] == 1 &&  (p[i+1] == ASDCP::MPEG2::SEQ_START || p[i+1] == ASDCP::MPEG2::PIC_START) )
 	    type = ESS_MPEG2_VES;
+
+	  else if ( TmpElement.TestString((const char*)p, FB.Size()) )
+	    type = ESS_TIMED_TEXT;
 
 	  else if ( ASDCP_SUCCESS(WavHeader.ReadFromBuffer(p, read_count, &data_offset)) )
 	    type = ESS_PCM_24b_48k;
