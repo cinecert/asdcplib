@@ -195,7 +195,7 @@ namespace ASDCP
 			 const std::string& PackageLabel);
       void AddDMSegment(const MXF::Rational& EditRate, ui32_t TCFrameRate,
 			 const std::string& TrackName, const UL& DataDefinition,
-			 const std::string& PackageLabel);
+			const std::string& PackageLabel, const UMID& PackageUID);
       void AddEssenceDescriptor(const UL& WrappingUL);
       Result_t CreateBodyPart(const MXF::Rational& EditRate, ui32_t BytesPerEditUnit = 0);
 

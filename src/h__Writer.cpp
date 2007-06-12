@@ -45,8 +45,6 @@ using namespace ASDCP::MXF;
 //
 ASDCP::h__Writer::h__Writer() :
   m_HeaderSize(0), m_EssenceStart(0),
-  //  m_MaterialPackage(0), m_MPTCSequence(0), m_MPTimecode(0), m_MPClSequence(0), m_MPClip(0),
-  //  m_FilePackage(0), m_FPTCSequence(0), m_FPTimecode(0), m_FPClSequence(0), m_FPClip(0),
   m_EssenceDescriptor(0), m_FramesWritten(0), m_StreamOffset(0)
 {
 }
@@ -274,7 +272,7 @@ ASDCP::h__Writer::AddSourceClip(const MXF::Rational& EditRate, ui32_t TCFrameRat
 void
 ASDCP::h__Writer::AddDMSegment(const MXF::Rational& EditRate, ui32_t TCFrameRate,
 				const std::string& TrackName, const UL& DataDefinition,
-				const std::string& PackageLabel)
+			       const std::string& PackageLabel, const UMID& SourcePackageUMID)
 {
   //
   ContentStorage* Storage = new ContentStorage;
@@ -287,9 +285,9 @@ ASDCP::h__Writer::AddDMSegment(const MXF::Rational& EditRate, ui32_t TCFrameRate
   ECD->IndexSID = 129;
   ECD->BodySID = 1;
 
-  UUID assetUUID(m_Info.AssetUUID);
-  UMID SourcePackageUMID, MaterialPackageUMID;
-  SourcePackageUMID.MakeUMID(0x0f, assetUUID);
+  //  UUID assetUUID(m_Info.AssetUUID);
+  UMID MaterialPackageUMID;
+  //  SourcePackageUMID.MakeUMID(0x0f, assetUUID);
   MaterialPackageUMID.MakeUMID(0x0f); // unidentified essence
 
   //

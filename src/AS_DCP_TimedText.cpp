@@ -185,6 +185,9 @@ ASDCP::TimedText::MXFReader::h__Reader::OpenRead(char const* filename)
   if( ASDCP_SUCCESS(result) )
     result = InitInfo();
 
+  if( ASDCP_SUCCESS(result) )
+    memcpy(m_TDesc.AssetID, m_Info.AssetUUID, UUIDlen);
+
   return result;
 }
 
@@ -225,10 +228,9 @@ ASDCP::TimedText::MXFReader::h__Reader::ReadAncillaryResource(const byte_t* uuid
       RIP::Pair TmpPair;
       ui32_t sequence = 1;
 
-      // look up the partition start in the RIP using the SID
-      // count the distance in because this is the sequence value needed to 
-      // complete the HMAC
-      //      result = m_HeaderPart.m_RIP.GetPairBySID(DescObject->ResourceSID, TmpPair);
+      // Look up the partition start in the RIP using the SID.
+      // Count the sequence length in because this is the sequence
+      // value needed to  complete the HMAC.
       for ( pi = m_HeaderPart.m_RIP.PairArray.begin(); pi != m_HeaderPart.m_RIP.PairArray.end(); pi++, sequence++ )
 	{
 	  if ( (*pi).BodySID == DescObject->ResourceSID )
@@ -415,7 +417,6 @@ ASDCP::Result_t
 ASDCP::TimedText::MXFWriter::h__Writer::TimedText_TDesc_to_MD(TimedText::TimedTextDescriptor& TDesc)
 {
   assert(m_EssenceDescriptor);
-  //  assert(m_EssenceSubDescriptor);
   MXF::DCTimedTextDescriptor* TDescObj = (MXF::DCTimedTextDescriptor*)m_EssenceDescriptor;
 
   TDescObj->SampleRate = TDesc.EditRate;
@@ -471,9 +472,12 @@ ASDCP::TimedText::MXFWriter::h__Writer::SetSourceStream(ASDCP::TimedText::TimedT
 
   if ( ASDCP_SUCCESS(result) )
     {
+      UMID SourcePackageUMID;
+      SourcePackageUMID.MakeUMID(0x0f, m_TDesc.AssetID);
+
       InitHeader();
       AddDMSegment(m_TDesc.EditRate, 24, TIMED_TEXT_DEF_LABEL,
-		   UL(Dict::ul(MDD_PictureDataDef)), TIMED_TEXT_PACKAGE_LABEL);
+		   UL(Dict::ul(MDD_PictureDataDef)), TIMED_TEXT_PACKAGE_LABEL, SourcePackageUMID);
 
       AddEssenceDescriptor(UL(Dict::ul(MDD_DCTimedTextWrapping)));
 
