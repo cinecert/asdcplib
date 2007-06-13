@@ -40,6 +40,53 @@ using namespace ASDCP;
 
 const char* c_dcst_namespace_name = "http://www.smpte-ra.org/schemas/428-7/2007/DCST";
 
+//------------------------------------------------------------------------------------------
+
+
+
+class FilenameResolver : public ASDCP::TimedText::IResourceResolver
+{
+  std::string m_Dirname;
+
+  FilenameResolver();
+  bool operator==(const FilenameResolver&);
+
+public:
+  FilenameResolver(const std::string& dirname)
+  {
+    if ( PathIsDirectory(dirname) )
+      {
+	m_Dirname = dirname;
+	return;
+      }
+
+    DefaultLogSink().Error("Path '%s' is not a directory, defaulting to '.'\n", dirname.c_str());
+    m_Dirname = ".";
+  }
+
+  //
+  Result_t ResolveRID(const byte_t* uuid, TimedText::FrameBuffer& FrameBuf) const
+  {
+    FileReader Reader;
+    char buf[64];
+    UUID RID(uuid);
+    std::string filename = m_Dirname + "/" + RID.EncodeHex(buf, 64);
+    DefaultLogSink().Debug("retrieving resource %s from file %s\n", buf, filename.c_str());
+
+    Result_t result = Reader.OpenRead(filename.c_str());
+
+    if ( KM_SUCCESS(result) )
+      {
+	ui32_t read_count = 0;
+	result = Reader.Read(FrameBuf.Data(), FrameBuf.Capacity(), &read_count);
+
+	if ( KM_SUCCESS(result) )
+	  FrameBuf.Size(read_count);
+      }
+
+    return result;
+  }
+};
 
 //------------------------------------------------------------------------------------------
 
@@ -53,8 +100,10 @@ class ASDCP::TimedText::DCSubtitleParser::h__SubtitleParser
   ASDCP_NO_COPY_CONSTRUCT(h__SubtitleParser);
 
 public:
+  std::string m_Filename;
   std::string m_XMLDoc;
   TimedTextDescriptor  m_TDesc;
+  mem_ptr<FilenameResolver> m_DefaultResolver;
 
   h__SubtitleParser() : m_Root("**ParserRoot**")
   {
@@ -63,8 +112,16 @@ public:
 
   ~h__SubtitleParser() {}
 
+  TimedText::IResourceResolver* GetDefaultResolver()
+  {
+    if ( m_DefaultResolver.empty() )
+      m_DefaultResolver = new FilenameResolver(PathDirname(m_Filename));
+    
+    return m_DefaultResolver;
+  }
+
   Result_t OpenRead(const char* filename);
-  Result_t ReadAncillaryResource(const byte_t* uuid, FrameBuffer& FrameBuf) const;
+  Result_t ReadAncillaryResource(const byte_t* uuid, FrameBuffer& FrameBuf, const IResourceResolver& Resolver) const;
 };
 
 //
@@ -103,22 +160,6 @@ decode_rational(const char* str_rat)
 }
 
 //
-ui32_t
-CalculateSubtitleDuration(const XMLElement* begin, const XMLElement* end)
-{
-  assert(begin); assert(end);
-
-  S12MTimecode
-    beginTC(begin->GetAttrWithName("TimeIn"), 24),
-    endTC(end->GetAttrWithName("TimeOut"), 24);
-
-  if ( endTC < beginTC )
-    return 0;
-
-  return endTC.GetFrames() - beginTC.GetFrames();
-}
-
-//
 Result_t
 ASDCP::TimedText::DCSubtitleParser::h__SubtitleParser::OpenRead(const char* filename)
 {
@@ -127,6 +168,7 @@ ASDCP::TimedText::DCSubtitleParser::h__SubtitleParser::OpenRead(const char* file
   if ( ! m_Root.ParseString(m_XMLDoc.c_str()) )
     return RESULT_FORMAT;
 
+  m_Filename = filename;
   m_TDesc.EncodingName = "UTF-8"; // the XML parser demands UTF-8
   m_TDesc.ResourceList.clear();
   m_TDesc.ContainerDuration = 0;
@@ -157,6 +199,12 @@ ASDCP::TimedText::DCSubtitleParser::h__SubtitleParser::OpenRead(const char* file
     }
 
   m_TDesc.EditRate = decode_rational(EditRate->GetBody().c_str());
+
+  if ( m_TDesc.EditRate != EditRate_24 && m_TDesc.EditRate != EditRate_48 )
+    {
+      DefaultLogSink(). Error("EditRate must be 24/1 or 48/1\n");
+      return RESULT_FORMAT;
+    }
 
   // list of fonts
   ElementList FontList;
@@ -198,10 +246,35 @@ ASDCP::TimedText::DCSubtitleParser::h__SubtitleParser::OpenRead(const char* file
       m_ResourceTypes.insert(ResourceTypeMap_t::value_type(UUID(TmpResource.ResourceID), MT_PNG));
     }
 
-  // duration
+  // Calculate the timeline duration.
+  // This is a little ugly because the last element in the file is not necessarily
+  // the last instance to be displayed, e.g., element n and element n-1 may have the
+  // same start time but n-1 may have a greater duration making it the last to be seen.
+  // We must scan the list to accumulate the latest TimeOut value.
   ElementList InstanceList;
+  ElementList::const_iterator ei;
+  ui32_t end_count = 0;
+  
   m_Root.GetChildrenWithName("Subtitle", InstanceList);
-  m_TDesc.ContainerDuration = CalculateSubtitleDuration(InstanceList.front(), InstanceList.back());
+
+  if ( InstanceList.empty() )
+    {
+      DefaultLogSink(). Error("XML document contains no Subtitle elements!\n");
+      return RESULT_FORMAT;
+    }
+
+  // assumes 24/1 or 48/1 as constrained above
+  S12MTimecode beginTC(InstanceList.front()->GetAttrWithName("TimeIn"), m_TDesc.EditRate.Numerator);
+
+  for ( ei = InstanceList.begin(); ei != InstanceList.end(); ei++ )
+    {
+      S12MTimecode tmpTC((*ei)->GetAttrWithName("TimeOut"), m_TDesc.EditRate.Numerator);
+      if ( end_count < tmpTC.GetFrames() )
+	end_count = tmpTC.GetFrames();
+    }
+
+  assert( end_count > beginTC.GetFrames() );
+  m_TDesc.ContainerDuration = end_count - beginTC.GetFrames();
 
   return RESULT_OK;
 }
@@ -209,12 +282,12 @@ ASDCP::TimedText::DCSubtitleParser::h__SubtitleParser::OpenRead(const char* file
 
 //
 Result_t
-ASDCP::TimedText::DCSubtitleParser::h__SubtitleParser::ReadAncillaryResource(const byte_t* uuid, FrameBuffer& FrameBuf) const
+ASDCP::TimedText::DCSubtitleParser::h__SubtitleParser::ReadAncillaryResource(const byte_t* uuid, FrameBuffer& FrameBuf,
+									     const IResourceResolver& Resolver) const
 {
   FrameBuf.AssetID(uuid);
   UUID TmpID(uuid);
   char buf[64];
-  FileReader Reader;
 
   ResourceTypeMap_t::const_iterator rmi = m_ResourceTypes.find(TmpID);
 
@@ -224,30 +297,18 @@ ASDCP::TimedText::DCSubtitleParser::h__SubtitleParser::ReadAncillaryResource(con
       return RESULT_RANGE;
     }
 
-  Result_t result = Reader.OpenRead(TmpID.EncodeHex(buf, 64));
+  Result_t result = Resolver.ResolveRID(uuid, FrameBuf);
 
   if ( KM_SUCCESS(result) )
     {
-      ui32_t read_count = 0;
-      result = Reader.Read(FrameBuf.Data(), FrameBuf.Capacity(), &read_count);
-
-      if ( KM_SUCCESS(result) )
-	{
-	  FrameBuf.Size(read_count);
-
-	  if ( (*rmi).second == MT_PNG )
-	    FrameBuf.MIMEType("image/png");
+      if ( (*rmi).second == MT_PNG )
+	FrameBuf.MIMEType("image/png");
 	      
-	  else if ( (*rmi).second == MT_OPENTYPE )
-	    FrameBuf.MIMEType("application/x-opentype");
+      else if ( (*rmi).second == MT_OPENTYPE )
+	FrameBuf.MIMEType("application/x-opentype");
 
-	  else
-	    FrameBuf.MIMEType("application/octet-stream");
-	}
-    }
-  else
-    {
-      DefaultLogSink(). Error("Error opening resource file %s.\n", buf);
+      else
+	FrameBuf.MIMEType("application/octet-stream");
     }
 
   return result;
@@ -302,12 +363,16 @@ ASDCP::TimedText::DCSubtitleParser::ReadTimedTextResource(std::string& s) const
 
 //
 ASDCP::Result_t
-ASDCP::TimedText::DCSubtitleParser::ReadAncillaryResource(const byte_t* uuid, FrameBuffer& FrameBuf) const
+ASDCP::TimedText::DCSubtitleParser::ReadAncillaryResource(const byte_t* uuid, FrameBuffer& FrameBuf,
+							  const IResourceResolver* Resolver) const
 {
- if ( m_Parser.empty() )
+  if ( m_Parser.empty() )
     return RESULT_INIT;
 
- return m_Parser->ReadAncillaryResource(uuid, FrameBuf);
+  if ( Resolver == 0 )
+    Resolver = m_Parser->GetDefaultResolver();
+
+  return m_Parser->ReadAncillaryResource(uuid, FrameBuf, *Resolver);
 }
 
 

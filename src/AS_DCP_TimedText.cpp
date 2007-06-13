@@ -199,7 +199,15 @@ ASDCP::TimedText::MXFReader::h__Reader::ReadTimedTextResource(FrameBuffer& Frame
   if ( ! m_File.IsOpen() )
     return RESULT_INIT;
 
-  return ReadEKLVFrame(0, FrameBuf, Dict::ul(MDD_DCTimedTextEssence), Ctx, HMAC);
+  Result_t result = ReadEKLVFrame(0, FrameBuf, Dict::ul(MDD_DCTimedTextEssence), Ctx, HMAC);
+
+ if( ASDCP_SUCCESS(result) )
+   {
+     FrameBuf.AssetID(m_TDesc.AssetID);
+     FrameBuf.MIMEType("text/xml");
+   }
+
+ return result;
 }
 
 //
@@ -215,7 +223,7 @@ ASDCP::TimedText::MXFReader::h__Reader::ReadAncillaryResource(const byte_t* uuid
     {
       char buf[64];
       DefaultLogSink().Error("No such resource: %s\n", RID.EncodeHex(buf, 64));
-      return RESULT_FORMAT;
+      return RESULT_RANGE;
     }
 
   DCTimedTextResourceDescriptor* DescObject = 0;

@@ -41,6 +41,9 @@ namespace Kumu
 {
   class XMLElement;
 
+  // Return true if the given string contains an XML document (or the start of one).
+  bool StringIsXML(const char* document, ui32_t len = 0);
+
   //
   struct NVPair
   {
@@ -93,7 +96,6 @@ namespace Kumu
       inline void                SetNamespace(const XMLNamespace* ns) { assert(ns); m_Namespace = ns; }
 
       bool        ParseString(const std::string& document);
-      bool        TestString(const char* document, ui32_t len = 0);
 
       // building
       void        SetName(const char* name);

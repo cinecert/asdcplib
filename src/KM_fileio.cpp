@@ -53,32 +53,32 @@ struct iovec {
 typedef struct stat     fstat_t;
 #endif
 
+//
 static void
 split(const std::string& str, char separator, std::list<std::string>& components)
 {
   const char* pstr = str.c_str();
   const char* r = strchr(pstr, separator);
 
-  while( r != NULL )
+  while ( r != 0 )
     {
-      char* cp = new char[(r-pstr)+1];
-      memcpy(cp, pstr, (r-pstr));
-      cp[(r-pstr)] = '\0';
-
-      if( strlen(cp) > 0 )
+      assert(r >= pstr);
+      if ( r > pstr )
 	{
-	  std::string s(cp);
-	  components.push_back(s);
+	  std::string tmp_str;
+	  assert(r - pstr < 100);
+	  tmp_str.assign(pstr, (r - pstr));
+	  components.push_back(tmp_str);
 	}
 
-      delete[] cp;
       pstr = r + 1;
       r = strchr(pstr, separator);
     }
 
   if( strlen(pstr) > 0 )
-      components.push_back(std::string(pstr));
+    components.push_back(std::string(pstr));
 }
+
 
 //
 static Kumu::Result_t

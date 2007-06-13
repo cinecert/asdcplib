@@ -206,7 +206,7 @@ ASDCP::RawEssenceType(const char* filename, EssenceType_t& type)
 	  if ( i > 1 && p[i] == 1 &&  (p[i+1] == ASDCP::MPEG2::SEQ_START || p[i+1] == ASDCP::MPEG2::PIC_START) )
 	    type = ESS_MPEG2_VES;
 
-	  else if ( TmpElement.TestString((const char*)p, FB.Size()) )
+	  else if ( Kumu::StringIsXML((const char*)p, FB.Size()) )
 	    type = ESS_TIMED_TEXT;
 
 	  else if ( ASDCP_SUCCESS(WavHeader.ReadFromBuffer(p, read_count, &data_offset)) )

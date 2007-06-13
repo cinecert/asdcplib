@@ -170,7 +170,7 @@ namespace Kumu
   // Search all paths in SearchPaths for filenames matching Pattern (no directories are returned).
   // Put results in FoundPaths. Returns after first find if one_shot is true.
   PathList_t& FindInPath(const IPathMatch& Pattern, const std::string& SearchDir,
-			 PathList_t& FoundPaths, bool one_shot, char separator);
+			 PathList_t& FoundPaths, bool one_shot = false, char separator = '/');
 
   PathList_t& FindInPaths(const IPathMatch& Pattern, const PathList_t& SearchPaths,
 			  PathList_t& FoundPaths, bool one_shot = false, char separator = '/');

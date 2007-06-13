@@ -61,7 +61,7 @@ namespace ASDCP {
 	Rational       EditRate;                // 
 	ui32_t         ContainerDuration;
 	byte_t         AssetID[UUIDlen];
-	std::string    NamespaceName; // NULL-terminated string
+	std::string    NamespaceName;
 	std::string    EncodingName;
 	ResourceList_t ResourceList;
 
@@ -95,6 +95,14 @@ namespace ASDCP {
       };
 
       //
+      class IResourceResolver
+      {
+      public:
+	virtual ~IResourceResolver() {}
+	virtual Result_t ResolveRID(const byte_t* uuid, FrameBuffer&) const = 0; // return data for RID
+      };
+
+      //
       class DCSubtitleParser
 	{
 	  class h__SubtitleParser;
@@ -117,8 +125,14 @@ namespace ASDCP {
 	  Result_t ReadTimedTextResource(std::string&) const;
 
 	  // Reads the Ancillary Resource having the given ID. Fails if the buffer
-	  // is too small or the resource does not exist.
-	  Result_t ReadAncillaryResource(const byte_t* uuid, FrameBuffer&) const;
+	  // is too small or the resource does not exist. The optional Resolver
+	  // argument can be provided which will be used to retrieve the resource
+	  // having a particulat UUID. If a Resolver is not supplied, the default
+	  // internal resolver will return the contents of the file having the UUID
+	  // (with optional extension) as the filename. The filename must exist in
+	  // the same directory as the XML file opened with OpenRead().
+	  Result_t ReadAncillaryResource(const byte_t* uuid, FrameBuffer&,
+					 const IResourceResolver* Resolver = 0) const;
 	};
 
       //

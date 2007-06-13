@@ -442,7 +442,7 @@ xph_test_start(void* p, const XML_Char* name, const XML_Char** attrs)
 
 //
 bool
-Kumu::XMLElement::TestString(const char* document, ui32_t len)
+Kumu::StringIsXML(const char* document, ui32_t len)
 {
   if ( document == 0 )
     return false;
@@ -479,9 +479,9 @@ Kumu::XMLElement::ParseString(const std::string& document)
 
 //
 bool
-Kumu::XMLElement::TestString(const char* document, ui32_t len)
+Kumu::StringIsXML(const char* document, ui32_t len)
 {
-  DefaultLogSink().Error("asdcplib compiled without XML parser support.\n");
+  DefaultLogSink().Error("Kumu compiled without XML parser support.\n");
   return false;
 }
 
