@@ -113,6 +113,37 @@ utilities all respond to -h.
 
 
 Change History
+2007.06.xx - Timed Text and Bug fixes v.1.1.15
+ o Added support for draft SMPTE 429-5 Timed Text Track File. See
+   AS_DCP_TimedText.h for the API. This is *very* experimental, so
+   do not use for shipping products. Timed Text support is NOT part
+   of the default build, run `make WITH_TIMED_TEXT=1` to enable
+   this part of the library. AS_DCP_TimedText.h will be combined
+   with AS_DCP.h when it becomes stable. Because we need an XML
+   parser to create the Track File, expat is now part of the Timed
+   Text build. Follow the XML_PARSER macro in the makefile and KM_xml
+   to see how you can support your favorite parser. See also
+   S429-5-cgi.cpp for an example that shows how to serve plaintext
+   MXF file elements directly via HTTP.
+ o Refactored the following files as a side-effect of the above
+   work: AS_DCP_JP2K.cpp AS_DCP_MPEG2.cpp AS_DCP_PCM.cpp
+   AS_DCP_MXF.cpp AS_DCP_internal.h MXF.[h|cpp] MXFTypes.[h|cpp]
+   Metadata.[h|cpp] h__Reader.cpp h__Writer.cpp klvwalk.cpp.
+   WARNING: While significant effort has been extended to make sure
+   that this work does not affect existing stable file support,
+   users are cautioned to test this release thouroughly.
+ o Added a large set of path manglers to KM_fileio.h. See
+   path-test.cpp for example usage. The path manglers have not yet
+   been tested on win32 platforms (they are currently used only by
+   the Timed Text module. The PathIsFile(), PathIsDirectory() and
+   FileSize() subroutines have been modified to accept const
+   std::string& instead of const char*.
+ o Added namespace and parsing support (Expat) to Kumu::XMLElement
+   (currently used only for Timed Text support). Also added some
+   new accessors.
+ o ...
+
+
 2007.03.31 - Bug fixes v.1.1.14
  o Fixed KeyFrameOffset value in MPEG wrapping to have negative
    value. This is probably not yet complete for handling all
@@ -133,7 +164,7 @@ Change History
  o Fixed a bug in ByteString::Unarchive() that caused the operation
    to fail when the buffer was smaller than the read (i.e., when
    Capacity() was called).
- o Added IdentifierList class to KM_util.
+ o Added IdentifierList class to KM_util.h.
  o Changed some Error() messages to Debug() in Wav.cpp
  o Revived jp2k-test.cpp and asdcp-mem-test.cpp (they both had
    stale #includes).

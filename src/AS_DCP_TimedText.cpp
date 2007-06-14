@@ -127,6 +127,7 @@ ASDCP::TimedText::MXFReader::h__Reader::MD_to_TimedText_TDesc(TimedText::TimedTe
 
   TDesc.EditRate = TDescObj->SampleRate;
   TDesc.ContainerDuration = TDescObj->ContainerDuration;
+  memcpy(TDesc.AssetID, TDescObj->AssetID.Value(), UUIDlen);
   TDesc.NamespaceName = TDescObj->RootNamespaceName;
   TDesc.EncodingName = TDescObj->UTFEncoding;
 
@@ -141,7 +142,7 @@ ASDCP::TimedText::MXFReader::h__Reader::MD_to_TimedText_TDesc(TimedText::TimedTe
       if ( KM_SUCCESS(result) )
 	{
 	  TimedTextResourceDescriptor TmpResource;
-	  memcpy(TmpResource.ResourceID, DescObject->ResourcePackageID.Value(), UUIDlen);
+	  memcpy(TmpResource.ResourceID, DescObject->ResourceID.Value(), UUIDlen);
 
 	  if ( DescObject->ResourceMIMEType.find("font/") != std::string::npos )
 	    TmpResource.Type = MT_OPENTYPE;
@@ -153,7 +154,7 @@ ASDCP::TimedText::MXFReader::h__Reader::MD_to_TimedText_TDesc(TimedText::TimedTe
 	    TmpResource.Type = MT_BIN;
 
 	  TDesc.ResourceList.push_back(TmpResource);
-	  m_ResourceMap.insert(ResourceMap_t::value_type(DescObject->ResourcePackageID, *sdi));
+	  m_ResourceMap.insert(ResourceMap_t::value_type(DescObject->ResourceID, *sdi));
 	}
       else
 	{
@@ -184,9 +185,6 @@ ASDCP::TimedText::MXFReader::h__Reader::OpenRead(char const* filename)
 
   if( ASDCP_SUCCESS(result) )
     result = InitInfo();
-
-  if( ASDCP_SUCCESS(result) )
-    memcpy(m_TDesc.AssetID, m_Info.AssetUUID, UUIDlen);
 
   return result;
 }
@@ -429,6 +427,7 @@ ASDCP::TimedText::MXFWriter::h__Writer::TimedText_TDesc_to_MD(TimedText::TimedTe
 
   TDescObj->SampleRate = TDesc.EditRate;
   TDescObj->ContainerDuration = TDesc.ContainerDuration;
+  TDescObj->AssetID.Set(TDesc.AssetID);
   TDescObj->RootNamespaceName = TDesc.NamespaceName;
   TDescObj->UTFEncoding = TDesc.EncodingName;
 
@@ -469,7 +468,7 @@ ASDCP::TimedText::MXFWriter::h__Writer::SetSourceStream(ASDCP::TimedText::TimedT
     {
       DCTimedTextResourceDescriptor* resourceSubdescriptor = new DCTimedTextResourceDescriptor;
       GenRandomValue(resourceSubdescriptor->InstanceUID);
-      resourceSubdescriptor->ResourcePackageID.Set((*ri).ResourceID);
+      resourceSubdescriptor->ResourceID.Set((*ri).ResourceID);
       resourceSubdescriptor->ResourceMIMEType = MIME2str((*ri).Type);
       resourceSubdescriptor->ResourceSID = m_ResourceSID++;
       m_EssenceSubDescriptorList.push_back((FileDescriptor*)resourceSubdescriptor);
@@ -480,12 +479,9 @@ ASDCP::TimedText::MXFWriter::h__Writer::SetSourceStream(ASDCP::TimedText::TimedT
 
   if ( ASDCP_SUCCESS(result) )
     {
-      UMID SourcePackageUMID;
-      SourcePackageUMID.MakeUMID(0x0f, m_TDesc.AssetID);
-
       InitHeader();
       AddDMSegment(m_TDesc.EditRate, 24, TIMED_TEXT_DEF_LABEL,
-		   UL(Dict::ul(MDD_PictureDataDef)), TIMED_TEXT_PACKAGE_LABEL, SourcePackageUMID);
+		   UL(Dict::ul(MDD_PictureDataDef)), TIMED_TEXT_PACKAGE_LABEL);
 
       AddEssenceDescriptor(UL(Dict::ul(MDD_DCTimedTextWrapping)));
 

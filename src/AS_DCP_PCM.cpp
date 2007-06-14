@@ -160,7 +160,8 @@ ASDCP::PCM::MXFReader::h__Reader::OpenRead(const char* filename)
     }
 
   // check for sample/frame rate sanity
-  if ( m_ADesc.SampleRate != EditRate_24
+  if ( ASDCP_SUCCESS(result)
+       && m_ADesc.SampleRate != EditRate_24
        && m_ADesc.SampleRate != EditRate_48
        && m_ADesc.SampleRate != EditRate_23_98 )
     {

@@ -98,7 +98,7 @@ main(int argc, const char** argv)
 
   cerr << "----------------------------------" << endl;
   OutList.clear();
-  FindInPaths(PathMatchRegex("^[A-J].*\.h$"), InList, OutList);
+  FindInPaths(PathMatchRegex("^[A-J].*\\.h$"), InList, OutList);
 
   for ( pi = OutList.begin(); pi != OutList.end(); pi++ )
     cerr << *pi << endl;

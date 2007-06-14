@@ -293,16 +293,17 @@ namespace ASDCP {
 	MDD_DCTimedTextWrapping, // 255
 	MDD_DCTimedTextEssence, // 256
 	MDD_DCTimedTextDescriptor, // 257
-	MDD_DCTimedTextDescriptor_UTFEncoding, // 258
-	MDD_DCTimedTextDescriptor_RootNamespaceName, // 259
-	MDD_DCTimedTextResourceDescriptor, // 260
-	MDD_DCTimedTextResourceDescriptor_ResourcePackageID, // 261
-	MDD_DCTimedTextResourceDescriptor_ResourceMIMEType, // 262
-	MDD_DCTimedTextResourceDescriptor_ResourceSID, //263
-	MDD_GenericStreamPartition, // 264
-	MDD_DMSegment_DataDefinition, // 265
-	MDD_DMSegment_Duration, // 266
-	MDD_DMSegment_TrackIDList, // 267
+	MDD_DCTimedTextDescriptor_AssetID, // 258
+	MDD_DCTimedTextDescriptor_UTFEncoding, // 259
+	MDD_DCTimedTextDescriptor_RootNamespaceName, // 260
+	MDD_DCTimedTextResourceDescriptor, // 261
+	MDD_DCTimedTextResourceDescriptor_ResourceID, // 262
+	MDD_DCTimedTextResourceDescriptor_ResourceMIMEType, // 263
+	MDD_DCTimedTextResourceDescriptor_ResourceSID, //264
+	MDD_GenericStreamPartition, // 265
+	MDD_DMSegment_DataDefinition, // 266
+	MDD_DMSegment_Duration, // 267
+	MDD_DMSegment_TrackIDList, // 268
     }; // enum MDD_t
 } // namespaceASDCP
 

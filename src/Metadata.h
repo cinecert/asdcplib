@@ -572,6 +572,7 @@ namespace ASDCP
 	  ASDCP_NO_COPY_CONSTRUCT(DCTimedTextDescriptor);
 
 	public:
+	  UUID AssetID;
           UTF16String UTFEncoding;
           UTF16String RootNamespaceName;
 
@@ -591,7 +592,7 @@ namespace ASDCP
 	  ASDCP_NO_COPY_CONSTRUCT(DCTimedTextResourceDescriptor);
 
 	public:
-          UUID ResourcePackageID;
+          UUID ResourceID;
           UTF16String ResourceMIMEType;
           ui32_t ResourceSID;
 

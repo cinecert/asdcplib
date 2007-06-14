@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2003-2006, John Hurst
+Copyright (c) 2007, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -24,9 +24,9 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-/*! \file    AS_DCP_Subtitle.h
+/*! \file    AS_DCP_TimedText.h
     \version $Id$       
-    \brief   experimental AS-DCP subtitle
+    \brief   experimental AS-DCP timed-text container
 
     Implements Draft S429-5
 */
@@ -129,8 +129,8 @@ namespace ASDCP {
 	  // argument can be provided which will be used to retrieve the resource
 	  // having a particulat UUID. If a Resolver is not supplied, the default
 	  // internal resolver will return the contents of the file having the UUID
-	  // (with optional extension) as the filename. The filename must exist in
-	  // the same directory as the XML file opened with OpenRead().
+	  // as the filename. The filename must exist in the same directory as the
+	  // XML file opened with OpenRead().
 	  Result_t ReadAncillaryResource(const byte_t* uuid, FrameBuffer&,
 					 const IResourceResolver* Resolver = 0) const;
 	};

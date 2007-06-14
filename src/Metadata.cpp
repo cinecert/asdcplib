@@ -1577,6 +1577,7 @@ ASDCP::Result_t
 DCTimedTextDescriptor::InitFromTLVSet(TLVReader& TLVSet)
 {
   Result_t result = GenericDataEssenceDescriptor::InitFromTLVSet(TLVSet);
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(DCTimedTextDescriptor, AssetID));
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(DCTimedTextDescriptor, UTFEncoding));
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(DCTimedTextDescriptor, RootNamespaceName));
   return result;
@@ -1587,6 +1588,7 @@ ASDCP::Result_t
 DCTimedTextDescriptor::WriteToTLVSet(TLVWriter& TLVSet)
 {
   Result_t result = GenericDataEssenceDescriptor::WriteToTLVSet(TLVSet);
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(DCTimedTextDescriptor, AssetID));
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(DCTimedTextDescriptor, UTFEncoding));
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(DCTimedTextDescriptor, RootNamespaceName));
   return result;
@@ -1603,6 +1605,7 @@ DCTimedTextDescriptor::Dump(FILE* stream)
     stream = stderr;
 
   GenericDataEssenceDescriptor::Dump(stream);
+  fprintf(stream, "  %22s = %s\n",  "AssetID", AssetID.EncodeString(identbuf, IdentBufferLen));
   fprintf(stream, "  %22s = %s\n",  "UTFEncoding", UTFEncoding.EncodeString(identbuf, IdentBufferLen));
   fprintf(stream, "  %22s = %s\n",  "RootNamespaceName", RootNamespaceName.EncodeString(identbuf, IdentBufferLen));
 }
@@ -1631,7 +1634,7 @@ ASDCP::Result_t
 DCTimedTextResourceDescriptor::InitFromTLVSet(TLVReader& TLVSet)
 {
   Result_t result = InterchangeObject::InitFromTLVSet(TLVSet);
-  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(DCTimedTextResourceDescriptor, ResourcePackageID));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(DCTimedTextResourceDescriptor, ResourceID));
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(DCTimedTextResourceDescriptor, ResourceMIMEType));
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadUi32(OBJ_READ_ARGS(DCTimedTextResourceDescriptor, ResourceSID));
   return result;
@@ -1642,7 +1645,7 @@ ASDCP::Result_t
 DCTimedTextResourceDescriptor::WriteToTLVSet(TLVWriter& TLVSet)
 {
   Result_t result = InterchangeObject::WriteToTLVSet(TLVSet);
-  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(DCTimedTextResourceDescriptor, ResourcePackageID));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(DCTimedTextResourceDescriptor, ResourceID));
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(DCTimedTextResourceDescriptor, ResourceMIMEType));
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi32(OBJ_WRITE_ARGS(DCTimedTextResourceDescriptor, ResourceSID));
   return result;
@@ -1659,7 +1662,7 @@ DCTimedTextResourceDescriptor::Dump(FILE* stream)
     stream = stderr;
 
   InterchangeObject::Dump(stream);
-  fprintf(stream, "  %22s = %s\n",  "ResourcePackageID", ResourcePackageID.EncodeString(identbuf, IdentBufferLen));
+  fprintf(stream, "  %22s = %s\n",  "ResourceID", ResourceID.EncodeString(identbuf, IdentBufferLen));
   fprintf(stream, "  %22s = %s\n",  "ResourceMIMEType", ResourceMIMEType.EncodeString(identbuf, IdentBufferLen));
   fprintf(stream, "  %22s = %d\n",  "ResourceSID", ResourceSID);
 }
