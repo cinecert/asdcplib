@@ -114,6 +114,35 @@ namespace Kumu
     return Kumu::RESULT_NULL_STR; \
   }
 
+namespace Kumu
+{
+  // simple tracing mechanism
+  class DTrace_t
+  {
+    DTrace_t();
+    
+  protected:
+    const char* m_Label;
+    Result_t*   m_Watch;
+    int         m_Line;
+    const char* m_File;
+    int         m_Sequence;
+
+  public:
+    DTrace_t(const char* Label, Result_t* Watch, int Line, const char* File);
+    ~DTrace_t();
+  };
+}
+
+#ifdef KM_TRACE
+#define WDTRACE(l) DTrace_t __wl__Trace__((l), 0, __LINE__, __FILE__)
+#define WDTRACER(l,r) DTrace_t __wl__Trace__((l), &(r), __LINE__, __FILE__)
+#else
+#define WDTRACE(l)
+#define WDTRACER(l,r)
+#endif
+
+
 #endif // _KM_ERROR_H_
 
 //

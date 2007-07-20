@@ -163,7 +163,7 @@ ASDCP::TimedText::MXFReader::h__Reader::MD_to_TimedText_TDesc(TimedText::TimedTe
 	}
     }
 
-  return RESULT_OK;
+  return result;
 }
 
 //

@@ -141,6 +141,7 @@ Change History
  o Added namespace and parsing support (Expat) to Kumu::XMLElement
    (currently used only for Timed Text support). Also added some
    new accessors.
+ o Altered MXF::UTF16String to use mbtowc() and wctomb().
  o ...
 
 

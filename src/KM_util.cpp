@@ -111,6 +111,26 @@ Kumu::Result_t::~Result_t() {}
 
 
 //------------------------------------------------------------------------------------------
+// DTrace internals
+
+static int s_DTraceSequence = 0;
+
+Kumu::DTrace_t::DTrace_t(const char* Label, Kumu::Result_t* Watch, int Line, const char* File)
+  : m_Label(Label), m_Watch(Watch), m_Line(Line), m_File(File)
+{
+  m_Sequence = s_DTraceSequence++;
+  DefaultLogSink().Debug("@enter %s[%d] (%s at %d)\n", m_Label, m_Sequence, m_File, m_Line);
+}
+
+Kumu::DTrace_t::~DTrace_t()
+{
+  if ( m_Watch != 0  )
+    DefaultLogSink().Debug("@exit %s[%d]: %s\n", m_Label, m_Sequence, m_Watch->Label());
+  else
+    DefaultLogSink().Debug("@exit %s[%d]\n", m_Label, m_Sequence);
+}
+
+//------------------------------------------------------------------------------------------
 
 
 const char  fill = '=';
