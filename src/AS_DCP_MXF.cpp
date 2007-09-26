@@ -149,21 +149,12 @@ ASDCP::EssenceType(const char* filename, EssenceType_t& type)
       type = ESS_UNKNOWN;
       if ( ASDCP_SUCCESS(TestHeader.GetMDObjectByType(OBJ_TYPE_ARGS(RGBAEssenceDescriptor))) )
 	type = ESS_JPEG_2000;
-      else
-	{
-	  if ( ASDCP_SUCCESS(TestHeader.GetMDObjectByType(OBJ_TYPE_ARGS(WaveAudioDescriptor))) )
-	    type = ESS_PCM_24b_48k;
-	  else
-	    {
-	      if ( ASDCP_SUCCESS(TestHeader.GetMDObjectByType(OBJ_TYPE_ARGS(MPEG2VideoDescriptor))) )
-		type = ESS_MPEG2_VES;
-	      else
-		{
-		  if ( ASDCP_SUCCESS(TestHeader.GetMDObjectByType(OBJ_TYPE_ARGS(DCTimedTextDescriptor))) )
-		    type = ESS_TIMED_TEXT;
-		}
-	    }
-	}
+      else if ( ASDCP_SUCCESS(TestHeader.GetMDObjectByType(OBJ_TYPE_ARGS(WaveAudioDescriptor))) )
+	type = ESS_PCM_24b_48k;
+      else if ( ASDCP_SUCCESS(TestHeader.GetMDObjectByType(OBJ_TYPE_ARGS(MPEG2VideoDescriptor))) )
+	type = ESS_MPEG2_VES;
+      else if ( ASDCP_SUCCESS(TestHeader.GetMDObjectByType(OBJ_TYPE_ARGS(DCTimedTextDescriptor))) )
+	type = ESS_TIMED_TEXT;
     }
 
   return result;

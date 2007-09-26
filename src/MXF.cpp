@@ -164,8 +164,6 @@ ASDCP::MXF::RIP::Dump(FILE* stream)
 
   KLVFilePacket::Dump(stream, false);
   PairArray.Dump(stream, false);
-
-  fputs("==========================================================================\n", stream);
 }
 
 //------------------------------------------------------------------------------------------
@@ -391,8 +389,6 @@ ASDCP::MXF::Partition::Dump(FILE* stream)
   fprintf(stream, "  BodySID            = %u\n",  BodySID);
   fprintf(stream, "  OperationalPattern = %s\n",  OperationalPattern.EncodeString(identbuf, IdentBufferLen));
   fputs("Essence Containers:\n", stream); EssenceContainers.Dump(stream, false);
-
-  fputs("==========================================================================\n", stream);
 }
 
 
@@ -562,8 +558,6 @@ ASDCP::MXF::Primer::Dump(FILE* stream)
       const MDDEntry* Entry = Dict::FindUL((*i).UL.Value());
       fprintf(stream, "  %s %s\n", (*i).EncodeString(identbuf, IdentBufferLen), (Entry ? Entry->name : "Unknown"));
     }
-
-  fputs("==========================================================================\n", stream);
 }
 
 
@@ -925,16 +919,11 @@ ASDCP::MXF::OPAtomHeader::Dump(FILE* stream)
   if ( stream == 0 )
     stream = stderr;
 
-  if ( m_HasRIP )
-    m_RIP.Dump(stream);
-
   Partition::Dump(stream);
   m_Primer.Dump(stream);
 
   if ( m_Preface == 0 )
     fputs("No Preface loaded\n", stream);
-  else
-    m_Preface->Dump(stream);
 
   std::list<InterchangeObject*>::iterator i = m_PacketList->m_List.begin();
   for ( ; i != m_PacketList->m_List.end(); i++ )

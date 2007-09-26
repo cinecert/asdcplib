@@ -123,10 +123,10 @@ void
 usage(FILE* stream = stdout)
 {
   fprintf(stream, "\
-USAGE: %s -c <output-file> [-b <buffer-size>] [-d <duration>] [-e|-E]\n\
+USAGE: %s -c <output-file> [-3] [-b <buffer-size>] [-d <duration>] [-e|-E]\n\
        [-f <start-frame>] [-j <key-id-string>] [-k <key-string>] [-L] [-M]\n\
        [-p <frame-rate>] [-R] [-s <num>] [-v] [-W]\n\
-       <input-file> [<input-file2> ...]\n\
+       <input-file> [<input-file-2> ...]\n\
 \n\
        %s [-h|-help] [-V]\n\
 \n\
@@ -145,7 +145,10 @@ USAGE: %s -c <output-file> [-b <buffer-size>] [-d <duration>] [-e|-E]\n\
 
   fprintf(stream, "\
 Major modes:\n\
-  -c <output-file>  - Create AS-DCP track file from input(s)\n\
+  -3                - Create a stereoscopic image file. Expects two dir-\n\
+                      ectories of JP2K codestreams (directories must have\n\
+                      an equal number of frames; left eye is first).\n\
+  -c <output-file>  - Create an AS-DCP track file from input(s)\n\
   -g                - Generate a random 16 byte value to stdout\n\
   -G                - Perform GOP start lookup test on MXF+Interop MPEG file\n\
   -h | -help        - Show help\n\
@@ -238,6 +241,7 @@ public:
   bool   no_write_flag;  // true if no output files are to be written
   bool   version_flag;   // true if the version display option was selected
   bool   help_flag;      // true if the help display option was selected
+  bool   stereo_image_flag; // if true, expect stereoscopic JP2K input (left eye first)
   ui32_t start_frame;    // frame number to begin processing
   ui32_t duration;       // number of frames to be processed
   bool   duration_flag;  // true if duration argument given
@@ -273,7 +277,7 @@ public:
     mode(MMT_NONE), error_flag(true), key_flag(false), key_id_flag(false), encrypt_header_flag(true),
     write_hmac(true), read_hmac(false), split_wav(false), mono_wav(false),
     verbose_flag(false), fb_dump_size(0), showindex_flag(false), showheader_flag(false),
-    no_write_flag(false), version_flag(false), help_flag(false), start_frame(0),
+    no_write_flag(false), version_flag(false), help_flag(false), stereo_image_flag(false), start_frame(0),
     duration(0xffffffff), duration_flag(false), do_repeat(false), use_smpte_labels(false),
     picture_rate(24), fb_size(FRAME_BUFFER_SIZE), file_count(0), file_root(0), out_file(0)
   {
@@ -297,6 +301,7 @@ public:
 	      {
 	      case '1': mono_wav = true; break;
 	      case '2': split_wav = true; break;
+	      case '3': stereo_image_flag = true; break;
 	      case 'i': mode = MMT_INFO;	break;
 	      case 'G': mode = MMT_GOP_START; break;
 	      case 'W': no_write_flag = true; break;
@@ -686,6 +691,137 @@ gop_start_test(CommandOptions& Options)
 
 //------------------------------------------------------------------------------------------
 // JPEG 2000 essence
+
+// Write one or more plaintext JPEG 2000 stereoscopic codestream pairs to a plaintext ASDCP file
+// Write one or more plaintext JPEG 2000 stereoscopic codestream pairs to a ciphertext ASDCP file
+//
+Result_t
+write_JP2K_S_file(CommandOptions& Options)
+{
+  AESEncContext*          Context = 0;
+  HMACContext*            HMAC = 0;
+  JP2K::MXFSWriter        Writer;
+  JP2K::FrameBuffer       FrameBuffer(Options.fb_size);
+  JP2K::PictureDescriptor PDesc;
+  JP2K::SequenceParser    ParserLeft, ParserRight;
+  byte_t                  IV_buf[CBC_BLOCK_SIZE];
+  Kumu::FortunaRNG        RNG;
+
+  fprintf(stderr, "Hello, stereoscopic world!\n");
+
+  if ( Options.file_count != 2 )
+    {
+      fprintf(stderr, "Two inputs are required for stereoscopic option.\n");
+      return RESULT_FAIL;
+    }
+
+  // set up essence parser
+  Result_t result = ParserLeft.OpenRead(Options.filenames[0]);
+
+  if ( ASDCP_SUCCESS(result) )
+    result = ParserRight.OpenRead(Options.filenames[1]);
+
+  // set up MXF writer
+  if ( ASDCP_SUCCESS(result) )
+    {
+      ParserLeft.FillPictureDescriptor(PDesc);
+      PDesc.EditRate = Options.PictureRate();
+
+      if ( Options.verbose_flag )
+	{
+	  fputs("JPEG 2000 stereoscopic pictures\nPictureDescriptor:\n", stderr);
+          fprintf(stderr, "Frame Buffer size: %u\n", Options.fb_size);
+	  JP2K::PictureDescriptorDump(PDesc);
+	}
+    }
+
+  if ( ASDCP_SUCCESS(result) && ! Options.no_write_flag )
+    {
+      WriterInfo Info = s_MyInfo;  // fill in your favorite identifiers here
+      Kumu::GenRandomUUID(Info.AssetUUID);
+
+      if ( Options.use_smpte_labels )
+	{
+	  Info.LabelSetType = LS_MXF_SMPTE;
+	  fprintf(stderr, "ATTENTION! Writing SMPTE Universal Labels\n");
+	}
+
+      // configure encryption
+      if( Options.key_flag )
+	{
+	  Kumu::GenRandomUUID(Info.ContextID);
+	  Info.EncryptedEssence = true;
+
+	  if ( Options.key_id_flag )
+	    memcpy(Info.CryptographicKeyID, Options.key_id_value, UUIDlen);
+	  else
+	    RNG.FillRandom(Info.CryptographicKeyID, UUIDlen);
+
+	  Context = new AESEncContext;
+	  result = Context->InitKey(Options.key_value);
+
+	  if ( ASDCP_SUCCESS(result) )
+	    result = Context->SetIVec(RNG.FillRandom(IV_buf, CBC_BLOCK_SIZE));
+
+	  if ( ASDCP_SUCCESS(result) && Options.write_hmac )
+	    {
+	      Info.UsesHMAC = true;
+	      HMAC = new HMACContext;
+	      result = HMAC->InitKey(Options.key_value, Info.LabelSetType);
+	    }
+	}
+
+      if ( ASDCP_SUCCESS(result) )
+	result = Writer.OpenWrite(Options.out_file, Info, PDesc);
+    }
+
+  if ( ASDCP_SUCCESS(result) )
+    {
+      ui32_t duration = 0;
+      result = ParserLeft.Reset();
+      if ( ASDCP_SUCCESS(result) ) result = ParserRight.Reset();
+
+      while ( ASDCP_SUCCESS(result) && duration++ < Options.duration )
+	{
+	  result = ParserLeft.ReadFrame(FrameBuffer);
+
+	  if ( ASDCP_SUCCESS(result) )
+	    {
+	      if ( Options.verbose_flag )
+		FrameBuffer.Dump(stderr, Options.fb_dump_size);
+		  
+	      if ( Options.encrypt_header_flag )
+		FrameBuffer.PlaintextOffset(0);
+	    }
+
+	  if ( ASDCP_SUCCESS(result) && ! Options.no_write_flag )
+	    result = Writer.WriteFrame(FrameBuffer, JP2K::SP_LEFT, Context, HMAC);
+
+	  if ( ASDCP_SUCCESS(result) )
+	    result = ParserRight.ReadFrame(FrameBuffer);
+
+	  if ( ASDCP_SUCCESS(result) )
+	    {
+	      if ( Options.verbose_flag )
+		FrameBuffer.Dump(stderr, Options.fb_dump_size);
+		  
+	      if ( Options.encrypt_header_flag )
+		FrameBuffer.PlaintextOffset(0);
+	    }
+
+	  if ( ASDCP_SUCCESS(result) && ! Options.no_write_flag )
+	    result = Writer.WriteFrame(FrameBuffer, JP2K::SP_RIGHT, Context, HMAC);
+	}
+
+      if ( result == RESULT_ENDOFFILE )
+	result = RESULT_OK;
+    }
+
+  if ( ASDCP_SUCCESS(result) && ! Options.no_write_flag )
+    result = Writer.Finalize();
+
+  return result;
+}
 
 // Write one or more plaintext JPEG 2000 codestreams to a plaintext ASDCP file
 // Write one or more plaintext JPEG 2000 codestreams to a ciphertext ASDCP file
@@ -1422,6 +1558,11 @@ show_file_info(CommandOptions& Options)
       fputs("File essence type is JPEG 2000 pictures.\n", stdout);
       FileInfoWrapper<ASDCP::JP2K::MXFReader, MyPictureDescriptor>::file_info(Options);
     }
+  else if ( EssenceType == ESS_JPEG_2000_S )
+    {
+      fputs("File essence type is JPEG 2000 stereoscopic pictures.\n", stdout);
+      FileInfoWrapper<ASDCP::JP2K::MXFReader, MyPictureDescriptor>::file_info(Options);
+    }
 #ifdef ASDCP_WITH_TIMED_TEXT
   else if ( EssenceType == ESS_TIMED_TEXT )
     {
@@ -1612,7 +1753,12 @@ main(int argc, const char** argv)
 	      break;
 
 	    case ESS_JPEG_2000:
-	      result = write_JP2K_file(Options);
+	      if ( Options.stereo_image_flag )
+		result = write_JP2K_S_file(Options);
+
+	      else
+		result = write_JP2K_file(Options);
+
 	      break;
 
 	    case ESS_PCM_24b_48k:

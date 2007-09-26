@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2005-2006, John Hurst
+Copyright (c) 2005-2007, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -65,7 +65,7 @@ banner(FILE* stream = stdout)
 {
   fprintf(stream, "\n\
 %s (asdcplib %s)\n\n\
-Copyright (c) 2005-2006 John Hurst\n\
+Copyright (c) 2005-2007 John Hurst\n\
 %s is part of the asdcplib DCP tools package.\n\
 asdcplib may be copied only under the terms of the license found at\n\
 the top of every file in the asdcplib distribution kit.\n\n\
@@ -82,11 +82,10 @@ USAGE: %s [-r] [-v] <input-file> [<input-file2> ...]\n\
 \n\
        %s [-h|-help] [-V]\n\
 \n\
-  -h | -help  - Show help\n\
-  -r          - When KLV data is an OPAtom file, additionally\n\
-                display OPAtom headers\n\
-  -v          - Verbose. Prints informative messages to stderr\n\
-  -V          - Show version information\n\
+  -h | -help   - Show help\n\
+  -r           - When KLV data is an MXF OPAtom file, display OPAtom headers\n\
+  -v           - Verbose. Prints informative messages to stderr\n\
+  -V           - Show version information\n\
 \n\
   NOTES: o There is no option grouping, all options must be distinct arguments.\n\
          o All option arguments must be separated from the option by whitespace.\n\
@@ -123,7 +122,6 @@ USAGE: %s [-r] [-v] <input-file> [<input-file2> ...]\n\
 	   {
 	     switch ( argv[i][1] )
 	       {
-
 	       case 'h': help_flag = true; break;
 	       case 'r': read_mxf_flag = true; break;
 	       case 'V': version_flag = true; break;
@@ -202,9 +200,10 @@ main(int argc, const char** argv)
 	  if ( ASDCP_SUCCESS(result) )
 	    result = Header.InitFromFile(Reader);
 	  
-	  Header.Dump(stdout);
+	  if ( ASDCP_SUCCESS(result) )
+	    Header.Dump(stdout);
 	  
-	  if ( ASDCP_SUCCESS(result) && Header.m_RIP.PairArray.size() > 3 )
+	  if ( ASDCP_SUCCESS(result) && Header.m_RIP.PairArray.size() > 2 )
 	    {
 	      MXF::Array<MXF::RIP::Pair>::const_iterator pi = Header.m_RIP.PairArray.begin();
 
@@ -237,6 +236,9 @@ main(int argc, const char** argv)
 	      if ( ASDCP_SUCCESS(result) )
 		Index.Dump(stdout);
 	    }
+
+	  if ( ASDCP_SUCCESS(result) )
+	    Header.m_RIP.Dump(stdout);
 	}
       else // dump klv
 	{

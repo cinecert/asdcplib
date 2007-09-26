@@ -301,7 +301,6 @@ namespace ASDCP
 
       //---------------------------------------------------------------------------------
       //
-      class h__PacketList; // See MXF.cpp
       class Identification;
       class SourcePackage;
 

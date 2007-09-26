@@ -134,12 +134,12 @@ ASDCP::KLVPacket::Dump(FILE* stream, bool show_hex)
   if ( m_KeyStart != 0 )
     {
       assert(m_ValueStart);
-
-      for ( ui32_t i = 0; i < SMPTE_UL_LENGTH; i++ )
-	fprintf(stream, "%02x.", m_KeyStart[i]);
+      UL TmpUL(m_KeyStart);
+      char buf[64];
+      fprintf(stream, "%s", TmpUL.EncodeString(buf, 64));
 
       const MDDEntry* Entry = Dict::FindUL(m_KeyStart);
-      fprintf(stream, "\b  len: %7u (%s)\n", m_ValueLength, (Entry ? Entry->name : "Unknown"));
+      fprintf(stream, "  len: %7u (%s)\n", m_ValueLength, (Entry ? Entry->name : "Unknown"));
 
       if ( show_hex && m_ValueLength < 1000 )
 	Kumu::hexdump(m_ValueStart, Kumu::xmin(m_ValueLength, (ui32_t)64), stream);

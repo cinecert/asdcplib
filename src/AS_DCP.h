@@ -34,16 +34,21 @@ D-Cinema packaging working group DC28.20.  The file format, labeled
 AS-DCP, is described in series of separate documents which include but
 may not be limited to:
 
- o AS-DCP Track File Specification
- o AS-DCP Track File Essence Encryption Specification
- o AS-DCP Operational Constraints Specification
+ o MXF Interop Track File Specification
+ o MXF Interop Track File Essence Encryption Specification
+ o MXF Interop Operational Constraints Specification
+ o SMPTE 429-3-2006 Track File Specification
+ o SMPTE 429-4-2006 JPEG 2000 for D-Cinema
+ o SMPTE 429-5-200X Timed Text Track File
+ o SMPTE 429-6-2006 Essence Encryption Specification
+ o SMPTE 429-10-2006 Stereoscopic Image Track File
  o SMPTE 330M - UMID
  o SMPTE 336M - KLV
  o SMPTE 377M - MXF
  o SMPTE 390M - OP-Atom
  o SMPTE 379M - Generic Container
  o SMPTE 381M - MPEG2 picture
- o SMPTE XXXM - JPEG 2000 picture
+ o SMPTE 422M - JPEG 2000 picture
  o SMPTE 382M - WAV/PCM sound
  o IETF RFC 2104 - HMAC/SHA1
  o NIST FIPS 197 - AES (Rijndael)
@@ -143,8 +148,8 @@ namespace ASDCP {
   // in file format, and if no changes were made to AS_DCP.h, the new version would be
   // 1.0.1. If changes were also required in AS_DCP.h, the new version would be 1.1.1.
   const ui32_t VERSION_MAJOR = 1;
-  const ui32_t VERSION_APIMINOR = 1;
-  const ui32_t VERSION_IMPMINOR = 15;
+  const ui32_t VERSION_APIMINOR = 2;
+  const ui32_t VERSION_IMPMINOR = 16;
   const char* Version();
 
   // UUIDs are passed around as strings of UUIDlen bytes
@@ -190,6 +195,7 @@ namespace ASDCP {
   const Kumu::Result_t RESULT_CRYPT_INIT (-111, "Error initializing block cipher context.");
   const Kumu::Result_t RESULT_EMPTY_FB   (-112, "Empty frame buffer.");
   const Kumu::Result_t RESULT_KLV_CODING (-113, "KLV coding error.");
+  const Kumu::Result_t RESULT_SPHASE     (-114, "Stereoscopic phase mismatch.");
 
   //---------------------------------------------------------------------------------
   // file identification
@@ -203,6 +209,7 @@ namespace ASDCP {
     ESS_PCM_24b_48k, // the file contains one or more PCM audio pairs
     ESS_PCM_24b_96k, // the file contains one or more PCM audio pairs
     ESS_TIMED_TEXT,  // the file contains an XML timed text document and one or more resources
+    ESS_JPEG_2000_S, // the file contains one or more JPEG 2000 codestream pairs (stereoscopic)
   };
 
   // Determine the type of essence contained in the given MXF file. RESULT_OK
@@ -244,9 +251,10 @@ namespace ASDCP {
 
   // common edit rates, use these instead of hard coded constants
   const Rational EditRate_24(24,1);
-  const Rational EditRate_23_98(24000,1001);
+  const Rational EditRate_23_98(24000,1001); // Not a DCI-compliant value!
   const Rational EditRate_48(48,1);
   const Rational SampleRate_48k(48000,1);
+  const Rational SampleRate_96k(96000,1);
 
   // Non-reference counting container for internal member objects.
   // Please do not use this class for any other purpose.
@@ -1065,6 +1073,88 @@ namespace ASDCP {
 	  // Returns RESULT_INIT if the file is not open, failure if the frame number is
 	  // out of range, or if optional decrypt or HAMC operations fail.
 	  Result_t ReadFrame(ui32_t frame_number, FrameBuffer&, AESDecContext* = 0, HMACContext* = 0) const;
+
+	  // Print debugging information to stream
+	  void     DumpHeaderMetadata(FILE* = 0) const;
+	  void     DumpIndex(FILE* = 0) const;
+	};
+
+
+      // Stereoscopic Image support
+      //
+
+      enum StereoscopicPhase_t
+      {
+	SP_LEFT,
+	SP_RIGHT
+      };
+
+
+      class MXFSWriter
+	{
+	  class h__SWriter;
+	  mem_ptr<h__SWriter> m_Writer;
+	  ASDCP_NO_COPY_CONSTRUCT(MXFSWriter);
+
+	public:
+	  MXFSWriter();
+	  virtual ~MXFSWriter();
+
+	  // Open the file for writing. The file must not exist. Returns error if
+	  // the operation cannot be completed or if nonsensical data is discovered
+	  // in the essence descriptor.
+	  Result_t OpenWrite(const char* filename, const WriterInfo&,
+			     const PictureDescriptor&, ui32_t HeaderSize = 16384);
+
+	  // Writes a frame of essence to the MXF file. If the optional AESEncContext
+	  // argument is present, the essence is encrypted prior to writing.
+	  // Fails if the file is not open, is finalized, or an operating system
+	  // error occurs. Frames must be written in the proper phase (L-R-L-R),
+	  // RESULT_SPHASE will be returned if phase is reversed. The first frame
+	  // written must be left eye.
+	  Result_t WriteFrame(const FrameBuffer&, StereoscopicPhase_t phase,
+			      AESEncContext* = 0, HMACContext* = 0);
+
+	  // Closes the MXF file, writing the index and revised header.  Returns
+	  // RESULT_SPHASE if WriteFrame was called an odd number of times.
+	  Result_t Finalize();
+	};
+
+      //
+      class MXFSReader
+	{
+	  class h__SReader;
+	  mem_ptr<h__SReader> m_Reader;
+	  ASDCP_NO_COPY_CONSTRUCT(MXFSReader);
+
+	public:
+	  MXFSReader();
+	  virtual ~MXFSReader();
+
+	  // Open the file for reading. The file must exist. Returns error if the
+	  // operation cannot be completed.
+	  Result_t OpenRead(const char* filename) const;
+
+	  // Returns RESULT_INIT if the file is not open.
+	  Result_t Close() const;
+
+	  // Fill an AudioDescriptor struct with the values from the file's header.
+	  // Returns RESULT_INIT if the file is not open.
+	  Result_t FillPictureDescriptor(PictureDescriptor&) const;
+
+	  // Fill a WriterInfo struct with the values from the file's header.
+	  // Returns RESULT_INIT if the file is not open.
+	  Result_t FillWriterInfo(WriterInfo&) const;
+
+	  // Reads a frame of essence from the MXF file. If the optional AESEncContext
+	  // argument is present, the essence is decrypted after reading. If the MXF
+	  // file is encrypted and the AESDecContext argument is NULL, the frame buffer
+	  // will contain the ciphertext frame data. If the HMACContext argument is
+	  // not NULL, the HMAC will be calculated (if the file supports it).
+	  // Returns RESULT_INIT if the file is not open, failure if the frame number is
+	  // out of range, or if optional decrypt or HAMC operations fail.
+	  Result_t ReadFrame(ui32_t frame_number, StereoscopicPhase_t phase,
+			     FrameBuffer&, AESDecContext* = 0, HMACContext* = 0) const;
 
 	  // Print debugging information to stream
 	  void     DumpHeaderMetadata(FILE* = 0) const;

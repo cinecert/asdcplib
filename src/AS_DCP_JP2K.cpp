@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2004-2006, John Hurst
+Copyright (c) 2004-2007, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -35,6 +35,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //------------------------------------------------------------------------------------------
 
 static std::string JP2K_PACKAGE_LABEL = "File Package: SMPTE 429-4 frame wrapping of JPEG 2000 codestreams";
+static std::string JP2K_S_PACKAGE_LABEL = "File Package: SMPTE 429-10 frame wrapping of stereoscopic JPEG 2000 codestreams";
 static std::string PICT_DEF_LABEL = "Picture Track";
 
 //
@@ -309,9 +310,10 @@ ASDCP::JP2K::MXFReader::DumpIndex(FILE* stream) const
 //------------------------------------------------------------------------------------------
 
 
+using namespace ASDCP::JP2K;
 
 //
-class ASDCP::JP2K::MXFWriter::h__Writer : public ASDCP::h__Writer
+class lh__Writer : public ASDCP::h__Writer
 {
   JPEG2000PictureSubDescriptor* m_EssenceSubDescriptor;
 
@@ -319,17 +321,18 @@ public:
   PictureDescriptor m_PDesc;
   byte_t            m_EssenceUL[SMPTE_UL_LENGTH];
 
-  ASDCP_NO_COPY_CONSTRUCT(h__Writer);
+  ASDCP_NO_COPY_CONSTRUCT(lh__Writer);
 
-  h__Writer() : m_EssenceSubDescriptor(0) {
+  lh__Writer() : m_EssenceSubDescriptor(0) {
     memset(m_EssenceUL, 0, SMPTE_UL_LENGTH);
   }
 
-  ~h__Writer(){}
+  ~lh__Writer(){}
 
   Result_t OpenWrite(const char*, ui32_t HeaderSize);
-  Result_t SetSourceStream(const PictureDescriptor&);
-  Result_t WriteFrame(const FrameBuffer&, AESEncContext* = 0, HMACContext* = 0);
+  Result_t SetSourceStream(const PictureDescriptor&, const std::string& label,
+			   ASDCP::Rational LocalEditRate = ASDCP::Rational(0,0));
+  Result_t WriteFrame(const JP2K::FrameBuffer&, bool add_index, AESEncContext*, HMACContext*);
   Result_t Finalize();
   Result_t JP2K_PDesc_to_MD(JP2K::PictureDescriptor& PDesc);
 };
@@ -337,7 +340,7 @@ public:
 
 //
 ASDCP::Result_t
-ASDCP::JP2K::MXFWriter::h__Writer::JP2K_PDesc_to_MD(JP2K::PictureDescriptor& PDesc)
+lh__Writer::JP2K_PDesc_to_MD(JP2K::PictureDescriptor& PDesc)
 {
   assert(m_EssenceDescriptor);
   assert(m_EssenceSubDescriptor);
@@ -394,7 +397,7 @@ ASDCP::JP2K::MXFWriter::h__Writer::JP2K_PDesc_to_MD(JP2K::PictureDescriptor& PDe
 // Open the file for writing. The file must not exist. Returns error if
 // the operation cannot be completed.
 ASDCP::Result_t
-ASDCP::JP2K::MXFWriter::h__Writer::OpenWrite(const char* filename, ui32_t HeaderSize)
+lh__Writer::OpenWrite(const char* filename, ui32_t HeaderSize)
 {
   if ( ! m_State.Test_BEGIN() )
     return RESULT_STATE;
@@ -423,18 +426,21 @@ ASDCP::JP2K::MXFWriter::h__Writer::OpenWrite(const char* filename, ui32_t Header
 
 // Automatically sets the MXF file's metadata from the first jpeg codestream stream.
 ASDCP::Result_t
-ASDCP::JP2K::MXFWriter::h__Writer::SetSourceStream(const PictureDescriptor& PDesc)
+lh__Writer::SetSourceStream(const PictureDescriptor& PDesc, const std::string& label, ASDCP::Rational LocalEditRate)
 {
   if ( ! m_State.Test_INIT() )
     return RESULT_STATE;
+
+  if ( LocalEditRate == ASDCP::Rational(0,0) )
+    LocalEditRate = m_PDesc.EditRate;
 
   m_PDesc = PDesc;
   Result_t result = JP2K_PDesc_to_MD(m_PDesc);
 
   if ( ASDCP_SUCCESS(result) )
-      result = WriteMXFHeader(JP2K_PACKAGE_LABEL, UL(Dict::ul(MDD_JPEG_2000Wrapping)),
+      result = WriteMXFHeader(label, UL(Dict::ul(MDD_JPEG_2000Wrapping)),
 			      PICT_DEF_LABEL,     UL(Dict::ul(MDD_PictureDataDef)),
-			      m_PDesc.EditRate, 24 /* TCFrameRate */);
+			      LocalEditRate, 24 /* TCFrameRate */);
 
   if ( ASDCP_SUCCESS(result) )
     {
@@ -452,22 +458,23 @@ ASDCP::JP2K::MXFWriter::h__Writer::SetSourceStream(const PictureDescriptor& PDes
 // error occurs.
 //
 ASDCP::Result_t
-ASDCP::JP2K::MXFWriter::h__Writer::WriteFrame(const FrameBuffer& FrameBuf, AESEncContext* Ctx,
-					       HMACContext* HMAC)
+lh__Writer::WriteFrame(const JP2K::FrameBuffer& FrameBuf, bool add_index,
+		       AESEncContext* Ctx, HMACContext* HMAC)
 {
   Result_t result = RESULT_OK;
 
   if ( m_State.Test_READY() )
     result = m_State.Goto_RUNNING(); // first time through
  
-  IndexTableSegment::IndexEntry Entry;
-  Entry.StreamOffset = m_StreamOffset;
+  ui64_t StreamOffset = m_StreamOffset;
 
   if ( ASDCP_SUCCESS(result) )
     result = WriteEKLVPacket(FrameBuf, m_EssenceUL, Ctx, HMAC);
 
-  if ( ASDCP_SUCCESS(result) )
+  if ( ASDCP_SUCCESS(result) && add_index )
     {  
+      IndexTableSegment::IndexEntry Entry;
+      Entry.StreamOffset = StreamOffset;
       m_FooterPart.PushIndexEntry(Entry);
       m_FramesWritten++;
     }
@@ -479,7 +486,7 @@ ASDCP::JP2K::MXFWriter::h__Writer::WriteFrame(const FrameBuffer& FrameBuf, AESEn
 // Closes the MXF file, writing the index and other closing information.
 //
 ASDCP::Result_t
-ASDCP::JP2K::MXFWriter::h__Writer::Finalize()
+lh__Writer::Finalize()
 {
   if ( ! m_State.Test_RUNNING() )
     return RESULT_STATE;
@@ -488,6 +495,12 @@ ASDCP::JP2K::MXFWriter::h__Writer::Finalize()
 
   return WriteMXFFooter();
 }
+
+
+//
+class ASDCP::JP2K::MXFWriter::h__Writer : public lh__Writer
+{
+};
 
 
 //------------------------------------------------------------------------------------------
@@ -516,7 +529,7 @@ ASDCP::JP2K::MXFWriter::OpenWrite(const char* filename, const WriterInfo& Info,
   if ( ASDCP_SUCCESS(result) )
     {
       m_Writer->m_Info = Info;
-      result = m_Writer->SetSourceStream(PDesc);
+      result = m_Writer->SetSourceStream(PDesc, JP2K_PACKAGE_LABEL);
     }
 
   if ( ASDCP_FAILURE(result) )
@@ -536,7 +549,7 @@ ASDCP::JP2K::MXFWriter::WriteFrame(const FrameBuffer& FrameBuf, AESEncContext* C
   if ( m_Writer.empty() )
     return RESULT_INIT;
 
-  return m_Writer->WriteFrame(FrameBuf, Ctx, HMAC);
+  return m_Writer->WriteFrame(FrameBuf, true, Ctx, HMAC);
 }
 
 // Closes the MXF file, writing the index and other closing information.
@@ -549,6 +562,111 @@ ASDCP::JP2K::MXFWriter::Finalize()
   return m_Writer->Finalize();
 }
 
+
+//------------------------------------------------------------------------------------------
+//
+
+//
+class ASDCP::JP2K::MXFSWriter::h__SWriter : public lh__Writer
+{
+  StereoscopicPhase_t m_NextPhase;
+
+public:
+  h__SWriter() : m_NextPhase(SP_LEFT) {}
+
+  //
+  Result_t WriteFrame(const FrameBuffer& FrameBuf, StereoscopicPhase_t phase,
+		      AESEncContext* Ctx, HMACContext* HMAC)
+  {
+    if ( m_NextPhase != phase )
+      return RESULT_SPHASE;
+
+    if ( phase == SP_LEFT )
+      {
+	m_NextPhase = SP_RIGHT;
+	return lh__Writer::WriteFrame(FrameBuf, true, Ctx, HMAC);
+      }
+
+    m_NextPhase = SP_LEFT;
+    return lh__Writer::WriteFrame(FrameBuf, false, Ctx, HMAC);
+  }
+
+  //
+  Result_t Finalize()
+  {
+    if ( m_NextPhase != SP_LEFT )
+      return RESULT_SPHASE;
+
+    return lh__Writer::Finalize();
+  }
+};
+
+
+//
+ASDCP::JP2K::MXFSWriter::MXFSWriter()
+{
+}
+
+ASDCP::JP2K::MXFSWriter::~MXFSWriter()
+{
+}
+
+
+// Open the file for writing. The file must not exist. Returns error if
+// the operation cannot be completed.
+ASDCP::Result_t
+ASDCP::JP2K::MXFSWriter::OpenWrite(const char* filename, const WriterInfo& Info,
+				   const PictureDescriptor& PDesc, ui32_t HeaderSize)
+{
+  m_Writer = new h__SWriter;
+  
+  if ( PDesc.EditRate != ASDCP::EditRate_24 )
+    {
+      DefaultLogSink().Error("Stereoscopic wrapping requires 24 fps input streams.\n");
+      return RESULT_FORMAT;
+    }
+
+  Result_t result = m_Writer->OpenWrite(filename, HeaderSize);
+
+  if ( ASDCP_SUCCESS(result) )
+    {
+      m_Writer->m_Info = Info;
+      PictureDescriptor TmpPDesc = PDesc;
+      TmpPDesc.EditRate = ASDCP::EditRate_48;
+
+      result = m_Writer->SetSourceStream(TmpPDesc, JP2K_S_PACKAGE_LABEL, ASDCP::EditRate_24);
+    }
+
+  if ( ASDCP_FAILURE(result) )
+    m_Writer.release();
+
+  return result;
+}
+
+
+// Writes a frame of essence to the MXF file. If the optional AESEncContext
+// argument is present, the essence is encrypted prior to writing.
+// Fails if the file is not open, is finalized, or an operating system
+// error occurs.
+ASDCP::Result_t
+ASDCP::JP2K::MXFSWriter::WriteFrame(const FrameBuffer& FrameBuf, StereoscopicPhase_t phase,
+				    AESEncContext* Ctx, HMACContext* HMAC)
+{
+  if ( m_Writer.empty() )
+    return RESULT_INIT;
+
+  return m_Writer->WriteFrame(FrameBuf, phase, Ctx, HMAC);
+}
+
+// Closes the MXF file, writing the index and other closing information.
+ASDCP::Result_t
+ASDCP::JP2K::MXFSWriter::Finalize()
+{
+  if ( m_Writer.empty() )
+    return RESULT_INIT;
+
+  return m_Writer->Finalize();
+}
 
 //
 // end AS_DCP_JP2K.cpp
