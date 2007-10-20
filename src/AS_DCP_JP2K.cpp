@@ -31,12 +31,22 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "AS_DCP_internal.h"
 
+using namespace ASDCP::JP2K;
+
 
 //------------------------------------------------------------------------------------------
 
 static std::string JP2K_PACKAGE_LABEL = "File Package: SMPTE 429-4 frame wrapping of JPEG 2000 codestreams";
 static std::string JP2K_S_PACKAGE_LABEL = "File Package: SMPTE 429-10 frame wrapping of stereoscopic JPEG 2000 codestreams";
 static std::string PICT_DEF_LABEL = "Picture Track";
+
+
+//22
+
+// 7f18 7f00 7f00 7ebc 76ea 76ea 76bc 6f4c 6f4c 6f64 5803 5803 5845 5fd2 5fd2 5f61
+
+
+int s_exp_lookup[16] = { 0, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024,2048, 4096, 8192, 16384, 32768 };
 
 //
 void
@@ -60,8 +70,8 @@ ASDCP::JP2K::PictureDescriptorDump(const PictureDescriptor& PDesc, FILE* stream)
            XTOsize: %u\n\
            YTOsize: %u\n\
  ContainerDuration: %u\n",
-	  PDesc.AspectRatio.Numerator ,PDesc.AspectRatio.Denominator,
-	  PDesc.EditRate.Numerator ,PDesc.EditRate.Denominator,
+	  PDesc.AspectRatio.Numerator, PDesc.AspectRatio.Denominator,
+	  PDesc.EditRate.Numerator, PDesc.EditRate.Denominator,
 	  PDesc.StoredWidth,
 	  PDesc.StoredHeight,
 	  PDesc.Rsize,
@@ -76,61 +86,85 @@ ASDCP::JP2K::PictureDescriptorDump(const PictureDescriptor& PDesc, FILE* stream)
 	  PDesc.ContainerDuration
 	  );
 
-  fprintf(stream, "Color Components:\n");
+  fprintf(stream, "-- JPEG 2000 Metadata --\n");
+  fprintf(stream, "    ImageComponents:\n");
+  fprintf(stream, "  bits  h-sep v-sep\n");
 
   for ( ui32_t i = 0; i < PDesc.Csize; i++ )
     {
-      fprintf(stream, "  %u.%u.%u\n",
-	      PDesc.ImageComponents[i].Ssize,
+      fprintf(stream, "  %4d  %5d %5d\n",
+	      PDesc.ImageComponents[i].Ssize + 1, // See ISO 15444-1, Table A11, for the origin of '+1'
 	      PDesc.ImageComponents[i].XRsize,
 	      PDesc.ImageComponents[i].YRsize
 	      );
     }
+  
+  fprintf(stream, "               Scod: %hd\n", PDesc.CodingStyleDefault.Scod);
+  fprintf(stream, "   ProgressionOrder: %hd\n", PDesc.CodingStyleDefault.SGcod.ProgressionOrder);
+  fprintf(stream, "     NumberOfLayers: %hd\n",
+	  KM_i16_BE(Kumu::cp2i<ui16_t>(PDesc.CodingStyleDefault.SGcod.NumberOfLayers)));
 
-  const ui32_t tmp_buf_len = 256;
-  char tmp_buf[tmp_buf_len];
+  fprintf(stream, " MultiCompTransform: %hd\n", PDesc.CodingStyleDefault.SGcod.MultiCompTransform);
+  fprintf(stream, "DecompositionLevels: %hd\n", PDesc.CodingStyleDefault.SPcod.DecompositionLevels);
+  fprintf(stream, "     CodeblockWidth: %hd\n", PDesc.CodingStyleDefault.SPcod.CodeblockWidth);
+  fprintf(stream, "    CodeblockHeight: %hd\n", PDesc.CodingStyleDefault.SPcod.CodeblockHeight);
+  fprintf(stream, "     CodeblockStyle: %hd\n", PDesc.CodingStyleDefault.SPcod.CodeblockStyle);
+  fprintf(stream, "     Transformation: %hd\n", PDesc.CodingStyleDefault.SPcod.Transformation);
 
-  if ( PDesc.CodingStyleLength )
-    fprintf(stream, "Default Coding (%u): %s\n",
-	    PDesc.CodingStyleLength,
-	    Kumu::bin2hex(PDesc.CodingStyle, PDesc.CodingStyleLength, tmp_buf, tmp_buf_len)
+
+  ui32_t precinct_set_size = 0, i;
+
+  for ( i = 0; PDesc.CodingStyleDefault.SPcod.PrecinctSize[i] != 0 && i < MaxPrecincts; i++ )
+    precinct_set_size++;
+
+  fprintf(stream, "          Precincts: %hd\n", precinct_set_size);
+  fprintf(stream, "precinct dimensions:\n");
+
+  for ( i = 0; i < precinct_set_size; i++ )
+    fprintf(stream, "    %d: %d x %d\n", i + 1,
+	    s_exp_lookup[PDesc.CodingStyleDefault.SPcod.PrecinctSize[i]&0x0f],
+	    s_exp_lookup[(PDesc.CodingStyleDefault.SPcod.PrecinctSize[i]>>4)&0x0f]
 	    );
 
-  if ( PDesc.QuantDefaultLength )
-    fprintf(stream, "Quantization Default (%u): %s\n",
-	    PDesc.QuantDefaultLength,
-	    Kumu::bin2hex(PDesc.QuantDefault, PDesc.QuantDefaultLength, tmp_buf, tmp_buf_len)
-	    );
+  fprintf(stream, "               Sqcd: %hd\n", PDesc.QuantizationDefault.Sqcd);
+
+  char tmp_buf[MaxDefaults*2];
+  fprintf(stream, "              SPqcd: %s\n",
+	  Kumu::bin2hex(PDesc.QuantizationDefault.SPqcd, PDesc.QuantizationDefault.SPqcdLength,
+			tmp_buf, MaxDefaults*2)
+	  );
 }
 
 //------------------------------------------------------------------------------------------
 //
 // hidden, internal implementation of JPEG 2000 reader
 
-class ASDCP::JP2K::MXFReader::h__Reader : public ASDCP::h__Reader
+class lh__Reader : public ASDCP::h__Reader
 {
   RGBAEssenceDescriptor*        m_EssenceDescriptor;
   JPEG2000PictureSubDescriptor* m_EssenceSubDescriptor;
+  ASDCP::Rational               m_EditRate;
+  EssenceType_t                 m_Format;
 
-  ASDCP_NO_COPY_CONSTRUCT(h__Reader);
+  ASDCP_NO_COPY_CONSTRUCT(lh__Reader);
 
 public:
   PictureDescriptor m_PDesc;        // codestream parameter list
 
-  h__Reader() : m_EssenceDescriptor(0), m_EssenceSubDescriptor(0) {}
-  Result_t    OpenRead(const char*);
-  Result_t    ReadFrame(ui32_t, FrameBuffer&, AESDecContext*, HMACContext*);
+  lh__Reader() : m_EssenceDescriptor(0), m_EssenceSubDescriptor(0), m_Format(ESS_UNKNOWN) {}
+  Result_t    OpenRead(const char*, EssenceType_t);
+  Result_t    ReadFrame(ui32_t, JP2K::FrameBuffer&, AESDecContext*, HMACContext*);
   Result_t    MD_to_JP2K_PDesc(JP2K::PictureDescriptor& PDesc);
 };
 
 //
 ASDCP::Result_t
-ASDCP::JP2K::MXFReader::h__Reader::MD_to_JP2K_PDesc(JP2K::PictureDescriptor& PDesc)
+lh__Reader::MD_to_JP2K_PDesc(JP2K::PictureDescriptor& PDesc)
 {
   memset(&PDesc, 0, sizeof(PDesc));
   MXF::RGBAEssenceDescriptor* PDescObj = (MXF::RGBAEssenceDescriptor*)m_EssenceDescriptor;
 
-  PDesc.EditRate           = PDescObj->SampleRate;
+  PDesc.EditRate           = m_EditRate;
   PDesc.ContainerDuration  = PDescObj->ContainerDuration;
   PDesc.StoredWidth        = PDescObj->StoredWidth;
   PDesc.StoredHeight       = PDescObj->StoredHeight;
@@ -159,12 +193,18 @@ ASDCP::JP2K::MXFReader::h__Reader::MD_to_JP2K_PDesc(JP2K::PictureDescriptor& PDe
 	DefaultLogSink().Error("Unexpected PictureComponentSizing size: %u, should be 17\n", tmp_size);
 
       // CodingStyleDefault
-      if ( ( PDesc.CodingStyleLength = m_EssenceSubDescriptor->CodingStyleDefault.Length() ) != 0 )
-	memcpy(PDesc.CodingStyle, m_EssenceSubDescriptor->CodingStyleDefault.RoData(), PDesc.CodingStyleLength);
+      memset(&m_PDesc.CodingStyleDefault, 0, sizeof(CodingStyleDefault_t));
+      memcpy(&m_PDesc.CodingStyleDefault,
+	     m_EssenceSubDescriptor->CodingStyleDefault.RoData(),
+	     m_EssenceSubDescriptor->CodingStyleDefault.Length());
 
       // QuantizationDefault
-      if ( ( PDesc.QuantDefaultLength = m_EssenceSubDescriptor->QuantizationDefault.Length() ) != 0 )
-	memcpy(PDesc.QuantDefault, m_EssenceSubDescriptor->QuantizationDefault.RoData(), PDesc.QuantDefaultLength);
+      memset(&m_PDesc.QuantizationDefault, 0, sizeof(QuantizationDefault_t));
+      memcpy(&m_PDesc.QuantizationDefault,
+	     m_EssenceSubDescriptor->QuantizationDefault.RoData(),
+	     m_EssenceSubDescriptor->QuantizationDefault.Length());
+
+      m_PDesc.QuantizationDefault.SPqcdLength = m_EssenceSubDescriptor->QuantizationDefault.Length() - 1;
     }
 
   return RESULT_OK;
@@ -173,16 +213,49 @@ ASDCP::JP2K::MXFReader::h__Reader::MD_to_JP2K_PDesc(JP2K::PictureDescriptor& PDe
 //
 //
 ASDCP::Result_t
-ASDCP::JP2K::MXFReader::h__Reader::OpenRead(const char* filename)
+lh__Reader::OpenRead(const char* filename, EssenceType_t type)
 {
   Result_t result = OpenMXFRead(filename);
 
   if( ASDCP_SUCCESS(result) )
     {
-      if ( m_EssenceDescriptor == 0 )
+      m_HeaderPart.GetMDObjectByType(OBJ_TYPE_ARGS(RGBAEssenceDescriptor),
+				     (InterchangeObject**)&m_EssenceDescriptor);
+      m_HeaderPart.GetMDObjectByType(OBJ_TYPE_ARGS(JPEG2000PictureSubDescriptor),
+				     (InterchangeObject**)&m_EssenceSubDescriptor);
+
+      std::list<InterchangeObject*> ObjectList;
+      m_HeaderPart.GetMDObjectsByType(OBJ_TYPE_ARGS(Track), ObjectList);
+
+      if ( ObjectList.empty() )
 	{
-	  m_HeaderPart.GetMDObjectByType(OBJ_TYPE_ARGS(RGBAEssenceDescriptor), (InterchangeObject**)&m_EssenceDescriptor);
-	  m_HeaderPart.GetMDObjectByType(OBJ_TYPE_ARGS(JPEG2000PictureSubDescriptor), (InterchangeObject**)&m_EssenceSubDescriptor);
+	  DefaultLogSink().Error("MXF Metadata contains no Track Sets\n");
+	  return RESULT_FORMAT;
+	}
+
+      m_EditRate = ((Track*)ObjectList.front())->EditRate;
+
+      if ( type == ASDCP::ESS_JPEG_2000 )
+	{
+	  if ( m_EditRate != m_EssenceDescriptor->SampleRate )
+	    {
+	      DefaultLogSink().Error("EditRate and SampleRate do not match (%.03f, %.03f)\n",
+				     m_EditRate.Quotient(), m_EssenceDescriptor->SampleRate.Quotient());
+	      return RESULT_SFORMAT;
+	    }
+	}
+      else if ( type == ASDCP::ESS_JPEG_2000_S )
+	{
+	  if ( ! ( m_EditRate == EditRate_24 && m_EssenceDescriptor->SampleRate == EditRate_48 ) )
+	    {
+	      DefaultLogSink().Error("EditRate and SampleRate not correct for 24/48 stereoscopic essence\n");
+	      return RESULT_FORMAT;
+	    }
+	}
+      else
+	{
+	  DefaultLogSink().Error("'type' argument unexpected: %x\n", type);
+	  return RESULT_STATE;
 	}
 
       result = MD_to_JP2K_PDesc(m_PDesc);
@@ -200,14 +273,22 @@ ASDCP::JP2K::MXFReader::h__Reader::OpenRead(const char* filename)
 //
 //
 ASDCP::Result_t
-ASDCP::JP2K::MXFReader::h__Reader::ReadFrame(ui32_t FrameNum, FrameBuffer& FrameBuf,
-					      AESDecContext* Ctx, HMACContext* HMAC)
+lh__Reader::ReadFrame(ui32_t FrameNum, JP2K::FrameBuffer& FrameBuf,
+		      AESDecContext* Ctx, HMACContext* HMAC)
 {
   if ( ! m_File.IsOpen() )
     return RESULT_INIT;
 
   return ReadEKLVFrame(FrameNum, FrameBuf, Dict::ul(MDD_JPEG2000Essence), Ctx, HMAC);
 }
+
+
+//
+class ASDCP::JP2K::MXFReader::h__Reader : public lh__Reader
+{
+};
+
+
 
 //------------------------------------------------------------------------------------------
 
@@ -245,7 +326,7 @@ ASDCP::JP2K::MXFReader::~MXFReader()
 ASDCP::Result_t
 ASDCP::JP2K::MXFReader::OpenRead(const char* filename) const
 {
-  return m_Reader->OpenRead(filename);
+  return m_Reader->OpenRead(filename, ASDCP::ESS_JPEG_2000);
 }
 
 //
@@ -309,8 +390,101 @@ ASDCP::JP2K::MXFReader::DumpIndex(FILE* stream) const
 
 //------------------------------------------------------------------------------------------
 
+class ASDCP::JP2K::MXFSReader::h__SReader : public lh__Reader
+{
+  StereoscopicPhase_t m_NextPhase;
 
-using namespace ASDCP::JP2K;
+public:
+  h__SReader() : m_NextPhase(SP_LEFT) {}
+
+  //
+  Result_t ReadFrame(ui32_t FrameNum, StereoscopicPhase_t phase, FrameBuffer& FrameBuf,
+		     AESDecContext* Ctx, HMACContext* HMAC) const
+  {
+    return Kumu::RESULT_NOTIMPL;
+  }
+};
+
+
+
+ASDCP::JP2K::MXFSReader::MXFSReader()
+{
+  m_Reader = new h__SReader;
+}
+
+
+ASDCP::JP2K::MXFSReader::~MXFSReader()
+{
+}
+
+// Open the file for reading. The file must exist. Returns error if the
+// operation cannot be completed.
+ASDCP::Result_t
+ASDCP::JP2K::MXFSReader::OpenRead(const char* filename) const
+{
+  return m_Reader->OpenRead(filename, ASDCP::ESS_JPEG_2000_S);
+}
+
+//
+ASDCP::Result_t
+ASDCP::JP2K::MXFSReader::ReadFrame(ui32_t FrameNum, StereoscopicPhase_t phase, FrameBuffer& FrameBuf,
+				   AESDecContext* Ctx, HMACContext* HMAC) const
+{
+  if ( m_Reader && m_Reader->m_File.IsOpen() )
+    return m_Reader->ReadFrame(FrameNum, phase, FrameBuf, Ctx, HMAC);
+
+  return RESULT_INIT;
+}
+
+
+// Fill the struct with the values from the file's header.
+// Returns RESULT_INIT if the file is not open.
+ASDCP::Result_t
+ASDCP::JP2K::MXFSReader::FillPictureDescriptor(PictureDescriptor& PDesc) const
+{
+  if ( m_Reader && m_Reader->m_File.IsOpen() )
+    {
+      PDesc = m_Reader->m_PDesc;
+      return RESULT_OK;
+    }
+
+  return RESULT_INIT;
+}
+
+
+// Fill the struct with the values from the file's header.
+// Returns RESULT_INIT if the file is not open.
+ASDCP::Result_t
+ASDCP::JP2K::MXFSReader::FillWriterInfo(WriterInfo& Info) const
+{
+  if ( m_Reader && m_Reader->m_File.IsOpen() )
+    {
+      Info = m_Reader->m_Info;
+      return RESULT_OK;
+    }
+
+  return RESULT_INIT;
+}
+
+//
+void
+ASDCP::JP2K::MXFSReader::DumpHeaderMetadata(FILE* stream) const
+{
+  if ( m_Reader->m_File.IsOpen() )
+    m_Reader->m_HeaderPart.Dump(stream);
+}
+
+
+//
+void
+ASDCP::JP2K::MXFSReader::DumpIndex(FILE* stream) const
+{
+  if ( m_Reader->m_File.IsOpen() )
+    m_Reader->m_FooterPart.Dump(stream);
+}
+
+//------------------------------------------------------------------------------------------
+
 
 //
 class lh__Writer : public ASDCP::h__Writer
@@ -374,21 +548,28 @@ lh__Writer::JP2K_PDesc_to_MD(JP2K::PictureDescriptor& PDesc)
   m_EssenceSubDescriptor->YTOsize = PDesc.YTOsize;
   m_EssenceSubDescriptor->Csize = PDesc.Csize;
 
-  const ui32_t tmp_buffer_len = 64;
+  const ui32_t tmp_buffer_len = 1024;
   byte_t tmp_buffer[tmp_buffer_len];
 
-  *(ui32_t*)tmp_buffer = KM_i32_BE(3L); // three components
-  *(ui32_t*)(tmp_buffer+4) = KM_i32_BE(3L);
-  memcpy(tmp_buffer + 8, &PDesc.ImageComponents, sizeof(ASDCP::JP2K::ImageComponent) * 3L);
+  *(ui32_t*)tmp_buffer = KM_i32_BE(MaxComponents); // three components
+  *(ui32_t*)(tmp_buffer+4) = KM_i32_BE(sizeof(ASDCP::JP2K::ImageComponent_t));
+  memcpy(tmp_buffer + 8, &PDesc.ImageComponents, sizeof(ASDCP::JP2K::ImageComponent_t) * MaxComponents);
 
-  memcpy(m_EssenceSubDescriptor->PictureComponentSizing.Data(), tmp_buffer, 17);
-  m_EssenceSubDescriptor->PictureComponentSizing.Length(17);
+  const ui32_t pcomp_size = (sizeof(int) * 2) + (sizeof(ASDCP::JP2K::ImageComponent_t) * MaxComponents);
+  memcpy(m_EssenceSubDescriptor->PictureComponentSizing.Data(), tmp_buffer, pcomp_size);
+  m_EssenceSubDescriptor->PictureComponentSizing.Length(pcomp_size);
 
-  memcpy(m_EssenceSubDescriptor->CodingStyleDefault.Data(), PDesc.CodingStyle, PDesc.CodingStyleLength);
-  m_EssenceSubDescriptor->CodingStyleDefault.Length(PDesc.CodingStyleLength);
+  ui32_t precinct_set_size = 0, i;
+  for ( i = 0; PDesc.CodingStyleDefault.SPcod.PrecinctSize[i] != 0 && i < MaxPrecincts; i++ )
+    precinct_set_size++;
 
-  memcpy(m_EssenceSubDescriptor->QuantizationDefault.Data(), PDesc.QuantDefault, PDesc.QuantDefaultLength);
-  m_EssenceSubDescriptor->QuantizationDefault.Length(PDesc.QuantDefaultLength);
+  ui32_t csd_size = sizeof(CodingStyleDefault_t) - MaxPrecincts + precinct_set_size;
+  memcpy(m_EssenceSubDescriptor->CodingStyleDefault.Data(), &PDesc.CodingStyleDefault, csd_size);
+  m_EssenceSubDescriptor->CodingStyleDefault.Length(csd_size);
+
+  ui32_t qdflt_size = PDesc.QuantizationDefault.SPqcdLength + 1;
+  memcpy(m_EssenceSubDescriptor->QuantizationDefault.Data(), &PDesc.QuantizationDefault, qdflt_size);
+  m_EssenceSubDescriptor->QuantizationDefault.Length(qdflt_size);
 
   return RESULT_OK;
 }
@@ -432,7 +613,7 @@ lh__Writer::SetSourceStream(const PictureDescriptor& PDesc, const std::string& l
     return RESULT_STATE;
 
   if ( LocalEditRate == ASDCP::Rational(0,0) )
-    LocalEditRate = m_PDesc.EditRate;
+    LocalEditRate = PDesc.EditRate;
 
   m_PDesc = PDesc;
   Result_t result = JP2K_PDesc_to_MD(m_PDesc);

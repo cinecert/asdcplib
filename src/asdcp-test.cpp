@@ -56,11 +56,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <WavFileWriter.h>
 #include <MXF.h>
 #include <Metadata.h>
-
-#ifdef ASDCP_WITH_TIMED_TEXT
-#include <AS_DCP_TimedText.h>
-#endif
-
 #include <openssl/sha.h>
 
 using namespace ASDCP;
@@ -707,8 +702,6 @@ write_JP2K_S_file(CommandOptions& Options)
   byte_t                  IV_buf[CBC_BLOCK_SIZE];
   Kumu::FortunaRNG        RNG;
 
-  fprintf(stderr, "Hello, stereoscopic world!\n");
-
   if ( Options.file_count != 2 )
     {
       fprintf(stderr, "Two inputs are required for stereoscopic option.\n");
@@ -822,6 +815,100 @@ write_JP2K_S_file(CommandOptions& Options)
 
   return result;
 }
+
+// Read one or more plaintext JPEG 2000 stereoscopic codestream pairs from a plaintext ASDCP file
+// Read one or more plaintext JPEG 2000 stereoscopic codestream pairs from a ciphertext ASDCP file
+// Read one or more ciphertext JPEG 2000 stereoscopic codestream pairs from a ciphertext ASDCP file
+Result_t
+read_JP2K_S_file(CommandOptions& Options)
+{
+  AESDecContext*     Context = 0;
+  HMACContext*       HMAC = 0;
+  JP2K::MXFSReader    Reader;
+  JP2K::FrameBuffer  FrameBuffer(Options.fb_size);
+  ui32_t             frame_count = 0;
+
+  Result_t result = Reader.OpenRead(Options.filenames[0]);
+
+  if ( ASDCP_SUCCESS(result) )
+    {
+      JP2K::PictureDescriptor PDesc;
+      Reader.FillPictureDescriptor(PDesc);
+
+      frame_count = PDesc.ContainerDuration;
+
+      if ( Options.verbose_flag )
+	{
+	  fprintf(stderr, "Frame Buffer size: %u\n", Options.fb_size);
+	  JP2K::PictureDescriptorDump(PDesc);
+	}
+    }
+
+  if ( ASDCP_SUCCESS(result) && Options.key_flag )
+    {
+      Context = new AESDecContext;
+      result = Context->InitKey(Options.key_value);
+
+      if ( ASDCP_SUCCESS(result) && Options.read_hmac )
+	{
+	  WriterInfo Info;
+	  Reader.FillWriterInfo(Info);
+
+	  if ( Info.UsesHMAC )
+	    {
+	      HMAC = new HMACContext;
+	      result = HMAC->InitKey(Options.key_value, Info.LabelSetType);
+	    }
+	  else
+	    {
+	      fputs("File does not contain HMAC values, ignoring -m option.\n", stderr);
+	    }
+	}
+    }
+
+  const int filename_max = 1024;
+  char filename[filename_max];
+  ui32_t last_frame = Options.start_frame + ( Options.duration ? Options.duration : frame_count);
+  if ( last_frame > frame_count )
+    last_frame = frame_count;
+
+  for ( ui32_t i = Options.start_frame; ASDCP_SUCCESS(result) && i < last_frame; i++ )
+    {
+      result = Reader.ReadFrame(i, JP2K::SP_LEFT, FrameBuffer, Context, HMAC);
+
+      if ( ASDCP_SUCCESS(result) )
+	{
+	  Kumu::FileWriter OutFile;
+	  ui32_t write_count;
+	  snprintf(filename, filename_max, "%s%06uL.j2c", Options.file_root, i);
+	  result = OutFile.OpenWrite(filename);
+
+	  if ( ASDCP_SUCCESS(result) )
+	    result = OutFile.Write(FrameBuffer.Data(), FrameBuffer.Size(), &write_count);
+
+	  if ( Options.verbose_flag )
+	    FrameBuffer.Dump(stderr, Options.fb_dump_size);
+	}
+
+      if ( ASDCP_SUCCESS(result) )
+	result = Reader.ReadFrame(i, JP2K::SP_RIGHT, FrameBuffer, Context, HMAC);
+
+      if ( ASDCP_SUCCESS(result) )
+	{
+	  Kumu::FileWriter OutFile;
+	  ui32_t write_count;
+	  snprintf(filename, filename_max, "%s%06uR.j2c", Options.file_root, i);
+	  result = OutFile.OpenWrite(filename);
+
+	  if ( ASDCP_SUCCESS(result) )
+	    result = OutFile.Write(FrameBuffer.Data(), FrameBuffer.Size(), &write_count);
+	}
+    }
+
+  return result;
+}
+
+
 
 // Write one or more plaintext JPEG 2000 codestreams to a plaintext ASDCP file
 // Write one or more plaintext JPEG 2000 codestreams to a ciphertext ASDCP file
@@ -1240,8 +1327,6 @@ read_PCM_file(CommandOptions& Options)
 }
 
 
-#ifdef ASDCP_WITH_TIMED_TEXT
-
 //------------------------------------------------------------------------------------------
 // TimedText essence
 
@@ -1433,7 +1518,6 @@ read_timed_text_file(CommandOptions& Options)
 
   return result;
 }
-#endif // ASDCP_WITH_TIMED_TEXT
 
 //------------------------------------------------------------------------------------------
 //
@@ -1467,6 +1551,18 @@ class MyPictureDescriptor : public JP2K::PictureDescriptor
   }
 };
 
+class MyStereoPictureDescriptor : public JP2K::PictureDescriptor
+{
+ public:
+  void FillDescriptor(JP2K::MXFSReader& Reader) {
+    Reader.FillPictureDescriptor(*this);
+  }
+
+  void Dump(FILE* stream) {
+    JP2K::PictureDescriptorDump(*this, stream);
+  }
+};
+
 class MyAudioDescriptor : public PCM::AudioDescriptor
 {
  public:
@@ -1479,7 +1575,6 @@ class MyAudioDescriptor : public PCM::AudioDescriptor
   }
 };
 
-#ifdef ASDCP_WITH_TIMED_TEXT
 class MyTextDescriptor : public TimedText::TimedTextDescriptor
 {
  public:
@@ -1491,15 +1586,16 @@ class MyTextDescriptor : public TimedText::TimedTextDescriptor
     TimedText::DescriptorDump(*this, stream);
   }
 };
-#endif
 
 // MSVC didn't like the function template, so now it's a static class method
 template<class ReaderT, class DescriptorT>
 class FileInfoWrapper
 {
 public:
-  static void file_info(CommandOptions& Options, FILE* stream = 0)
+  static void
+  file_info(CommandOptions& Options, const char* type_string, FILE* stream = 0)
   {
+    assert(type_string);
     if ( stream == 0 )
       stream = stdout;
 
@@ -1510,6 +1606,8 @@ public:
 
 	if ( ASDCP_SUCCESS(result) )
 	  {
+	    fprintf(stdout, "File essence type is %s.\n", type_string);
+
 	    if ( Options.showheader_flag )
 	      Reader.DumpHeaderMetadata(stream);
 
@@ -1544,32 +1642,28 @@ show_file_info(CommandOptions& Options)
     return result;
 
   if ( EssenceType == ESS_MPEG2_VES )
-    {
-      fputs("File essence type is MPEG2 video.\n", stdout);
-      FileInfoWrapper<ASDCP::MPEG2::MXFReader, MyVideoDescriptor>::file_info(Options);
-    }
+    FileInfoWrapper<ASDCP::MPEG2::MXFReader, MyVideoDescriptor>::file_info(Options, "MPEG2 video");
+
   else if ( EssenceType == ESS_PCM_24b_48k )
-    {
-      fputs("File essence type is PCM audio.\n", stdout);
-      FileInfoWrapper<ASDCP::PCM::MXFReader, MyAudioDescriptor>::file_info(Options);
-    }
+    FileInfoWrapper<ASDCP::PCM::MXFReader, MyAudioDescriptor>::file_info(Options, "PCM audio");
+
   else if ( EssenceType == ESS_JPEG_2000 )
     {
-      fputs("File essence type is JPEG 2000 pictures.\n", stdout);
-      FileInfoWrapper<ASDCP::JP2K::MXFReader, MyPictureDescriptor>::file_info(Options);
+      if ( Options.stereo_image_flag )
+	FileInfoWrapper<ASDCP::JP2K::MXFSReader,
+	MyStereoPictureDescriptor>::file_info(Options, "JPEG 2000 stereoscopic pictures");
+
+      else
+	FileInfoWrapper<ASDCP::JP2K::MXFReader,
+	MyPictureDescriptor>::file_info(Options, "JPEG 2000 pictures");
     }
   else if ( EssenceType == ESS_JPEG_2000_S )
-    {
-      fputs("File essence type is JPEG 2000 stereoscopic pictures.\n", stdout);
-      FileInfoWrapper<ASDCP::JP2K::MXFReader, MyPictureDescriptor>::file_info(Options);
-    }
-#ifdef ASDCP_WITH_TIMED_TEXT
+    FileInfoWrapper<ASDCP::JP2K::MXFSReader,
+    MyStereoPictureDescriptor>::file_info(Options, "JPEG 2000 stereoscopic pictures");
+
   else if ( EssenceType == ESS_TIMED_TEXT )
-    {
-      fputs("File essence type is Timed Text.\n", stdout);
-      FileInfoWrapper<ASDCP::TimedText::MXFReader, MyTextDescriptor>::file_info(Options);
-    }
-#endif
+    FileInfoWrapper<ASDCP::TimedText::MXFReader, MyTextDescriptor>::file_info(Options, "Timed Text");
+
   else
     {
       fprintf(stderr, "File is not AS-DCP: %s\n", Options.filenames[0]);
@@ -1712,7 +1806,14 @@ main(int argc, const char** argv)
 	      break;
 
 	    case ESS_JPEG_2000:
-	      result = read_JP2K_file(Options);
+	      if ( Options.stereo_image_flag )
+		result = read_JP2K_S_file(Options);
+	      else
+		result = read_JP2K_file(Options);
+	      break;
+
+	    case ESS_JPEG_2000_S:
+	      result = read_JP2K_S_file(Options);
 	      break;
 
 	    case ESS_PCM_24b_48k:
@@ -1720,13 +1821,9 @@ main(int argc, const char** argv)
 	      break;
 
 	    case ESS_TIMED_TEXT:
-#ifdef ASDCP_WITH_TIMED_TEXT
 	      result = read_timed_text_file(Options);
 	      break;
-#else
-	      fprintf(stderr, "asdcplib compiled without timed text support.\n");
-	      return 7;
-#endif
+
 	    default:
 	      fprintf(stderr, "%s: Unknown file type, not ASDCP essence.\n", Options.filenames[0]);
 	      return 5;
@@ -1766,13 +1863,8 @@ main(int argc, const char** argv)
 	      break;
 
 	    case ESS_TIMED_TEXT:
-#ifdef ASDCP_WITH_TIMED_TEXT
 	      result = write_timed_text_file(Options);
 	      break;
-#else
-	      fprintf(stderr, "asdcplib compiled without timed text support.\n");
-	      return 7;
-#endif
 
 	    default:
 	      fprintf(stderr, "%s: Unknown file type, not ASDCP-compatible essence.\n",

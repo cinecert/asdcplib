@@ -849,6 +849,7 @@ Kumu::Timestamp::DecodeString(const char* datestr)
        || ! ( isdigit(datestr[8]) && isdigit(datestr[9]) ) )
     return false;
 
+  ui32_t char_count = 10;
   TmpStamp.Year = atoi(datestr);
   TmpStamp.Month = atoi(datestr + 5);
   TmpStamp.Day = atoi(datestr + 8);
@@ -861,6 +862,7 @@ Kumu::Timestamp::DecodeString(const char* datestr)
 	   || ! ( isdigit(datestr[14]) && isdigit(datestr[15]) ) )
 	return false;
 
+      char_count += 6;
       TmpStamp.Hour = atoi(datestr + 11);
       TmpStamp.Minute = atoi(datestr + 14);
 
@@ -869,28 +871,37 @@ Kumu::Timestamp::DecodeString(const char* datestr)
 	  if ( ! ( isdigit(datestr[17]) && isdigit(datestr[18]) ) )
 	    return false;
 
+	  char_count += 3;
 	  TmpStamp.Second = atoi(datestr + 17);
+	}
+
+      if ( datestr[19] == '-' || datestr[19] == '+' )
+	{
+	  if ( ! ( isdigit(datestr[20]) && isdigit(datestr[21]) )
+	       || datestr[22] != ':'
+	       || ! ( isdigit(datestr[23]) && isdigit(datestr[24]) ) )
+	    return false;
+
+	  char_count += 6;
+	  ui32_t TZ_hh = atoi(datestr + 20);
+	  ui32_t TZ_mm = atoi(datestr + 23);
+      
+	  if ( TZ_mm != 0 )
+	    DefaultLogSink().Warn("Ignoring minutes in timezone offset: %u\n", TZ_mm);
+	  
+	  if ( TZ_hh > 12 )
+	    return false;
+
+	  else 
+	    AddHours( (datestr[19] == '-' ? (-TZ_hh) : TZ_hh));
 	}
     }
 
-  if ( datestr[19] == '-' || datestr[19] == '+' )
+  if ( datestr[char_count] != 0 )
     {
-      if ( ! ( isdigit(datestr[20]) && isdigit(datestr[21]) )
-	   || datestr[22] != ':'
-	   || ! ( isdigit(datestr[23]) && isdigit(datestr[24]) ) )
-	return false;
-
-      ui32_t TZ_hh = atoi(datestr + 20);
-      ui32_t TZ_mm = atoi(datestr + 23);
-      
-      if ( TZ_mm != 0 )
-	DefaultLogSink().Error("Ignoring minutes in timezone offset: %u\n", TZ_mm);
-
-      if ( TZ_hh > 12 )
-	return false;
-
-      else 
-	AddHours( (datestr[19] == '-' ? (-TZ_hh) : TZ_hh));
+      DefaultLogSink().Error("Unexpected extra characters in string: %s (%ld)\n",
+			     datestr, char_count);
+      return false;
     }
 
 #ifdef KM_WIN32

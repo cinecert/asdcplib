@@ -96,10 +96,6 @@ public:
 		result = RESULT_RAW_ESS;
 		break;
 	      }
-#if 0
-	    fprintf(stderr, "%s Length: %u\n",
-		    GetMarkerString(NextMarker.m_Type), NextMarker.m_DataSize);
-#endif
 
 	    switch ( NextMarker.m_Type )
 	      {
@@ -137,25 +133,34 @@ public:
 		break;
 
 	      case MRK_COD:
-		if ( NextMarker.m_DataSize > DefaultCodingDataLength )
+		memset(&m_PDesc.CodingStyleDefault, 0, sizeof(CodingStyleDefault_t));
+
+		if ( NextMarker.m_DataSize > sizeof(CodingStyleDefault_t) )
 		  {
 		    DefaultLogSink().Error("Unexpectedly large CodingStyle data: %u\n", NextMarker.m_DataSize);
 		    return RESULT_RAW_FORMAT;
 		  }
 
-		m_PDesc.CodingStyleLength = NextMarker.m_DataSize;
-		memcpy(m_PDesc.CodingStyle, NextMarker.m_Data, m_PDesc.CodingStyleLength);
+		memcpy(&m_PDesc.CodingStyleDefault, NextMarker.m_Data, NextMarker.m_DataSize);
 		break;
 
 	      case MRK_QCD:
-		if ( NextMarker.m_DataSize > DefaultCodingDataLength )
+		memset(&m_PDesc.QuantizationDefault, 0, sizeof(QuantizationDefault_t));
+
+		if ( NextMarker.m_DataSize < 16 )
 		  {
-		    DefaultLogSink().Error("Unexpectedly large QuantDefault data: %u\n", NextMarker.m_DataSize);
+		    DefaultLogSink().Error("No quantization signaled\n");
 		    return RESULT_RAW_FORMAT;
 		  }
 
-		m_PDesc.QuantDefaultLength = NextMarker.m_DataSize;
-		memcpy(m_PDesc.QuantDefault, NextMarker.m_Data, m_PDesc.QuantDefaultLength);
+		if ( NextMarker.m_DataSize > MaxDefaults )
+		  {
+		    DefaultLogSink().Error("Quantization Default length exceeds maximum %d\n", NextMarker.m_DataSize);
+		    return RESULT_RAW_FORMAT;
+		  }
+
+		memcpy(&m_PDesc.QuantizationDefault, NextMarker.m_Data, NextMarker.m_DataSize);
+		m_PDesc.QuantizationDefault.SPqcdLength = NextMarker.m_DataSize - 1;
 		break;
 	      }
 	  }

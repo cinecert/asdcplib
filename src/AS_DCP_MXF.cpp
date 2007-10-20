@@ -148,7 +148,12 @@ ASDCP::EssenceType(const char* filename, EssenceType_t& type)
     {
       type = ESS_UNKNOWN;
       if ( ASDCP_SUCCESS(TestHeader.GetMDObjectByType(OBJ_TYPE_ARGS(RGBAEssenceDescriptor))) )
-	type = ESS_JPEG_2000;
+	{
+	  if ( ASDCP_SUCCESS(TestHeader.GetMDObjectByType(OBJ_TYPE_ARGS(StereoscopicPictureSubDescriptor))) )
+	    type = ESS_JPEG_2000_S;
+	  else
+	    type = ESS_JPEG_2000;
+	}
       else if ( ASDCP_SUCCESS(TestHeader.GetMDObjectByType(OBJ_TYPE_ARGS(WaveAudioDescriptor))) )
 	type = ESS_PCM_24b_48k;
       else if ( ASDCP_SUCCESS(TestHeader.GetMDObjectByType(OBJ_TYPE_ARGS(MPEG2VideoDescriptor))) )

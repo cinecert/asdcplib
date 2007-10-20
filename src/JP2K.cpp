@@ -102,7 +102,7 @@ ASDCP::JP2K::GetNextMarker(const byte_t** buf, JP2K::Marker& Marker)
 
 //
 void
-ASDCP::JP2K::Accessor::SIZ::ReadComponent(ui32_t index, ASDCP::JP2K::ImageComponent& IC)
+ASDCP::JP2K::Accessor::SIZ::ReadComponent(ui32_t index, ASDCP::JP2K::ImageComponent_t& IC)
 {
   assert ( index < Csize() );
   const byte_t* p = m_MarkerData + 36 + (index * 3);
@@ -136,7 +136,7 @@ ASDCP::JP2K::Accessor::SIZ::Dump(FILE* stream)
 
       for ( ui32_t i = 0; i < Csize(); i++ )
 	{
-	  ImageComponent TmpComp;
+	  ImageComponent_t TmpComp;
 	  ReadComponent(i, TmpComp);
 	  fprintf(stream, "%u: ", i);
 	  fprintf(stream, "%u, %u, %u\n", TmpComp.Ssize, TmpComp.XRsize, TmpComp.YRsize);

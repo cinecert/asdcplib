@@ -123,7 +123,7 @@ namespace JP2K
 	  inline ui32_t XTOsize() { return KM_i32_BE(*(ui32_t*)(m_MarkerData + 26)); }
 	  inline ui32_t YTOsize() { return KM_i32_BE(*(ui32_t*)(m_MarkerData + 30)); }
 	  inline ui16_t Csize()   { return KM_i16_BE(*(ui16_t*)(m_MarkerData + 34)); }
-	  void ReadComponent(ui32_t index, ImageComponent& IC);
+	  void ReadComponent(ui32_t index, ImageComponent_t& IC);
 	  void Dump(FILE* stream = 0);
 	};
 

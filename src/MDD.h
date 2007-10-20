@@ -304,6 +304,7 @@ namespace ASDCP {
 	MDD_DMSegment_DataDefinition, // 266
 	MDD_DMSegment_Duration, // 267
 	MDD_DMSegment_TrackIDList, // 268
+	MDD_StereoscopicPictureSubDescriptor, // 269
     }; // enum MDD_t
 } // namespaceASDCP
 

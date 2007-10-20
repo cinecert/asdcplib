@@ -31,7 +31,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 #include "AS_DCP_internal.h"
-#include "AS_DCP_TimedText.h"
 #include "S12MTimecode.h"
 #include "KM_xml.h"
 

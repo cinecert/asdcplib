@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2003-2006, John Hurst
+Copyright (c) 2003-2007, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -41,7 +41,7 @@ may not be limited to:
  o SMPTE 429-4-2006 JPEG 2000 for D-Cinema
  o SMPTE 429-5-200X Timed Text Track File
  o SMPTE 429-6-2006 Essence Encryption Specification
- o SMPTE 429-10-2006 Stereoscopic Image Track File
+ o SMPTE 429-10-200X Stereoscopic Image Track File
  o SMPTE 330M - UMID
  o SMPTE 336M - KLV
  o SMPTE 377M - MXF
@@ -65,6 +65,11 @@ The following use cases are supported by the library:
  o Read one or more plaintext JPEG 2000 codestreams from a plaintext ASDCP file
  o Read one or more plaintext JPEG 2000 codestreams from a ciphertext ASDCP file
  o Read one or more ciphertext JPEG 2000 codestreams from a ciphertext ASDCP file
+ o Write one or more plaintext JPEG 2000 stereoscopic codestream pairs to a plaintext ASDCP file
+ o Write one or more plaintext JPEG 2000 stereoscopic codestream pairs to a ciphertext ASDCP file
+ o Read one or more plaintext JPEG 2000 stereoscopic codestream pairs from a plaintext ASDCP file
+ o Read one or more plaintext JPEG 2000 stereoscopic codestream pairs from a ciphertext ASDCP file
+ o Read one or more ciphertext JPEG 2000 stereoscopic codestream pairs from a ciphertext ASDCP file
  o Write one or more plaintext PCM audio streams to a plaintext ASDCP file
  o Write one or more plaintext PCM audio streams to a ciphertext ASDCP file
  o Read one or more plaintext PCM audio streams from a plaintext ASDCP file
@@ -86,6 +91,7 @@ This project depends upon the following library:
 #include <math.h>
 #include <iostream>
 #include <string>
+#include <list>
 
 //--------------------------------------------------------------------------------
 // common integer types
@@ -196,6 +202,7 @@ namespace ASDCP {
   const Kumu::Result_t RESULT_EMPTY_FB   (-112, "Empty frame buffer.");
   const Kumu::Result_t RESULT_KLV_CODING (-113, "KLV coding error.");
   const Kumu::Result_t RESULT_SPHASE     (-114, "Stereoscopic phase mismatch.");
+  const Kumu::Result_t RESULT_SFORMAT    (-115, "Rate mismatch, file may contain stereoscopic essence.");
 
   //---------------------------------------------------------------------------------
   // file identification
@@ -899,14 +906,46 @@ namespace ASDCP {
   namespace JP2K
     {
       const ui32_t MaxComponents = 3;
-      const ui32_t DefaultCodingDataLength = 64;
+      const ui32_t MaxPrecincts = 32; // ISO 15444-1 Annex A.6.1
+      const ui32_t MaxDefaults = 256; // made up
 
-      struct ImageComponent
+#pragma pack(1)
+      struct ImageComponent_t  // ISO 15444-1 Annex A.5.1
       {
-	byte_t Ssize;
-	byte_t XRsize;
-	byte_t YRsize;
+	ui8_t Ssize;
+	ui8_t XRsize;
+	ui8_t YRsize;
       };
+
+      struct CodingStyleDefault_t // ISO 15444-1 Annex A.6.1
+      {
+	ui8_t   Scod;
+
+	struct
+	{
+	  ui8_t  ProgressionOrder;
+	  ui8_t  NumberOfLayers[sizeof(ui16_t)];
+	  ui8_t  MultiCompTransform;
+	} SGcod;
+	
+	struct
+	{
+	  ui8_t  DecompositionLevels;
+	  ui8_t  CodeblockWidth;
+	  ui8_t  CodeblockHeight;
+	  ui8_t  CodeblockStyle;
+	  ui8_t  Transformation;
+	  ui8_t  PrecinctSize[MaxPrecincts];
+	} SPcod;
+      };
+
+      struct QuantizationDefault_t // ISO 15444-1 Annex A.6.4
+      {
+	ui8_t  Sqcd;
+	ui8_t  SPqcd[MaxDefaults];
+	ui8_t  SPqcdLength;
+      };
+#pragma pack()
 
       struct PictureDescriptor
       {
@@ -926,11 +965,9 @@ namespace ASDCP {
 	ui32_t         XTOsize;
 	ui32_t         YTOsize;
 	ui16_t         Csize;
-	ImageComponent ImageComponents[MaxComponents];
-	byte_t         CodingStyle[DefaultCodingDataLength];
-	ui32_t         CodingStyleLength;
-	byte_t         QuantDefault[DefaultCodingDataLength];
-	ui32_t         QuantDefaultLength;
+	ImageComponent_t      ImageComponents[MaxComponents];
+	CodingStyleDefault_t  CodingStyleDefault;
+	QuantizationDefault_t QuantizationDefault;
       };
 
       // Print debugging information to stream (stderr default)
@@ -1161,6 +1198,194 @@ namespace ASDCP {
 	  void     DumpIndex(FILE* = 0) const;
 	};
     } // namespace JP2K
+
+  //
+  namespace TimedText
+    {
+      enum MIMEType_t { MT_BIN, MT_PNG, MT_OPENTYPE };
+
+      struct TimedTextResourceDescriptor
+      {
+	byte_t      ResourceID[UUIDlen];
+	MIMEType_t  Type;
+
+        TimedTextResourceDescriptor() : Type(MT_BIN) {}
+      };
+
+      typedef std::list<TimedTextResourceDescriptor> ResourceList_t;
+
+      struct TimedTextDescriptor
+      {
+	Rational       EditRate;                // 
+	ui32_t         ContainerDuration;
+	byte_t         AssetID[UUIDlen];
+	std::string    NamespaceName;
+	std::string    EncodingName;
+	ResourceList_t ResourceList;
+
+      TimedTextDescriptor() : ContainerDuration(0), EncodingName("UTF-8") {} // D-Cinema format is always UTF-8
+      };
+
+      // Print debugging information to stream (stderr default)
+      void   DescriptorDump(const TimedTextDescriptor&, FILE* = 0);
+
+      //
+      class FrameBuffer : public ASDCP::FrameBuffer
+      {
+	ASDCP_NO_COPY_CONSTRUCT(FrameBuffer); // TODO: should have copy construct
+
+      protected:
+	byte_t      m_AssetID[UUIDlen];
+	std::string m_MIMEType;
+
+      public:
+	FrameBuffer() { memset(m_AssetID, 0, UUIDlen); }
+	FrameBuffer(ui32_t size) { Capacity(size); memset(m_AssetID, 0, UUIDlen); }
+	virtual ~FrameBuffer() {}
+        
+	inline const byte_t* AssetID() const { return m_AssetID; }
+	inline void          AssetID(const byte_t* buf) { memcpy(m_AssetID, buf, UUIDlen); }
+	inline const char*   MIMEType() const { return m_MIMEType.c_str(); }
+	inline void          MIMEType(const std::string& s) { m_MIMEType = s; }
+
+	// Print debugging information to stream (stderr default)
+	void Dump(FILE* = 0, ui32_t dump_bytes = 0) const;
+      };
+
+      //
+      class IResourceResolver
+      {
+      public:
+	virtual ~IResourceResolver() {}
+	virtual Result_t ResolveRID(const byte_t* uuid, FrameBuffer&) const = 0; // return data for RID
+      };
+
+      //
+      class DCSubtitleParser
+	{
+	  class h__SubtitleParser;
+	  mem_ptr<h__SubtitleParser> m_Parser;
+	  ASDCP_NO_COPY_CONSTRUCT(DCSubtitleParser);
+
+	public:
+	  DCSubtitleParser();
+	  virtual ~DCSubtitleParser();
+
+	  // Opens the XML file for reading, parse data to provide a complete
+	  // set of stream metadata for the MXFWriter below.
+	  Result_t OpenRead(const char* filename) const;
+
+	  // Fill a TimedTextDescriptor struct with the values from the file's contents.
+	  // Returns RESULT_INIT if the file is not open.
+	  Result_t FillDescriptor(TimedTextDescriptor&) const;
+
+	  // Reads the complete Timed Text Resource into the given string.
+	  Result_t ReadTimedTextResource(std::string&) const;
+
+	  // Reads the Ancillary Resource having the given ID. Fails if the buffer
+	  // is too small or the resource does not exist. The optional Resolver
+	  // argument can be provided which will be used to retrieve the resource
+	  // having a particulat UUID. If a Resolver is not supplied, the default
+	  // internal resolver will return the contents of the file having the UUID
+	  // as the filename. The filename must exist in the same directory as the
+	  // XML file opened with OpenRead().
+	  Result_t ReadAncillaryResource(const byte_t* uuid, FrameBuffer&,
+					 const IResourceResolver* Resolver = 0) const;
+	};
+
+      //
+      class MXFWriter
+	{
+	  class h__Writer;
+	  mem_ptr<h__Writer> m_Writer;
+	  ASDCP_NO_COPY_CONSTRUCT(MXFWriter);
+
+	public:
+	  MXFWriter();
+	  virtual ~MXFWriter();
+
+	  // Open the file for writing. The file must not exist. Returns error if
+	  // the operation cannot be completed or if nonsensical data is discovered
+	  // in the essence descriptor.
+	  Result_t OpenWrite(const char* filename, const WriterInfo&,
+			     const TimedTextDescriptor&, ui32_t HeaderSize = 16384);
+
+	  // Writes the Timed-Text Resource to the MXF file. The file must be UTF-8
+	  // encoded. If the optional AESEncContext argument is present, the essence
+	  // is encrypted prior to writing. Fails if the file is not open, is finalized,
+	  // or an operating system error occurs.
+	  // This method may only be called once, and it must be called before any
+	  // call to WriteAncillaryResource(). RESULT_STATE will be returned if these
+	  // conditions are not met.
+	  Result_t WriteTimedTextResource(const std::string& XMLDoc, AESEncContext* = 0, HMACContext* = 0);
+
+	  // Writes an Ancillary Resource to the MXF file. If the optional AESEncContext
+	  // argument is present, the essence is encrypted prior to writing.
+	  // Fails if the file is not open, is finalized, or an operating system
+	  // error occurs. RESULT_STATE will be returned if the method is called before
+	  // WriteTimedTextResource()
+	  Result_t WriteAncillaryResource(const FrameBuffer&, AESEncContext* = 0, HMACContext* = 0);
+
+	  // Closes the MXF file, writing the index and revised header.
+	  Result_t Finalize();
+	};
+
+      //
+      class MXFReader
+	{
+	  class h__Reader;
+	  mem_ptr<h__Reader> m_Reader;
+	  ASDCP_NO_COPY_CONSTRUCT(MXFReader);
+
+	public:
+	  MXFReader();
+	  virtual ~MXFReader();
+
+	  // Open the file for reading. The file must exist. Returns error if the
+	  // operation cannot be completed.
+	  Result_t OpenRead(const char* filename) const;
+
+	  // Returns RESULT_INIT if the file is not open.
+	  Result_t Close() const;
+
+	  // Fill a TimedTextDescriptor struct with the values from the file's header.
+	  // Returns RESULT_INIT if the file is not open.
+	  Result_t FillDescriptor(TimedTextDescriptor&) const;
+
+	  // Fill a WriterInfo struct with the values from the file's header.
+	  // Returns RESULT_INIT if the file is not open.
+	  Result_t FillWriterInfo(WriterInfo&) const;
+
+	  // Reads the complete Timed Text Resource into the given string. Fails if the resource
+	  // is encrypted and AESDecContext is NULL (use the following method to retrieve the
+	  // raw ciphertet block).
+	  Result_t ReadTimedTextResource(std::string&, AESDecContext* = 0, HMACContext* = 0) const;
+
+	  // Reads the complete Timed Text Resource from the MXF file. If the optional AESEncContext
+	  // argument is present, the resource is decrypted after reading. If the MXF
+	  // file is encrypted and the AESDecContext argument is NULL, the frame buffer
+	  // will contain the ciphertext frame data. If the HMACContext argument is
+	  // not NULL, the HMAC will be calculated (if the file supports it).
+	  // Returns RESULT_INIT if the file is not open, failure if the frame number is
+	  // out of range, or if optional decrypt or HAMC operations fail.
+	  Result_t ReadTimedTextResource(FrameBuffer&, AESDecContext* = 0, HMACContext* = 0) const;
+
+	  // Reads the timed-text resource having the given UUID from the MXF file. If the
+	  // optional AESEncContext argument is present, the resource is decrypted after
+	  // reading. If the MXF file is encrypted and the AESDecContext argument is NULL,
+	  // the frame buffer will contain the ciphertext frame data. If the HMACContext
+	  // argument is not NULL, the HMAC will be calculated (if the file supports it).
+	  // Returns RESULT_INIT if the file is not open, failure if the frame number is
+	  // out of range, or if optional decrypt or HAMC operations fail.
+	  Result_t ReadAncillaryResource(const byte_t* uuid, FrameBuffer&, AESDecContext* = 0, HMACContext* = 0) const;
+
+	  // Print debugging information to stream
+	  void     DumpHeaderMetadata(FILE* = 0) const;
+	  void     DumpIndex(FILE* = 0) const;
+	};
+    } // namespace TimedText
+
+
 } // namespace ASDCP
 
 

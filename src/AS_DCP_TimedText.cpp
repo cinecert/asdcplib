@@ -31,7 +31,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 #include "AS_DCP_internal.h"
-#include "AS_DCP_TimedText.h"
 #include "KM_xml.h"
 
 static std::string TIMED_TEXT_PACKAGE_LABEL = "File Package: SMPTE 429-5 frame wrapping of D-Cinema Timed Text data";
