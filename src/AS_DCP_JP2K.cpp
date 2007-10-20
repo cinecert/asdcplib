@@ -40,12 +40,6 @@ static std::string JP2K_PACKAGE_LABEL = "File Package: SMPTE 429-4 frame wrappin
 static std::string JP2K_S_PACKAGE_LABEL = "File Package: SMPTE 429-10 frame wrapping of stereoscopic JPEG 2000 codestreams";
 static std::string PICT_DEF_LABEL = "Picture Track";
 
-
-//22
-
-// 7f18 7f00 7f00 7ebc 76ea 76ea 76bc 6f4c 6f4c 6f64 5803 5803 5845 5fd2 5fd2 5f61
-
-
 int s_exp_lookup[16] = { 0, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024,2048, 4096, 8192, 16384, 32768 };
 
 //
@@ -503,7 +497,7 @@ public:
 
   ~lh__Writer(){}
 
-  Result_t OpenWrite(const char*, ui32_t HeaderSize);
+  Result_t OpenWrite(const char*, EssenceType_t type, ui32_t HeaderSize);
   Result_t SetSourceStream(const PictureDescriptor&, const std::string& label,
 			   ASDCP::Rational LocalEditRate = ASDCP::Rational(0,0));
   Result_t WriteFrame(const JP2K::FrameBuffer&, bool add_index, AESEncContext*, HMACContext*);
@@ -578,7 +572,7 @@ lh__Writer::JP2K_PDesc_to_MD(JP2K::PictureDescriptor& PDesc)
 // Open the file for writing. The file must not exist. Returns error if
 // the operation cannot be completed.
 ASDCP::Result_t
-lh__Writer::OpenWrite(const char* filename, ui32_t HeaderSize)
+lh__Writer::OpenWrite(const char* filename, EssenceType_t type, ui32_t HeaderSize)
 {
   if ( ! m_State.Test_BEGIN() )
     return RESULT_STATE;
@@ -594,10 +588,18 @@ lh__Writer::OpenWrite(const char* filename, ui32_t HeaderSize)
 
       m_EssenceDescriptor = tmp_rgba;
       m_EssenceSubDescriptor = new JPEG2000PictureSubDescriptor;
-      m_EssenceSubDescriptorList.push_back((FileDescriptor*)m_EssenceSubDescriptor);
+      m_EssenceSubDescriptorList.push_back((InterchangeObject*)m_EssenceSubDescriptor);
 
       GenRandomValue(m_EssenceSubDescriptor->InstanceUID);
       m_EssenceDescriptor->SubDescriptors.push_back(m_EssenceSubDescriptor->InstanceUID);
+
+      if ( type == ASDCP::ESS_JPEG_2000_S )
+	{
+	  InterchangeObject* StereoSubDesc = new StereoscopicPictureSubDescriptor;
+	  m_EssenceSubDescriptorList.push_back(StereoSubDesc);
+	  GenRandomValue(StereoSubDesc->InstanceUID);
+	  m_EssenceDescriptor->SubDescriptors.push_back(StereoSubDesc->InstanceUID);
+	}
 
       result = m_State.Goto_INIT();
     }
@@ -705,7 +707,7 @@ ASDCP::JP2K::MXFWriter::OpenWrite(const char* filename, const WriterInfo& Info,
 {
   m_Writer = new h__Writer;
   
-  Result_t result = m_Writer->OpenWrite(filename, HeaderSize);
+  Result_t result = m_Writer->OpenWrite(filename, ASDCP::ESS_JPEG_2000, HeaderSize);
 
   if ( ASDCP_SUCCESS(result) )
     {
@@ -807,7 +809,7 @@ ASDCP::JP2K::MXFSWriter::OpenWrite(const char* filename, const WriterInfo& Info,
       return RESULT_FORMAT;
     }
 
-  Result_t result = m_Writer->OpenWrite(filename, HeaderSize);
+  Result_t result = m_Writer->OpenWrite(filename, ASDCP::ESS_JPEG_2000_S, HeaderSize);
 
   if ( ASDCP_SUCCESS(result) )
     {

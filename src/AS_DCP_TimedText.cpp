@@ -126,7 +126,7 @@ ASDCP::TimedText::MXFReader::h__Reader::MD_to_TimedText_TDesc(TimedText::TimedTe
 
   TDesc.EditRate = TDescObj->SampleRate;
   TDesc.ContainerDuration = TDescObj->ContainerDuration;
-  memcpy(TDesc.AssetID, TDescObj->AssetID.Value(), UUIDlen);
+  memcpy(TDesc.AssetID, TDescObj->ResourceID.Value(), UUIDlen);
   TDesc.NamespaceName = TDescObj->RootNamespaceName;
   TDesc.EncodingName = TDescObj->UTFEncoding;
 
@@ -426,7 +426,7 @@ ASDCP::TimedText::MXFWriter::h__Writer::TimedText_TDesc_to_MD(TimedText::TimedTe
 
   TDescObj->SampleRate = TDesc.EditRate;
   TDescObj->ContainerDuration = TDesc.ContainerDuration;
-  TDescObj->AssetID.Set(TDesc.AssetID);
+  TDescObj->ResourceID.Set(TDesc.AssetID);
   TDescObj->RootNamespaceName = TDesc.NamespaceName;
   TDescObj->UTFEncoding = TDesc.EncodingName;
 

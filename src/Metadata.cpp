@@ -67,6 +67,8 @@ static InterchangeObject* CryptographicContext_Factory() { return new Cryptograp
 static InterchangeObject* GenericDataEssenceDescriptor_Factory() { return new GenericDataEssenceDescriptor; }
 static InterchangeObject* DCTimedTextDescriptor_Factory() { return new DCTimedTextDescriptor; }
 static InterchangeObject* DCTimedTextResourceDescriptor_Factory() { return new DCTimedTextResourceDescriptor; }
+static InterchangeObject* StereoscopicPictureSubDescriptor_Factory() { return new StereoscopicPictureSubDescriptor; }
+
 
 void
 ASDCP::MXF::Metadata_InitTypes()
@@ -98,6 +100,7 @@ ASDCP::MXF::Metadata_InitTypes()
   SetObjectFactory(Dict::ul(MDD_GenericDataEssenceDescriptor), GenericDataEssenceDescriptor_Factory);
   SetObjectFactory(Dict::ul(MDD_DCTimedTextDescriptor), DCTimedTextDescriptor_Factory);
   SetObjectFactory(Dict::ul(MDD_DCTimedTextResourceDescriptor), DCTimedTextResourceDescriptor_Factory);
+  SetObjectFactory(Dict::ul(MDD_StereoscopicPictureSubDescriptor), StereoscopicPictureSubDescriptor_Factory);
 }
 
 //------------------------------------------------------------------------------------------
@@ -1577,7 +1580,7 @@ ASDCP::Result_t
 DCTimedTextDescriptor::InitFromTLVSet(TLVReader& TLVSet)
 {
   Result_t result = GenericDataEssenceDescriptor::InitFromTLVSet(TLVSet);
-  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(DCTimedTextDescriptor, AssetID));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(DCTimedTextDescriptor, ResourceID));
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(DCTimedTextDescriptor, UTFEncoding));
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(DCTimedTextDescriptor, RootNamespaceName));
   return result;
@@ -1588,7 +1591,7 @@ ASDCP::Result_t
 DCTimedTextDescriptor::WriteToTLVSet(TLVWriter& TLVSet)
 {
   Result_t result = GenericDataEssenceDescriptor::WriteToTLVSet(TLVSet);
-  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(DCTimedTextDescriptor, AssetID));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(DCTimedTextDescriptor, ResourceID));
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(DCTimedTextDescriptor, UTFEncoding));
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(DCTimedTextDescriptor, RootNamespaceName));
   return result;
@@ -1605,7 +1608,7 @@ DCTimedTextDescriptor::Dump(FILE* stream)
     stream = stderr;
 
   GenericDataEssenceDescriptor::Dump(stream);
-  fprintf(stream, "  %22s = %s\n",  "AssetID", AssetID.EncodeString(identbuf, IdentBufferLen));
+  fprintf(stream, "  %22s = %s\n",  "ResourceID", ResourceID.EncodeString(identbuf, IdentBufferLen));
   fprintf(stream, "  %22s = %s\n",  "UTFEncoding", UTFEncoding.EncodeString(identbuf, IdentBufferLen));
   fprintf(stream, "  %22s = %s\n",  "RootNamespaceName", RootNamespaceName.EncodeString(identbuf, IdentBufferLen));
 }
@@ -1683,6 +1686,53 @@ DCTimedTextResourceDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
   return InterchangeObject::WriteToBuffer(Buffer);
 }
 
+//------------------------------------------------------------------------------------------
+// StereoscopicPictureSubDescriptor
+
+//
+ASDCP::Result_t
+StereoscopicPictureSubDescriptor::InitFromTLVSet(TLVReader& TLVSet)
+{
+  Result_t result = InterchangeObject::InitFromTLVSet(TLVSet);
+  return result;
+}
+
+//
+ASDCP::Result_t
+StereoscopicPictureSubDescriptor::WriteToTLVSet(TLVWriter& TLVSet)
+{
+  Result_t result = InterchangeObject::WriteToTLVSet(TLVSet);
+  return result;
+}
+
+//
+void
+StereoscopicPictureSubDescriptor::Dump(FILE* stream)
+{
+  char identbuf[IdentBufferLen];
+  *identbuf = 0;
+
+  if ( stream == 0 )
+    stream = stderr;
+
+  InterchangeObject::Dump(stream);
+}
+
+//
+ASDCP::Result_t
+StereoscopicPictureSubDescriptor::InitFromBuffer(const byte_t* p, ui32_t l)
+{
+  m_Typeinfo = &Dict::Type(MDD_StereoscopicPictureSubDescriptor);
+  return InterchangeObject::InitFromBuffer(p, l);
+}
+
+//
+ASDCP::Result_t
+StereoscopicPictureSubDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
+{
+  m_Typeinfo = &Dict::Type(MDD_StereoscopicPictureSubDescriptor);
+  return InterchangeObject::WriteToBuffer(Buffer);
+}
 
 //
 // end Metadata.cpp

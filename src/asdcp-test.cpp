@@ -1592,17 +1592,19 @@ template<class ReaderT, class DescriptorT>
 class FileInfoWrapper
 {
 public:
-  static void
+  static Result_t
   file_info(CommandOptions& Options, const char* type_string, FILE* stream = 0)
   {
     assert(type_string);
     if ( stream == 0 )
       stream = stdout;
 
+    Result_t result = RESULT_OK;
+
     if ( Options.verbose_flag || Options.showheader_flag )
       {
 	ReaderT     Reader;
-	Result_t result = Reader.OpenRead(Options.filenames[0]);
+	result = Reader.OpenRead(Options.filenames[0]);
 
 	if ( ASDCP_SUCCESS(result) )
 	  {
@@ -1627,6 +1629,8 @@ public:
 	    Reader.DumpHeaderMetadata(stream);
 	  }
       }
+
+    return result;
   }
 };
 
@@ -1642,27 +1646,27 @@ show_file_info(CommandOptions& Options)
     return result;
 
   if ( EssenceType == ESS_MPEG2_VES )
-    FileInfoWrapper<ASDCP::MPEG2::MXFReader, MyVideoDescriptor>::file_info(Options, "MPEG2 video");
+    result = FileInfoWrapper<ASDCP::MPEG2::MXFReader, MyVideoDescriptor>::file_info(Options, "MPEG2 video");
 
   else if ( EssenceType == ESS_PCM_24b_48k )
-    FileInfoWrapper<ASDCP::PCM::MXFReader, MyAudioDescriptor>::file_info(Options, "PCM audio");
+    result = FileInfoWrapper<ASDCP::PCM::MXFReader, MyAudioDescriptor>::file_info(Options, "PCM audio");
 
   else if ( EssenceType == ESS_JPEG_2000 )
     {
       if ( Options.stereo_image_flag )
-	FileInfoWrapper<ASDCP::JP2K::MXFSReader,
+	result = FileInfoWrapper<ASDCP::JP2K::MXFSReader,
 	MyStereoPictureDescriptor>::file_info(Options, "JPEG 2000 stereoscopic pictures");
 
       else
-	FileInfoWrapper<ASDCP::JP2K::MXFReader,
+	result = FileInfoWrapper<ASDCP::JP2K::MXFReader,
 	MyPictureDescriptor>::file_info(Options, "JPEG 2000 pictures");
     }
   else if ( EssenceType == ESS_JPEG_2000_S )
-    FileInfoWrapper<ASDCP::JP2K::MXFSReader,
+    result = FileInfoWrapper<ASDCP::JP2K::MXFSReader,
     MyStereoPictureDescriptor>::file_info(Options, "JPEG 2000 stereoscopic pictures");
 
   else if ( EssenceType == ESS_TIMED_TEXT )
-    FileInfoWrapper<ASDCP::TimedText::MXFReader, MyTextDescriptor>::file_info(Options, "Timed Text");
+    result = FileInfoWrapper<ASDCP::TimedText::MXFReader, MyTextDescriptor>::file_info(Options, "Timed Text");
 
   else
     {
@@ -1878,7 +1882,11 @@ main(int argc, const char** argv)
     {
       fputs("Program stopped on error.\n", stderr);
 
-      if ( result != RESULT_FAIL )
+      if ( result == RESULT_SFORMAT )
+	{
+	  fputs("Use option '-3' to force stereoscopic mode.\n", stderr);
+	}
+      else if ( result != RESULT_FAIL )
 	{
 	  fputs(result, stderr);
 	  fputc('\n', stderr);

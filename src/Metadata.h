@@ -572,7 +572,7 @@ namespace ASDCP
 	  ASDCP_NO_COPY_CONSTRUCT(DCTimedTextDescriptor);
 
 	public:
-	  UUID AssetID;
+          UUID ResourceID;
           UTF16String UTFEncoding;
           UTF16String RootNamespaceName;
 
@@ -605,6 +605,24 @@ namespace ASDCP
 	  virtual Result_t InitFromBuffer(const byte_t* p, ui32_t l);
 	  virtual Result_t WriteToBuffer(ASDCP::FrameBuffer&);
 	};
+
+      //
+      class StereoscopicPictureSubDescriptor : public InterchangeObject
+	{
+	  ASDCP_NO_COPY_CONSTRUCT(StereoscopicPictureSubDescriptor);
+
+	public:
+
+	  StereoscopicPictureSubDescriptor() {}
+	  virtual ~StereoscopicPictureSubDescriptor() {}
+          virtual const char* HasName() { return "StereoscopicPictureSubDescriptor"; }
+          virtual Result_t InitFromTLVSet(TLVReader& TLVSet);
+          virtual Result_t WriteToTLVSet(TLVWriter& TLVSet);
+	  virtual void     Dump(FILE* = 0);
+	  virtual Result_t InitFromBuffer(const byte_t* p, ui32_t l);
+	  virtual Result_t WriteToBuffer(ASDCP::FrameBuffer&);
+	};
+
     } // namespace MXF
 } // namespace ASDCP
 

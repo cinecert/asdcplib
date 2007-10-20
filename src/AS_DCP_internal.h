@@ -177,7 +177,7 @@ namespace ASDCP
       SourcePackage*     m_FilePackage;
 
       FileDescriptor*    m_EssenceDescriptor;
-      std::list<FileDescriptor*> m_EssenceSubDescriptorList;
+      std::list<InterchangeObject*> m_EssenceSubDescriptorList;
 
       ui32_t             m_FramesWritten;
       ui64_t             m_StreamOffset;

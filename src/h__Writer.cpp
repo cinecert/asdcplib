@@ -376,7 +376,7 @@ ASDCP::h__Writer::AddEssenceDescriptor(const UL& WrappingUL)
   m_HeaderPart.m_Preface->EssenceContainers = m_HeaderPart.EssenceContainers;
   m_HeaderPart.AddChildObject(m_EssenceDescriptor);
 
-  std::list<FileDescriptor*>::iterator sdli = m_EssenceSubDescriptorList.begin();
+  std::list<InterchangeObject*>::iterator sdli = m_EssenceSubDescriptorList.begin();
   for ( ; sdli != m_EssenceSubDescriptorList.end(); sdli++ )
       m_HeaderPart.AddChildObject(*sdli);
 
