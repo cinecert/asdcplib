@@ -338,7 +338,7 @@ public:
     SHA_CTX SHA;
     SHA1_Init(&SHA);
 
-    byte_t xor_buf[KeyLen];
+    byte_t xor_buf[B_len];
     ui32_t i = 0;
 
     for ( ; i < KeyLen; i++ )
@@ -348,14 +348,14 @@ public:
       {
 	for ( ; i < B_len; i++ )
 	  xor_buf[i] = 0 ^ opad[0];
-	
+
 	SHA1_Update(&m_SHA, xor_buf, B_len);
       }
     else
       {
 	SHA1_Update(&m_SHA, xor_buf, KeyLen);
       }
-
+    
     SHA1_Update(&SHA, xor_buf, KeyLen);
     SHA1_Update(&SHA, m_SHAValue, HMAC_SIZE);
 
