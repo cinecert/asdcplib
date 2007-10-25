@@ -141,6 +141,7 @@ namespace Kumu
     inline bool Match(const std::string& s) const { return true; }
   };
 
+#ifndef KM_WIN32
  class PathMatchRegex : public IPathMatch
   {
     regex_t m_regex;
@@ -166,6 +167,7 @@ namespace Kumu
     virtual ~PathMatchGlob();
     bool Match(const std::string& s) const;
   };
+#endif /* !KM_WIN32 */
 
   // Search all paths in SearchPaths for filenames matching Pattern (no directories are returned).
   // Put results in FoundPaths. Returns after first find if one_shot is true.

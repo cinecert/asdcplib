@@ -150,35 +150,24 @@ ASDCP::h__Reader::InitMXFIndex()
 }
 
 //
-class KLReader : public ASDCP::KLVPacket
+Result_t
+ASDCP::KLReader::ReadKLFromFile(Kumu::FileReader& Reader)
 {
-  ASDCP_NO_COPY_CONSTRUCT(KLReader);
-  byte_t m_KeyBuf[32];
+  ui32_t read_count;
+  ui32_t header_length = SMPTE_UL_LENGTH + MXF_BER_LENGTH;
+  Result_t result = Reader.Read(m_KeyBuf, header_length, &read_count);
 
-public:
-  KLReader() {}
-  ~KLReader() {}
-
-  inline const byte_t* Key() { return m_KeyBuf; }
-  inline const ui64_t  Length() { return m_ValueLength; }
-  inline const ui64_t  KLLength() { return m_KLLength; }
-
-  Result_t ReadKLFromFile(Kumu::FileReader& Reader)
-  {
-    ui32_t read_count;
-    ui32_t header_length = SMPTE_UL_LENGTH + MXF_BER_LENGTH;
-    Result_t result = Reader.Read(m_KeyBuf, header_length, &read_count);
-
-    if ( read_count != header_length )
-      return RESULT_READFAIL;
+  if ( ASDCP_SUCCESS(result) )
+    {
+      if ( read_count != header_length )
+	result = RESULT_READFAIL;
   
-    if ( ASDCP_SUCCESS(result) )
-      result = InitFromBuffer(m_KeyBuf, header_length);
+      else
+	result = InitFromBuffer(m_KeyBuf, header_length);
+    }
 
-    return result;
-  }
-};
-
+  return result;
+}
 
 // standard method of reading a plaintext or encrypted frame
 Result_t

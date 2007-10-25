@@ -91,6 +91,23 @@ namespace ASDCP
   Result_t DecryptFrameBuffer(const ASDCP::FrameBuffer&, ASDCP::FrameBuffer&, AESDecContext*);
 
   //
+ class KLReader : public ASDCP::KLVPacket
+    {
+      ASDCP_NO_COPY_CONSTRUCT(KLReader);
+      byte_t m_KeyBuf[SMPTE_UL_LENGTH*2];
+
+    public:
+      KLReader() {}
+      ~KLReader() {}
+
+      inline const byte_t* Key() { return m_KeyBuf; }
+      inline const ui64_t  Length() { return m_ValueLength; }
+      inline const ui64_t  KLLength() { return m_KLLength; }
+      
+      Result_t ReadKLFromFile(Kumu::FileReader& Reader);
+    };
+
+  //
   class h__Reader
     {
       ASDCP_NO_COPY_CONSTRUCT(h__Reader);

@@ -60,7 +60,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 using namespace ASDCP;
 
-const ui32_t FRAME_BUFFER_SIZE = 4*1024*1024;
+const ui32_t FRAME_BUFFER_SIZE = 4 * Kumu::Megabyte;
 
 //------------------------------------------------------------------------------------------
 //
@@ -133,16 +133,18 @@ USAGE: %s -c <output-file> [-3] [-b <buffer-size>] [-d <duration>] [-e|-E]\n\
 \n\
        %s -t <input-file>\n\
 \n\
-       %s -x <file-prefix> [-b <buffer-size>] [-d <duration>]\n\
+       %s -x <file-prefix> [-3] [-b <buffer-size>] [-d <duration>]\n\
        [-f <starting-frame>] [-m] [-p <frame-rate>] [-R] [-s <num>] [-S|-1]\n\
        [-v] [-W] <input-file>\n\
 \n", PACKAGE, PACKAGE, PACKAGE, PACKAGE, PACKAGE, PACKAGE, PACKAGE);
 
   fprintf(stream, "\
 Major modes:\n\
-  -3                - Create a stereoscopic image file. Expects two dir-\n\
-                      ectories of JP2K codestreams (directories must have\n\
+  -3                - With -c, create a stereoscopic image file. Expects two\n\
+                      directories of JP2K codestreams (directories must have\n\
                       an equal number of frames; left eye is first).\n\
+                    - With -x, force stereoscopic interpretation of a JP2K\n\
+                      track file.\n\
   -c <output-file>  - Create an AS-DCP track file from input(s)\n\
   -g                - Generate a random 16 byte value to stdout\n\
   -G                - Perform GOP start lookup test on MXF+Interop MPEG file\n\

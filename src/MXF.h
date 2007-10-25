@@ -348,7 +348,7 @@ namespace ASDCP
 	  virtual Result_t WriteToFile(Kumu::FileWriter& Writer, ui64_t duration);
 	  virtual void     Dump(FILE* = 0);
 
-	  virtual Result_t Lookup(ui32_t frame_num, IndexTableSegment::IndexEntry&);
+	  virtual Result_t Lookup(ui32_t frame_num, IndexTableSegment::IndexEntry&) const;
 	  virtual void     PushIndexEntry(const IndexTableSegment::IndexEntry&);
 	  virtual void     SetIndexParamsCBR(IPrimerLookup* lookup, ui32_t size, const Rational& Rate);
 	  virtual void     SetIndexParamsVBR(IPrimerLookup* lookup, const Rational& Rate, Kumu::fpos_t offset);

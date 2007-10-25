@@ -11,8 +11,8 @@ Initiatives, LLC (DCI). Subsequent efforts have been funded
 by Deluxe Laboratories, Doremi Labs, CineCert LLC, Avica
 Technology and others.
 
-**The asdcplib project was housed on SourceForge. The project
-has moved to http://www.cinecert.com/asdcplib/
+**The asdcplib project was originally housed on SourceForge.
+The project has moved to http://www.cinecert.com/asdcplib/
 
 The project formerly depended upon the mxflib project. Because
 of its focus on covering the whole of the MXF specifications,
@@ -39,16 +39,16 @@ urged to use static linking (at least where you use this
 library) to prevent malicious in-field replacement of
 critical system modules. This recommendation should be
 considered wherever Open Source or Free software is being
-used for applications having non-trivial security
-requirements.
+used in conjunction with critical security parameters, such
+as cryptographic keys.
 
-The author strives mightily to provide an API that is
-completely independent of operating system and other
-library dependencies, and which allows selective replacement
-of some modules for local needs.  Specifically, the essence
-parsers and OpenSSL crypto functions can be replaced by
-linking to alternative implementations of the ASDCP::
-objects which provide those services.
+The author strives mightily to provide an API that is completely
+independent of operating system and other library dependencies,
+and which allows selective replacement of some modules for
+local needs.  Specifically, the essence parsers and OpenSSL
+crypto functions can be replaced by linking to alternative
+implementations of the ASDCP:: objects which provide those
+services.
 
 AS_DCP.h contains the entire API.  You do not need to read
 any of the other files, except maybe asdcp-test.cpp which
@@ -77,6 +77,9 @@ myhost$ ls -l
 total 1761
 drwxr-xr-x    1 jhurst   None         0 Feb  3 16:37 asdcplib
 drwxr-xr-x   56 jhurst   None         0 Feb  2 16:35 openssl
+
+Expat is optionally required for writing Timed Text Track Files. See
+http://expat.sourceforge.net/
 
 To build, type 'make'. There are several test targets but you
 need to assemble a set of test files to use them.
@@ -113,36 +116,45 @@ utilities all respond to -h.
 
 
 Change History
-2007.06.xx - Timed Text and Bug fixes v.1.1.15
- o Added support for draft SMPTE 429-5 Timed Text Track File. See
-   AS_DCP_TimedText.h for the API. This is *very* experimental, so
-   do not use for shipping products. Timed Text support is NOT part
-   of the default build, run `make WITH_TIMED_TEXT=1` to enable
-   this part of the library. AS_DCP_TimedText.h will be combined
-   with AS_DCP.h when it becomes stable. Because we need an XML
-   parser to create the Track File, expat is now part of the Timed
-   Text build. Follow the XML_PARSER macro in the makefile and KM_xml
-   to see how you can support your favorite parser. See also
-   S429-5-cgi.cpp for an example that shows how to serve plaintext
-   MXF file elements directly via HTTP.
+2007.10.22 - Timed Text, Stereoscopic Picture and Bug fixes v.1.2.16
+ o Significant API changes have been made. Please read all entries
+   in this changelog to be sure you understand the changes. Also
+   note that some changes have been made to LS_MXF_SMPTE files that
+   are incompatible with earlier releases (e.g., EKLV HMAC). If
+   you are looking for a stable interop release, use  v.1.1.14.
+ o Fixed RFC 2104 HMAC implementation for LS_MXF_SMPTE only. The
+   broken implementation has been maintained for Interop mode.
+ o Added support for draft SMPTE 429-5 Timed Text Track File. This
+   is still waiting for official SMPTE ULs, so do not use it for
+   shipping products.  An XML parser is needed to create a Timed
+   Text Track File; Expat is now an optional part of the build.
+   Make with WITH_XML_PARSER=1 to link with Expat. If you do not
+   link with expat, you will get an error when using the TimedText::
+   DCSubtitleParser class. See also S429-5-cgi.cpp for an example
+   that shows how to serve plaintext MXF file elements directly via
+   HTTP.
+ o Added support for draft SMPTE 429-10 Stereoscopic Picture Track
+   File, including the JPEG Interop version. This is still waiting
+   for official SMPTE ULs, so do not use it with LS_MXF_SMPTE for
+   shipping products.  
  o Refactored the following files as a side-effect of the above
    work: AS_DCP_JP2K.cpp AS_DCP_MPEG2.cpp AS_DCP_PCM.cpp
    AS_DCP_MXF.cpp AS_DCP_internal.h MXF.[h|cpp] MXFTypes.[h|cpp]
    Metadata.[h|cpp] h__Reader.cpp h__Writer.cpp klvwalk.cpp.
    WARNING: While significant effort has been extended to make sure
-   that this work does not affect existing stable file support,
+   that these changes do not affect existing stable file support,
    users are cautioned to test this release thouroughly.
- o Added a large set of path manglers to KM_fileio.h. See
+ o Added a large set of filesystem path manglers to KM_fileio.h. See
    path-test.cpp for example usage. The path manglers have not yet
    been tested on win32 platforms (they are currently used only by
-   the Timed Text module. The PathIsFile(), PathIsDirectory() and
-   FileSize() subroutines have been modified to accept const
-   std::string& instead of const char*.
+   the Timed Text module.
+ o The PathIsFile(), PathIsDirectory() and FileSize() subroutines
+   have been modified to accept const std::string& instead of
+   const char*.
  o Added namespace and parsing support (Expat) to Kumu::XMLElement
    (currently used only for Timed Text support). Also added some
    new accessors.
  o Altered MXF::UTF16String to use mbtowc() and wctomb().
- o ...
 
 
 2007.03.31 - Bug fixes v.1.1.14

@@ -33,6 +33,9 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <KM_log.h>
 #include <fcntl.h>
 #include <assert.h>
+#ifdef KM_WIN32
+#include <direct.h>
+#endif
 
 using namespace Kumu;
 

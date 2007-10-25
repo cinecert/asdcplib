@@ -386,16 +386,75 @@ ASDCP::JP2K::MXFReader::DumpIndex(FILE* stream) const
 
 class ASDCP::JP2K::MXFSReader::h__SReader : public lh__Reader
 {
-  StereoscopicPhase_t m_NextPhase;
+  ui32_t m_StereoFrameReady;
 
 public:
-  h__SReader() : m_NextPhase(SP_LEFT) {}
+  h__SReader() : m_StereoFrameReady(0xffffffff) {}
 
   //
   Result_t ReadFrame(ui32_t FrameNum, StereoscopicPhase_t phase, FrameBuffer& FrameBuf,
-		     AESDecContext* Ctx, HMACContext* HMAC) const
+		     AESDecContext* Ctx, HMACContext* HMAC)
   {
-    return Kumu::RESULT_NOTIMPL;
+    // look up frame index node
+    IndexTableSegment::IndexEntry TmpEntry;
+
+    if ( ASDCP_FAILURE(m_FooterPart.Lookup(FrameNum, TmpEntry)) )
+      {
+	DefaultLogSink().Error("Frame value out of range: %u\n", FrameNum);
+	return RESULT_RANGE;
+      }
+
+    // get frame position
+    Kumu::fpos_t FilePosition = m_EssenceStart + TmpEntry.StreamOffset;
+    Result_t result = RESULT_OK;
+
+    if ( phase == SP_LEFT )
+      {    
+	if ( FilePosition != m_LastPosition )
+	  {
+	    m_LastPosition = FilePosition;
+	    result = m_File.Seek(FilePosition);
+	  }
+
+	// the call to ReadEKLVPacket() will leave the file on an R frame
+	m_StereoFrameReady = FrameNum;
+      }
+    else if ( phase == SP_RIGHT )
+      {
+	if ( m_StereoFrameReady != FrameNum )
+	  {
+	    // the file is not already positioned, we must do some work
+	    // seek to the companion SP_LEFT frame and read the frame's key and length
+	    if ( FilePosition != m_LastPosition )
+	      {
+		m_LastPosition = FilePosition;
+		result = m_File.Seek(FilePosition);
+	      }
+
+	    KLReader Reader;
+	    result = Reader.ReadKLFromFile(m_File);
+
+	    if ( ASDCP_SUCCESS(result) )
+	      {
+		// skip over the companion SP_LEFT frame
+		Kumu::fpos_t new_pos = FilePosition + SMPTE_UL_LENGTH + Reader.KLLength() + Reader.Length();
+		result = m_File.Seek(new_pos);
+	      }
+	  }
+
+	// the call to ReadEKLVPacket() will leave the file not on an R frame
+	m_StereoFrameReady = 0xffffffff;
+      }
+    else
+      {
+	DefaultLogSink().Error("Unexpected stereoscopic phase value: %u\n", phase);
+	return RESULT_STATE;
+      }
+
+    if( ASDCP_SUCCESS(result) )
+      result = ReadEKLVPacket(FrameNum, FrameBuf, Dict::ul(MDD_JPEG2000Essence), Ctx, HMAC);
+
+    return result;
   }
 };
 
@@ -593,7 +652,7 @@ lh__Writer::OpenWrite(const char* filename, EssenceType_t type, ui32_t HeaderSiz
       GenRandomValue(m_EssenceSubDescriptor->InstanceUID);
       m_EssenceDescriptor->SubDescriptors.push_back(m_EssenceSubDescriptor->InstanceUID);
 
-      if ( type == ASDCP::ESS_JPEG_2000_S )
+      if ( type == ASDCP::ESS_JPEG_2000_S && m_Info.LabelSetType == LS_MXF_SMPTE )
 	{
 	  InterchangeObject* StereoSubDesc = new StereoscopicPictureSubDescriptor;
 	  m_EssenceSubDescriptorList.push_back(StereoSubDesc);

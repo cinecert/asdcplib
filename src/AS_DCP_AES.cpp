@@ -239,6 +239,7 @@ ASDCP::AESDecContext::DecryptBlock(const byte_t* ct_buf, byte_t* pt_buf, ui32_t 
 
 //------------------------------------------------------------------------------------------
 
+static const ui32_t B_len = 64; // rfc 2104, Sec. 2
 
 static byte_t ipad[KeyLen] = { 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36,
 			       0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36 };
@@ -249,12 +250,13 @@ static byte_t opad[KeyLen] = { 0x5c, 0x5c, 0x5c, 0x5c, 0x5c, 0x5c, 0x5c, 0x5c,
 class HMACContext::h__HMACContext
 {
   SHA_CTX m_SHA;
-  byte_t m_key[KeyLen];
+  byte_t  m_key[KeyLen];
   ASDCP_NO_COPY_CONSTRUCT(h__HMACContext);
 
 public:
-  byte_t sha_value[HMAC_SIZE];
-  bool   m_Final;
+  byte_t     m_SHAValue[HMAC_SIZE];
+  LabelSet_t m_SetType;
+  bool       m_Final;
 
   h__HMACContext() : m_Final(false) {}
   ~h__HMACContext() {}
@@ -265,6 +267,7 @@ public:
     byte_t rng_buf[SHA_DIGEST_LENGTH*2];
     Kumu::Gen_FIPS_186_Value(key, KeyLen, rng_buf, SHA_DIGEST_LENGTH*2);
     memcpy(m_key, rng_buf+SHA_DIGEST_LENGTH, KeyLen);
+    m_SetType = LS_MXF_SMPTE;
     Reset();
   }
 
@@ -282,24 +285,37 @@ public:
     SHA1_Update(&SHA, key_nonce, KeyLen);
     SHA1_Final(sha_buf, &SHA);
     memcpy(m_key, sha_buf, KeyLen);
-
+    m_SetType = LS_MXF_INTEROP;
     Reset();
   }
 
+  //
   void
   Reset()
   {
-    byte_t xor_buf[KeyLen];
-    memset(sha_value, 0, HMAC_SIZE);
+    byte_t xor_buf[B_len];
+    memset(m_SHAValue, 0, HMAC_SIZE);
     m_Final = false;
     SHA1_Init(&m_SHA);
 
     // H(K XOR opad, H(K XOR ipad, text))
     //                 ^^^^^^^^^^
-    for ( ui32_t i = 0; i < KeyLen; i++ )
+    ui32_t i = 0;
+
+    for ( ; i < KeyLen; i++ )
       xor_buf[i] = m_key[i] ^ ipad[i];
 
-    SHA1_Update(&m_SHA, xor_buf, KeyLen);
+    if ( m_SetType == LS_MXF_SMPTE )
+      {
+	for ( ; i < B_len; i++ )
+	  xor_buf[i] = 0 ^ ipad[0];
+
+	SHA1_Update(&m_SHA, xor_buf, B_len);
+      }
+    else
+      {
+	SHA1_Update(&m_SHA, xor_buf, KeyLen);
+      }
   }
 
   //
@@ -317,20 +333,33 @@ public:
   {
     // H(K XOR opad, H(K XOR ipad, text))
     // ^^^^^^^^^^^^^^^
-    SHA1_Final(sha_value, &m_SHA);
+    SHA1_Final(m_SHAValue, &m_SHA);
 
     SHA_CTX SHA;
     SHA1_Init(&SHA);
 
     byte_t xor_buf[KeyLen];
+    ui32_t i = 0;
 
-    for ( ui32_t i = 0; i < KeyLen; i++ )
+    for ( ; i < KeyLen; i++ )
       xor_buf[i] = m_key[i] ^ opad[i];
     
-    SHA1_Update(&SHA, xor_buf, KeyLen);
-    SHA1_Update(&SHA, sha_value, HMAC_SIZE);
+    if ( m_SetType == LS_MXF_SMPTE )
+      {
+	for ( ; i < B_len; i++ )
+	  xor_buf[i] = 0 ^ opad[0];
+	
+	SHA1_Update(&m_SHA, xor_buf, B_len);
+      }
+    else
+      {
+	SHA1_Update(&m_SHA, xor_buf, KeyLen);
+      }
 
-    SHA1_Final(sha_value, &SHA);
+    SHA1_Update(&SHA, xor_buf, KeyLen);
+    SHA1_Update(&SHA, m_SHAValue, HMAC_SIZE);
+
+    SHA1_Final(m_SHAValue, &SHA);
     m_Final = true;
   }
 };
@@ -410,7 +439,7 @@ HMACContext::GetHMACValue(byte_t* buf) const
   if ( m_Context.empty() || ! m_Context->m_Final )
     return RESULT_INIT;
 
-  memcpy(buf, m_Context->sha_value, HMAC_SIZE);
+  memcpy(buf, m_Context->m_SHAValue, HMAC_SIZE);
   return RESULT_OK;
 }
 
@@ -424,7 +453,7 @@ HMACContext::TestHMACValue(const byte_t* buf) const
   if ( m_Context.empty() || ! m_Context->m_Final )
     return RESULT_INIT;
   
-  return ( memcmp(buf, m_Context->sha_value, HMAC_SIZE) == 0 ) ? RESULT_OK : RESULT_HMACFAIL;
+  return ( memcmp(buf, m_Context->m_SHAValue, HMAC_SIZE) == 0 ) ? RESULT_OK : RESULT_HMACFAIL;
 }
 
 

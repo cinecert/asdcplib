@@ -1070,7 +1070,7 @@ ASDCP::MXF::OPAtomIndexFooter::Dump(FILE* stream)
 
 //
 ASDCP::Result_t
-ASDCP::MXF::OPAtomIndexFooter::Lookup(ui32_t frame_num, IndexTableSegment::IndexEntry& Entry)
+ASDCP::MXF::OPAtomIndexFooter::Lookup(ui32_t frame_num, IndexTableSegment::IndexEntry& Entry) const
 {
   std::list<InterchangeObject*>::iterator li;
   for ( li = m_PacketList->m_List.begin(); li != m_PacketList->m_List.end(); li++ )
