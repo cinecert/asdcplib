@@ -45,7 +45,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 struct map_entry_t
 {
-  long            rcode;
+  int             rcode;
   Kumu::Result_t* result;
 };
 
@@ -56,7 +56,7 @@ static struct map_entry_t s_ResultMap[MapSize];
 
 //
 const Kumu::Result_t&
-Kumu::Result_t::Find(long v)
+Kumu::Result_t::Find(int v)
 {
   if ( v == 0 )
     return RESULT_OK;
@@ -72,7 +72,7 @@ Kumu::Result_t::Find(long v)
 }
 
 //
-Kumu::Result_t::Result_t(long v, const char* l) : value(v), label(l)
+Kumu::Result_t::Result_t(int v, const char* l) : value(v), label(l)
 {
   assert(l);
 

@@ -98,8 +98,8 @@ typedef std::map<UUID, UUID> ResourceMap_t;
 
 class ASDCP::TimedText::MXFReader::h__Reader : public ASDCP::h__Reader
 {
-  TimedTextDescriptor*  m_EssenceDescriptor;
-  ResourceMap_t         m_ResourceMap;
+  DCTimedTextDescriptor* m_EssenceDescriptor;
+  ResourceMap_t          m_ResourceMap;
 
   ASDCP_NO_COPY_CONSTRUCT(h__Reader);
 
@@ -136,7 +136,9 @@ ASDCP::TimedText::MXFReader::h__Reader::MD_to_TimedText_TDesc(TimedText::TimedTe
 
   for ( ; sdi != TDescObj->SubDescriptors.end() && KM_SUCCESS(result); sdi++ )
     {
-      result = m_HeaderPart.GetMDObjectByID(*sdi, (InterchangeObject**)&DescObject);
+      InterchangeObject* tmp_iobj = 0;
+      result = m_HeaderPart.GetMDObjectByID(*sdi, &tmp_iobj);
+      DescObject = static_cast<DCTimedTextResourceDescriptor*>(tmp_iobj);
 
       if ( KM_SUCCESS(result) )
 	{
@@ -174,9 +176,14 @@ ASDCP::TimedText::MXFReader::h__Reader::OpenRead(char const* filename)
   if( ASDCP_SUCCESS(result) )
     {
       if ( m_EssenceDescriptor == 0 )
-	  m_HeaderPart.GetMDObjectByType(OBJ_TYPE_ARGS(DCTimedTextDescriptor), (InterchangeObject**)&m_EssenceDescriptor);
+	{
+	  InterchangeObject* tmp_iobj = 0;
+	  result = m_HeaderPart.GetMDObjectByType(OBJ_TYPE_ARGS(DCTimedTextDescriptor), &tmp_iobj);
+	  m_EssenceDescriptor = static_cast<DCTimedTextDescriptor*>(tmp_iobj);
+	}
 
-      result = MD_to_TimedText_TDesc(m_TDesc);
+      if( ASDCP_SUCCESS(result) )
+	result = MD_to_TimedText_TDesc(m_TDesc);
     }
 
   if( ASDCP_SUCCESS(result) )
@@ -225,7 +232,9 @@ ASDCP::TimedText::MXFReader::h__Reader::ReadAncillaryResource(const byte_t* uuid
 
   DCTimedTextResourceDescriptor* DescObject = 0;
   // get the subdescriptor
-  Result_t result = m_HeaderPart.GetMDObjectByID((*ri).second, (InterchangeObject**)&DescObject);
+  InterchangeObject* tmp_iobj = 0;
+  Result_t result = m_HeaderPart.GetMDObjectByID((*ri).second, &tmp_iobj);
+  DescObject = static_cast<DCTimedTextResourceDescriptor*>(tmp_iobj);
 
   if ( KM_SUCCESS(result) )
     {
@@ -279,7 +288,7 @@ ASDCP::TimedText::MXFReader::h__Reader::ReadAncillaryResource(const byte_t* uuid
 
 	      // read the essence packet
 	      if( ASDCP_SUCCESS(result) )
-		result = ReadEKLVPacket(0, FrameBuf, Dict::ul(MDD_DCTimedTextDescriptor), Ctx, HMAC);
+		result = ReadEKLVPacket(0, 1, FrameBuf, Dict::ul(MDD_DCTimedTextDescriptor), Ctx, HMAC);
 	    }
 	}
     }

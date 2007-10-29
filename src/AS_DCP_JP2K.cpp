@@ -213,10 +213,12 @@ lh__Reader::OpenRead(const char* filename, EssenceType_t type)
 
   if( ASDCP_SUCCESS(result) )
     {
-      m_HeaderPart.GetMDObjectByType(OBJ_TYPE_ARGS(RGBAEssenceDescriptor),
-				     (InterchangeObject**)&m_EssenceDescriptor);
-      m_HeaderPart.GetMDObjectByType(OBJ_TYPE_ARGS(JPEG2000PictureSubDescriptor),
-				     (InterchangeObject**)&m_EssenceSubDescriptor);
+      InterchangeObject* tmp_iobj = 0;
+      m_HeaderPart.GetMDObjectByType(OBJ_TYPE_ARGS(RGBAEssenceDescriptor), &tmp_iobj);
+      m_EssenceDescriptor = static_cast<RGBAEssenceDescriptor*>(tmp_iobj);
+
+      m_HeaderPart.GetMDObjectByType(OBJ_TYPE_ARGS(JPEG2000PictureSubDescriptor), &tmp_iobj);
+      m_EssenceSubDescriptor = static_cast<JPEG2000PictureSubDescriptor*>(tmp_iobj);
 
       std::list<InterchangeObject*> ObjectList;
       m_HeaderPart.GetMDObjectsByType(OBJ_TYPE_ARGS(Track), ObjectList);
@@ -452,7 +454,11 @@ public:
       }
 
     if( ASDCP_SUCCESS(result) )
-      result = ReadEKLVPacket(FrameNum, FrameBuf, Dict::ul(MDD_JPEG2000Essence), Ctx, HMAC);
+      {
+	ui32_t SequenceNum = FrameNum * 2;
+	SequenceNum += ( phase == SP_RIGHT ) ? 2 : 1;
+	result = ReadEKLVPacket(FrameNum, SequenceNum, FrameBuf, Dict::ul(MDD_JPEG2000Essence), Ctx, HMAC);
+      }
 
     return result;
   }
@@ -718,9 +724,9 @@ lh__Writer::WriteFrame(const JP2K::FrameBuffer& FrameBuf, bool add_index,
       IndexTableSegment::IndexEntry Entry;
       Entry.StreamOffset = StreamOffset;
       m_FooterPart.PushIndexEntry(Entry);
-      m_FramesWritten++;
     }
 
+  m_FramesWritten++;
   return result;
 }
 
@@ -839,6 +845,8 @@ public:
     if ( m_NextPhase != SP_LEFT )
       return RESULT_SPHASE;
 
+    assert( m_FramesWritten % 2 == 0 );
+    m_FramesWritten /= 2;
     return lh__Writer::Finalize();
   }
 };

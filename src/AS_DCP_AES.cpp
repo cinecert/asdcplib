@@ -241,11 +241,19 @@ ASDCP::AESDecContext::DecryptBlock(const byte_t* ct_buf, byte_t* pt_buf, ui32_t 
 
 static const ui32_t B_len = 64; // rfc 2104, Sec. 2
 
-static byte_t ipad[KeyLen] = { 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36,
-			       0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36 };
+static byte_t ipad[B_len] = {
+  0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36,
+  0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36,
+  0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36,
+  0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36
+};
 
-static byte_t opad[KeyLen] = { 0x5c, 0x5c, 0x5c, 0x5c, 0x5c, 0x5c, 0x5c, 0x5c,
-			       0x5c, 0x5c, 0x5c, 0x5c, 0x5c, 0x5c, 0x5c, 0x5c };
+static byte_t opad[B_len] = {
+  0x5c, 0x5c, 0x5c, 0x5c, 0x5c, 0x5c, 0x5c, 0x5c,
+  0x5c, 0x5c, 0x5c, 0x5c, 0x5c, 0x5c, 0x5c, 0x5c,
+  0x5c, 0x5c, 0x5c, 0x5c, 0x5c, 0x5c, 0x5c, 0x5c,
+  0x5c, 0x5c, 0x5c, 0x5c, 0x5c, 0x5c, 0x5c, 0x5c
+};
 
 class HMACContext::h__HMACContext
 {
@@ -255,7 +263,6 @@ class HMACContext::h__HMACContext
 
 public:
   byte_t     m_SHAValue[HMAC_SIZE];
-  LabelSet_t m_SetType;
   bool       m_Final;
 
   h__HMACContext() : m_Final(false) {}
@@ -267,7 +274,6 @@ public:
     byte_t rng_buf[SHA_DIGEST_LENGTH*2];
     Kumu::Gen_FIPS_186_Value(key, KeyLen, rng_buf, SHA_DIGEST_LENGTH*2);
     memcpy(m_key, rng_buf+SHA_DIGEST_LENGTH, KeyLen);
-    m_SetType = LS_MXF_SMPTE;
     Reset();
   }
 
@@ -285,7 +291,6 @@ public:
     SHA1_Update(&SHA, key_nonce, KeyLen);
     SHA1_Final(sha_buf, &SHA);
     memcpy(m_key, sha_buf, KeyLen);
-    m_SetType = LS_MXF_INTEROP;
     Reset();
   }
 
@@ -294,28 +299,19 @@ public:
   Reset()
   {
     byte_t xor_buf[B_len];
+    memset(xor_buf, 0, B_len);
+    memcpy(xor_buf, m_key, KeyLen);
+
     memset(m_SHAValue, 0, HMAC_SIZE);
     m_Final = false;
     SHA1_Init(&m_SHA);
 
     // H(K XOR opad, H(K XOR ipad, text))
     //                 ^^^^^^^^^^
-    ui32_t i = 0;
+    for ( ui32_t i = 0; i < B_len; i++ )
+      xor_buf[i] ^= ipad[i];
 
-    for ( ; i < KeyLen; i++ )
-      xor_buf[i] = m_key[i] ^ ipad[i];
-
-    if ( m_SetType == LS_MXF_SMPTE )
-      {
-	for ( ; i < B_len; i++ )
-	  xor_buf[i] = 0 ^ ipad[0];
-
-	SHA1_Update(&m_SHA, xor_buf, B_len);
-      }
-    else
-      {
-	SHA1_Update(&m_SHA, xor_buf, KeyLen);
-      }
+    SHA1_Update(&m_SHA, xor_buf, B_len);
   }
 
   //
@@ -331,34 +327,29 @@ public:
   void
   Finalize()
   {
-    // H(K XOR opad, H(K XOR ipad, text))
-    // ^^^^^^^^^^^^^^^
-    SHA1_Final(m_SHAValue, &m_SHA);
-
     SHA_CTX SHA;
     SHA1_Init(&SHA);
 
     byte_t xor_buf[B_len];
-    ui32_t i = 0;
+    memset(xor_buf, 0, B_len);
+    memcpy(xor_buf, m_key, KeyLen);
 
-    for ( ; i < KeyLen; i++ )
-      xor_buf[i] = m_key[i] ^ opad[i];
-    
-    if ( m_SetType == LS_MXF_SMPTE )
-      {
-	for ( ; i < B_len; i++ )
-	  xor_buf[i] = 0 ^ opad[0];
+    SHA1_Init(&SHA);
 
-	SHA1_Update(&m_SHA, xor_buf, B_len);
-      }
-    else
-      {
-	SHA1_Update(&m_SHA, xor_buf, KeyLen);
-      }
-    
-    SHA1_Update(&SHA, xor_buf, KeyLen);
+    // H(K XOR opad, H(K XOR ipad, text))
+    //   ^^^^^^^^^^
+    for ( ui32_t i = 0; i < B_len; i++ )
+      xor_buf[i] ^= opad[i];
+
+    SHA1_Update(&SHA, xor_buf, B_len);
+
+    // H(K XOR opad, H(K XOR ipad, text))
+    //               ^
+    SHA1_Final(m_SHAValue, &m_SHA);
     SHA1_Update(&SHA, m_SHAValue, HMAC_SIZE);
 
+    // H(K XOR opad, H(K XOR ipad, text))
+    // ^
     SHA1_Final(m_SHAValue, &SHA);
     m_Final = true;
   }

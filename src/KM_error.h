@@ -43,14 +43,14 @@ namespace Kumu
 
   class Result_t
     {
-      long value;
+      int value;
       const char* label;
       Result_t();
 
     public:
-      static const Result_t& Find(long);
+      static const Result_t& Find(int);
 
-      Result_t(long v, const char* l);
+      Result_t(int v, const char* l);
       ~Result_t();
 
       inline bool        operator==(const Result_t& rhs) const { return value == rhs.value; }
@@ -58,8 +58,8 @@ namespace Kumu
       inline bool        Success() const { return ( value >= 0 ); }
       inline bool        Failure() const { return ( value < 0 ); }
 
-      inline long        Value() const { return value; }
-      inline operator    long() const { return value; }
+      inline int         Value() const { return value; }
+      inline operator    int() const { return value; }
 
       inline const char* Label() const { return label; }
       inline operator    const char*() const { return label; }

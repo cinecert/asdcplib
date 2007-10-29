@@ -134,7 +134,7 @@ namespace ASDCP
 			     const byte_t* EssenceUL, AESDecContext* Ctx, HMACContext* HMAC);
 
       // reads from current position
-      Result_t ReadEKLVPacket(ui32_t FrameNum, ASDCP::FrameBuffer& FrameBuf,
+      Result_t ReadEKLVPacket(ui32_t FrameNum, ui32_t SequenceNum, ASDCP::FrameBuffer& FrameBuf,
 			      const byte_t* EssenceUL, AESDecContext* Ctx, HMACContext* HMAC);
       void     Close();
     };

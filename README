@@ -116,6 +116,19 @@ utilities all respond to -h.
 
 
 Change History
+2007.10.29 - Bug fixes v.1.2.17
+ o Changed Result_t implementation to use int instead of long, which
+   was causing trouble on some 64 bit platforms.
+ o Fixed EKLV HMAC. Broke backward compatibility with older Interop
+   files. To validate these files use asdcplib-1.1.14. This should
+   not cause too much trouble since files with broken and non-broken
+   HMAC have been in the wild for years without trouble.
+ o Fixed HMAC sequence numbering in encrypted stereoscopic files.
+ o Finished stereoscopic test targets in the makefile.
+ o Fixed the win32 build, now expects VS2005 compiler by default,
+   use WITH_VC6=1 top get VS6 flags.
+
+
 2007.10.22 - Timed Text, Stereoscopic Picture and Bug fixes v.1.2.16
  o Significant API changes have been made. Please read all entries
    in this changelog to be sure you understand the changes. Also

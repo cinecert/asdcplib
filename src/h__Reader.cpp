@@ -194,14 +194,14 @@ ASDCP::h__Reader::ReadEKLVFrame(ui32_t FrameNum, ASDCP::FrameBuffer& FrameBuf,
     }
 
   if( ASDCP_SUCCESS(result) )
-    result = ReadEKLVPacket(FrameNum, FrameBuf, EssenceUL, Ctx, HMAC);
+    result = ReadEKLVPacket(FrameNum, FrameNum + 1, FrameBuf, EssenceUL, Ctx, HMAC);
 
   return result;
 }
 
 
 Result_t
-ASDCP::h__Reader::ReadEKLVPacket(ui32_t FrameNum, ASDCP::FrameBuffer& FrameBuf,
+ASDCP::h__Reader::ReadEKLVPacket(ui32_t FrameNum, ui32_t SequenceNum, ASDCP::FrameBuffer& FrameBuf,
 				 const byte_t* EssenceUL, AESDecContext* Ctx, HMACContext* HMAC)
 {
   KLReader Reader;
@@ -326,7 +326,7 @@ ASDCP::h__Reader::ReadEKLVPacket(ui32_t FrameNum, ASDCP::FrameBuffer& FrameBuf,
 	  if ( ASDCP_SUCCESS(result) && m_Info.UsesHMAC && HMAC )
 	    {
 	      IntegrityPack IntPack;
-	      result = IntPack.TestValues(TmpWrapper, m_Info.AssetUUID, FrameNum + 1, HMAC);
+	      result = IntPack.TestValues(TmpWrapper, m_Info.AssetUUID, SequenceNum, HMAC);
 	    }
 	}
       else // return ciphertext to caller
