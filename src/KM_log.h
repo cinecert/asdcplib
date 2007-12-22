@@ -212,7 +212,7 @@ namespace Kumu
 
     void WriteEntry(const LogEntry& Entry) {
       m_a.WriteEntry(Entry);
-      m_a.WriteEntry(Entry);
+      m_b.WriteEntry(Entry);
     }
   };
 
