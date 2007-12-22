@@ -33,7 +33,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "AS_DCP_internal.h"
 #include "KM_xml.h"
 
-static std::string TIMED_TEXT_PACKAGE_LABEL = "File Package: SMPTE 429-5 frame wrapping of D-Cinema Timed Text data";
+static std::string TIMED_TEXT_PACKAGE_LABEL = "File Package: SMPTE 429-5 clip wrapping of D-Cinema Timed Text data";
 static std::string TIMED_TEXT_DEF_LABEL = "Timed Text Track";
 
 
@@ -46,7 +46,7 @@ MIME2str(TimedText::MIMEType_t m)
     return "image/png";
 
   else if ( m == TimedText::MT_OPENTYPE )
-    return "application/x-opentype";
+    return "application/x-font-opentype";
 
   return "application/octet-stream";
 }
@@ -64,8 +64,8 @@ ASDCP::TimedText::DescriptorDump(ASDCP::TimedText::TimedTextDescriptor const& TD
   fprintf(stream, "         EditRate: %u/%u\n", TDesc.EditRate.Numerator, TDesc.EditRate.Denominator);
   fprintf(stream, "ContainerDuration: %u\n",    TDesc.ContainerDuration);
   fprintf(stream, "          AssetID: %s\n",    TmpID.EncodeHex(buf, 64));
-  fprintf(stream, "    NamespaceName: %s\n", TDesc.NamespaceName.c_str());
-  fprintf(stream, "    ResourceCount: %lu\n", TDesc.ResourceList.size());
+  fprintf(stream, "    NamespaceName: %s\n",    TDesc.NamespaceName.c_str());
+  fprintf(stream, "    ResourceCount: %lu\n",   TDesc.ResourceList.size());
 
   TimedText::ResourceList_t::const_iterator ri;
   for ( ri = TDesc.ResourceList.begin() ; ri != TDesc.ResourceList.end(); ri++ )
@@ -98,8 +98,8 @@ typedef std::map<UUID, UUID> ResourceMap_t;
 
 class ASDCP::TimedText::MXFReader::h__Reader : public ASDCP::h__Reader
 {
-  DCTimedTextDescriptor* m_EssenceDescriptor;
-  ResourceMap_t          m_ResourceMap;
+  MXF::TimedTextDescriptor* m_EssenceDescriptor;
+  ResourceMap_t             m_ResourceMap;
 
   ASDCP_NO_COPY_CONSTRUCT(h__Reader);
 
@@ -122,40 +122,40 @@ ASDCP::TimedText::MXFReader::h__Reader::MD_to_TimedText_TDesc(TimedText::TimedTe
 {
   assert(m_EssenceDescriptor);
   memset(&m_TDesc.AssetID, 0, UUIDlen);
-  MXF::DCTimedTextDescriptor* TDescObj = (MXF::DCTimedTextDescriptor*)m_EssenceDescriptor;
+  MXF::TimedTextDescriptor* TDescObj = (MXF::TimedTextDescriptor*)m_EssenceDescriptor;
 
   TDesc.EditRate = TDescObj->SampleRate;
   TDesc.ContainerDuration = TDescObj->ContainerDuration;
   memcpy(TDesc.AssetID, TDescObj->ResourceID.Value(), UUIDlen);
-  TDesc.NamespaceName = TDescObj->RootNamespaceName;
-  TDesc.EncodingName = TDescObj->UTFEncoding;
+  TDesc.NamespaceName = TDescObj->NamespaceURI;
+  TDesc.EncodingName = TDescObj->UCSEncoding;
 
   Batch<UUID>::const_iterator sdi = TDescObj->SubDescriptors.begin();
-  DCTimedTextResourceDescriptor* DescObject = 0;
+  TimedTextResourceSubDescriptor* DescObject = 0;
   Result_t result = RESULT_OK;
 
   for ( ; sdi != TDescObj->SubDescriptors.end() && KM_SUCCESS(result); sdi++ )
     {
       InterchangeObject* tmp_iobj = 0;
       result = m_HeaderPart.GetMDObjectByID(*sdi, &tmp_iobj);
-      DescObject = static_cast<DCTimedTextResourceDescriptor*>(tmp_iobj);
+      DescObject = static_cast<TimedTextResourceSubDescriptor*>(tmp_iobj);
 
       if ( KM_SUCCESS(result) )
 	{
 	  TimedTextResourceDescriptor TmpResource;
-	  memcpy(TmpResource.ResourceID, DescObject->ResourceID.Value(), UUIDlen);
+	  memcpy(TmpResource.ResourceID, DescObject->AncillaryResourceID.Value(), UUIDlen);
 
-	  if ( DescObject->ResourceMIMEType.find("font/") != std::string::npos )
+	  if ( DescObject->MIMEMediaType.find("font/") != std::string::npos )
 	    TmpResource.Type = MT_OPENTYPE;
 
-	  else if ( DescObject->ResourceMIMEType.find("image/png") != std::string::npos )
+	  else if ( DescObject->MIMEMediaType.find("image/png") != std::string::npos )
 	    TmpResource.Type = MT_PNG;
 
 	  else
 	    TmpResource.Type = MT_BIN;
 
 	  TDesc.ResourceList.push_back(TmpResource);
-	  m_ResourceMap.insert(ResourceMap_t::value_type(DescObject->ResourceID, *sdi));
+	  m_ResourceMap.insert(ResourceMap_t::value_type(DescObject->AncillaryResourceID, *sdi));
 	}
       else
 	{
@@ -178,8 +178,8 @@ ASDCP::TimedText::MXFReader::h__Reader::OpenRead(char const* filename)
       if ( m_EssenceDescriptor == 0 )
 	{
 	  InterchangeObject* tmp_iobj = 0;
-	  result = m_HeaderPart.GetMDObjectByType(OBJ_TYPE_ARGS(DCTimedTextDescriptor), &tmp_iobj);
-	  m_EssenceDescriptor = static_cast<DCTimedTextDescriptor*>(tmp_iobj);
+	  result = m_HeaderPart.GetMDObjectByType(OBJ_TYPE_ARGS(TimedTextDescriptor), &tmp_iobj);
+	  m_EssenceDescriptor = static_cast<MXF::TimedTextDescriptor*>(tmp_iobj);
 	}
 
       if( ASDCP_SUCCESS(result) )
@@ -203,7 +203,7 @@ ASDCP::TimedText::MXFReader::h__Reader::ReadTimedTextResource(FrameBuffer& Frame
   if ( ! m_File.IsOpen() )
     return RESULT_INIT;
 
-  Result_t result = ReadEKLVFrame(0, FrameBuf, Dict::ul(MDD_DCTimedTextEssence), Ctx, HMAC);
+  Result_t result = ReadEKLVFrame(0, FrameBuf, Dict::ul(MDD_TimedTextEssence), Ctx, HMAC);
 
  if( ASDCP_SUCCESS(result) )
    {
@@ -230,11 +230,11 @@ ASDCP::TimedText::MXFReader::h__Reader::ReadAncillaryResource(const byte_t* uuid
       return RESULT_RANGE;
     }
 
-  DCTimedTextResourceDescriptor* DescObject = 0;
+  TimedTextResourceSubDescriptor* DescObject = 0;
   // get the subdescriptor
   InterchangeObject* tmp_iobj = 0;
   Result_t result = m_HeaderPart.GetMDObjectByID((*ri).second, &tmp_iobj);
-  DescObject = static_cast<DCTimedTextResourceDescriptor*>(tmp_iobj);
+  DescObject = static_cast<TimedTextResourceSubDescriptor*>(tmp_iobj);
 
   if ( KM_SUCCESS(result) )
     {
@@ -247,7 +247,7 @@ ASDCP::TimedText::MXFReader::h__Reader::ReadAncillaryResource(const byte_t* uuid
       // value needed to  complete the HMAC.
       for ( pi = m_HeaderPart.m_RIP.PairArray.begin(); pi != m_HeaderPart.m_RIP.PairArray.end(); pi++, sequence++ )
 	{
-	  if ( (*pi).BodySID == DescObject->ResourceSID )
+	  if ( (*pi).BodySID == DescObject->EssenceStreamID )
 	    {
 	      TmpPair = *pi;
 	      break;
@@ -256,14 +256,14 @@ ASDCP::TimedText::MXFReader::h__Reader::ReadAncillaryResource(const byte_t* uuid
 
       if ( TmpPair.ByteOffset == 0 )
 	{
-	  DefaultLogSink().Error("Body SID not found in RIP set: %d\n", DescObject->ResourceSID);
+	  DefaultLogSink().Error("Body SID not found in RIP set: %d\n", DescObject->EssenceStreamID);
 	  return RESULT_FORMAT;
 	}
 
       if ( KM_SUCCESS(result) )
 	{
 	  FrameBuf.AssetID(uuid);
-	  FrameBuf.MIMEType(DescObject->ResourceMIMEType);
+	  FrameBuf.MIMEType(DescObject->MIMEMediaType);
 
 	  // seek tp the start of the partition
 	  if ( (Kumu::fpos_t)TmpPair.ByteOffset != m_LastPosition )
@@ -279,7 +279,7 @@ ASDCP::TimedText::MXFReader::h__Reader::ReadAncillaryResource(const byte_t* uuid
 	  if( ASDCP_SUCCESS(result) )
 	    {
 	      // check the SID
-	      if ( DescObject->ResourceSID != GSPart.BodySID )
+	      if ( DescObject->EssenceStreamID != GSPart.BodySID )
 		{
 		  char buf[64];
 		  DefaultLogSink().Error("Generic stream partition body differs: %s\n", RID.EncodeHex(buf, 64));
@@ -288,7 +288,7 @@ ASDCP::TimedText::MXFReader::h__Reader::ReadAncillaryResource(const byte_t* uuid
 
 	      // read the essence packet
 	      if( ASDCP_SUCCESS(result) )
-		result = ReadEKLVPacket(0, 1, FrameBuf, Dict::ul(MDD_DCTimedTextDescriptor), Ctx, HMAC);
+		result = ReadEKLVPacket(0, 1, FrameBuf, Dict::ul(MDD_TimedTextDescriptor), Ctx, HMAC);
 	    }
 	}
     }
@@ -408,11 +408,11 @@ class ASDCP::TimedText::MXFWriter::h__Writer : public ASDCP::h__Writer
 public:
   TimedTextDescriptor m_TDesc;
   byte_t              m_EssenceUL[SMPTE_UL_LENGTH];
-  ui32_t              m_ResourceSID;
+  ui32_t              m_EssenceStreamID;
 
   ASDCP_NO_COPY_CONSTRUCT(h__Writer);
 
-  h__Writer() : m_ResourceSID(10) {
+  h__Writer() : m_EssenceStreamID(10) {
     memset(m_EssenceUL, 0, SMPTE_UL_LENGTH);
   }
 
@@ -431,13 +431,13 @@ ASDCP::Result_t
 ASDCP::TimedText::MXFWriter::h__Writer::TimedText_TDesc_to_MD(TimedText::TimedTextDescriptor& TDesc)
 {
   assert(m_EssenceDescriptor);
-  MXF::DCTimedTextDescriptor* TDescObj = (MXF::DCTimedTextDescriptor*)m_EssenceDescriptor;
+  MXF::TimedTextDescriptor* TDescObj = (MXF::TimedTextDescriptor*)m_EssenceDescriptor;
 
   TDescObj->SampleRate = TDesc.EditRate;
   TDescObj->ContainerDuration = TDesc.ContainerDuration;
   TDescObj->ResourceID.Set(TDesc.AssetID);
-  TDescObj->RootNamespaceName = TDesc.NamespaceName;
-  TDescObj->UTFEncoding = TDesc.EncodingName;
+  TDescObj->NamespaceURI = TDesc.NamespaceName;
+  TDescObj->UCSEncoding = TDesc.EncodingName;
 
   return RESULT_OK;
 }
@@ -454,7 +454,7 @@ ASDCP::TimedText::MXFWriter::h__Writer::OpenWrite(char const* filename, ui32_t H
   if ( ASDCP_SUCCESS(result) )
     {
       m_HeaderSize = HeaderSize;
-      m_EssenceDescriptor = new DCTimedTextDescriptor();
+      m_EssenceDescriptor = new MXF::TimedTextDescriptor();
       result = m_State.Goto_INIT();
     }
 
@@ -474,16 +474,16 @@ ASDCP::TimedText::MXFWriter::h__Writer::SetSourceStream(ASDCP::TimedText::TimedT
 
   for ( ri = m_TDesc.ResourceList.begin() ; ri != m_TDesc.ResourceList.end() && ASDCP_SUCCESS(result); ri++ )
     {
-      DCTimedTextResourceDescriptor* resourceSubdescriptor = new DCTimedTextResourceDescriptor;
+      TimedTextResourceSubDescriptor* resourceSubdescriptor = new TimedTextResourceSubDescriptor;
       GenRandomValue(resourceSubdescriptor->InstanceUID);
-      resourceSubdescriptor->ResourceID.Set((*ri).ResourceID);
-      resourceSubdescriptor->ResourceMIMEType = MIME2str((*ri).Type);
-      resourceSubdescriptor->ResourceSID = m_ResourceSID++;
+      resourceSubdescriptor->AncillaryResourceID.Set((*ri).ResourceID);
+      resourceSubdescriptor->MIMEMediaType = MIME2str((*ri).Type);
+      resourceSubdescriptor->EssenceStreamID = m_EssenceStreamID++;
       m_EssenceSubDescriptorList.push_back((FileDescriptor*)resourceSubdescriptor);
       m_EssenceDescriptor->SubDescriptors.push_back(resourceSubdescriptor->InstanceUID);
     }
 
-  m_ResourceSID = 10;
+  m_EssenceStreamID = 10;
 
   if ( ASDCP_SUCCESS(result) )
     {
@@ -491,7 +491,7 @@ ASDCP::TimedText::MXFWriter::h__Writer::SetSourceStream(ASDCP::TimedText::TimedT
       AddDMSegment(m_TDesc.EditRate, 24, TIMED_TEXT_DEF_LABEL,
 		   UL(Dict::ul(MDD_PictureDataDef)), TIMED_TEXT_PACKAGE_LABEL);
 
-      AddEssenceDescriptor(UL(Dict::ul(MDD_DCTimedTextWrapping)));
+      AddEssenceDescriptor(UL(Dict::ul(MDD_TimedTextWrapping)));
 
       result = m_HeaderPart.WriteToFile(m_File, m_HeaderSize);
       
@@ -501,7 +501,7 @@ ASDCP::TimedText::MXFWriter::h__Writer::SetSourceStream(ASDCP::TimedText::TimedT
 
   if ( ASDCP_SUCCESS(result) )
     {
-      memcpy(m_EssenceUL, Dict::ul(MDD_DCTimedTextEssence), SMPTE_UL_LENGTH);
+      memcpy(m_EssenceUL, Dict::ul(MDD_TimedTextEssence), SMPTE_UL_LENGTH);
       m_EssenceUL[SMPTE_UL_LENGTH-1] = 1; // first (and only) essence container
       result = m_State.Goto_READY();
     }
@@ -558,11 +558,11 @@ ASDCP::TimedText::MXFWriter::h__Writer::WriteAncillaryResource(const ASDCP::Time
 
   GSPart.ThisPartition = here;
   GSPart.PreviousPartition = m_HeaderPart.m_RIP.PairArray.back().ByteOffset;
-  GSPart.BodySID = m_ResourceSID;
+  GSPart.BodySID = m_EssenceStreamID;
   GSPart.OperationalPattern = m_HeaderPart.OperationalPattern;
 
-  m_HeaderPart.m_RIP.PairArray.push_back(RIP::Pair(m_ResourceSID++, here));
-  GSPart.EssenceContainers.push_back(UL(Dict::ul(MDD_DCTimedTextEssence)));
+  m_HeaderPart.m_RIP.PairArray.push_back(RIP::Pair(m_EssenceStreamID++, here));
+  GSPart.EssenceContainers.push_back(UL(Dict::ul(MDD_TimedTextEssence)));
   UL TmpUL(Dict::ul(MDD_GenericStreamPartition));
   Result_t result = GSPart.WriteToFile(m_File, TmpUL);
 

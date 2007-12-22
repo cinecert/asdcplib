@@ -49,6 +49,7 @@ namespace Kumu
 
     public:
       static const Result_t& Find(int);
+      static Result_t Delete(int);
 
       Result_t(int v, const char* l);
       ~Result_t();

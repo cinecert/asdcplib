@@ -125,6 +125,18 @@ namespace ASDCP
 
 	  inline virtual bool HasValue() const { return ! this->empty(); }
 
+	  virtual ui32_t ArchiveLength() const {
+	    ui32_t arch_size = sizeof(ui32_t)*2;
+
+	    typename std::vector<T>::const_iterator l_i = this->begin();
+	    assert(l_i != this->end());
+
+	    for ( ; l_i != this->end(); l_i++ )
+	      arch_size += l_i->ArchiveLength();
+	    
+	    return arch_size;
+	  }
+
 	  //
 	  virtual bool Archive(Kumu::MemIOWriter* Writer) const {
 	    if ( ! Writer->WriteUi32BE(this->size()) ) return false;
@@ -187,6 +199,17 @@ namespace ASDCP
 	    }
 
 	  inline virtual bool HasValue() const { return ! this->empty(); }
+
+	  virtual ui32_t ArchiveLength() const {
+	    ui32_t arch_size = 0;
+
+	    typename std::list<T>::const_iterator l_i = this->begin();
+
+	    for ( ; l_i != this->end(); l_i++ )
+	      arch_size += l_i->ArchiveLength();
+	    
+	    return arch_size;
+	  }
 
 	  //
 	  virtual bool Archive(Kumu::MemIOWriter* Writer) const {
@@ -255,6 +278,7 @@ namespace ASDCP
 	  }
 
 	  inline virtual bool HasValue() const { return true; }
+	  inline virtual ui32_t ArchiveLength() const { return 8L; }
 
 	  //
 	  inline virtual bool Archive(Kumu::MemIOWriter* Writer) const {
@@ -275,8 +299,9 @@ namespace ASDCP
 	  const UTF16String& operator=(const std::string&);
 
 	  const char* EncodeString(char* str_buf, ui32_t buf_len) const;
-	  virtual bool Unarchive(Kumu::MemIOReader* Reader);
 	  inline virtual bool HasValue() const { return ! empty(); }
+	  inline virtual ui32_t ArchiveLength() const { return sizeof(ui32_t) + size(); }
+	  virtual bool Unarchive(Kumu::MemIOReader* Reader);
 	  virtual bool Archive(Kumu::MemIOWriter* Writer) const;
 	};
 
@@ -322,6 +347,7 @@ namespace ASDCP
 	  }
 
 	  inline virtual bool HasValue() const { return true; }
+	  inline virtual ui32_t ArchiveLength() const { return sizeof(ui32_t)*2; }
 
 	  inline virtual bool Archive(Kumu::MemIOWriter* Writer) const {
 	    if ( ! Writer->WriteUi32BE((ui32_t)Numerator) ) return false;
@@ -341,7 +367,7 @@ namespace ASDCP
 	  ui16_t Minor;
 	  ui16_t Patch;
 	  ui16_t Build;
-	  ui16_t Release;
+	  Release_t Release;
 
 	  VersionType() : Major(0), Minor(0), Patch(0), Build(0), Release(RL_UNKNOWN) {}
 	  ~VersionType() {}
@@ -364,6 +390,7 @@ namespace ASDCP
 	  }
 
 	  inline virtual bool HasValue() const { return true; }
+	  inline virtual ui32_t ArchiveLength() const { return sizeof(ui16_t)*5; }
 
 	  virtual bool Archive(Kumu::MemIOWriter* Writer) const {
 	    if ( ! Writer->WriteUi16BE(Major) ) return false;

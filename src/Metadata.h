@@ -384,6 +384,7 @@ namespace ASDCP
           ui32_t StoredWidth;
           ui32_t StoredHeight;
           Rational AspectRatio;
+          UL PictureEssenceCoding;
 
 	  GenericPictureEssenceDescriptor() : FrameLayout(0), StoredWidth(0), StoredHeight(0) {}
 	  virtual ~GenericPictureEssenceDescriptor() {}
@@ -567,18 +568,18 @@ namespace ASDCP
 	};
 
       //
-      class DCTimedTextDescriptor : public GenericDataEssenceDescriptor
+      class TimedTextDescriptor : public GenericDataEssenceDescriptor
 	{
-	  ASDCP_NO_COPY_CONSTRUCT(DCTimedTextDescriptor);
+	  ASDCP_NO_COPY_CONSTRUCT(TimedTextDescriptor);
 
 	public:
           UUID ResourceID;
-          UTF16String UTFEncoding;
-          UTF16String RootNamespaceName;
+          UTF16String UCSEncoding;
+          UTF16String NamespaceURI;
 
-	  DCTimedTextDescriptor() {}
-	  virtual ~DCTimedTextDescriptor() {}
-          virtual const char* HasName() { return "DCTimedTextDescriptor"; }
+	  TimedTextDescriptor() {}
+	  virtual ~TimedTextDescriptor() {}
+          virtual const char* HasName() { return "TimedTextDescriptor"; }
           virtual Result_t InitFromTLVSet(TLVReader& TLVSet);
           virtual Result_t WriteToTLVSet(TLVWriter& TLVSet);
 	  virtual void     Dump(FILE* = 0);
@@ -587,18 +588,18 @@ namespace ASDCP
 	};
 
       //
-      class DCTimedTextResourceDescriptor : public InterchangeObject
+      class TimedTextResourceSubDescriptor : public InterchangeObject
 	{
-	  ASDCP_NO_COPY_CONSTRUCT(DCTimedTextResourceDescriptor);
+	  ASDCP_NO_COPY_CONSTRUCT(TimedTextResourceSubDescriptor);
 
 	public:
-          UUID ResourceID;
-          UTF16String ResourceMIMEType;
-          ui32_t ResourceSID;
+          UUID AncillaryResourceID;
+          UTF16String MIMEMediaType;
+          ui32_t EssenceStreamID;
 
-	  DCTimedTextResourceDescriptor() : ResourceSID(0) {}
-	  virtual ~DCTimedTextResourceDescriptor() {}
-          virtual const char* HasName() { return "DCTimedTextResourceDescriptor"; }
+	  TimedTextResourceSubDescriptor() : EssenceStreamID(0) {}
+	  virtual ~TimedTextResourceSubDescriptor() {}
+          virtual const char* HasName() { return "TimedTextResourceSubDescriptor"; }
           virtual Result_t InitFromTLVSet(TLVReader& TLVSet);
           virtual Result_t WriteToTLVSet(TLVWriter& TLVSet);
 	  virtual void     Dump(FILE* = 0);

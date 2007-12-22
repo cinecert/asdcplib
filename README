@@ -116,17 +116,26 @@ utilities all respond to -h.
 
 
 Change History
-2007.10.29 - Bug fixes v.1.2.17
+2007.12.13 - Bug fixes v.1.2.17
  o Changed Result_t implementation to use int instead of long, which
    was causing trouble on some 64 bit platforms.
- o Fixed EKLV HMAC. Broke backward compatibility with older Interop
-   files. To validate these files use asdcplib-1.1.14. This should
-   not cause too much trouble since files with broken and non-broken
-   HMAC have been in the wild for years without trouble.
+ o Fixed EKLV HMAC. NOTE: Breaks backward compatibility with older
+   Interop files. To validate these files, use asdcplib-1.1.14. This
+   should not cause too much trouble since files with broken and
+   non-broken HMAC have been in the wild for years without issue.
  o Fixed HMAC sequence numbering in encrypted stereoscopic files.
  o Finished stereoscopic test targets in the makefile.
  o Fixed the win32 build, now expects VS2005 compiler by default,
-   use WITH_VC6=1 top get VS6 flags.
+   use WITH_VC6=1 top get VC6 flags.
+ o Stereoscopic and Timed Text modes now have SMPTE UL values.
+   NOTE: SMPTE 429-5 and 429-10 are not yet published. It is possible
+   that these UL values may change before publication. Please use
+   caution when using these features for production work.
+ o Changed a bunch of symbol names in the 429-5 implementation to
+   better match the spec.
+ o Added -U option to asdcp-test to dump the UL library to stdout.
+ o Fixed erroneous placement of the PictureEssenceCoding UL in JP2K
+   files (Interop and SMPTE modes).
 
 
 2007.10.22 - Timed Text, Stereoscopic Picture and Bug fixes v.1.2.16

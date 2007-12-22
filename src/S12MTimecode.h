@@ -130,6 +130,7 @@ public:
 
   // IArchive
   bool HasValue() const { return (m_FPS > 0); }
+  ui32_t ArchiveLength() const { return sizeof(ui32_t)*2; }
 
   bool Archive(Kumu::MemIOWriter* Writer) const
   {

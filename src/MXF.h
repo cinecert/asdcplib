@@ -78,15 +78,16 @@ namespace ASDCP
 		return str_buf;
 	      }
 
-	      inline virtual bool Unarchive(Kumu::MemIOReader* Reader) {
+	      inline bool HasValue() const { return true; }
+	      inline ui32_t ArchiveLength() const { return sizeof(ui32_t) + sizeof(ui64_t); }
+
+	      inline bool Unarchive(Kumu::MemIOReader* Reader) {
 		if ( ! Reader->ReadUi32BE(&BodySID) ) return false;
 		if ( ! Reader->ReadUi64BE(&ByteOffset) ) return false;
 		return true;
 	      }
 	      
-	      inline virtual bool HasValue() const { return true; }
-	  
-	      inline virtual bool Archive(Kumu::MemIOWriter* Writer) const {
+	      inline bool Archive(Kumu::MemIOWriter* Writer) const {
 		if ( ! Writer->WriteUi32BE(BodySID) ) return false;
 		if ( ! Writer->WriteUi64BE(ByteOffset) ) return false;
 		return true;
@@ -148,7 +149,7 @@ namespace ASDCP
 
 	public:
 	  //
-	  class LocalTagEntry
+	class LocalTagEntry : Kumu::IArchive
 	    {
 	    public:
 	      TagValue    Tag;
@@ -159,6 +160,9 @@ namespace ASDCP
 		UL.EncodeString(str_buf + strlen(str_buf), buf_len - strlen(str_buf));
 		return str_buf;
 	      }
+
+	      inline bool HasValue() const { return UL.HasValue(); }
+	      inline ui32_t ArchiveLength() const { return 2 + UL.ArchiveLength(); }
 
 	      inline bool Unarchive(Kumu::MemIOReader* Reader) {
 		if ( ! Reader->ReadUi8(&Tag.a) ) return false;
@@ -246,7 +250,7 @@ namespace ASDCP
 
 	public:
 	  //
-	  class DeltaEntry
+	class DeltaEntry : public Kumu::IArchive
 	    {
 	    public:
 	      i8_t    PosTableIndex;
@@ -254,13 +258,15 @@ namespace ASDCP
 	      ui32_t  ElementData;
 
 	      DeltaEntry() : PosTableIndex(-1), Slice(0), ElementData(0) {}
+	      inline bool HasValue() const { return true; }
+	      ui32_t      ArchiveLength() const { return sizeof(ui32_t) + 2; }
 	      bool        Unarchive(Kumu::MemIOReader* Reader);
 	      bool        Archive(Kumu::MemIOWriter* Writer) const;
 	      const char* EncodeString(char* str_buf, ui32_t buf_len) const;
 	    };
 
 	  //
-	  class IndexEntry
+	  class IndexEntry : public Kumu::IArchive
 	    {
 	    public:
 	      i8_t               TemporalOffset;
@@ -274,6 +280,8 @@ namespace ASDCP
 	      //	      Array<Rational>    PosTable;
 
 	      IndexEntry() : TemporalOffset(0), KeyFrameOffset(0), Flags(0), StreamOffset() {}
+	      inline bool HasValue() const { return true; }
+	      ui32_t      ArchiveLength() const { return sizeof(ui64_t) + 3; };
 	      bool        Unarchive(Kumu::MemIOReader* Reader);
 	      bool        Archive(Kumu::MemIOWriter* Writer) const;
 	      const char* EncodeString(char* str_buf, ui32_t buf_len) const;

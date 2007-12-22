@@ -151,6 +151,7 @@ Major modes:\n\
   -h | -help        - Show help\n\
   -i                - Show file info\n\
   -t                - Calculate message digest of input file\n\
+  -U                - Dump UL catalog to stdout\n\
   -u                - Generate a random UUID value to stdout\n\
   -V                - Show version information\n\
   -x <root-name>    - Extract essence from AS-DCP file to named file(s)\n\
@@ -211,7 +212,8 @@ enum MajorMode_t
   MMT_GEN_ID,
   MMT_GEN_KEY,
   MMT_GOP_START,
-  MMT_DIGEST
+  MMT_DIGEST,
+  MMT_UL_LIST,
 };
 
 
@@ -310,6 +312,7 @@ public:
 	      case 'h': help_flag = true; break;
 	      case 'v': verbose_flag = true; break;
 	      case 'g': mode = MMT_GEN_KEY; break;
+	      case 'U':	mode = MMT_UL_LIST; break;
 	      case 'u':	mode = MMT_GEN_ID; break;
 	      case 'e': encrypt_header_flag = true; break;
 	      case 'E': encrypt_header_flag = false; break;
@@ -1752,6 +1755,7 @@ int
 main(int argc, const char** argv)
 {
   Result_t result = RESULT_OK;
+  char     str_buf[64];
   CommandOptions Options(argc, argv);
 
   if ( Options.version_flag )
@@ -1781,22 +1785,32 @@ main(int argc, const char** argv)
     {
       Kumu::FortunaRNG RNG;
       byte_t bin_buf[KeyLen];
-      char   str_buf[40];
 
       RNG.FillRandom(bin_buf, KeyLen);
-      printf("%s\n", Kumu::bin2hex(bin_buf, KeyLen, str_buf, 40));
+      printf("%s\n", Kumu::bin2hex(bin_buf, KeyLen, str_buf, 64));
     }
   else if ( Options.mode == MMT_GEN_ID )
     {
       UUID TmpID;
       Kumu::GenRandomValue(TmpID);
-      char   str_buf[40];
-      printf("%s\n", TmpID.EncodeHex(str_buf, 40));
+      printf("%s\n", TmpID.EncodeHex(str_buf, 64));
     }
   else if ( Options.mode == MMT_DIGEST )
     {
       for ( ui32_t i = 0; i < Options.file_count && ASDCP_SUCCESS(result); i++ )
 	result = digest_file(Options.filenames[i]);
+    }
+  else if ( Options.mode == MMT_UL_LIST )
+    {
+      MDD_t di = (MDD_t)0;
+
+      while ( di < MDD_Max )
+	{
+	  MDDEntry TmpType = Dict::Type(di);
+	  UL TmpUL(TmpType.ul);
+	  fprintf(stdout, "%s: %s\n", TmpUL.EncodeString(str_buf, 64), TmpType.name);
+	  di = (MDD_t)(di + 1);
+	}
     }
   else if ( Options.mode == MMT_EXTRACT )
     {
@@ -1878,6 +1892,11 @@ main(int argc, const char** argv)
 	      return 5;
 	    }
 	}
+    }
+  else
+    {
+      fprintf(stderr, "Unhandled mode: %d.\n", Options.mode);
+      return 6;
     }
 
   if ( ASDCP_FAILURE(result) )

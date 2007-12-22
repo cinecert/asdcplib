@@ -49,7 +49,7 @@ struct map_entry_t
   Kumu::Result_t* result;
 };
 
-const ui32_t MapMax = 512;
+const ui32_t MapMax = 1024;
 const ui32_t MapSize = MapMax * (sizeof(struct map_entry_t));
 static bool s_MapInit = false;
 static struct map_entry_t s_ResultMap[MapSize];
@@ -72,9 +72,38 @@ Kumu::Result_t::Find(int v)
 }
 
 //
+Kumu::Result_t
+Kumu::Result_t::Delete(int v)
+{
+  if ( v >= RESULT_NOTAFILE.Value() )
+    {
+      DefaultLogSink().Error("Cannot delete core result code: %ld\n", v);
+      return RESULT_FAIL;
+    }
+
+  for ( ui32_t i = 0; s_ResultMap[i].result != 0 && i < MapMax; i++ )
+    {
+      if ( s_ResultMap[i].rcode == v )
+	{
+	  s_ResultMap[i].rcode = 0;
+	  s_ResultMap[i++].result = 0;
+
+	  for ( ; s_ResultMap[i].result != 0 && i < MapMax; i++ )
+	    s_ResultMap[i-1] = s_ResultMap[i];
+
+	  return RESULT_OK;
+	}
+    }
+
+  return RESULT_FALSE;
+}
+
+
+//
 Kumu::Result_t::Result_t(int v, const char* l) : value(v), label(l)
 {
   assert(l);
+  assert(value < (int)MapMax);
 
   if ( v == 0 )
     return;
@@ -875,6 +904,15 @@ Kumu::Timestamp::DecodeString(const char* datestr)
 	  TmpStamp.Second = atoi(datestr + 17);
 	}
 
+      if ( datestr[19] == '.' )
+	{
+	  if ( ! ( isdigit(datestr[20]) && isdigit(datestr[21]) && isdigit(datestr[22]) ) )
+	    return false;
+	  
+	  // we don't carry the ms value
+	  datestr += 4;
+	}
+
       if ( datestr[19] == '-' || datestr[19] == '+' )
 	{
 	  if ( ! ( isdigit(datestr[20]) && isdigit(datestr[21]) )
@@ -1047,24 +1085,32 @@ Kumu::ByteString::Set(const ByteString& Buf)
 
 
 // Sets the size of the internally allocate buffer.
-// Resets content length to zero.
 Kumu::Result_t
 Kumu::ByteString::Capacity(ui32_t cap_size)
 {
-  if ( m_Capacity < cap_size )
+  if ( m_Capacity >= cap_size )
+    return RESULT_OK;
+
+  byte_t* tmp_data = 0;
+  if ( m_Data != 0 )
     {
-      if ( m_Data != 0 )
+      if ( m_Length > 0 )
+	tmp_data = m_Data;
+      else
 	free(m_Data);
-		
-      m_Data = (byte_t*)malloc(cap_size);
-		
-      if ( m_Data == 0 )
-	return RESULT_ALLOC;
-		
-      m_Capacity = cap_size;
-      m_Length = 0;
     }
-	
+		
+  if ( ( m_Data = (byte_t*)malloc(cap_size) ) == 0 )
+    return RESULT_ALLOC;
+
+  if ( tmp_data != 0 )
+    {
+      assert(m_Length > 0);
+      memcpy(m_Data, tmp_data, m_Length);
+      free(tmp_data);
+    }
+		
+  m_Capacity = cap_size;
   return RESULT_OK;
 }
 

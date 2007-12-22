@@ -570,6 +570,9 @@ public:
   Result_t JP2K_PDesc_to_MD(JP2K::PictureDescriptor& PDesc);
 };
 
+const int VideoLineMapSize = 16; // See SMPTE 377M D.2.1
+const int PixelLayoutSize = 8*2; // See SMPTE 377M D.2.3
+static const byte_t s_PixelLayoutXYZ[PixelLayoutSize] = { 0xd8, 0x0c, 0xd9, 0x0c, 0xda, 0x0c, 0x00 };
 
 //
 ASDCP::Result_t
@@ -579,21 +582,31 @@ lh__Writer::JP2K_PDesc_to_MD(JP2K::PictureDescriptor& PDesc)
   assert(m_EssenceSubDescriptor);
   MXF::RGBAEssenceDescriptor* PDescObj = (MXF::RGBAEssenceDescriptor*)m_EssenceDescriptor;
 
-  PDescObj->SampleRate = PDesc.EditRate;
   PDescObj->ContainerDuration = PDesc.ContainerDuration;
+  PDescObj->SampleRate = PDesc.EditRate;
+  PDescObj->FrameLayout = 0;
   PDescObj->StoredWidth = PDesc.StoredWidth;
   PDescObj->StoredHeight = PDesc.StoredHeight;
   PDescObj->AspectRatio = PDesc.AspectRatio;
-  PDescObj->FrameLayout = 0;
+
+  //  if ( m_Info.LabelSetType == LS_MXF_SMPTE )
+  //    {
+  // PictureEssenceCoding UL = 
+  // Video Line Map       ui32_t[VideoLineMapSize] = { 2, 4, 0, 0 }
+  // CaptureGamma         UL = 
+  // ComponentMaxRef      ui32_t = 4095
+  // ComponentMinRef      ui32_t = 0
+  // PixelLayout          byte_t[PixelLayoutSize] = s_PixelLayoutXYZ
+  //    }
 
   if ( PDesc.StoredWidth < 2049 )
     {
-      PDescObj->Codec.Set(Dict::ul(MDD_JP2KEssenceCompression_2K));
+      PDescObj->PictureEssenceCoding.Set(Dict::ul(MDD_JP2KEssenceCompression_2K));
       m_EssenceSubDescriptor->Rsize = 3;
     }
   else
     {
-      PDescObj->Codec.Set(Dict::ul(MDD_JP2KEssenceCompression_4K));
+      PDescObj->PictureEssenceCoding.Set(Dict::ul(MDD_JP2KEssenceCompression_4K));
       m_EssenceSubDescriptor->Rsize = 4;
     }
 

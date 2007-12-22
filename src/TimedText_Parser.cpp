@@ -304,7 +304,7 @@ ASDCP::TimedText::DCSubtitleParser::h__SubtitleParser::ReadAncillaryResource(con
 	FrameBuf.MIMEType("image/png");
 	      
       else if ( (*rmi).second == MT_OPENTYPE )
-	FrameBuf.MIMEType("application/x-opentype");
+	FrameBuf.MIMEType("application/x-font-opentype");
 
       else
 	FrameBuf.MIMEType("application/octet-stream");

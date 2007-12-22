@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2006, John Hurst
+Copyright (c) 2006-2007, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -61,8 +61,8 @@ namespace Kumu
       inline void    Reset() { m_size = 0; }
       inline byte_t* Data() { return m_p; }
       inline byte_t* CurrentData() { return m_p + m_size; }
-      inline ui32_t Length() { return m_size; }
-      inline ui32_t Remainder() { return m_capacity - m_size; }
+      inline ui32_t  Length() { return m_size; }
+      inline ui32_t  Remainder() { return m_capacity - m_size; }
 
       inline bool AddOffset(ui32_t offset) {
 	if ( ( m_size + offset ) > m_capacity )

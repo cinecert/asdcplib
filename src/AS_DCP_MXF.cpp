@@ -158,7 +158,7 @@ ASDCP::EssenceType(const char* filename, EssenceType_t& type)
 	type = ESS_PCM_24b_48k;
       else if ( ASDCP_SUCCESS(TestHeader.GetMDObjectByType(OBJ_TYPE_ARGS(MPEG2VideoDescriptor))) )
 	type = ESS_MPEG2_VES;
-      else if ( ASDCP_SUCCESS(TestHeader.GetMDObjectByType(OBJ_TYPE_ARGS(DCTimedTextDescriptor))) )
+      else if ( ASDCP_SUCCESS(TestHeader.GetMDObjectByType(OBJ_TYPE_ARGS(TimedTextDescriptor))) )
 	type = ESS_TIMED_TEXT;
     }
 

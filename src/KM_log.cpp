@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2004-2006, John Hurst
+Copyright (c) 2004-2007, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -41,26 +41,20 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <unistd.h>
 #endif
 
+//------------------------------------------------------------------------------------------
+//
 
 void
-Kumu::StdioLogSink::vLogf(ILogSink::LogType_t type, const char* fmt, va_list* list)
+Kumu::ILogSink::vLogf(LogType_t type, const char* fmt, va_list* list)
 {
-  AutoMutex L(m_Lock);
+  char buf[MaxLogLength];
+  vsnprintf(buf, MaxLogLength, fmt, *list);
 
-  switch ( type )
-    {
-    case LOG_CRIT:   fprintf(m_stream, "[%d CRT]: ", getpid()); break;
-    case LOG_ALERT:  fprintf(m_stream, "[%d ALR]: ", getpid()); break;
-    case LOG_NOTICE: fprintf(m_stream, "[%d NTC]: ", getpid()); break;
-    case LOG_ERROR:  fprintf(m_stream, "[%d ERR]: ", getpid()); break;
-    case LOG_WARN:   fprintf(m_stream, "[%d WRN]: ", getpid()); break;
-    case LOG_INFO:   fprintf(m_stream, "[%d INF]: ", getpid()); break;
-    case LOG_DEBUG:  fprintf(m_stream, "[%d DBG]: ", getpid()); break;
-    default:         fprintf(m_stream, "[%d DFL]: ", getpid());
-    }
-
-  vfprintf(m_stream, fmt, *list);
+  WriteEntry(LogEntry(getpid(), type, buf));
 }
+
+//------------------------------------------------------------------------------------------
+//
 
 static Kumu::ILogSink* s_DefaultLogSink;
 static Kumu::StdioLogSink s_StderrLogSink;
@@ -82,73 +76,154 @@ Kumu::DefaultLogSink()
   return *s_DefaultLogSink;
 }
 
-//---------------------------------------------------------------------------------
-#ifdef KM_WIN32
-
+//------------------------------------------------------------------------------------------
 //
+
 void
-Kumu::WinDbgLogSink::vLogf(ILogSink::LogType_t type, const char* fmt, va_list* list)
+Kumu::StdioLogSink::WriteEntry(const LogEntry& Entry)
 {
   AutoMutex L(m_Lock);
-  char msg_buf[MaxLogLength];
-
-  DWORD pid = GetCurrentProcessId();
-
-  switch ( type )
-    {
-    case LOG_CRIT:   snprintf(msg_buf, MaxLogLength, "[%d CRT]: ", pid); break;
-    case LOG_ALERT:  snprintf(msg_buf, MaxLogLength, "[%d ALR]: ", pid); break;
-    case LOG_NOTICE: snprintf(msg_buf, MaxLogLength, "[%d NTC]: ", pid); break;
-    case LOG_ERROR:  snprintf(msg_buf, MaxLogLength, "[%d ERR]: ", pid); break;
-    case LOG_WARN:   snprintf(msg_buf, MaxLogLength, "[%d WRN]: ", pid); break;
-    case LOG_INFO:   snprintf(msg_buf, MaxLogLength, "[%d INF]: ", pid); break;
-    case LOG_DEBUG:  snprintf(msg_buf, MaxLogLength, "[%d DBG]: ", pid); break;
-    default:         snprintf(msg_buf, MaxLogLength, "[%d DFL]: ", pid);
-    }
-  
-  ui32_t len = strlen(msg_buf);
-  vsnprintf(msg_buf + len, MaxLogLength - len, fmt, *list);
-  msg_buf[MaxLogLength-1] = 0;
-  ::OutputDebugString(msg_buf);
+  std::string buf;
+  if ( Entry.CreateStringWithFilter(m_filter, buf) )
+    fputs(buf.c_str(), m_stream);
 }
 
-#else
+//---------------------------------------------------------------------------------
 
+#ifdef KM_WIN32
+//
 void
-Kumu::StreamLogSink::vLogf(ILogSink::LogType_t type, const char* fmt, va_list* list)
+Kumu::WinDbgLogSink::WriteEntry(const LogEntry& Entry)
 {
   AutoMutex L(m_Lock);
-  char msg_buf[MaxLogLength];
-  char ts_buf[MaxLogLength];
-  Timestamp Now;
-
-  switch ( type )
-    {
-    case LOG_CRIT:   snprintf(msg_buf, MaxLogLength, "[%s %d CRT]: ",
-			      Now.EncodeString(ts_buf, MaxLogLength), getpid()); break;
-    case LOG_ALERT:  snprintf(msg_buf, MaxLogLength, "[%s %d ALR]: ",
-			      Now.EncodeString(ts_buf, MaxLogLength), getpid()); break;
-    case LOG_NOTICE: snprintf(msg_buf, MaxLogLength, "[%s %d NTC]: ",
-			      Now.EncodeString(ts_buf, MaxLogLength), getpid()); break;
-    case LOG_ERROR:  snprintf(msg_buf, MaxLogLength, "[%s %d ERR]: ",
-			      Now.EncodeString(ts_buf, MaxLogLength), getpid()); break;
-    case LOG_WARN:   snprintf(msg_buf, MaxLogLength, "[%s %d WRN]: ",
-			      Now.EncodeString(ts_buf, MaxLogLength), getpid()); break;
-    case LOG_INFO:   snprintf(msg_buf, MaxLogLength, "[%s %d INF]: ",
-			      Now.EncodeString(ts_buf, MaxLogLength), getpid()); break;
-    case LOG_DEBUG:  snprintf(msg_buf, MaxLogLength, "[%s %d DBG]: ",
-			      Now.EncodeString(ts_buf, MaxLogLength), getpid()); break;
-    default:         snprintf(msg_buf, MaxLogLength, "[%s %d DFL]: ",
-			      Now.EncodeString(ts_buf, MaxLogLength), getpid());
-    }
-  
-  ui32_t len = strlen(msg_buf);
-  vsnprintf(msg_buf + len, MaxLogLength - len, fmt, *list);
-  msg_buf[MaxLogLength-1] = 0;
-  write(m_fd, msg_buf, strlen(msg_buf));
+  std::string buf;
+  if ( Entry.CreateStringWithFilter(m_filter, buf) )
+    ::OutputDebugString(buf.c_str());
 }
 #endif
 
+//------------------------------------------------------------------------------------------
+//
+
+#ifndef KM_WIN32
+//
+void
+Kumu::StreamLogSink::WriteEntry(const LogEntry& Entry)
+{
+  AutoMutex L(m_Lock);
+  std::string buf;
+  if ( Entry.CreateStringWithFilter(m_filter, buf) )
+    write(m_fd, buf.c_str(), buf.size());
+}
+#endif
+
+//------------------------------------------------------------------------------------------
+
+bool
+Kumu::LogEntry::CreateStringWithFilter(i32_t filter, std::string& out_buf) const
+{
+  const char* p = 0;
+
+  switch ( Type )
+    {
+    case LOG_CRIT:
+      if ( (filter & LOG_ALLOW_CRIT) != 0 )
+	p = " CRT";
+      break;
+
+    case LOG_ALERT:
+      if ( (filter & LOG_ALLOW_ALERT) != 0 )
+	p = " ALR";
+      break;
+
+    case LOG_NOTICE:
+      if ( (filter & LOG_ALLOW_NOTICE) != 0 )
+	p = " NTC";
+      break;
+
+    case LOG_ERROR:
+      if ( (filter & LOG_ALLOW_ERROR) != 0 )
+	p = " ERR";
+      break;
+
+    case LOG_WARN:
+      if ( (filter & LOG_ALLOW_WARN) != 0 )
+	p = " WRN";
+      break;
+
+    case LOG_INFO:
+      if ( (filter & LOG_ALLOW_INFO) != 0 )
+	p = " INF";
+      break;
+
+    case LOG_DEBUG:
+      if ( (filter & LOG_ALLOW_DEBUG) != 0 )
+	p = " DBG";
+      break;
+
+    default:
+      if ( (filter & LOG_ALLOW_DEFAULT) != 0 )
+	p = " DFL";
+      break;
+    }
+
+  if ( p == 0 )
+    return false;
+
+  char buf[64];
+  out_buf = "[";
+
+  if ( (filter & LOG_ALLOW_TIMESTAMP) != 0 )
+    {
+      Timestamp Now;
+      out_buf += Now.EncodeString(buf, 64);
+
+      if ( (filter & LOG_ALLOW_PID) != 0 )
+	out_buf += " ";
+    }
+
+  if ( (filter & LOG_ALLOW_PID) != 0 )
+    {
+      snprintf(buf, 64, "%d", PID);
+      out_buf += buf;
+    }
+
+  out_buf += "] " + Msg;
+  return true;
+}
+
+
+//
+ui32_t
+Kumu::LogEntry::ArchiveLength() const
+{
+  return sizeof(ui32_t)
+    + EventTime.ArchiveLength()
+    + sizeof(ui32_t)
+    + sizeof(ui32_t) + Msg.size();
+}
+
+//
+bool
+Kumu::LogEntry::Archive(Kumu::MemIOWriter* Writer) const
+{
+  if ( ! Writer->WriteUi32BE(PID) ) return false;
+  if ( ! EventTime.Archive(Writer) ) return false;
+  if ( ! Writer->WriteUi32BE(Type) ) return false;
+  if ( ! ArchiveString(*Writer, Msg) ) return false;
+  return true;
+}
+
+//
+bool
+Kumu::LogEntry::Unarchive(Kumu::MemIOReader* Reader)
+{
+  if ( ! Reader->ReadUi32BE(&PID) ) return false;
+  if ( ! EventTime.Unarchive(Reader) ) return false;
+  if ( ! Reader->ReadUi32BE((ui32_t*)&Type) ) return false;
+  if ( ! UnarchiveString(*Reader, Msg) ) return false;
+  return true;
+}
 
 //
 // end

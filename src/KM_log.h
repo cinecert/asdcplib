@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2004-2006, John Hurst
+Copyright (c) 2004-2007, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -35,12 +35,15 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <KM_platform.h>
 #include <KM_mutex.h>
+#include <KM_util.h>
 #include <stdarg.h>
 #include <errno.h>
 
-#define LOG_MSG_IMPL(t) va_list args; va_start(args, fmt); vLogf((t), fmt, &args); va_end(args)
-
-
+#define LOG_MSG_IMPL(t) \
+  va_list args; \
+  va_start(args, fmt); \
+  vLogf((t), fmt, &args); \
+  va_end(args)
 
 // Returns RESULT_PTR if the given argument is NULL.
 # define KM_TEST_NULL_L(p) \
@@ -69,29 +72,100 @@ namespace Kumu
   //---------------------------------------------------------------------------------
   // message logging
 
-  // Error and debug messages will be delivered to an object having this interface.
-  // The default implementation sends only LOG_ERROR and LOG_WARN messages to stderr.
-  // To receive LOG_INFO or LOG_DEBUG messages, or to send messages somewhere other
-  // than stderr, implement this interface and register an instance of your new class
-  // by calling SetDefaultLogSink().
+  // Log messages are recorded by objects which implement the interface given
+  // in the class ILogSink below. The library maintains a pointer to a default
+  // log sink which is used by the library to report messages.
+  //
+
+  // types of log messages
+  enum LogType_t {
+    LOG_DEBUG,    // detailed developer info
+    LOG_INFO,     // developer info
+    LOG_WARN,     // library non-fatal or near-miss error
+    LOG_ERROR,    // library fatal error
+    LOG_NOTICE,   // application user info
+    LOG_ALERT,    // application non-fatal or near-miss error
+    LOG_CRIT,     // application fatal error
+  };
+
+
+  // OR these values together to come up with sink filter flags.
+  // The default mask is 0x0000ffff (no time stamp, no pid, all messages).
+  const i32_t LOG_ALLOW_TIMESTAMP = 0x01000000;
+  const i32_t LOG_ALLOW_PID       = 0x02000000;
+
+  const i32_t LOG_ALLOW_DEBUG     = 0x00000001;
+  const i32_t LOG_ALLOW_INFO      = 0x00000002;
+  const i32_t LOG_ALLOW_WARN      = 0x00000004;
+  const i32_t LOG_ALLOW_ERROR     = 0x00000008;
+  const i32_t LOG_ALLOW_NOTICE    = 0x00000010;
+  const i32_t LOG_ALLOW_ALERT     = 0x00000020;
+  const i32_t LOG_ALLOW_CRIT      = 0x00000040;
+
+  const i32_t LOG_ALLOW_DEFAULT   = 0x00008000; // show messages having an unknown type
+  const i32_t LOG_ALLOW_NONE      = 0x00000000;
+  const i32_t LOG_ALLOW_MESSAGES  = 0x0000ffff;
+  const i32_t LOG_ALLOW_ANY       = 0xffffffff;
+
+  // A log message with environmental metadata
+ class LogEntry : public IArchive
+  {
+  public:
+    ui32_t      PID;
+    Timestamp   EventTime;
+    LogType_t   Type;
+    std::string Msg;
+
+    LogEntry() {}
+    LogEntry(ui32_t pid, LogType_t t, const char* m) : PID(pid), Type(t), Msg(m) { assert(m); }
+    virtual ~LogEntry() {}
+
+    bool   CreateStringWithFilter(i32_t, std::string&) const;
+
+    // IArchive
+    bool   HasValue() const { return ! Msg.empty(); }
+    ui32_t ArchiveLength() const;
+    bool   Archive(MemIOWriter* Writer) const;
+    bool   Unarchive(MemIOReader* Reader);
+  };
+
+
+  typedef ArchivableList<LogEntry> LogEntryList_t;
+  
+  //
   class ILogSink
     {
-    public:
-      enum LogType_t { LOG_DEBUG, LOG_INFO, LOG_WARN, LOG_ERROR,
-		       LOG_NOTICE, LOG_ALERT, LOG_CRIT };
+    protected:
+      i32_t m_filter;
 
+    public:
       virtual ~ILogSink() {}
 
-      void Critical(const char* fmt, ...) { LOG_MSG_IMPL(LOG_CRIT); }
-      void Alert(const char* fmt, ...)    { LOG_MSG_IMPL(LOG_ALERT); }
-      void Notice(const char* fmt, ...)   { LOG_MSG_IMPL(LOG_NOTICE); }
+      void  SetFilterFlags(i32_t f) { m_filter = f; }
+      i32_t GetFilterFlags() const  { return m_filter; }
+      void  SetFilterFlag(i32_t f) { m_filter |= f; }
+      void  UnsetFilterFlag(i32_t f) { m_filter &= ~f; }
+      bool  TestFilterFlag(i32_t f) const  { return ((m_filter & f) != 0); }
+
+      // library messages
       void Error(const char* fmt, ...)    { LOG_MSG_IMPL(LOG_ERROR); }
       void Warn(const char* fmt, ...)     { LOG_MSG_IMPL(LOG_WARN);  }
       void Info(const char* fmt, ...)     { LOG_MSG_IMPL(LOG_INFO);  }
       void Debug(const char* fmt, ...)    { LOG_MSG_IMPL(LOG_DEBUG); }
-      void Logf(ILogSink::LogType_t type, const char* fmt, ...) { LOG_MSG_IMPL(type); }
-      virtual void vLogf(LogType_t, const char*, va_list*) = 0; // log a formatted string with a va_list struct
+
+      // application messages
+      void Critical(const char* fmt, ...) { LOG_MSG_IMPL(LOG_CRIT); }
+      void Alert(const char* fmt, ...)    { LOG_MSG_IMPL(LOG_ALERT); }
+      void Notice(const char* fmt, ...)   { LOG_MSG_IMPL(LOG_NOTICE); }
+
+      // message with type
+      void Logf(LogType_t type, const char* fmt, ...) { LOG_MSG_IMPL(type); }
+
+      // actual log sink input
+      virtual void vLogf(LogType_t, const char*, va_list*);
+      virtual void WriteEntry(const LogEntry&) = 0;
     };
+
 
   // Sets the internal default sink to the given receiver. If the given value
   // is zero, sets the default sink to the internally allocated stderr sink.
@@ -100,7 +174,67 @@ namespace Kumu
   // Returns the internal default sink.
   ILogSink& DefaultLogSink();
 
+
+  // Sets a log sink as the default until the object is destroyed.
+  // The original default sink is saved and then restored on delete.
+  class LogSinkContext
+  {
+    KM_NO_COPY_CONSTRUCT(LogSinkContext);
+    LogSinkContext();
+    ILogSink* m_orig;
+
+  public:
+    LogSinkContext(ILogSink& sink) {
+      m_orig = &DefaultLogSink();
+      SetDefaultLogSink(&sink);
+    }
+
+    ~LogSinkContext() {
+      SetDefaultLogSink(m_orig);
+    }
+  };
+
+  //------------------------------------------------------------------------------------------
   //
+
+  // write messages to two subordinate log sinks 
+  class TeeLogSink : public ILogSink
+  {
+    KM_NO_COPY_CONSTRUCT(TeeLogSink);
+    TeeLogSink();
+
+    ILogSink& m_a;
+    ILogSink& m_b;
+
+  public:
+    TeeLogSink(ILogSink& a, ILogSink& b) : m_a(a), m_b(b) {}
+    virtual ~TeeLogSink() {}
+
+    void WriteEntry(const LogEntry& Entry) {
+      m_a.WriteEntry(Entry);
+      m_a.WriteEntry(Entry);
+    }
+  };
+
+  // collect log messages into the given list
+  class EntryListLogSink : public ILogSink
+  {
+    KM_NO_COPY_CONSTRUCT(EntryListLogSink);
+    EntryListLogSink();
+
+    LogEntryList_t& m_Target;
+
+  public:
+    EntryListLogSink(LogEntryList_t& target) : m_Target(target) {}
+    virtual ~EntryListLogSink() {}
+
+    void WriteEntry(const LogEntry& Entry) {
+      m_Target.push_back(Entry);
+    }
+  };
+
+
+  // write messages to a POSIX stdio stream
   class StdioLogSink : public ILogSink
     {
       Mutex m_Lock;
@@ -111,11 +245,12 @@ namespace Kumu
       StdioLogSink() : m_stream(stderr) {};
       StdioLogSink(FILE* stream) : m_stream(stream) {}
       virtual ~StdioLogSink() {}
-      virtual void vLogf(LogType_t, const char*, va_list*);
+
+    void WriteEntry(const LogEntry&);
     };
 
 #ifdef KM_WIN32
-  //
+  // write messages to the Win32 debug stream
   class WinDbgLogSink : public ILogSink
     {
       Mutex m_Lock;
@@ -124,12 +259,13 @@ namespace Kumu
     public:
       WinDbgLogSink() {}
       virtual ~WinDbgLogSink() {}
-      virtual void vLogf(LogType_t, const char*, va_list*);
+
+      void WriteEntry(const LogEntry&);
     };
+#endif
 
-#else
-
-  //
+#ifndef KM_WIN32
+  // write messages to a POSIX file descriptor
   class StreamLogSink : public ILogSink
     {
       Mutex m_Lock;
@@ -140,9 +276,11 @@ namespace Kumu
     public:
       StreamLogSink(int fd) : m_fd(fd) {}
       virtual ~StreamLogSink() {}
-      virtual void vLogf(LogType_t, const char*, va_list*);
+
+      void WriteEntry(const LogEntry&);
     };
 #endif
+
 
 } // namespace Kumu
 

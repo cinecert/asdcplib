@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2005-2006, John Hurst
+Copyright (c) 2005-2007, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -170,11 +170,59 @@ namespace Kumu
     {
     public:
       virtual ~IArchive(){}
-      virtual bool HasValue() const = 0;
-      virtual bool Archive(MemIOWriter* Writer) const = 0;
-      virtual bool Unarchive(MemIOReader* Reader) = 0;
+      virtual bool   HasValue() const = 0;
+      virtual ui32_t ArchiveLength() const = 0;
+      virtual bool   Archive(MemIOWriter* Writer) const = 0;
+      virtual bool   Unarchive(MemIOReader* Reader) = 0;
     };
 
+  //
+  template <class T>
+  class ArchivableList : public std::list<T>, public IArchive
+    {
+    public:
+      ArchivableList() {}
+      virtual ~ArchivableList() {}
+
+      bool HasValue() const { return ! this->empty(); }
+
+      ui32_t ArchiveLength() const
+      {
+	ui32_t arch_size = sizeof(ui32_t);
+
+	typename ArchivableList<T>::const_iterator i = this->begin();
+	for ( ; i != this->end(); i++ )
+	  arch_size += i->ArchiveLength();
+
+	return arch_size;
+      }
+
+      bool Unarchive(Kumu::MemIOReader* Reader)
+	{
+	  if ( Reader == 0 ) return false;
+	  ui32_t read_size = 0;
+	  if ( ! Reader->ReadUi32BE(&read_size) ) return false;
+	  for ( ui32_t i = 0; i < read_size; i++ )
+	    {
+	      T TmpTP;
+	      if ( ! TmpTP.Unarchive(Reader) ) return false;
+	      this->push_back(TmpTP);
+	    }
+
+	  return true;
+	}
+
+      bool Archive(Kumu::MemIOWriter* Writer) const
+	{
+	  if ( Writer == 0 ) return false;
+	  if ( ! Writer->WriteUi32BE(this->size()) ) return false;
+	  typename ArchivableList<T>::const_iterator i = this->begin();
+	  for ( ; i != this->end(); i++ )
+	    if ( ! i->Archive(Writer) ) return false;
+
+	  return true;
+	}
+    };
 
   //
   // the base of all identifier classes, Identifier is not usually used directly
@@ -256,6 +304,8 @@ namespace Kumu
 
       inline bool HasValue() const { return m_HasValue; }
 
+      inline ui32_t ArchiveLength() const { return SIZE; }
+
       inline bool Unarchive(Kumu::MemIOReader* Reader) {
 	m_HasValue = Reader->ReadRaw(m_Value, SIZE);
 	return m_HasValue;
@@ -266,42 +316,6 @@ namespace Kumu
       }
     };
 
-  //
-  template <class T>
-  class IdentifierList : public std::list<T>, public IArchive
-    {
-    public:
-      IdentifierList() {}
-      virtual ~IdentifierList() {}
-
-      bool HasValue() const { return ! this->empty(); }
-
-      bool Unarchive(Kumu::MemIOReader* Reader)
-	{
-	  if ( Reader == 0 )return false;
-	  ui32_t read_size = 0;
-	  if ( ! Reader->ReadUi32BE(&read_size) ) return false;
-	  for ( ui32_t i = 0; i < read_size; i++ )
-	    {
-	      T TmpTP;
-	      if ( ! TmpTP.Unarchive(Reader) ) return false;
-	      this->push_back(TmpTP);
-	    }
-
-	  return true;
-	}
-
-      bool Archive(Kumu::MemIOWriter* Writer) const
-	{
-	  if ( Writer == 0 )return false;
-	  if ( ! Writer->WriteUi32BE(this->size()) ) return false;
-	  typename IdentifierList<T>::const_iterator i = this->begin();
-	  for ( ; i != this->end(); i++ )
-	    if ( ! (*i).Archive(Writer) ) return false;
-
-	  return true;
-	}
-    };
 
   // UUID
   //
@@ -388,9 +402,10 @@ namespace Kumu
       // | 16 bits int, big-endian |    8 bits   |   8 bits  |   8 bits   |    8 bits    |    8 bits    |
       // |        Year A.D         | Month(1-12) | Day(1-31) | Hour(0-23) | Minute(0-59) | Second(0-59) |
       //
-      virtual bool HasValue() const;
-      virtual bool Archive(MemIOWriter* Writer) const;
-      virtual bool Unarchive(MemIOReader* Reader);
+      virtual bool   HasValue() const;
+      virtual ui32_t ArchiveLength() const { return 8L; }
+      virtual bool   Archive(MemIOWriter* Writer) const;
+      virtual bool   Unarchive(MemIOReader* Reader);
     };
 
   //
@@ -408,8 +423,7 @@ namespace Kumu
       ByteString(ui32_t cap);
       virtual ~ByteString();
 
-      // Sets the size of the internally allocated buffer.
-      // Resets content Size to zero.
+      // Sets or resets the size of the internally allocated buffer.
       Result_t Capacity(ui32_t cap);
 
       Result_t Append(const ByteString&);
@@ -436,6 +450,8 @@ namespace Kumu
       Result_t Set(const ByteString& Buf);
 
       inline virtual bool HasValue() const { return m_Length > 0; }
+
+      inline virtual ui32_t ArchiveLength() const { return m_Length; }
 
       inline virtual bool Archive(MemIOWriter* Writer) const {
 	assert(Writer);
