@@ -76,6 +76,19 @@ Kumu::DefaultLogSink()
   return *s_DefaultLogSink;
 }
 
+
+//------------------------------------------------------------------------------------------
+//
+
+void
+Kumu::EntryListLogSink::WriteEntry(const LogEntry& Entry)
+{
+  AutoMutex L(m_Lock);
+
+  if ( Entry.TestFilter(m_filter) )
+    m_Target.push_back(Entry);
+}
+
 //------------------------------------------------------------------------------------------
 //
 
@@ -84,8 +97,12 @@ Kumu::StdioLogSink::WriteEntry(const LogEntry& Entry)
 {
   AutoMutex L(m_Lock);
   std::string buf;
-  if ( Entry.CreateStringWithFilter(m_filter, buf) )
-    fputs(buf.c_str(), m_stream);
+
+  if ( Entry.TestFilter(m_filter) )
+    {
+      Entry.CreateStringWithOptions(buf, m_options);
+      fputs(buf.c_str(), m_stream);
+    }
 }
 
 //---------------------------------------------------------------------------------
@@ -97,8 +114,12 @@ Kumu::WinDbgLogSink::WriteEntry(const LogEntry& Entry)
 {
   AutoMutex L(m_Lock);
   std::string buf;
-  if ( Entry.CreateStringWithFilter(m_filter, buf) )
-    ::OutputDebugString(buf.c_str());
+
+  if ( Entry.TestFilter(m_filter) )
+    {
+      Entry.CreateStringWithOptions(buf, m_options);
+      ::OutputDebugString(buf.c_str());
+    }
 }
 #endif
 
@@ -112,84 +133,109 @@ Kumu::StreamLogSink::WriteEntry(const LogEntry& Entry)
 {
   AutoMutex L(m_Lock);
   std::string buf;
-  if ( Entry.CreateStringWithFilter(m_filter, buf) )
-    write(m_fd, buf.c_str(), buf.size());
+
+  if ( Entry.TestFilter(m_filter) )
+    {
+      Entry.CreateStringWithOptions(buf, m_options);
+      write(m_fd, buf.c_str(), buf.size());
+    }
 }
 #endif
 
 //------------------------------------------------------------------------------------------
 
+//
 bool
-Kumu::LogEntry::CreateStringWithFilter(i32_t filter, std::string& out_buf) const
+Kumu::LogEntry::TestFilter(i32_t filter) const
 {
-  const char* p = 0;
-
-  switch ( Type )
+ switch ( Type )
     {
     case LOG_CRIT:
-      if ( (filter & LOG_ALLOW_CRIT) != 0 )
-	p = " CRT";
+      if ( (filter & LOG_ALLOW_CRIT) == 0 )
+	return false;
       break;
 
     case LOG_ALERT:
-      if ( (filter & LOG_ALLOW_ALERT) != 0 )
-	p = " ALR";
+      if ( (filter & LOG_ALLOW_ALERT) == 0 )
+	return false;
       break;
 
     case LOG_NOTICE:
-      if ( (filter & LOG_ALLOW_NOTICE) != 0 )
-	p = " NTC";
+      if ( (filter & LOG_ALLOW_NOTICE) == 0 )
+	return false;
       break;
 
     case LOG_ERROR:
-      if ( (filter & LOG_ALLOW_ERROR) != 0 )
-	p = " ERR";
+      if ( (filter & LOG_ALLOW_ERROR) == 0 )
+	return false;
       break;
 
     case LOG_WARN:
-      if ( (filter & LOG_ALLOW_WARN) != 0 )
-	p = " WRN";
+      if ( (filter & LOG_ALLOW_WARN) == 0 )
+	return false;
       break;
 
     case LOG_INFO:
-      if ( (filter & LOG_ALLOW_INFO) != 0 )
-	p = " INF";
+      if ( (filter & LOG_ALLOW_INFO) == 0 )
+	return false;
       break;
 
     case LOG_DEBUG:
-      if ( (filter & LOG_ALLOW_DEBUG) != 0 )
-	p = " DBG";
+      if ( (filter & LOG_ALLOW_DEBUG) == 0 )
+	return false;
       break;
 
-    default:
-      if ( (filter & LOG_ALLOW_DEFAULT) != 0 )
-	p = " DFL";
-      break;
     }
 
-  if ( p == 0 )
-    return false;
+ return true;
+}
 
-  char buf[64];
-  out_buf = "[";
+//
+std::string&
+Kumu::LogEntry::CreateStringWithOptions(std::string& out_buf, i32_t opt) const
+{
+  out_buf.clear();
 
-  if ( (filter & LOG_ALLOW_TIMESTAMP) != 0 )
+  if ( opt != 0 )
     {
-      Timestamp Now;
-      out_buf += Now.EncodeString(buf, 64);
+      char buf[64];
 
-      if ( (filter & LOG_ALLOW_PID) != 0 )
-	out_buf += " ";
+      if ( (opt & LOG_OPTION_TIMESTAMP) != 0 )
+	{
+	  Timestamp Now;
+	  out_buf += Now.EncodeString(buf, 64);
+	}
+
+      if ( (opt & LOG_OPTION_PID) != 0 )
+	{
+	  if ( ! out_buf.empty() )  out_buf += " ";
+	  snprintf(buf, 64, "%d", PID);
+	  out_buf += buf;
+	}
+
+      if ( (opt & LOG_OPTION_TYPE) != 0 )
+	{
+	  if ( ! out_buf.empty() )  out_buf += " ";
+	  
+	  switch ( Type )
+	    {
+	    case LOG_CRIT:   out_buf += "CRT";      break;
+	    case LOG_ALERT:  out_buf += "ALR";      break;
+	    case LOG_NOTICE: out_buf += "NTC";      break;
+	    case LOG_ERROR:  out_buf += "ERR";      break;
+	    case LOG_WARN:   out_buf += "WRN";      break;
+	    case LOG_INFO:   out_buf += "INF";      break;
+	    case LOG_DEBUG:  out_buf += "DBG";      break;
+	    default:	     out_buf += "DFL";      break;
+	    }
+	}
+
+      out_buf.insert(0, "[");
+      out_buf += "]: ";
     }
 
-  if ( (filter & LOG_ALLOW_PID) != 0 )
-    {
-      snprintf(buf, 64, "%d", PID);
-      out_buf += buf;
-    }
-
-  out_buf += "] " + Msg;
-  return true;
+  out_buf += Msg;
+  return out_buf;
 }
 
 

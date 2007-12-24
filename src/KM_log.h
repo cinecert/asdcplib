@@ -90,22 +90,24 @@ namespace Kumu
 
 
   // OR these values together to come up with sink filter flags.
-  // The default mask is 0x0000ffff (no time stamp, no pid, all messages).
-  const i32_t LOG_ALLOW_TIMESTAMP = 0x01000000;
-  const i32_t LOG_ALLOW_PID       = 0x02000000;
+  // The default mask is LOG_ALLOW_ALL (all messages).
+  const i32_t LOG_ALLOW_DEBUG      = 0x00000001;
+  const i32_t LOG_ALLOW_INFO       = 0x00000002;
+  const i32_t LOG_ALLOW_WARN       = 0x00000004;
+  const i32_t LOG_ALLOW_ERROR      = 0x00000008;
+  const i32_t LOG_ALLOW_NOTICE     = 0x00000010;
+  const i32_t LOG_ALLOW_ALERT      = 0x00000020;
+  const i32_t LOG_ALLOW_CRIT       = 0x00000040;
+  const i32_t LOG_ALLOW_NONE       = 0x00000000;
+  const i32_t LOG_ALLOW_ALL        = 0x000fffff;
 
-  const i32_t LOG_ALLOW_DEBUG     = 0x00000001;
-  const i32_t LOG_ALLOW_INFO      = 0x00000002;
-  const i32_t LOG_ALLOW_WARN      = 0x00000004;
-  const i32_t LOG_ALLOW_ERROR     = 0x00000008;
-  const i32_t LOG_ALLOW_NOTICE    = 0x00000010;
-  const i32_t LOG_ALLOW_ALERT     = 0x00000020;
-  const i32_t LOG_ALLOW_CRIT      = 0x00000040;
-
-  const i32_t LOG_ALLOW_DEFAULT   = 0x00008000; // show messages having an unknown type
-  const i32_t LOG_ALLOW_NONE      = 0x00000000;
-  const i32_t LOG_ALLOW_MESSAGES  = 0x0000ffff;
-  const i32_t LOG_ALLOW_ANY       = 0xffffffff;
+  // options are used to control display format
+  // default is 0 (
+  const i32_t LOG_OPTION_TYPE      = 0x01000000;
+  const i32_t LOG_OPTION_TIMESTAMP = 0x02000000;
+  const i32_t LOG_OPTION_PID       = 0x04000000;
+  const i32_t LOG_OPTION_NONE      = 0x00000000;
+  const i32_t LOG_OPTION_ALL       = 0xfff00000;
 
   // A log message with environmental metadata
  class LogEntry : public IArchive
@@ -120,7 +122,12 @@ namespace Kumu
     LogEntry(ui32_t pid, LogType_t t, const char* m) : PID(pid), Type(t), Msg(m) { assert(m); }
     virtual ~LogEntry() {}
 
-    bool   CreateStringWithFilter(i32_t, std::string&) const;
+    // returns true if the message Type is present in the mask
+    bool   TestFilter(i32_t mask_value) const;
+
+    // renders the message into outstr using the given dispaly options
+    // returns outstr&
+    std::string& CreateStringWithOptions(std::string& outstr, i32_t mask_value) const;
 
     // IArchive
     bool   HasValue() const { return ! Msg.empty(); }
@@ -137,15 +144,19 @@ namespace Kumu
     {
     protected:
       i32_t m_filter;
+      i32_t m_options;
 
     public:
+    ILogSink() : m_filter(LOG_ALLOW_ALL), m_options(LOG_OPTION_NONE) {}
       virtual ~ILogSink() {}
 
-      void  SetFilterFlags(i32_t f) { m_filter = f; }
-      i32_t GetFilterFlags() const  { return m_filter; }
       void  SetFilterFlag(i32_t f) { m_filter |= f; }
       void  UnsetFilterFlag(i32_t f) { m_filter &= ~f; }
-      bool  TestFilterFlag(i32_t f) const  { return ((m_filter & f) != 0); }
+      bool  TestFilterFlag(i32_t f) const  { return ((m_filter & f) == f); }
+
+      void  SetOptionFlag(i32_t o) { m_options |= o; }
+      void  UnsetOptionFlag(i32_t o) { m_options &= ~o; }
+      bool  TestOptionFlag(i32_t o) const  { return ((m_options & o) == o); }
 
       // library messages
       void Error(const char* fmt, ...)    { LOG_MSG_IMPL(LOG_ERROR); }
@@ -216,21 +227,19 @@ namespace Kumu
     }
   };
 
-  // collect log messages into the given list
+  // collect log messages into the given list, does not test filter
   class EntryListLogSink : public ILogSink
   {
+    Mutex m_Lock;
+    LogEntryList_t& m_Target;
     KM_NO_COPY_CONSTRUCT(EntryListLogSink);
     EntryListLogSink();
-
-    LogEntryList_t& m_Target;
 
   public:
     EntryListLogSink(LogEntryList_t& target) : m_Target(target) {}
     virtual ~EntryListLogSink() {}
 
-    void WriteEntry(const LogEntry& Entry) {
-      m_Target.push_back(Entry);
-    }
+    void WriteEntry(const LogEntry& Entry);
   };
 
 
@@ -242,8 +251,8 @@ namespace Kumu
       KM_NO_COPY_CONSTRUCT(StdioLogSink);
 
     public:
-      StdioLogSink() : m_stream(stderr) {};
-      StdioLogSink(FILE* stream) : m_stream(stream) {}
+    StdioLogSink() : m_stream(stderr) {}
+    StdioLogSink(FILE* stream) : m_stream(stream) {}
       virtual ~StdioLogSink() {}
 
     void WriteEntry(const LogEntry&);
