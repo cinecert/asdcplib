@@ -148,7 +148,7 @@ Kumu::StreamLogSink::WriteEntry(const LogEntry& Entry)
 bool
 Kumu::LogEntry::TestFilter(i32_t filter) const
 {
- switch ( Type )
+  switch ( Type )
     {
     case LOG_CRIT:
       if ( (filter & LOG_ALLOW_CRIT) == 0 )

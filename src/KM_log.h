@@ -101,8 +101,7 @@ namespace Kumu
   const i32_t LOG_ALLOW_NONE       = 0x00000000;
   const i32_t LOG_ALLOW_ALL        = 0x000fffff;
 
-  // options are used to control display format
-  // default is 0 (
+  // options are used to control display format default is 0.
   const i32_t LOG_OPTION_TYPE      = 0x01000000;
   const i32_t LOG_OPTION_TIMESTAMP = 0x02000000;
   const i32_t LOG_OPTION_PID       = 0x04000000;
@@ -137,7 +136,7 @@ namespace Kumu
   };
 
 
-  typedef ArchivableList<LogEntry> LogEntryList_t;
+  typedef ArchivableList<LogEntry> LogEntryList;
   
   //
   class ILogSink
@@ -231,12 +230,12 @@ namespace Kumu
   class EntryListLogSink : public ILogSink
   {
     Mutex m_Lock;
-    LogEntryList_t& m_Target;
+    LogEntryList& m_Target;
     KM_NO_COPY_CONSTRUCT(EntryListLogSink);
     EntryListLogSink();
 
   public:
-    EntryListLogSink(LogEntryList_t& target) : m_Target(target) {}
+    EntryListLogSink(LogEntryList& target) : m_Target(target) {}
     virtual ~EntryListLogSink() {}
 
     void WriteEntry(const LogEntry& Entry);

@@ -306,9 +306,9 @@ public:
 	return RESULT_FALSE;
       }
 
-    Accessor::Picture PIC(b);
-    m_TemporalRef = PIC.TemporalRef();
-    m_FrameType = PIC.FrameType();
+    Accessor::Picture pic(b);
+    m_TemporalRef = pic.TemporalRef();
+    m_FrameType = pic.FrameType();
     m_FrameSize += s;
     return m_State.Goto_PIC();
   }
