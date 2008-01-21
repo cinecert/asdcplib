@@ -904,10 +904,7 @@ ASDCP::JP2K::MXFSWriter::OpenWrite(const char* filename, const WriterInfo& Info,
     }
 
   if ( PDesc.StoredWidth > 2048 )
-    {
-      DefaultLogSink().Error("Stereoscopic wrapping requires 2K image content.\n");
-      return RESULT_FORMAT;
-    }
+    DefaultLogSink().Warn("Wrapping non-standard 4K stereoscopic content. I hope you know what you are doing!\n");
 
   m_Writer->m_Info = Info;
 
