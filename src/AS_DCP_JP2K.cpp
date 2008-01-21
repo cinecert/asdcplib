@@ -486,6 +486,23 @@ ASDCP::JP2K::MXFSReader::OpenRead(const char* filename) const
 
 //
 ASDCP::Result_t
+ASDCP::JP2K::MXFSReader::ReadFrame(ui32_t FrameNum, SFrameBuffer& FrameBuf, AESDecContext* Ctx, HMACContext* HMAC) const
+{
+  Result_t result = RESULT_INIT;
+
+  if ( m_Reader && m_Reader->m_File.IsOpen() )
+    {
+      result = m_Reader->ReadFrame(FrameNum, SP_LEFT, FrameBuf.Left, Ctx, HMAC);
+
+      if ( ASDCP_SUCCESS(result) )
+	result = m_Reader->ReadFrame(FrameNum, SP_RIGHT, FrameBuf.Right, Ctx, HMAC);
+    }
+
+  return result;
+}
+
+//
+ASDCP::Result_t
 ASDCP::JP2K::MXFSReader::ReadFrame(ui32_t FrameNum, StereoscopicPhase_t phase, FrameBuffer& FrameBuf,
 				   AESDecContext* Ctx, HMACContext* HMAC) const
 {
@@ -494,7 +511,6 @@ ASDCP::JP2K::MXFSReader::ReadFrame(ui32_t FrameNum, StereoscopicPhase_t phase, F
 
   return RESULT_INIT;
 }
-
 
 // Fill the struct with the values from the file's header.
 // Returns RESULT_INIT if the file is not open.
@@ -906,6 +922,19 @@ ASDCP::JP2K::MXFSWriter::OpenWrite(const char* filename, const WriterInfo& Info,
   return result;
 }
 
+ASDCP::Result_t
+ASDCP::JP2K::MXFSWriter::WriteFrame(const SFrameBuffer& FrameBuf, AESEncContext* Ctx, HMACContext* HMAC)
+{
+  if ( m_Writer.empty() )
+    return RESULT_INIT;
+
+  Result_t result = m_Writer->WriteFrame(FrameBuf.Left, SP_LEFT, Ctx, HMAC);
+
+  if ( ASDCP_SUCCESS(result) )
+    result = m_Writer->WriteFrame(FrameBuf.Right, SP_RIGHT, Ctx, HMAC);
+
+  return result;
+}
 
 // Writes a frame of essence to the MXF file. If the optional AESEncContext
 // argument is present, the essence is encrypted prior to writing.

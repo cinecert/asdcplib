@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2004-2006, John Hurst
+Copyright (c) 2004-2008, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -82,93 +82,108 @@ public:
 
     if ( ASDCP_SUCCESS(result) )
       {
-	Marker NextMarker;
-	ui32_t i;
-	const byte_t* p = FB.RoData();
-	const byte_t* end_p = p + FB.Size();
+	byte_t start_of_data = 0; // out param
+	result = ParseMetadataIntoDesc(FB, m_PDesc, &start_of_data);
 
-	while ( p < end_p && ASDCP_SUCCESS(result) )
-	  {
-	    result = GetNextMarker(&p, NextMarker);
-
-	    if ( ASDCP_FAILURE(result) )
-	      {
-		result = RESULT_RAW_ESS;
-		break;
-	      }
-
-	    switch ( NextMarker.m_Type )
-	      {
-	      case MRK_SOD:
-		FB.PlaintextOffset(p - FB.RoData());
-		p = end_p;
-		break;
-
-	      case MRK_SIZ:
-		{
-		  Accessor::SIZ SIZ_(NextMarker);
-		  m_PDesc.StoredWidth = SIZ_.Xsize();
-		  m_PDesc.StoredHeight = SIZ_.Ysize();
-		  m_PDesc.AspectRatio = Rational(SIZ_.Xsize(), SIZ_.Ysize());
-		  m_PDesc.Rsize = SIZ_.Rsize();
-		  m_PDesc.Xsize = SIZ_.Xsize();
-		  m_PDesc.Ysize = SIZ_.Ysize();
-		  m_PDesc.XOsize = SIZ_.XOsize();
-		  m_PDesc.YOsize = SIZ_.YOsize();
-		  m_PDesc.XTsize = SIZ_.XTsize();
-		  m_PDesc.YTsize = SIZ_.YTsize();
-		  m_PDesc.XTOsize = SIZ_.XTOsize();
-		  m_PDesc.YTOsize = SIZ_.YTOsize();
-		  m_PDesc.Csize = SIZ_.Csize();
-
-		  if ( m_PDesc.Csize != 3 )
-		    {
-		      DefaultLogSink().Error("Unexpected number of components: %u\n", m_PDesc.Csize);
-		      return RESULT_RAW_FORMAT;
-		    }
-
-		  for ( i = 0; i < m_PDesc.Csize; i++ )
-		    SIZ_.ReadComponent(i, m_PDesc.ImageComponents[i]);
-		}
-		break;
-
-	      case MRK_COD:
-		memset(&m_PDesc.CodingStyleDefault, 0, sizeof(CodingStyleDefault_t));
-
-		if ( NextMarker.m_DataSize > sizeof(CodingStyleDefault_t) )
-		  {
-		    DefaultLogSink().Error("Unexpectedly large CodingStyle data: %u\n", NextMarker.m_DataSize);
-		    return RESULT_RAW_FORMAT;
-		  }
-
-		memcpy(&m_PDesc.CodingStyleDefault, NextMarker.m_Data, NextMarker.m_DataSize);
-		break;
-
-	      case MRK_QCD:
-		memset(&m_PDesc.QuantizationDefault, 0, sizeof(QuantizationDefault_t));
-
-		if ( NextMarker.m_DataSize < 16 )
-		  {
-		    DefaultLogSink().Error("No quantization signaled\n");
-		    return RESULT_RAW_FORMAT;
-		  }
-
-		if ( NextMarker.m_DataSize > MaxDefaults )
-		  {
-		    DefaultLogSink().Error("Quantization Default length exceeds maximum %d\n", NextMarker.m_DataSize);
-		    return RESULT_RAW_FORMAT;
-		  }
-
-		memcpy(&m_PDesc.QuantizationDefault, NextMarker.m_Data, NextMarker.m_DataSize);
-		m_PDesc.QuantizationDefault.SPqcdLength = NextMarker.m_DataSize - 1;
-		break;
-	      }
-	  }
+	if ( ASDCP_SUCCESS(result) )
+	  FB.PlaintextOffset(start_of_data);
       }
 
     return result;
   }
 };
+
+ASDCP::Result_t
+ASDCP::JP2K::ParseMetadataIntoDesc(const FrameBuffer& FB, PictureDescriptor& PDesc, byte_t* start_of_data)
+{
+  Result_t result = RESULT_OK;
+  Marker NextMarker;
+  ui32_t i;
+  const byte_t* p = FB.RoData();
+  const byte_t* end_p = p + FB.Size();
+
+  while ( p < end_p && ASDCP_SUCCESS(result) )
+    {
+      result = GetNextMarker(&p, NextMarker);
+
+      if ( ASDCP_FAILURE(result) )
+	{
+	  result = RESULT_RAW_ESS;
+	  break;
+	}
+
+      switch ( NextMarker.m_Type )
+	{
+	case MRK_SOD:
+	  if ( start_of_data != 0 )
+	    *start_of_data = p - FB.RoData();
+
+	  p = end_p;
+	  break;
+
+	case MRK_SIZ:
+	  {
+	    Accessor::SIZ SIZ_(NextMarker);
+	    PDesc.StoredWidth = SIZ_.Xsize();
+	    PDesc.StoredHeight = SIZ_.Ysize();
+	    PDesc.AspectRatio = Rational(SIZ_.Xsize(), SIZ_.Ysize());
+	    PDesc.Rsize = SIZ_.Rsize();
+	    PDesc.Xsize = SIZ_.Xsize();
+	    PDesc.Ysize = SIZ_.Ysize();
+	    PDesc.XOsize = SIZ_.XOsize();
+	    PDesc.YOsize = SIZ_.YOsize();
+	    PDesc.XTsize = SIZ_.XTsize();
+	    PDesc.YTsize = SIZ_.YTsize();
+	    PDesc.XTOsize = SIZ_.XTOsize();
+	    PDesc.YTOsize = SIZ_.YTOsize();
+	    PDesc.Csize = SIZ_.Csize();
+
+	    if ( PDesc.Csize != 3 )
+	      {
+		DefaultLogSink().Error("Unexpected number of components: %u\n", PDesc.Csize);
+		return RESULT_RAW_FORMAT;
+	      }
+	    
+	    for ( i = 0; i < PDesc.Csize; i++ )
+	      SIZ_.ReadComponent(i, PDesc.ImageComponents[i]);
+	  }
+	  break;
+
+	case MRK_COD:
+	  memset(&PDesc.CodingStyleDefault, 0, sizeof(CodingStyleDefault_t));
+
+	  if ( NextMarker.m_DataSize > sizeof(CodingStyleDefault_t) )
+	    {
+	      DefaultLogSink().Error("Unexpectedly large CodingStyle data: %u\n", NextMarker.m_DataSize);
+	      return RESULT_RAW_FORMAT;
+	    }
+	  
+	  memcpy(&PDesc.CodingStyleDefault, NextMarker.m_Data, NextMarker.m_DataSize);
+	  break;
+
+	case MRK_QCD:
+	  memset(&PDesc.QuantizationDefault, 0, sizeof(QuantizationDefault_t));
+
+	  if ( NextMarker.m_DataSize < 16 )
+	    {
+	      DefaultLogSink().Error("No quantization signaled\n");
+	      return RESULT_RAW_FORMAT;
+	    }
+	  
+	  if ( NextMarker.m_DataSize > MaxDefaults )
+	    {
+	      DefaultLogSink().Error("Quantization Default length exceeds maximum %d\n", NextMarker.m_DataSize);
+	      return RESULT_RAW_FORMAT;
+	    }
+
+	  memcpy(&PDesc.QuantizationDefault, NextMarker.m_Data, NextMarker.m_DataSize);
+	  PDesc.QuantizationDefault.SPqcdLength = NextMarker.m_DataSize - 1;
+	  break;
+	}
+    }
+
+  return result;
+}
 
 //------------------------------------------------------------------------------------------
 

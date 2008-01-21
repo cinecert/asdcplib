@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2003-2007, John Hurst
+Copyright (c) 2003-2008, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -154,8 +154,8 @@ namespace ASDCP {
   // in file format, and if no changes were made to AS_DCP.h, the new version would be
   // 1.0.1. If changes were also required in AS_DCP.h, the new version would be 1.1.1.
   const ui32_t VERSION_MAJOR = 1;
-  const ui32_t VERSION_APIMINOR = 2;
-  const ui32_t VERSION_IMPMINOR = 17;
+  const ui32_t VERSION_APIMINOR = 3;
+  const ui32_t VERSION_IMPMINOR = 18;
   const char* Version();
 
   // UUIDs are passed around as strings of UUIDlen bytes
@@ -1011,6 +1011,10 @@ namespace ASDCP {
 	  Result_t FillPictureDescriptor(PictureDescriptor&) const;
 	};
 
+      // Parses the data in the frame buffer to fill in the picture descriptor. Copies
+      // the offset of the image data into start_of_data. Returns error if the parser fails.
+      Result_t ParseMetadataIntoDesc(const FrameBuffer&, PictureDescriptor&, byte_t* start_of_data = 0);
+
       // An object which reads a sequence of files containing JPEG 2000 pictures.
       class SequenceParser
 	{
@@ -1125,10 +1129,20 @@ namespace ASDCP {
 	SP_LEFT,
 	SP_RIGHT
       };
+      
+      struct SFrameBuffer
+      {
+	JP2K::FrameBuffer Left;
+	JP2K::FrameBuffer Right;
 
+	SFrameBuffer(ui32_t size) {
+	  Left.Capacity(size);
+	  Right.Capacity(size);
+	}
+      };
 
       class MXFSWriter
-	{
+      {
 	  class h__SWriter;
 	  mem_ptr<h__SWriter> m_Writer;
 	  ASDCP_NO_COPY_CONSTRUCT(MXFSWriter);
@@ -1142,6 +1156,12 @@ namespace ASDCP {
 	  // in the essence descriptor.
 	  Result_t OpenWrite(const char* filename, const WriterInfo&,
 			     const PictureDescriptor&, ui32_t HeaderSize = 16384);
+
+	  // Writes a pair of frames of essence to the MXF file. If the optional AESEncContext
+	  // argument is present, the essence is encrypted prior to writing.
+	  // Fails if the file is not open, is finalized, or an operating system
+	  // error occurs.
+	  Result_t WriteFrame(const SFrameBuffer&, AESEncContext* = 0, HMACContext* = 0);
 
 	  // Writes a frame of essence to the MXF file. If the optional AESEncContext
 	  // argument is present, the essence is encrypted prior to writing.
@@ -1182,6 +1202,15 @@ namespace ASDCP {
 	  // Fill a WriterInfo struct with the values from the file's header.
 	  // Returns RESULT_INIT if the file is not open.
 	  Result_t FillWriterInfo(WriterInfo&) const;
+
+	  // Reads a pair of frames of essence from the MXF file. If the optional AESEncContext
+	  // argument is present, the essence is decrypted after reading. If the MXF
+	  // file is encrypted and the AESDecContext argument is NULL, the frame buffer
+	  // will contain the ciphertext frame data. If the HMACContext argument is
+	  // not NULL, the HMAC will be calculated (if the file supports it).
+	  // Returns RESULT_INIT if the file is not open, failure if the frame number is
+	  // out of range, or if optional decrypt or HAMC operations fail.
+	  Result_t ReadFrame(ui32_t frame_number, SFrameBuffer&, AESDecContext* = 0, HMACContext* = 0) const;
 
 	  // Reads a frame of essence from the MXF file. If the optional AESEncContext
 	  // argument is present, the essence is decrypted after reading. If the MXF
