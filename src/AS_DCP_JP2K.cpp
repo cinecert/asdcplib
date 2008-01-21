@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2004-2007, John Hurst
+Copyright (c) 2004-2008, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -800,14 +800,12 @@ ASDCP::JP2K::MXFWriter::OpenWrite(const char* filename, const WriterInfo& Info,
 				  const PictureDescriptor& PDesc, ui32_t HeaderSize)
 {
   m_Writer = new h__Writer;
-  
+  m_Writer->m_Info = Info;
+
   Result_t result = m_Writer->OpenWrite(filename, ASDCP::ESS_JPEG_2000, HeaderSize);
 
   if ( ASDCP_SUCCESS(result) )
-    {
-      m_Writer->m_Info = Info;
-      result = m_Writer->SetSourceStream(PDesc, JP2K_PACKAGE_LABEL);
-    }
+    result = m_Writer->SetSourceStream(PDesc, JP2K_PACKAGE_LABEL);
 
   if ( ASDCP_FAILURE(result) )
     m_Writer.release();
@@ -905,11 +903,18 @@ ASDCP::JP2K::MXFSWriter::OpenWrite(const char* filename, const WriterInfo& Info,
       return RESULT_FORMAT;
     }
 
+  if ( PDesc.StoredWidth > 2048 )
+    {
+      DefaultLogSink().Error("Stereoscopic wrapping requires 2K image content.\n");
+      return RESULT_FORMAT;
+    }
+
+  m_Writer->m_Info = Info;
+
   Result_t result = m_Writer->OpenWrite(filename, ASDCP::ESS_JPEG_2000_S, HeaderSize);
 
   if ( ASDCP_SUCCESS(result) )
     {
-      m_Writer->m_Info = Info;
       PictureDescriptor TmpPDesc = PDesc;
       TmpPDesc.EditRate = ASDCP::EditRate_48;
 

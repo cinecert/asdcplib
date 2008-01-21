@@ -543,14 +543,12 @@ ASDCP::MPEG2::MXFWriter::OpenWrite(const char* filename, const WriterInfo& Info,
 				   const VideoDescriptor& VDesc, ui32_t HeaderSize)
 {
   m_Writer = new h__Writer;
+  m_Writer->m_Info = Info;
   
   Result_t result = m_Writer->OpenWrite(filename, HeaderSize);
 
   if ( ASDCP_SUCCESS(result) )
-    {
-      m_Writer->m_Info = Info;
-      result = m_Writer->SetSourceStream(VDesc);
-    }
+    result = m_Writer->SetSourceStream(VDesc);
 
   if ( ASDCP_FAILURE(result) )
     m_Writer.release();
