@@ -225,7 +225,7 @@ lh__Reader::OpenRead(const char* filename, EssenceType_t type)
 
       if ( ObjectList.empty() )
 	{
-	  DefaultLogSink().Error("MXF Metadata contains no Track Sets\n");
+	  DefaultLogSink().Error("MXF Metadata contains no Track Sets.\n");
 	  return RESULT_FORMAT;
 	}
 
@@ -235,16 +235,23 @@ lh__Reader::OpenRead(const char* filename, EssenceType_t type)
 	{
 	  if ( m_EditRate != m_EssenceDescriptor->SampleRate )
 	    {
-	      DefaultLogSink().Error("EditRate and SampleRate do not match (%.03f, %.03f)\n",
+	      DefaultLogSink().Error("EditRate and SampleRate do not match (%.03f, %.03f).\n",
 				     m_EditRate.Quotient(), m_EssenceDescriptor->SampleRate.Quotient());
-	      return RESULT_SFORMAT;
+	      
+	      if ( m_EditRate == EditRate_24 && m_EssenceDescriptor->SampleRate == EditRate_48 )
+		{
+		  DefaultLogSink().Error("File may contain JPEG Interop stereoscopic images.\n");
+		  return RESULT_SFORMAT;
+		}
+
+	      return RESULT_FORMAT;
 	    }
 	}
       else if ( type == ASDCP::ESS_JPEG_2000_S )
 	{
 	  if ( ! ( m_EditRate == EditRate_24 && m_EssenceDescriptor->SampleRate == EditRate_48 ) )
 	    {
-	      DefaultLogSink().Error("EditRate and SampleRate not correct for 24/48 stereoscopic essence\n");
+	      DefaultLogSink().Error("EditRate and SampleRate not correct for 24/48 stereoscopic essence.\n");
 	      return RESULT_FORMAT;
 	    }
 	}
