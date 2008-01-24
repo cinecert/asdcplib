@@ -44,8 +44,8 @@ ASDCP::Wav::SimpleWaveHeader::SimpleWaveHeader(ASDCP::PCM::AudioDescriptor& ADes
   nchannels = ADesc.ChannelCount;
   bitspersample = ADesc.QuantizationBits;
   samplespersec = (ui32_t)ceil(ADesc.AudioSamplingRate.Quotient());
-  avgbps = samplespersec * nchannels * ((bitspersample + 7) / 8);
-  blockalign = nchannels * ((bitspersample + 7) / 8);
+  blockalign = nchannels * (bitspersample / 8);
+  avgbps = samplespersec * blockalign;
   cbsize = 0;	  
   data_len = ASDCP::PCM::CalcFrameBufferSize(ADesc) * ADesc.ContainerDuration;
 }
@@ -265,7 +265,7 @@ ASDCP::AIFF::SimpleAIFFHeader::FillADesc(ASDCP::PCM::AudioDescriptor& ADesc, ASD
   ADesc.AudioSamplingRate = extended_to_Rat(sampleRate);
   ADesc.QuantizationBits = sampleSize;
   ADesc.BlockAlign = sampleSize / 8;
-  ADesc.AvgBps = ADesc.BlockAlign * (ui32_t)ceil(ADesc.AudioSamplingRate.Quotient());
+  ADesc.AvgBps = ADesc.BlockAlign * ADesc.AudioSamplingRate.Quotient();
   ui32_t FrameBufferSize = ASDCP::PCM::CalcFrameBufferSize(ADesc);
   ADesc.ContainerDuration = data_len / FrameBufferSize;
 }
