@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2003-2007, John Hurst
+Copyright (c) 2003-2008, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -47,9 +47,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   these features.
 */
 
-#include <iostream>
-#include <assert.h>
-
 #include <KM_fileio.h>
 #include <KM_prng.h>
 #include <PCMParserList.h>
@@ -57,6 +54,9 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <MXF.h>
 #include <Metadata.h>
 #include <openssl/sha.h>
+
+#include <iostream>
+#include <assert.h>
 
 using namespace ASDCP;
 
@@ -106,7 +106,7 @@ banner(FILE* stream = stdout)
 {
   fprintf(stream, "\n\
 %s (asdcplib %s)\n\n\
-Copyright (c) 2003-2006 John Hurst\n\n\
+Copyright (c) 2003-2008 John Hurst\n\n\
 asdcplib may be copied only under the terms of the license found at\n\
 the top of every file in the asdcplib distribution kit.\n\n\
 Specify the -h (help) option for further information about %s\n\n",

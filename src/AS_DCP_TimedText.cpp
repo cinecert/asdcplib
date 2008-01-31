@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2007, John Hurst
+Copyright (c) 2008, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -32,6 +32,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "AS_DCP_internal.h"
 #include "KM_xml.h"
+
+using Kumu::GenRandomValue;
 
 static std::string TIMED_TEXT_PACKAGE_LABEL = "File Package: SMPTE 429-5 clip wrapping of D-Cinema Timed Text data";
 static std::string TIMED_TEXT_DEF_LABEL = "Timed Text Track";

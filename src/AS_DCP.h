@@ -77,8 +77,9 @@ The following use cases are supported by the library:
  o Read one or more ciphertext PCM audio streams from a ciphertext ASDCP file
  o Read header metadata from an ASDCP file
 
-This project depends upon the following library:
+This project depends upon the following libraries:
  - OpenSSL http://www.openssl.org/
+ - Expat http://expat.sourceforge.net/ (optional)
 
 */
 

@@ -32,7 +32,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "AS_DCP_internal.h"
 
 using namespace ASDCP::JP2K;
-
+using Kumu::GenRandomValue;
 
 //------------------------------------------------------------------------------------------
 
@@ -84,7 +84,8 @@ ASDCP::JP2K::PictureDescriptorDump(const PictureDescriptor& PDesc, FILE* stream)
   fprintf(stream, "    ImageComponents:\n");
   fprintf(stream, "  bits  h-sep v-sep\n");
 
-  for ( ui32_t i = 0; i < PDesc.Csize; i++ )
+  ui32_t i;
+  for ( i = 0; i < PDesc.Csize; i++ )
     {
       fprintf(stream, "  %4d  %5d %5d\n",
 	      PDesc.ImageComponents[i].Ssize + 1, // See ISO 15444-1, Table A11, for the origin of '+1'
@@ -106,7 +107,7 @@ ASDCP::JP2K::PictureDescriptorDump(const PictureDescriptor& PDesc, FILE* stream)
   fprintf(stream, "     Transformation: %hd\n", PDesc.CodingStyleDefault.SPcod.Transformation);
 
 
-  ui32_t precinct_set_size = 0, i;
+  ui32_t precinct_set_size = 0;
 
   for ( i = 0; PDesc.CodingStyleDefault.SPcod.PrecinctSize[i] != 0 && i < MaxPrecincts; i++ )
     precinct_set_size++;

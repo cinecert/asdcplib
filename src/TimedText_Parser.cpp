@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2007, John Hurst
+Copyright (c) 2007-2008, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -36,6 +36,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 using namespace Kumu;
 using namespace ASDCP;
+
+using Kumu::DefaultLogSink;
 
 const char* c_dcst_namespace_name = "http://www.smpte-ra.org/schemas/428-7/2007/DCST";
 

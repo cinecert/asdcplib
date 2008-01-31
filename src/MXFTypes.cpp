@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2005-2007, John Hurst
+Copyright (c) 2005-2008, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -150,7 +150,7 @@ const ASDCP::MXF::UTF16String&
 ASDCP::MXF::UTF16String::operator=(const char* sz)
 {
   if ( sz == 0 || *sz == 0 )
-    clear();
+    erase();
 
   else
     this->assign(sz);
@@ -180,7 +180,7 @@ ASDCP::MXF::UTF16String::EncodeString(char* str_buf, ui32_t buf_len) const
 bool
 ASDCP::MXF::UTF16String::Unarchive(Kumu::MemIOReader* Reader)
 {
-  clear();
+  erase();
   const ui16_t* p = (ui16_t*)Reader->CurrentData();
   ui32_t length = Reader->Remainder() / 2;
   char mb_buf[MB_LEN_MAX+1];

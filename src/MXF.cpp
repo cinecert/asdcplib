@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2005-2007, John Hurst
+Copyright (c) 2005-2008, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -32,7 +32,9 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "MXF.h"
 #include "Metadata.h"
 #include <KM_log.h>
+
 using Kumu::DefaultLogSink;
+using Kumu::GenRandomValue;
 
 // index segments must be < 64K
 // NOTE: this value may too high if advanced index entry elements are used.
