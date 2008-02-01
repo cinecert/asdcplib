@@ -711,7 +711,8 @@ ASDCP::MXF::OPAtomHeader::InitFromFile(const Kumu::FileReader& Reader)
   if ( HeaderByteCount < 1024 )
     DefaultLogSink().Warn("Improbably small HeaderByteCount value: %u\n", HeaderByteCount);
 
-  result = m_Buffer.Capacity(HeaderByteCount);
+  assert (HeaderByteCount <= 0xFFFFFFFFL);
+  result = m_Buffer.Capacity((ui32_t) HeaderByteCount);
 
   if ( ASDCP_SUCCESS(result) )
     {
@@ -841,7 +842,8 @@ ASDCP::MXF::OPAtomHeader::WriteToFile(Kumu::FileWriter& Writer, ui32_t HeaderSiz
 
   ASDCP::FrameBuffer HeaderBuffer;
   HeaderByteCount = HeaderSize - ArchiveSize();
-  Result_t result = HeaderBuffer.Capacity(HeaderByteCount); 
+  assert (HeaderByteCount <= 0xFFFFFFFFL);
+  Result_t result = HeaderBuffer.Capacity((ui32_t) HeaderByteCount); 
   m_Preface->m_Lookup = &m_Primer;
 
   std::list<InterchangeObject*>::iterator pl_i = m_PacketList->m_List.begin();
@@ -955,7 +957,10 @@ ASDCP::MXF::OPAtomIndexFooter::InitFromFile(const Kumu::FileReader& Reader)
   ui32_t read_count;
 
   if ( ASDCP_SUCCESS(result) )
-    result = m_Buffer.Capacity(IndexByteCount);
+    {
+      assert (IndexByteCount <= 0xFFFFFFFFL);
+      result = m_Buffer.Capacity((ui32_t) IndexByteCount);
+    }
 
   if ( ASDCP_SUCCESS(result) )
     result = Reader.Read(m_Buffer.Data(), m_Buffer.Capacity(), &read_count);
@@ -1096,7 +1101,9 @@ ASDCP::MXF::OPAtomIndexFooter::Lookup(ui32_t frame_num, IndexTableSegment::Index
 	  else if ( (ui64_t)frame_num >= start_pos
 		    && (ui64_t)frame_num < (start_pos + Segment->IndexDuration) )
 	    {
-	      Entry = Segment->IndexEntryArray[frame_num-start_pos];
+	      ui64_t tmp = frame_num - start_pos;
+	      assert(tmp <= 0xFFFFFFFFL);
+	      Entry = Segment->IndexEntryArray[(ui32_t) tmp];
 	      return RESULT_OK;
 	    }
 	}

@@ -46,7 +46,8 @@ MD_to_MPEG2_VDesc(MXF::MPEG2VideoDescriptor* VDescObj, MPEG2::VideoDescriptor& V
   VDesc.SampleRate             = VDescObj->SampleRate;
   VDesc.EditRate               = VDescObj->SampleRate;
   VDesc.FrameRate              = VDescObj->SampleRate.Numerator;
-  VDesc.ContainerDuration      = VDescObj->ContainerDuration;
+  assert(VDescObj->ContainerDuration <= 0xFFFFFFFFL);
+  VDesc.ContainerDuration      = (ui32_t) VDescObj->ContainerDuration;
 
   VDesc.FrameLayout            = VDescObj->FrameLayout;
   VDesc.StoredWidth            = VDescObj->StoredWidth;
@@ -492,7 +493,7 @@ ASDCP::MPEG2::MXFWriter::h__Writer::WriteFrame(const FrameBuffer& FrameBuf, AESE
 
   // update the index manager
   Entry.TemporalOffset = - FrameBuf.TemporalOffset();
-  Entry.KeyFrameOffset = - m_GOPOffset;
+  Entry.KeyFrameOffset = 0 - m_GOPOffset;
   Entry.Flags = Flags;
   /*
   fprintf(stderr, "to: %4hd   ko: %4hd   c1: %4hd   c2: %4hd   fl: 0x%02x\n",

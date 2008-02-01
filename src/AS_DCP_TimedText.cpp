@@ -127,7 +127,8 @@ ASDCP::TimedText::MXFReader::h__Reader::MD_to_TimedText_TDesc(TimedText::TimedTe
   MXF::TimedTextDescriptor* TDescObj = (MXF::TimedTextDescriptor*)m_EssenceDescriptor;
 
   TDesc.EditRate = TDescObj->SampleRate;
-  TDesc.ContainerDuration = TDescObj->ContainerDuration;
+  assert(TDescObj->ContainerDuration <= 0xFFFFFFFFL);
+  TDesc.ContainerDuration = (ui32_t) TDescObj->ContainerDuration;
   memcpy(TDesc.AssetID, TDescObj->ResourceID.Value(), UUIDlen);
   TDesc.NamespaceName = TDescObj->NamespaceURI;
   TDesc.EncodingName = TDescObj->UCSEncoding;

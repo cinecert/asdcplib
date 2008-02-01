@@ -224,9 +224,11 @@ ASDCP::h__Reader::ReadEKLVPacket(ui32_t FrameNum, ui32_t SequenceNum, ASDCP::Fra
 	}
 
       // read encrypted triplet value into internal buffer
-      m_CtFrameBuf.Capacity(PacketLength);
+      assert(PacketLength <= 0xFFFFFFFFL);
+      m_CtFrameBuf.Capacity((ui32_t) PacketLength);
       ui32_t read_count;
-      result = m_File.Read(m_CtFrameBuf.Data(), PacketLength, &read_count);
+      result = m_File.Read(m_CtFrameBuf.Data(), (ui32_t) PacketLength,
+			   &read_count);
 
       if ( ASDCP_FAILURE(result) )
 	return result;
@@ -237,7 +239,7 @@ ASDCP::h__Reader::ReadEKLVPacket(ui32_t FrameNum, ui32_t SequenceNum, ASDCP::Fra
           return RESULT_FORMAT;
         }
 
-      m_CtFrameBuf.Size(PacketLength);
+      m_CtFrameBuf.Size((ui32_t) PacketLength);
 
       // should be const but mxflib::ReadBER is not
       byte_t* ess_p = m_CtFrameBuf.Data();
@@ -357,7 +359,8 @@ ASDCP::h__Reader::ReadEKLVPacket(ui32_t FrameNum, ui32_t SequenceNum, ASDCP::Fra
 
       // read the data into the supplied buffer
       ui32_t read_count;
-      result = m_File.Read(FrameBuf.Data(), PacketLength, &read_count);
+      assert(PacketLength <= 0xFFFFFFFFL);
+      result = m_File.Read(FrameBuf.Data(), (ui32_t) PacketLength, &read_count);
 	  
       if ( ASDCP_FAILURE(result) )
 	return result;

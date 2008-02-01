@@ -265,7 +265,7 @@ ASDCP::AIFF::SimpleAIFFHeader::FillADesc(ASDCP::PCM::AudioDescriptor& ADesc, ASD
   ADesc.AudioSamplingRate = extended_to_Rat(sampleRate);
   ADesc.QuantizationBits = sampleSize;
   ADesc.BlockAlign = sampleSize / 8;
-  ADesc.AvgBps = ADesc.BlockAlign * ADesc.AudioSamplingRate.Quotient();
+  ADesc.AvgBps = (ui32_t) (ADesc.BlockAlign * ADesc.AudioSamplingRate.Quotient());
   ui32_t FrameBufferSize = ASDCP::PCM::CalcFrameBufferSize(ADesc);
   ADesc.ContainerDuration = data_len / FrameBufferSize;
 }

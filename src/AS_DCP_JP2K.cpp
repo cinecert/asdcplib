@@ -160,7 +160,8 @@ lh__Reader::MD_to_JP2K_PDesc(JP2K::PictureDescriptor& PDesc)
   MXF::RGBAEssenceDescriptor* PDescObj = (MXF::RGBAEssenceDescriptor*)m_EssenceDescriptor;
 
   PDesc.EditRate           = m_EditRate;
-  PDesc.ContainerDuration  = PDescObj->ContainerDuration;
+  assert(PDescObj->ContainerDuration <= 0xFFFFFFFFL);
+  PDesc.ContainerDuration  = (ui32_t) PDescObj->ContainerDuration;
   PDesc.StoredWidth        = PDescObj->StoredWidth;
   PDesc.StoredHeight       = PDescObj->StoredHeight;
   PDesc.AspectRatio        = PDescObj->AspectRatio;

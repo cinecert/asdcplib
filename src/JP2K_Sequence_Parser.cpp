@@ -144,7 +144,10 @@ ASDCP::JP2K::SequenceParser::h__SequenceParser::OpenRead(const char* filename)
 	result = RESULT_NOT_FOUND;
 
       if ( ASDCP_SUCCESS(result) )
-	result = TmpBuffer.Capacity(file_size);
+	{
+	  assert(file_size <= 0xFFFFFFFFL);
+	  result = TmpBuffer.Capacity((ui32_t) file_size);
+	}
 
       if ( ASDCP_SUCCESS(result) )
 	result = Parser.OpenReadFrame((*m_CurrentFile).c_str(), TmpBuffer);

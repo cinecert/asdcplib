@@ -88,7 +88,8 @@ ASDCP::KLVPacket::InitFromBuffer(const byte_t* buf, ui32_t buf_len)
   if ( ! Kumu::read_BER(buf + SMPTE_UL_LENGTH, &tmp_size) )
        return RESULT_FAIL;
 
-  m_ValueLength = tmp_size;
+  assert (tmp_size <= 0xFFFFFFFFL);
+  m_ValueLength = (ui32_t) tmp_size;
   m_KLLength = SMPTE_UL_LENGTH + Kumu::BER_length(buf + SMPTE_UL_LENGTH);
   m_KeyStart = buf;
   m_ValueStart = buf + m_KLLength;
@@ -208,7 +209,8 @@ ASDCP::KLVFilePacket::InitFromFile(const Kumu::FileReader& Reader)
   ui32_t remainder = 0;
   ui32_t ber_len = Kumu::BER_length(tmp_data + SMPTE_UL_LENGTH);
   m_KLLength = SMPTE_UL_LENGTH + ber_len;
-  m_ValueLength = tmp_size;
+  assert(tmp_size <= 0xFFFFFFFFL);
+  m_ValueLength = (ui32_t) tmp_size;
   ui32_t packet_length = m_ValueLength + m_KLLength;
 
   result = m_Buffer.Capacity(packet_length);

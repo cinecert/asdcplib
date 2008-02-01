@@ -67,6 +67,7 @@ MD_to_PCM_ADesc(MXF::WaveAudioDescriptor* ADescObj, PCM::AudioDescriptor& ADesc)
   ADesc.BlockAlign = ADescObj->BlockAlign;
   ADesc.AvgBps = ADescObj->AvgBps;
   ADesc.LinkedTrackID = ADescObj->LinkedTrackID;
+  assert(ADescObj->ContainerDuration <= 0xFFFFFFFFL);
   ADesc.ContainerDuration = ADescObj->ContainerDuration;
   return RESULT_OK;
 }

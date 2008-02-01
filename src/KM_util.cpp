@@ -931,7 +931,7 @@ Kumu::Timestamp::DecodeString(const char* datestr)
 	    return false;
 
 	  else 
-	    AddHours( (datestr[19] == '-' ? (-TZ_hh) : TZ_hh));
+	    AddHours( (datestr[19] == '-' ? (0 - TZ_hh) : TZ_hh));
 	}
     }
 
