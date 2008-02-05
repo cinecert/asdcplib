@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2004-2007, John Hurst
+Copyright (c) 2004-2008, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -358,8 +358,11 @@ ASDCP::h__Writer::AddEssenceDescriptor(const UL& WrappingUL)
   m_HeaderPart.m_Preface->PrimaryPackage = m_FilePackage->InstanceUID;
 
   //
-  // Encryption Descriptor
+  // Essence Descriptors
   //
+  UL GenericContainerUL(Dict::ul(MDD_GCMulti));
+  m_HeaderPart.EssenceContainers.push_back(GenericContainerUL);
+
   if ( m_Info.EncryptedEssence )
     {
       UL CryptEssenceUL(Dict::ul(MDD_EncryptedContainerLabel));
@@ -369,7 +372,6 @@ ASDCP::h__Writer::AddEssenceDescriptor(const UL& WrappingUL)
     }
   else
     {
-      m_HeaderPart.EssenceContainers.push_back(UL(Dict::ul(MDD_GCMulti)));
       m_HeaderPart.EssenceContainers.push_back(WrappingUL);
     }
 
