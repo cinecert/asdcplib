@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2006-2007, John Hurst
+Copyright (c) 2006-2008, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
