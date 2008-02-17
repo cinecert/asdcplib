@@ -116,7 +116,7 @@ utilities all respond to -h.
 
 
 Change History
-2008.02.05 - SMPTE format fixes, bug fixes v.1.3.18
+2008.02.16 - SMPTE format fixes, bug fixes v.1.3.18
  o Added correct SMPTE UL for StereoscopicPictureSubDescriptor.
  o Exposed JP2K metadata parser as ParseMetadataIntoDesc().
  o Added simple stereoscopic framebuffer to support paired ReadFrame()

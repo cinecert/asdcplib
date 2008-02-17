@@ -194,7 +194,7 @@ Kumu::LogEntry::TestFilter(i32_t filter) const
 std::string&
 Kumu::LogEntry::CreateStringWithOptions(std::string& out_buf, i32_t opt) const
 {
-  out_buf.clear();
+  out_buf.erase();
 
   if ( opt != 0 )
     {
