@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2005-2006, John Hurst
+Copyright (c) 2005-2008, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -82,6 +82,14 @@ Kumu::XMLElement::SetAttr(const char* name, const char* value)
   TmpVal.value = value;
 
   m_AttrList.push_back(TmpVal);
+}
+
+//
+Kumu::XMLElement*
+Kumu::XMLElement::AddChild(Kumu::XMLElement* element)
+{
+  m_ChildList.push_back(element); // takes posession!
+  return element;
 }
 
 //

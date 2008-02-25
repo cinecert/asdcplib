@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2005-2006, John Hurst
+Copyright (c) 2005-2008, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -77,6 +77,10 @@ namespace Kumu
   //
   class XMLElement
     {
+      KM_NO_COPY_CONSTRUCT(XMLElement);
+      XMLElement();
+
+    protected:
       AttributeList       m_AttrList;
       ElementList         m_ChildList;
       const XMLNamespace* m_Namespace;
@@ -84,9 +88,6 @@ namespace Kumu
 
       std::string   m_Name;
       std::string   m_Body;
-
-      KM_NO_COPY_CONSTRUCT(XMLElement);
-      XMLElement();
 
     public:
       XMLElement(const char* name);
@@ -101,6 +102,7 @@ namespace Kumu
       void        SetName(const char* name);
       void        AppendBody(const std::string& value);
       void        SetAttr(const char* name, const char* value);
+      XMLElement* AddChild(XMLElement* element);
       XMLElement* AddChild(const char* name);
       XMLElement* AddChildWithContent(const char* name, const char* value);
       XMLElement* AddChildWithContent(const char* name, const std::string& value);
