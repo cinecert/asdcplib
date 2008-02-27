@@ -2,7 +2,10 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.59])
-AC_INIT([asdcplib], [1.3.19.1], [asdcplib@cinecert.com])
+# If you change this, you should update the libtool version number specified
+# in src/Makefile.am. Read <http://www.gnu.org/software/libtool/manual.html#Versioning>
+# for suggestions on doing so.
+AC_INIT([asdcplib], [1.3.19], [asdcplib@cinecert.com])
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_SRCDIR([src/KM_error.h])
 AC_CONFIG_HEADER([src/config.h])
