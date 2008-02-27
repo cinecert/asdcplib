@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.59])
-AC_INIT([napali], [1.3.19.1])
+AC_INIT([asdcplib], [1.3.19.1], [asdcplib@cinecert.com])
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_SRCDIR([src/KM_error.h])
 AC_CONFIG_HEADER([src/config.h])
@@ -26,7 +26,24 @@ AZ_PYTHON_DEFAULT
 AZ_PYTHON_WITH
 AM_CONDITIONAL([HAVE_PYTHON], [test "$PYTHON" != :])
 
+# Checks for header files.
+AC_HEADER_DIRENT
+AC_HEADER_STDC
+AC_CHECK_HEADERS([arpa/inet.h fcntl.h limits.h netinet/in.h stdlib.h string.h sys/socket.h unistd.h wchar.h])
+
+# Checks for typedefs, structures, and compiler characteristics.
+AC_C_CONST
+AC_C_INLINE
+AC_TYPE_OFF_T
+AC_TYPE_SIZE_T
+AC_STRUCT_TM
+
 # Checks for library functions.
+AC_FUNC_CLOSEDIR_VOID
+AC_FUNC_MALLOC
+AC_FUNC_MEMCMP
+AC_FUNC_STAT
+AC_CHECK_FUNCS([getcwd memset regcomp strchr strerror strrchr strstr strtol])
 
 AC_CONFIG_FILES([Makefile
                  src/Makefile])
