@@ -50,8 +50,8 @@ AC_ARG_WITH(ssl,
         ssldir="$dir"
         if test -f "$dir/include/openssl/ssl.h"; then
             found_ssl="yes";
-            CFLAGS="$CFLAGS -I$ssldir/include/openssl -DHAVE_SSL";
-            CXXFLAGS="$CXXFLAGS -I$ssldir/include/openssl -DHAVE_SSL";
+            CFLAGS="$CFLAGS -I$ssldir/include -DHAVE_SSL";
+            CXXFLAGS="$CXXFLAGS -I$ssldir/include -DHAVE_SSL";
             break;
         fi
         if test -f "$dir/include/ssl.h"; then
@@ -66,7 +66,7 @@ AC_ARG_WITH(ssl,
     else
         printf "OpenSSL found in $ssldir\n";
         LIBS="$LIBS -lssl -lcrypto";
-        LDFLAGS="$LDFLAGS -L$ssldir/lib";
+        LDFLAGS="$LDFLAGS -L$ssldir";
         HAVE_SSL=yes
     fi
     AC_SUBST(HAVE_SSL)
