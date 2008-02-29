@@ -30,15 +30,17 @@ libasdcp_la_CPPFLAGS=-DASDCP_PLATFORM=\"@host@\"
 # Python extension
 if PYTHON_USE
 pyexecdir = @PYTHON_EXECDIR@
-pyexec_LTLIBRARIES = pykumu.la pyasdcp.la
-nodist_pykumu_la_SOURCES = kumu_python.cpp kumu_python.h
-pykumu_la_CPPFLAGS = @PYTHON_CPPFLAGS@
-pykumu_la_LDFLAGS = @PYTHON_LSPEC@ -avoid-version -module
-pykumu_la_LIBADD = libkumu.la
-nodist_pyasdcp_la_SOURCES = asdcp_python.cpp asdcp_python.h asdcp_python_misc.cpp asdcp_python_reader.cpp asdcp_python_writer.cpp asdcp_wrappers.h
-pyasdcp_la_CPPFLAGS = @PYTHON_CPPFLAGS@
-pyasdcp_la_LDFLAGS = @PYTHON_LSPEC@ -avoid-version -module
-pyasdcp_la_LIBADD = libasdcp.la
+#pyexec_includedir = $(PYTHON_PREFIX)/include
+pyexec_LTLIBRARIES = kumu.la asdcp.la
+nodist_kumu_la_SOURCES = kumu_python.cpp kumu_python.h
+kumu_la_CPPFLAGS = @PYTHON_CPPFLAGS@
+kumu_la_LDFLAGS = @PYTHON_LSPEC@ -avoid-version -module
+kumu_la_LIBADD = libkumu.la
+nodist_asdcp_la_SOURCES = asdcp_python.cpp asdcp_python.h asdcp_python_misc.cpp asdcp_python_reader.cpp asdcp_python_writer.cpp asdcp_wrappers.h
+asdcp_la_CPPFLAGS = @PYTHON_CPPFLAGS@
+asdcp_la_LDFLAGS = @PYTHON_LSPEC@ -avoid-version -module
+asdcp_la_LIBADD = libasdcp.la
+#pyexec_include_HEADERS = kumu_python.h asdcp_python.h
 endif
 
 # list of programs to be built and installed
