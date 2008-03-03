@@ -2,7 +2,8 @@
 
 # list of all the header files that should be installed
 include_HEADERS = KM_error.h KM_fileio.h KM_log.h KM_memio.h KM_mutex.h \
- KM_platform.h KM_prng.h KM_util.h KM_xml.h AS_DCP.h S12MTimecode.h
+ KM_platform.h KM_prng.h KM_util.h KM_xml.h AS_DCP.h S12MTimecode.h MDD.h\
+ Metadata.h KLV.h MXFTypes.h MXF.h Wav.h
 
 # list of the libraries to build and install
 lib_LTLIBRARIES = libkumu.la libasdcp.la
