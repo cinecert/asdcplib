@@ -2,8 +2,8 @@
 
 # list of all the header files that should be installed
 include_HEADERS = KM_error.h KM_fileio.h KM_log.h KM_memio.h KM_mutex.h \
- KM_platform.h KM_prng.h KM_util.h KM_xml.h AS_DCP.h S12MTimecode.h MDD.h\
- Metadata.h KLV.h MXFTypes.h MXF.h Wav.h
+ KM_platform.h KM_prng.h KM_util.h KM_xml.h AS_DCP.h
+extra_HDRS = S12MTimecode.h MDD.h Metadata.h KLV.h MXFTypes.h MXF.h Wav.h
 
 # list of the libraries to build and install
 lib_LTLIBRARIES = libkumu.la libasdcp.la
@@ -116,3 +116,14 @@ Metadata.h:
 # dependencies:  Metadata.h $(srcdir)/Metadata_cpp.tt2
 Metadata.cpp:
 	$(srcdir)/mxfgen.pl $(srcdir)/MXF_def.pl $(srcdir)/Metadata_cpp.tt2 > Metadata.cpp
+
+extraHDRS_INSTALL = $(INSTALL_HEADER)
+install-extra: $(extra_HDRS)
+	@$(NORMAL_INSTALL)
+	test -z "$(includedir)" || $(MKDIR_P) "$(DESTDIR)$(includedir)"
+	@list='$(extra_HDRS)'; for p in $$list; do \
+		if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+		f=$(am__strip_dir) \
+		echo " $(extraHDRS_INSTALL) '$$d$$p' '$(DESTDIR)$(includedir)/$$f'"; \
+		$(extraHDRS_INSTALL) "$$d$$p" "$(DESTDIR)$(includedir)/$$f"; \
+	done
