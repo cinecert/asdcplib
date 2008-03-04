@@ -3,7 +3,8 @@
 # list of all the header files that should be installed
 include_HEADERS = KM_error.h KM_fileio.h KM_log.h KM_memio.h KM_mutex.h \
  KM_platform.h KM_prng.h KM_util.h KM_xml.h AS_DCP.h
-extra_HDRS = S12MTimecode.h MDD.h Metadata.h KLV.h MXFTypes.h MXF.h Wav.h
+extra_HDRS = S12MTimecode.h MDD.h Metadata.h KLV.h MXFTypes.h MXF.h Wav.h \
+ PCMParserList.h
 
 # list of the libraries to build and install
 lib_LTLIBRARIES = libkumu.la libasdcp.la
@@ -21,7 +22,8 @@ libasdcp_la_SOURCES = MPEG2_Parser.cpp MPEG.cpp JP2K_Codestream_Parser.cpp \
  TimedText_Parser.cpp KLV.cpp Dict.cpp MXFTypes.cpp MXF.cpp \
  Index.cpp Metadata.cpp AS_DCP.cpp AS_DCP_MXF.cpp AS_DCP_AES.cpp \
  h__Reader.cpp h__Writer.cpp AS_DCP_MPEG2.cpp AS_DCP_JP2K.cpp \
- AS_DCP_PCM.cpp AS_DCP_TimedText.cpp Wav.h WavFileWriter.h MXF.h Metadata.h \
+ AS_DCP_PCM.cpp AS_DCP_TimedText.cpp PCMParserList.cpp \
+ Wav.h WavFileWriter.h MXF.h Metadata.h \
  JP2K.h AS_DCP.h AS_DCP_internal.h KLV.h MPEG.h MXFTypes.h MDD.h \
  PCMParserList.h S12MTimecode.h MDD.cpp
 libasdcp_la_LDFLAGS = -version-info 3:19:0
@@ -37,7 +39,10 @@ nodist_kumu_la_SOURCES = kumu_python.cpp kumu_python.h
 kumu_la_CPPFLAGS = @PYTHON_CPPFLAGS@
 kumu_la_LDFLAGS = @PYTHON_LSPEC@ -avoid-version -module
 kumu_la_LIBADD = libkumu.la
-nodist_asdcp_la_SOURCES = asdcp_python.cpp asdcp_python.h asdcp_python_misc.cpp asdcp_python_reader.cpp asdcp_python_writer.cpp asdcp_wrappers.h
+nodist_asdcp_la_SOURCES = asdcp_python.cpp asdcp_python.h asdcp_python_misc.cpp \
+ asdcp_python_reader.cpp asdcp_python_writer.cpp asdcp_wrappers.h \
+ kumu_python.cpp kumu_python.h
+
 asdcp_la_CPPFLAGS = @PYTHON_CPPFLAGS@
 asdcp_la_LDFLAGS = @PYTHON_LSPEC@ -avoid-version -module
 asdcp_la_LIBADD = libasdcp.la
@@ -49,7 +54,7 @@ bin_PROGRAMS = asdcp-test blackwave klvwalk kmfilegen kmrandgen \
  kmuuidgen wavesplit
 
 # sources for a program
-asdcp_test_SOURCES = asdcp-test.cpp PCMParserList.cpp
+asdcp_test_SOURCES = asdcp-test.cpp
 # list of libraries to link against for a program
 asdcp_test_LDADD = libasdcp.la
 kmfilegen_SOURCES = kmfilegen.cpp
