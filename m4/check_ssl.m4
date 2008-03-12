@@ -66,7 +66,7 @@ AC_ARG_WITH(ssl,
     else
         printf "OpenSSL found in $ssldir\n";
         LIBS="$LIBS -lssl -lcrypto";
-        LDFLAGS="$LDFLAGS -L$ssldir";
+        LDFLAGS="$LDFLAGS -L$ssldir/lib -L$ssldir";
         HAVE_SSL=yes
     fi
     AC_SUBST(HAVE_SSL)
