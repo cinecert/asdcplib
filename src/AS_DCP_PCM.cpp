@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2004-2006, John Hurst
+Copyright (c) 2004-2008, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -370,9 +370,9 @@ ASDCP::PCM::MXFWriter::h__Writer::SetSourceStream(const AudioDescriptor& ADesc)
       return RESULT_RAW_FORMAT;
     }
 
-  if ( ADesc.AudioSamplingRate != SampleRate_48k )
+  if ( ADesc.AudioSamplingRate != SampleRate_48k && ADesc.AudioSamplingRate != SampleRate_96k )
     {
-      DefaultLogSink().Error("AudioDescriptor.AudioSamplingRate is not 48000/1: %d/%d\n",
+      DefaultLogSink().Error("AudioDescriptor.AudioSamplingRate is not 48000/1 or 96000/1: %d/%d\n",
 			     ADesc.AudioSamplingRate.Numerator, ADesc.AudioSamplingRate.Denominator);
       return RESULT_RAW_FORMAT;
     }
