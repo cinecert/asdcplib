@@ -37,7 +37,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 using namespace Kumu;
 
 const ui32_t RandBlockSize = 16;
-const char* PACKAGE = "kmrandgen";
+const char* PROGRAM_NAME = "kmrandgen";
 
 // Increment the iterator, test for an additional non-option command line argument.
 // Causes the caller to return if there are no remaining arguments or if the next
@@ -59,7 +59,7 @@ Copyright (c) 2003-2008 John Hurst\n\n\
 asdcplib may be copied only under the terms of the license found at\n\
 the top of every file in the asdcplib distribution kit.\n\n\
 Specify the -h (help) option for further information about %s\n\n",
-	  PACKAGE, ASDCP::Version(), PACKAGE, PACKAGE);
+	  PROGRAM_NAME, ASDCP::Version(), PROGRAM_NAME, PROGRAM_NAME);
 }
 
 //
@@ -83,7 +83,7 @@ USAGE: %s [-b|-B|-c|-x] [-n] [-s <size>] [-v]\n\
 \n\
   NOTES: o There is no option grouping, all options must be distinct arguments.\n\
          o All option arguments must be separated from the option by whitespace.\n\
-\n", PACKAGE, PACKAGE);
+\n", PROGRAM_NAME, PROGRAM_NAME);
 }
 
 enum OutputFormat_t {
@@ -183,7 +183,7 @@ main(int argc, const char** argv)
 
   if ( Options.error_flag )
     {
-      fprintf(stderr, "There was a problem. Type %s -h for help.\n", PACKAGE);
+      fprintf(stderr, "There was a problem. Type %s -h for help.\n", PROGRAM_NAME);
       return 3;
     }
 

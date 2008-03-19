@@ -66,7 +66,7 @@ const ui32_t FRAME_BUFFER_SIZE = 4 * Kumu::Megabyte;
 //
 // command line option parser class
 
-static const char* PACKAGE = "asdcp-test";  // program name for messages
+static const char* PROGRAM_NAME = "asdcp-test";  // program name for messages
 const ui32_t MAX_IN_FILES = 16;             // maximum number of input files handled by
                                             //   the command option parser
 
@@ -110,7 +110,7 @@ Copyright (c) 2003-2008 John Hurst\n\n\
 asdcplib may be copied only under the terms of the license found at\n\
 the top of every file in the asdcplib distribution kit.\n\n\
 Specify the -h (help) option for further information about %s\n\n",
-	  PACKAGE, ASDCP::Version(), PACKAGE);
+	  PROGRAM_NAME, ASDCP::Version(), PROGRAM_NAME);
 }
 
 //
@@ -136,7 +136,7 @@ USAGE: %s -c <output-file> [-3] [-b <buffer-size>] [-d <duration>] [-e|-E]\n\
        %s -x <file-prefix> [-3] [-b <buffer-size>] [-d <duration>]\n\
        [-f <starting-frame>] [-m] [-p <frame-rate>] [-R] [-s <num>] [-S|-1]\n\
        [-v] [-W] <input-file>\n\
-\n", PACKAGE, PACKAGE, PACKAGE, PACKAGE, PACKAGE, PACKAGE, PACKAGE);
+\n", PROGRAM_NAME, PROGRAM_NAME, PROGRAM_NAME, PROGRAM_NAME, PROGRAM_NAME, PROGRAM_NAME, PROGRAM_NAME);
 
   fprintf(stream, "\
 Major modes:\n\
@@ -1769,7 +1769,7 @@ main(int argc, const char** argv)
 
   if ( Options.error_flag )
     {
-      fprintf(stderr, "There was a problem. Type %s -h for help.\n", PACKAGE);
+      fprintf(stderr, "There was a problem. Type %s -h for help.\n", PROGRAM_NAME);
       return 3;
     }
 

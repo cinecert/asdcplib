@@ -38,7 +38,7 @@ using namespace ASDCP;
 //
 // command line option parser class
 
-static const char* PACKAGE = "blackwave";    // program name for messages
+static const char* PROGRAM_NAME = "blackwave";    // program name for messages
 
 // Macros used to test command option data state.
 
@@ -61,7 +61,7 @@ wavesplit is part of asdcplib.\n\
 asdcplib may be copied only under the terms of the license found at\n\
 the top of every file in the asdcplib distribution kit.\n\n\
 Specify the -h (help) option for further information about %s\n\n",
-	  PACKAGE, ASDCP::Version(), PACKAGE);
+	  PROGRAM_NAME, ASDCP::Version(), PROGRAM_NAME);
 }
 
 //
@@ -80,7 +80,7 @@ Other Options:\n\
 \n\
   NOTES: o There is no option grouping, all options must be distinct arguments.\n\
          o All option arguments must be separated from the option by whitespace.\n\
-\n", PACKAGE);
+\n", PROGRAM_NAME);
 }
 
 //

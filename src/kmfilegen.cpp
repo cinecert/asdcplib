@@ -40,7 +40,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 using namespace Kumu;
 
 // constants
-static const char* PACKAGE = "kmfilegen";  // program name for messages
+static const char* PROGRAM_NAME = "kmfilegen";  // program name for messages
 const ui32_t RNG_KEY_SIZE = 16;
 const ui32_t RNG_KEY_SIZE_BITS = 128;
 const ui32_t RNG_BLOCK_SIZE = 16;
@@ -74,7 +74,7 @@ Copyright (c) 2005-2008 John Hurst\n\
 asdcplib may be copied only under the terms of the license found at\n\
 the top of every file in the asdcplib distribution kit.\n\n\
 Specify the -h (help) option for further information about %s\n\n",
-	  PACKAGE, ASDCP::Version(), PACKAGE, PACKAGE);
+	  PROGRAM_NAME, ASDCP::Version(), PROGRAM_NAME, PROGRAM_NAME);
 }
 
 
@@ -102,7 +102,7 @@ USAGE: %s [-c <file-size>] [-v] <output-file>\n\
 \n\
   NOTES: o There is no option grouping, all options must be distinct arguments.\n\
          o All option arguments must be separated from the option by whitespace.\n\
-\n", PACKAGE, PACKAGE, PACKAGE, PACKAGE);
+\n", PROGRAM_NAME, PROGRAM_NAME, PROGRAM_NAME, PROGRAM_NAME);
 }
 
 enum MajorMode_t {
@@ -574,7 +574,7 @@ main(int argc, const char **argv)
 
   if ( Options.error_flag )
     {
-      fprintf(stderr, "There was a problem. Type %s -h for help.\n", PACKAGE);
+      fprintf(stderr, "There was a problem. Type %s -h for help.\n", PROGRAM_NAME);
       return 3;
     }
 
