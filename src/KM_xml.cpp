@@ -34,7 +34,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <stack>
 #include <map>
 
-#ifdef ASDCP_USE_EXPAT
+#ifdef HAVE_EXPAT
 #include <expat.h>
 #endif
 
@@ -271,7 +271,7 @@ Kumu::XMLElement::GetChildrenWithName(const char* name, ElementList& outList) co
 
 //----------------------------------------------------------------------------------------------------
 
-#ifdef ASDCP_USE_EXPAT
+#ifdef HAVE_EXPAT
 
 
 class ExpatParseContext

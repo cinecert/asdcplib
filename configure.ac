@@ -8,7 +8,7 @@ AC_PREREQ([2.59])
 AC_INIT([asdcplib], [1.3.19], [asdcplib@cinecert.com])
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_SRCDIR([src/KM_error.h])
-AC_CONFIG_HEADER([src/config.h])
+#AC_CONFIG_HEADER([src/config.h])
 AM_INIT_AUTOMAKE([1.9 foreign])
 
 # Checks for programs.
@@ -21,6 +21,9 @@ AC_PROG_INSTALL
 AC_PROG_RANLIB
 
 AC_SYS_LARGEFILE
+if test "$ac_cv_sys_largefile_CC" != no; then
+   CXX=$CXX$ac_cv_sys_largefile_CC
+fi
 
 CHECK_SSL
 AX_LIB_EXPAT
