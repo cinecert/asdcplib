@@ -32,6 +32,9 @@ AZ_PYTHON_DEFAULT
 AZ_PYTHON_WITH
 AM_CONDITIONAL([HAVE_PYTHON], [test "$PYTHON" != :])
 
+# Checks for libraries.
+AC_CHECK_LIB([pthread], [pthread_create])
+
 # Checks for header files.
 AC_HEADER_DIRENT
 AC_HEADER_STDC
