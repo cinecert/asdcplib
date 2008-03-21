@@ -36,23 +36,23 @@ AM_CONDITIONAL([HAVE_PYTHON], [test "$PYTHON" != :])
 AC_CHECK_LIB([pthread], [pthread_create])
 
 # Checks for header files.
-AC_HEADER_DIRENT
-AC_HEADER_STDC
-AC_CHECK_HEADERS([arpa/inet.h fcntl.h limits.h netinet/in.h stdlib.h string.h sys/socket.h unistd.h wchar.h])
+#AC_HEADER_DIRENT
+#AC_HEADER_STDC
+#AC_CHECK_HEADERS([arpa/inet.h fcntl.h limits.h netinet/in.h stdlib.h string.h sys/socket.h unistd.h wchar.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
-AC_C_CONST
-AC_C_INLINE
-AC_TYPE_OFF_T
-AC_TYPE_SIZE_T
-AC_STRUCT_TM
+#AC_C_CONST
+#AC_C_INLINE
+#AC_TYPE_OFF_T
+#AC_TYPE_SIZE_T
+#AC_STRUCT_TM
 
 # Checks for library functions.
-AC_FUNC_CLOSEDIR_VOID
-AC_FUNC_MALLOC
-AC_FUNC_MEMCMP
-AC_FUNC_STAT
-AC_CHECK_FUNCS([getcwd memset regcomp strchr strerror strrchr strstr strtol])
+#AC_FUNC_CLOSEDIR_VOID
+#AC_FUNC_MALLOC
+#AC_FUNC_MEMCMP
+#AC_FUNC_STAT
+#AC_CHECK_FUNCS([getcwd memset regcomp strchr strerror strrchr strstr strtol])
 
 AC_CONFIG_FILES([Makefile
                  src/Makefile])
