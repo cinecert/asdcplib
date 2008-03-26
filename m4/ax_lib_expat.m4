@@ -271,4 +271,7 @@ p = NULL;
             AC_MSG_WARN([Expat XML Parser support requested but headers or library not found. Specify valid prefix of Expat using --with-expat=@<:@DIR@:>@ or provide include directory and linker flags using --with-expat-inc and --with-expat-lib])
         fi
     fi
+    if test "$HAVE_EXPAT" = "yes"; then
+        CPPFLAGS="$CPPFLAGS -DHAVE_EXPAT=1"
+    fi
 ])
