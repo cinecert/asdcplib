@@ -31,11 +31,37 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <KM_xml.h>
 #include <KM_log.h>
+#include <KM_mutex.h>
 #include <stack>
 #include <map>
 
+//#undef HAVE_EXPAT
+//#define HAVE_XERCES_C
+
 #ifdef HAVE_EXPAT
+# ifdef HAVE_XERCES_C
+#  error "Both HAVE_EXPAT and HAVE_XERCES_C defined"
+# endif
 #include <expat.h>
+#endif
+
+#ifdef HAVE_XERCES_C
+# ifdef HAVE_EXPAT
+#  error "Both HAVE_EXPAT and HAVE_XERCES_C defined"
+# endif
+
+#include <xercesc/util/PlatformUtils.hpp>
+#include <xercesc/util/XMLString.hpp>
+#include <xercesc/sax/AttributeList.hpp>
+#include <xercesc/sax/HandlerBase.hpp>
+#include <xercesc/sax/ErrorHandler.hpp>
+#include <xercesc/sax/SAXParseException.hpp>
+#include <xercesc/parsers/SAXParser.hpp>
+#include <xercesc/framework/MemBufInputSource.hpp>
+#include <xercesc/framework/XMLPScanToken.hpp>
+
+
+XERCES_CPP_NAMESPACE_USE 
 #endif
 
 using namespace Kumu;
@@ -44,16 +70,13 @@ using namespace Kumu;
 class ns_map : public std::map<std::string, XMLNamespace*>
 {
 public:
-  ns_map() {}
   ~ns_map()
   {
-    ns_map::iterator ni = begin();
-
-    while (ni != end() )
+    while ( ! empty() )
       {
-	//	fprintf(stderr, "deleting namespace %s:%s\n", ni->second->Prefix().c_str(), ni->second->Name().c_str());
+	ns_map::iterator ni = begin();
 	delete ni->second;
-	ni++;
+	erase(ni);
       }
   }
 };
@@ -69,8 +92,7 @@ Kumu::XMLElement::~XMLElement()
   for ( Elem_i i = m_ChildList.begin(); i != m_ChildList.end(); i++ )
     delete *i;
 
-  if ( m_NamespaceOwner != 0 )
-    delete (ns_map*)m_NamespaceOwner;
+  delete (ns_map*)m_NamespaceOwner;
 }
 
 //
@@ -475,7 +497,279 @@ Kumu::StringIsXML(const char* document, ui32_t len)
   return Wrapper.Status;
 }
 
-#else // no XML parser support
+#endif
+
+//----------------------------------------------------------------------------------------------------
+
+#ifdef HAVE_XERCES_C
+
+static Mutex sg_Lock;
+static bool  sg_xml_init = false;
+
+
+//
+static bool
+init_xml()
+{
+  if ( ! sg_xml_init )
+    {
+      AutoMutex AL(sg_Lock);
+
+      if ( ! sg_xml_init )
+	{
+	  try
+	    {
+	      XMLPlatformUtils::Initialize();
+	    }
+	  catch (const XMLException &e)
+	    {
+	      DefaultLogSink().Error("Xerces initialization error: %s\n", e.getMessage());
+	      return false;
+	    }
+  	}
+    }
+
+  return true;
+}
+
+
+//
+class MyTreeHandler : public HandlerBase
+{
+  ns_map*                  m_Namespaces;
+  std::stack<XMLElement*>  m_Scope;
+  XMLElement*              m_Root;
+
+public:
+  MyTreeHandler(XMLElement* root) : m_Namespaces(0), m_Root(root) {
+    assert(m_Root);
+    m_Namespaces = new ns_map;
+  }
+
+  ~MyTreeHandler() {
+    delete m_Namespaces;
+  }
+
+  ns_map* TakeNamespaceMap() {
+    if ( m_Namespaces == 0 || m_Namespaces->empty() )
+      return 0;
+
+    ns_map* ret = m_Namespaces;
+    m_Namespaces = 0;
+    return ret;
+  }
+
+  //
+  void AddNamespace(const char* ns_prefix, const char* ns_name)
+  {
+    assert(ns_prefix);
+    assert(ns_name);
+
+    if ( ns_prefix[0] == ':' )
+      {
+	ns_prefix++;
+      }
+    else
+      {
+	assert(ns_prefix[0] == 0);
+	ns_prefix = "";
+      }
+
+    ns_map::iterator ni = m_Namespaces->find(ns_name);
+
+    if  ( ni != m_Namespaces->end() )
+      {
+	if ( ni->second->Name() != std::string(ns_name) )
+	  {
+	    DefaultLogSink().Error("Duplicate prefix: %s\n", ns_prefix);
+	    return;
+	  }
+      }
+    else
+      {
+	XMLNamespace* Namespace = new XMLNamespace(ns_prefix, ns_name);
+	m_Namespaces->insert(ns_map::value_type(ns_prefix, Namespace));
+      }
+
+    assert(!m_Namespaces->empty());
+  }
+
+  //
+  void startElement(const XMLCh* const x_name,
+		    XERCES_CPP_NAMESPACE::AttributeList& attributes)
+  {
+    assert(x_name);
+
+    const char* tx_name = XMLString::transcode(x_name);
+    const char* name = tx_name;
+    XMLElement* Element;
+    const char* ns_root = name;
+    const char* local_name = strchr(name, ':');
+
+    if ( local_name != 0 )
+      name = local_name + 1;
+
+    if ( m_Scope.empty() )
+      {
+	m_Scope.push(m_Root);
+      }
+    else
+      {
+	Element = m_Scope.top();
+	m_Scope.push(Element->AddChild(name));
+      }
+
+    Element = m_Scope.top();
+    Element->SetName(name);
+
+    // set attributes
+    ui32_t a_len = attributes.getLength();
+
+    for ( ui32_t i = 0; i < a_len; i++)
+      {
+	const XMLCh* aname = attributes.getName(i);
+	const XMLCh* value = attributes.getValue(i);
+	assert(aname);
+	assert(value);
+
+	char* x_aname = XMLString::transcode(aname);
+	char* x_value = XMLString::transcode(value);
+
+	if ( strncmp(x_aname, "xmlns", 5) == 0 )
+	  AddNamespace(x_aname+5, x_value);
+
+	if ( ( local_name = strchr(x_aname, ':') ) == 0 )
+	  local_name = x_aname;
+	else
+	  local_name++;
+
+	Element->SetAttr(local_name, x_value);
+
+	XMLString::release(&x_aname);
+	XMLString::release(&x_value);
+      }
+
+    // map the namespace
+    std::string key;
+    if ( ns_root != name )
+      key.assign(ns_root, name - ns_root - 1);
+  
+    ns_map::iterator ni = m_Namespaces->find(key);
+    if ( ni != m_Namespaces->end() )
+      Element->SetNamespace(ni->second);
+
+    XMLString::release((char**)&tx_name);
+  }
+
+  void endElement(const XMLCh *const name) {
+    m_Scope.pop();
+  }
+
+  void characters(const XMLCh *const chars, const unsigned int length)
+  {
+    if ( length > 0 )
+      {
+	char* text = XMLString::transcode(chars);
+	m_Scope.top()->AppendBody(text);
+	XMLString::release(&text);
+      }
+  }
+};
+
+//
+bool
+Kumu::XMLElement::ParseString(const std::string& document)
+{
+  if ( document.empty() )
+    return false;
+
+  if ( ! init_xml() )
+    return false;
+
+  SAXParser* parser = new SAXParser();
+  parser->setDoValidation(true);
+  parser->setDoNamespaces(true);    // optional
+
+  MyTreeHandler* docHandler = new MyTreeHandler(this);
+  ErrorHandler* errHandler = (ErrorHandler*)docHandler;
+  parser->setDocumentHandler(docHandler);
+
+  try
+    {
+      MemBufInputSource xmlSource(reinterpret_cast<const XMLByte*>(document.c_str()),
+				  static_cast<const unsigned int>(document.size()),
+				  "pidc_rules_file");
+
+      parser->parse(xmlSource);
+    }
+  catch (const XMLException& e)
+    {
+      char* message = XMLString::transcode(e.getMessage());
+      DefaultLogSink().Error("Parser error: %s\n", message);
+      XMLString::release(&message);
+      return false;
+    }
+  catch (const SAXParseException& e)
+    {
+      char* message = XMLString::transcode(e.getMessage());
+      DefaultLogSink().Error("Parser error: %s at line %d\n", message, e.getLineNumber());
+      XMLString::release(&message);
+      return false;
+    }
+  catch (...)
+    {
+      DefaultLogSink().Error("Unexpected XML parser error\n");
+      return false;
+    }
+  
+  m_NamespaceOwner = (void*)docHandler->TakeNamespaceMap();
+  delete parser;
+  delete docHandler;
+  return true;
+}
+
+//
+bool
+Kumu::StringIsXML(const char* document, ui32_t len)
+{
+  if ( document == 0 || *document == 0 )
+    return false;
+
+  if ( ! init_xml() )
+    return false;
+
+  if ( len == 0 )
+    len = strlen(document);
+
+  SAXParser parser;
+  XMLPScanToken token;
+  bool status = false;
+
+  try
+    {
+      MemBufInputSource xmlSource(reinterpret_cast<const XMLByte*>(document),
+				  static_cast<const unsigned int>(len),
+				  "pidc_rules_file");
+
+      if ( parser.parseFirst(xmlSource, token) )
+	{
+	  if ( parser.parseNext(token) )
+	    status = true;
+	}
+    }
+  catch (...)
+    {
+    }
+  
+  return status;
+}
+
+
+#endif
+
+//----------------------------------------------------------------------------------------------------
+
+#if ! defined(HAVE_EXPAT) && ! defined(HAVE_XERCES_C)
 
 //
 bool

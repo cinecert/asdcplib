@@ -166,6 +166,9 @@ ASDCP::TimedText::DCSubtitleParser::h__SubtitleParser::OpenRead(const char* file
 {
   Result_t result = ReadFileIntoString(filename, m_XMLDoc);
 
+  if ( KM_FAILURE(result) )
+    return result;
+
   if ( ! m_Root.ParseString(m_XMLDoc.c_str()) )
     return RESULT_FORMAT;
 
