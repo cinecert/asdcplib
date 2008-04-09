@@ -859,7 +859,7 @@ Kumu::Timestamp::EncodeString(char* str_buf, ui32_t buf_len) const
 
   // 2004-05-01T13:20:00-00:00
   snprintf(str_buf, buf_len,
-	   "%04hu-%02hu-%02huT%02hu:%02hu:%02hu-00:00",
+	   "%04hu-%02hu-%02huT%02hu:%02hu:%02hu+00:00",
 	   Year, Month, Day, Hour, Minute, Second);
   
   return str_buf;
