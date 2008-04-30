@@ -73,14 +73,17 @@ AC_DEFUN([AX_LIB_XERCES],
         fi
         ],
         [
-        dnl Default behavior is implicit yes
-        if test -d /usr/local/include/xercesc ; then
-            xerces_prefix=/usr/local
-        elif test -d /usr/include/xercesc ; then
-            xerces_prefix=/usr
-        else
-            xerces_prefix=""
-        fi
+#        dnl Default behavior is implicit yes
+#        if test -d /usr/local/include/xercesc ; then
+#            xerces_prefix=/usr/local
+#        elif test -d /usr/include/xercesc ; then
+#            xerces_prefix=/usr
+#        else
+#            xerces_prefix=""
+#        fi
+        dnl Default behavior is implicit no
+        xerces_prefix=""
+        xerces_requested="no"
         ]
     )
 

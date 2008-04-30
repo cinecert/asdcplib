@@ -70,14 +70,17 @@ AC_DEFUN([AX_LIB_EXPAT],
         fi
         ],
         [
-        dnl Default behavior is implicit yes
-        if test -f /usr/local/include/expat.h ; then
-            expat_prefix=/usr/local
-        elif test -f /usr/include/expat.h ; then
-            expat_prefix=/usr
-        else
-            expat_prefix=""
-        fi
+#        dnl Default behavior is implicit yes
+#        if test -f /usr/local/include/expat.h ; then
+#            expat_prefix=/usr/local
+#        elif test -f /usr/include/expat.h ; then
+#            expat_prefix=/usr
+#        else
+#            expat_prefix=""
+#        fi
+        dnl Default behavior is implicit no
+        expat_prefix=""
+        expat_requested="no"
         ]
     )
 
