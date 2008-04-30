@@ -48,7 +48,7 @@
 
 AC_DEFUN([AX_LIB_XERCES],
 [
-    AC_REQUIRE([ACX_PTHREAD])
+#    AC_REQUIRE([ACX_PTHREAD])
 
     AC_ARG_WITH([xerces],
         AC_HELP_STRING([--with-xerces=@<:@ARG@:>@],
@@ -286,5 +286,8 @@ XMLPlatformUtils::Initialize();
         if test "$xerces_requested" = "yes"; then
             AC_MSG_WARN([Xerces C++ Parser support requested but headers or library not found. Specify valid prefix of Xerces C++ using --with-xerces=@<:@DIR@:>@ or provide include directory and linker flags using --with-xerces-inc and --with-xerces-lib])
         fi
+    fi
+    if test "$HAVE_XERCES" = "yes"; then
+        CPPFLAGS="$CPPFLAGS -DHAVE_XERCES_C=1"
     fi
 ])
