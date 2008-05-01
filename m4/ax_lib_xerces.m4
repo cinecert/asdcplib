@@ -291,6 +291,7 @@ XMLPlatformUtils::Initialize();
         fi
     fi
     if test "$HAVE_XERCES" = "yes"; then
-        CPPFLAGS="$CPPFLAGS -DHAVE_XERCES_C=1"
+        CPPFLAGS="$CPPFLAGS $XERCES_CPPFLAGS -DHAVE_XERCES_C=1"
+        LDFLAGS="$LDFLAGS $XERCES_LDFLAGS $XERCES_LIBS"
     fi
 ])

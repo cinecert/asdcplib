@@ -275,6 +275,7 @@ p = NULL;
         fi
     fi
     if test "$HAVE_EXPAT" = "yes"; then
-        CPPFLAGS="$CPPFLAGS -DHAVE_EXPAT=1"
+        CPPFLAGS="$CPPFLAGS $EXPAT_CFLAGS -DHAVE_EXPAT=1"
+        LDFLAGS="$LDFLAGS $EXPAT_LDFLAGS"
     fi
 ])
