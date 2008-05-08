@@ -234,7 +234,7 @@ AC_DEFUN([AZ_PYTHON_CSPEC],
 	python_path=
         az_python_execprefix=`${PYTHON} -c "import sys; print sys.exec_prefix"`
         az_python_version=`$PYTHON -c "import sys; print sys.version[[:3]]"`
-        az_python_includespec="-I`$PYTHON -c \"import distutils.sysconfig; print distutils.sysconfig.get_python_inc();\"`"
+        az_python_includespec="-I`$PYTHON -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_inc();'`"
         if test x"$python_prefix" != x"$python_execprefix"; then
             az_python_execspec="-I${az_python_execprefix}/include/python${az_python_version}"
             az_python_includespec="${az_python_includespec} $az_python_execspec"
