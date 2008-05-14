@@ -25,7 +25,7 @@ if test "$ac_cv_sys_largefile_CC" != no; then
    CXX=$CXX$ac_cv_sys_largefile_CC
 fi
 
-CHECK_SSL
+AX_LIB_OPENSSL([0.9.7])
 AX_LIB_EXPAT
 AX_LIB_XERCES
 #AM_PATH_PYTHON([2.3], , [:])

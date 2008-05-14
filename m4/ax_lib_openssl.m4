@@ -48,10 +48,14 @@ AC_DEFUN([AX_LIB_OPENSSL],
         ),
         [
         if test "$withval" = "yes"; then
-            if test -d /usr/local/ssl/include ; then
+            if test -d /var/local/ssl/include ; then
+                openssl_prefix=/var/local/ssl
+            elif test -d /usr/local/ssl/include ; then
                 openssl_prefix=/usr/local/ssl
             elif test -d /usr/lib/ssl/include ; then
                 openssl_prefix=/usr/lib/ssl
+            elif test -d /usr/include/openssl ; then
+                openssl_prefix=/usr
             else
                 openssl_prefix=""
             fi
@@ -66,10 +70,14 @@ AC_DEFUN([AX_LIB_OPENSSL],
         ],
         [
         dnl Default behavior is implicit yes
-        if test -d /usr/local/ssl/include ; then
+        if test -d /var/local/ssl/include ; then
+            openssl_prefix=/var/local/ssl
+        elif test -d /usr/local/ssl/include ; then
             openssl_prefix=/usr/local/ssl
         elif test -d /usr/lib/ssl/include ; then
             openssl_prefix=/usr/lib/ssl
+        elif test -d /usr/include/openssl ; then
+            openssl_prefix=/usr
         else
             openssl_prefix=""
         fi
@@ -155,7 +163,6 @@ AC_DEFUN([AX_LIB_OPENSSL],
 @%:@include <openssl/ssl.h>
 @%:@include <openssl/crypto.h>
 #if (OPENSSL_VERSION_NUMBER < 0x0090700f)
-deliberate syntax error
 #endif
                     ]],
                     [[
@@ -209,50 +216,43 @@ SSLeay();
 
                 AC_MSG_CHECKING([if OpenSSL version is >= $openssl_version_req])
 
-                if test -f "$openssl_include_dir/xercesc/util/XercesVersion.hpp"; then
+                if test -f "$openssl_include_dir/openssl/opensslv.h"; then
 
-                    openssl_major=`cat $xerces_include_dir/xercesc/util/XercesVersion.hpp | \
-                                    grep '^#define.*OPENSSL_VERSION_MAJOR.*[0-9]$' | \
-                                    sed -e 's/#define OPENSSL_VERSION_MAJOR.//'`
-
-                    openssl_minor=`cat $xerces_include_dir/xercesc/util/XercesVersion.hpp | \
-                                    grep '^#define.*OPENSSL_VERSION_MINOR.*[0-9]$' | \
-                                    sed -e 's/#define OPENSSL_VERSION_MINOR.//'`
-
-                    openssl_revision=`cat $xerces_include_dir/xercesc/util/XercesVersion.hpp | \
-                                    grep '^#define.*OPENSSL_VERSION_REVISION.*[0-9]$' | \
-                                    sed -e 's/#define OPENSSL_VERSION_REVISION.//'`
-
-                    OPENSSL_VERSION="$xerces_major.$xerces_minor.$xerces_revision"
+                    OPENSSL_VERSION=`grep OPENSSL_VERSION_TEXT $openssl_include_dir/openssl/opensslv.h \
+                                    | grep -v fips | grep -v PTEXT | cut -f 2 | tr -d \"`
                     AC_SUBST([OPENSSL_VERSION])
 
                     dnl Decompose required version string and calculate numerical representation
-                    xerces_version_req_major=`expr $xerces_version_req : '\([[0-9]]*\)'`
-                    xerces_version_req_minor=`expr $xerces_version_req : '[[0-9]]*\.\([[0-9]]*\)'`
-                    xerces_version_req_revision=`expr $xerces_version_req : '[[0-9]]*\.[[0-9]]*\.\([[0-9]]*\)'`
+                    openssl_version_req_major=`expr $openssl_version_req : '\([[0-9]]*\)'`
+                    openssl_version_req_minor=`expr $openssl_version_req : '[[0-9]]*\.\([[0-9]]*\)'`
+                    openssl_version_req_revision=`expr $openssl_version_req : '[[0-9]]*\.[[0-9]]*\.\([[0-9]]*\)'`
+                    openssl_version_req_patch=`expr $openssl_version_req : '[[0-9]]*\.[[0-9]]*\.[[0-9]]*\([[a-z]]*\)'`
                     if test "x$openssl_version_req_revision" = "x"; then
                         openssl_version_req_revision="0"
                     fi
+                    if test "x$openssl_version_req_patch" = "x"; then
+                        openssl_version_req_patch="\`"
+                    fi
 
-                    openssl_version_req_number=`expr $xerces_version_req_major \* 10000 \
-                                               \+ $xerces_version_req_minor \* 100 \
-                                               \+ $xerces_version_req_revision`
+                    openssl_version_req_number=`expr $openssl_version_req_major \* $((0x10000000)) \
+                                               \+ $openssl_version_req_minor \* $((0x100000)) \
+                                               \+ $openssl_version_req_revision \* $((0x1000)) \
+                                               \+ $((1 + $(printf "%d" \'$openssl_version_req_patch) - $(printf "%d" \'a))) \* $((0x10)) \
+                                               \+ $((0xf))`
 
                     dnl Calculate numerical representation of detected version
-                    openssl_version_number=`expr $xerces_major \* 10000 \
-                                          \+ $xerces_minor \* 100 \
-                                           \+ $xerces_revision`
+                    openssl_version_number=`expr $(($(grep OPENSSL_VERSION_NUMBER $openssl_include_dir/openssl/opensslv.h | cut -f 2 | tr -d L)))`
 
                     openssl_version_check=`expr $openssl_version_number \>\= $openssl_version_req_number`
                     if test "$openssl_version_check" = "1"; then
                         AC_MSG_RESULT([yes])
                     else
                         AC_MSG_RESULT([no])
-                        AC_MSG_WARN([Found OpenSSL $OPENSSL_VERSION, which is older than required. Possible compilation failure.])
+                        AC_MSG_WARN([Found $OPENSSL_VERSION, which is older than required. Possible compilation failure.])
                     fi
                 else
                     AC_MSG_RESULT([no])
-                    AC_MSG_WARN([Missing header XercesVersion.hpp. Unable to determine Xerces version.])
+                    AC_MSG_WARN([Missing header openssl/opensslv.h. Unable to determine OpenSSL version.])
                 fi
             fi
         fi
