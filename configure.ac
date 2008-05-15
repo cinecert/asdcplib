@@ -14,8 +14,8 @@ AM_INIT_AUTOMAKE([1.9 foreign])
 # Checks for programs.
 AC_CANONICAL_BUILD
 AC_CANONICAL_HOST
-AC_PROG_CC([egcc gcc cc cl])
-AC_PROG_CXX([eg++ g++ c++ gpp aCC CC cxx cc++ cl FCC KCC RCC xlC_r xlC])
+AC_PROG_CC
+AC_PROG_CXX
 AC_PROG_LIBTOOL
 AC_PROG_INSTALL
 AC_PROG_RANLIB

@@ -1,5 +1,8 @@
 ## Makefile.am -- Process this file with automake to produce Makefile.in
 
+AM_CPPFLAGS = -I/var/local/include -I/usr/local/include
+AM_LDFLAGS = -L/var/local/lib -L/usr/local/lib
+
 # list of all the header files that should be installed
 include_HEADERS = KM_error.h KM_fileio.h KM_log.h KM_memio.h KM_mutex.h \
  KM_platform.h KM_prng.h KM_util.h KM_xml.h AS_DCP.h
