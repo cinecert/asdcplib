@@ -41,6 +41,31 @@ using namespace ASDCP::MXF;
 #endif
 
 
+static std::vector<int>
+version_split(const char* str)
+{
+  std::vector<int> result;
+
+  const char* pstr = str;
+  const char* r = strchr(pstr, '.');
+
+  while ( r != 0 )
+    {
+      assert(r >= pstr);
+      if ( r > pstr )
+	result.push_back(atoi(pstr));
+
+      pstr = r + 1;
+      r = strchr(pstr, '.');
+    }
+
+  if( strlen(pstr) > 0 )
+    result.push_back(atoi(pstr));
+
+  assert(result.size() == 3);
+  return result;
+}
+
 
 //
 ASDCP::h__Writer::h__Writer() :
@@ -124,9 +149,12 @@ ASDCP::h__Writer::InitHeader()
   Ident->VersionString = m_Info.ProductVersion.c_str();
   Ident->ProductUID.Set(m_Info.ProductUUID);
   Ident->Platform = ASDCP_PLATFORM;
-  Ident->ToolkitVersion.Major = VERSION_MAJOR;
-  Ident->ToolkitVersion.Minor = VERSION_APIMINOR;
-  Ident->ToolkitVersion.Patch = VERSION_IMPMINOR;
+
+  std::vector<int> version = version_split(Version());
+
+  Ident->ToolkitVersion.Major = version[0];
+  Ident->ToolkitVersion.Minor = version[1];
+  Ident->ToolkitVersion.Patch = version[2];
   Ident->ToolkitVersion.Build = ASDCP_BUILD_NUMBER;
   Ident->ToolkitVersion.Release = VersionType::RL_RELEASE;
 }

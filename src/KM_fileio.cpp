@@ -103,7 +103,7 @@ do_stat(const char* path, fstat_t* stat_info)
   if ( stat(path, stat_info) == -1L )
     result = Kumu::RESULT_FILEOPEN;
 
-  if ( stat_info->st_mode & (S_IFREG|S_IFLNK|S_IFDIR) == 0 )
+  if ( (stat_info->st_mode & (S_IFREG|S_IFLNK|S_IFDIR)) == 0 )
     result = Kumu::RESULT_FILEOPEN;
 #endif
 
@@ -123,7 +123,7 @@ do_fstat(HANDLE handle, fstat_t* stat_info)
   if ( fstat(handle, stat_info) == -1L )
     result = Kumu::RESULT_FILEOPEN;
 
-  if ( stat_info->st_mode & (S_IFREG|S_IFLNK|S_IFDIR) == 0 )
+  if ( (stat_info->st_mode & (S_IFREG|S_IFLNK|S_IFDIR)) == 0 )
     result = Kumu::RESULT_FILEOPEN;
 
   return result;

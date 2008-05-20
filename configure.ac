@@ -5,7 +5,17 @@ AC_PREREQ([2.59])
 # If you change this, you should update the libtool version number specified
 # in src/Makefile.am. Read <http://www.gnu.org/software/libtool/manual.html#Versioning>
 # for suggestions on doing so.
+
+# The version number consists of three segments: major, API minor, and
+# implementation minor. Whenever a change is made to AS_DCP.h, the API minor
+# version will increment. Changes made to the internal implementation will
+# result in the incrementing of the implementation minor version.
+#
+# For example, if asdcplib version 1.0.0 were modified to accomodate changes
+# in file format, and if no changes were made to AS_DCP.h, the new version would be
+# 1.0.1. If changes were also required in AS_DCP.h, the new version would be 1.1.1.
 AC_INIT([asdcplib], [1.3.19], [asdcplib@cinecert.com])
+
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_SRCDIR([src/KM_error.h])
 #AC_CONFIG_HEADER([src/config.h])

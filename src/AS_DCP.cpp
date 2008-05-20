@@ -35,9 +35,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 const char*
 ASDCP::Version()
 {
-  static char ver[16];
-  snprintf(ver, 16, "%u.%u.%u", VERSION_MAJOR, VERSION_APIMINOR, VERSION_IMPMINOR);
-  return ver;
+  return PACKAGE_VERSION;
 }
 
 

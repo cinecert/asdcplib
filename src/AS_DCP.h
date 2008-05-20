@@ -146,17 +146,8 @@ typedef unsigned int   ui32_t;
 // All library components are defined in the namespace ASDCP
 //
 namespace ASDCP {
-  // The version number consists of three segments: major, API minor, and
-  // implementation minor. Whenever a change is made to AS_DCP.h, the API minor
-  // version will increment. Changes made to the internal implementation will
-  // result in the incrementing of the implementation minor version.
-
-  // For example, if asdcplib version 1.0.0 were modified to accomodate changes
-  // in file format, and if no changes were made to AS_DCP.h, the new version would be
-  // 1.0.1. If changes were also required in AS_DCP.h, the new version would be 1.1.1.
-  const ui32_t VERSION_MAJOR = 1;
-  const ui32_t VERSION_APIMINOR = 3;
-  const ui32_t VERSION_IMPMINOR = 19;
+  //
+  // The version number declaration and explanation have moved to ../configure.ac
   const char* Version();
 
   // UUIDs are passed around as strings of UUIDlen bytes

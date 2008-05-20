@@ -83,10 +83,7 @@ public:
       memcpy(ProductUUID, default_ProductUUID_Data, UUIDlen);
       CompanyName = "WidgetCo";
       ProductName = "asdcp-test";
-
-      char s_buf[128];
-      snprintf(s_buf, 128, "%u.%u.%u", VERSION_MAJOR, VERSION_APIMINOR, VERSION_IMPMINOR);
-      ProductVersion = s_buf;
+      ProductVersion = ASDCP::Version();
   }
 } s_MyInfo;
 
