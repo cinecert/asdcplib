@@ -132,7 +132,7 @@ USAGE: %s -c <output-file> [-3] [-b <buffer-size>] [-d <duration>] [-e|-E]\n\
 \n\
        %s -x <file-prefix> [-3] [-b <buffer-size>] [-d <duration>]\n\
        [-f <starting-frame>] [-m] [-p <frame-rate>] [-R] [-s <num>] [-S|-1]\n\
-       [-v] [-W] <input-file>\n\
+       [-v] [-W] [-w] <input-file>\n\
 \n", PROGRAM_NAME, PROGRAM_NAME, PROGRAM_NAME, PROGRAM_NAME, PROGRAM_NAME, PROGRAM_NAME, PROGRAM_NAME);
 
   fprintf(stream, "\
@@ -180,6 +180,8 @@ Read/Write Options:\n\
   -1                - Split Wave essence to mono WAV files during extract.\n\
                       Default is multichannel WAV\n\
   -W                - Read input file only, do not write source file\n\
+  -w <width>        - Width of numeric element in a series of frame file names\n\
+                      (use with -x, default 6).\n\
 \n");
 
   fprintf(stream, "\
@@ -238,6 +240,7 @@ public:
   bool   version_flag;   // true if the version display option was selected
   bool   help_flag;      // true if the help display option was selected
   bool   stereo_image_flag; // if true, expect stereoscopic JP2K input (left eye first)
+  ui32_t number_width;   // number of digits in a serialized filename (for JPEG extract)
   ui32_t start_frame;    // frame number to begin processing
   ui32_t duration;       // number of frames to be processed
   bool   duration_flag;  // true if duration argument given
@@ -273,7 +276,8 @@ public:
     mode(MMT_NONE), error_flag(true), key_flag(false), key_id_flag(false), encrypt_header_flag(true),
     write_hmac(true), read_hmac(false), split_wav(false), mono_wav(false),
     verbose_flag(false), fb_dump_size(0), showindex_flag(false), showheader_flag(false),
-    no_write_flag(false), version_flag(false), help_flag(false), stereo_image_flag(false), start_frame(0),
+    no_write_flag(false), version_flag(false), help_flag(false), stereo_image_flag(false),
+    number_width(6), start_frame(0),
     duration(0xffffffff), duration_flag(false), do_repeat(false), use_smpte_labels(false),
     picture_rate(24), fb_size(FRAME_BUFFER_SIZE), file_count(0), file_root(0), out_file(0)
   {
@@ -298,24 +302,15 @@ public:
 	      case '1': mono_wav = true; break;
 	      case '2': split_wav = true; break;
 	      case '3': stereo_image_flag = true; break;
-	      case 'i': mode = MMT_INFO;	break;
-	      case 'G': mode = MMT_GOP_START; break;
-	      case 'W': no_write_flag = true; break;
-	      case 'n': showindex_flag = true; break;
-	      case 'H': showheader_flag = true; break;
-	      case 'R': do_repeat = true; break;
-	      case 'S': split_wav = true; break;
-	      case 'V': version_flag = true; break;
-	      case 'h': help_flag = true; break;
-	      case 'v': verbose_flag = true; break;
-	      case 'g': mode = MMT_GEN_KEY; break;
-	      case 'U':	mode = MMT_UL_LIST; break;
-	      case 'u':	mode = MMT_GEN_ID; break;
-	      case 'e': encrypt_header_flag = true; break;
-	      case 'E': encrypt_header_flag = false; break;
-	      case 'M': write_hmac = false; break;
-	      case 'm': read_hmac = true; break;
-	      case 'L': use_smpte_labels = true; break;
+
+	      case 'b':
+		TEST_EXTRA_ARG(i, 'b');
+		fb_size = abs(atoi(argv[i]));
+
+		if ( verbose_flag )
+		  fprintf(stderr, "Frame Buffer size: %u bytes.\n", fb_size);
+
+		break;
 
 	      case 'c':
 		TEST_EXTRA_ARG(i, 'c');
@@ -323,10 +318,38 @@ public:
 		out_file = argv[i];
 		break;
 
-	      case 'x':
-		TEST_EXTRA_ARG(i, 'x');
-		mode = MMT_EXTRACT;
-		file_root = argv[i];
+	      case 'd':
+		TEST_EXTRA_ARG(i, 'd');
+		duration_flag = true;
+		duration = abs(atoi(argv[i]));
+		break;
+
+	      case 'E': encrypt_header_flag = false; break;
+	      case 'e': encrypt_header_flag = true; break;
+
+	      case 'f':
+		TEST_EXTRA_ARG(i, 'f');
+		start_frame = abs(atoi(argv[i]));
+		break;
+
+	      case 'G': mode = MMT_GOP_START; break;
+	      case 'g': mode = MMT_GEN_KEY; break;
+	      case 'H': showheader_flag = true; break;
+	      case 'h': help_flag = true; break;
+	      case 'i': mode = MMT_INFO;	break;
+
+	      case 'j': key_id_flag = true;
+		TEST_EXTRA_ARG(i, 'j');
+		{
+		  ui32_t length;
+		  Kumu::hex2bin(argv[i], key_id_value, UUIDlen, &length);
+
+		  if ( length != UUIDlen )
+		    {
+		      fprintf(stderr, "Unexpected key ID length: %u, expecting %u characters.\n", length, UUIDlen);
+		      return;
+		    }
+		}
 		break;
 
 	      case 'k': key_flag = true;
@@ -343,35 +366,19 @@ public:
 		}
 		break;
 
-	      case 'j': key_id_flag = true;
-		TEST_EXTRA_ARG(i, 'j');
-		{
-		  ui32_t length;
-		  Kumu::hex2bin(argv[i], key_id_value, UUIDlen, &length);
 
-		  if ( length != UUIDlen )
-		    {
-		      fprintf(stderr, "Unexpected key ID length: %u, expecting %u characters.\n", length, UUIDlen);
-		      return;
-		    }
-		}
-		break;
-
-	      case 'f':
-		TEST_EXTRA_ARG(i, 'f');
-		start_frame = abs(atoi(argv[i]));
-		break;
-
-	      case 'd':
-		TEST_EXTRA_ARG(i, 'd');
-		duration_flag = true;
-		duration = abs(atoi(argv[i]));
-		break;
+	      case 'L': use_smpte_labels = true; break;
+	      case 'M': write_hmac = false; break;
+	      case 'm': read_hmac = true; break;
+	      case 'n': showindex_flag = true; break;
 
 	      case 'p':
 		TEST_EXTRA_ARG(i, 'p');
 		picture_rate = abs(atoi(argv[i]));
 		break;
+
+	      case 'R': do_repeat = true; break;
+	      case 'S': split_wav = true; break;
 
 	      case 's':
 		TEST_EXTRA_ARG(i, 's');
@@ -379,14 +386,21 @@ public:
 		break;
 
 	      case 't': mode = MMT_DIGEST; break;
+	      case 'U':	mode = MMT_UL_LIST; break;
+	      case 'u':	mode = MMT_GEN_ID; break;
+	      case 'V': version_flag = true; break;
+	      case 'v': verbose_flag = true; break;
+	      case 'W': no_write_flag = true; break;
 
-	      case 'b':
-		TEST_EXTRA_ARG(i, 'b');
-		fb_size = abs(atoi(argv[i]));
+	      case 'w':
+		TEST_EXTRA_ARG(i, 'w');
+		number_width = abs(atoi(argv[i]));
+		break;
 
-		if ( verbose_flag )
-		  fprintf(stderr, "Frame Buffer size: %u bytes.\n", fb_size);
-
+	      case 'x':
+		TEST_EXTRA_ARG(i, 'x');
+		mode = MMT_EXTRACT;
+		file_root = argv[i];
 		break;
 
 	      default:
@@ -874,6 +888,10 @@ read_JP2K_S_file(CommandOptions& Options)
   if ( last_frame > frame_count )
     last_frame = frame_count;
 
+  char left_format[64];  char right_format[64];
+  snprintf(left_format,  64, "%%s%%0%duL.j2c", Options.number_width);
+  snprintf(right_format, 64, "%%s%%0%duR.j2c", Options.number_width);
+
   for ( ui32_t i = Options.start_frame; ASDCP_SUCCESS(result) && i < last_frame; i++ )
     {
       result = Reader.ReadFrame(i, JP2K::SP_LEFT, FrameBuffer, Context, HMAC);
@@ -882,7 +900,7 @@ read_JP2K_S_file(CommandOptions& Options)
 	{
 	  Kumu::FileWriter OutFile;
 	  ui32_t write_count;
-	  snprintf(filename, filename_max, "%s%06uL.j2c", Options.file_root, i);
+	  snprintf(filename, filename_max, left_format, Options.file_root, i);
 	  result = OutFile.OpenWrite(filename);
 
 	  if ( ASDCP_SUCCESS(result) )
@@ -899,7 +917,7 @@ read_JP2K_S_file(CommandOptions& Options)
 	{
 	  Kumu::FileWriter OutFile;
 	  ui32_t write_count;
-	  snprintf(filename, filename_max, "%s%06uR.j2c", Options.file_root, i);
+	  snprintf(filename, filename_max, right_format, Options.file_root, i);
 	  result = OutFile.OpenWrite(filename);
 
 	  if ( ASDCP_SUCCESS(result) )
@@ -1084,6 +1102,9 @@ read_JP2K_file(CommandOptions& Options)
   if ( last_frame > frame_count )
     last_frame = frame_count;
 
+  char name_format[64];
+  snprintf(name_format,  64, "%%s%%0%du.j2c", Options.number_width);
+
   for ( ui32_t i = Options.start_frame; ASDCP_SUCCESS(result) && i < last_frame; i++ )
     {
       result = Reader.ReadFrame(i, FrameBuffer, Context, HMAC);
@@ -1093,7 +1114,7 @@ read_JP2K_file(CommandOptions& Options)
 	  Kumu::FileWriter OutFile;
 	  char filename[256];
 	  ui32_t write_count;
-	  snprintf(filename, 256, "%s%06u.j2c", Options.file_root, i);
+	  snprintf(filename, 256, name_format, Options.file_root, i);
 	  result = OutFile.OpenWrite(filename);
 
 	  if ( ASDCP_SUCCESS(result) )
