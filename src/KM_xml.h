@@ -112,11 +112,14 @@ namespace Kumu
       void        RenderElement(std::string& outbuf, ui32_t depth) const;
 
       // querying
-      inline const std::string& GetBody() const { return m_Body; }
-      const char*    GetAttrWithName(const char* name) const;
-      XMLElement*    GetChildWithName(const char* name) const;
+      inline const std::string&   GetBody() const { return m_Body; }
+      inline const ElementList&   GetChildren() const { return m_ChildList; }
+      inline const std::string&   GetName() const { return m_Name; }
+      inline const AttributeList& GetAttributes() const { return m_AttrList; }
+      const char*        GetAttrWithName(const char* name) const;
+      XMLElement*        GetChildWithName(const char* name) const;
       const ElementList& GetChildrenWithName(const char* name, ElementList& outList) const;
-      bool           HasName(const char* name) const;
+      bool               HasName(const char* name) const;
 
     };
 } // namespace Kumu
