@@ -508,8 +508,8 @@ static bool  sg_xml_init = false;
 
 
 //
-static bool
-init_xml()
+void
+asdcp_init_xml_dom()
 {
   if ( ! sg_xml_init )
     {
@@ -520,16 +520,14 @@ init_xml()
 	  try
 	    {
 	      XMLPlatformUtils::Initialize();
+	      sg_xml_init = true;
 	    }
 	  catch (const XMLException &e)
 	    {
 	      DefaultLogSink().Error("Xerces initialization error: %s\n", e.getMessage());
-	      return false;
 	    }
   	}
     }
-
-  return true;
 }
 
 
@@ -683,8 +681,7 @@ Kumu::XMLElement::ParseString(const std::string& document)
   if ( document.empty() )
     return false;
 
-  if ( ! init_xml() )
-    return false;
+  asdcp_init_xml_dom();
 
   SAXParser* parser = new SAXParser();
   parser->setDoValidation(true);
@@ -735,8 +732,7 @@ Kumu::StringIsXML(const char* document, ui32_t len)
   if ( document == 0 || *document == 0 )
     return false;
 
-  if ( ! init_xml() )
-    return false;
+  asdcp_init_xml_dom();
 
   if ( len == 0 )
     len = strlen(document);
