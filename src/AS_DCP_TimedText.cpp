@@ -32,6 +32,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "AS_DCP_internal.h"
 #include "KM_xml.h"
+#include <iostream>
+#include <iomanip>
 
 using Kumu::GenRandomValue;
 
@@ -51,6 +53,29 @@ MIME2str(TimedText::MIMEType_t m)
     return "application/x-font-opentype";
 
   return "application/octet-stream";
+}
+
+//
+std::ostream&
+ASDCP::TimedText::operator << (std::ostream& strm, const TimedTextDescriptor& TDesc)
+{
+  UUID TmpID(TDesc.AssetID);
+  char buf[64];
+
+  strm << "         EditRate: " << (unsigned) TDesc.EditRate.Numerator << "/" << (unsigned) TDesc.EditRate.Denominator << std::endl;
+  strm << "ContainerDuration: " << (unsigned) TDesc.ContainerDuration << std::endl;
+  strm << "          AssetID: " << TmpID.EncodeHex(buf, 64) << std::endl;
+  strm << "    NamespaceName: " << TDesc.NamespaceName << std::endl;
+  strm << "    ResourceCount: " << (unsigned long) TDesc.ResourceList.size() << std::endl;
+
+  TimedText::ResourceList_t::const_iterator ri;
+  for ( ri = TDesc.ResourceList.begin() ; ri != TDesc.ResourceList.end(); ri++ )
+    {
+      TmpID.Set((*ri).ResourceID);
+      strm << "    " << TmpID.EncodeHex(buf, 64) << ": " << MIME2str((*ri).Type) << std::endl;
+    }
+
+  return strm;
 }
 
 //

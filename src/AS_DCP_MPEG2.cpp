@@ -30,6 +30,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include "AS_DCP_internal.h"
+#include <iostream>
+#include <iomanip>
 
 
 //------------------------------------------------------------------------------------------
@@ -93,6 +95,27 @@ MPEG2_VDesc_to_MD(MPEG2::VideoDescriptor& VDesc, MXF::MPEG2VideoDescriptor* VDes
   return RESULT_OK;
 }
 
+//
+std::ostream&
+ASDCP::MPEG2::operator << (std::ostream& strm, const VideoDescriptor& VDesc)
+{
+  strm << "        SampleRate: " << VDesc.SampleRate.Numerator << "/" << VDesc.SampleRate.Denominator << std::endl;
+  strm << "       FrameLayout: " << (unsigned) VDesc.FrameLayout << std::endl;
+  strm << "       StoredWidth: " << (unsigned) VDesc.StoredWidth << std::endl;
+  strm << "      StoredHeight: " << (unsigned) VDesc.StoredHeight << std::endl;
+  strm << "       AspectRatio: " << VDesc.AspectRatio.Numerator << "/" << VDesc.AspectRatio.Denominator << std::endl;
+  strm << "    ComponentDepth: " << (unsigned) VDesc.ComponentDepth << std::endl;
+  strm << " HorizontalSubsmpl: " << (unsigned) VDesc.HorizontalSubsampling << std::endl;
+  strm << "   VerticalSubsmpl: " << (unsigned) VDesc.VerticalSubsampling << std::endl;
+  strm << "       ColorSiting: " << (unsigned) VDesc.ColorSiting << std::endl;
+  strm << "  CodedContentType: " << (unsigned) VDesc.CodedContentType << std::endl;
+  strm << "          LowDelay: " << (unsigned) VDesc.LowDelay << std::endl;
+  strm << "           BitRate: " << (unsigned) VDesc.BitRate << std::endl;
+  strm << "   ProfileAndLevel: " << (unsigned) VDesc.ProfileAndLevel << std::endl;
+  strm << " ContainerDuration: " << (unsigned) VDesc.ContainerDuration << std::endl;
+
+  return strm;
+}
 
 //
 void

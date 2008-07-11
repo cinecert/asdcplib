@@ -90,7 +90,7 @@ This project depends upon the following libraries:
 #include <stdio.h>
 #include <stdarg.h>
 #include <math.h>
-#include <iostream>
+#include <iosfwd>
 #include <string>
 #include <list>
 
@@ -338,6 +338,8 @@ namespace ASDCP {
     }
   };
 
+  // Print WriterInfo to std::ostream
+  std::ostream& operator << (std::ostream& strm, const WriterInfo& winfo);
   // Print WriterInfo to stream, stderr by default.
   void WriterInfoDump(const WriterInfo&, FILE* = 0);
 
@@ -568,6 +570,8 @@ namespace ASDCP {
 	  ui32_t   ContainerDuration;       // 
       };
 
+      // Print VideoDescriptor to std::ostream
+      std::ostream& operator << (std::ostream& strm, const VideoDescriptor& vdesc);
       // Print VideoDescriptor to stream, stderr by default.
       void VideoDescriptorDump(const VideoDescriptor&, FILE* = 0);
 
@@ -760,6 +764,8 @@ namespace ASDCP {
 	  ui32_t   ContainerDuration;  // number of frames
       };
 
+      // Print AudioDescriptor to std::ostream
+      std::ostream& operator << (std::ostream& strm, const AudioDescriptor& adesc);
       // Print debugging information to stream (stderr default)
       void   AudioDescriptorDump(const AudioDescriptor&, FILE* = 0);
 
@@ -962,6 +968,8 @@ namespace ASDCP {
 	QuantizationDefault_t QuantizationDefault;
       };
 
+      // Print debugging information to std::ostream
+      std::ostream& operator << (std::ostream& strm, const PictureDescriptor& pdesc);
       // Print debugging information to stream (stderr default)
       void   PictureDescriptorDump(const PictureDescriptor&, FILE* = 0);
 
@@ -1247,6 +1255,8 @@ namespace ASDCP {
       TimedTextDescriptor() : ContainerDuration(0), EncodingName("UTF-8") {} // D-Cinema format is always UTF-8
       };
 
+      // Print debugging information to std::ostream
+      std::ostream& operator << (std::ostream& strm, const TimedTextDescriptor& tinfo);
       // Print debugging information to stream (stderr default)
       void   DescriptorDump(const TimedTextDescriptor&, FILE* = 0);
 

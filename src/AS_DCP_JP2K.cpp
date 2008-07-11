@@ -30,6 +30,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include "AS_DCP_internal.h"
+#include <iostream>
+#include <iomanip>
 
 using namespace ASDCP::JP2K;
 using Kumu::GenRandomValue;
@@ -41,6 +43,70 @@ static std::string JP2K_S_PACKAGE_LABEL = "File Package: SMPTE 429-10 frame wrap
 static std::string PICT_DEF_LABEL = "Picture Track";
 
 int s_exp_lookup[16] = { 0, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024,2048, 4096, 8192, 16384, 32768 };
+
+//
+std::ostream&
+ASDCP::JP2K::operator << (std::ostream& strm, const PictureDescriptor& PDesc)
+{
+  strm << "       AspectRatio: " << PDesc.AspectRatio.Numerator << "/" << PDesc.AspectRatio.Denominator << std::endl;
+  strm << "          EditRate: " << PDesc.EditRate.Numerator << "/" << PDesc.EditRate.Denominator << std::endl;
+  strm << "       StoredWidth: " << (unsigned) PDesc.StoredWidth << std::endl;
+  strm << "      StoredHeight: " << (unsigned) PDesc.StoredHeight << std::endl;
+  strm << "             Rsize: " << (unsigned) PDesc.Rsize << std::endl;
+  strm << "             Xsize: " << (unsigned) PDesc.Xsize << std::endl;
+  strm << "             Ysize: " << (unsigned) PDesc.Ysize << std::endl;
+  strm << "            XOsize: " << (unsigned) PDesc.XOsize << std::endl;
+  strm << "            YOsize: " << (unsigned) PDesc.YOsize << std::endl;
+  strm << "            XTsize: " << (unsigned) PDesc.XTsize << std::endl;
+  strm << "            YTsize: " << (unsigned) PDesc.YTsize << std::endl;
+  strm << "           XTOsize: " << (unsigned) PDesc.XTOsize << std::endl;
+  strm << "           YTOsize: " << (unsigned) PDesc.YTOsize << std::endl;
+  strm << " ContainerDuration: " << (unsigned) PDesc.ContainerDuration << std::endl;
+
+  strm << "-- JPEG 2000 Metadata --" << std::endl;
+  strm << "    ImageComponents:" << std::endl;
+  strm << "  bits  h-sep v-sep" << std::endl;
+
+  ui32_t i;
+  for ( i = 0; i < PDesc.Csize; i++ )
+    {
+      strm << "  " << std::setw(4) << PDesc.ImageComponents[i].Ssize + 1 /* See ISO 15444-1, Table A11, for the origin of '+1' */
+	   << "  " << std::setw(5) << PDesc.ImageComponents[i].XRsize
+	   << " " << std::setw(5) << PDesc.ImageComponents[i].YRsize
+	   << std::endl;
+    }
+
+  strm << "               Scod: " << (short) PDesc.CodingStyleDefault.Scod << std::endl;
+  strm << "   ProgressionOrder: " << (short) PDesc.CodingStyleDefault.SGcod.ProgressionOrder << std::endl;
+  strm << "     NumberOfLayers: " << (short) KM_i16_BE(Kumu::cp2i<ui16_t>(PDesc.CodingStyleDefault.SGcod.NumberOfLayers)) << std::endl;
+  strm << " MultiCompTransform: " << (short) PDesc.CodingStyleDefault.SGcod.MultiCompTransform << std::endl;
+  strm << "DecompositionLevels: " << (short) PDesc.CodingStyleDefault.SPcod.DecompositionLevels << std::endl;
+  strm << "     CodeblockWidth: " << (short) PDesc.CodingStyleDefault.SPcod.CodeblockWidth << std::endl;
+  strm << "    CodeblockHeight: " << (short) PDesc.CodingStyleDefault.SPcod.CodeblockHeight << std::endl;
+  strm << "     CodeblockStyle: " << (short) PDesc.CodingStyleDefault.SPcod.CodeblockStyle << std::endl;
+  strm << "     Transformation: " << (short) PDesc.CodingStyleDefault.SPcod.Transformation << std::endl;
+
+
+  ui32_t precinct_set_size = 0;
+
+  for ( i = 0; PDesc.CodingStyleDefault.SPcod.PrecinctSize[i] != 0 && i < MaxPrecincts; i++ )
+    precinct_set_size++;
+
+  strm << "          Precincts: " << (short) precinct_set_size << std::endl;
+  strm << "precinct dimensions:" << std::endl;
+
+  for ( i = 0; i < precinct_set_size; i++ )
+    strm << "    " << i + 1 << ": " << s_exp_lookup[PDesc.CodingStyleDefault.SPcod.PrecinctSize[i]&0x0f] << " x "
+	 << s_exp_lookup[(PDesc.CodingStyleDefault.SPcod.PrecinctSize[i]>>4)&0x0f] << std::endl;
+
+  strm << "               Sqcd: " << (short) PDesc.QuantizationDefault.Sqcd << std::endl;
+
+  char tmp_buf[MaxDefaults*2];
+  strm << "              SPqcd: " << Kumu::bin2hex(PDesc.QuantizationDefault.SPqcd, PDesc.QuantizationDefault.SPqcdLength, tmp_buf, MaxDefaults*2)
+       << std::endl;
+
+  return strm;
+}
 
 //
 void
@@ -129,6 +195,7 @@ ASDCP::JP2K::PictureDescriptorDump(const PictureDescriptor& PDesc, FILE* stream)
 			tmp_buf, MaxDefaults*2)
 	  );
 }
+
 
 //------------------------------------------------------------------------------------------
 //

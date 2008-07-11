@@ -31,6 +31,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "AS_DCP_internal.h"
 #include <map>
+#include <iostream>
+#include <iomanip>
 
 //------------------------------------------------------------------------------------------
 
@@ -72,6 +74,24 @@ MD_to_PCM_ADesc(MXF::WaveAudioDescriptor* ADescObj, PCM::AudioDescriptor& ADesc)
   return RESULT_OK;
 }
 
+//
+std::ostream&
+ASDCP::PCM::operator << (std::ostream& strm, const AudioDescriptor& ADesc)
+{
+  strm << "        SampleRate: " << ADesc.SampleRate.Numerator << "/" << ADesc.SampleRate.Denominator << std::endl;
+  strm << " AudioSamplingRate: " << ADesc.AudioSamplingRate.Numerator << "/" << ADesc.AudioSamplingRate.Denominator << std::endl;
+  strm << "            Locked: " << (unsigned) ADesc.Locked << std::endl;
+  strm << "      ChannelCount: " << (unsigned) ADesc.ChannelCount << std::endl;
+  strm << "  QuantizationBits: " << (unsigned) ADesc.QuantizationBits << std::endl;
+  strm << "        BlockAlign: " << (unsigned) ADesc.BlockAlign << std::endl;
+  strm << "            AvgBps: " << (unsigned) ADesc.AvgBps << std::endl;
+  strm << "     LinkedTrackID: " << (unsigned) ADesc.LinkedTrackID << std::endl;
+  strm << " ContainerDuration: " << (unsigned) ADesc.ContainerDuration << std::endl;
+
+  return strm;
+}
+
+//
 void
 ASDCP::PCM::AudioDescriptorDump(const AudioDescriptor& ADesc, FILE* stream)
 {
