@@ -35,11 +35,39 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "JP2K.h"
 #include "MPEG.h"
 #include "Wav.h"
+#include <iostream>
+#include <iomanip>
 
 
 //------------------------------------------------------------------------------------------
 // misc subroutines
 
+
+//
+std::ostream&
+ASDCP::operator << (std::ostream& strm, const WriterInfo& Info)
+{
+  char str_buf[40];
+
+  strm << "       ProductUUID: " << UUID(Info.ProductUUID).EncodeHex(str_buf, 40) << std::endl;
+  strm << "    ProductVersion: " << Info.ProductVersion << std::endl;
+  strm << "       CompanyName: " << Info.CompanyName << std::endl;
+  strm << "       ProductName: " << Info.ProductName << std::endl;
+  strm << "  EncryptedEssence: " << (Info.EncryptedEssence ? "Yes" : "No") << std::endl;
+
+  if ( Info.EncryptedEssence )
+    {
+      strm << "              HMAC: " << (Info.UsesHMAC ? "Yes" : "No") << std::endl;
+      strm << "         ContextID: " << UUID(Info.ContextID).EncodeHex(str_buf, 40) << std::endl;
+      strm << "CryptographicKeyID: " << UUID(Info.CryptographicKeyID).EncodeHex(str_buf, 40) << std::endl;
+    }
+
+  strm << "         AssetUUID: " << UUID(Info.AssetUUID).EncodeHex(str_buf, 40) << std::endl;
+  strm << "    Label Set Type: " << (Info.LabelSetType == LS_MXF_SMPTE ? "SMPTE" :
+				     (Info.LabelSetType == LS_MXF_INTEROP ? "MXF Interop" :
+				      "Unknown")) << std::endl;
+  return strm;
+}
 
 //
 void
