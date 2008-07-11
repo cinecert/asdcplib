@@ -34,6 +34,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <sys/types.h>
 #include <string.h>
 #include <stdarg.h>
+#include <iostream>
+#include <sstream>
 
 #ifdef KM_WIN32
 #define getpid GetCurrentProcessId
@@ -143,6 +145,24 @@ Kumu::StreamLogSink::WriteEntry(const LogEntry& Entry)
 #endif
 
 //------------------------------------------------------------------------------------------
+
+//
+std::basic_ostream<char, std::char_traits<char> >&
+Kumu::operator<<(std::basic_ostream<char, std::char_traits<char> >& strm, LogEntry const& Entry)
+{
+  std::basic_ostringstream<char, std::char_traits<char> > s;
+  s.copyfmt(strm);
+  s.width(0);
+  std::string buf;
+
+  s << Entry.CreateStringWithOptions(buf, LOG_OPTION_ALL);
+
+  strm << s.str();
+  return strm;
+}
+
+//------------------------------------------------------------------------------------------
+
 
 //
 bool

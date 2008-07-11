@@ -683,6 +683,7 @@ Kumu::XMLElement::ParseString(const std::string& document)
 
   asdcp_init_xml_dom();
 
+  int errorCount = 0;
   SAXParser* parser = new SAXParser();
   parser->setDoValidation(true);
   parser->setDoNamespaces(true);    // optional
@@ -704,25 +705,28 @@ Kumu::XMLElement::ParseString(const std::string& document)
       char* message = XMLString::transcode(e.getMessage());
       DefaultLogSink().Error("Parser error: %s\n", message);
       XMLString::release(&message);
-      return false;
+      errorCount++;
     }
   catch (const SAXParseException& e)
     {
       char* message = XMLString::transcode(e.getMessage());
       DefaultLogSink().Error("Parser error: %s at line %d\n", message, e.getLineNumber());
       XMLString::release(&message);
-      return false;
+      errorCount++;
     }
   catch (...)
     {
       DefaultLogSink().Error("Unexpected XML parser error\n");
-      return false;
+      errorCount++;
     }
   
-  m_NamespaceOwner = (void*)docHandler->TakeNamespaceMap();
+  if ( errorCount == 0 )
+    m_NamespaceOwner = (void*)docHandler->TakeNamespaceMap();
+
   delete parser;
   delete docHandler;
-  return true;
+
+  return errorCount > 0 ? false : true;
 }
 
 //

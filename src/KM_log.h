@@ -38,6 +38,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <KM_util.h>
 #include <stdarg.h>
 #include <errno.h>
+#include <iosfwd>
 
 #define LOG_MSG_IMPL(t) \
   va_list args; \
@@ -134,6 +135,10 @@ namespace Kumu
     bool   Archive(MemIOWriter* Writer) const;
     bool   Unarchive(MemIOReader* Reader);
   };
+
+  //
+  std::basic_ostream<char, std::char_traits<char> >&
+    operator<<(std::basic_ostream<char, std::char_traits<char> >& strm, LogEntry const& Entry);
 
 
   typedef ArchivableList<LogEntry> LogEntryList;
