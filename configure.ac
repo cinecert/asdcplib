@@ -42,6 +42,14 @@ AX_LIB_XERCES
 AZ_PYTHON_DEFAULT
 AZ_PYTHON_WITH
 AM_CONDITIONAL([HAVE_PYTHON], [test "$PYTHON" != :])
+AC_ARG_ENABLE([freedist],
+     [  --enable-freedist    Ensure source distribution is of BSD-licensed code.],
+     [case "${enableval}" in
+       yes) freedist=true ;;
+       no)  freedist=false ;;
+       *) AC_MSG_ERROR([bad value ${enableval} for --enable-freedist]) ;;
+     esac],[freedist=false])
+     AM_CONDITIONAL([FREEDIST], [test x$freedist = xtrue])
 
 # Checks for libraries.
 AC_CHECK_LIB([pthread], [pthread_create])

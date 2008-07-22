@@ -110,7 +110,11 @@ TESTS_ENVIRONMENT = BUILD_DIR="." TEST_FILES=../tests TEST_FILE_PREFIX=DCPd1-M1 
 
 # files to include in the distribution that automake doesn't automatically include
 EXTRA_DIST = fips-186-test-harness.pl $(TESTS)
-
+if PYTHON_USE
+if !FREEDIST
+EXTRA_DIST += $(nodist_libpyasdcp_la_SOURCES) $(nodist_kumu_la_SOURCES) $(nodist_asdcp_la_SOURCES)
+endif
+endif
 
 # source files that are themselves built
 BUILT_SOURCES = Metadata.h Metadata.cpp MDD.h MDD.cpp
