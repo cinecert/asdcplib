@@ -484,7 +484,7 @@ Kumu::PathMatchRegex::PathMatchRegex(const std::string& s)
     }
 }
 
-Kumu::PathMatchRegex::PathMatchRegex(const PathMatchRegex& rhs) {
+Kumu::PathMatchRegex::PathMatchRegex(const PathMatchRegex& rhs) : IPathMatch() {
   m_regex = rhs.m_regex;
 }
 
@@ -527,7 +527,7 @@ Kumu::PathMatchGlob::PathMatchGlob(const std::string& glob)
     }
 }
 
-Kumu::PathMatchGlob::PathMatchGlob(const PathMatchGlob& rhs) {
+Kumu::PathMatchGlob::PathMatchGlob(const PathMatchGlob& rhs) : IPathMatch() {
   m_regex = rhs.m_regex;
 }
 

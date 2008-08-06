@@ -793,7 +793,7 @@ Kumu::Timestamp::AddHours(i32_t hours)
 #endif // KM_WIN32
 
 
-Kumu::Timestamp::Timestamp(const Timestamp& rhs)
+Kumu::Timestamp::Timestamp(const Timestamp& rhs) : IArchive()
 {
   Year   = rhs.Year;
   Month  = rhs.Month;

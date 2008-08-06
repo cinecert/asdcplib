@@ -58,7 +58,7 @@ public:
     DecodeString(tc);
   }
 
-  S12MTimecode(const S12MTimecode& rhs) : m_FrameCount(0), m_FPS(0)
+  S12MTimecode(const S12MTimecode& rhs) : IArchive(), m_FrameCount(0), m_FPS(0)
   {
     m_FPS = rhs.m_FPS;
     m_FrameCount = rhs.m_FrameCount;

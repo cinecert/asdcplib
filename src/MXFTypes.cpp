@@ -415,7 +415,7 @@ ASDCP::MXF::Timestamp::AddHours(i32_t hours)
 #endif // KM_WIN32
 
 
-ASDCP::MXF::Timestamp::Timestamp(const Timestamp& rhs)
+ASDCP::MXF::Timestamp::Timestamp(const Timestamp& rhs) : IArchive()
 {
   Year   = rhs.Year;
   Month  = rhs.Month;

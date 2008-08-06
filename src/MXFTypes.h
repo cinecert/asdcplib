@@ -312,7 +312,7 @@ namespace ASDCP
 	  Rational() {}
 	  ~Rational() {}
 
-	  Rational(const Rational& rhs) {
+	  Rational(const Rational& rhs) : ASDCP::Rational(), IArchive() {
 	    Numerator = rhs.Numerator;
 	    Denominator = rhs.Denominator;
 	  }
