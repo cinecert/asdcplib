@@ -40,6 +40,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 namespace Kumu
 {
+  // The version number declaration and explanation are in ../configure.ac
+  const char* Version();
 
   // a class that represents the string form of a value
   template <class T, int SIZE = 16>

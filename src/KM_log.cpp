@@ -31,6 +31,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <KM_util.h>
 #include <KM_log.h>
+#include <KM_mutex.h>
 #include <sys/types.h>
 #include <string.h>
 #include <stdarg.h>
@@ -58,20 +59,24 @@ Kumu::ILogSink::vLogf(LogType_t type, const char* fmt, va_list* list)
 //------------------------------------------------------------------------------------------
 //
 
-static Kumu::ILogSink* s_DefaultLogSink;
+static Kumu::Mutex     s_DefaultLogSinkLock;
+static Kumu::ILogSink* s_DefaultLogSink = 0;
 static Kumu::StdioLogSink s_StderrLogSink;
 
 //
 void
 Kumu::SetDefaultLogSink(ILogSink* Sink)
 {
-    s_DefaultLogSink = Sink;
+  AutoMutex L(s_DefaultLogSinkLock);
+  s_DefaultLogSink = Sink;
 }
 
 // Returns the internal default sink.
 Kumu::ILogSink&
 Kumu::DefaultLogSink()
 {
+  AutoMutex L(s_DefaultLogSinkLock);
+
   if ( s_DefaultLogSink == 0 )
     s_DefaultLogSink = &s_StderrLogSink;
 

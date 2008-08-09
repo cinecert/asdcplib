@@ -67,11 +67,11 @@ asdcp_test_SOURCES = asdcp-test.cpp
 # list of libraries to link against for a program
 asdcp_test_LDADD = libasdcp.la
 kmfilegen_SOURCES = kmfilegen.cpp
-kmfilegen_LDADD = libasdcp.la
+kmfilegen_LDADD = libkumu.la
 kmrandgen_SOURCES = kmrandgen.cpp
-kmrandgen_LDADD = libasdcp.la
+kmrandgen_LDADD = libkumu.la
 kmuuidgen_SOURCES = kmuuidgen.cpp
-kmuuidgen_LDADD = libasdcp.la
+kmuuidgen_LDADD = libkumu.la
 blackwave_SOURCES = blackwave.cpp
 blackwave_LDADD = libasdcp.la
 klvwalk_SOURCES = klvwalk.cpp

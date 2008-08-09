@@ -92,6 +92,26 @@ namespace Kumu
   };
 #endif
 
+  //
+#ifndef KM_SMALL_FILES_OK
+  template <bool sizecheck>    void compile_time_size_checker();
+  template <>    inline void compile_time_size_checker<false>() {}
+  //
+  // READ THIS if your compiler is complaining about a previously declared implementation of
+  // compile_time_size_checker(). For example, GCC 4.0.1 looks like this:
+  //
+  // error: 'void Kumu::compile_time_size_checker() [with bool sizecheck = false]' previously declared here
+  //
+  // This is happeining because the equality being tested below is false. The reason for this 
+  // will depend on your OS, but on Linux it is probably because you have not used -D_FILE_OFFSET_BITS=64
+  // Adding this magic macro to your CFLAGS will get you going again. If you are on a system that
+  // does not support 64-bit files, you can disable this check by using -DKM_SMALL_FILES_OK. You
+  // will then of course be limited to file sizes < 4GB.
+  //
+  template <> inline void compile_time_size_checker<sizeof(Kumu::fsize_t)==sizeof(ui64_t)>() {}
+#endif
+  //
+
   const ui32_t Kilobyte = 1024;
   const ui32_t Megabyte = Kilobyte * Kilobyte;
   const ui32_t Gigabyte = Megabyte * Kilobyte;

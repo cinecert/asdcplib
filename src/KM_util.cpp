@@ -39,6 +39,13 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <map>
 #include <string>
 
+const char*
+Kumu::Version()
+{
+  return PACKAGE_VERSION;
+}
+
+
 //------------------------------------------------------------------------------------------
 
 // Result_t Internals
