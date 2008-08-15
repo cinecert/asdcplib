@@ -50,6 +50,7 @@ ASDCP::JP2K::operator << (std::ostream& strm, const PictureDescriptor& PDesc)
 {
   strm << "       AspectRatio: " << PDesc.AspectRatio.Numerator << "/" << PDesc.AspectRatio.Denominator << std::endl;
   strm << "          EditRate: " << PDesc.EditRate.Numerator << "/" << PDesc.EditRate.Denominator << std::endl;
+  strm << "        SampleRate: " << PDesc.SampleRate.Numerator << "/" << PDesc.SampleRate.Denominator << std::endl;
   strm << "       StoredWidth: " << (unsigned) PDesc.StoredWidth << std::endl;
   strm << "      StoredHeight: " << (unsigned) PDesc.StoredHeight << std::endl;
   strm << "             Rsize: " << (unsigned) PDesc.Rsize << std::endl;
@@ -118,6 +119,7 @@ ASDCP::JP2K::PictureDescriptorDump(const PictureDescriptor& PDesc, FILE* stream)
   fprintf(stream, "\
        AspectRatio: %d/%d\n\
           EditRate: %d/%d\n\
+        SampleRate: %d/%d\n\
        StoredWidth: %u\n\
       StoredHeight: %u\n\
              Rsize: %u\n\
@@ -132,6 +134,7 @@ ASDCP::JP2K::PictureDescriptorDump(const PictureDescriptor& PDesc, FILE* stream)
  ContainerDuration: %u\n",
 	  PDesc.AspectRatio.Numerator, PDesc.AspectRatio.Denominator,
 	  PDesc.EditRate.Numerator, PDesc.EditRate.Denominator,
+	  PDesc.SampleRate.Numerator, PDesc.SampleRate.Denominator,
 	  PDesc.StoredWidth,
 	  PDesc.StoredHeight,
 	  PDesc.Rsize,
@@ -206,6 +209,7 @@ class lh__Reader : public ASDCP::h__Reader
   RGBAEssenceDescriptor*        m_EssenceDescriptor;
   JPEG2000PictureSubDescriptor* m_EssenceSubDescriptor;
   ASDCP::Rational               m_EditRate;
+  ASDCP::Rational               m_SampleRate;
   EssenceType_t                 m_Format;
 
   ASDCP_NO_COPY_CONSTRUCT(lh__Reader);
@@ -227,6 +231,7 @@ lh__Reader::MD_to_JP2K_PDesc(JP2K::PictureDescriptor& PDesc)
   MXF::RGBAEssenceDescriptor* PDescObj = (MXF::RGBAEssenceDescriptor*)m_EssenceDescriptor;
 
   PDesc.EditRate           = m_EditRate;
+  PDesc.SampleRate         = m_SampleRate;
   assert(PDescObj->ContainerDuration <= 0xFFFFFFFFL);
   PDesc.ContainerDuration  = (ui32_t) PDescObj->ContainerDuration;
   PDesc.StoredWidth        = PDescObj->StoredWidth;
@@ -299,17 +304,18 @@ lh__Reader::OpenRead(const char* filename, EssenceType_t type)
 	}
 
       m_EditRate = ((Track*)ObjectList.front())->EditRate;
+      m_SampleRate = m_EssenceDescriptor->SampleRate;
 
       if ( type == ASDCP::ESS_JPEG_2000 )
 	{
-	  if ( m_EditRate != m_EssenceDescriptor->SampleRate )
+	  if ( m_EditRate != m_SampleRate )
 	    {
 	      DefaultLogSink().Error("EditRate and SampleRate do not match (%.03f, %.03f).\n",
-				     m_EditRate.Quotient(), m_EssenceDescriptor->SampleRate.Quotient());
+				     m_EditRate.Quotient(), m_SampleRate.Quotient());
 	      
-	      if ( m_EditRate == EditRate_24 && m_EssenceDescriptor->SampleRate == EditRate_48 )
+	      if ( m_EditRate == EditRate_24 && m_SampleRate == EditRate_48 )
 		{
-		  DefaultLogSink().Error("File may contain JPEG Interop stereoscopic images.\n");
+		  DefaultLogSink().Debug("File may contain JPEG Interop stereoscopic images.\n");
 		  return RESULT_SFORMAT;
 		}
 
@@ -318,7 +324,7 @@ lh__Reader::OpenRead(const char* filename, EssenceType_t type)
 	}
       else if ( type == ASDCP::ESS_JPEG_2000_S )
 	{
-	  if ( ! ( m_EditRate == EditRate_24 && m_EssenceDescriptor->SampleRate == EditRate_48 ) )
+	  if ( ! ( m_EditRate == EditRate_24 && m_SampleRate == EditRate_48 ) )
 	    {
 	      DefaultLogSink().Error("EditRate and SampleRate not correct for 24/48 stereoscopic essence.\n");
 	      return RESULT_FORMAT;

@@ -95,7 +95,7 @@ namespace Kumu
   //
 #ifndef KM_SMALL_FILES_OK
   template <bool sizecheck>    void compile_time_size_checker();
-  template <>    inline void compile_time_size_checker<false>() {}
+  template <> inline void compile_time_size_checker<false>() {}
   //
   // READ THIS if your compiler is complaining about a previously declared implementation of
   // compile_time_size_checker(). For example, GCC 4.0.1 looks like this:

@@ -263,12 +263,13 @@ ASDCP::TimedText::DCSubtitleParser::h__SubtitleParser::OpenRead(const char* file
 
   if ( InstanceList.empty() )
     {
-      DefaultLogSink(). Error("XML document contains no Subtitle elements!\n");
+      DefaultLogSink(). Error("XML document contains no Subtitle elements.\n");
       return RESULT_FORMAT;
     }
 
   // assumes 24/1 or 48/1 as constrained above
-  S12MTimecode beginTC(InstanceList.front()->GetAttrWithName("TimeIn"), m_TDesc.EditRate.Numerator);
+
+  S12MTimecode beginTC(m_Root.GetChildWithName("StartTime")->GetBody(), m_TDesc.EditRate.Numerator);
 
   for ( ei = InstanceList.begin(); ei != InstanceList.end(); ei++ )
     {
@@ -277,7 +278,12 @@ ASDCP::TimedText::DCSubtitleParser::h__SubtitleParser::OpenRead(const char* file
 	end_count = tmpTC.GetFrames();
     }
 
-  assert( end_count > beginTC.GetFrames() );
+  if ( end_count <= beginTC.GetFrames() )
+    {
+      DefaultLogSink(). Error("Timed Text file has zero-length timeline.\n");
+      return RESULT_FORMAT;
+    }
+
   m_TDesc.ContainerDuration = end_count - beginTC.GetFrames();
 
   return RESULT_OK;

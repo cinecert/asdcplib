@@ -667,11 +667,12 @@ ASDCP::MXF::OPAtomHeader::InitFromFile(const Kumu::FileReader& Reader)
 	}
       else
 	{
-	  if ( test_s < 2 || test_s > 3 )
+	  if ( test_s < 2 )
 	    {
 	      // OP-Atom states that there will be either two or three partitions:
 	      // one closed header and one closed footer with an optional body
-	      DefaultLogSink().Warn("RIP count is not 2 or 3: %u\n", test_s);
+	      // SMPTE 429-5 files may have many partitions, see SMPTE 410M
+	      DefaultLogSink().Warn("RIP count is less than 2: %u\n", test_s);
 	    }
 
 	  m_HasRIP = true;

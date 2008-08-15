@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2004-2007, John Hurst
+Copyright (c) 2004-2008, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -83,6 +83,14 @@ main(int argc, const char** argv)
   assert(PathGetExtension("foo") == "");
   assert(PathSetExtension("foo.bar", "") == "foo");
   assert(PathSetExtension(Path_3, "xml") == "baz.xml");
+
+  string Path_7 = "//tmp///////fooo";
+
+  PathCompList_t PathList_7;
+  PathToComponents(Path_7, PathList_7);
+  for ( PathCompList_t::const_iterator i = PathList_7.begin(); i != PathList_7.end(); i++ )
+    fprintf(stderr, "xx: \"%s\"\n", i->c_str());
+  assert(PathsAreEquivalent(PathMakeLocal(PathMakeCanonical(Path_7), "/tmp"), "fooo"));
 
   PathList_t InList, OutList;
   InList.push_back("tmp");

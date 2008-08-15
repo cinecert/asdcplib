@@ -228,16 +228,27 @@ ASDCP::RawEssenceType(const char* filename, EssenceType_t& type)
 	  while ( p[i] == 0 ) i++;
 
 	  if ( i > 1 && p[i] == 1 &&  (p[i+1] == ASDCP::MPEG2::SEQ_START || p[i+1] == ASDCP::MPEG2::PIC_START) )
-	    type = ESS_MPEG2_VES;
-
+	    {
+	      type = ESS_MPEG2_VES;
+	    }
 	  else if ( ASDCP_SUCCESS(WavHeader.ReadFromBuffer(p, read_count, &data_offset)) )
-	    type = ESS_PCM_24b_48k;
-
+	    {
+	      switch ( WavHeader.samplespersec )
+		{
+		case 48000: type = ESS_PCM_24b_48k; break;
+		case 96000: type = ESS_PCM_24b_96k; break;
+		default:
+		  return RESULT_FORMAT;
+		}
+	    }
 	  else if ( ASDCP_SUCCESS(AIFFHeader.ReadFromBuffer(p, read_count, &data_offset)) )
-	    type = ESS_PCM_24b_48k;
-
+	    {
+	      type = ESS_PCM_24b_48k;
+	    }
 	  else if ( Kumu::StringIsXML((const char*)p, FB.Size()) )
-	    type = ESS_TIMED_TEXT;
+	    {
+	      type = ESS_TIMED_TEXT;
+	    }
 	}
     }
   else if ( Kumu::PathIsDirectory(filename) )

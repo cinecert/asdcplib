@@ -69,7 +69,6 @@ split(const std::string& str, char separator, std::list<std::string>& components
       if ( r > pstr )
 	{
 	  std::string tmp_str;
-	  assert(r - pstr < 100);
 	  tmp_str.assign(pstr, (r - pstr));
 	  components.push_back(tmp_str);
 	}

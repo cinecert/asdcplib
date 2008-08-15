@@ -92,7 +92,7 @@ ASDCP::TimedText::DescriptorDump(ASDCP::TimedText::TimedTextDescriptor const& TD
   fprintf(stream, "ContainerDuration: %u\n",    TDesc.ContainerDuration);
   fprintf(stream, "          AssetID: %s\n",    TmpID.EncodeHex(buf, 64));
   fprintf(stream, "    NamespaceName: %s\n",    TDesc.NamespaceName.c_str());
-  fprintf(stream, "    ResourceCount: %lu\n",   TDesc.ResourceList.size());
+  fprintf(stream, "    ResourceCount: %du\n",   TDesc.ResourceList.size());
 
   TimedText::ResourceList_t::const_iterator ri;
   for ( ri = TDesc.ResourceList.begin() ; ri != TDesc.ResourceList.end(); ri++ )
@@ -173,7 +173,9 @@ ASDCP::TimedText::MXFReader::h__Reader::MD_to_TimedText_TDesc(TimedText::TimedTe
 	  TimedTextResourceDescriptor TmpResource;
 	  memcpy(TmpResource.ResourceID, DescObject->AncillaryResourceID.Value(), UUIDlen);
 
-	  if ( DescObject->MIMEMediaType.find("font/") != std::string::npos )
+	  if ( DescObject->MIMEMediaType.find("application/x-font-opentype") != std::string::npos
+	       || DescObject->MIMEMediaType.find("application/x-opentype") != std::string::npos
+	       || DescObject->MIMEMediaType.find("font/opentype") != std::string::npos )
 	    TmpResource.Type = MT_OPENTYPE;
 
 	  else if ( DescObject->MIMEMediaType.find("image/png") != std::string::npos )
@@ -316,7 +318,7 @@ ASDCP::TimedText::MXFReader::h__Reader::ReadAncillaryResource(const byte_t* uuid
 
 	      // read the essence packet
 	      if( ASDCP_SUCCESS(result) )
-		result = ReadEKLVPacket(0, 1, FrameBuf, Dict::ul(MDD_TimedTextDescriptor), Ctx, HMAC);
+		result = ReadEKLVPacket(0, 1, FrameBuf, Dict::ul(MDD_TimedTextEssence), Ctx, HMAC);
 	    }
 	}
     }
