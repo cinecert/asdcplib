@@ -50,6 +50,14 @@ AC_ARG_ENABLE([freedist],
        *) AC_MSG_ERROR([bad value ${enableval} for --enable-freedist]) ;;
      esac],[freedist=false])
      AM_CONDITIONAL([FREEDIST], [test x$freedist = xtrue])
+AC_ARG_ENABLE([dev-headers],
+     [  --enable-dev-headers    Install development headers],
+     [case "${enableval}" in
+       yes) dev_headers=true ;;
+       no)  dev_headers=false ;;
+       *) AC_MSG_ERROR([bad value ${enableval} for --enable-dev-headers]) ;;
+     esac],[dev_headers=false])
+     AM_CONDITIONAL([DEV_HEADERS], [test x$dev_headers = xtrue])
 
 # Checks for libraries.
 AC_CHECK_LIB([pthread], [pthread_create])

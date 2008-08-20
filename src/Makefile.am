@@ -6,8 +6,10 @@ AM_LDFLAGS = -L/var/local/lib -L/usr/local/lib
 # list of all the header files that should be installed
 include_HEADERS = KM_error.h KM_fileio.h KM_log.h KM_memio.h KM_mutex.h \
  KM_platform.h KM_prng.h KM_util.h KM_xml.h AS_DCP.h
-extra_HDRS = S12MTimecode.h MDD.h Metadata.h KLV.h MXFTypes.h MXF.h Wav.h \
- PCMParserList.h
+if DEV_HEADERS
+include_HEADERS += S12MTimecode.h MDD.h Metadata.h KLV.h MXFTypes.h MXF.h Wav.h \
+ PCMParserList.h asdcp_wrappers.h
+endif
 
 # list of the libraries to build and install
 lib_LTLIBRARIES = libkumu.la libasdcp.la
@@ -32,7 +34,7 @@ libasdcp_la_SOURCES = MPEG2_Parser.cpp MPEG.cpp JP2K_Codestream_Parser.cpp \
 libasdcp_la_LDFLAGS = -version-info 3:19:0
 # additional libraries to link against for a library
 libasdcp_la_LIBADD = libkumu.la
-libasdcp_la_CPPFLAGS=-DASDCP_PLATFORM=\"@host@\"
+libasdcp_la_CPPFLAGS = -DASDCP_PLATFORM=\"@host@\"
 # Python extension
 if PYTHON_USE
 lib_LTLIBRARIES += libpyasdcp.la
@@ -44,7 +46,8 @@ libpyasdcp_la_CPPFLAGS = @PYTHON_CPPFLAGS@
 libpyasdcp_la_LDFLAGS = @PYTHON_LSPEC@
 libpyasdcp_la_LIBADD = libkumu.la libasdcp.la
 pyexecdir = @PYTHON_EXECDIR@
-#pyexec_includedir = $(PYTHON_PREFIX)/include
+pyexec_includedir = $(PYTHON_PREFIX)/Headers
+pyexec_include_HEADERS = kumu_python.h asdcp_python.h
 pyexec_LTLIBRARIES = kumu.la asdcp.la
 nodist_kumu_la_SOURCES = pykumu.cpp kumu_python.h
 kumu_la_CPPFLAGS = @PYTHON_CPPFLAGS@
@@ -55,7 +58,6 @@ nodist_asdcp_la_SOURCES = pyasdcp.cpp asdcp_python.h
 asdcp_la_CPPFLAGS = @PYTHON_CPPFLAGS@
 asdcp_la_LDFLAGS = @PYTHON_LSPEC@ -avoid-version -module
 asdcp_la_LIBADD = libpyasdcp.la
-#pyexec_include_HEADERS = kumu_python.h asdcp_python.h
 endif
 
 # list of programs to be built and installed
@@ -134,14 +136,3 @@ Metadata.h:
 # dependencies:  Metadata.h $(srcdir)/Metadata_cpp.tt2
 Metadata.cpp:
 	$(srcdir)/mxfgen.pl $(srcdir)/MXF_def.pl $(srcdir)/Metadata_cpp.tt2 > Metadata.cpp
-
-extraHDRS_INSTALL = $(INSTALL_HEADER)
-install-extra: $(extra_HDRS)
-	@$(NORMAL_INSTALL)
-	test -z "$(includedir)" || $(MKDIR_P) "$(DESTDIR)$(includedir)"
-	@list='$(extra_HDRS)'; for p in $$list; do \
-		if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
-		f=$(am__strip_dir) \
-		echo " $(extraHDRS_INSTALL) '$$d$$p' '$(DESTDIR)$(includedir)/$$f'"; \
-		$(extraHDRS_INSTALL) "$$d$$p" "$(DESTDIR)$(includedir)/$$f"; \
-	done
