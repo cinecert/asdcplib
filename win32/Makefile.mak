@@ -13,8 +13,7 @@ ASDCP_OBJS = MPEG2_Parser.obj MPEG.obj JP2K_Codestream_Parser.obj \
 	AS_DCP_PCM.obj AS_DCP_TimedText.obj PCMParserList.obj \
 	MDD.obj
 
-
-CXXFLAGS = /nologo /W3 /GR /EHsc /DWIN32 /DKM_WIN32 /D_CONSOLE /I. /DASDCP_PLATFORM=\"win32\" \
+CXXFLAGS = /nologo /W3 /GR /EHsc /DWIN32 /DKM_WIN32 /D_CONSOLE /I. /I$(SRCDIR) /DASDCP_PLATFORM=\"win32\" \
 	/D_CRT_SECURE_NO_WARNINGS /D_CRT_NONSTDC_NO_WARNINGS /RTC1 /DPACKAGE_VERSION=\"1.3.19a\" \
 	/MTd /Od /ZI /DDEBUG /D_DEBUG /I$(OPENSSL_DIR)\inc32
 CPPFLAGS = $(CXXFLAGS)
@@ -25,7 +24,7 @@ LIBFLAGS = /NOLOGO /LIBPATH:$(OPENSSL_DIR)\out32dll
 LINK = link.exe
 LINKFLAGS = /NOLOGO /SUBSYSTEM:console /MACHINE:I386 /LIBPATH:. /DEBUG
 
-all: kmfilegen.exe kmrandgen.exe kmuuidgen.exe asdcp-test.exe blackwave.exe klvwalk.exe wavesplit.exe
+all: libkumu.lib kmfilegen.exe kmrandgen.exe kmuuidgen.exe asdcp-test.exe blackwave.exe klvwalk.exe wavesplit.exe
 
 libkumu.lib : $(KUMU_OBJS)
 	$(LIB_EXE) $(LIBFLAGS) /OUT:libkumu.lib $(KUMU_OBJS) libeay32.lib
