@@ -1,3 +1,5 @@
+ARCH = win32
+
 SRCDIR=..\src
 
 OPENSSL_DIR = ..\..\openssl
@@ -13,23 +15,41 @@ ASDCP_OBJS = MPEG2_Parser.obj MPEG.obj JP2K_Codestream_Parser.obj \
 
 
 CXXFLAGS = /nologo /W3 /GR /EHsc /DWIN32 /DKM_WIN32 /D_CONSOLE /I. /DASDCP_PLATFORM=\"win32\" \
-	/D_CRT_SECURE_NO_WARNINGS /D_CRT_NONSTDC_NO_WARNINGS /RTC1 /DPACKAGE_VERSION=\"win32\" \
-	/MTd /Od /ZI /DDEBUG /OPT:NOREF /D_DEBUG /I$(OPENSSL_DIR)\inc32
+	/D_CRT_SECURE_NO_WARNINGS /D_CRT_NONSTDC_NO_WARNINGS /RTC1 /DPACKAGE_VERSION=\"1.3.19a\" \
+	/MTd /Od /ZI /DDEBUG /D_DEBUG /I$(OPENSSL_DIR)\inc32
 CPPFLAGS = $(CXXFLAGS)
 
-LIB = lib.exe
+LIB_EXE = lib.exe
 LIBFLAGS = /NOLOGO /LIBPATH:$(OPENSSL_DIR)\out32dll
 
 LINK = link.exe
 LINKFLAGS = /NOLOGO /SUBSYSTEM:console /MACHINE:I386 /LIBPATH:. /DEBUG
 
-all: blackwave.exe
+all: kmfilegen.exe kmrandgen.exe kmuuidgen.exe asdcp-test.exe blackwave.exe klvwalk.exe wavesplit.exe
 
 libkumu.lib : $(KUMU_OBJS)
-	$(LIB) $(LIBFLAGS) /OUT:libkumu.lib $(KUMU_OBJS) libeay32.lib
+	$(LIB_EXE) $(LIBFLAGS) /OUT:libkumu.lib $(KUMU_OBJS) libeay32.lib
 
-libasdcp.lib: $(ASDCP_OBJS)
-	$(LIB) $(LIBFLAGS) /OUT:libasdcp.lib $(ASDCP_OBJS) libeay32.lib
+libasdcp.lib: libkumu.lib $(ASDCP_OBJS)
+	$(LIB_EXE) $(LIBFLAGS) /OUT:libasdcp.lib libkumu.lib $(ASDCP_OBJS)
 
-blackwave.exe: blackwave.obj libasdcp.lib libkumu.lib
-	$(LINK) $(LINKFLAGS) /OUT:blackwave.exe blackwave.obj libkumu.lib libasdcp.lib Advapi32.lib
+blackwave.exe: libasdcp.lib blackwave.obj
+	$(LINK) $(LINKFLAGS) /OUT:blackwave.exe blackwave.obj libasdcp.lib Advapi32.lib
+
+wavesplit.exe: libasdcp.lib wavesplit.obj
+	$(LINK) $(LINKFLAGS) /OUT:wavesplit.exe wavesplit.obj libasdcp.lib Advapi32.lib
+
+kmuuidgen.exe: libkumu.lib kmuuidgen.obj
+	$(LINK) $(LINKFLAGS) /OUT:kmuuidgen.exe kmuuidgen.obj libkumu.lib Advapi32.lib
+
+kmrandgen.exe: libkumu.lib kmrandgen.obj
+	$(LINK) $(LINKFLAGS) /OUT:kmrandgen.exe kmrandgen.obj libkumu.lib Advapi32.lib
+
+kmfilegen.exe: libkumu.lib kmfilegen.obj
+	$(LINK) $(LINKFLAGS) /OUT:kmfilegen.exe kmfilegen.obj libkumu.lib Advapi32.lib
+
+klvwalk.exe: libasdcp.lib klvwalk.obj
+	$(LINK) $(LINKFLAGS) /OUT:klvwalk.exe klvwalk.obj libasdcp.lib Advapi32.lib
+
+asdcp-test.exe: libasdcp.lib asdcp-test.obj
+	$(LINK) $(LINKFLAGS) /OUT:asdcp-test.exe asdcp-test.obj libasdcp.lib Advapi32.lib
