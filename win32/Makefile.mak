@@ -5,6 +5,7 @@
 #
 #
 
+
 ARCH = win32
 
 SRCDIR=..\src
@@ -41,12 +42,19 @@ LINKFLAGS = $(LINKFLAGS1)
 
 !IFDEF WITH_XERCES
 !ifdef WITH_XML_PARSER
-!ERROR "Cannot include both Expat and Xerces!"
+!ERROR "Cannot include both Expat and Xerces-C++!"
 !endif
 
 XERCES_DIR = $(WITH_XERCES)
 CPPFLAGS = $(CXXFLAGS2) /DHAVE_XERCES_C=1 /I"$(XERCES_DIR)"\include
 LIBFLAGS = $(LIBFLAGS1) /LIBPATH:"$(XERCES_DIR)"\lib
+!ELSEIF WITH_XML_PARSER
+CPPFLAGS = $(CXXFLAGS2) /DASDCP_USE_EXPAT /I"$(WITH_XML_PARSER)"\Source\lib
+!IFDEF DEBUG
+LIBFLAGS = $(LIBFLAGS1) /LIBPATH:"$(WITH_XML_PARSER)"\Source\win32\bin\debug
+!ELSE
+LIBFLAGS = $(LIBFLAGS1) /LIBPATH:"$(WITH_XML_PARSER)"\Source\win32\bin\release
+!ENDIF
 !ELSE
 CPPFLAGS = $(CXXFLAGS2)
 LIBFLAGS = $(LIBFLAGS1)
@@ -62,6 +70,8 @@ libkumu.lib : $(KUMU_OBJS)
 !ELSE
 	$(LIB_EXE) $(LIBFLAGS) /OUT:libkumu.lib $(KUMU_OBJS) libeay32.lib xerces-c_2.lib
 !ENDIF
+!ELSEIF WITH_XML_PARSER
+	$(LIB_EXE) $(LIBFLAGS) /OUT:libkumu.lib $(KUMU_OBJS) libeay32.lib libexpatMT.lib
 !ELSE
 	$(LIB_EXE) $(LIBFLAGS) /OUT:libkumu.lib $(KUMU_OBJS) libeay32.lib
 !ENDIF 
