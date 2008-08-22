@@ -1,3 +1,10 @@
+#
+#
+#
+#
+#
+#
+
 ARCH = win32
 
 SRCDIR=..\src
@@ -13,21 +20,51 @@ ASDCP_OBJS = MPEG2_Parser.obj MPEG.obj JP2K_Codestream_Parser.obj \
 	AS_DCP_PCM.obj AS_DCP_TimedText.obj PCMParserList.obj \
 	MDD.obj
 
-CXXFLAGS = /nologo /W3 /GR /EHsc /DWIN32 /DKM_WIN32 /D_CONSOLE /I. /I$(SRCDIR) /DASDCP_PLATFORM=\"win32\" \
-	/D_CRT_SECURE_NO_WARNINGS /D_CRT_NONSTDC_NO_WARNINGS /RTC1 /DPACKAGE_VERSION=\"1.3.19a\" \
-	/MTd /Od /ZI /DDEBUG /D_DEBUG /I$(OPENSSL_DIR)\inc32
-CPPFLAGS = $(CXXFLAGS)
+CXXFLAGS1 = /nologo /W3 /GR /EHsc /DWIN32 /DKM_WIN32 /D_CONSOLE /I. /I$(SRCDIR) /DASDCP_PLATFORM=\"win32\" \
+	/D_CRT_SECURE_NO_WARNINGS /D_CRT_NONSTDC_NO_WARNINGS /DPACKAGE_VERSION=\"1.3.19a\" \
+	/I$(OPENSSL_DIR)\inc32
 
 LIB_EXE = lib.exe
-LIBFLAGS = /NOLOGO /LIBPATH:$(OPENSSL_DIR)\out32dll
+LIBFLAGS1 = /NOLOGO /LIBPATH:$(OPENSSL_DIR)\out32dll
 
 LINK = link.exe
-LINKFLAGS = /NOLOGO /SUBSYSTEM:console /MACHINE:I386 /LIBPATH:. /DEBUG
+LINKFLAGS1 = /NOLOGO /SUBSYSTEM:console /MACHINE:I386 /LIBPATH:. /DEBUG
+
+
+!ifdef DEBUG
+CXXFLAGS2 = $(CXXFLAGS1) /MTd /DDEBUG /D_DEBUG /Od /RTC1 /ZI
+LINKFLAGS = $(LINKFLAGS1) /DEBUG
+!else
+CXXFLAGS2 = $(CXXFLAGS1) /MT /DNDEBUG /D_NDEBUG /O2
+LINKFLAGS = $(LINKFLAGS1)
+!endif
+
+!IFDEF WITH_XERCES
+!ifdef WITH_XML_PARSER
+!ERROR "Cannot include both Expat and Xerces!"
+!endif
+
+XERCES_DIR = $(WITH_XERCES)
+CPPFLAGS = $(CXXFLAGS2) /DHAVE_XERCES_C=1 /I"$(XERCES_DIR)"\include
+LIBFLAGS = $(LIBFLAGS1) /LIBPATH:"$(XERCES_DIR)"\lib
+!ELSE
+CPPFLAGS = $(CXXFLAGS2)
+LIBFLAGS = $(LIBFLAGS1)
+!ENDIF
+
 
 all: libkumu.lib kmfilegen.exe kmrandgen.exe kmuuidgen.exe asdcp-test.exe blackwave.exe klvwalk.exe wavesplit.exe
 
 libkumu.lib : $(KUMU_OBJS)
+!IFDEF WITH_XERCES
+!IFDEF DEBUG
+	$(LIB_EXE) $(LIBFLAGS) /OUT:libkumu.lib $(KUMU_OBJS) libeay32.lib xerces-c_2D.lib
+!ELSE
+	$(LIB_EXE) $(LIBFLAGS) /OUT:libkumu.lib $(KUMU_OBJS) libeay32.lib xerces-c_2.lib
+!ENDIF
+!ELSE
 	$(LIB_EXE) $(LIBFLAGS) /OUT:libkumu.lib $(KUMU_OBJS) libeay32.lib
+!ENDIF 
 
 libasdcp.lib: libkumu.lib $(ASDCP_OBJS)
 	$(LIB_EXE) $(LIBFLAGS) /OUT:libasdcp.lib libkumu.lib $(ASDCP_OBJS)
