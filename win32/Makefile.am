@@ -1,3 +1,3 @@
 ## Makefile.am -- Process this file with automake to produce Makefile.in
 
-EXTRA_DIST = Makefile.mak build.bat
+EXTRA_DIST = Makefile.mak
