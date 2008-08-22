@@ -13,14 +13,14 @@
 
 
 ARCH = win32
-
-SRCDIR=..\src
+SRCDIR = ..\src
+OBJDIR = .
 
 !ifndef WITH_OPENSSL
 !error "OpenSSL is needed! Specify it with WITH_OPENSSL=<OpenSSL directory>"
 !endif
 
-KUMU_OBJS = KM_fileio.obj KM_log.obj KM_prng.obj KM_util.obj KM_xml.obj
+KUMU_OBJS = $(OBJDIR)\KM_fileio.obj $(OBJDIR)\KM_log.obj $(OBJDIR)\KM_prng.obj $(OBJDIR)\KM_util.obj $(OBJDIR)\KM_xml.obj
 ASDCP_OBJS = MPEG2_Parser.obj MPEG.obj JP2K_Codestream_Parser.obj \
 	JP2K_Sequence_Parser.obj JP2K.obj PCM_Parser.obj Wav.obj \
 	TimedText_Parser.obj KLV.obj Dict.obj MXFTypes.obj MXF.obj \
@@ -44,7 +44,7 @@ LINKFLAGS1 = /NOLOGO /SUBSYSTEM:console /MACHINE:I386 /LIBPATH:. /DEBUG
 CXXFLAGS2 = $(CXXFLAGS1) /MTd /DDEBUG /D_DEBUG /Od /RTC1 /ZI
 LINKFLAGS = $(LINKFLAGS1) /DEBUG
 !else
-CXXFLAGS2 = $(CXXFLAGS1) /MT /DNDEBUG /D_NDEBUG /O2
+CXXFLAGS2 = $(CXXFLAGS1) /MT /DNODEBUG /D_NODEBUG /O2
 LINKFLAGS = $(LINKFLAGS1)
 !endif
 
@@ -58,20 +58,24 @@ LINKFLAGS = $(LINKFLAGS1)
 !endif
 
 XERCES_DIR = $(WITH_XERCES)
-CPPFLAGS = $(CXXFLAGS2) /DHAVE_XERCES_C=1 /I"$(XERCES_DIR)"\include
+CXXFLAGS = $(CXXFLAGS2) /DHAVE_XERCES_C=1 /I"$(XERCES_DIR)"\include
 LIBFLAGS = $(LIBFLAGS1) /LIBPATH:"$(XERCES_DIR)"\lib
 !ELSEIFDEF WITH_XML_PARSER
-CPPFLAGS = $(CXXFLAGS2) /DASDCP_USE_EXPAT /I"$(WITH_XML_PARSER)"\Source\lib
+CXXFLAGS = $(CXXFLAGS2) /DASDCP_USE_EXPAT /I"$(WITH_XML_PARSER)"\Source\lib
 !IFDEF DEBUG
 LIBFLAGS = $(LIBFLAGS1) /LIBPATH:"$(WITH_XML_PARSER)"\Source\win32\bin\debug
 !ELSE
 LIBFLAGS = $(LIBFLAGS1) /LIBPATH:"$(WITH_XML_PARSER)"\Source\win32\bin\release
 !ENDIF
 !ELSE
-CPPFLAGS = $(CXXFLAGS2)
+CXXFLAGS = $(CXXFLAGS2)
 LIBFLAGS = $(LIBFLAGS1)
 !ENDIF
 
+CPPFLAGS = $(CXXFLAGS)
+
+{$(SRCDIR)\}.cpp{}.obj:
+	$(CXX) $(CXXFLAGS) -Fd$(OBJDIR)\ /c $<
 
 all: libkumu.lib kmfilegen.exe kmrandgen.exe kmuuidgen.exe asdcp-test.exe blackwave.exe klvwalk.exe wavesplit.exe
 
@@ -111,3 +115,7 @@ klvwalk.exe: libasdcp.lib klvwalk.obj
 
 asdcp-test.exe: libasdcp.lib asdcp-test.obj
 	$(LINK) $(LINKFLAGS) /OUT:asdcp-test.exe asdcp-test.obj libasdcp.lib Advapi32.lib
+
+
+O = .
+S = ..\src
