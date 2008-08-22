@@ -16,7 +16,9 @@ ARCH = win32
 
 SRCDIR=..\src
 
-OPENSSL_DIR = ..\..\openssl
+!ifndef WITH_OPENSSL
+!error "OpenSSL is needed! Specify it with WITH_OPENSSL=<OpenSSL directory>"
+!endif
 
 KUMU_OBJS = KM_fileio.obj KM_log.obj KM_prng.obj KM_util.obj KM_xml.obj
 ASDCP_OBJS = MPEG2_Parser.obj MPEG.obj JP2K_Codestream_Parser.obj \
@@ -29,10 +31,10 @@ ASDCP_OBJS = MPEG2_Parser.obj MPEG.obj JP2K_Codestream_Parser.obj \
 
 CXXFLAGS1 = /nologo /W3 /GR /EHsc /DWIN32 /DKM_WIN32 /D_CONSOLE /I. /I$(SRCDIR) /DASDCP_PLATFORM=\"win32\" \
 	/D_CRT_SECURE_NO_WARNINGS /D_CRT_NONSTDC_NO_WARNINGS /DPACKAGE_VERSION=\"1.3.19a\" \
-	/I$(OPENSSL_DIR)\inc32
+	/I$(WITH_OPENSSL)\inc32
 
 LIB_EXE = lib.exe
-LIBFLAGS1 = /NOLOGO /LIBPATH:$(OPENSSL_DIR)\out32dll
+LIBFLAGS1 = /NOLOGO /LIBPATH:$(WITH_OPENSSL)\out32dll
 
 LINK = link.exe
 LINKFLAGS1 = /NOLOGO /SUBSYSTEM:console /MACHINE:I386 /LIBPATH:. /DEBUG
@@ -46,6 +48,10 @@ CXXFLAGS2 = $(CXXFLAGS1) /MT /DNDEBUG /D_NDEBUG /O2
 LINKFLAGS = $(LINKFLAGS1)
 !endif
 
+!ifndef WITH_OPENSSL
+!error "OpenSSL is needed!"
+!endif
+
 !IFDEF WITH_XERCES
 !ifdef WITH_XML_PARSER
 !ERROR "Cannot include both Expat and Xerces-C++!"
@@ -54,7 +60,7 @@ LINKFLAGS = $(LINKFLAGS1)
 XERCES_DIR = $(WITH_XERCES)
 CPPFLAGS = $(CXXFLAGS2) /DHAVE_XERCES_C=1 /I"$(XERCES_DIR)"\include
 LIBFLAGS = $(LIBFLAGS1) /LIBPATH:"$(XERCES_DIR)"\lib
-!ELSEIF WITH_XML_PARSER
+!ELSEIFDEF WITH_XML_PARSER
 CPPFLAGS = $(CXXFLAGS2) /DASDCP_USE_EXPAT /I"$(WITH_XML_PARSER)"\Source\lib
 !IFDEF DEBUG
 LIBFLAGS = $(LIBFLAGS1) /LIBPATH:"$(WITH_XML_PARSER)"\Source\win32\bin\debug
@@ -76,7 +82,7 @@ libkumu.lib : $(KUMU_OBJS)
 !ELSE
 	$(LIB_EXE) $(LIBFLAGS) /OUT:libkumu.lib $(KUMU_OBJS) libeay32.lib xerces-c_2.lib
 !ENDIF
-!ELSEIF WITH_XML_PARSER
+!ELSEIFDEF WITH_XML_PARSER
 	$(LIB_EXE) $(LIBFLAGS) /OUT:libkumu.lib $(KUMU_OBJS) libeay32.lib libexpatMT.lib
 !ELSE
 	$(LIB_EXE) $(LIBFLAGS) /OUT:libkumu.lib $(KUMU_OBJS) libeay32.lib
