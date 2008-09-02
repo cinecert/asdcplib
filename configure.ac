@@ -105,5 +105,6 @@ AC_CHECK_LIB([pthread], [pthread_create])
 #AC_CHECK_FUNCS([getcwd memset regcomp strchr strerror strrchr strstr strtol])
 
 AC_CONFIG_FILES([Makefile
-                 src/Makefile])
+                 src/Makefile
+		 win32/Makefile])
 AC_OUTPUT
