@@ -86,7 +86,7 @@ ASDCP_OBJS = MPEG2_Parser.obj MPEG.obj JP2K_Codestream_Parser.obj \
 all: kmfilegen.exe kmrandgen.exe kmuuidgen.exe asdcp-test.exe blackwave.exe klvwalk.exe wavesplit.exe
 
 clean:
-	erase $(SRCDIR)\*.exe $(SRCDIR)\*.lib $(SRCDIR)\*.obj $(SRCDIR)\*.ilk $(SRCDIR)\*.pdb $(SRCDIR)\*.idb
+	erase *.exe *.lib *.obj *.ilk *.pdb *.idb
 
 libkumu.lib : $(KUMU_OBJS)
 !IFDEF WITH_XERCES
