@@ -71,51 +71,6 @@ LIBFLAGS = $(LIBFLAGS1)
 
 CPPFLAGS = $(CXXFLAGS)
 
-{$(SRCDIR)\}.cpp{}.obj:
-	$(CXX) $(CXXFLAGS) -Fd$(OBJDIR)\ /c $<
-
-all: kmfilegen.exe kmrandgen.exe kmuuidgen.exe asdcp-test.exe blackwave.exe klvwalk.exe wavesplit.exe
-
-clean:
-	erase *.exe *.lib *.obj *.ilk *.pdb *.idb
-
-libkumu.lib : $(KUMU_OBJS)
-!IFDEF WITH_XERCES
-!IFDEF DEBUG
-	$(LIB_EXE) $(LIBFLAGS) /OUT:libkumu.lib $? libeay32.lib xerces-c_2D.lib
-!ELSE
-	$(LIB_EXE) $(LIBFLAGS) /OUT:libkumu.lib $? libeay32.lib xerces-c_2.lib
-!ENDIF
-!ELSEIFDEF WITH_XML_PARSER
-	$(LIB_EXE) $(LIBFLAGS) /OUT:libkumu.lib $? libeay32.lib libexpatMT.lib
-!ELSE
-	$(LIB_EXE) $(LIBFLAGS) /OUT:libkumu.lib $? libeay32.lib
-!ENDIF 
-
-libasdcp.lib: libkumu.lib $(ASDCP_OBJS)
-	$(LIB_EXE) $(LIBFLAGS) /OUT:libasdcp.lib $?
-
-blackwave.exe: libasdcp.lib blackwave.obj
-	$(LINK) $(LINKFLAGS) /OUT:blackwave.exe $? Advapi32.lib
-
-wavesplit.exe: libasdcp.lib wavesplit.obj
-	$(LINK) $(LINKFLAGS) /OUT:wavesplit.exe $? Advapi32.lib
-
-kmuuidgen.exe: libkumu.lib kmuuidgen.obj
-	$(LINK) $(LINKFLAGS) /OUT:kmuuidgen.exe $? Advapi32.lib
-
-kmrandgen.exe: libkumu.lib kmrandgen.obj
-	$(LINK) $(LINKFLAGS) /OUT:kmrandgen.exe $? Advapi32.lib
-
-kmfilegen.exe: libkumu.lib kmfilegen.obj
-	$(LINK) $(LINKFLAGS) /OUT:kmfilegen.exe $? Advapi32.lib
-
-klvwalk.exe: libasdcp.lib klvwalk.obj
-	$(LINK) $(LINKFLAGS) /OUT:klvwalk.exe $? Advapi32.lib
-
-asdcp-test.exe: libasdcp.lib asdcp-test.obj
-	$(LINK) $(LINKFLAGS) /OUT:asdcp-test.exe $? Advapi32.lib
-
 KUMU_OBJS = KM_fileio.obj KM_log.obj KM_prng.obj KM_util.obj KM_xml.obj
 ASDCP_OBJS = MPEG2_Parser.obj MPEG.obj JP2K_Codestream_Parser.obj \
 	JP2K_Sequence_Parser.obj JP2K.obj PCM_Parser.obj Wav.obj \
@@ -124,3 +79,48 @@ ASDCP_OBJS = MPEG2_Parser.obj MPEG.obj JP2K_Codestream_Parser.obj \
 	h__Reader.obj h__Writer.obj AS_DCP_MPEG2.obj AS_DCP_JP2K.obj \
 	AS_DCP_PCM.obj AS_DCP_TimedText.obj PCMParserList.obj \
 	MDD.obj
+
+{$(SRCDIR)\}.cpp{}.obj:
+	$(CXX) $(CXXFLAGS) -Fd$(OBJDIR)\ /c $<
+
+all: kmfilegen.exe kmrandgen.exe kmuuidgen.exe asdcp-test.exe blackwave.exe klvwalk.exe wavesplit.exe
+
+clean:
+	erase $(SRCDIR)\*.exe $(SRCDIR)\*.lib $(SRCDIR)\*.obj $(SRCDIR)\*.ilk $(SRCDIR)\*.pdb $(SRCDIR)\*.idb
+
+libkumu.lib : $(KUMU_OBJS)
+!IFDEF WITH_XERCES
+!IFDEF DEBUG
+	$(LIB_EXE) $(LIBFLAGS) /OUT:libkumu.lib $** libeay32.lib xerces-c_2D.lib
+!ELSE
+	$(LIB_EXE) $(LIBFLAGS) /OUT:libkumu.lib $** libeay32.lib xerces-c_2.lib
+!ENDIF
+!ELSEIFDEF WITH_XML_PARSER
+	$(LIB_EXE) $(LIBFLAGS) /OUT:libkumu.lib $** libeay32.lib libexpatMT.lib
+!ELSE
+	$(LIB_EXE) $(LIBFLAGS) /OUT:libkumu.lib $** libeay32.lib
+!ENDIF 
+
+libasdcp.lib: libkumu.lib $(ASDCP_OBJS)
+	$(LIB_EXE) $(LIBFLAGS) /OUT:libasdcp.lib $**
+
+blackwave.exe: libasdcp.lib blackwave.obj
+	$(LINK) $(LINKFLAGS) /OUT:blackwave.exe $** Advapi32.lib
+
+wavesplit.exe: libasdcp.lib wavesplit.obj
+	$(LINK) $(LINKFLAGS) /OUT:wavesplit.exe $** Advapi32.lib
+
+kmuuidgen.exe: libkumu.lib kmuuidgen.obj
+	$(LINK) $(LINKFLAGS) /OUT:kmuuidgen.exe $** Advapi32.lib
+
+kmrandgen.exe: libkumu.lib kmrandgen.obj
+	$(LINK) $(LINKFLAGS) /OUT:kmrandgen.exe $** Advapi32.lib
+
+kmfilegen.exe: libkumu.lib kmfilegen.obj
+	$(LINK) $(LINKFLAGS) /OUT:kmfilegen.exe $** Advapi32.lib
+
+klvwalk.exe: libasdcp.lib klvwalk.obj
+	$(LINK) $(LINKFLAGS) /OUT:klvwalk.exe $** Advapi32.lib
+
+asdcp-test.exe: libasdcp.lib asdcp-test.obj
+	$(LINK) $(LINKFLAGS) /OUT:asdcp-test.exe $** Advapi32.lib
