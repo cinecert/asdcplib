@@ -102,7 +102,7 @@ namespace Kumu
   //
   // error: 'void Kumu::compile_time_size_checker() [with bool sizecheck = false]' previously declared here
   //
-  // This is happeining because the equality being tested below is false. The reason for this 
+  // This is happening because the equality being tested below is false. The reason for this 
   // will depend on your OS, but on Linux it is probably because you have not used -D_FILE_OFFSET_BITS=64
   // Adding this magic macro to your CFLAGS will get you going again. If you are on a system that
   // does not support 64-bit files, you can disable this check by using -DKM_SMALL_FILES_OK. You

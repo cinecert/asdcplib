@@ -41,7 +41,7 @@ lib_LTLIBRARIES = libkumu.la libasdcp.la
 # sources for a library
 libkumu_la_SOURCES = KM_error.h KM_fileio.cpp KM_fileio.h KM_log.cpp KM_log.h \
  KM_memio.h KM_mutex.h KM_platform.h KM_prng.cpp KM_prng.h KM_util.cpp \
- KM_util.h KM_xml.cpp KM_xml.h
+ KM_util.h KM_xml.cpp KM_xml.h KM_tai.h KM_tai.cpp
 # linker flags (*not* including libraries to link against) for a library
 libkumu_la_LDFLAGS = -version-info 3:19:0
 # sources for a library that don't get added to a distribution

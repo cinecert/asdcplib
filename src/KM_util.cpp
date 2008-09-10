@@ -34,6 +34,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <KM_memio.h>
 #include <KM_fileio.h>
 #include <KM_log.h>
+#include <KM_tai.h>
 #include <ctype.h>
 #include <list>
 #include <map>
@@ -720,64 +721,80 @@ Kumu::Timestamp::AddHours(i32_t hours)
 
 #include <time.h>
 
-#define TIMESTAMP_TO_TM(ts, t) \
-  (t)->tm_year = (ts).Year - 1900;   /* year - 1900 */ \
-  (t)->tm_mon  = (ts).Month - 1;     /* month of year (0 - 11) */ \
-  (t)->tm_mday = (ts).Day;           /* day of month (1 - 31) */ \
-  (t)->tm_hour = (ts).Hour;          /* hours (0 - 23) */ \
-  (t)->tm_min  = (ts).Minute;        /* minutes (0 - 59) */ \
-  (t)->tm_sec  = (ts).Second;        /* seconds (0 - 60) */
+#define TIMESTAMP_TO_CALTIME(ts, ct)				       \
+  (ct)->date.year  = (ts).Year;    /* year */			       \
+  (ct)->date.month = (ts).Month;   /* month of year (1 - 12) */	       \
+  (ct)->date.day   = (ts).Day;     /* day of month (1 - 31) */	       \
+  (ct)->hour       = (ts).Hour;    /* hours (0 - 23) */		       \
+  (ct)->minute     = (ts).Minute;  /* minutes (0 - 59) */	       \
+  (ct)->second     = (ts).Second;  /* seconds (0 - 60) */	       \
+  (ct)->offset     = 0;
 
-#define TM_TO_TIMESTAMP(t, ts) \
-  (ts).Year   = (t)->tm_year + 1900;    /* year - 1900 */ \
-  (ts).Month  = (t)->tm_mon + 1;     /* month of year (0 - 11) */ \
-  (ts).Day    = (t)->tm_mday;    /* day of month (1 - 31) */ \
-  (ts).Hour   = (t)->tm_hour;    /* hours (0 - 23) */ \
-  (ts).Minute = (t)->tm_min;     /* minutes (0 - 59) */ \
-  (ts).Second = (t)->tm_sec;     /* seconds (0 - 60) */
+#define CALTIME_TO_TIMESTAMP(ct, ts)				       \
+  assert((ct)->offset == 0);					       \
+  (ts).Year   = (ct)->date.year;    /* year */			       \
+  (ts).Month  = (ct)->date.month;   /* month of year (1 - 12) */       \
+  (ts).Day    = (ct)->date.day;     /* day of month (1 - 31) */	       \
+  (ts).Hour   = (ct)->hour;         /* hours (0 - 23) */	       \
+  (ts).Minute = (ct)->minute;       /* minutes (0 - 59) */	       \
+  (ts).Second = (ct)->second;       /* seconds (0 - 60) */
+
 
 //
 Kumu::Timestamp::Timestamp() :
-  Year(0), Month(0),  Day(0), Hour(0), Minute(0), Second(0)
+  Year(0), Month(0), Day(0), Hour(0), Minute(0), Second(0)
 {
-  time_t t_now = time(0);
-  struct tm*  now = gmtime(&t_now);
-  TM_TO_TIMESTAMP(now, *this);
+  Kumu::TAI::tai now;
+  Kumu::TAI::caltime ct;
+  now.now();
+  ct = now;
+  CALTIME_TO_TIMESTAMP(&ct, *this)
 }
 
 //
 bool
 Kumu::Timestamp::operator<(const Timestamp& rhs) const
 {
-  struct tm lhtm, rhtm;
-  TIMESTAMP_TO_TM(*this, &lhtm);
-  TIMESTAMP_TO_TM(rhs, &rhtm);
-  return ( timegm(&lhtm) < timegm(&rhtm) );
+  Kumu::TAI::caltime lh_ct, rh_ct;
+  TIMESTAMP_TO_CALTIME(*this, &lh_ct)
+  TIMESTAMP_TO_CALTIME(rhs, &rh_ct)
+
+  Kumu::TAI::tai lh_tai, rh_tai;
+  lh_tai = lh_ct;
+  rh_tai = rh_ct;
+
+  return ( lh_tai.x < rh_tai.x );
 }
 
 //
 bool
 Kumu::Timestamp::operator>(const Timestamp& rhs) const
 {
-  struct tm lhtm, rhtm;
-  TIMESTAMP_TO_TM(*this, &lhtm);
-  TIMESTAMP_TO_TM(rhs, &rhtm);
-  return ( timegm(&lhtm) > timegm(&rhtm) );
+  Kumu::TAI::caltime lh_ct, rh_ct;
+  TIMESTAMP_TO_CALTIME(*this, &lh_ct)
+  TIMESTAMP_TO_CALTIME(rhs, &rh_ct)
+
+  Kumu::TAI::tai lh_tai, rh_tai;
+  lh_tai = lh_ct;
+  rh_tai = rh_ct;
+
+  return ( lh_tai.x > rh_tai.x );
 }
 
 //
 void
 Kumu::Timestamp::AddDays(i32_t days)
 {
-  struct tm current;
+  Kumu::TAI::caltime ct;
+  Kumu::TAI::tai t;
 
   if ( days != 0 )
     {
-      TIMESTAMP_TO_TM(*this, &current);
-      time_t adj_time = timegm(&current);
-      adj_time += 86400 * days;
-      struct tm*  now = gmtime(&adj_time);
-      TM_TO_TIMESTAMP(now, *this);
+      TIMESTAMP_TO_CALTIME(*this, &ct)
+      t = ct;
+      t.add_days(days);
+      ct = t;
+      CALTIME_TO_TIMESTAMP(&ct, *this)
     }
 }
 
@@ -785,15 +802,16 @@ Kumu::Timestamp::AddDays(i32_t days)
 void
 Kumu::Timestamp::AddHours(i32_t hours)
 {
-  struct tm current;
+  Kumu::TAI::caltime ct;
+  Kumu::TAI::tai t;
 
   if ( hours != 0 )
     {
-      TIMESTAMP_TO_TM(*this, &current);
-      time_t adj_time = timegm(&current);
-      adj_time += 3600 * hours;
-      struct tm*  now = gmtime(&adj_time);
-      TM_TO_TIMESTAMP(now, *this);
+      TIMESTAMP_TO_CALTIME(*this, &ct)
+      t = ct;
+      t.add_hours(hours);
+      ct = t;
+      CALTIME_TO_TIMESTAMP(&ct, *this)
     }
 }
 
@@ -932,7 +950,7 @@ Kumu::Timestamp::DecodeString(const char* datestr)
 	  ui32_t TZ_mm = atoi(datestr + 23);
       
 	  if ( TZ_mm != 0 )
-	    DefaultLogSink().Warn("Ignoring minutes in timezone offset: %u\n", TZ_mm);
+	    Kumu::DefaultLogSink().Warn("Ignoring minutes in timezone offset: %u\n", TZ_mm);
 	  
 	  if ( TZ_hh > 12 )
 	    return false;
@@ -944,8 +962,8 @@ Kumu::Timestamp::DecodeString(const char* datestr)
 
   if ( datestr[char_count] != 0 )
     {
-      DefaultLogSink().Error("Unexpected extra characters in string: %s (%ld)\n",
-			     datestr, char_count);
+      Kumu::DefaultLogSink().Error("Unexpected extra characters in string: %s (%ld)\n",
+				   datestr, char_count);
       return false;
     }
 
@@ -957,11 +975,12 @@ Kumu::Timestamp::DecodeString(const char* datestr)
     return false;
   SYSTIME_TO_TIMESTAMP(&st, *this);
 #else
-  struct tm stm;
-  TIMESTAMP_TO_TM(TmpStamp, &stm);
-  if ( timegm(&stm) == 0 )
-    return false;
-  TM_TO_TIMESTAMP(&stm, *this);
+  Kumu::TAI::tai t;
+  Kumu::TAI::caltime ct;
+  TIMESTAMP_TO_CALTIME(TmpStamp, &ct);
+  t = ct; // back and forth to tai to normalize offset
+  ct = t;
+  CALTIME_TO_TIMESTAMP(&ct, *this)
 #endif
 
   return true;
