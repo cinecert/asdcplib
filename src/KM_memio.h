@@ -34,6 +34,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <KM_platform.h>
 #include <string>
+#include <cstring>
 
 namespace Kumu
 {

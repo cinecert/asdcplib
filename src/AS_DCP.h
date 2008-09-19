@@ -92,6 +92,7 @@ This project depends upon the following libraries:
 #include <math.h>
 #include <iosfwd>
 #include <string>
+#include <cstring>
 #include <list>
 
 //--------------------------------------------------------------------------------
