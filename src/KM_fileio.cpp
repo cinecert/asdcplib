@@ -1061,6 +1061,66 @@ Kumu::WriteStringIntoFile(const char* filename, const std::string& inString)
   return result;
 }
 
+//------------------------------------------------------------------------------------------
+
+
+//
+Kumu::Result_t
+Kumu::ReadFileIntoObject(const std::string& Filename, Kumu::IArchive& Object, ui32_t max_size)
+{
+  ByteString Buffer;
+  ui32_t file_size = FileSize(Filename);
+  Result_t result = Buffer.Capacity(file_size);
+
+  if ( KM_SUCCESS(result) )
+    {
+      ui32_t read_count = 0;
+      FileWriter Reader;
+
+      result = Reader.OpenRead(Filename.c_str());
+
+      if ( KM_SUCCESS(result) )
+	result = Reader.Read(Buffer.Data(), file_size, &read_count);
+    
+      if ( KM_SUCCESS(result) )
+	{
+	  assert(file_size == read_count);
+	  Buffer.Length(read_count);
+	  MemIOReader MemReader(&Buffer);
+	  result = Object.Unarchive(&MemReader) ? RESULT_OK : RESULT_READFAIL;
+	}
+    }
+
+  return result;
+}
+
+//
+Kumu::Result_t
+Kumu::WriteObjectIntoFile(const Kumu::IArchive& Object, const std::string& Filename)
+{
+  ByteString Buffer;
+  Result_t result = Buffer.Capacity(Object.ArchiveLength());
+
+  if ( KM_SUCCESS(result) )
+    {
+      ui32_t write_count = 0;
+      FileWriter Writer;
+      MemIOWriter MemWriter(&Buffer);
+
+      result = Object.Archive(&MemWriter) ? RESULT_OK : RESULT_WRITEFAIL;
+
+      if ( KM_SUCCESS(result) )
+	{
+	  Buffer.Length(MemWriter.Length());
+	  result = Writer.OpenWrite(Filename.c_str());
+	}
+
+      if ( KM_SUCCESS(result) )
+	result = Writer.Write(Buffer.RoData(), Buffer.Length(), &write_count);
+    }
+
+  return result;
+}
 
 //------------------------------------------------------------------------------------------
 //

@@ -206,6 +206,14 @@ namespace Kumu
   // Writes a string to a file, overwrites the existing file if present.
   Result_t WriteStringIntoFile(const char* filename, const std::string& inString);
 
+  // Instant IO for archivable objects
+  //
+  // Unarchives a file into an object
+  Result_t ReadFileIntoObject(const std::string& Filename, IArchive& Object, ui32_t max_size = 8 * Kumu::Megabyte);
+
+  // Archives an object into a file
+  Result_t WriteObjectIntoFile(const IArchive& Object, const std::string& Filename);
+
   //
   class FileReader
     {
