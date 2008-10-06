@@ -133,6 +133,7 @@ namespace ASDCP
 	  virtual ~Partition();
 	  virtual void     AddChildObject(InterchangeObject*);
 	  virtual Result_t InitFromFile(const Kumu::FileReader& Reader);
+	  virtual Result_t InitFromBuffer(const byte_t* p, ui32_t l);
 	  virtual Result_t WriteToFile(Kumu::FileWriter& Writer, UL& PartitionLabel);
 	  virtual ui32_t   ArchiveSize(); // returns the size of the archived structure
 	  virtual void     Dump(FILE* = 0);
@@ -327,6 +328,8 @@ namespace ASDCP
 	  OPAtomHeader();
 	  virtual ~OPAtomHeader();
 	  virtual Result_t InitFromFile(const Kumu::FileReader& Reader);
+	  virtual Result_t InitFromPartitionBuffer(const byte_t* p, ui32_t l);
+	  virtual Result_t InitFromBuffer(const byte_t* p, ui32_t l);
 	  virtual Result_t WriteToFile(Kumu::FileWriter& Writer, ui32_t HeaderLength = 16384);
 	  virtual void     Dump(FILE* = 0);
 	  virtual Result_t GetMDObjectByID(const UUID&, InterchangeObject** = 0);
@@ -353,6 +356,8 @@ namespace ASDCP
 	  OPAtomIndexFooter();
 	  virtual ~OPAtomIndexFooter();
 	  virtual Result_t InitFromFile(const Kumu::FileReader& Reader);
+	  virtual Result_t InitFromPartitionBuffer(const byte_t* p, ui32_t l);
+	  virtual Result_t InitFromBuffer(const byte_t* p, ui32_t l);
 	  virtual Result_t WriteToFile(Kumu::FileWriter& Writer, ui64_t duration);
 	  virtual void     Dump(FILE* = 0);
 

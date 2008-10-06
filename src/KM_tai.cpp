@@ -55,6 +55,7 @@ The libtai source code is in the public domain.
 void
 caldate_frommjd(Kumu::TAI::caldate* cd, i32_t day)
 {
+  assert(cd);
   i32_t year, month, yday;
 
   year = day / 146097L;
@@ -101,6 +102,7 @@ static ui32_t montab[12] =
 i32_t
 caldate_mjd(const Kumu::TAI::caldate* cd)
 {
+  assert(cd);
   i32_t y, m, d;
 
   d = cd->day - 678882L;
@@ -138,6 +140,7 @@ caldate_mjd(const Kumu::TAI::caldate* cd)
 void
 caltime_utc(Kumu::TAI::caltime* ct, const Kumu::TAI::tai* t)
 {
+  assert(ct&&t);
   Kumu::TAI::tai t2 = *t;
   ui64_t u;
   i32_t s;
@@ -163,6 +166,7 @@ caltime_utc(Kumu::TAI::caltime* ct, const Kumu::TAI::tai* t)
 void
 caltime_tai(const Kumu::TAI::caltime* ct, Kumu::TAI::tai* t)
 {
+  assert(ct&&t);
   i32_t day, s;
 
   /* XXX: check for overflow? */

@@ -283,27 +283,33 @@ ASDCP::MXF::Partition::InitFromFile(const Kumu::FileReader& Reader)
   Result_t result = KLVFilePacket::InitFromFile(Reader);
   // test the UL
   // could be one of several values
-
   if ( ASDCP_SUCCESS(result) )
-    {
-      Kumu::MemIOReader MemRDR(m_ValueStart, m_ValueLength);
-      result = RESULT_KLV_CODING;
+    result = ASDCP::MXF::Partition::InitFromBuffer(m_ValueStart, m_ValueLength);
+  
+  return result;
+}
 
-      if ( MemRDR.ReadUi16BE(&MajorVersion) )
-	if ( MemRDR.ReadUi16BE(&MinorVersion) )
-	  if ( MemRDR.ReadUi32BE(&KAGSize) )
-	    if ( MemRDR.ReadUi64BE(&ThisPartition) )
-	      if ( MemRDR.ReadUi64BE(&PreviousPartition) )
-		if ( MemRDR.ReadUi64BE(&FooterPartition) )
-		  if ( MemRDR.ReadUi64BE(&HeaderByteCount) )
-		    if ( MemRDR.ReadUi64BE(&IndexByteCount) )
-		      if ( MemRDR.ReadUi32BE(&IndexSID) )
-			if ( MemRDR.ReadUi64BE(&BodyOffset) )
-			  if ( MemRDR.ReadUi32BE(&BodySID) )
-			    if ( OperationalPattern.Unarchive(&MemRDR) )
-			      if ( EssenceContainers.Unarchive(&MemRDR) )
-				result = RESULT_OK;
-    }
+//
+ASDCP::Result_t
+ASDCP::MXF::Partition::InitFromBuffer(const byte_t* p, ui32_t l)
+{
+  Kumu::MemIOReader MemRDR(p, l);
+  Result_t result = RESULT_KLV_CODING;
+
+  if ( MemRDR.ReadUi16BE(&MajorVersion) )
+    if ( MemRDR.ReadUi16BE(&MinorVersion) )
+      if ( MemRDR.ReadUi32BE(&KAGSize) )
+	if ( MemRDR.ReadUi64BE(&ThisPartition) )
+	  if ( MemRDR.ReadUi64BE(&PreviousPartition) )
+	    if ( MemRDR.ReadUi64BE(&FooterPartition) )
+	      if ( MemRDR.ReadUi64BE(&HeaderByteCount) )
+		if ( MemRDR.ReadUi64BE(&IndexByteCount) )
+		  if ( MemRDR.ReadUi32BE(&IndexSID) )
+		    if ( MemRDR.ReadUi64BE(&BodyOffset) )
+		      if ( MemRDR.ReadUi32BE(&BodySID) )
+			if ( OperationalPattern.Unarchive(&MemRDR) )
+			  if ( EssenceContainers.Unarchive(&MemRDR) )
+			    result = RESULT_OK;
 
   if ( ASDCP_FAILURE(result) )
     DefaultLogSink().Error("Failed to initialize Partition\n");
@@ -731,8 +737,33 @@ ASDCP::MXF::OPAtomHeader::InitFromFile(const Kumu::FileReader& Reader)
 	}
     }
 
-  const byte_t* p = m_Buffer.RoData();
-  const byte_t* end_p = p + m_Buffer.Capacity();
+  result = InitFromBuffer(m_Buffer.RoData(), m_Buffer.Capacity());
+}
+
+//
+ASDCP::Result_t
+ASDCP::MXF::OPAtomHeader::InitFromPartitionBuffer(const byte_t* p, ui32_t l)
+{
+  Result_t result = KLVPacket::InitFromBuffer(p, l);
+
+  if ( ASDCP_SUCCESS(result) )
+    result = Partition::InitFromBuffer(m_ValueStart, m_ValueLength); // test UL and OP
+
+  if ( ASDCP_SUCCESS(result) )
+    {
+      ui32_t pp_len = KLVPacket::PacketLength();
+      result = InitFromBuffer(p + pp_len, l - pp_len);
+    }
+
+  return result;
+}
+
+//
+ASDCP::Result_t
+ASDCP::MXF::OPAtomHeader::InitFromBuffer(const byte_t* p, ui32_t l)
+{
+  Result_t result = RESULT_OK;
+  const byte_t* end_p = p + l;
 
   while ( ASDCP_SUCCESS(result) && p < end_p )
     {
@@ -761,11 +792,8 @@ ASDCP::MXF::OPAtomHeader::InitFromFile(const Kumu::FileReader& Reader)
 	    {
 	      m_PacketList->AddPacket(object);
 
-	      if ( object->IsA(Dict::ul(MDD_Preface)) )
-		{
-		  assert(m_Preface == 0);
-		  m_Preface = (Preface*)object;
-		}
+	      if ( object->IsA(Dict::ul(MDD_Preface)) && m_Preface == 0 )
+		m_Preface = (Preface*)object;
 	    }
 	}
       else
@@ -948,7 +976,7 @@ ASDCP::MXF::OPAtomIndexFooter::OPAtomIndexFooter() :
 
 ASDCP::MXF::OPAtomIndexFooter::~OPAtomIndexFooter() {}
 
-
+//
 ASDCP::Result_t
 ASDCP::MXF::OPAtomIndexFooter::InitFromFile(const Kumu::FileReader& Reader)
 {
@@ -973,8 +1001,36 @@ ASDCP::MXF::OPAtomIndexFooter::InitFromFile(const Kumu::FileReader& Reader)
       return RESULT_FAIL;
     }
 
-  const byte_t* p = m_Buffer.RoData();
-  const byte_t* end_p = p + m_Buffer.Capacity();
+  if ( ASDCP_SUCCESS(result) )
+    result = InitFromBuffer(m_Buffer.RoData(), m_Buffer.Capacity());
+
+  return result;
+}
+
+//
+ASDCP::Result_t
+ASDCP::MXF::OPAtomIndexFooter::InitFromPartitionBuffer(const byte_t* p, ui32_t l)
+{
+  Result_t result = KLVPacket::InitFromBuffer(p, l);
+
+  if ( ASDCP_SUCCESS(result) )
+    result = Partition::InitFromBuffer(m_ValueStart, m_ValueLength); // test UL and OP
+
+  if ( ASDCP_SUCCESS(result) )
+    {
+      ui32_t pp_len = KLVPacket::PacketLength();
+      result = InitFromBuffer(p + pp_len, l - pp_len);
+    }
+
+  return result;
+}
+
+//
+ASDCP::Result_t
+ASDCP::MXF::OPAtomIndexFooter::InitFromBuffer(const byte_t* p, ui32_t l)
+{
+  Result_t result = RESULT_OK;
+  const byte_t* end_p = p + l;
   
   while ( ASDCP_SUCCESS(result) && p < end_p )
     {

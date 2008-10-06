@@ -431,7 +431,7 @@ ASDCP::IntegrityPack::CalcValues(const ASDCP::FrameBuffer& FB, byte_t* AssetID,
   byte_t* p = Data;
   HMAC->Reset();
 
-  static byte_t ber_4[MXF_BER_LENGTH] = {0x83, 0};
+  static byte_t ber_4[MXF_BER_LENGTH] = {0x83, 0, 0, 0};
 
   // update HMAC with essence data
   HMAC->Update(FB.RoData(), FB.Size());
