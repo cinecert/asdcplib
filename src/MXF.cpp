@@ -737,7 +737,10 @@ ASDCP::MXF::OPAtomHeader::InitFromFile(const Kumu::FileReader& Reader)
 	}
     }
 
-  result = InitFromBuffer(m_Buffer.RoData(), m_Buffer.Capacity());
+  if ( ASDCP_SUCCESS(result) )
+    result = InitFromBuffer(m_Buffer.RoData(), m_Buffer.Capacity());
+
+  return result;
 }
 
 //
