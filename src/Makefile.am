@@ -41,9 +41,9 @@ lib_LTLIBRARIES = libkumu.la libasdcp.la
 # sources for a library
 libkumu_la_SOURCES = KM_error.h KM_fileio.cpp KM_fileio.h KM_log.cpp KM_log.h \
  KM_memio.h KM_mutex.h KM_platform.h KM_prng.cpp KM_prng.h KM_util.cpp \
- KM_util.h KM_xml.cpp KM_xml.h KM_tai.h KM_tai.cpp
+ KM_util.h KM_xml.cpp KM_xml.h
 # linker flags (*not* including libraries to link against) for a library
-libkumu_la_LDFLAGS = -version-info 3:19:0
+libkumu_la_LDFLAGS = -release 0.3.20
 # sources for a library that don't get added to a distribution
 nodist_libasdcp_la_SOURCES = Metadata_h.tt2 Metadata_cpp.tt2 \
  mxfgen.pl MXF_def.pl ullist.pl ULList.xml dict.xml DMS_Crypto.xml
@@ -56,7 +56,7 @@ libasdcp_la_SOURCES = MPEG2_Parser.cpp MPEG.cpp JP2K_Codestream_Parser.cpp \
  Wav.h WavFileWriter.h MXF.h Metadata.h \
  JP2K.h AS_DCP.h AS_DCP_internal.h KLV.h MPEG.h MXFTypes.h MDD.h \
  PCMParserList.h S12MTimecode.h MDD.cpp
-libasdcp_la_LDFLAGS = -version-info 3:19:0
+libasdcp_la_LDFLAGS = -release 0.3.20
 # additional libraries to link against for a library
 libasdcp_la_LIBADD = libkumu.la
 libasdcp_la_CPPFLAGS = -DASDCP_PLATFORM=\"@host@\"
