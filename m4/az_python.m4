@@ -243,6 +243,7 @@ AC_DEFUN([AZ_PYTHON_CSPEC],
         az_python_cspec="${az_python_ccshared} ${az_python_includespec}"
         AC_SUBST([PYTHON_CSPEC], [${az_python_cspec}])
         AC_SUBST([PYTHON_CPPFLAGS], [${az_python_includespec}])
+        AC_SUBST([PYTHON_SHORTVERSION], ["${az_python_version}"])
         AC_MSG_RESULT([$PYTHON_CPPFLAGS])
     fi
 ])

@@ -26,7 +26,7 @@
 # THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 AM_CPPFLAGS = -I/var/local/include -I/usr/local/include
-AM_LDFLAGS = -L/var/local/lib -L/usr/local/lib
+AM_LDFLAGS = -L./.libs -L/var/local/lib -L/usr/local/lib
 
 # list of all the header files that should be installed
 include_HEADERS = KM_error.h KM_fileio.h KM_log.h KM_memio.h KM_mutex.h \
@@ -71,7 +71,7 @@ libpyasdcp_la_CPPFLAGS = @PYTHON_CPPFLAGS@
 libpyasdcp_la_LDFLAGS = @PYTHON_LSPEC@
 libpyasdcp_la_LIBADD = libkumu.la libasdcp.la
 pyexecdir = @PYTHON_EXECDIR@
-pyexec_includedir = $(PYTHON_PREFIX)/Headers
+pyexec_includedir = $(PYTHON_PREFIX)/include/python$(PYTHON_SHORTVERSION)
 pyexec_include_HEADERS = kumu_python.h asdcp_python.h
 pyexec_LTLIBRARIES = kumu.la asdcp.la
 nodist_kumu_la_SOURCES = pykumu.cpp kumu_python.h
