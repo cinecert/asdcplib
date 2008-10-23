@@ -47,6 +47,11 @@ AM_INIT_AUTOMAKE([1.9 foreign])
 # Checks for programs.
 AC_CANONICAL_BUILD
 AC_CANONICAL_HOST
+case $host_os in
+       openbsd*) openbsd_host=true ;;
+       *)        openbsd_host=false ;;
+esac
+AM_CONDITIONAL([OPENBSD_HOST], [test x$openbsd_host = xtrue])
 AC_PROG_CC
 AC_PROG_CXX
 AC_PROG_LIBTOOL
