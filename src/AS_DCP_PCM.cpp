@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2004-2008, John Hurst
+Copyright (c) 2004-2009, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -39,6 +39,15 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 static std::string PCM_PACKAGE_LABEL = "File Package: SMPTE 382M frame wrapping of wave audio";
 static std::string SOUND_DEF_LABEL = "Sound Track";
 
+static byte_t SNDFMT_CFG_1_UL[16] = { 0x06, 0x0e, 0x2b, 0x34, 0x04, 0x01, 0x01, 0x0b,
+				      0x04, 0x02, 0x02, 0x10, 0x03, 0x01, 0x01, 0x00 };
+
+static byte_t SNDFMT_CFG_2_UL[16] = { 0x06, 0x0e, 0x2b, 0x34, 0x04, 0x01, 0x01, 0x0b,
+				      0x04, 0x02, 0x02, 0x10, 0x03, 0x01, 0x02, 0x00 };
+
+static byte_t SNDFMT_CFG_3_UL[16] = { 0x06, 0x0e, 0x2b, 0x34, 0x04, 0x01, 0x01, 0x0b,
+				      0x04, 0x02, 0x02, 0x10, 0x03, 0x01, 0x03, 0x00 };
+
 //
 Result_t
 PCM_ADesc_to_MD(PCM::AudioDescriptor& ADesc, MXF::WaveAudioDescriptor* ADescObj)
@@ -53,6 +62,24 @@ PCM_ADesc_to_MD(PCM::AudioDescriptor& ADesc, MXF::WaveAudioDescriptor* ADescObj)
   ADescObj->AvgBps = ADesc.AvgBps;
   ADescObj->LinkedTrackID = ADesc.LinkedTrackID;
   ADescObj->ContainerDuration = ADesc.ContainerDuration;
+
+  ADescObj->ChannelAssignment.Reset();
+
+  switch ( ADesc.ChannelFormat )
+    {
+      case PCM::CF_CFG_1:
+	ADescObj->ChannelAssignment = UL(SNDFMT_CFG_1_UL);
+	break;
+
+      case PCM::CF_CFG_2:
+	ADescObj->ChannelAssignment = UL(SNDFMT_CFG_2_UL);
+	break;
+
+      case PCM::CF_CFG_3:
+	ADescObj->ChannelAssignment = UL(SNDFMT_CFG_3_UL);
+	break;
+    }
+
   return RESULT_OK;
 }
 
@@ -71,6 +98,21 @@ MD_to_PCM_ADesc(MXF::WaveAudioDescriptor* ADescObj, PCM::AudioDescriptor& ADesc)
   ADesc.LinkedTrackID = ADescObj->LinkedTrackID;
   assert(ADescObj->ContainerDuration <= 0xFFFFFFFFL);
   ADesc.ContainerDuration = (ui32_t) ADescObj->ContainerDuration;
+
+  ADesc.ChannelFormat = PCM::CF_NONE;
+
+  if ( ADescObj->ChannelAssignment.HasValue() )
+    {
+      if ( ADescObj->ChannelAssignment == UL(SNDFMT_CFG_1_UL) )
+	ADesc.ChannelFormat = PCM::CF_CFG_1;
+
+      else if ( ADescObj->ChannelAssignment == UL(SNDFMT_CFG_2_UL) )
+	ADesc.ChannelFormat = PCM::CF_CFG_2;
+
+      else if ( ADescObj->ChannelAssignment == UL(SNDFMT_CFG_3_UL) )
+	ADesc.ChannelFormat = PCM::CF_CFG_3;
+    }
+
   return RESULT_OK;
 }
 

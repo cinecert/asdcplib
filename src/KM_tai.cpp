@@ -193,6 +193,7 @@ const Kumu::TAI::tai&
 Kumu::TAI::tai::operator=(const Kumu::TAI::caltime& rhs)
 {
   caltime_tai(&rhs, this);
+  return *this;
 }
 
 //
@@ -200,6 +201,7 @@ const Kumu::TAI::caltime&
 Kumu::TAI::caltime::operator=(const Kumu::TAI::tai& rhs)
 {
   caltime_utc(this, &rhs);
+  return *this;
 }
 
 

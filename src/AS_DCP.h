@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2003-2008, John Hurst
+Copyright (c) 2003-2009, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -749,9 +749,22 @@ namespace ASDCP {
 	};
     } // namespace MPEG2
 
+  //---------------------------------------------------------------------------------
   //
   namespace PCM
     {
+      // The channel format will normally be CF_NONE. Unless you have read and understand
+      // SMPTE 429-2-2009 Annex A you should leave it as-is. If you want to label your channel
+      // format and it is one of the fomats given in 429-2, select the appropriate value
+      // from this enum and use it in the ChannelFormat element of the AudioDescriptor struct.
+      //
+      enum ChannelFormat_t {
+	CF_NONE,
+	CF_CFG_1, // 5.1 with optional HI/VI
+	CF_CFG_2, // 6.1 (5.1 + center surround) with optional HI/VI
+	CF_CFG_3, // 7.1 with optional HI/VI
+      };
+
       struct AudioDescriptor
 	{
 	  Rational SampleRate;         // rate of frame wrapping
@@ -763,6 +776,7 @@ namespace ASDCP {
 	  ui32_t   AvgBps;             // 
 	  ui32_t   LinkedTrackID;      // 
 	  ui32_t   ContainerDuration;  // number of frames
+	  ChannelFormat_t ChannelFormat; // audio channel arrangement
       };
 
       // Print AudioDescriptor to std::ostream
@@ -901,6 +915,7 @@ namespace ASDCP {
 	};
     } // namespace PCM
 
+  //---------------------------------------------------------------------------------
   //
   namespace JP2K
     {
@@ -1229,6 +1244,7 @@ namespace ASDCP {
 	};
     } // namespace JP2K
 
+  //---------------------------------------------------------------------------------
   //
   namespace TimedText
     {

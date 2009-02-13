@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2003-2008, John Hurst
+Copyright (c) 2003-2009, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -116,8 +116,8 @@ usage(FILE* stream = stdout)
 {
   fprintf(stream, "\
 USAGE: %s -c <output-file> [-3] [-b <buffer-size>] [-d <duration>] [-e|-E]\n\
-       [-f <start-frame>] [-j <key-id-string>] [-k <key-string>] [-L] [-M]\n\
-       [-p <frame-rate>] [-R] [-s <num>] [-v] [-W]\n\
+       [-f <start-frame>] [-j <key-id-string>] [-k <key-string>] [-l <label>]\n\
+       [-L] [-M] [-p <frame-rate>] [-R] [-s <num>] [-v] [-W]\n\
        <input-file> [<input-file-2> ...]\n\
 \n\
        %s [-h|-help] [-V]\n\
@@ -170,6 +170,9 @@ Read/Write Options:\n\
                       Defaults to 4,194,304 (4MB)\n\
   -d <duration>     - Number of frames to process, default all\n\
   -f <start-frame>  - Starting frame number, default 0\n\
+  -l <label>        - Use given channel format label when writing MXF sound\n\
+                      files. SMPTE 429-2 labels: '5.1', '6.1', '7.1'. Default\n\
+                      is no label (valid for Interop only).\n\
   -L                - Write SMPTE UL values instead of MXF Interop\n\
   -p <rate>         - fps of picture when wrapping PCM or JP2K:\n\
                       Use one of [23|24|48], 24 is default\n\
@@ -215,6 +218,23 @@ enum MajorMode_t
   MMT_UL_LIST,
 };
 
+//
+PCM::ChannelFormat_t
+decode_channel_fmt(const std::string& label_name)
+{
+  if ( label_name == "5.1" )
+    return PCM::CF_CFG_1;
+
+  else if ( label_name == "6.1" )
+    return PCM::CF_CFG_2;
+  
+  else if ( label_name == "7.1" )
+    return PCM::CF_CFG_3;
+
+  fprintf(stderr, "Error decoding channel format string: %s\n", label_name.c_str());
+  fprintf(stderr, "Expecting '5.1', '6.1', or '7.1'\n");
+  return PCM::CF_NONE;
+}
 
 //
 //
@@ -254,6 +274,7 @@ public:
   byte_t key_value[KeyLen];  // value of given encryption key (when key_flag is true)
   byte_t key_id_value[UUIDlen];// value of given key ID (when key_id_flag is true)
   const char* filenames[MAX_IN_FILES]; // list of filenames to be processed
+  PCM::ChannelFormat_t channel_fmt; // audio channel arrangement
 
   //
   Rational PictureRate()
@@ -279,7 +300,8 @@ public:
     no_write_flag(false), version_flag(false), help_flag(false), stereo_image_flag(false),
     number_width(6), start_frame(0),
     duration(0xffffffff), duration_flag(false), do_repeat(false), use_smpte_labels(false),
-    picture_rate(24), fb_size(FRAME_BUFFER_SIZE), file_count(0), file_root(0), out_file(0)
+    picture_rate(24), fb_size(FRAME_BUFFER_SIZE), file_count(0), file_root(0), out_file(0),
+    channel_fmt(PCM::CF_NONE)
   {
     memset(key_value, 0, KeyLen);
     memset(key_id_value, 0, UUIDlen);
@@ -366,6 +388,10 @@ public:
 		}
 		break;
 
+	      case 'l':
+		TEST_EXTRA_ARG(i, 'l');
+		channel_fmt = decode_channel_fmt(argv[i]);
+		break;
 
 	      case 'L': use_smpte_labels = true; break;
 	      case 'M': write_hmac = false; break;
@@ -1158,6 +1184,12 @@ write_PCM_file(CommandOptions& Options)
 
       ADesc.SampleRate = PictureRate;
       FrameBuffer.Capacity(PCM::CalcFrameBufferSize(ADesc));
+      ADesc.ChannelFormat = Options.channel_fmt;
+
+      if ( Options.use_smpte_labels && ADesc.ChannelFormat == PCM::CF_NONE)
+	{
+	  fprintf(stderr, "ATTENTION! Writing SMPTE audio without ChannelAssignment property (see option -l)\n");
+	}
 
       if ( Options.verbose_flag )
 	{

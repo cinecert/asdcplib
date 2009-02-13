@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2005-2007, John Hurst
+Copyright (c) 2005-2009, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -363,6 +363,7 @@ namespace ASDCP
           ui16_t BlockAlign;
           ui8_t SequenceOffset;
           ui32_t AvgBps;
+          UL ChannelAssignment;
 
 	  WaveAudioDescriptor() : BlockAlign(0), SequenceOffset(0), AvgBps(0) {}
 	  virtual ~WaveAudioDescriptor() {}

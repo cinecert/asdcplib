@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2005-2006, John Hurst
+Copyright (c) 2005-2009, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -65,6 +65,7 @@ ASDCP::Wav::SimpleWaveHeader::FillADesc(ASDCP::PCM::AudioDescriptor& ADesc, ASDC
   ADesc.QuantizationBits = bitspersample;
   ui32_t FrameBufferSize = ASDCP::PCM::CalcFrameBufferSize(ADesc);
   ADesc.ContainerDuration = data_len / FrameBufferSize;
+  ADesc.ChannelFormat = PCM::CF_NONE;
 }
 
 
@@ -268,6 +269,7 @@ ASDCP::AIFF::SimpleAIFFHeader::FillADesc(ASDCP::PCM::AudioDescriptor& ADesc, ASD
   ADesc.AvgBps = (ui32_t) (ADesc.BlockAlign * ADesc.AudioSamplingRate.Quotient());
   ui32_t FrameBufferSize = ASDCP::PCM::CalcFrameBufferSize(ADesc);
   ADesc.ContainerDuration = data_len / FrameBufferSize;
+  ADesc.ChannelFormat = PCM::CF_NONE;
 }
 
 //

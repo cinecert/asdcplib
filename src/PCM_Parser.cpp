@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2004-2006, John Hurst
+Copyright (c) 2004-2009, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -110,6 +110,7 @@ ASDCP::PCM::WAVParser::h__WAVParser::OpenRead(const char* filename, const Ration
 	  m_FrameBufferSize = ASDCP::PCM::CalcFrameBufferSize(m_ADesc);
 	  m_DataLength = WavHeader.data_len;
 	  m_ADesc.ContainerDuration = m_DataLength / m_FrameBufferSize;
+	  m_ADesc.ChannelFormat = PCM::CF_NONE;
 	  Reset();
 	}
       else
@@ -125,6 +126,7 @@ ASDCP::PCM::WAVParser::h__WAVParser::OpenRead(const char* filename, const Ration
 	      m_FrameBufferSize = ASDCP::PCM::CalcFrameBufferSize(m_ADesc);
 	      m_DataLength = AIFFHeader.data_len;
 	      m_ADesc.ContainerDuration = m_DataLength / m_FrameBufferSize;
+	      m_ADesc.ChannelFormat = PCM::CF_NONE;
 	      Reset();
 	    }
 	}

@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2005-2007, John Hurst
+Copyright (c) 2005-2009, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -977,6 +977,7 @@ WaveAudioDescriptor::InitFromTLVSet(TLVReader& TLVSet)
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadUi16(OBJ_READ_ARGS(WaveAudioDescriptor, BlockAlign));
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadUi8(OBJ_READ_ARGS(WaveAudioDescriptor, SequenceOffset));
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadUi32(OBJ_READ_ARGS(WaveAudioDescriptor, AvgBps));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(WaveAudioDescriptor, ChannelAssignment));
   return result;
 }
 
@@ -988,6 +989,7 @@ WaveAudioDescriptor::WriteToTLVSet(TLVWriter& TLVSet)
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi16(OBJ_WRITE_ARGS(WaveAudioDescriptor, BlockAlign));
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi8(OBJ_WRITE_ARGS(WaveAudioDescriptor, SequenceOffset));
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi32(OBJ_WRITE_ARGS(WaveAudioDescriptor, AvgBps));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(WaveAudioDescriptor, ChannelAssignment));
   return result;
 }
 
@@ -1005,6 +1007,7 @@ WaveAudioDescriptor::Dump(FILE* stream)
   fprintf(stream, "  %22s = %d\n",  "BlockAlign", BlockAlign);
   fprintf(stream, "  %22s = %d\n",  "SequenceOffset", SequenceOffset);
   fprintf(stream, "  %22s = %d\n",  "AvgBps", AvgBps);
+  fprintf(stream, "  %22s = %s\n",  "ChannelAssignment", ChannelAssignment.EncodeString(identbuf, IdentBufferLen));
 }
 
 //

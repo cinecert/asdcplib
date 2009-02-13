@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2005-2006, John Hurst
+Copyright (c) 2005-2009, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -40,6 +40,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <map>
 #include <string>
 
+#define CONFIG_RANDOM_UUID
+
 const char*
 Kumu::Version()
 {
@@ -75,8 +77,7 @@ Kumu::Result_t::Find(int v)
 	return *s_ResultMap[i].result;
     }
 
-  DefaultLogSink().Error("Unknown result code: %ld\n", v);
-  return RESULT_FAIL;
+  return RESULT_UNKNOWN;
 }
 
 //
@@ -373,6 +374,38 @@ Kumu::hex2bin(const char* str, byte_t* buf, ui32_t buf_len, ui32_t* conv_size)
   return 0;
 }
 
+#ifdef CONFIG_RANDOM_UUID
+
+// convert a memory region to a NULL-terminated hexadecimal string
+//
+static const char*
+bin2hex_rand(const byte_t* bin_buf, ui32_t bin_len, char* str_buf, ui32_t str_len)
+{
+  if ( bin_buf == 0
+       || str_buf == 0
+       || ((bin_len * 2) + 1) > str_len )
+    return 0;
+
+  char* p = str_buf;
+  Kumu::mem_ptr<byte_t> rand_buf = new byte_t[bin_len];
+  Kumu::FortunaRNG RNG;
+  RNG.FillRandom(rand_buf, bin_len);
+
+  for ( ui32_t i = 0; i < bin_len; i++ )
+    {
+      *p = (bin_buf[i] >> 4) & 0x0f;
+      *p += *p < 10 ? 0x30 : (( ((rand_buf[i] & 0x01) == 0) ? 0x61 : 0x41 ) - 10);
+      p++;
+
+      *p = bin_buf[i] & 0x0f;
+      *p += *p < 10 ? 0x30 : (( (((rand_buf[i] >> 1) & 0x01) == 0) ? 0x61 : 0x41 ) - 10);
+      p++;
+    }
+
+  *p = '\0';
+  return str_buf;
+}
+#endif
 
 // convert a memory region to a NULL-terminated hexadecimal string
 //
@@ -383,6 +416,12 @@ Kumu::bin2hex(const byte_t* bin_buf, ui32_t bin_len, char* str_buf, ui32_t str_l
        || str_buf == 0
        || ((bin_len * 2) + 1) > str_len )
     return 0;
+
+#ifdef CONFIG_RANDOM_UUID
+  const char* use_random_uuid  = getenv("KM_USE_RANDOM_UUID");
+  if ( use_random_uuid != 0 && use_random_uuid[0] != 0 && use_random_uuid[0] != '0' )
+    return bin2hex_rand(bin_buf, bin_len, str_buf, str_len);
+#endif
 
   char* p = str_buf;
 

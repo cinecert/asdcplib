@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2004-2008, John Hurst
+Copyright (c) 2004-2009, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -87,6 +87,7 @@ namespace Kumu
   const Result_t RESULT_ENDOFFILE  (-17,  "Attempt to read past end of file.");
   const Result_t RESULT_FILEEXISTS (-18,  "Filename already exists.");
   const Result_t RESULT_NOTAFILE   (-19,  "Filename not found.");
+  const Result_t RESULT_UNKNOWN    (-20,  "Unknown result code.");
 } // namespace Kumu
 
 //--------------------------------------------------------------------------------

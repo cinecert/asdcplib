@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2006, John Hurst
+Copyright (c) 2006-2009, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -305,6 +305,7 @@ namespace ASDCP {
 	MDD_DMSegment_Duration, // 267
 	MDD_DMSegment_TrackIDList, // 268
 	MDD_StereoscopicPictureSubDescriptor, // 269
+        MDD_WaveAudioDescriptor_ChannelAssignment,  // 270
 	MDD_Max,
     }; // enum MDD_t
 } // namespaceASDCP
