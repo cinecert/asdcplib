@@ -37,11 +37,12 @@ may not be limited to:
  o MXF Interop Track File Specification
  o MXF Interop Track File Essence Encryption Specification
  o MXF Interop Operational Constraints Specification
+ o SMPTE 429-2-2009 DCP Operational Constraints
  o SMPTE 429-3-2006 Track File Specification
  o SMPTE 429-4-2006 JPEG 2000 for D-Cinema
- o SMPTE 429-5-200X Timed Text Track File
+ o SMPTE 429-5-2009 Timed Text Track File
  o SMPTE 429-6-2006 Essence Encryption Specification
- o SMPTE 429-10-200X Stereoscopic Image Track File
+ o SMPTE 429-10-2008 Stereoscopic Image Track File
  o SMPTE 330M - UMID
  o SMPTE 336M - KLV
  o SMPTE 377M - MXF
@@ -79,8 +80,9 @@ The following use cases are supported by the library:
 
 This project depends upon the following libraries:
  - OpenSSL http://www.openssl.org/
- - Expat http://expat.sourceforge.net/ (optional)
-
+ - Expat http://expat.sourceforge.net/  or
+     Xerces-C http://xerces.apache.org/xerces-c/
+   An XML library is not needed if you don't need support for SMPTE 429-5-2009.
 */
 
 #ifndef _AS_DCP_H_
@@ -753,10 +755,14 @@ namespace ASDCP {
   //
   namespace PCM
     {
-      // The channel format will normally be CF_NONE. Unless you have read and understand
-      // SMPTE 429-2-2009 Annex A you should leave it as-is. If you want to label your channel
-      // format and it is one of the fomats given in 429-2, select the appropriate value
-      // from this enum and use it in the ChannelFormat element of the AudioDescriptor struct.
+      // The default value of the ChannelFormat element of the AudioDescriptor struct
+      // is CF_NONE. If the value is set to one of the other ChannelFormat_t enum
+      // values, the file's Wave Audio Descriptor will contain a Channel Assignment
+      // element.
+      //
+      // The channel format should be one of (CF_CFG_1, CF_CFG_2, or CF_CFG_3) for
+      // SMPTE 429-2 files. It should normally be CF_NONE for JPEG Interop files, but
+      // the 429-2 may also be used.
       //
       enum ChannelFormat_t {
 	CF_NONE,
