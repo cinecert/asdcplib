@@ -1193,7 +1193,8 @@ write_PCM_file(CommandOptions& Options)
 
       if ( Options.verbose_flag )
 	{
-	  fprintf(stderr, "48Khz PCM Audio, %s fps (%u spf)\n",
+	  fprintf(stderr, "%.1fkHz PCM Audio, %s fps (%u spf)\n",
+		  ADesc.AudioSamplingRate.Quotient() / 1000.0,
 		  Options.szPictureRate(),
 		  PCM::CalcSamplesPerFrame(ADesc));
 	  fputs("AudioDescriptor:\n", stderr);
@@ -1703,7 +1704,7 @@ show_file_info(CommandOptions& Options)
   if ( EssenceType == ESS_MPEG2_VES )
     result = FileInfoWrapper<ASDCP::MPEG2::MXFReader, MyVideoDescriptor>::file_info(Options, "MPEG2 video");
 
-  else if ( EssenceType == ESS_PCM_24b_48k )
+  else if ( EssenceType == ESS_PCM_24b_48k || EssenceType == ESS_PCM_24b_96k )
     result = FileInfoWrapper<ASDCP::PCM::MXFReader, MyAudioDescriptor>::file_info(Options, "PCM audio");
 
   else if ( EssenceType == ESS_JPEG_2000 )
@@ -1887,6 +1888,7 @@ main(int argc, const char** argv)
 	      break;
 
 	    case ESS_PCM_24b_48k:
+	    case ESS_PCM_24b_96k:
 	      result = read_PCM_file(Options);
 	      break;
 
@@ -1929,6 +1931,7 @@ main(int argc, const char** argv)
 	      break;
 
 	    case ESS_PCM_24b_48k:
+	    case ESS_PCM_24b_96k:
 	      result = write_PCM_file(Options);
 	      break;
 
