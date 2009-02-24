@@ -306,7 +306,8 @@ namespace ASDCP {
 	MDD_DMSegment_TrackIDList, // 268
 	MDD_StereoscopicPictureSubDescriptor, // 269
         MDD_WaveAudioDescriptor_ChannelAssignment,  // 270
-	MDD_Max,
+	MDD_GenericStream_DataElement, // 271
+	MDD_Max
     }; // enum MDD_t
 } // namespaceASDCP
 

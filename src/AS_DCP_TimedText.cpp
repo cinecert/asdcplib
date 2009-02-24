@@ -92,7 +92,7 @@ ASDCP::TimedText::DescriptorDump(ASDCP::TimedText::TimedTextDescriptor const& TD
   fprintf(stream, "ContainerDuration: %u\n",    TDesc.ContainerDuration);
   fprintf(stream, "          AssetID: %s\n",    TmpID.EncodeHex(buf, 64));
   fprintf(stream, "    NamespaceName: %s\n",    TDesc.NamespaceName.c_str());
-  fprintf(stream, "    ResourceCount: %du\n",   TDesc.ResourceList.size());
+  fprintf(stream, "    ResourceCount: %d\n",   TDesc.ResourceList.size());
 
   TimedText::ResourceList_t::const_iterator ri;
   for ( ri = TDesc.ResourceList.begin() ; ri != TDesc.ResourceList.end(); ri++ )
@@ -318,7 +318,7 @@ ASDCP::TimedText::MXFReader::h__Reader::ReadAncillaryResource(const byte_t* uuid
 
 	      // read the essence packet
 	      if( ASDCP_SUCCESS(result) )
-		result = ReadEKLVPacket(0, 1, FrameBuf, Dict::ul(MDD_TimedTextEssence), Ctx, HMAC);
+		result = ReadEKLVPacket(0, 1, FrameBuf, Dict::ul(MDD_GenericStream_DataElement), Ctx, HMAC);
 	    }
 	}
     }
@@ -584,6 +584,7 @@ ASDCP::TimedText::MXFWriter::h__Writer::WriteAncillaryResource(const ASDCP::Time
   Kumu::fpos_t here = m_File.Tell();
 
   // create generic stream partition header
+  static UL GenericStream_DataElement(Dict::ul(MDD_GenericStream_DataElement));
   MXF::Partition GSPart;
 
   GSPart.ThisPartition = here;
@@ -597,9 +598,9 @@ ASDCP::TimedText::MXFWriter::h__Writer::WriteAncillaryResource(const ASDCP::Time
   Result_t result = GSPart.WriteToFile(m_File, TmpUL);
 
   if ( ASDCP_SUCCESS(result) )
-    result = WriteEKLVPacket(FrameBuf, m_EssenceUL, Ctx, HMAC);
+    result = WriteEKLVPacket(FrameBuf, GenericStream_DataElement.Value(), Ctx, HMAC);
 
- m_FramesWritten++;
+  m_FramesWritten++;
   return result;
 }
 
