@@ -74,7 +74,7 @@ libpyasdcp_la_LDFLAGS = @PYTHON_LSPEC@
 libpyasdcp_la_LIBADD = libkumu.la libasdcp.la
 pyexecdir = @PYTHON_EXECDIR@
 pyexec_includedir = $(PYTHON_PREFIX)/include/python$(PYTHON_SHORTVERSION)
-pyexec_include_HEADERS = kumu_python.h asdcp_python.h
+nodist_pyexec_include_HEADERS = kumu_python.h asdcp_python.h
 pyexec_LTLIBRARIES = kumu.la asdcp.la
 nodist_kumu_la_SOURCES = pykumu.cpp kumu_python.h
 kumu_la_CPPFLAGS = @PYTHON_CPPFLAGS@
@@ -141,7 +141,7 @@ TESTS_ENVIRONMENT = BUILD_DIR="." TEST_FILES=../tests TEST_FILE_PREFIX=DCPd1-M1 
 EXTRA_DIST = fips-186-test-harness.pl $(TESTS)
 if PYTHON_USE
 if !FREEDIST
-EXTRA_DIST += $(nodist_libpyasdcp_la_SOURCES) $(nodist_kumu_la_SOURCES) $(nodist_asdcp_la_SOURCES)
+EXTRA_DIST += $(nodist_pyexec_include_HEADERS) $(nodist_libpyasdcp_la_SOURCES) $(nodist_kumu_la_SOURCES) $(nodist_asdcp_la_SOURCES)
 endif
 endif
 
