@@ -49,9 +49,9 @@ ${BUILD_DIR}/asdcp-test${EXEEXT} -m -k ${CRYPT_KEY} \
 if [ $? -ne 0 ]; then
     exit 1
 fi
-for file in `ls ../test/${TEST_FILE_PREFIX}`; do \
+for file in `ls ${TEST_FILES}/${TEST_FILE_PREFIX}`; do \
   echo "$file"; \
-  cmp ../test/${TEST_FILE_PREFIX}/$file ../test/plaintext/$file; \
+  cmp ${TEST_FILES}/${TEST_FILE_PREFIX}/$file ${TEST_FILES}/plaintext/$file; \
   if [ $? -ne 0 ]; then \
     exit 1; \
   fi; \
