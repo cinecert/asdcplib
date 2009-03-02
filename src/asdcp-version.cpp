@@ -36,7 +36,7 @@ using namespace ASDCP;
 int
 main()
 {
-  printf("%u.%u.%u", VERSION_MAJOR, VERSION_APIMINOR, VERSION_IMPMINOR);
+  printf("%s", VERSION);
   return 0;
 }
 
