@@ -64,7 +64,8 @@ GNU make is required to build asdcplib. The makefile will work
 on win32 systems that have Cygwin and MSVC. Other win32 gmake
 packages may or may not work depending upon the availability
 of standard POSIX shell commands. You will need gcc to rebuild
-the dep.make file.
+the dep.make file. Alternatively, a native MSVC build file
+and instructions can be found in the win32 subdirectory.
 
 OpenSSL is also required. See http://www.openssl.org/
 
