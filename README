@@ -60,32 +60,24 @@ is simple AS-DCP support.
 
 Build Instructions
 
-GNU make is required to build asdcplib. The makefile will work
-on win32 systems that have Cygwin and MSVC. Other win32 gmake
-packages may or may not work depending upon the availability
-of standard POSIX shell commands. You will need gcc to rebuild
-the dep.make file. Alternatively, a native MSVC build file
-and instructions can be found in the win32 subdirectory.
+On more-or-less POSIX systems (OS X, Linux, and BSD), GNU make is
+required to build asdcplib. The same configure script will also
+build this package on Windows machines with Cygwin and
+MinGW installed. For those Windows users who would prefer to build
+this natively, an "nmake" build file and instructions can be found
+in the win32 subdirectory.
 
 OpenSSL is also required. See http://www.openssl.org/
 
-If you are building on win32 or a unix with no OpenSSL library
-support, you will have to also obtain and build OpenSSL.  Unpack
-it into the same parent directory as asdcplib/, and rename (or make
-a symlink to) the directory as 'openssl':
+Optional support for writing Timed Text Track Files is supported by
+either Xerces-C or Expat. See http://xerces.apache.org/xerces-c/ or
+http://expat.sourceforge.net/ for source and build instructions.
 
-myhost$ ls -l
-total 1761
-drwxr-xr-x    1 jhurst   None         0 Feb  3 16:37 asdcplib
-drwxr-xr-x   56 jhurst   None         0 Feb  2 16:35 openssl
+To configure and build, type './configure' followed by 'make'. There
+are several test targets on the POSIX side, but you need to assemble
+a set of test files to use them.
 
-Expat is optionally required for writing Timed Text Track Files. See
-http://expat.sourceforge.net/
-
-To build, type 'make'. There are several test targets but you
-need to assemble a set of test files to use them.
-
-I have tested this build on win32, Linux, OpenBSD and Darwin
+I have tested this build on win32, Linux, OpenBSD, and Darwin
 platforms. Others may work as well.
 
 
