@@ -105,7 +105,7 @@ int d()
 {
   //  MPEG2::Parser     mPFile;
   MPEG2::MXFReader  mRFile;
-  Result_t result = mRFile.OpenRead("../test/write_test_mpeg.mxf");
+  Result_t result = mRFile.OpenRead("../tests/write_test_mpeg.mxf");
   assert(ASDCP_SUCCESS(result));
 
   //  MPEG2::MXFWriter  mWFile;
