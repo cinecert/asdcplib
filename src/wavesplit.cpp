@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2005-2006, John Hurst
+Copyright (c) 2005-2009, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -69,7 +69,7 @@ banner(FILE* stream = stderr)
 {
   fprintf(stream, "\n\
 %s (asdcplib %s)\n\n\
-Copyright (c) 2005-2006 John Hurst\n\n\
+Copyright (c) 2005-2009 John Hurst\n\n\
 wavesplit is part of asdcplib.\n\
 asdcplib may be copied only under the terms of the license found at\n\
 the top of every file in the asdcplib distribution kit.\n\n\

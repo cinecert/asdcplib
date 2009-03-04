@@ -103,7 +103,7 @@ banner(FILE* stream = stdout)
 {
   fprintf(stream, "\n\
 %s (asdcplib %s)\n\n\
-Copyright (c) 2003-2008 John Hurst\n\n\
+Copyright (c) 2003-2009 John Hurst\n\n\
 asdcplib may be copied only under the terms of the license found at\n\
 the top of every file in the asdcplib distribution kit.\n\n\
 Specify the -h (help) option for further information about %s\n\n",
