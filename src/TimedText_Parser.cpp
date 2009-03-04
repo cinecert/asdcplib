@@ -268,8 +268,14 @@ ASDCP::TimedText::DCSubtitleParser::h__SubtitleParser::OpenRead(const char* file
     }
 
   // assumes 24/1 or 48/1 as constrained above
+  assert(m_TDesc.EditRate.Denominator == 1);
 
-  S12MTimecode beginTC(m_Root.GetChildWithName("StartTime")->GetBody(), m_TDesc.EditRate.Numerator);
+  S12MTimecode beginTC;
+  beginTC.SetFPS(m_TDesc.EditRate.Numerator);
+  XMLElement* StartTime = m_Root.GetChildWithName("StartTime");
+
+  if ( StartTime != 0 )
+    beginTC.DecodeString(StartTime->GetBody());
 
   for ( ei = InstanceList.begin(); ei != InstanceList.end(); ei++ )
     {
