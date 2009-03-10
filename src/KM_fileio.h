@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2004-2007, John Hurst
+Copyright (c) 2004-2009, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -82,8 +82,8 @@ namespace Kumu
 #else
   typedef off_t    fsize_t;
   typedef off_t    fpos_t;
-  typedef int      HANDLE;
-  const HANDLE INVALID_HANDLE_VALUE = -1L;
+  typedef int      FileHandle;
+  const FileHandle INVALID_HANDLE_VALUE = -1L;
 
   enum SeekPos_t {
     SP_BEGIN = SEEK_SET,
@@ -221,7 +221,7 @@ namespace Kumu
 
     protected:
       std::string m_Filename;
-      HANDLE      m_Handle;
+      FileHandle  m_Handle;
 
     public:
       FileReader() : m_Handle(INVALID_HANDLE_VALUE) {}

@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2004-2007, John Hurst
+Copyright (c) 2004-2009, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -113,7 +113,7 @@ do_stat(const char* path, fstat_t* stat_info)
 
 //
 static Kumu::Result_t
-do_fstat(HANDLE handle, fstat_t* stat_info)
+do_fstat(FileHandle handle, fstat_t* stat_info)
 {
   KM_TEST_NULL_L(stat_info);
 
@@ -676,7 +676,7 @@ Kumu::FileReader::Tell(Kumu::fpos_t* pos) const
 {
   KM_TEST_NULL_L(pos);
 
-  if ( m_Handle == (HANDLE)-1L )
+  if ( m_Handle == INVALID_HANDLE_VALUE )
     return Kumu::RESULT_FILEOPEN;
 
   LARGE_INTEGER in;
