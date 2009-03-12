@@ -40,8 +40,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <map>
 #include <string>
 
-#define CONFIG_RANDOM_UUID
-
 const char*
 Kumu::Version()
 {

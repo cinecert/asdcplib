@@ -25,9 +25,17 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 # THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+# Allow for configure's changes to this makefile
+AM_CPPFLAGS =
+AM_LDFLAGS =
+
 if OPENBSD_HOST
-AM_CPPFLAGS = -I/var/local/include -I/usr/local/include
-AM_LDFLAGS = -L./.libs -L/var/local/lib -L/usr/local/lib
+AM_CPPFLAGS += -I/var/local/include -I/usr/local/include
+AM_LDFLAGS += -L./.libs -L/var/local/lib -L/usr/local/lib
+endif
+
+if ENABLE_RANDOM_UUID
+AM_CPPFLAGS += -DCONFIG_RANDOM_UUID
 endif
 
 # list of all the header files that should be installed
