@@ -80,8 +80,9 @@ namespace Kumu
     };
 
     //
-    struct caltime
+    class caltime
     {
+    public:
       caldate date;
       i32_t hour;
       i32_t minute;

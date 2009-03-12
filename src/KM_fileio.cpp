@@ -1069,7 +1069,7 @@ Kumu::Result_t
 Kumu::ReadFileIntoObject(const std::string& Filename, Kumu::IArchive& Object, ui32_t max_size)
 {
   ByteString Buffer;
-  ui32_t file_size = FileSize(Filename);
+  ui32_t file_size = static_cast<ui32_t>(FileSize(Filename));
   Result_t result = Buffer.Capacity(file_size);
 
   if ( KM_SUCCESS(result) )

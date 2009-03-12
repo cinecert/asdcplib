@@ -73,6 +73,7 @@ namespace Kumu
 #ifdef KM_WIN32
   typedef __int64  fsize_t;
   typedef __int64  fpos_t;
+  typedef HANDLE FileHandle;
 
   enum SeekPos_t {
     SP_BEGIN = FILE_BEGIN,
