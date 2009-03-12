@@ -1,5 +1,5 @@
 # $Id$
-# Copyright (c) 2007-2008 John Hurst. All rights reserved.
+# Copyright (c) 2007-2009 John Hurst. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -31,10 +31,15 @@ OBJDIR = .
 !error "OpenSSL is needed! Specify it with WITH_OPENSSL=<OpenSSL directory>"
 !endif
 
+!ifdef ENABLE_RANDOM_UUID
+CXXFLAGS1 = /nologo /W3 /GR /EHsc /DWIN32 /DKM_WIN32 /D_CONSOLE /I. /I$(SRCDIR) /DASDCP_PLATFORM=\"win32\" \
+	/D_CRT_SECURE_NO_WARNINGS /D_CRT_NONSTDC_NO_WARNINGS /DPACKAGE_VERSION=\"1.4.21\" \
+	/I"$(WITH_OPENSSL)"\inc32 /DCONFIG_RANDOM_UUID=1
+!else
 CXXFLAGS1 = /nologo /W3 /GR /EHsc /DWIN32 /DKM_WIN32 /D_CONSOLE /I. /I$(SRCDIR) /DASDCP_PLATFORM=\"win32\" \
 	/D_CRT_SECURE_NO_WARNINGS /D_CRT_NONSTDC_NO_WARNINGS /DPACKAGE_VERSION=\"1.4.21\" \
 	/I"$(WITH_OPENSSL)"\inc32
-
+!endif
 LIB_EXE = lib.exe
 LIBFLAGS1 = /NOLOGO /LIBPATH:"$(WITH_OPENSSL)"\out32dll
 
