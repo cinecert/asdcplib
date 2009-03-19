@@ -45,6 +45,7 @@ namespace ASDCP {
 
  class S12MTimecode : public Kumu::IArchive
 {
+ protected:
   ui32_t m_FrameCount;
   ui32_t m_FPS;
 

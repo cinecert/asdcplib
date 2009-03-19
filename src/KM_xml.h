@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2005-2008, John Hurst
+Copyright (c) 2005-2009, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -100,6 +100,7 @@ namespace Kumu
 
       // building
       void        SetName(const char* name);
+      void        SetBody(const std::string& value);
       void        AppendBody(const std::string& value);
       void        SetAttr(const char* name, const char* value);
       XMLElement* AddChild(XMLElement* element);
@@ -121,6 +122,12 @@ namespace Kumu
       const ElementList& GetChildrenWithName(const char* name, ElementList& outList) const;
       bool               HasName(const char* name) const;
 
+      // altering
+      void        DeleteAttributes();
+      void        DeleteAttrWithName(const char* name);
+      void        DeleteChildren();
+      void        DeleteChild(const XMLElement* element);
+      void        ForgetChild(const XMLElement* element);
     };
 } // namespace Kumu
 

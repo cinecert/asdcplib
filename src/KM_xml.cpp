@@ -138,6 +138,13 @@ Kumu::XMLElement::AppendBody(const std::string& value)
 }
 
 //
+void
+Kumu::XMLElement::SetBody(const std::string& value)
+{
+  m_Body = value;
+}
+
+//
 Kumu::XMLElement*
 Kumu::XMLElement::AddChildWithContent(const char* name, const char* value)
 {
@@ -290,6 +297,73 @@ Kumu::XMLElement::GetChildrenWithName(const char* name, ElementList& outList) co
 
   return outList;
 }
+
+//
+void
+Kumu::XMLElement::DeleteAttributes()
+{
+  m_AttrList.clear();
+}
+
+//
+void
+Kumu::XMLElement::DeleteAttrWithName(const char* name)
+{
+  assert(name);
+  AttributeList::iterator i;
+  for ( i = m_AttrList.begin(); i != m_AttrList.end(); i++ )
+    {
+      if ( i->name == std::string(name) )
+	m_AttrList.erase(i);
+    }
+}
+
+//
+void
+Kumu::XMLElement::DeleteChildren()
+{
+  for ( ElementList::iterator i = m_ChildList.begin(); i != m_ChildList.end(); i++ )
+    {
+      delete *i;
+      m_ChildList.erase(i);
+    }
+}
+
+//
+void
+Kumu::XMLElement::DeleteChild(const XMLElement* element)
+{
+  if ( element != 0 )
+    {
+      for ( ElementList::iterator i = m_ChildList.begin(); i != m_ChildList.end(); i++ )
+	{
+	  if ( *i == element )
+	    {
+	      delete *i;
+	      m_ChildList.erase(i);
+	      return;
+	    }
+	}
+    }
+}
+
+//
+void
+Kumu::XMLElement::ForgetChild(const XMLElement* element)
+{
+  if ( element != 0 )
+    {
+      for ( ElementList::iterator i = m_ChildList.begin(); i != m_ChildList.end(); i++ )
+	{
+	  if ( *i == element )
+	    {
+	      m_ChildList.erase(i);
+	      return;
+	    }
+	}
+    }
+}
+
 
 //----------------------------------------------------------------------------------------------------
 
