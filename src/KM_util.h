@@ -362,7 +362,7 @@ namespace Kumu
   void GenRandomValue(SymmetricKey&);
 
   //
-  // 2004-05-01T13:20:00-00:00
+  // 2004-05-01T13:20:00+00:00
   const ui32_t DateTimeLen = 25; //  the number of chars in the xs:dateTime format (sans milliseconds)
 
   // UTC time+date representation
@@ -387,17 +387,18 @@ namespace Kumu
       bool operator==(const Timestamp& rhs) const;
       bool operator!=(const Timestamp& rhs) const;
 
-      // Write the timestamp value to the given buffer in the form 2004-05-01T13:20:00-00:00
+      // Write the timestamp value to the given buffer in the form 2004-05-01T13:20:00+00:00
       // returns 0 if the buffer is smaller than DateTimeLen
       const char* EncodeString(char* str_buf, ui32_t buf_len) const;
 
       // decode and set value from string formatted by EncodeString
       bool        DecodeString(const char* datestr);
 
-      // Add the given number of days or hours to the timestamp value.
+      // Add the given number of days, hours, or minutes to the timestamp value.
       // Values less than zero will cause the timestamp to decrease
       void AddDays(i32_t);
       void AddHours(i32_t);
+      void AddMinutes(i32_t);
 
       // Read and write the timestamp value as a byte string having
       // the following format:

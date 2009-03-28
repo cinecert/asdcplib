@@ -727,7 +727,7 @@ Kumu::Timestamp::AddDays(i32_t days)
       TIMESTAMP_TO_SYSTIME(*this, &current_st);
       SystemTimeToFileTime(&current_st, &current_ft);
       memcpy(&current_ul, &current_ft, sizeof(current_ul));
-      current_ul.QuadPart += ( seconds_to_ns100(86400) * (ui64_t)days );
+      current_ul.QuadPart += ( seconds_to_ns100(86400) * (i64_t)days );
       memcpy(&current_ft, &current_ul, sizeof(current_ft));
       FileTimeToSystemTime(&current_ft, &current_st);
       SYSTIME_TO_TIMESTAMP(&current_st, *this);
@@ -747,7 +747,27 @@ Kumu::Timestamp::AddHours(i32_t hours)
       TIMESTAMP_TO_SYSTIME(*this, &current_st);
       SystemTimeToFileTime(&current_st, &current_ft);
       memcpy(&current_ul, &current_ft, sizeof(current_ul));
-      current_ul.QuadPart += ( seconds_to_ns100(3600) * (ui64_t)hours );
+      current_ul.QuadPart += ( seconds_to_ns100(3600) * (i64_t)hours );
+      memcpy(&current_ft, &current_ul, sizeof(current_ft));
+      FileTimeToSystemTime(&current_ft, &current_st);
+      SYSTIME_TO_TIMESTAMP(&current_st, *this);
+    }
+}
+
+//
+void
+Kumu::Timestamp::AddMinutes(i32_t minutes)
+{
+  SYSTEMTIME current_st;
+  FILETIME current_ft;
+  ULARGE_INTEGER current_ul;
+
+  if ( minutes != 0 )
+    {
+      TIMESTAMP_TO_SYSTIME(*this, &current_st);
+      SystemTimeToFileTime(&current_st, &current_ft);
+      memcpy(&current_ul, &current_ft, sizeof(current_ul));
+      current_ul.QuadPart += ( seconds_to_ns100(60) * (i64_t)minutes );
       memcpy(&current_ft, &current_ul, sizeof(current_ft));
       FileTimeToSystemTime(&current_ft, &current_st);
       SYSTIME_TO_TIMESTAMP(&current_st, *this);
@@ -847,6 +867,23 @@ Kumu::Timestamp::AddHours(i32_t hours)
       TIMESTAMP_TO_CALTIME(*this, &ct)
       t = ct;
       t.add_hours(hours);
+      ct = t;
+      CALTIME_TO_TIMESTAMP(&ct, *this)
+    }
+}
+
+//
+void
+Kumu::Timestamp::AddMinutes(i32_t minutes)
+{
+  Kumu::TAI::caltime ct;
+  Kumu::TAI::tai t;
+
+  if ( minutes != 0 )
+    {
+      TIMESTAMP_TO_CALTIME(*this, &ct)
+      t = ct;
+      t.add_minutes(minutes);
       ct = t;
       CALTIME_TO_TIMESTAMP(&ct, *this)
     }
@@ -983,17 +1020,22 @@ Kumu::Timestamp::DecodeString(const char* datestr)
 	    return false;
 
 	  char_count += 6;
-	  ui32_t TZ_hh = atoi(datestr + 20);
-	  ui32_t TZ_mm = atoi(datestr + 23);
-      
-	  if ( TZ_mm != 0 )
-	    Kumu::DefaultLogSink().Warn("Ignoring minutes in timezone offset: %u\n", TZ_mm);
-	  
-	  if ( TZ_hh > 12 )
+
+	  i32_t TZ_mm = 60 * atoi(datestr + 20);
+	  TZ_mm += atoi(datestr + 23);
+	  if (datestr[19] == '-')
+	    TZ_mm = -TZ_mm;
+
+	  if ((TZ_mm > 14 * 60) || (TZ_mm < -12 * 60))
 	    return false;
 
 	  else 
-	    AddHours( (datestr[19] == '-' ? (0 - TZ_hh) : TZ_hh));
+	    TmpStamp.AddMinutes(-TZ_mm);
+	}
+      else if (datestr[19] == 'Z')
+	{
+	  /* act as if the offset were +00:00 */
+	  char_count++;
 	}
     }
 
