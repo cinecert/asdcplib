@@ -1026,7 +1026,7 @@ Kumu::Timestamp::DecodeString(const char* datestr)
 	  if (datestr[19] == '-')
 	    TZ_mm = -TZ_mm;
 
-	  if ((TZ_mm > 14 * 60) || (TZ_mm < -12 * 60))
+	  if ((TZ_mm > 14 * 60) || (TZ_mm < -14 * 60))
 	    return false;
 
 	  else 
