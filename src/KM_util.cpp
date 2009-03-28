@@ -1021,16 +1021,19 @@ Kumu::Timestamp::DecodeString(const char* datestr)
 
 	  char_count += 6;
 
-	  i32_t TZ_mm = 60 * atoi(datestr + 20);
-	  TZ_mm += atoi(datestr + 23);
-	  if (datestr[19] == '-')
-	    TZ_mm = -TZ_mm;
-
-	  if ((TZ_mm > 14 * 60) || (TZ_mm < -14 * 60))
+	  ui32_t TZ_hh = atoi(datestr + 20);
+	  ui32_t TZ_mm = atoi(datestr + 23);
+	  if ((TZ_hh > 14) || (TZ_mm > 59) || ((TZ_hh == 14) && (TZ_mm > 0)))
 	    return false;
 
-	  else 
-	    TmpStamp.AddMinutes(-TZ_mm);
+	  i32_t TZ_offset = 60 * TZ_hh + TZ_mm;
+	  if (datestr[19] == '-')
+	    TZ_offset = -TZ_offset;
+	  /* at this point, TZ_offset reflects the contents of the string */
+
+	  /* a negative offset is behind UTC and so needs to increment to
+	   * convert, while a positive offset must do the reverse */
+	  TmpStamp.AddMinutes(-TZ_offset);
 	}
       else if (datestr[19] == 'Z')
 	{
