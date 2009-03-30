@@ -109,6 +109,23 @@ utilities all respond to -h.
 
 
 Change History
+
+2009.03.08 - SMPTE format fixes, enhancements and bug fixes, v.1.4.21
+ o Added build option (CONFIG_RANDOM_UUID) to enable mixed case UUID
+   generation when environment variable KM_USE_RANDOM_UUID is defined.
+ o Fixed a condition that could cause an error to occur whenwrapping 
+   SMPTE format timed text track files that do not define a starting 
+   frame.
+ o Updated ULs for SMPTE format track files.
+ o SampleRate added to JP2K metadata
+ o Support for wrapping 96kHz WAV files added.
+ o Updated ULs for audio channel formats  (ChannelFormat)  
+ o Updated font subdescriptor MIME Types for TimedText Trackfiles.
+ o Changed time implementation to support dates beyond Jan 19th, 2038.
+ o Xerces-C XML parser support added.  
+ o New build method for Windows (see win32/README.txt for details).
+
+
 2008.02.16 - SMPTE format fixes, bug fixes v.1.3.18
  o Added correct SMPTE UL for StereoscopicPictureSubDescriptor.
  o Exposed JP2K metadata parser as ParseMetadataIntoDesc().
