@@ -57,11 +57,11 @@ banner(FILE* stream = stderr)
   fprintf(stream, "\n\
 %s (asdcplib %s)\n\n\
 Copyright (c) 2005-2006 John Hurst\n\n\
-wavesplit is part of asdcplib.\n\
+%s is part of asdcplib.\n\
 asdcplib may be copied only under the terms of the license found at\n\
 the top of every file in the asdcplib distribution kit.\n\n\
 Specify the -h (help) option for further information about %s\n\n",
-	  PROGRAM_NAME, ASDCP::Version(), PROGRAM_NAME);
+	  PROGRAM_NAME, ASDCP::Version(), PROGRAM_NAME, PROGRAM_NAME);
 }
 
 //

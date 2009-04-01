@@ -132,9 +132,8 @@ check_PROGRAMS = asdcp-mem-test path-test jp2k-test S429-5-cgi \
 	fips-186-rng-test asdcp-version tt-xform
 
 # sources for a test program
-asdcp_mem_test_SOURCES = asdcp-mem-test.cpp
-
 # list of libraries to link against for a test program
+asdcp_mem_test_SOURCES = asdcp-mem-test.cpp
 asdcp_mem_test_LDADD = libasdcp.la
 path_test_SOURCES = path-test.cpp
 path_test_LDADD = libkumu.la
@@ -146,8 +145,9 @@ fips_186_rng_test_SOURCES = fips-186-rng-test.cpp
 fips_186_rng_test_LDADD = libasdcp.la
 asdcp_version_SOURCES = asdcp-version.cpp
 asdcp_version_LDADD = libkumu.la
+
 tt_xform_SOURCES = tt-xform.cpp TimedText_Transform.h TimedText_Transform.cpp
-tt_xform_LDADD = libkumu.la
+tt_xform_LDADD = libasdcp.la libkumu.la
 
 
 # list of test scripts to execute during "make check"
