@@ -88,6 +88,8 @@ namespace Kumu
   const Result_t RESULT_FILEEXISTS (-18,  "Filename already exists.");
   const Result_t RESULT_NOTAFILE   (-19,  "Filename not found.");
   const Result_t RESULT_UNKNOWN    (-20,  "Unknown result code.");
+  const Result_t RESULT_DIR_CREATE (-21, "Unable to create directory.");
+ 
 } // namespace Kumu
 
 //--------------------------------------------------------------------------------

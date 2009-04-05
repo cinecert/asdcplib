@@ -28,15 +28,12 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     \version $Id$       
     \brief   AS-DCP library, public interface
 
-The asdcplib library is a set of wrapper objects that offer simplified
-access to files conforming to the file formats proposed by the SMPTE
-D-Cinema packaging working group DC28.20.  The file format, labeled
-AS-DCP, is described in series of separate documents which include but
-may not be limited to:
+The asdcplib library is a set of file access objects that offer simplified
+access to files conforming to the standards published by the SMPTE
+D-Cinema Technology Committee 21DC. The file format, labeled AS-DCP,
+is described in series of separate documents which include but may not
+be be limited to:
 
- o MXF Interop Track File Specification
- o MXF Interop Track File Essence Encryption Specification
- o MXF Interop Operational Constraints Specification
  o SMPTE 429-2-2009 DCP Operational Constraints
  o SMPTE 429-3-2006 Track File Specification
  o SMPTE 429-4-2006 JPEG 2000 for D-Cinema
@@ -54,29 +51,29 @@ may not be limited to:
  o IETF RFC 2104 - HMAC/SHA1
  o NIST FIPS 197 - AES (Rijndael)
 
+ o MXF Interop Track File Specification
+ o MXF Interop Track File Essence Encryption Specification
+ o MXF Interop Operational Constraints Specification
+ - Note: the MXF Interop documents are not formally published.
+   Contact the asdcplib support address to get copies.
+
 The following use cases are supported by the library:
 
- o Write a plaintext MPEG2 Video Elementary Stream to a plaintext ASDCP file
- o Write a plaintext MPEG2 Video Elementary Stream to a ciphertext ASDCP file
- o Read a plaintext MPEG2 Video Elementary Stream from a plaintext ASDCP file
- o Read a plaintext MPEG2 Video Elementary Stream from a ciphertext ASDCP file
- o Read a ciphertext MPEG2 Video Elementary Stream from a ciphertext ASDCP file
- o Write one or more plaintext JPEG 2000 codestreams to a plaintext ASDCP file
- o Write one or more plaintext JPEG 2000 codestreams to a ciphertext ASDCP file
- o Read one or more plaintext JPEG 2000 codestreams from a plaintext ASDCP file
- o Read one or more plaintext JPEG 2000 codestreams from a ciphertext ASDCP file
- o Read one or more ciphertext JPEG 2000 codestreams from a ciphertext ASDCP file
- o Write one or more plaintext JPEG 2000 stereoscopic codestream pairs to a plaintext ASDCP file
- o Write one or more plaintext JPEG 2000 stereoscopic codestream pairs to a ciphertext ASDCP file
- o Read one or more plaintext JPEG 2000 stereoscopic codestream pairs from a plaintext ASDCP file
- o Read one or more plaintext JPEG 2000 stereoscopic codestream pairs from a ciphertext ASDCP file
- o Read one or more ciphertext JPEG 2000 stereoscopic codestream pairs from a ciphertext ASDCP file
- o Write one or more plaintext PCM audio streams to a plaintext ASDCP file
- o Write one or more plaintext PCM audio streams to a ciphertext ASDCP file
- o Read one or more plaintext PCM audio streams from a plaintext ASDCP file
- o Read one or more plaintext PCM audio streams from a ciphertext ASDCP file
- o Read one or more ciphertext PCM audio streams from a ciphertext ASDCP file
- o Read header metadata from an ASDCP file
+ o Write essence to a plaintext or ciphertext AS-DCP file:
+     MPEG2 Video Elementary Stream
+     JPEG 2000 codestreams
+     JPEG 2000 stereoscopic codestream pairs
+     PCM audio streams
+     SMPTE 429-7 Timed Text XML with font and image resources
+
+ o Read essence from a plaintext or ciphertext AS-DCP file:
+     MPEG2 Video Elementary Stream
+     JPEG 2000 codestreams
+     JPEG 2000 stereoscopic codestream pairs
+     PCM audio streams
+     SMPTE 429-7 Timed Text XML with font and image resources
+
+ o Read header metadata from an AS-DCP file
 
 This project depends upon the following libraries:
  - OpenSSL http://www.openssl.org/
@@ -257,6 +254,14 @@ namespace ASDCP {
   const Rational EditRate_48(48,1);
   const Rational SampleRate_48k(48000,1);
   const Rational SampleRate_96k(96000,1);
+
+  // Additional frame rates, see SMPTE 428-11
+  // These rates are new and not supported by all systems. Do not assume that a package
+  // made using on of these rates will work just anywhere!
+  const Rational EditRate_25(25,1);
+  const Rational EditRate_30(30,1);
+  const Rational EditRate_50(50,1);
+  const Rational EditRate_60(60,1);
 
   // Non-reference counting container for internal member objects.
   // Please do not use this class for any other purpose.

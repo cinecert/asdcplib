@@ -32,7 +32,9 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <KM_fileio.h>
 #include <KM_log.h>
 #include <fcntl.h>
+
 #include <assert.h>
+
 #ifdef KM_WIN32
 #include <direct.h>
 #endif
@@ -52,6 +54,13 @@ struct iovec {
   int   iov_len;
 };
 #else
+# if defined(__linux__)
+#   include <sys/statfs.h>
+# else
+#  include <sys/mount.h>
+# endif
+
+#include <sys/stat.h>
 #include <sys/uio.h>
 typedef struct stat     fstat_t;
 #endif
@@ -1125,6 +1134,57 @@ Kumu::WriteObjectIntoFile(const Kumu::IArchive& Object, const std::string& Filen
 //------------------------------------------------------------------------------------------
 //
 
+//
+Result_t
+Kumu::ReadFileIntoBuffer(const std::string& Filename, Kumu::ByteString& Buffer, ui32_t max_size)
+{
+  ui32_t file_size = FileSize(Filename);
+  Result_t result = Buffer.Capacity(file_size);
+
+  if ( KM_SUCCESS(result) )
+    {
+      ui32_t read_count = 0;
+      FileWriter Reader;
+
+      result = Reader.OpenRead(Filename.c_str());
+
+      if ( KM_SUCCESS(result) )
+	result = Reader.Read(Buffer.Data(), file_size, &read_count);
+    
+      if ( KM_SUCCESS(result) )
+	{
+	  if ( file_size != read_count) 
+	    return RESULT_READFAIL;
+
+	  Buffer.Length(read_count);
+	}
+    }
+  
+  return result;
+}
+
+//
+Result_t
+Kumu::WriteBufferIntoFile(const Kumu::ByteString& Buffer, const std::string& Filename)
+{
+  ui32_t write_count = 0;
+  FileWriter Writer;
+
+  Result_t result = Writer.OpenWrite(Filename.c_str());
+
+  if ( KM_SUCCESS(result) )
+    result = Writer.Write(Buffer.RoData(), Buffer.Length(), &write_count);
+
+  if ( KM_SUCCESS(result) && Buffer.Length() != write_count) 
+    return RESULT_WRITEFAIL;
+
+  return result;
+}
+
+//------------------------------------------------------------------------------------------
+//
+
+
 // Win32 directory scanner
 //
 #ifdef KM_WIN32
@@ -1277,6 +1337,181 @@ Kumu::DirScanner::GetNext(char* filename)
 #endif // KM_WIN32
 
 
+//------------------------------------------------------------------------------------------
+
+// note: when moving to KM_fileio, don't forget to write the Win32 versions
+// note: add error messages and remove RESULT_FAIL form DirScanner
+
+#ifdef KM_WIN32
+#else // KM_WIN32
+
+// given a path string, create any missing directories so that PathIsDirectory(Path) is true.
+//
+Result_t
+Kumu::CreateDirectoriesInPath(const std::string& Path)
+{
+  bool abs = PathIsAbsolute(Path);
+  assert(abs);
+  PathCompList_t PathComps, TmpPathComps;
+
+  PathToComponents(Path, PathComps);
+
+  while ( ! PathComps.empty() )
+    {
+      TmpPathComps.push_back(PathComps.front());
+      PathComps.pop_front();
+      std::string tmp_path = abs ? ComponentsToAbsolutePath(TmpPathComps) : ComponentsToPath(TmpPathComps);
+
+      if ( ! PathIsDirectory(tmp_path) )
+	{
+	  if ( mkdir(tmp_path.c_str(), 0775) != 0 )
+	    {
+	      DefaultLogSink().Error("CreateDirectoriesInPath mkdir %s: %s\n",
+				     tmp_path.c_str(), strerror(errno));
+	      return RESULT_DIR_CREATE;
+	    }
+	}
+    }
+
+  return RESULT_OK;
+}
+#endif // KM_WIN32
+
+
+#ifdef KM_WIN32
+#else // KM_WIN32
+
+//
+Result_t
+Kumu::DeleteFile(const std::string& filename)
+{
+  if ( unlink(filename.c_str()) == 0 )
+    return RESULT_OK;
+
+  switch ( errno )
+    {
+    case ENOENT:
+    case ENOTDIR: return RESULT_NOTAFILE;
+
+    case EROFS:
+    case EBUSY:
+    case EACCES:
+    case EPERM:   return RESULT_NO_PERM;
+    }
+
+  DefaultLogSink().Error("DeleteFile %s: %s\n", filename.c_str(), strerror(errno));
+  return RESULT_FAIL;
+}
+
+//
+Result_t
+h__DeletePath(const std::string& pathname)
+{
+  fprintf(stderr, "h__DeletePath %s\n", pathname.c_str());
+  Result_t result = RESULT_OK;
+
+  if ( ! PathIsDirectory(pathname) )
+    {
+      result = DeleteFile(pathname);
+    }
+  else
+    {
+      {
+	DirScanner TestDir;
+	char       next_file[Kumu::MaxFilePath];
+	result = TestDir.Open(pathname.c_str());
+
+	while ( KM_SUCCESS(result) && KM_SUCCESS(TestDir.GetNext(next_file)) )
+	  {
+	    if ( next_file[0] == '.' )
+	      {
+		if ( next_file[1] ==  0 )
+		  continue; // don't delete 'this'
+		
+		if ( next_file[1] == '.' && next_file[2] ==  0 )
+		  continue; // don't delete 'this' parent
+	      }
+
+	    result = h__DeletePath(pathname + std::string("/") + next_file);
+	  }
+      }
+
+      if ( rmdir(pathname.c_str()) != 0 )
+	{
+	  switch ( errno )
+	    {
+	    case ENOENT:
+	    case ENOTDIR:
+	      result = RESULT_NOTAFILE;
+	      break;
+
+	    case EROFS:
+	    case EBUSY:
+	    case EACCES:
+	    case EPERM:
+	      result = RESULT_NO_PERM;
+	      break;
+
+	    default:
+	      DefaultLogSink().Error("DeletePath %s: %s\n", pathname.c_str(), strerror(errno));
+	      result = RESULT_FAIL;
+	    }
+	}
+    }
+
+  return result;
+}
+
+//
+Result_t
+Kumu::DeletePath(const std::string& pathname)
+{
+  std::string c_pathname = PathMakeAbsolute(PathMakeCanonical(pathname));
+  DefaultLogSink().Debug("DeletePath (%s) c(%s)\n", pathname.c_str(), c_pathname.c_str());
+  return h__DeletePath(c_pathname);
+}
+
+#endif // KM_WIN32
+
+//------------------------------------------------------------------------------------------
+//
+
+
+#ifdef KM_WIN32
+#else // KM_WIN32
+
+//
+Result_t
+Kumu::FreeSpaceForPath(const std::string& path, Kumu::fsize_t& free_space, Kumu::fsize_t& total_space)
+{
+  struct statfs s;
+
+  if ( statfs(path.c_str(), &s) == 0 )
+    {
+      if ( s.f_blocks < 1 )
+	{
+	  DefaultLogSink().Error("File system %s has impossible size: %ld\n",
+				 path.c_str(), s.f_blocks);
+	  return RESULT_FAIL;
+	}
+
+      free_space = (Kumu::fsize_t)s.f_bsize * (Kumu::fsize_t)s.f_bavail;
+      total_space = (Kumu::fsize_t)s.f_bsize * (Kumu::fsize_t)s.f_blocks;
+      return RESULT_OK;
+    }
+
+  switch ( errno )
+    {
+    case ENOENT:
+    case ENOTDIR: return RESULT_NOTAFILE;
+    case EACCES:  return RESULT_NO_PERM;
+    }
+
+  DefaultLogSink().Error("FreeSpaceForPath statfs %s: %s\n", path.c_str(), strerror(errno));
+  return RESULT_FAIL;
+} 
+
+#endif // KM_WIN32
 
 //
 // end KM_fileio.cpp

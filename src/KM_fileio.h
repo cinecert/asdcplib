@@ -119,18 +119,26 @@ namespace Kumu
 
   const ui32_t MaxFilePath = Kilobyte;
 
+
+  //------------------------------------------------------------------------------------------
   // Path Manglers
-  //
+  //------------------------------------------------------------------------------------------
+
+  // types
   typedef std::list<std::string> PathCompList_t; // a list of path components
   typedef std::list<std::string> PathList_t; // a list of paths
 
+  // tests
   bool        PathExists(const std::string& Path); // true if the path exists in the filesystem
   bool        PathIsFile(const std::string& Path); // true if the path exists in the filesystem and is a file
   bool        PathIsDirectory(const std::string& Path); // true if the path exists in the filesystem and is a directory
   fsize_t     FileSize(const std::string& Path); // returns the size of a regular file, 0 for a directory or device
   bool        PathsAreEquivalent(const std::string& lhs, const std::string& rhs); // true if paths point to the same filesystem entry
 
-  // split and reassemble pats as lists of path components
+  // Returns free space and total space available for the given path
+  Result_t   FreeSpaceForPath(const std::string& path, Kumu::fsize_t& free_space, Kumu::fsize_t& total_space);
+
+  // split and reassemble paths as lists of path components
   PathCompList_t& PathToComponents(const std::string& Path, PathCompList_t& CList, char separator = '/'); // removes '//'
   std::string ComponentsToPath(const PathCompList_t& CList, char separator = '/');
   std::string ComponentsToAbsolutePath(const PathCompList_t& CList, char separator = '/'); // add separator to the front
@@ -141,12 +149,18 @@ namespace Kumu
   std::string PathMakeLocal(const std::string& Path, const std::string& Parent); // remove Parent from front of Path, if it exists
   std::string PathMakeCanonical(const std::string& Path, char separator = '/'); // remove '.' and '..'
 
+  // common operations
   std::string PathBasename(const std::string& Path, char separator = '/'); // returns right-most path element (list back())
   std::string PathDirname(const std::string& Path, char separator = '/'); // returns everything but the right-most element
   std::string PathGetExtension(const std::string& Path); // returns everything in the right-most element following the right-most '.'
   std::string PathSetExtension(const std::string& Path, const std::string& Extension); // empty extension removes '.' as well
 
-  //
+
+  //------------------------------------------------------------------------------------------
+  // Path Search
+  //------------------------------------------------------------------------------------------
+
+  // An interface for a path matching function, used by FindInPath() and FindInPaths() below
   //
   class IPathMatch
   {
@@ -155,6 +169,7 @@ namespace Kumu
     virtual bool Match(const std::string& s) const = 0;
   };
 
+  // matches any pathname
  class PathMatchAny : public IPathMatch
   {
   public:
@@ -163,6 +178,7 @@ namespace Kumu
   };
 
 #ifndef KM_WIN32
+  // matches pathnames using a regular expression
  class PathMatchRegex : public IPathMatch
   {
     regex_t m_regex;
@@ -176,6 +192,7 @@ namespace Kumu
     bool Match(const std::string& s) const;
   };
 
+  // matches pathnames using a Bourne shell glob expression
  class PathMatchGlob : public IPathMatch
   {
     regex_t m_regex;
@@ -198,6 +215,22 @@ namespace Kumu
   PathList_t& FindInPaths(const IPathMatch& Pattern, const PathList_t& SearchPaths,
 			  PathList_t& FoundPaths, bool one_shot = false, char separator = '/');
 
+  //------------------------------------------------------------------------------------------
+  // Directory Manipulation
+  //------------------------------------------------------------------------------------------
+
+  // Create a directory, creates intermediate directories as necessary
+  Result_t CreateDirectoriesInPath(const std::string& Path);
+
+  // Delete a file (fails if the path points to a directory)
+  Result_t DeleteFile(const std::string& filename);
+
+  // Recursively remove a file or directory
+  Result_t DeletePath(const std::string& pathname);
+
+  //------------------------------------------------------------------------------------------
+  // File I/O Wrappers
+  //------------------------------------------------------------------------------------------
 
   // Instant IO for strings
   //
@@ -214,6 +247,20 @@ namespace Kumu
 
   // Archives an object into a file
   Result_t WriteObjectIntoFile(const IArchive& Object, const std::string& Filename);
+
+  // Instant IO for memory buffers
+  //
+  // Unarchives a file into a buffer
+  Result_t ReadFileIntoBuffer(const std::string& Filename, Kumu::ByteString& Buffer,
+			      ui32_t max_size = 8 * Kumu::Megabyte);
+
+  // Archives a buffer into a file
+  Result_t WriteBufferIntoFile(const Kumu::ByteString& Buffer, const std::string& Filename);
+
+
+  //------------------------------------------------------------------------------------------
+  // File I/O
+  //------------------------------------------------------------------------------------------
 
   //
   class FileReader
@@ -273,6 +320,11 @@ namespace Kumu
       // you had called Writev() first.
       Result_t Write(const byte_t*, ui32_t, ui32_t* = 0);            // write buffer to disk
    };
+
+  Result_t CreateDirectoriesInPath(const std::string& Path);
+  Result_t FreeSpaceForPath(const std::string& path, Kumu::fsize_t& free_space, Kumu::fsize_t& total_space);
+  Result_t DeleteFile(const std::string& filename);
+  Result_t DeletePath(const std::string& pathname);
 
 } // namespace Kumu
 
