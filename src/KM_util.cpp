@@ -953,14 +953,41 @@ Kumu::Timestamp::operator!=(const Timestamp& rhs) const
 const char*
 Kumu::Timestamp::EncodeString(char* str_buf, ui32_t buf_len) const
 {
+  return EncodeStringWithOffset(str_buf, buf_len, 0);
+}
+
+// 
+const char*
+Kumu::Timestamp::EncodeStringWithOffset(char* str_buf, ui32_t buf_len,
+					i32_t offset_minutes) const
+{
   if ( buf_len < ( DateTimeLen + 1 ) )
     return 0;
 
-  // 2004-05-01T13:20:00-00:00
+  // ensure offset is within +/- 14 hours
+  if ((offset_minutes < -14 * 60) || (offset_minutes > 14 * 60))
+    return 0;
+
+  // set the apparent time
+  Kumu::Timestamp tmp_t(*this);
+  tmp_t.AddMinutes(offset_minutes);
+
+  char direction = '+';
+  if (offset_minutes < 0) {
+    direction = '-';
+    // need absolute offset from zero
+    offset_minutes = -offset_minutes;
+  }
+
+  // 2004-05-01T13:20:00+00:00
   snprintf(str_buf, buf_len,
-	   "%04hu-%02hu-%02huT%02hu:%02hu:%02hu+00:00",
-	   Year, Month, Day, Hour, Minute, Second);
-  
+	   "%04hu-%02hu-%02huT%02hu:%02hu:%02hu%c%02hu:%02hu",
+	   tmp_t.Year, tmp_t.Month, tmp_t.Day,
+	   tmp_t.Hour, tmp_t.Minute, tmp_t.Second,
+	   direction,
+	   offset_minutes / 60,
+	   offset_minutes % 60);
+
   return str_buf;
 }
 

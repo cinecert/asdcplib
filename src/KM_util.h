@@ -390,6 +390,8 @@ namespace Kumu
       // Write the timestamp value to the given buffer in the form 2004-05-01T13:20:00+00:00
       // returns 0 if the buffer is smaller than DateTimeLen
       const char* EncodeString(char* str_buf, ui32_t buf_len) const;
+      const char* EncodeStringWithOffset(char* str_buf, ui32_t buf_len,
+					 i32_t offset_minutes = 0) const;
 
       // decode and set value from string formatted by EncodeString
       bool        DecodeString(const char* datestr);
