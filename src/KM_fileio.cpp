@@ -1342,9 +1342,6 @@ Kumu::DirScanner::GetNext(char* filename)
 // note: when moving to KM_fileio, don't forget to write the Win32 versions
 // note: add error messages and remove RESULT_FAIL form DirScanner
 
-#ifdef KM_WIN32
-#else // KM_WIN32
-
 // given a path string, create any missing directories so that PathIsDirectory(Path) is true.
 //
 Result_t
@@ -1364,7 +1361,11 @@ Kumu::CreateDirectoriesInPath(const std::string& Path)
 
       if ( ! PathIsDirectory(tmp_path) )
 	{
+#ifdef KM_WIN32
+	  if ( mkdir(tmp_path.c_str()) != 0 )
+#else // KM_WIN32
 	  if ( mkdir(tmp_path.c_str(), 0775) != 0 )
+#endif // KM_WIN32
 	    {
 	      DefaultLogSink().Error("CreateDirectoriesInPath mkdir %s: %s\n",
 				     tmp_path.c_str(), strerror(errno));
@@ -1375,11 +1376,7 @@ Kumu::CreateDirectoriesInPath(const std::string& Path)
 
   return RESULT_OK;
 }
-#endif // KM_WIN32
 
-
-#ifdef KM_WIN32
-#else // KM_WIN32
 
 //
 Result_t
@@ -1471,7 +1468,6 @@ Kumu::DeletePath(const std::string& pathname)
   return h__DeletePath(c_pathname);
 }
 
-#endif // KM_WIN32
 
 //------------------------------------------------------------------------------------------
 //
