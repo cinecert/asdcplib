@@ -1284,11 +1284,23 @@ Kumu::DirScanner::Open(const char* filename)
 
   if ( ( m_Handle = opendir(filename) ) == NULL )
     {
-      if ( errno == ENOENT )
-	result = RESULT_ENDOFFILE;
-
-      else
-	result = RESULT_FAIL;
+      switch ( errno )
+	{
+	case ENOENT:
+	case ENOTDIR:
+	  result = RESULT_NOTAFILE;
+	case EACCES:
+	  result = RESULT_NO_PERM;
+	case ELOOP:
+	case ENAMETOOLONG:
+	  result = RESULT_PARAM;
+	case EMFILE:
+	case ENFILE:
+	  result = RESULT_STATE;
+	default:
+	  DefaultLogSink().Error("DirScanner::Open(%s): %s\n", filename.c_str(), strerror(errno));
+	  result = RESULT_FAIL;
+	}
     }
 
   return result;
@@ -1302,8 +1314,17 @@ Kumu::DirScanner::Close()
   if ( m_Handle == NULL )
     return RESULT_FILEOPEN;
 
-  if ( closedir(m_Handle) == -1 )
-    return RESULT_FAIL;
+  if ( closedir(m_Handle) == -1 ) {
+    switch ( errno )
+      {
+      case EBADF:
+      case EINTR:
+	return RESULT_STATE;
+      default:
+	DefaultLogSink().Error("DirScanner::Close(): %s\n", strerror(errno));
+	return RESULT_FAIL;
+      }
+  }
 
   m_Handle = NULL;
   return RESULT_OK;
@@ -1339,8 +1360,10 @@ Kumu::DirScanner::GetNext(char* filename)
 
 //------------------------------------------------------------------------------------------
 
-// note: when moving to KM_fileio, don't forget to write the Win32 versions
-// note: add error messages and remove RESULT_FAIL form DirScanner
+//
+// Attention Windows users: make sure to use the proper separator character
+// with these functions.
+//
 
 // given a path string, create any missing directories so that PathIsDirectory(Path) is true.
 //
