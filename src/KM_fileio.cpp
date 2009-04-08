@@ -1298,7 +1298,7 @@ Kumu::DirScanner::Open(const char* filename)
 	case ENFILE:
 	  result = RESULT_STATE;
 	default:
-	  DefaultLogSink().Error("DirScanner::Open(%s): %s\n", filename.c_str(), strerror(errno));
+	  DefaultLogSink().Error("DirScanner::Open(%s): %s\n", filename, strerror(errno));
 	  result = RESULT_FAIL;
 	}
     }
