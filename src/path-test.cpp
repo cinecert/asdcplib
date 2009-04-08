@@ -92,6 +92,12 @@ main(int argc, const char** argv)
     fprintf(stderr, "xx: \"%s\"\n", i->c_str());
   assert(PathsAreEquivalent(PathMakeLocal(PathMakeCanonical(Path_7), "/tmp"), "fooo"));
 
+  string Path_8 = "tmp/foo/bar/ack";
+  CreateDirectoriesInPath(Path_8);
+  assert(PathExists(Path_8));
+  DeletePath(Path_8);
+  assert(!PathExists(Path_8));
+
   PathList_t InList, OutList;
   InList.push_back("tmp");
   InList.push_back("Darwin");
@@ -119,6 +125,11 @@ main(int argc, const char** argv)
     cerr << *pi << endl;
 
   cerr << "----------------------------------" << endl;
+
+  fsize_t free_space, total_space;
+  FreeSpaceForPath("/", free_space, total_space);
+  cerr << "Free space: " << free_space << endl;
+  cerr << "Total space: " << total_space << endl;
 
   cerr << "OK" << endl;
 
