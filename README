@@ -110,7 +110,7 @@ utilities all respond to -h.
 
 Change History
 
-2009.03.08 - SMPTE format fixes, enhancements and bug fixes, v.1.4.21
+2009.04.08 - SMPTE format fixes, enhancements and bug fixes, v.1.4.21
  o Added build option (CONFIG_RANDOM_UUID) to enable mixed case UUID
    generation when environment variable KM_USE_RANDOM_UUID is defined.
  o Fixed a condition that could cause an error to occur whenwrapping 
@@ -124,6 +124,12 @@ Change History
  o Changed time implementation to support dates beyond Jan 19th, 2038.
  o Xerces-C XML parser support added.  
  o New build method for Windows (see win32/README.txt for details).
+ o Added new functionality in Kumu to recursively create and delete files 
+   and directories, and get free disk space for a given volume path.
+ o Added a method to Kumu::Timestamp, AddMinutes(), to add (or subtract) 
+   minutes to a time value.  
+ o Improved how Kumu::Timestamp parses timestamps with offsets. 
+
 
 
 2008.02.16 - SMPTE format fixes, bug fixes v.1.3.18
