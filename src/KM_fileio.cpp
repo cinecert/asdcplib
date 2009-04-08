@@ -1473,13 +1473,24 @@ Kumu::DeletePath(const std::string& pathname)
 //
 
 
-#ifdef KM_WIN32
-#else // KM_WIN32
-
-//
 Result_t
 Kumu::FreeSpaceForPath(const std::string& path, Kumu::fsize_t& free_space, Kumu::fsize_t& total_space)
 {
+#ifdef KM_WIN32
+	ULARGE_INTEGER lTotalNumberOfBytes;
+	ULARGE_INTEGER lTotalNumberOfFreeBytes;
+
+	BOOL fResult = ::GetDiskFreeSpaceEx(path.c_str(), NULL, &lTotalNumberOfBytes, &lTotalNumberOfFreeBytes);
+	if (fResult) {
+      free_space = static_cast<Kumu::fsize_t>(lTotalNumberOfFreeBytes.QuadPart);
+      total_space = static_cast<Kumu::fsize_t>(lTotalNumberOfBytes.QuadPart);
+      return RESULT_OK;
+	}
+	HRESULT LastError = ::GetLastError();
+
+	DefaultLogSink().Error("FreeSpaceForPath GetDiskFreeSpaceEx %s: %lu\n", path.c_str(), ::GetLastError());
+	return RESULT_FAIL;
+#else // KM_WIN32
   struct statfs s;
 
   if ( statfs(path.c_str(), &s) == 0 )
@@ -1505,9 +1516,9 @@ Kumu::FreeSpaceForPath(const std::string& path, Kumu::fsize_t& free_space, Kumu:
 
   DefaultLogSink().Error("FreeSpaceForPath statfs %s: %s\n", path.c_str(), strerror(errno));
   return RESULT_FAIL;
+#endif // KM_WIN32
 } 
 
-#endif // KM_WIN32
 
 //
 // end KM_fileio.cpp
