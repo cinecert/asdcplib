@@ -43,7 +43,7 @@ include_HEADERS = KM_error.h KM_fileio.h KM_log.h KM_memio.h KM_mutex.h \
 		KM_platform.h KM_prng.h KM_util.h KM_xml.h AS_DCP.h
 if DEV_HEADERS
 include_HEADERS += S12MTimecode.h MDD.h Metadata.h KLV.h MXFTypes.h MXF.h Wav.h \
-		PCMParserList.h asdcp_wrappers.h
+		PCMParserList.h
 endif
 
 # list of the libraries to build and install
@@ -91,15 +91,15 @@ libpyasdcp_la_LIBADD = libkumu.la libasdcp.la
 
 pyexecdir = @PYTHON_EXECDIR@
 pyexec_includedir = $(PYTHON_PREFIX)/include/python$(PYTHON_SHORTVERSION)
-nodist_pyexec_include_HEADERS = kumu_python.h asdcp_python.h
+nodist_pyexec_include_HEADERS = kumu_python.h asdcp_python.h asdcp_wrappers.h
 pyexec_LTLIBRARIES = kumu.la asdcp.la
-nodist_kumu_la_SOURCES = pykumu.cpp kumu_python.h
 
+nodist_kumu_la_SOURCES = pykumu.cpp kumu_python.h
 kumu_la_CPPFLAGS = @PYTHON_CPPFLAGS@
 kumu_la_LDFLAGS = @PYTHON_LSPEC@ -avoid-version -module
 kumu_la_LIBADD = libpyasdcp.la
-nodist_asdcp_la_SOURCES = pyasdcp.cpp asdcp_python.h
 
+nodist_asdcp_la_SOURCES = pyasdcp.cpp asdcp_python.h asdcp_wrappers.h
 asdcp_la_CPPFLAGS = @PYTHON_CPPFLAGS@
 asdcp_la_LDFLAGS = @PYTHON_LSPEC@ -avoid-version -module
 asdcp_la_LIBADD = libpyasdcp.la
