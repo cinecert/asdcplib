@@ -112,7 +112,9 @@ Change History
 
 2009.04.09 - SMPTE format fixes, enhancements and bug fixes, v.1.4.22
  o asdcplib now uses GNU autotools on POSIX systems to configure 
-   and build.  See "./configure" for details.
+   and build.  See "./configure" for details.  Note that two options, 
+   --emable-freedist and --with-python are not enabled in the free
+   version of asdcplib and should not be used.  
  o Added build option (CONFIG_RANDOM_UUID) to enable mixed case UUID
    generation when environment variable KM_USE_RANDOM_UUID is defined.
  o Fixed a condition that could cause an error to occur whenwrapping 
