@@ -1,7 +1,6 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 #
-#
-# Copyright (c) 2003-2008, John Hurst
+# Copyright (c) 2003-2009, John Hurst
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
