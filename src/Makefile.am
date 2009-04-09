@@ -129,7 +129,7 @@ wavesplit_LDADD = libasdcp.la
 
 # list of programs that need to be compiled for use in test suite
 check_PROGRAMS = asdcp-mem-test path-test jp2k-test S429-5-cgi \
-	fips-186-rng-test asdcp-version tt-xform
+	fips-186-rng-test asdcp-version 
 
 # sources for a test program
 # list of libraries to link against for a test program
@@ -146,8 +146,6 @@ fips_186_rng_test_LDADD = libasdcp.la
 asdcp_version_SOURCES = asdcp-version.cpp
 asdcp_version_LDADD = libkumu.la
 
-tt_xform_SOURCES = tt-xform.cpp TimedText_Transform.h TimedText_Transform.cpp
-tt_xform_LDADD = libasdcp.la libkumu.la
 
 
 # list of test scripts to execute during "make check"
