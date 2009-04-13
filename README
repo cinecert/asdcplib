@@ -67,7 +67,9 @@ MinGW installed. For those Windows users who would prefer to build
 this natively, an "nmake" build file and instructions can be found
 in the win32 subdirectory.
 
-OpenSSL is also required. See http://www.openssl.org/
+OpenSSL is also required, version 0.9.8k is recommended. See 
+http://www.openssl.org/ for more information and download 
+instructions.
 
 Optional support for writing Timed Text Track Files is supported by
 either Xerces-C or Expat. See http://xerces.apache.org/xerces-c/ or
