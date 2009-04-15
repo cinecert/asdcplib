@@ -1190,6 +1190,9 @@ Kumu::WriteBufferIntoFile(const Kumu::ByteString& Buffer, const std::string& Fil
 #ifdef KM_WIN32
 
 //
+Kumu::DirScanner::DirScanner(void) : m_Handle(-1) {}
+
+//
 //
 Result_t
 Kumu::DirScanner::Open(const char* filename)
@@ -1273,6 +1276,9 @@ Kumu::DirScanner::GetNext(char* filename)
 #else // KM_WIN32
 
 // POSIX directory scanner
+
+//
+Kumu::DirScanner::DirScanner(void) : m_Handle(NULL) {}
 
 //
 Result_t

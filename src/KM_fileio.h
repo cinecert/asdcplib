@@ -62,7 +62,7 @@ namespace Kumu
       DIR*       m_Handle;
 #endif
 
-      DirScanner()  {};
+      DirScanner(void);
       ~DirScanner() { Close(); }
 
       Result_t Open(const char*);
