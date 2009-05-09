@@ -1408,7 +1408,7 @@ write_timed_text_file(CommandOptions& Options)
   // set up MXF writer
   if ( ASDCP_SUCCESS(result) )
     {
-      Parser.FillDescriptor(TDesc);
+      Parser.FillTimedTextDescriptor(TDesc);
       FrameBuffer.Capacity(2*Kumu::Megabyte);
 
       if ( Options.verbose_flag )
@@ -1519,7 +1519,7 @@ read_timed_text_file(CommandOptions& Options)
 
   if ( ASDCP_SUCCESS(result) )
     {
-      Reader.FillDescriptor(TDesc);
+      Reader.FillTimedTextDescriptor(TDesc);
       FrameBuffer.Capacity(2*Kumu::Megabyte);
 
       if ( Options.verbose_flag )
@@ -1635,7 +1635,7 @@ class MyTextDescriptor : public TimedText::TimedTextDescriptor
 {
  public:
   void FillDescriptor(TimedText::MXFReader& Reader) {
-    Reader.FillDescriptor(*this);
+    Reader.FillTimedTextDescriptor(*this);
   }
 
   void Dump(FILE* stream) {

@@ -1336,7 +1336,7 @@ namespace ASDCP {
 
 	  // Fill a TimedTextDescriptor struct with the values from the file's contents.
 	  // Returns RESULT_INIT if the file is not open.
-	  Result_t FillDescriptor(TimedTextDescriptor&) const;
+	  Result_t FillTimedTextDescriptor(TimedTextDescriptor&) const;
 
 	  // Reads the complete Timed Text Resource into the given string.
 	  Result_t ReadTimedTextResource(std::string&) const;
@@ -1409,7 +1409,7 @@ namespace ASDCP {
 
 	  // Fill a TimedTextDescriptor struct with the values from the file's header.
 	  // Returns RESULT_INIT if the file is not open.
-	  Result_t FillDescriptor(TimedTextDescriptor&) const;
+	  Result_t FillTimedTextDescriptor(TimedTextDescriptor&) const;
 
 	  // Fill a WriterInfo struct with the values from the file's header.
 	  // Returns RESULT_INIT if the file is not open.

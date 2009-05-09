@@ -350,7 +350,7 @@ ASDCP::TimedText::MXFReader::OpenRead(const char* filename) const
 // Fill the struct with the values from the file's header.
 // Returns RESULT_INIT if the file is not open.
 ASDCP::Result_t
-ASDCP::TimedText::MXFReader::FillDescriptor(TimedText::TimedTextDescriptor& TDesc) const
+ASDCP::TimedText::MXFReader::FillTimedTextDescriptor(TimedText::TimedTextDescriptor& TDesc) const
 {
   if ( m_Reader && m_Reader->m_File.IsOpen() )
     {

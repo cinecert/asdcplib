@@ -357,7 +357,7 @@ ASDCP::TimedText::DCSubtitleParser::OpenRead(const char* filename) const
 
 //
 ASDCP::Result_t
-ASDCP::TimedText::DCSubtitleParser::FillDescriptor(TimedTextDescriptor& TDesc) const
+ASDCP::TimedText::DCSubtitleParser::FillTimedTextDescriptor(TimedTextDescriptor& TDesc) const
 {
   if ( m_Parser.empty() )
     return RESULT_INIT;
