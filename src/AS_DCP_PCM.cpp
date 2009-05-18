@@ -267,7 +267,7 @@ ASDCP::PCM::MXFReader::h__Reader::ReadFrame(ui32_t FrameNum, FrameBuffer& FrameB
   if ( ! m_File.IsOpen() )
     return RESULT_INIT;
 
-  return ReadEKLVFrame(FrameNum, FrameBuf, m_Dict.ul(MDD_WAVEssence), Ctx, HMAC);
+  return ReadEKLVFrame(FrameNum, FrameBuf, m_Dict->ul(MDD_WAVEssence), Ctx, HMAC);
 }
 
 //------------------------------------------------------------------------------------------
@@ -444,13 +444,13 @@ ASDCP::PCM::MXFWriter::h__Writer::SetSourceStream(const AudioDescriptor& ADesc)
   Result_t result = PCM_ADesc_to_MD(m_ADesc, (WaveAudioDescriptor*)m_EssenceDescriptor);
   
   if ( ASDCP_SUCCESS(result) )
-      result = WriteMXFHeader(PCM_PACKAGE_LABEL, UL(m_Dict.ul(MDD_WAVWrapping)),
-			      SOUND_DEF_LABEL,   UL(m_Dict.ul(MDD_SoundDataDef)),
+      result = WriteMXFHeader(PCM_PACKAGE_LABEL, UL(m_Dict->ul(MDD_WAVWrapping)),
+			      SOUND_DEF_LABEL,   UL(m_Dict->ul(MDD_SoundDataDef)),
 			      m_ADesc.SampleRate, 24 /* TCFrameRate */, calc_CBR_frame_size(m_Info, m_ADesc));
 
   if ( ASDCP_SUCCESS(result) )
     {
-      memcpy(m_EssenceUL, m_Dict.ul(MDD_WAVEssence), SMPTE_UL_LENGTH);
+      memcpy(m_EssenceUL, m_Dict->ul(MDD_WAVEssence), SMPTE_UL_LENGTH);
       m_EssenceUL[SMPTE_UL_LENGTH-1] = 1; // first (and only) essence container
       result = m_State.Goto_READY();
     }

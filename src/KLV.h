@@ -137,27 +137,21 @@ inline const char* ui64sz(ui64_t i, char* buf)
   //
   class Dictionary
     {
-    public:
-#if 0
-      static const MDDEntry* FindName(const char*);
-      static const MDDEntry& Type(MDD_t type_id);
-      static bool            Replace(const MDDEntry& Entry);
-      static void            Restore(const byte_t* ul);
-      static void            RestoreAll();
-#endif
-
-    private:
       std::map<ASDCP::UL, ui32_t> m_md_lookup;
+      std::map<ui32_t, ASDCP::UL> m_md_rev_lookup;
       MDDEntry m_MDD_Table[ASDCP::MDD_Table_size];
 
       ASDCP_NO_COPY_CONSTRUCT(Dictionary);
-
 
     public:
       Dictionary();
       ~Dictionary();
 
+      bool operator==(const Dictionary& rhs) const { return this == &rhs; }
+
+      void Init();
       bool AddEntry(const MDDEntry& Entry, ui32_t index);
+      bool DeleteEntry(ui32_t index);
 
       const MDDEntry* FindUL(const byte_t*) const;
       const MDDEntry& Type(MDD_t type_id) const;

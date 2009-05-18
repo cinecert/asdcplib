@@ -193,7 +193,8 @@ main(int argc, const char** argv)
       if ( Options.read_mxf_flag ) // dump MXF
 	{
 	  Kumu::FileReader        Reader;
-	  ASDCP::MXF::OPAtomHeader Header(DefaultCompositeDict());
+	  const Dictionary* Dict = &DefaultCompositeDict();
+	  ASDCP::MXF::OPAtomHeader Header(Dict);
 	  
 	  result = Reader.OpenRead((*fi).c_str());
 	  
@@ -213,7 +214,7 @@ main(int argc, const char** argv)
 
 		  if ( ASDCP_SUCCESS(result) )
 		    {
-		      MXF::Partition TmpPart(DefaultCompositeDict());
+		      MXF::Partition TmpPart(Dict);
 		      result = TmpPart.InitFromFile(Reader);
 
 		      if ( ASDCP_SUCCESS(result) && TmpPart.BodySID > 0 )
@@ -224,7 +225,7 @@ main(int argc, const char** argv)
 
 	  if ( ASDCP_SUCCESS(result) )
 	    {
-	      ASDCP::MXF::OPAtomIndexFooter Index(DefaultCompositeDict());
+	      ASDCP::MXF::OPAtomIndexFooter Index(Dict);
 	      result = Reader.Seek(Header.FooterPartition);
 	      
 	      if ( ASDCP_SUCCESS(result) )

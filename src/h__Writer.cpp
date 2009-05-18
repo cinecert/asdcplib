@@ -69,7 +69,7 @@ version_split(const char* str)
 
 //
 ASDCP::h__Writer::h__Writer(const Dictionary& d) :
-  m_HeaderPart(d), m_BodyPart(d), m_FooterPart(d), m_Dict(d),
+  m_HeaderPart(m_Dict), m_BodyPart(m_Dict), m_FooterPart(m_Dict), m_Dict(&d),
   m_HeaderSize(0), m_EssenceStart(0),
   m_EssenceDescriptor(0), m_FramesWritten(0), m_StreamOffset(0)
 {
@@ -83,7 +83,7 @@ ASDCP::h__Writer::~h__Writer()
 // add DMS CryptographicFramework entry to source package
 void
 AddDMScrypt(Partition& HeaderPart, SourcePackage& Package,
-	    WriterInfo& Descr, const UL& WrappingUL, const Dictionary& Dict)
+	    WriterInfo& Descr, const UL& WrappingUL, const Dictionary*& Dict)
 {
   // Essence Track
   StaticTrack* NewTrack = new StaticTrack(Dict);
@@ -95,7 +95,7 @@ AddDMScrypt(Partition& HeaderPart, SourcePackage& Package,
   Sequence* Seq = new Sequence(Dict);
   HeaderPart.AddChildObject(Seq);
   NewTrack->Sequence = Seq->InstanceUID;
-  Seq->DataDefinition = UL(Dict.ul(MDD_DescriptiveMetaDataDef));
+  Seq->DataDefinition = UL(Dict->ul(MDD_DescriptiveMetaDataDef));
 
   DMSegment* Segment = new DMSegment(Dict);
   HeaderPart.AddChildObject(Segment);
@@ -112,8 +112,8 @@ AddDMScrypt(Partition& HeaderPart, SourcePackage& Package,
 
   Context->ContextID.Set(Descr.ContextID);
   Context->SourceEssenceContainer = WrappingUL; // ??????
-  Context->CipherAlgorithm.Set(Dict.ul(MDD_CipherAlgorithm_AES));
-  Context->MICAlgorithm.Set( Descr.UsesHMAC ? Dict.ul(MDD_MICAlgorithm_HMAC_SHA1) : Dict.ul(MDD_MICAlgorithm_NONE) );
+  Context->CipherAlgorithm.Set(Dict->ul(MDD_CipherAlgorithm_AES));
+  Context->MICAlgorithm.Set( Descr.UsesHMAC ? Dict->ul(MDD_MICAlgorithm_HMAC_SHA1) : Dict->ul(MDD_MICAlgorithm_NONE) );
   Context->CryptographicKeyID.Set(Descr.CryptographicKeyID);
 }
 
@@ -129,7 +129,7 @@ ASDCP::h__Writer::InitHeader()
 
   // Set the Operational Pattern label -- we're just starting and have no RIP or index,
   // so we tell the world by using OP1a
-  m_HeaderPart.m_Preface->OperationalPattern = UL(m_Dict.ul(MDD_OP1a));
+  m_HeaderPart.m_Preface->OperationalPattern = UL(m_Dict->ul(MDD_OP1a));
   m_HeaderPart.OperationalPattern = m_HeaderPart.m_Preface->OperationalPattern;
 
   // First RIP Entry
@@ -176,7 +176,7 @@ struct TrackSet
 template <class PackageT, class ClipT>
 TrackSet<ClipT>
 CreateTrackAndSequence(OPAtomHeader& Header, PackageT& Package, const std::string TrackName,
-		       const MXF::Rational& EditRate, const UL& Definition, ui32_t TrackID, const Dictionary& Dict)
+		       const MXF::Rational& EditRate, const UL& Definition, ui32_t TrackID, const Dictionary*& Dict)
 {
   TrackSet<ClipT> NewTrack;
 
@@ -199,9 +199,9 @@ CreateTrackAndSequence(OPAtomHeader& Header, PackageT& Package, const std::strin
 template <class PackageT>
 TrackSet<TimecodeComponent>
 CreateTimecodeTrack(OPAtomHeader& Header, PackageT& Package,
-		    const MXF::Rational& EditRate, ui32_t TCFrameRate, ui64_t TCStart, const Dictionary& Dict)
+		    const MXF::Rational& EditRate, ui32_t TCFrameRate, ui64_t TCStart, const Dictionary*& Dict)
 {
-  UL TCUL(Dict.ul(MDD_TimecodeDataDef));
+  UL TCUL(Dict->ul(MDD_TimecodeDataDef));
 
   TrackSet<TimecodeComponent> NewTrack = CreateTrackAndSequence<PackageT, TimecodeComponent>(Header, Package, "Timecode Track", EditRate, TCUL, 1, Dict);
 
@@ -396,14 +396,14 @@ ASDCP::h__Writer::AddEssenceDescriptor(const UL& WrappingUL)
   //
   // Essence Descriptors
   //
-  UL GenericContainerUL(m_Dict.ul(MDD_GCMulti));
+  UL GenericContainerUL(m_Dict->ul(MDD_GCMulti));
   m_HeaderPart.EssenceContainers.push_back(GenericContainerUL);
 
   if ( m_Info.EncryptedEssence )
     {
-      UL CryptEssenceUL(m_Dict.ul(MDD_EncryptedContainerLabel));
+      UL CryptEssenceUL(m_Dict->ul(MDD_EncryptedContainerLabel));
       m_HeaderPart.EssenceContainers.push_back(CryptEssenceUL);
-      m_HeaderPart.m_Preface->DMSchemes.push_back(UL(m_Dict.ul(MDD_CryptographicFrameworkLabel)));
+      m_HeaderPart.m_Preface->DMSchemes.push_back(UL(m_Dict->ul(MDD_CryptographicFrameworkLabel)));
       AddDMScrypt(m_HeaderPart, *m_FilePackage, m_Info, WrappingUL, m_Dict);
     }
   else
@@ -434,11 +434,11 @@ ASDCP::h__Writer::CreateBodyPart(const MXF::Rational& EditRate, ui32_t BytesPerE
       m_BodyPart.EssenceContainers = m_HeaderPart.EssenceContainers;
       m_BodyPart.ThisPartition = m_File.Tell();
       m_BodyPart.BodySID = 1;
-      UL OPAtomUL(m_Dict.ul(MDD_OPAtom));
+      UL OPAtomUL(m_Dict->ul(MDD_OPAtom));
       m_BodyPart.OperationalPattern = OPAtomUL;
       m_HeaderPart.m_RIP.PairArray.push_back(RIP::Pair(1, m_BodyPart.ThisPartition)); // Second RIP Entry
       
-      UL BodyUL(m_Dict.ul(MDD_ClosedCompleteBodyPartition));
+      UL BodyUL(m_Dict->ul(MDD_ClosedCompleteBodyPartition));
       result = m_BodyPart.WriteToFile(m_File, BodyUL);
     }
   else
@@ -518,9 +518,9 @@ ASDCP::h__Writer::WriteEKLVPacket(const ASDCP::FrameBuffer& FrameBuf, const byte
       if ( ASDCP_SUCCESS(result) )
 	{ // write UL
 	  if ( m_Info.LabelSetType == LS_MXF_INTEROP )
-	    Overhead.WriteRaw(m_Dict.ul(MDD_MXFInterop_CryptEssence), SMPTE_UL_LENGTH);
+	    Overhead.WriteRaw(m_Dict->ul(MDD_MXFInterop_CryptEssence), SMPTE_UL_LENGTH);
 	  else
-	    Overhead.WriteRaw(m_Dict.ul(MDD_CryptEssence), SMPTE_UL_LENGTH);
+	    Overhead.WriteRaw(m_Dict->ul(MDD_CryptEssence), SMPTE_UL_LENGTH);
 
 	  // construct encrypted triplet header
 	  ui32_t ETLength = klv_cryptinfo_size + m_CtFrameBuf.Size();
@@ -617,10 +617,10 @@ ASDCP::h__Writer::WriteMXFFooter()
   m_HeaderPart.FooterPartition = here;
 
   // re-label the partition
-  UL OPAtomUL(m_Dict.ul(MDD_OPAtom));
+  UL OPAtomUL(m_Dict->ul(MDD_OPAtom));
 
   if ( m_Info.LabelSetType == LS_MXF_INTEROP )
-    OPAtomUL.Set(m_Dict.ul(MDD_MXFInterop_OPAtom));
+    OPAtomUL.Set(m_Dict->ul(MDD_MXFInterop_OPAtom));
   
   m_HeaderPart.OperationalPattern = OPAtomUL;
   m_HeaderPart.m_Preface->OperationalPattern = m_HeaderPart.OperationalPattern;

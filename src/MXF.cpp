@@ -113,7 +113,7 @@ ASDCP::MXF::RIP::GetPairBySID(ui32_t SID, Pair& outPair) const
 ASDCP::Result_t
 ASDCP::MXF::RIP::InitFromFile(const Kumu::FileReader& Reader)
 {
-  Result_t result = KLVFilePacket::InitFromFile(Reader, m_Dict.ul(MDD_RandomIndexMetadata));
+  Result_t result = KLVFilePacket::InitFromFile(Reader, m_Dict->ul(MDD_RandomIndexMetadata));
 
   if ( ASDCP_SUCCESS(result) )
     {
@@ -136,7 +136,7 @@ ASDCP::MXF::RIP::WriteToFile(Kumu::FileWriter& Writer)
   Result_t result = Buffer.Capacity(RIPSize);
 
   if ( ASDCP_SUCCESS(result) )
-    result = WriteKLToFile(Writer, m_Dict.ul(MDD_RandomIndexMetadata), RIPSize);
+    result = WriteKLToFile(Writer, m_Dict->ul(MDD_RandomIndexMetadata), RIPSize);
 
   if ( ASDCP_SUCCESS(result) )
     {
@@ -164,7 +164,7 @@ ASDCP::MXF::RIP::Dump(FILE* stream)
   if ( stream == 0 )
     stream = stderr;
 
-  KLVFilePacket::Dump(stream, m_Dict, false);
+  KLVFilePacket::Dump(stream, *m_Dict, false);
   PairArray.Dump(stream, false);
 }
 
@@ -251,7 +251,7 @@ public:
 //
 
 
-ASDCP::MXF::Partition::Partition(const Dictionary& d) :
+ASDCP::MXF::Partition::Partition(const Dictionary*& d) :
   m_Dict(d),
   MajorVersion(1), MinorVersion(2),
   KAGSize(1), ThisPartition(0), PreviousPartition(0),
@@ -384,7 +384,7 @@ ASDCP::MXF::Partition::Dump(FILE* stream)
   if ( stream == 0 )
     stream = stderr;
 
-  KLVFilePacket::Dump(stream, m_Dict, false);
+  KLVFilePacket::Dump(stream, *m_Dict, false);
   fprintf(stream, "  MajorVersion       = %hu\n", MajorVersion);
   fprintf(stream, "  MinorVersion       = %hu\n", MinorVersion);
   fprintf(stream, "  KAGSize            = %u\n",  KAGSize);
@@ -418,7 +418,7 @@ public:
 
 
 //
-ASDCP::MXF::Primer::Primer(const Dictionary& d) : m_LocalTag(0xff), m_Dict(d) {}
+ASDCP::MXF::Primer::Primer(const Dictionary*& d) : m_LocalTag(0xff), m_Dict(d) {}
 
 //
 ASDCP::MXF::Primer::~Primer() {}
@@ -435,7 +435,7 @@ ASDCP::MXF::Primer::ClearTagList()
 ASDCP::Result_t
 ASDCP::MXF::Primer::InitFromBuffer(const byte_t* p, ui32_t l)
 {
-  Result_t result = KLVPacket::InitFromBuffer(p, l, m_Dict.ul(MDD_Primer));
+  Result_t result = KLVPacket::InitFromBuffer(p, l, m_Dict->ul(MDD_Primer));
 
   if ( ASDCP_SUCCESS(result) )
     {
@@ -482,7 +482,7 @@ ASDCP::MXF::Primer::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
   if ( ASDCP_SUCCESS(result) )
     {
       ui32_t packet_length = MemWRT.Length();
-      result = WriteKLToBuffer(Buffer, m_Dict.ul(MDD_Primer), packet_length);
+      result = WriteKLToBuffer(Buffer, m_Dict->ul(MDD_Primer), packet_length);
 
       if ( ASDCP_SUCCESS(result) )
 	Buffer.Size(Buffer.Size() + packet_length);
@@ -556,7 +556,7 @@ ASDCP::MXF::Primer::Dump(FILE* stream)
   if ( stream == 0 )
     stream = stderr;
 
-  KLVPacket::Dump(stream, m_Dict, false);
+  KLVPacket::Dump(stream, *m_Dict, false);
   fprintf(stream, "Primer: %u %s\n",
 	  (ui32_t)LocalTagEntryBatch.size(),
 	  ( LocalTagEntryBatch.size() == 1 ? "entry" : "entries" ));
@@ -564,7 +564,7 @@ ASDCP::MXF::Primer::Dump(FILE* stream)
   Batch<LocalTagEntry>::iterator i = LocalTagEntryBatch.begin();
   for ( ; i != LocalTagEntryBatch.end(); i++ )
     {
-      const MDDEntry* Entry = m_Dict.FindUL((*i).UL.Value());
+      const MDDEntry* Entry = m_Dict->FindUL((*i).UL.Value());
       fprintf(stream, "  %s %s\n", (*i).EncodeString(identbuf, IdentBufferLen), (Entry ? Entry->name : "Unknown"));
     }
 }
@@ -611,7 +611,7 @@ ASDCP::MXF::Preface::WriteToTLVSet(TLVWriter& TLVSet)
 ASDCP::Result_t
 ASDCP::MXF::Preface::InitFromBuffer(const byte_t* p, ui32_t l)
 {
-  m_Typeinfo = &m_Dict.Type(MDD_Preface);
+  m_Typeinfo = &(m_Dict->Type(MDD_Preface));
   return InterchangeObject::InitFromBuffer(p, l);
 }
 
@@ -619,7 +619,7 @@ ASDCP::MXF::Preface::InitFromBuffer(const byte_t* p, ui32_t l)
 ASDCP::Result_t
 ASDCP::MXF::Preface::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 {
-  m_Typeinfo = &m_Dict.Type(MDD_Preface);
+  m_Typeinfo = &(m_Dict->Type(MDD_Preface));
   return InterchangeObject::WriteToBuffer(Buffer);
 }
 
@@ -647,7 +647,7 @@ ASDCP::MXF::Preface::Dump(FILE* stream)
 //------------------------------------------------------------------------------------------
 //
 
-ASDCP::MXF::OPAtomHeader::OPAtomHeader(const Dictionary& d) : Partition(d), m_Dict(d), m_RIP(d), m_Primer(d), m_Preface(0), m_HasRIP(false) {}
+ASDCP::MXF::OPAtomHeader::OPAtomHeader(const Dictionary*& d) : Partition(d), m_Dict(d), m_RIP(d), m_Primer(d), m_Preface(0), m_HasRIP(false) {}
 ASDCP::MXF::OPAtomHeader::~OPAtomHeader() {}
 
 //
@@ -702,15 +702,26 @@ ASDCP::MXF::OPAtomHeader::InitFromFile(const Kumu::FileReader& Reader)
     return result;
 
   // is it really OP-Atom?
-  UL OPAtomUL(m_Dict.ul(MDD_OPAtom));
-  UL InteropOPAtomUL(m_Dict.ul(MDD_MXFInterop_OPAtom));
+  UL OPAtomUL(m_Dict->ul(MDD_OPAtom));
+  UL InteropOPAtomUL(m_Dict->ul(MDD_MXFInterop_OPAtom));
 
-  if ( ! ( OperationalPattern == OPAtomUL  || OperationalPattern == InteropOPAtomUL ) )
+  if ( OperationalPattern == OPAtomUL ) // SMPTE
+    {
+      if ( m_Dict == &DefaultCompositeDict() )
+	m_Dict = &DefaultSMPTEDict();
+    }
+  else if ( OperationalPattern == InteropOPAtomUL ) // Interop
+    {
+      if ( m_Dict == &DefaultCompositeDict() )
+	m_Dict = &DefaultInteropDict();
+    }
+  else
     {
       char strbuf[IdentBufferLen];
-      const MDDEntry* Entry = m_Dict.FindUL(OperationalPattern.Value());
+      const MDDEntry* Entry = m_Dict->FindUL(OperationalPattern.Value());
       if ( Entry == 0 )
-	DefaultLogSink().Warn("Operational pattern is not OP-Atom: %s\n", OperationalPattern.EncodeString(strbuf, IdentBufferLen));
+	DefaultLogSink().Warn("Operational pattern is not OP-Atom: %s\n",
+			      OperationalPattern.EncodeString(strbuf, IdentBufferLen));
       else
 	DefaultLogSink().Warn("Operational pattern is not OP-Atom: %s\n", Entry->name);
     }
@@ -783,11 +794,11 @@ ASDCP::MXF::OPAtomHeader::InitFromBuffer(const byte_t* p, ui32_t l)
 
       if ( ASDCP_SUCCESS(result) )
 	{
-	  if ( object->IsA(m_Dict.ul(MDD_KLVFill)) )
+	  if ( object->IsA(m_Dict->ul(MDD_KLVFill)) )
 	    {
 	      delete object;
 	    }
-	  else if ( object->IsA(m_Dict.ul(MDD_Primer)) )
+	  else if ( object->IsA(m_Dict->ul(MDD_Primer)) )
 	    {
 	      delete object;
 	      result = m_Primer.InitFromBuffer(redo_p, end_p - redo_p);
@@ -796,7 +807,7 @@ ASDCP::MXF::OPAtomHeader::InitFromBuffer(const byte_t* p, ui32_t l)
 	    {
 	      m_PacketList->AddPacket(object);
 
-	      if ( object->IsA(m_Dict.ul(MDD_Preface)) && m_Preface == 0 )
+	      if ( object->IsA(m_Dict->ul(MDD_Preface)) && m_Preface == 0 )
 		m_Preface = (Preface*)object;
 	    }
 	}
@@ -894,7 +905,7 @@ ASDCP::MXF::OPAtomHeader::WriteToFile(Kumu::FileWriter& Writer, ui32_t HeaderSiz
 
   if ( ASDCP_SUCCESS(result) )
     {
-      UL TmpUL(m_Dict.ul(MDD_ClosedCompleteHeader));
+      UL TmpUL(m_Dict->ul(MDD_ClosedCompleteHeader));
       result = Partition::WriteToFile(Writer, TmpUL);
     }
 
@@ -932,7 +943,7 @@ ASDCP::MXF::OPAtomHeader::WriteToFile(Kumu::FileWriter& Writer, ui32_t HeaderSiz
 	}
 
       klv_fill_length -= kl_length;
-      result = WriteKLToFile(Writer, m_Dict.ul(MDD_KLVFill), klv_fill_length);
+      result = WriteKLToFile(Writer, m_Dict->ul(MDD_KLVFill), klv_fill_length);
 
       if ( ASDCP_SUCCESS(result) )
 	result = NilBuf.Capacity(klv_fill_length);
@@ -970,7 +981,7 @@ ASDCP::MXF::OPAtomHeader::Dump(FILE* stream)
 //------------------------------------------------------------------------------------------
 //
 
-ASDCP::MXF::OPAtomIndexFooter::OPAtomIndexFooter(const Dictionary& d) :
+ASDCP::MXF::OPAtomIndexFooter::OPAtomIndexFooter(const Dictionary*& d) :
   Partition(d), m_Dict(d),
   m_CurrentSegment(0), m_BytesPerEditUnit(0), m_BodySID(0),
   m_ECOffset(0), m_Lookup(0)
@@ -1109,7 +1120,7 @@ ASDCP::MXF::OPAtomIndexFooter::WriteToFile(Kumu::FileWriter& Writer, ui64_t dura
   if ( ASDCP_SUCCESS(result) )
     {
       IndexByteCount = FooterBuffer.Size();
-      UL FooterUL(m_Dict.ul(MDD_CompleteFooter));
+      UL FooterUL(m_Dict->ul(MDD_CompleteFooter));
       result = Partition::WriteToFile(Writer, FooterUL);
     }
 
@@ -1313,7 +1324,7 @@ ASDCP::MXF::InterchangeObject::Dump(FILE* stream)
   char identbuf[IdentBufferLen];
 
   fputc('\n', stream);
-  KLVPacket::Dump(stream, m_Dict, false);
+  KLVPacket::Dump(stream, *m_Dict, false);
   fprintf(stream, "             InstanceUID = %s\n",  InstanceUID.EncodeHex(identbuf, IdentBufferLen));
   fprintf(stream, "           GenerationUID = %s\n",  GenerationUID.EncodeHex(identbuf, IdentBufferLen));
 }
@@ -1380,7 +1391,7 @@ ASDCP::MXF::SetObjectFactory(ASDCP::UL label, ASDCP::MXF::MXFObjectFactory_t fac
 
 //
 ASDCP::MXF::InterchangeObject*
-ASDCP::MXF::CreateObject(const Dictionary& Dict, const UL& label)
+ASDCP::MXF::CreateObject(const Dictionary*& Dict, const UL& label)
 {
   if ( ! s_TypesInit )
     {

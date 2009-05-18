@@ -853,7 +853,7 @@ static const ASDCP::MDDEntry s_MDD_Table[] = {
     {0x00, 0x00}, false, "GenericStream_DataElement" },
   { { 0x06, 0x0e, 0x2b, 0x34, 0x01, 0x01, 0x01, 0x02, // 272
       0x06, 0x01, 0x01, 0x04, 0x06, 0x10, 0x00, 0x00 },
-      {0}, true, "GenericDescriptor_MXFInterop_SubDescriptors" },
+      {0}, true, "MXFInterop_GenericDescriptor_SubDescriptors" },
 
   { {0}, {0}, false, 0 }
 };

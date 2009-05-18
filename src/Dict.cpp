@@ -31,52 +31,108 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 #include "KM_mutex.h"
+#include "KM_log.h"
 #include "KLV.h"
 #include "MDD.cpp"
 
 //------------------------------------------------------------------------------------------
 
-//static ASDCP::Dictionary s_SMPTEDict;
-//static ASDCP::Dictionary s_InteropDict;
-
-const ASDCP::Dictionary&
-ASDCP::DefaultSMPTEDict() {
-  // return s_SMPTEDict;
-  return DefaultCompositeDict();
-}
-
-const ASDCP::Dictionary&
-ASDCP::DefaultInteropDict() {
-  // return s_InteropDict;
-  return DefaultCompositeDict();
-}
-
-//
+// The composite dict is the union of the SMPTE and Interop dicts
 //
 static ASDCP::Dictionary s_CompositeDict;
-static Kumu::Mutex s_Lock;
-static bool s_md_init = false;
+static Kumu::Mutex s_CompositeDictLock;
+static bool s_CompositeDictInit = false;
 
 //
 const ASDCP::Dictionary&
 ASDCP::DefaultCompositeDict()
 {
-  if ( ! s_md_init )
+  if ( ! s_CompositeDictInit )
     {
-      Kumu::AutoMutex AL(s_Lock);
+      Kumu::AutoMutex AL(s_CompositeDictLock);
 
-      if ( ! s_md_init )
+      if ( ! s_CompositeDictInit )
 	{
-	  for ( ui32_t x = 0; x < ASDCP::MDD_Table_size; x++ )
-	    s_CompositeDict.AddEntry(s_MDD_Table[x], x);
-	  //	    s_md_lookup.insert(std::map<UL, ui32_t>::value_type(UL(s_MDD_Table[x].ul), x));
-
-	  s_md_init = true;
+	  s_CompositeDict.Init();
+	  s_CompositeDictInit = true;
 	}
     }
 
   return s_CompositeDict;
 }
+
+//
+//
+static ASDCP::Dictionary s_InteropDict;
+static Kumu::Mutex s_InteropDictLock;
+static bool s_InteropDictInit = false;
+
+//
+const ASDCP::Dictionary&
+ASDCP::DefaultInteropDict()
+{
+  if ( ! s_InteropDictInit )
+    {
+      Kumu::AutoMutex AL(s_InteropDictLock);
+
+      if ( ! s_InteropDictInit )
+	{
+	  s_InteropDict.Init();
+
+	  s_InteropDict.AddEntry(s_InteropDict.Type(MDD_MXFInterop_OPAtom), MDD_OPAtom);
+	  s_InteropDict.AddEntry(s_InteropDict.Type(MDD_MXFInterop_CryptEssence), MDD_CryptEssence);
+	  s_InteropDict.AddEntry(s_InteropDict.Type(MDD_MXFInterop_GenericDescriptor_SubDescriptors),
+				     MDD_GenericDescriptor_SubDescriptors);
+	  s_InteropDict.DeleteEntry(MDD_TimedTextWrapping);
+	  s_InteropDict.DeleteEntry(MDD_TimedTextEssence);
+	  s_InteropDict.DeleteEntry(MDD_TimedTextDescriptor);
+	  s_InteropDict.DeleteEntry(MDD_TimedTextDescriptor_ResourceID);
+	  s_InteropDict.DeleteEntry(MDD_TimedTextDescriptor_UCSEncoding);
+	  s_InteropDict.DeleteEntry(MDD_TimedTextDescriptor_NamespaceURI);
+	  s_InteropDict.DeleteEntry(MDD_TimedTextResourceSubDescriptor);
+	  s_InteropDict.DeleteEntry(MDD_TimedTextResourceSubDescriptor_AncillaryResourceID);
+	  s_InteropDict.DeleteEntry(MDD_TimedTextResourceSubDescriptor_MIMEMediaType);
+	  s_InteropDict.DeleteEntry(MDD_TimedTextResourceSubDescriptor_EssenceStreamID);
+	  s_InteropDict.DeleteEntry(MDD_GenericStreamPartition);
+	  s_InteropDict.DeleteEntry(MDD_StereoscopicPictureSubDescriptor);
+	  s_InteropDict.DeleteEntry(MDD_GenericStream_DataElement);
+
+	  s_InteropDictInit = true;
+	}
+    }
+
+  return s_InteropDict;
+}
+
+//
+//
+static ASDCP::Dictionary s_SMPTEDict;
+static Kumu::Mutex s_SMPTEDictLock;
+static bool s_SMPTEDictInit = false;
+
+//
+const ASDCP::Dictionary&
+ASDCP::DefaultSMPTEDict()
+{
+  if ( ! s_SMPTEDictInit )
+    {
+      Kumu::AutoMutex AL(s_SMPTEDictLock);
+
+      if ( ! s_SMPTEDictInit )
+	{
+	  s_SMPTEDict.Init();
+
+	  s_SMPTEDict.DeleteEntry(MDD_MXFInterop_OPAtom);
+	  s_SMPTEDict.DeleteEntry(MDD_MXFInterop_CryptEssence);
+	  s_SMPTEDict.DeleteEntry(MDD_MXFInterop_GenericDescriptor_SubDescriptors);
+
+	  s_SMPTEDictInit = true;
+	}
+    }
+
+  return s_SMPTEDict;
+}
+
 
 //------------------------------------------------------------------------------------------
 //
@@ -84,14 +140,56 @@ ASDCP::DefaultCompositeDict()
 ASDCP::Dictionary::Dictionary() {}
 ASDCP::Dictionary::~Dictionary() {}
 
+//
+void
+ASDCP::Dictionary::Init()
+{
+  m_md_lookup.clear();
+  memset(m_MDD_Table, 0, sizeof(m_MDD_Table));
+
+  for ( ui32_t x = 0; x < ASDCP::MDD_Table_size; x++ )
+    AddEntry(s_MDD_Table[x], x);
+}
 
 //
 bool
 ASDCP::Dictionary::AddEntry(const MDDEntry& Entry, ui32_t index)
 {
-  m_MDD_Table[index] = Entry;
+  bool result = true;
+  // is this index already there?
+  std::map<ui32_t, ASDCP::UL>::iterator rii = m_md_rev_lookup.find(index);
+
+  if ( rii != m_md_rev_lookup.end() )
+    {
+      DeleteEntry(index);
+      result = false;
+    }
+
   m_md_lookup.insert(std::map<UL, ui32_t>::value_type(UL(Entry.ul), index));
-  return true;
+  m_md_rev_lookup.insert(std::map<ui32_t, UL>::value_type(index, UL(Entry.ul)));
+  m_MDD_Table[index] = Entry;
+
+  return result;
+}
+
+//
+bool
+ASDCP::Dictionary::DeleteEntry(ui32_t index)
+{
+  // is this index already there?
+  std::map<ui32_t, ASDCP::UL>::iterator rii = m_md_rev_lookup.find(index);
+
+  if ( rii != m_md_rev_lookup.end() )
+    {
+      std::map<ASDCP::UL, ui32_t>::iterator ii = m_md_lookup.find(rii->second);
+      assert(ii != m_md_lookup.end());
+
+      char buf[64];
+      Kumu::DefaultLogSink().Warn("Deleting %s: %s\n", ii->first.EncodeString(buf, 64), m_MDD_Table[index].name);
+      return true;
+    }
+
+  return false;
 }
 
 //

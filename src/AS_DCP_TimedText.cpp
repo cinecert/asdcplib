@@ -233,7 +233,7 @@ ASDCP::TimedText::MXFReader::h__Reader::ReadTimedTextResource(FrameBuffer& Frame
   if ( ! m_File.IsOpen() )
     return RESULT_INIT;
 
-  Result_t result = ReadEKLVFrame(0, FrameBuf, m_Dict.ul(MDD_TimedTextEssence), Ctx, HMAC);
+  Result_t result = ReadEKLVFrame(0, FrameBuf, m_Dict->ul(MDD_TimedTextEssence), Ctx, HMAC);
 
  if( ASDCP_SUCCESS(result) )
    {
@@ -318,7 +318,7 @@ ASDCP::TimedText::MXFReader::h__Reader::ReadAncillaryResource(const byte_t* uuid
 
 	      // read the essence packet
 	      if( ASDCP_SUCCESS(result) )
-		result = ReadEKLVPacket(0, 1, FrameBuf, m_Dict.ul(MDD_GenericStream_DataElement), Ctx, HMAC);
+		result = ReadEKLVPacket(0, 1, FrameBuf, m_Dict->ul(MDD_GenericStream_DataElement), Ctx, HMAC);
 	    }
 	}
     }
@@ -520,9 +520,9 @@ ASDCP::TimedText::MXFWriter::h__Writer::SetSourceStream(ASDCP::TimedText::TimedT
     {
       InitHeader();
       AddDMSegment(m_TDesc.EditRate, 24, TIMED_TEXT_DEF_LABEL,
-		   UL(m_Dict.ul(MDD_PictureDataDef)), TIMED_TEXT_PACKAGE_LABEL);
+		   UL(m_Dict->ul(MDD_PictureDataDef)), TIMED_TEXT_PACKAGE_LABEL);
 
-      AddEssenceDescriptor(UL(m_Dict.ul(MDD_TimedTextWrapping)));
+      AddEssenceDescriptor(UL(m_Dict->ul(MDD_TimedTextWrapping)));
 
       result = m_HeaderPart.WriteToFile(m_File, m_HeaderSize);
       
@@ -532,7 +532,7 @@ ASDCP::TimedText::MXFWriter::h__Writer::SetSourceStream(ASDCP::TimedText::TimedT
 
   if ( ASDCP_SUCCESS(result) )
     {
-      memcpy(m_EssenceUL, m_Dict.ul(MDD_TimedTextEssence), SMPTE_UL_LENGTH);
+      memcpy(m_EssenceUL, m_Dict->ul(MDD_TimedTextEssence), SMPTE_UL_LENGTH);
       m_EssenceUL[SMPTE_UL_LENGTH-1] = 1; // first (and only) essence container
       result = m_State.Goto_READY();
     }
@@ -585,7 +585,7 @@ ASDCP::TimedText::MXFWriter::h__Writer::WriteAncillaryResource(const ASDCP::Time
   Kumu::fpos_t here = m_File.Tell();
 
   // create generic stream partition header
-  static UL GenericStream_DataElement(m_Dict.ul(MDD_GenericStream_DataElement));
+  static UL GenericStream_DataElement(m_Dict->ul(MDD_GenericStream_DataElement));
   MXF::Partition GSPart(m_Dict);
 
   GSPart.ThisPartition = here;
@@ -594,8 +594,8 @@ ASDCP::TimedText::MXFWriter::h__Writer::WriteAncillaryResource(const ASDCP::Time
   GSPart.OperationalPattern = m_HeaderPart.OperationalPattern;
 
   m_HeaderPart.m_RIP.PairArray.push_back(RIP::Pair(m_EssenceStreamID++, here));
-  GSPart.EssenceContainers.push_back(UL(m_Dict.ul(MDD_TimedTextEssence)));
-  UL TmpUL(m_Dict.ul(MDD_GenericStreamPartition));
+  GSPart.EssenceContainers.push_back(UL(m_Dict->ul(MDD_TimedTextEssence)));
+  UL TmpUL(m_Dict->ul(MDD_GenericStreamPartition));
   Result_t result = GSPart.WriteToFile(m_File, TmpUL);
 
   if ( ASDCP_SUCCESS(result) )

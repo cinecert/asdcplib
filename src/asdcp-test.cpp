@@ -1728,7 +1728,8 @@ show_file_info(CommandOptions& Options)
     {
       fprintf(stderr, "File is not AS-DCP: %s\n", Options.filenames[0]);
       Kumu::FileReader   Reader;
-      MXF::OPAtomHeader TestHeader(DefaultCompositeDict());
+      const Dictionary* Dict = &DefaultCompositeDict();
+      MXF::OPAtomHeader TestHeader(Dict);
 
       result = Reader.OpenRead(Options.filenames[0]);
 

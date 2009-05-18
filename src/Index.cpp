@@ -34,7 +34,7 @@ const ui32_t kl_length = ASDCP::SMPTE_UL_LENGTH + ASDCP::MXF_BER_LENGTH;
 
 
 //
-ASDCP::MXF::IndexTableSegment::IndexTableSegment(const Dictionary& d) :
+ASDCP::MXF::IndexTableSegment::IndexTableSegment(const Dictionary*& d) :
   InterchangeObject(d), m_Dict(d),
   IndexStartPosition(0), IndexDuration(0), EditUnitByteCount(0),
   IndexSID(129), BodySID(1), SliceCount(0), PosTableCount(0)
@@ -86,7 +86,7 @@ ASDCP::MXF::IndexTableSegment::WriteToTLVSet(TLVWriter& TLVSet)
 ASDCP::Result_t
 ASDCP::MXF::IndexTableSegment::InitFromBuffer(const byte_t* p, ui32_t l)
 {
-  m_Typeinfo = &m_Dict.Type(MDD_IndexTableSegment);
+  m_Typeinfo = &(m_Dict->Type(MDD_IndexTableSegment));
   return InterchangeObject::InitFromBuffer(p, l);
 }
 
@@ -94,7 +94,7 @@ ASDCP::MXF::IndexTableSegment::InitFromBuffer(const byte_t* p, ui32_t l)
 ASDCP::Result_t
 ASDCP::MXF::IndexTableSegment::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 {
-  m_Typeinfo = &m_Dict.Type(MDD_IndexTableSegment);
+  m_Typeinfo = &(m_Dict->Type(MDD_IndexTableSegment));
   return InterchangeObject::WriteToBuffer(Buffer);
 }
 

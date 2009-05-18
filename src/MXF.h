@@ -41,13 +41,13 @@ namespace ASDCP
       class InterchangeObject;
 
       //
-      typedef ASDCP::MXF::InterchangeObject* (*MXFObjectFactory_t)(const Dictionary&);
+      typedef ASDCP::MXF::InterchangeObject* (*MXFObjectFactory_t)(const Dictionary*&);
 
       //
       void SetObjectFactory(UL label, MXFObjectFactory_t factory);
 
       //
-      InterchangeObject* CreateObject(const Dictionary& Dict, const UL& label);
+      InterchangeObject* CreateObject(const Dictionary*& Dict, const UL& label);
 
 
       // seek an open file handle to the start of the RIP KLV packet
@@ -95,10 +95,10 @@ namespace ASDCP
 	      }
 	    };
 
-	  const Dictionary& m_Dict;
+	  const Dictionary*& m_Dict;
 	  Array<Pair> PairArray;
 
-	RIP(const Dictionary& d) : m_Dict(d) {}
+	RIP(const Dictionary*& d) : m_Dict(d) {}
 	  virtual ~RIP() {}
 	  virtual Result_t InitFromFile(const Kumu::FileReader& Reader);
 	  virtual Result_t WriteToFile(Kumu::FileWriter& Writer);
@@ -118,7 +118,7 @@ namespace ASDCP
 	  mem_ptr<h__PacketList> m_PacketList;
 
 	public:
-	  const Dictionary& m_Dict;
+	  const Dictionary*& m_Dict;
 
 	  ui16_t    MajorVersion;
 	  ui16_t    MinorVersion;
@@ -134,7 +134,7 @@ namespace ASDCP
 	  UL        OperationalPattern;
 	  Batch<UL> EssenceContainers;
 
-	  Partition(const Dictionary&);
+	  Partition(const Dictionary*&);
 	  virtual ~Partition();
 	  virtual void     AddChildObject(InterchangeObject*);
 	  virtual Result_t InitFromFile(const Kumu::FileReader& Reader);
@@ -185,9 +185,9 @@ namespace ASDCP
 	    };
 
 	  Batch<LocalTagEntry> LocalTagEntryBatch;
-	  const Dictionary& m_Dict;
+	  const Dictionary*& m_Dict;
 
-	  Primer(const Dictionary&);
+	  Primer(const Dictionary*&);
 	  virtual ~Primer();
 
 	  virtual void     ClearTagList();
@@ -210,12 +210,12 @@ namespace ASDCP
 	  const MDDEntry* m_Typeinfo;
 
 	public:
-	  const Dictionary& m_Dict;
+	  const Dictionary*& m_Dict;
 	  IPrimerLookup* m_Lookup;
 	  UUID           InstanceUID;
 	  UUID           GenerationUID;
 
-	InterchangeObject(const Dictionary& d) : m_Typeinfo(0), m_Dict(d), m_Lookup(0) {}
+	InterchangeObject(const Dictionary*& d) : m_Typeinfo(0), m_Dict(d), m_Lookup(0) {}
 	  virtual ~InterchangeObject() {}
           virtual Result_t InitFromTLVSet(TLVReader& TLVSet);
 	  virtual Result_t InitFromBuffer(const byte_t* p, ui32_t l);
@@ -233,7 +233,7 @@ namespace ASDCP
 	  Preface();
 
 	public:
-	  const Dictionary& m_Dict;
+	  const Dictionary*& m_Dict;
 	  UUID         GenerationUID;
 	  Timestamp    LastModifiedDate;
 	  ui16_t       Version;
@@ -245,7 +245,7 @@ namespace ASDCP
 	  Batch<UL>    EssenceContainers;
 	  Batch<UL>    DMSchemes;
 
-	Preface(const Dictionary& d) : InterchangeObject(d), m_Dict(d), Version(258), ObjectModelVersion(0) {}
+	Preface(const Dictionary*& d) : InterchangeObject(d), m_Dict(d), Version(258), ObjectModelVersion(0) {}
 	  virtual ~Preface() {}
           virtual Result_t InitFromTLVSet(TLVReader& TLVSet);
 	  virtual Result_t InitFromBuffer(const byte_t* p, ui32_t l);
@@ -300,7 +300,7 @@ namespace ASDCP
 	      const char* EncodeString(char* str_buf, ui32_t buf_len) const;
 	    };
 
-	  const Dictionary& m_Dict;
+	  const Dictionary*& m_Dict;
 
 	  Rational    IndexEditRate;
 	  ui64_t      IndexStartPosition;
@@ -313,7 +313,7 @@ namespace ASDCP
 	  Batch<DeltaEntry> DeltaEntryArray;
 	  Batch<IndexEntry> IndexEntryArray;
 
-	  IndexTableSegment(const Dictionary&);
+	  IndexTableSegment(const Dictionary*&);
 	  virtual ~IndexTableSegment();
 	  virtual Result_t InitFromTLVSet(TLVReader& TLVSet);
 	  virtual Result_t InitFromBuffer(const byte_t* p, ui32_t l);
@@ -334,14 +334,14 @@ namespace ASDCP
 	  OPAtomHeader();
 
 	public:
-	  const Dictionary&   m_Dict;
+	  const Dictionary*&   m_Dict;
 	  ASDCP::MXF::RIP     m_RIP;
 	  ASDCP::MXF::Primer  m_Primer;
 	  Preface*            m_Preface;
 	  ASDCP::FrameBuffer  m_Buffer;
 	  bool                m_HasRIP;
 
-	  OPAtomHeader(const Dictionary&);
+	  OPAtomHeader(const Dictionary*&);
 	  virtual ~OPAtomHeader();
 	  virtual Result_t InitFromFile(const Kumu::FileReader& Reader);
 	  virtual Result_t InitFromPartitionBuffer(const byte_t* p, ui32_t l);
@@ -366,11 +366,11 @@ namespace ASDCP
 	  ASDCP_NO_COPY_CONSTRUCT(OPAtomIndexFooter);
 
 	public:
-	  const Dictionary&   m_Dict;
+	  const Dictionary*&   m_Dict;
 	  Kumu::fpos_t        m_ECOffset;
 	  IPrimerLookup*      m_Lookup;
 	 
-	  OPAtomIndexFooter(const Dictionary&);
+	  OPAtomIndexFooter(const Dictionary*&);
 	  virtual ~OPAtomIndexFooter();
 	  virtual Result_t InitFromFile(const Kumu::FileReader& Reader);
 	  virtual Result_t InitFromPartitionBuffer(const byte_t* p, ui32_t l);

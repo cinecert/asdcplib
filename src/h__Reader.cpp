@@ -37,7 +37,7 @@ using namespace ASDCP::MXF;
 
 //
 ASDCP::h__Reader::h__Reader(const Dictionary& d) :
-  m_HeaderPart(d), m_BodyPart(d), m_FooterPart(d), m_Dict(d), m_EssenceStart(0)
+  m_HeaderPart(m_Dict), m_BodyPart(m_Dict), m_FooterPart(m_Dict), m_Dict(&d), m_EssenceStart(0)
 {
 }
 
@@ -62,8 +62,8 @@ ASDCP::h__Reader::InitInfo()
   InterchangeObject* Object;
 
   m_Info.LabelSetType = LS_MXF_UNKNOWN;
-  UL OPAtomUL(m_Dict.ul(MDD_OPAtom));
-  UL Interop_OPAtomUL(m_Dict.ul(MDD_MXFInterop_OPAtom));
+  UL OPAtomUL(m_Dict->ul(MDD_OPAtom));
+  UL Interop_OPAtomUL(m_Dict->ul(MDD_MXFInterop_OPAtom));
 
   if ( m_HeaderPart.OperationalPattern == Interop_OPAtomUL )
     m_Info.LabelSetType = LS_MXF_INTEROP;
@@ -92,7 +92,7 @@ ASDCP::h__Reader::InitInfo()
       Result_t cr_result = m_HeaderPart.GetMDObjectByType(OBJ_TYPE_ARGS(CryptographicContext), &Object);
 
       if( ASDCP_SUCCESS(cr_result) )
-	MD_to_CryptoInfo((CryptographicContext*)Object, m_Info, m_Dict);
+	MD_to_CryptoInfo((CryptographicContext*)Object, m_Info, *m_Dict);
     }
 
   return result;
@@ -215,8 +215,8 @@ ASDCP::h__Reader::ReadEKLVPacket(ui32_t FrameNum, ui32_t SequenceNum, ASDCP::Fra
   ui64_t PacketLength = Reader.Length();
   m_LastPosition = m_LastPosition + Reader.KLLength() + PacketLength;
 
-  if ( memcmp(Key.Value(), m_Dict.ul(MDD_CryptEssence), Key.Size() - 1) == 0  // ignore the stream numbers
-       || memcmp(Key.Value(), m_Dict.ul(MDD_MXFInterop_CryptEssence), Key.Size() - 1) == 0 )
+  if ( memcmp(Key.Value(), m_Dict->ul(MDD_CryptEssence), Key.Size() - 1) == 0  // ignore the stream numbers
+       || memcmp(Key.Value(), m_Dict->ul(MDD_MXFInterop_CryptEssence), Key.Size() - 1) == 0 )
     {
       if ( ! m_Info.EncryptedEssence )
 	{
@@ -272,7 +272,7 @@ ASDCP::h__Reader::ReadEKLVPacket(ui32_t FrameNum, ui32_t SequenceNum, ASDCP::Fra
       if ( memcmp(ess_p, EssenceUL, SMPTE_UL_LENGTH - 1) != 0 ) // ignore the stream number
 	{
 	  char strbuf[IntBufferLen];
-	  const MDDEntry* Entry = m_Dict.FindUL(Key.Value());
+	  const MDDEntry* Entry = m_Dict->FindUL(Key.Value());
 	  if ( Entry == 0 )
 	    DefaultLogSink().Warn("Unexpected Essence UL found: %s.\n", Key.EncodeString(strbuf, IntBufferLen));
 	  else
@@ -383,7 +383,7 @@ ASDCP::h__Reader::ReadEKLVPacket(ui32_t FrameNum, ui32_t SequenceNum, ASDCP::Fra
   else
     {
       char strbuf[IntBufferLen];
-      const MDDEntry* Entry = m_Dict.FindUL(Key.Value());
+      const MDDEntry* Entry = m_Dict->FindUL(Key.Value());
       if ( Entry == 0 )
         DefaultLogSink().Warn("Unexpected Essence UL found: %s.\n", Key.EncodeString(strbuf, IntBufferLen));
       else

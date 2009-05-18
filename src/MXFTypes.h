@@ -41,9 +41,9 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // used with TLVReader::Read*
 //
 // these are used below to manufacture arguments
-#define OBJ_READ_ARGS(s,l) m_Dict.Type(MDD_##s##_##l), &l
-#define OBJ_WRITE_ARGS(s,l) m_Dict.Type(MDD_##s##_##l), &l
-#define OBJ_TYPE_ARGS(t) m_Dict.Type(MDD_##t).ul
+#define OBJ_READ_ARGS(s,l) m_Dict->Type(MDD_##s##_##l), &l
+#define OBJ_WRITE_ARGS(s,l) m_Dict->Type(MDD_##s##_##l), &l
+#define OBJ_TYPE_ARGS(t) m_Dict->Type(MDD_##t).ul
 
 
 namespace ASDCP

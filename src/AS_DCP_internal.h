@@ -114,7 +114,7 @@ namespace ASDCP
       h__Reader();
 
     public:
-      const Dictionary&  m_Dict;
+      const Dictionary*  m_Dict;
       Kumu::FileReader   m_File;
       OPAtomHeader       m_HeaderPart;
       Partition          m_BodyPart;
@@ -186,7 +186,7 @@ namespace ASDCP
       h__Writer();
 
     public:
-      const Dictionary&  m_Dict;
+      const Dictionary*  m_Dict;
       Kumu::FileWriter   m_File;
       ui32_t             m_HeaderSize;
       OPAtomHeader       m_HeaderPart;

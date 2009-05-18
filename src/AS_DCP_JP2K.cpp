@@ -359,7 +359,7 @@ lh__Reader::ReadFrame(ui32_t FrameNum, JP2K::FrameBuffer& FrameBuf,
   if ( ! m_File.IsOpen() )
     return RESULT_INIT;
 
-  return ReadEKLVFrame(FrameNum, FrameBuf, m_Dict.ul(MDD_JPEG2000Essence), Ctx, HMAC);
+  return ReadEKLVFrame(FrameNum, FrameBuf, m_Dict->ul(MDD_JPEG2000Essence), Ctx, HMAC);
 }
 
 
@@ -547,7 +547,7 @@ public:
       {
 	ui32_t SequenceNum = FrameNum * 2;
 	SequenceNum += ( phase == SP_RIGHT ) ? 2 : 1;
-	result = ReadEKLVPacket(FrameNum, SequenceNum, FrameBuf, m_Dict.ul(MDD_JPEG2000Essence), Ctx, HMAC);
+	result = ReadEKLVPacket(FrameNum, SequenceNum, FrameBuf, m_Dict->ul(MDD_JPEG2000Essence), Ctx, HMAC);
       }
 
     return result;
@@ -708,12 +708,12 @@ lh__Writer::JP2K_PDesc_to_MD(JP2K::PictureDescriptor& PDesc)
 
   if ( PDesc.StoredWidth < 2049 )
     {
-      PDescObj->PictureEssenceCoding.Set(m_Dict.ul(MDD_JP2KEssenceCompression_2K));
+      PDescObj->PictureEssenceCoding.Set(m_Dict->ul(MDD_JP2KEssenceCompression_2K));
       m_EssenceSubDescriptor->Rsize = 3;
     }
   else
     {
-      PDescObj->PictureEssenceCoding.Set(m_Dict.ul(MDD_JP2KEssenceCompression_4K));
+      PDescObj->PictureEssenceCoding.Set(m_Dict->ul(MDD_JP2KEssenceCompression_4K));
       m_EssenceSubDescriptor->Rsize = 4;
     }
 
@@ -806,13 +806,13 @@ lh__Writer::SetSourceStream(const PictureDescriptor& PDesc, const std::string& l
   Result_t result = JP2K_PDesc_to_MD(m_PDesc);
 
   if ( ASDCP_SUCCESS(result) )
-      result = WriteMXFHeader(label, UL(m_Dict.ul(MDD_JPEG_2000Wrapping)),
-			      PICT_DEF_LABEL,     UL(m_Dict.ul(MDD_PictureDataDef)),
+      result = WriteMXFHeader(label, UL(m_Dict->ul(MDD_JPEG_2000Wrapping)),
+			      PICT_DEF_LABEL,     UL(m_Dict->ul(MDD_PictureDataDef)),
 			      LocalEditRate, 24 /* TCFrameRate */);
 
   if ( ASDCP_SUCCESS(result) )
     {
-      memcpy(m_EssenceUL, m_Dict.ul(MDD_JPEG2000Essence), SMPTE_UL_LENGTH);
+      memcpy(m_EssenceUL, m_Dict->ul(MDD_JPEG2000Essence), SMPTE_UL_LENGTH);
       m_EssenceUL[SMPTE_UL_LENGTH-1] = 1; // first (and only) essence container
       result = m_State.Goto_READY();
     }

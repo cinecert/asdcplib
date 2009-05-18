@@ -307,7 +307,7 @@ namespace ASDCP {
 	MDD_StereoscopicPictureSubDescriptor, // 269
         MDD_WaveAudioDescriptor_ChannelAssignment,  // 270
 	MDD_GenericStream_DataElement, // 271
-        MDD_GenericDescriptor_MXFInterop_SubDescriptors,  // 272
+        MDD_MXFInterop_GenericDescriptor_SubDescriptors,  // 272
 	MDD_Max
     }; // enum MDD_t
 
