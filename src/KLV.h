@@ -45,11 +45,13 @@ namespace ASDCP
   const ui32_t SMPTE_UL_LENGTH = 16;
   const ui32_t SMPTE_UMID_LENGTH = 32;
   const byte_t SMPTE_UL_START[4] = { 0x06, 0x0e, 0x2b, 0x34 };
+
+#ifndef MAX_KLV_PACKET_LENGTH
   const ui32_t MAX_KLV_PACKET_LENGTH = 1024*1024*64;
+#endif
 
   const ui32_t IdentBufferLen = 128;
-
-const ui32_t IntBufferLen = 64;
+  const ui32_t IntBufferLen = 64;
 
 inline const char* i64sz(i64_t i, char* buf)
 { 
@@ -132,9 +134,10 @@ inline const char* ui64sz(ui64_t i, char* buf)
   };
 
   //
-  class Dict
+  class Dictionary
     {
     public:
+#if 0
       static const MDDEntry* FindUL(const byte_t*);
       static const MDDEntry* FindName(const char*);
       static const MDDEntry& Type(MDD_t type_id);
@@ -145,17 +148,31 @@ inline const char* ui64sz(ui64_t i, char* buf)
       inline static const byte_t* ul(MDD_t type_id) {
 	return Type(type_id).ul;
       }
+#endif
 
     private:
-      Dict* m_Dict;
-      ASDCP_NO_COPY_CONSTRUCT(Dict);
+      //      Dictionary* m_Dict;
+      ASDCP_NO_COPY_CONSTRUCT(Dictionary);
 
-    protected:
-      Dict();
 
     public:
-      ~Dict();
+      Dictionary();
+      ~Dictionary();
+
+      const MDDEntry* FindUL(const byte_t*) const;
+
+      inline const byte_t* ul(MDD_t type_id) const {
+	return Type(type_id).ul;
+      }
+
+      const MDDEntry& Type(MDD_t type_id) const;
     };
+
+
+  const Dictionary& DefaultSMPTEDict();
+  const Dictionary& DefaultInteropDict();
+  const Dictionary& DefaultCompositeDict();
+
 
   //
   class IPrimerLookup
@@ -188,9 +205,9 @@ inline const char* ui64sz(ui64_t i, char* buf)
 
       virtual bool     HasUL(const byte_t*);
       virtual Result_t InitFromBuffer(const byte_t*, ui32_t);
-      virtual Result_t InitFromBuffer(const byte_t*, ui32_t, const byte_t* label);
-      virtual Result_t WriteKLToBuffer(ASDCP::FrameBuffer&, const byte_t* label, ui32_t length);
-      virtual void     Dump(FILE*, bool);
+      virtual Result_t InitFromBuffer(const byte_t*, ui32_t, const UL& label);
+      virtual Result_t WriteKLToBuffer(ASDCP::FrameBuffer&, const UL& label, ui32_t length);
+      virtual void     Dump(FILE*, const Dictionary& Dict, bool show_value);
     };
 
   //
@@ -206,8 +223,8 @@ inline const char* ui64sz(ui64_t i, char* buf)
       virtual ~KLVFilePacket() {}
 
       virtual Result_t InitFromFile(const Kumu::FileReader&);
-      virtual Result_t InitFromFile(const Kumu::FileReader&, const byte_t* label);
-      virtual Result_t WriteKLToFile(Kumu::FileWriter& Writer, const byte_t* label, ui32_t length);
+      virtual Result_t InitFromFile(const Kumu::FileReader&, const UL& label);
+      virtual Result_t WriteKLToFile(Kumu::FileWriter& Writer, const UL& label, ui32_t length);
     };
 
 } // namespace ASDCP

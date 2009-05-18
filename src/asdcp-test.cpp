@@ -1728,7 +1728,7 @@ show_file_info(CommandOptions& Options)
     {
       fprintf(stderr, "File is not AS-DCP: %s\n", Options.filenames[0]);
       Kumu::FileReader   Reader;
-      MXF::OPAtomHeader TestHeader;
+      MXF::OPAtomHeader TestHeader(DefaultCompositeDict());
 
       result = Reader.OpenRead(Options.filenames[0]);
 
@@ -1851,6 +1851,7 @@ main(int argc, const char** argv)
       for ( ui32_t i = 0; i < Options.file_count && ASDCP_SUCCESS(result); i++ )
 	result = digest_file(Options.filenames[i]);
     }
+#if 0
   else if ( Options.mode == MMT_UL_LIST )
     {
       MDD_t di = (MDD_t)0;
@@ -1863,6 +1864,7 @@ main(int argc, const char** argv)
 	  di = (MDD_t)(di + 1);
 	}
     }
+#endif
   else if ( Options.mode == MMT_EXTRACT )
     {
       EssenceType_t EssenceType;

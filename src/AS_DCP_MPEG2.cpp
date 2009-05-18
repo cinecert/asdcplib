@@ -163,11 +163,12 @@ ASDCP::MPEG2::VideoDescriptorDump(const VideoDescriptor& VDesc, FILE* stream)
 class ASDCP::MPEG2::MXFReader::h__Reader : public ASDCP::h__Reader
 {
   ASDCP_NO_COPY_CONSTRUCT(h__Reader);
+  h__Reader();
 
 public:
   VideoDescriptor m_VDesc;        // video parameter list
 
-  h__Reader() {}
+  h__Reader(const Dictionary& d) : ASDCP::h__Reader(d) {}
   ~h__Reader() {}
   Result_t    OpenRead(const char*);
   Result_t    ReadFrame(ui32_t, FrameBuffer&, AESDecContext*, HMACContext*);
@@ -254,7 +255,7 @@ ASDCP::MPEG2::MXFReader::h__Reader::ReadFrame(ui32_t FrameNum, FrameBuffer& Fram
   if ( ! m_File.IsOpen() )
     return RESULT_INIT;
 
-  Result_t result = ReadEKLVFrame(FrameNum, FrameBuf, Dict::ul(MDD_MPEG2Essence), Ctx, HMAC);
+  Result_t result = ReadEKLVFrame(FrameNum, FrameBuf, m_Dict.ul(MDD_MPEG2Essence), Ctx, HMAC);
 
   if ( ASDCP_FAILURE(result) )
     return result;
@@ -304,7 +305,7 @@ ASDCP::MPEG2::FrameBuffer::Dump(FILE* stream, ui32_t dump_len) const
 
 ASDCP::MPEG2::MXFReader::MXFReader()
 {
-  m_Reader = new h__Reader;
+  m_Reader = new h__Reader(DefaultCompositeDict());
 }
 
 
@@ -407,14 +408,15 @@ ASDCP::MPEG2::MXFReader::DumpIndex(FILE* stream) const
 //
 class ASDCP::MPEG2::MXFWriter::h__Writer : public ASDCP::h__Writer
 {
+  ASDCP_NO_COPY_CONSTRUCT(h__Writer);
+  h__Writer();
+
 public:
   VideoDescriptor m_VDesc;
   ui32_t          m_GOPOffset;
   byte_t          m_EssenceUL[SMPTE_UL_LENGTH];
 
-  ASDCP_NO_COPY_CONSTRUCT(h__Writer);
-
-  h__Writer() : m_GOPOffset(0) {
+  h__Writer(const Dictionary& d) : ASDCP::h__Writer(d), m_GOPOffset(0) {
     memset(m_EssenceUL, 0, SMPTE_UL_LENGTH);
   }
 
@@ -440,7 +442,7 @@ ASDCP::MPEG2::MXFWriter::h__Writer::OpenWrite(const char* filename, ui32_t Heade
   if ( ASDCP_SUCCESS(result) )
     {
       m_HeaderSize = HeaderSize;
-      m_EssenceDescriptor = new MPEG2VideoDescriptor;
+      m_EssenceDescriptor = new MPEG2VideoDescriptor(m_Dict);
       result = m_State.Goto_INIT();
     }
 
@@ -458,13 +460,13 @@ ASDCP::MPEG2::MXFWriter::h__Writer::SetSourceStream(const VideoDescriptor& VDesc
   Result_t result = MPEG2_VDesc_to_MD(m_VDesc, (MPEG2VideoDescriptor*)m_EssenceDescriptor);
 
   if ( ASDCP_SUCCESS(result) )
-      result = WriteMXFHeader(MPEG_PACKAGE_LABEL, UL(Dict::ul(MDD_MPEG2_VESWrapping)), 
-			      PICT_DEF_LABEL,     UL(Dict::ul(MDD_PictureDataDef)),
+      result = WriteMXFHeader(MPEG_PACKAGE_LABEL, UL(m_Dict.ul(MDD_MPEG2_VESWrapping)), 
+			      PICT_DEF_LABEL,     UL(m_Dict.ul(MDD_PictureDataDef)),
 			      m_VDesc.EditRate, 24 /* TCFrameRate */);
 
   if ( ASDCP_SUCCESS(result) )
     {
-      memcpy(m_EssenceUL, Dict::ul(MDD_MPEG2Essence), SMPTE_UL_LENGTH);
+      memcpy(m_EssenceUL, m_Dict.ul(MDD_MPEG2Essence), SMPTE_UL_LENGTH);
       m_EssenceUL[SMPTE_UL_LENGTH-1] = 1; // first (and only) essence container
       result = m_State.Goto_READY();
     }
@@ -566,7 +568,11 @@ ASDCP::Result_t
 ASDCP::MPEG2::MXFWriter::OpenWrite(const char* filename, const WriterInfo& Info,
 				   const VideoDescriptor& VDesc, ui32_t HeaderSize)
 {
-  m_Writer = new h__Writer;
+  if ( Info.LabelSetType == LS_MXF_SMPTE )
+    m_Writer = new h__Writer(DefaultSMPTEDict());
+  else
+    m_Writer = new h__Writer(DefaultInteropDict());
+
   m_Writer->m_Info = Info;
   
   Result_t result = m_Writer->OpenWrite(filename, HeaderSize);

@@ -294,18 +294,25 @@ namespace ASDCP {
   // MXF files use SMPTE Universal Labels to identify data items. The set of Labels
   // in a file is determined by the MXF Operational Pattern and any constraining
   // documentation. There are currently two flavors of AS-DCP file in use: MXF Interop
-  // and SMPTE. The two differ only in the values of two labels:
+  // (AKA JPEG Interop) and SMPTE. The two differ in the values of three labels:
   //
-  //   OP Atom     / Interop : 06 0e 2b 34 04 01 01 01  0d 01 02 01 10 00 00 00
-  //   OP Atom     / SMPTE   : 06 0e 2b 34 04 01 01 02  0d 01 02 01 10 00 00 00
-  // and 
-  //   EKLV Packet / Interop : 06 0e 2b 34 02 04 01 07  0d 01 03 01 02 7e 01 00
-  //   EKLV Packet / SMPTE   : 06 0e 2b 34 02 04 01 01  0d 01 03 01 02 7e 01 00
+  //   OPAtom
+  //      Interop : 06 0e 2b 34 04 01 01 01  0d 01 02 01 10 00 00 00
+  //      SMPTE   : 06 0e 2b 34 04 01 01 02  0d 01 02 01 10 00 00 00
+  //
+  //   EKLV Packet:
+  //      Interop : 06 0e 2b 34 02 04 01 07  0d 01 03 01 02 7e 01 00
+  //      SMPTE   : 06 0e 2b 34 02 04 01 01  0d 01 03 01 02 7e 01 00
+  //
+  //   GenericDescriptor/SubDescriptors:
+  //      Interop : 06 0e 2b 34 01 01 01 02  06 01 01 04 06 10 00 00
+  //      SMPTE   : 06 0e 2b 34 01 01 01 09  06 01 01 04 06 10 00 00
   //
   // asdcplib will read any (otherwise valid) file which has any combination of the
   // above values. When writing files, MXF Interop labels are used by default. To
   // write a file containing SMPTE labels, replace the default label set value in
   // the WriterInfo before calling OpenWrite()
+  //
   //
   enum LabelSet_t
   {

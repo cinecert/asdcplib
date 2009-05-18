@@ -194,11 +194,12 @@ calc_CBR_frame_size(ASDCP::WriterInfo& Info, const ASDCP::PCM::AudioDescriptor& 
 class ASDCP::PCM::MXFReader::h__Reader : public ASDCP::h__Reader
 {
   ASDCP_NO_COPY_CONSTRUCT(h__Reader);
+  h__Reader();
 
 public:
   AudioDescriptor m_ADesc;
 
-  h__Reader() {}
+  h__Reader(const Dictionary& d) : ASDCP::h__Reader(d) {}
   ~h__Reader() {}
   Result_t    OpenRead(const char*);
   Result_t    ReadFrame(ui32_t, FrameBuffer&, AESDecContext*, HMACContext*);
@@ -266,7 +267,7 @@ ASDCP::PCM::MXFReader::h__Reader::ReadFrame(ui32_t FrameNum, FrameBuffer& FrameB
   if ( ! m_File.IsOpen() )
     return RESULT_INIT;
 
-  return ReadEKLVFrame(FrameNum, FrameBuf, Dict::ul(MDD_WAVEssence), Ctx, HMAC);
+  return ReadEKLVFrame(FrameNum, FrameBuf, m_Dict.ul(MDD_WAVEssence), Ctx, HMAC);
 }
 
 //------------------------------------------------------------------------------------------
@@ -290,7 +291,7 @@ ASDCP::PCM::FrameBuffer::Dump(FILE* stream, ui32_t dump_len) const
 
 ASDCP::PCM::MXFReader::MXFReader()
 {
-  m_Reader = new h__Reader;
+  m_Reader = new h__Reader(DefaultCompositeDict());
 }
 
 
@@ -374,14 +375,14 @@ ASDCP::PCM::MXFReader::DumpIndex(FILE* stream) const
 //
 class ASDCP::PCM::MXFWriter::h__Writer : public ASDCP::h__Writer
 {
+  ASDCP_NO_COPY_CONSTRUCT(h__Writer);
+  h__Writer();
+
 public:
   AudioDescriptor m_ADesc;
   byte_t          m_EssenceUL[SMPTE_UL_LENGTH];
-
-
-  ASDCP_NO_COPY_CONSTRUCT(h__Writer);
   
-  h__Writer(){
+  h__Writer(const Dictionary& d) : ASDCP::h__Writer(d) {
     memset(m_EssenceUL, 0, SMPTE_UL_LENGTH);
   }
 
@@ -408,7 +409,7 @@ ASDCP::PCM::MXFWriter::h__Writer::OpenWrite(const char* filename, ui32_t HeaderS
   if ( ASDCP_SUCCESS(result) )
     {
       m_HeaderSize = HeaderSize;
-      m_EssenceDescriptor = new WaveAudioDescriptor;
+      m_EssenceDescriptor = new WaveAudioDescriptor(m_Dict);
       result = m_State.Goto_INIT();
     }
 
@@ -443,13 +444,13 @@ ASDCP::PCM::MXFWriter::h__Writer::SetSourceStream(const AudioDescriptor& ADesc)
   Result_t result = PCM_ADesc_to_MD(m_ADesc, (WaveAudioDescriptor*)m_EssenceDescriptor);
   
   if ( ASDCP_SUCCESS(result) )
-      result = WriteMXFHeader(PCM_PACKAGE_LABEL, UL(Dict::ul(MDD_WAVWrapping)),
-			      SOUND_DEF_LABEL,   UL(Dict::ul(MDD_SoundDataDef)),
+      result = WriteMXFHeader(PCM_PACKAGE_LABEL, UL(m_Dict.ul(MDD_WAVWrapping)),
+			      SOUND_DEF_LABEL,   UL(m_Dict.ul(MDD_SoundDataDef)),
 			      m_ADesc.SampleRate, 24 /* TCFrameRate */, calc_CBR_frame_size(m_Info, m_ADesc));
 
   if ( ASDCP_SUCCESS(result) )
     {
-      memcpy(m_EssenceUL, Dict::ul(MDD_WAVEssence), SMPTE_UL_LENGTH);
+      memcpy(m_EssenceUL, m_Dict.ul(MDD_WAVEssence), SMPTE_UL_LENGTH);
       m_EssenceUL[SMPTE_UL_LENGTH-1] = 1; // first (and only) essence container
       result = m_State.Goto_READY();
     }
@@ -512,7 +513,11 @@ ASDCP::Result_t
 ASDCP::PCM::MXFWriter::OpenWrite(const char* filename, const WriterInfo& Info,
 				 const AudioDescriptor& ADesc, ui32_t HeaderSize)
 {
-  m_Writer = new h__Writer;
+  if ( Info.LabelSetType == LS_MXF_SMPTE )
+    m_Writer = new h__Writer(DefaultSMPTEDict());
+  else
+    m_Writer = new h__Writer(DefaultInteropDict());
+
   m_Writer->m_Info = Info;
   
   Result_t result = m_Writer->OpenWrite(filename, HeaderSize);

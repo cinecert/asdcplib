@@ -45,13 +45,12 @@ const ui32_t tmp_read_size = 32;
 
 // 
 ASDCP::Result_t
-ASDCP::KLVPacket::InitFromBuffer(const byte_t* buf, ui32_t buf_len, const byte_t* label)
+ASDCP::KLVPacket::InitFromBuffer(const byte_t* buf, ui32_t buf_len, const UL& label)
 {
   Result_t result = KLVPacket::InitFromBuffer(buf, buf_len);
 
   if ( ASDCP_SUCCESS(result) )
-    result = ( memcmp(m_KeyStart, label, SMPTE_UL_LENGTH) == 0 ) ?
-      RESULT_OK : RESULT_FAIL;
+    result = ( UL(m_KeyStart) == label ) ? RESULT_OK : RESULT_FAIL;
 
   return result;
 }
@@ -108,7 +107,7 @@ ASDCP::KLVPacket::HasUL(const byte_t* ul)
 
 //
 ASDCP::Result_t
-ASDCP::KLVPacket::WriteKLToBuffer(ASDCP::FrameBuffer& Buffer, const byte_t* label, ui32_t length)
+ASDCP::KLVPacket::WriteKLToBuffer(ASDCP::FrameBuffer& Buffer, const UL& label, ui32_t length)
 {
   if ( Buffer.Size() + kl_length > Buffer.Capacity() )
     {
@@ -116,7 +115,7 @@ ASDCP::KLVPacket::WriteKLToBuffer(ASDCP::FrameBuffer& Buffer, const byte_t* labe
       return RESULT_FAIL;
     }
   
-  memcpy(Buffer.Data() + Buffer.Size(), label, SMPTE_UL_LENGTH);
+  memcpy(Buffer.Data() + Buffer.Size(), label.Value(), label.Size());
 
   if ( ! Kumu::write_BER(Buffer.Data() + Buffer.Size() + SMPTE_UL_LENGTH, length, MXF_BER_LENGTH) )
     return RESULT_FAIL;
@@ -127,7 +126,7 @@ ASDCP::KLVPacket::WriteKLToBuffer(ASDCP::FrameBuffer& Buffer, const byte_t* labe
 
 //
 void
-ASDCP::KLVPacket::Dump(FILE* stream, bool show_hex)
+ASDCP::KLVPacket::Dump(FILE* stream, const Dictionary& Dict, bool show_value)
 {
   if ( stream == 0 )
     stream = stderr;
@@ -139,11 +138,11 @@ ASDCP::KLVPacket::Dump(FILE* stream, bool show_hex)
       char buf[64];
       fprintf(stream, "%s", TmpUL.EncodeString(buf, 64));
 
-      const MDDEntry* Entry = Dict::FindUL(m_KeyStart);
+      const MDDEntry* Entry = Dict.FindUL(m_KeyStart);
       fprintf(stream, "  len: %7u (%s)\n", m_ValueLength, (Entry ? Entry->name : "Unknown"));
 
-      if ( show_hex && m_ValueLength < 1000 )
-	Kumu::hexdump(m_ValueStart, Kumu::xmin(m_ValueLength, (ui32_t)64), stream);
+      if ( show_value && m_ValueLength < 1000 )
+	Kumu::hexdump(m_ValueStart, Kumu::xmin(m_ValueLength, (ui32_t)128), stream);
     }
   else
     {
@@ -153,13 +152,12 @@ ASDCP::KLVPacket::Dump(FILE* stream, bool show_hex)
 
 // 
 ASDCP::Result_t
-ASDCP::KLVFilePacket::InitFromFile(const Kumu::FileReader& Reader, const byte_t* label)
+ASDCP::KLVFilePacket::InitFromFile(const Kumu::FileReader& Reader, const UL& label)
 {
   Result_t result = KLVFilePacket::InitFromFile(Reader);
 
   if ( ASDCP_SUCCESS(result) )
-    result = ( memcmp(m_KeyStart, label, SMPTE_UL_LENGTH) == 0 ) ?
-      RESULT_OK : RESULT_FAIL;
+    result = ( UL(m_KeyStart) == label ) ? RESULT_OK : RESULT_FAIL;
 
   return result;
 }
@@ -266,10 +264,10 @@ ASDCP::KLVFilePacket::InitFromFile(const Kumu::FileReader& Reader)
 
 //
 ASDCP::Result_t
-ASDCP::KLVFilePacket::WriteKLToFile(Kumu::FileWriter& Writer, const byte_t* label, ui32_t length)
+ASDCP::KLVFilePacket::WriteKLToFile(Kumu::FileWriter& Writer, const UL& label, ui32_t length)
 {
   byte_t buffer[kl_length];
-  memcpy(buffer, label, SMPTE_UL_LENGTH);
+  memcpy(buffer, label.Value(), label.Size());
 
   if ( ! Kumu::write_BER(buffer+SMPTE_UL_LENGTH, length, MXF_BER_LENGTH) )
     return RESULT_FAIL;

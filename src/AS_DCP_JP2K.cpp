@@ -204,6 +204,7 @@ ASDCP::JP2K::PictureDescriptorDump(const PictureDescriptor& PDesc, FILE* stream)
 //
 // hidden, internal implementation of JPEG 2000 reader
 
+
 class lh__Reader : public ASDCP::h__Reader
 {
   RGBAEssenceDescriptor*        m_EssenceDescriptor;
@@ -217,7 +218,8 @@ class lh__Reader : public ASDCP::h__Reader
 public:
   PictureDescriptor m_PDesc;        // codestream parameter list
 
-  lh__Reader() : m_EssenceDescriptor(0), m_EssenceSubDescriptor(0), m_Format(ESS_UNKNOWN) {}
+  lh__Reader(const Dictionary& d) :
+    ASDCP::h__Reader(d), m_EssenceDescriptor(0), m_EssenceSubDescriptor(0), m_Format(ESS_UNKNOWN) {}
   Result_t    OpenRead(const char*, EssenceType_t);
   Result_t    ReadFrame(ui32_t, JP2K::FrameBuffer&, AESDecContext*, HMACContext*);
   Result_t    MD_to_JP2K_PDesc(JP2K::PictureDescriptor& PDesc);
@@ -357,13 +359,18 @@ lh__Reader::ReadFrame(ui32_t FrameNum, JP2K::FrameBuffer& FrameBuf,
   if ( ! m_File.IsOpen() )
     return RESULT_INIT;
 
-  return ReadEKLVFrame(FrameNum, FrameBuf, Dict::ul(MDD_JPEG2000Essence), Ctx, HMAC);
+  return ReadEKLVFrame(FrameNum, FrameBuf, m_Dict.ul(MDD_JPEG2000Essence), Ctx, HMAC);
 }
 
 
 //
 class ASDCP::JP2K::MXFReader::h__Reader : public lh__Reader
 {
+  ASDCP_NO_COPY_CONSTRUCT(h__Reader);
+  h__Reader();
+
+public:
+  h__Reader(const Dictionary& d) : lh__Reader(d) {}
 };
 
 
@@ -391,7 +398,7 @@ ASDCP::JP2K::FrameBuffer::Dump(FILE* stream, ui32_t dump_len) const
 
 ASDCP::JP2K::MXFReader::MXFReader()
 {
-  m_Reader = new h__Reader;
+  m_Reader = new h__Reader(DefaultCompositeDict());
 }
 
 
@@ -468,12 +475,13 @@ ASDCP::JP2K::MXFReader::DumpIndex(FILE* stream) const
 
 //------------------------------------------------------------------------------------------
 
+
 class ASDCP::JP2K::MXFSReader::h__SReader : public lh__Reader
 {
   ui32_t m_StereoFrameReady;
 
 public:
-  h__SReader() : m_StereoFrameReady(0xffffffff) {}
+  h__SReader(const Dictionary& d) : lh__Reader(d), m_StereoFrameReady(0xffffffff) {}
 
   //
   Result_t ReadFrame(ui32_t FrameNum, StereoscopicPhase_t phase, FrameBuffer& FrameBuf,
@@ -539,7 +547,7 @@ public:
       {
 	ui32_t SequenceNum = FrameNum * 2;
 	SequenceNum += ( phase == SP_RIGHT ) ? 2 : 1;
-	result = ReadEKLVPacket(FrameNum, SequenceNum, FrameBuf, Dict::ul(MDD_JPEG2000Essence), Ctx, HMAC);
+	result = ReadEKLVPacket(FrameNum, SequenceNum, FrameBuf, m_Dict.ul(MDD_JPEG2000Essence), Ctx, HMAC);
       }
 
     return result;
@@ -550,7 +558,7 @@ public:
 
 ASDCP::JP2K::MXFSReader::MXFSReader()
 {
-  m_Reader = new h__SReader;
+  m_Reader = new h__SReader(DefaultCompositeDict());
 }
 
 
@@ -646,15 +654,16 @@ ASDCP::JP2K::MXFSReader::DumpIndex(FILE* stream) const
 //
 class lh__Writer : public ASDCP::h__Writer
 {
+  ASDCP_NO_COPY_CONSTRUCT(lh__Writer);
+  lh__Writer();
+
   JPEG2000PictureSubDescriptor* m_EssenceSubDescriptor;
 
 public:
   PictureDescriptor m_PDesc;
   byte_t            m_EssenceUL[SMPTE_UL_LENGTH];
 
-  ASDCP_NO_COPY_CONSTRUCT(lh__Writer);
-
-  lh__Writer() : m_EssenceSubDescriptor(0) {
+  lh__Writer(const Dictionary& d) : ASDCP::h__Writer(d), m_EssenceSubDescriptor(0) {
     memset(m_EssenceUL, 0, SMPTE_UL_LENGTH);
   }
 
@@ -699,12 +708,12 @@ lh__Writer::JP2K_PDesc_to_MD(JP2K::PictureDescriptor& PDesc)
 
   if ( PDesc.StoredWidth < 2049 )
     {
-      PDescObj->PictureEssenceCoding.Set(Dict::ul(MDD_JP2KEssenceCompression_2K));
+      PDescObj->PictureEssenceCoding.Set(m_Dict.ul(MDD_JP2KEssenceCompression_2K));
       m_EssenceSubDescriptor->Rsize = 3;
     }
   else
     {
-      PDescObj->PictureEssenceCoding.Set(Dict::ul(MDD_JP2KEssenceCompression_4K));
+      PDescObj->PictureEssenceCoding.Set(m_Dict.ul(MDD_JP2KEssenceCompression_4K));
       m_EssenceSubDescriptor->Rsize = 4;
     }
 
@@ -758,12 +767,12 @@ lh__Writer::OpenWrite(const char* filename, EssenceType_t type, ui32_t HeaderSiz
   if ( ASDCP_SUCCESS(result) )
     {
       m_HeaderSize = HeaderSize;
-      RGBAEssenceDescriptor* tmp_rgba = new RGBAEssenceDescriptor;
+      RGBAEssenceDescriptor* tmp_rgba = new RGBAEssenceDescriptor(m_Dict);
       tmp_rgba->ComponentMaxRef = 4095;
       tmp_rgba->ComponentMinRef = 0;
 
       m_EssenceDescriptor = tmp_rgba;
-      m_EssenceSubDescriptor = new JPEG2000PictureSubDescriptor;
+      m_EssenceSubDescriptor = new JPEG2000PictureSubDescriptor(m_Dict);
       m_EssenceSubDescriptorList.push_back((InterchangeObject*)m_EssenceSubDescriptor);
 
       GenRandomValue(m_EssenceSubDescriptor->InstanceUID);
@@ -771,7 +780,7 @@ lh__Writer::OpenWrite(const char* filename, EssenceType_t type, ui32_t HeaderSiz
 
       if ( type == ASDCP::ESS_JPEG_2000_S && m_Info.LabelSetType == LS_MXF_SMPTE )
 	{
-	  InterchangeObject* StereoSubDesc = new StereoscopicPictureSubDescriptor;
+	  InterchangeObject* StereoSubDesc = new StereoscopicPictureSubDescriptor(m_Dict);
 	  m_EssenceSubDescriptorList.push_back(StereoSubDesc);
 	  GenRandomValue(StereoSubDesc->InstanceUID);
 	  m_EssenceDescriptor->SubDescriptors.push_back(StereoSubDesc->InstanceUID);
@@ -797,13 +806,13 @@ lh__Writer::SetSourceStream(const PictureDescriptor& PDesc, const std::string& l
   Result_t result = JP2K_PDesc_to_MD(m_PDesc);
 
   if ( ASDCP_SUCCESS(result) )
-      result = WriteMXFHeader(label, UL(Dict::ul(MDD_JPEG_2000Wrapping)),
-			      PICT_DEF_LABEL,     UL(Dict::ul(MDD_PictureDataDef)),
+      result = WriteMXFHeader(label, UL(m_Dict.ul(MDD_JPEG_2000Wrapping)),
+			      PICT_DEF_LABEL,     UL(m_Dict.ul(MDD_PictureDataDef)),
 			      LocalEditRate, 24 /* TCFrameRate */);
 
   if ( ASDCP_SUCCESS(result) )
     {
-      memcpy(m_EssenceUL, Dict::ul(MDD_JPEG2000Essence), SMPTE_UL_LENGTH);
+      memcpy(m_EssenceUL, m_Dict.ul(MDD_JPEG2000Essence), SMPTE_UL_LENGTH);
       m_EssenceUL[SMPTE_UL_LENGTH-1] = 1; // first (and only) essence container
       result = m_State.Goto_READY();
     }
@@ -859,6 +868,11 @@ lh__Writer::Finalize()
 //
 class ASDCP::JP2K::MXFWriter::h__Writer : public lh__Writer
 {
+  ASDCP_NO_COPY_CONSTRUCT(h__Writer);
+  h__Writer();
+
+public:
+  h__Writer(const Dictionary& d) : lh__Writer(d) {}
 };
 
 
@@ -881,7 +895,11 @@ ASDCP::Result_t
 ASDCP::JP2K::MXFWriter::OpenWrite(const char* filename, const WriterInfo& Info,
 				  const PictureDescriptor& PDesc, ui32_t HeaderSize)
 {
-  m_Writer = new h__Writer;
+  if ( Info.LabelSetType == LS_MXF_SMPTE )
+    m_Writer = new h__Writer(DefaultSMPTEDict());
+  else
+    m_Writer = new h__Writer(DefaultInteropDict());
+
   m_Writer->m_Info = Info;
 
   Result_t result = m_Writer->OpenWrite(filename, ASDCP::ESS_JPEG_2000, HeaderSize);
@@ -926,10 +944,12 @@ ASDCP::JP2K::MXFWriter::Finalize()
 //
 class ASDCP::JP2K::MXFSWriter::h__SWriter : public lh__Writer
 {
+  ASDCP_NO_COPY_CONSTRUCT(h__SWriter);
+  h__SWriter();
   StereoscopicPhase_t m_NextPhase;
 
 public:
-  h__SWriter() : m_NextPhase(SP_LEFT) {}
+  h__SWriter(const Dictionary& d) : lh__Writer(d), m_NextPhase(SP_LEFT) {}
 
   //
   Result_t WriteFrame(const FrameBuffer& FrameBuf, StereoscopicPhase_t phase,
@@ -977,8 +997,11 @@ ASDCP::Result_t
 ASDCP::JP2K::MXFSWriter::OpenWrite(const char* filename, const WriterInfo& Info,
 				   const PictureDescriptor& PDesc, ui32_t HeaderSize)
 {
-  m_Writer = new h__SWriter;
-  
+  if ( Info.LabelSetType == LS_MXF_SMPTE )
+    m_Writer = new h__SWriter(DefaultSMPTEDict());
+  else
+    m_Writer = new h__SWriter(DefaultInteropDict());
+
   if ( PDesc.EditRate != ASDCP::EditRate_24 )
     {
       DefaultLogSink().Error("Stereoscopic wrapping requires 24 fps input streams.\n");

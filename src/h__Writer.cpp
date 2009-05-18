@@ -68,7 +68,8 @@ version_split(const char* str)
 
 
 //
-ASDCP::h__Writer::h__Writer() :
+ASDCP::h__Writer::h__Writer(const Dictionary& d) :
+  m_HeaderPart(d), m_BodyPart(d), m_FooterPart(d), m_Dict(d),
   m_HeaderSize(0), m_EssenceStart(0),
   m_EssenceDescriptor(0), m_FramesWritten(0), m_StreamOffset(0)
 {
@@ -81,37 +82,38 @@ ASDCP::h__Writer::~h__Writer()
 //
 // add DMS CryptographicFramework entry to source package
 void
-AddDMScrypt(Partition& HeaderPart, SourcePackage& Package, WriterInfo& Descr, const UL& WrappingUL)
+AddDMScrypt(Partition& HeaderPart, SourcePackage& Package,
+	    WriterInfo& Descr, const UL& WrappingUL, const Dictionary& Dict)
 {
   // Essence Track
-  StaticTrack* NewTrack = new StaticTrack;
+  StaticTrack* NewTrack = new StaticTrack(Dict);
   HeaderPart.AddChildObject(NewTrack);
   Package.Tracks.push_back(NewTrack->InstanceUID);
   NewTrack->TrackName = "Descriptive Track";
   NewTrack->TrackID = 3;
 
-  Sequence* Seq = new Sequence;
+  Sequence* Seq = new Sequence(Dict);
   HeaderPart.AddChildObject(Seq);
   NewTrack->Sequence = Seq->InstanceUID;
-  Seq->DataDefinition = UL(Dict::ul(MDD_DescriptiveMetaDataDef));
+  Seq->DataDefinition = UL(Dict.ul(MDD_DescriptiveMetaDataDef));
 
-  DMSegment* Segment = new DMSegment;
+  DMSegment* Segment = new DMSegment(Dict);
   HeaderPart.AddChildObject(Segment);
   Seq->StructuralComponents.push_back(Segment->InstanceUID);
   Segment->EventComment = "AS-DCP KLV Encryption";
   
-  CryptographicFramework* CFW = new CryptographicFramework;
+  CryptographicFramework* CFW = new CryptographicFramework(Dict);
   HeaderPart.AddChildObject(CFW);
   Segment->DMFramework = CFW->InstanceUID;
 
-  CryptographicContext* Context = new CryptographicContext;
+  CryptographicContext* Context = new CryptographicContext(Dict);
   HeaderPart.AddChildObject(Context);
   CFW->ContextSR = Context->InstanceUID;
 
   Context->ContextID.Set(Descr.ContextID);
   Context->SourceEssenceContainer = WrappingUL; // ??????
-  Context->CipherAlgorithm.Set(Dict::ul(MDD_CipherAlgorithm_AES));
-  Context->MICAlgorithm.Set( Descr.UsesHMAC ? Dict::ul(MDD_MICAlgorithm_HMAC_SHA1) : Dict::ul(MDD_MICAlgorithm_NONE) );
+  Context->CipherAlgorithm.Set(Dict.ul(MDD_CipherAlgorithm_AES));
+  Context->MICAlgorithm.Set( Descr.UsesHMAC ? Dict.ul(MDD_MICAlgorithm_HMAC_SHA1) : Dict.ul(MDD_MICAlgorithm_NONE) );
   Context->CryptographicKeyID.Set(Descr.CryptographicKeyID);
 }
 
@@ -122,12 +124,12 @@ ASDCP::h__Writer::InitHeader()
   assert(m_EssenceDescriptor);
 
   m_HeaderPart.m_Primer.ClearTagList();
-  m_HeaderPart.m_Preface = new Preface;
+  m_HeaderPart.m_Preface = new Preface(m_Dict);
   m_HeaderPart.AddChildObject(m_HeaderPart.m_Preface);
 
   // Set the Operational Pattern label -- we're just starting and have no RIP or index,
   // so we tell the world by using OP1a
-  m_HeaderPart.m_Preface->OperationalPattern = UL(Dict::ul(MDD_OP1a));
+  m_HeaderPart.m_Preface->OperationalPattern = UL(m_Dict.ul(MDD_OP1a));
   m_HeaderPart.OperationalPattern = m_HeaderPart.m_Preface->OperationalPattern;
 
   // First RIP Entry
@@ -139,7 +141,7 @@ ASDCP::h__Writer::InitHeader()
   //
   // Identification
   //
-  Identification* Ident = new Identification;
+  Identification* Ident = new Identification(m_Dict);
   m_HeaderPart.AddChildObject(Ident);
   m_HeaderPart.m_Preface->Identifications.push_back(Ident->InstanceUID);
 
@@ -174,18 +176,18 @@ struct TrackSet
 template <class PackageT, class ClipT>
 TrackSet<ClipT>
 CreateTrackAndSequence(OPAtomHeader& Header, PackageT& Package, const std::string TrackName,
-		       const MXF::Rational& EditRate, const UL& Definition, ui32_t TrackID)
+		       const MXF::Rational& EditRate, const UL& Definition, ui32_t TrackID, const Dictionary& Dict)
 {
   TrackSet<ClipT> NewTrack;
 
-  NewTrack.Track = new Track;
+  NewTrack.Track = new Track(Dict);
   Header.AddChildObject(NewTrack.Track);
   NewTrack.Track->EditRate = EditRate;
   Package.Tracks.push_back(NewTrack.Track->InstanceUID);
   NewTrack.Track->TrackID = TrackID;
   NewTrack.Track->TrackName = TrackName.c_str();
 
-  NewTrack.Sequence = new Sequence;
+  NewTrack.Sequence = new Sequence(Dict);
   Header.AddChildObject(NewTrack.Sequence);
   NewTrack.Track->Sequence = NewTrack.Sequence->InstanceUID;
   NewTrack.Sequence->DataDefinition = Definition;
@@ -197,13 +199,13 @@ CreateTrackAndSequence(OPAtomHeader& Header, PackageT& Package, const std::strin
 template <class PackageT>
 TrackSet<TimecodeComponent>
 CreateTimecodeTrack(OPAtomHeader& Header, PackageT& Package,
-		    const MXF::Rational& EditRate, ui32_t TCFrameRate, ui64_t TCStart)
+		    const MXF::Rational& EditRate, ui32_t TCFrameRate, ui64_t TCStart, const Dictionary& Dict)
 {
-  UL TCUL(Dict::ul(MDD_TimecodeDataDef));
+  UL TCUL(Dict.ul(MDD_TimecodeDataDef));
 
-  TrackSet<TimecodeComponent> NewTrack = CreateTrackAndSequence<PackageT, TimecodeComponent>(Header, Package, "Timecode Track", EditRate, TCUL, 1);
+  TrackSet<TimecodeComponent> NewTrack = CreateTrackAndSequence<PackageT, TimecodeComponent>(Header, Package, "Timecode Track", EditRate, TCUL, 1, Dict);
 
-  NewTrack.Clip = new TimecodeComponent;
+  NewTrack.Clip = new TimecodeComponent(Dict);
   Header.AddChildObject(NewTrack.Clip);
   NewTrack.Sequence->StructuralComponents.push_back(NewTrack.Clip->InstanceUID);
   NewTrack.Clip->RoundedTimecodeBase = TCFrameRate;
@@ -221,11 +223,11 @@ ASDCP::h__Writer::AddSourceClip(const MXF::Rational& EditRate, ui32_t TCFrameRat
 				const std::string& PackageLabel)
 {
   //
-  ContentStorage* Storage = new ContentStorage;
+  ContentStorage* Storage = new ContentStorage(m_Dict);
   m_HeaderPart.AddChildObject(Storage);
   m_HeaderPart.m_Preface->ContentStorage = Storage->InstanceUID;
 
-  EssenceContainerData* ECD = new EssenceContainerData;
+  EssenceContainerData* ECD = new EssenceContainerData(m_Dict);
   m_HeaderPart.AddChildObject(ECD);
   Storage->EssenceContainerData.push_back(ECD->InstanceUID);
   ECD->IndexSID = 129;
@@ -239,22 +241,23 @@ ASDCP::h__Writer::AddSourceClip(const MXF::Rational& EditRate, ui32_t TCFrameRat
   //
   // Material Package
   //
-  m_MaterialPackage = new MaterialPackage;
+  m_MaterialPackage = new MaterialPackage(m_Dict);
   m_MaterialPackage->Name = "AS-DCP Material Package";
   m_MaterialPackage->PackageUID = MaterialPackageUMID;
   m_HeaderPart.AddChildObject(m_MaterialPackage);
   Storage->Packages.push_back(m_MaterialPackage->InstanceUID);
 
   TrackSet<TimecodeComponent> MPTCTrack = CreateTimecodeTrack<MaterialPackage>(m_HeaderPart, *m_MaterialPackage,
-									       EditRate, TCFrameRate, 0);
+									       EditRate, TCFrameRate, 0, m_Dict);
   m_DurationUpdateList.push_back(&(MPTCTrack.Sequence->Duration));
   m_DurationUpdateList.push_back(&(MPTCTrack.Clip->Duration));
 
   TrackSet<SourceClip> MPTrack = CreateTrackAndSequence<MaterialPackage, SourceClip>(m_HeaderPart, *m_MaterialPackage,
-									   TrackName, EditRate, DataDefinition, 2);
+										     TrackName, EditRate, DataDefinition,
+										     2, m_Dict);
   m_DurationUpdateList.push_back(&(MPTrack.Sequence->Duration));
 
-  MPTrack.Clip = new SourceClip;
+  MPTrack.Clip = new SourceClip(m_Dict);
   m_HeaderPart.AddChildObject(MPTrack.Clip);
   MPTrack.Sequence->StructuralComponents.push_back(MPTrack.Clip->InstanceUID);
   MPTrack.Clip->DataDefinition = DataDefinition;
@@ -266,7 +269,7 @@ ASDCP::h__Writer::AddSourceClip(const MXF::Rational& EditRate, ui32_t TCFrameRat
   //
   // File (Source) Package
   //
-  m_FilePackage = new SourcePackage;
+  m_FilePackage = new SourcePackage(m_Dict);
   m_FilePackage->Name = PackageLabel.c_str();
   m_FilePackage->PackageUID = SourcePackageUMID;
   ECD->LinkedPackageUID = SourcePackageUMID;
@@ -275,15 +278,17 @@ ASDCP::h__Writer::AddSourceClip(const MXF::Rational& EditRate, ui32_t TCFrameRat
   Storage->Packages.push_back(m_FilePackage->InstanceUID);
 
   TrackSet<TimecodeComponent> FPTCTrack = CreateTimecodeTrack<SourcePackage>(m_HeaderPart, *m_FilePackage,
-									     EditRate, TCFrameRate, ui64_C(3600) * TCFrameRate);
+									     EditRate, TCFrameRate,
+									     ui64_C(3600) * TCFrameRate, m_Dict);
   m_DurationUpdateList.push_back(&(FPTCTrack.Sequence->Duration));
   m_DurationUpdateList.push_back(&(FPTCTrack.Clip->Duration));
 
   TrackSet<SourceClip> FPTrack = CreateTrackAndSequence<SourcePackage, SourceClip>(m_HeaderPart, *m_FilePackage,
-									 TrackName, EditRate, DataDefinition, 2);
+										   TrackName, EditRate, DataDefinition,
+										   2, m_Dict);
   m_DurationUpdateList.push_back(&(FPTrack.Sequence->Duration));
 
-  FPTrack.Clip = new SourceClip;
+  FPTrack.Clip = new SourceClip(m_Dict);
   m_HeaderPart.AddChildObject(FPTrack.Clip);
   FPTrack.Sequence->StructuralComponents.push_back(FPTrack.Clip->InstanceUID);
   FPTrack.Clip->DataDefinition = DataDefinition;
@@ -303,11 +308,11 @@ ASDCP::h__Writer::AddDMSegment(const MXF::Rational& EditRate, ui32_t TCFrameRate
 			       const std::string& PackageLabel)
 {
   //
-  ContentStorage* Storage = new ContentStorage;
+  ContentStorage* Storage = new ContentStorage(m_Dict);
   m_HeaderPart.AddChildObject(Storage);
   m_HeaderPart.m_Preface->ContentStorage = Storage->InstanceUID;
 
-  EssenceContainerData* ECD = new EssenceContainerData;
+  EssenceContainerData* ECD = new EssenceContainerData(m_Dict);
   m_HeaderPart.AddChildObject(ECD);
   Storage->EssenceContainerData.push_back(ECD->InstanceUID);
   ECD->IndexSID = 129;
@@ -321,22 +326,23 @@ ASDCP::h__Writer::AddDMSegment(const MXF::Rational& EditRate, ui32_t TCFrameRate
   //
   // Material Package
   //
-  m_MaterialPackage = new MaterialPackage;
+  m_MaterialPackage = new MaterialPackage(m_Dict);
   m_MaterialPackage->Name = "AS-DCP Material Package";
   m_MaterialPackage->PackageUID = MaterialPackageUMID;
   m_HeaderPart.AddChildObject(m_MaterialPackage);
   Storage->Packages.push_back(m_MaterialPackage->InstanceUID);
 
   TrackSet<TimecodeComponent> MPTCTrack = CreateTimecodeTrack<MaterialPackage>(m_HeaderPart, *m_MaterialPackage,
-									       EditRate, TCFrameRate, 0);
+									       EditRate, TCFrameRate, 0, m_Dict);
   m_DurationUpdateList.push_back(&(MPTCTrack.Sequence->Duration));
   m_DurationUpdateList.push_back(&(MPTCTrack.Clip->Duration));
 
   TrackSet<DMSegment> MPTrack = CreateTrackAndSequence<MaterialPackage, DMSegment>(m_HeaderPart, *m_MaterialPackage,
-							       TrackName, EditRate, DataDefinition, 2);
+										   TrackName, EditRate, DataDefinition,
+										   2, m_Dict);
   m_DurationUpdateList.push_back(&(MPTrack.Sequence->Duration));
 
-  MPTrack.Clip = new DMSegment;
+  MPTrack.Clip = new DMSegment(m_Dict);
   m_HeaderPart.AddChildObject(MPTrack.Clip);
   MPTrack.Sequence->StructuralComponents.push_back(MPTrack.Clip->InstanceUID);
   MPTrack.Clip->DataDefinition = DataDefinition;
@@ -348,7 +354,7 @@ ASDCP::h__Writer::AddDMSegment(const MXF::Rational& EditRate, ui32_t TCFrameRate
   //
   // File (Source) Package
   //
-  m_FilePackage = new SourcePackage;
+  m_FilePackage = new SourcePackage(m_Dict);
   m_FilePackage->Name = PackageLabel.c_str();
   m_FilePackage->PackageUID = SourcePackageUMID;
   ECD->LinkedPackageUID = SourcePackageUMID;
@@ -357,15 +363,17 @@ ASDCP::h__Writer::AddDMSegment(const MXF::Rational& EditRate, ui32_t TCFrameRate
   Storage->Packages.push_back(m_FilePackage->InstanceUID);
 
   TrackSet<TimecodeComponent> FPTCTrack = CreateTimecodeTrack<SourcePackage>(m_HeaderPart, *m_FilePackage,
-									     EditRate, TCFrameRate, ui64_C(3600) * TCFrameRate);
+									     EditRate, TCFrameRate,
+									     ui64_C(3600) * TCFrameRate, m_Dict);
   m_DurationUpdateList.push_back(&(FPTCTrack.Sequence->Duration));
   m_DurationUpdateList.push_back(&(FPTCTrack.Clip->Duration));
 
   TrackSet<DMSegment> FPTrack = CreateTrackAndSequence<SourcePackage, DMSegment>(m_HeaderPart, *m_FilePackage,
-										 TrackName, EditRate, DataDefinition, 2);
+										 TrackName, EditRate, DataDefinition,
+										 2, m_Dict);
   m_DurationUpdateList.push_back(&(FPTrack.Sequence->Duration));
 
-  FPTrack.Clip = new DMSegment;
+  FPTrack.Clip = new DMSegment(m_Dict);
   m_HeaderPart.AddChildObject(FPTrack.Clip);
   FPTrack.Sequence->StructuralComponents.push_back(FPTrack.Clip->InstanceUID);
   FPTrack.Clip->DataDefinition = DataDefinition;
@@ -388,15 +396,15 @@ ASDCP::h__Writer::AddEssenceDescriptor(const UL& WrappingUL)
   //
   // Essence Descriptors
   //
-  UL GenericContainerUL(Dict::ul(MDD_GCMulti));
+  UL GenericContainerUL(m_Dict.ul(MDD_GCMulti));
   m_HeaderPart.EssenceContainers.push_back(GenericContainerUL);
 
   if ( m_Info.EncryptedEssence )
     {
-      UL CryptEssenceUL(Dict::ul(MDD_EncryptedContainerLabel));
+      UL CryptEssenceUL(m_Dict.ul(MDD_EncryptedContainerLabel));
       m_HeaderPart.EssenceContainers.push_back(CryptEssenceUL);
-      m_HeaderPart.m_Preface->DMSchemes.push_back(UL(Dict::ul(MDD_CryptographicFrameworkLabel)));
-      AddDMScrypt(m_HeaderPart, *m_FilePackage, m_Info, WrappingUL);
+      m_HeaderPart.m_Preface->DMSchemes.push_back(UL(m_Dict.ul(MDD_CryptographicFrameworkLabel)));
+      AddDMScrypt(m_HeaderPart, *m_FilePackage, m_Info, WrappingUL, m_Dict);
     }
   else
     {
@@ -426,11 +434,11 @@ ASDCP::h__Writer::CreateBodyPart(const MXF::Rational& EditRate, ui32_t BytesPerE
       m_BodyPart.EssenceContainers = m_HeaderPart.EssenceContainers;
       m_BodyPart.ThisPartition = m_File.Tell();
       m_BodyPart.BodySID = 1;
-      UL OPAtomUL(Dict::ul(MDD_OPAtom));
+      UL OPAtomUL(m_Dict.ul(MDD_OPAtom));
       m_BodyPart.OperationalPattern = OPAtomUL;
       m_HeaderPart.m_RIP.PairArray.push_back(RIP::Pair(1, m_BodyPart.ThisPartition)); // Second RIP Entry
       
-      UL BodyUL(Dict::ul(MDD_ClosedCompleteBodyPartition));
+      UL BodyUL(m_Dict.ul(MDD_ClosedCompleteBodyPartition));
       result = m_BodyPart.WriteToFile(m_File, BodyUL);
     }
   else
@@ -510,9 +518,9 @@ ASDCP::h__Writer::WriteEKLVPacket(const ASDCP::FrameBuffer& FrameBuf, const byte
       if ( ASDCP_SUCCESS(result) )
 	{ // write UL
 	  if ( m_Info.LabelSetType == LS_MXF_INTEROP )
-	    Overhead.WriteRaw(Dict::ul(MDD_MXFInterop_CryptEssence), SMPTE_UL_LENGTH);
+	    Overhead.WriteRaw(m_Dict.ul(MDD_MXFInterop_CryptEssence), SMPTE_UL_LENGTH);
 	  else
-	    Overhead.WriteRaw(Dict::ul(MDD_CryptEssence), SMPTE_UL_LENGTH);
+	    Overhead.WriteRaw(m_Dict.ul(MDD_CryptEssence), SMPTE_UL_LENGTH);
 
 	  // construct encrypted triplet header
 	  ui32_t ETLength = klv_cryptinfo_size + m_CtFrameBuf.Size();
@@ -609,10 +617,10 @@ ASDCP::h__Writer::WriteMXFFooter()
   m_HeaderPart.FooterPartition = here;
 
   // re-label the partition
-  UL OPAtomUL(Dict::ul(MDD_OPAtom));
+  UL OPAtomUL(m_Dict.ul(MDD_OPAtom));
 
   if ( m_Info.LabelSetType == LS_MXF_INTEROP )
-    OPAtomUL.Set(Dict::ul(MDD_MXFInterop_OPAtom));
+    OPAtomUL.Set(m_Dict.ul(MDD_MXFInterop_OPAtom));
   
   m_HeaderPart.OperationalPattern = OPAtomUL;
   m_HeaderPart.m_Preface->OperationalPattern = m_HeaderPart.OperationalPattern;

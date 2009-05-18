@@ -40,8 +40,23 @@ static bool    s_md_init = false;
 static std::map<ASDCP::UL, ui32_t> s_md_lookup;
 
 //------------------------------------------------------------------------------------------
-// singleton wrapper
 
+static ASDCP::Dictionary s_SMPTEDict;
+static ASDCP::Dictionary s_InteropDict;
+static ASDCP::Dictionary s_CompositeDict;
+
+const ASDCP::Dictionary&
+ASDCP::DefaultSMPTEDict() { return s_SMPTEDict; }
+
+const ASDCP::Dictionary&
+ASDCP::DefaultInteropDict() { return s_InteropDict; }
+
+const ASDCP::Dictionary&
+ASDCP::DefaultCompositeDict() { return s_CompositeDict; }
+
+
+// singleton wrapper
+#if 0
 //
 const ASDCP::MDDEntry&
 ASDCP::Dict::Type(MDD_t type_id)
@@ -84,7 +99,7 @@ ASDCP::Dict::FindUL(const byte_t* ul_buf)
   return &s_MDD_Table[(*i).second];
 }
 
-
+#endif
 //
 // end Dict.cpp
 //

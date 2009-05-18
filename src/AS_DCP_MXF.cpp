@@ -132,7 +132,7 @@ ASDCP::MD_to_WriterInfo(Identification* InfoObj, WriterInfo& Info)
 
 //
 Result_t
-ASDCP::MD_to_CryptoInfo(CryptographicContext* InfoObj, WriterInfo& Info)
+ASDCP::MD_to_CryptoInfo(CryptographicContext* InfoObj, WriterInfo& Info, const Dictionary& Dict)
 {
   ASDCP_TEST_NULL(InfoObj);
 
@@ -140,8 +140,8 @@ ASDCP::MD_to_CryptoInfo(CryptographicContext* InfoObj, WriterInfo& Info)
   memcpy(Info.ContextID, InfoObj->ContextID.Value(), UUIDlen);
   memcpy(Info.CryptographicKeyID, InfoObj->CryptographicKeyID.Value(), UUIDlen);
 
-  UL MIC_SHA1(Dict::ul(MDD_MICAlgorithm_HMAC_SHA1));
-  UL MIC_NONE(Dict::ul(MDD_MICAlgorithm_NONE));
+  UL MIC_SHA1(Dict.ul(MDD_MICAlgorithm_HMAC_SHA1));
+  UL MIC_NONE(Dict.ul(MDD_MICAlgorithm_NONE));
 
   if ( InfoObj->MICAlgorithm == MIC_SHA1 )
     Info.UsesHMAC = true;
@@ -163,9 +163,12 @@ ASDCP::MD_to_CryptoInfo(CryptographicContext* InfoObj, WriterInfo& Info)
 ASDCP::Result_t
 ASDCP::EssenceType(const char* filename, EssenceType_t& type)
 {
+  // TODO
+  Dictionary m_Dict;
+
   ASDCP_TEST_NULL_STR(filename);
   Kumu::FileReader   Reader;
-  OPAtomHeader TestHeader;
+  OPAtomHeader TestHeader(m_Dict);
 
   Result_t result = Reader.OpenRead(filename);
 

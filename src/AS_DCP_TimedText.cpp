@@ -133,7 +133,7 @@ class ASDCP::TimedText::MXFReader::h__Reader : public ASDCP::h__Reader
 public:
   TimedTextDescriptor m_TDesc;    
 
-  h__Reader() : m_EssenceDescriptor(0) {
+  h__Reader(const Dictionary& d) : ASDCP::h__Reader(d), m_EssenceDescriptor(0) {
     memset(&m_TDesc.AssetID, 0, UUIDlen);
   }
 
@@ -233,7 +233,7 @@ ASDCP::TimedText::MXFReader::h__Reader::ReadTimedTextResource(FrameBuffer& Frame
   if ( ! m_File.IsOpen() )
     return RESULT_INIT;
 
-  Result_t result = ReadEKLVFrame(0, FrameBuf, Dict::ul(MDD_TimedTextEssence), Ctx, HMAC);
+  Result_t result = ReadEKLVFrame(0, FrameBuf, m_Dict.ul(MDD_TimedTextEssence), Ctx, HMAC);
 
  if( ASDCP_SUCCESS(result) )
    {
@@ -303,7 +303,7 @@ ASDCP::TimedText::MXFReader::h__Reader::ReadAncillaryResource(const byte_t* uuid
 	    }
 
 	  // read the partition header
-	  MXF::Partition GSPart;
+	  MXF::Partition GSPart(m_Dict);
 	  result = GSPart.InitFromFile(m_File);
 
 	  if( ASDCP_SUCCESS(result) )
@@ -318,7 +318,7 @@ ASDCP::TimedText::MXFReader::h__Reader::ReadAncillaryResource(const byte_t* uuid
 
 	      // read the essence packet
 	      if( ASDCP_SUCCESS(result) )
-		result = ReadEKLVPacket(0, 1, FrameBuf, Dict::ul(MDD_GenericStream_DataElement), Ctx, HMAC);
+		result = ReadEKLVPacket(0, 1, FrameBuf, m_Dict.ul(MDD_GenericStream_DataElement), Ctx, HMAC);
 	    }
 	}
     }
@@ -331,7 +331,7 @@ ASDCP::TimedText::MXFReader::h__Reader::ReadAncillaryResource(const byte_t* uuid
 
 ASDCP::TimedText::MXFReader::MXFReader()
 {
-  m_Reader = new h__Reader;
+  m_Reader = new h__Reader(DefaultSMPTEDict());
 }
 
 
@@ -435,14 +435,15 @@ ASDCP::TimedText::MXFReader::DumpIndex(FILE* stream) const
 //
 class ASDCP::TimedText::MXFWriter::h__Writer : public ASDCP::h__Writer
 {
+  ASDCP_NO_COPY_CONSTRUCT(h__Writer);
+  h__Writer();
+
 public:
   TimedTextDescriptor m_TDesc;
   byte_t              m_EssenceUL[SMPTE_UL_LENGTH];
   ui32_t              m_EssenceStreamID;
 
-  ASDCP_NO_COPY_CONSTRUCT(h__Writer);
-
-  h__Writer() : m_EssenceStreamID(10) {
+  h__Writer(const Dictionary& d) : ASDCP::h__Writer(d), m_EssenceStreamID(10) {
     memset(m_EssenceUL, 0, SMPTE_UL_LENGTH);
   }
 
@@ -484,7 +485,7 @@ ASDCP::TimedText::MXFWriter::h__Writer::OpenWrite(char const* filename, ui32_t H
   if ( ASDCP_SUCCESS(result) )
     {
       m_HeaderSize = HeaderSize;
-      m_EssenceDescriptor = new MXF::TimedTextDescriptor();
+      m_EssenceDescriptor = new MXF::TimedTextDescriptor(m_Dict);
       result = m_State.Goto_INIT();
     }
 
@@ -504,7 +505,7 @@ ASDCP::TimedText::MXFWriter::h__Writer::SetSourceStream(ASDCP::TimedText::TimedT
 
   for ( ri = m_TDesc.ResourceList.begin() ; ri != m_TDesc.ResourceList.end() && ASDCP_SUCCESS(result); ri++ )
     {
-      TimedTextResourceSubDescriptor* resourceSubdescriptor = new TimedTextResourceSubDescriptor;
+      TimedTextResourceSubDescriptor* resourceSubdescriptor = new TimedTextResourceSubDescriptor(m_Dict);
       GenRandomValue(resourceSubdescriptor->InstanceUID);
       resourceSubdescriptor->AncillaryResourceID.Set((*ri).ResourceID);
       resourceSubdescriptor->MIMEMediaType = MIME2str((*ri).Type);
@@ -519,9 +520,9 @@ ASDCP::TimedText::MXFWriter::h__Writer::SetSourceStream(ASDCP::TimedText::TimedT
     {
       InitHeader();
       AddDMSegment(m_TDesc.EditRate, 24, TIMED_TEXT_DEF_LABEL,
-		   UL(Dict::ul(MDD_PictureDataDef)), TIMED_TEXT_PACKAGE_LABEL);
+		   UL(m_Dict.ul(MDD_PictureDataDef)), TIMED_TEXT_PACKAGE_LABEL);
 
-      AddEssenceDescriptor(UL(Dict::ul(MDD_TimedTextWrapping)));
+      AddEssenceDescriptor(UL(m_Dict.ul(MDD_TimedTextWrapping)));
 
       result = m_HeaderPart.WriteToFile(m_File, m_HeaderSize);
       
@@ -531,7 +532,7 @@ ASDCP::TimedText::MXFWriter::h__Writer::SetSourceStream(ASDCP::TimedText::TimedT
 
   if ( ASDCP_SUCCESS(result) )
     {
-      memcpy(m_EssenceUL, Dict::ul(MDD_TimedTextEssence), SMPTE_UL_LENGTH);
+      memcpy(m_EssenceUL, m_Dict.ul(MDD_TimedTextEssence), SMPTE_UL_LENGTH);
       m_EssenceUL[SMPTE_UL_LENGTH-1] = 1; // first (and only) essence container
       result = m_State.Goto_READY();
     }
@@ -584,8 +585,8 @@ ASDCP::TimedText::MXFWriter::h__Writer::WriteAncillaryResource(const ASDCP::Time
   Kumu::fpos_t here = m_File.Tell();
 
   // create generic stream partition header
-  static UL GenericStream_DataElement(Dict::ul(MDD_GenericStream_DataElement));
-  MXF::Partition GSPart;
+  static UL GenericStream_DataElement(m_Dict.ul(MDD_GenericStream_DataElement));
+  MXF::Partition GSPart(m_Dict);
 
   GSPart.ThisPartition = here;
   GSPart.PreviousPartition = m_HeaderPart.m_RIP.PairArray.back().ByteOffset;
@@ -593,8 +594,8 @@ ASDCP::TimedText::MXFWriter::h__Writer::WriteAncillaryResource(const ASDCP::Time
   GSPart.OperationalPattern = m_HeaderPart.OperationalPattern;
 
   m_HeaderPart.m_RIP.PairArray.push_back(RIP::Pair(m_EssenceStreamID++, here));
-  GSPart.EssenceContainers.push_back(UL(Dict::ul(MDD_TimedTextEssence)));
-  UL TmpUL(Dict::ul(MDD_GenericStreamPartition));
+  GSPart.EssenceContainers.push_back(UL(m_Dict.ul(MDD_TimedTextEssence)));
+  UL TmpUL(m_Dict.ul(MDD_GenericStreamPartition));
   Result_t result = GSPart.WriteToFile(m_File, TmpUL);
 
   if ( ASDCP_SUCCESS(result) )
@@ -641,7 +642,7 @@ ASDCP::TimedText::MXFWriter::OpenWrite(const char* filename, const WriterInfo& I
       return RESULT_FORMAT;
     }
 
-  m_Writer = new h__Writer;
+  m_Writer = new h__Writer(DefaultSMPTEDict());
   m_Writer->m_Info = Info;
   
   Result_t result = m_Writer->OpenWrite(filename, HeaderSize);

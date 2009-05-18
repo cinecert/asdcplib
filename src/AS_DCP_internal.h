@@ -86,7 +86,7 @@ namespace ASDCP
   //
 
   Result_t MD_to_WriterInfo(MXF::Identification*, WriterInfo&);
-  Result_t MD_to_CryptoInfo(MXF::CryptographicContext*, WriterInfo&);
+  Result_t MD_to_CryptoInfo(MXF::CryptographicContext*, WriterInfo&, const Dictionary&);
   Result_t EncryptFrameBuffer(const ASDCP::FrameBuffer&, ASDCP::FrameBuffer&, AESEncContext*);
   Result_t DecryptFrameBuffer(const ASDCP::FrameBuffer&, ASDCP::FrameBuffer&, AESDecContext*);
 
@@ -111,8 +111,10 @@ namespace ASDCP
   class h__Reader
     {
       ASDCP_NO_COPY_CONSTRUCT(h__Reader);
+      h__Reader();
 
     public:
+      const Dictionary&  m_Dict;
       Kumu::FileReader   m_File;
       OPAtomHeader       m_HeaderPart;
       Partition          m_BodyPart;
@@ -122,7 +124,7 @@ namespace ASDCP
       ASDCP::FrameBuffer m_CtFrameBuf;
       Kumu::fpos_t       m_LastPosition;
 
-      h__Reader();
+      h__Reader(const Dictionary&);
       virtual ~h__Reader();
 
       Result_t InitInfo();
@@ -181,8 +183,10 @@ namespace ASDCP
   class h__Writer
     {
       ASDCP_NO_COPY_CONSTRUCT(h__Writer);
+      h__Writer();
 
     public:
+      const Dictionary&  m_Dict;
       Kumu::FileWriter   m_File;
       ui32_t             m_HeaderSize;
       OPAtomHeader       m_HeaderPart;
@@ -203,7 +207,7 @@ namespace ASDCP
       WriterInfo         m_Info;
       DurationElementList_t m_DurationUpdateList;
 
-      h__Writer();
+      h__Writer(const Dictionary&);
       virtual ~h__Writer();
 
       void InitHeader();

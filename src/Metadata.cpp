@@ -40,67 +40,67 @@ const ui32_t kl_length = ASDCP::SMPTE_UL_LENGTH + ASDCP::MXF_BER_LENGTH;
 
 //------------------------------------------------------------------------------------------
 
-static InterchangeObject* Preface_Factory() { return new Preface; }
-static InterchangeObject* IndexTableSegment_Factory() { return new IndexTableSegment; }
+static InterchangeObject* Preface_Factory(const Dictionary& Dict) { return new Preface(Dict); }
+static InterchangeObject* IndexTableSegment_Factory(const Dictionary& Dict) { return new IndexTableSegment(Dict); }
 
-static InterchangeObject* Identification_Factory() { return new Identification; }
-static InterchangeObject* ContentStorage_Factory() { return new ContentStorage; }
-static InterchangeObject* EssenceContainerData_Factory() { return new EssenceContainerData; }
-static InterchangeObject* MaterialPackage_Factory() { return new MaterialPackage; }
-static InterchangeObject* SourcePackage_Factory() { return new SourcePackage; }
-static InterchangeObject* StaticTrack_Factory() { return new StaticTrack; }
-static InterchangeObject* Track_Factory() { return new Track; }
-static InterchangeObject* Sequence_Factory() { return new Sequence; }
-static InterchangeObject* SourceClip_Factory() { return new SourceClip; }
-static InterchangeObject* TimecodeComponent_Factory() { return new TimecodeComponent; }
-static InterchangeObject* FileDescriptor_Factory() { return new FileDescriptor; }
-static InterchangeObject* GenericSoundEssenceDescriptor_Factory() { return new GenericSoundEssenceDescriptor; }
-static InterchangeObject* WaveAudioDescriptor_Factory() { return new WaveAudioDescriptor; }
-static InterchangeObject* GenericPictureEssenceDescriptor_Factory() { return new GenericPictureEssenceDescriptor; }
-static InterchangeObject* RGBAEssenceDescriptor_Factory() { return new RGBAEssenceDescriptor; }
-static InterchangeObject* JPEG2000PictureSubDescriptor_Factory() { return new JPEG2000PictureSubDescriptor; }
-static InterchangeObject* CDCIEssenceDescriptor_Factory() { return new CDCIEssenceDescriptor; }
-static InterchangeObject* MPEG2VideoDescriptor_Factory() { return new MPEG2VideoDescriptor; }
-static InterchangeObject* DMSegment_Factory() { return new DMSegment; }
-static InterchangeObject* CryptographicFramework_Factory() { return new CryptographicFramework; }
-static InterchangeObject* CryptographicContext_Factory() { return new CryptographicContext; }
-static InterchangeObject* GenericDataEssenceDescriptor_Factory() { return new GenericDataEssenceDescriptor; }
-static InterchangeObject* TimedTextDescriptor_Factory() { return new TimedTextDescriptor; }
-static InterchangeObject* TimedTextResourceSubDescriptor_Factory() { return new TimedTextResourceSubDescriptor; }
-static InterchangeObject* StereoscopicPictureSubDescriptor_Factory() { return new StereoscopicPictureSubDescriptor; }
+static InterchangeObject* Identification_Factory(const Dictionary& Dict) { return new Identification(Dict); }
+static InterchangeObject* ContentStorage_Factory(const Dictionary& Dict) { return new ContentStorage(Dict); }
+static InterchangeObject* EssenceContainerData_Factory(const Dictionary& Dict) { return new EssenceContainerData(Dict); }
+static InterchangeObject* MaterialPackage_Factory(const Dictionary& Dict) { return new MaterialPackage(Dict); }
+static InterchangeObject* SourcePackage_Factory(const Dictionary& Dict) { return new SourcePackage(Dict); }
+static InterchangeObject* StaticTrack_Factory(const Dictionary& Dict) { return new StaticTrack(Dict); }
+static InterchangeObject* Track_Factory(const Dictionary& Dict) { return new Track(Dict); }
+static InterchangeObject* Sequence_Factory(const Dictionary& Dict) { return new Sequence(Dict); }
+static InterchangeObject* SourceClip_Factory(const Dictionary& Dict) { return new SourceClip(Dict); }
+static InterchangeObject* TimecodeComponent_Factory(const Dictionary& Dict) { return new TimecodeComponent(Dict); }
+static InterchangeObject* FileDescriptor_Factory(const Dictionary& Dict) { return new FileDescriptor(Dict); }
+static InterchangeObject* GenericSoundEssenceDescriptor_Factory(const Dictionary& Dict) { return new GenericSoundEssenceDescriptor(Dict); }
+static InterchangeObject* WaveAudioDescriptor_Factory(const Dictionary& Dict) { return new WaveAudioDescriptor(Dict); }
+static InterchangeObject* GenericPictureEssenceDescriptor_Factory(const Dictionary& Dict) { return new GenericPictureEssenceDescriptor(Dict); }
+static InterchangeObject* RGBAEssenceDescriptor_Factory(const Dictionary& Dict) { return new RGBAEssenceDescriptor(Dict); }
+static InterchangeObject* JPEG2000PictureSubDescriptor_Factory(const Dictionary& Dict) { return new JPEG2000PictureSubDescriptor(Dict); }
+static InterchangeObject* CDCIEssenceDescriptor_Factory(const Dictionary& Dict) { return new CDCIEssenceDescriptor(Dict); }
+static InterchangeObject* MPEG2VideoDescriptor_Factory(const Dictionary& Dict) { return new MPEG2VideoDescriptor(Dict); }
+static InterchangeObject* DMSegment_Factory(const Dictionary& Dict) { return new DMSegment(Dict); }
+static InterchangeObject* CryptographicFramework_Factory(const Dictionary& Dict) { return new CryptographicFramework(Dict); }
+static InterchangeObject* CryptographicContext_Factory(const Dictionary& Dict) { return new CryptographicContext(Dict); }
+static InterchangeObject* GenericDataEssenceDescriptor_Factory(const Dictionary& Dict) { return new GenericDataEssenceDescriptor(Dict); }
+static InterchangeObject* TimedTextDescriptor_Factory(const Dictionary& Dict) { return new TimedTextDescriptor(Dict); }
+static InterchangeObject* TimedTextResourceSubDescriptor_Factory(const Dictionary& Dict) { return new TimedTextResourceSubDescriptor(Dict); }
+static InterchangeObject* StereoscopicPictureSubDescriptor_Factory(const Dictionary& Dict) { return new StereoscopicPictureSubDescriptor(Dict); }
 
 
 void
-ASDCP::MXF::Metadata_InitTypes()
+ASDCP::MXF::Metadata_InitTypes(const Dictionary& Dict)
 {
-  SetObjectFactory(Dict::ul(MDD_Preface), Preface_Factory);
-  SetObjectFactory(Dict::ul(MDD_IndexTableSegment), IndexTableSegment_Factory);
+  SetObjectFactory(Dict.ul(MDD_Preface), Preface_Factory);
+  SetObjectFactory(Dict.ul(MDD_IndexTableSegment), IndexTableSegment_Factory);
 
-  SetObjectFactory(Dict::ul(MDD_Identification), Identification_Factory);
-  SetObjectFactory(Dict::ul(MDD_ContentStorage), ContentStorage_Factory);
-  SetObjectFactory(Dict::ul(MDD_EssenceContainerData), EssenceContainerData_Factory);
-  SetObjectFactory(Dict::ul(MDD_MaterialPackage), MaterialPackage_Factory);
-  SetObjectFactory(Dict::ul(MDD_SourcePackage), SourcePackage_Factory);
-  SetObjectFactory(Dict::ul(MDD_StaticTrack), StaticTrack_Factory);
-  SetObjectFactory(Dict::ul(MDD_Track), Track_Factory);
-  SetObjectFactory(Dict::ul(MDD_Sequence), Sequence_Factory);
-  SetObjectFactory(Dict::ul(MDD_SourceClip), SourceClip_Factory);
-  SetObjectFactory(Dict::ul(MDD_TimecodeComponent), TimecodeComponent_Factory);
-  SetObjectFactory(Dict::ul(MDD_FileDescriptor), FileDescriptor_Factory);
-  SetObjectFactory(Dict::ul(MDD_GenericSoundEssenceDescriptor), GenericSoundEssenceDescriptor_Factory);
-  SetObjectFactory(Dict::ul(MDD_WaveAudioDescriptor), WaveAudioDescriptor_Factory);
-  SetObjectFactory(Dict::ul(MDD_GenericPictureEssenceDescriptor), GenericPictureEssenceDescriptor_Factory);
-  SetObjectFactory(Dict::ul(MDD_RGBAEssenceDescriptor), RGBAEssenceDescriptor_Factory);
-  SetObjectFactory(Dict::ul(MDD_JPEG2000PictureSubDescriptor), JPEG2000PictureSubDescriptor_Factory);
-  SetObjectFactory(Dict::ul(MDD_CDCIEssenceDescriptor), CDCIEssenceDescriptor_Factory);
-  SetObjectFactory(Dict::ul(MDD_MPEG2VideoDescriptor), MPEG2VideoDescriptor_Factory);
-  SetObjectFactory(Dict::ul(MDD_DMSegment), DMSegment_Factory);
-  SetObjectFactory(Dict::ul(MDD_CryptographicFramework), CryptographicFramework_Factory);
-  SetObjectFactory(Dict::ul(MDD_CryptographicContext), CryptographicContext_Factory);
-  SetObjectFactory(Dict::ul(MDD_GenericDataEssenceDescriptor), GenericDataEssenceDescriptor_Factory);
-  SetObjectFactory(Dict::ul(MDD_TimedTextDescriptor), TimedTextDescriptor_Factory);
-  SetObjectFactory(Dict::ul(MDD_TimedTextResourceSubDescriptor), TimedTextResourceSubDescriptor_Factory);
-  SetObjectFactory(Dict::ul(MDD_StereoscopicPictureSubDescriptor), StereoscopicPictureSubDescriptor_Factory);
+  SetObjectFactory(Dict.ul(MDD_Identification), Identification_Factory);
+  SetObjectFactory(Dict.ul(MDD_ContentStorage), ContentStorage_Factory);
+  SetObjectFactory(Dict.ul(MDD_EssenceContainerData), EssenceContainerData_Factory);
+  SetObjectFactory(Dict.ul(MDD_MaterialPackage), MaterialPackage_Factory);
+  SetObjectFactory(Dict.ul(MDD_SourcePackage), SourcePackage_Factory);
+  SetObjectFactory(Dict.ul(MDD_StaticTrack), StaticTrack_Factory);
+  SetObjectFactory(Dict.ul(MDD_Track), Track_Factory);
+  SetObjectFactory(Dict.ul(MDD_Sequence), Sequence_Factory);
+  SetObjectFactory(Dict.ul(MDD_SourceClip), SourceClip_Factory);
+  SetObjectFactory(Dict.ul(MDD_TimecodeComponent), TimecodeComponent_Factory);
+  SetObjectFactory(Dict.ul(MDD_FileDescriptor), FileDescriptor_Factory);
+  SetObjectFactory(Dict.ul(MDD_GenericSoundEssenceDescriptor), GenericSoundEssenceDescriptor_Factory);
+  SetObjectFactory(Dict.ul(MDD_WaveAudioDescriptor), WaveAudioDescriptor_Factory);
+  SetObjectFactory(Dict.ul(MDD_GenericPictureEssenceDescriptor), GenericPictureEssenceDescriptor_Factory);
+  SetObjectFactory(Dict.ul(MDD_RGBAEssenceDescriptor), RGBAEssenceDescriptor_Factory);
+  SetObjectFactory(Dict.ul(MDD_JPEG2000PictureSubDescriptor), JPEG2000PictureSubDescriptor_Factory);
+  SetObjectFactory(Dict.ul(MDD_CDCIEssenceDescriptor), CDCIEssenceDescriptor_Factory);
+  SetObjectFactory(Dict.ul(MDD_MPEG2VideoDescriptor), MPEG2VideoDescriptor_Factory);
+  SetObjectFactory(Dict.ul(MDD_DMSegment), DMSegment_Factory);
+  SetObjectFactory(Dict.ul(MDD_CryptographicFramework), CryptographicFramework_Factory);
+  SetObjectFactory(Dict.ul(MDD_CryptographicContext), CryptographicContext_Factory);
+  SetObjectFactory(Dict.ul(MDD_GenericDataEssenceDescriptor), GenericDataEssenceDescriptor_Factory);
+  SetObjectFactory(Dict.ul(MDD_TimedTextDescriptor), TimedTextDescriptor_Factory);
+  SetObjectFactory(Dict.ul(MDD_TimedTextResourceSubDescriptor), TimedTextResourceSubDescriptor_Factory);
+  SetObjectFactory(Dict.ul(MDD_StereoscopicPictureSubDescriptor), StereoscopicPictureSubDescriptor_Factory);
 }
 
 //------------------------------------------------------------------------------------------
@@ -171,7 +171,7 @@ Identification::Dump(FILE* stream)
 ASDCP::Result_t
 Identification::InitFromBuffer(const byte_t* p, ui32_t l)
 {
-  m_Typeinfo = &Dict::Type(MDD_Identification);
+  m_Typeinfo = &m_Dict.Type(MDD_Identification);
   return InterchangeObject::InitFromBuffer(p, l);
 }
 
@@ -179,7 +179,7 @@ Identification::InitFromBuffer(const byte_t* p, ui32_t l)
 ASDCP::Result_t
 Identification::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 {
-  m_Typeinfo = &Dict::Type(MDD_Identification);
+  m_Typeinfo = &m_Dict.Type(MDD_Identification);
   return InterchangeObject::WriteToBuffer(Buffer);
 }
 
@@ -227,7 +227,7 @@ ContentStorage::Dump(FILE* stream)
 ASDCP::Result_t
 ContentStorage::InitFromBuffer(const byte_t* p, ui32_t l)
 {
-  m_Typeinfo = &Dict::Type(MDD_ContentStorage);
+  m_Typeinfo = &m_Dict.Type(MDD_ContentStorage);
   return InterchangeObject::InitFromBuffer(p, l);
 }
 
@@ -235,7 +235,7 @@ ContentStorage::InitFromBuffer(const byte_t* p, ui32_t l)
 ASDCP::Result_t
 ContentStorage::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 {
-  m_Typeinfo = &Dict::Type(MDD_ContentStorage);
+  m_Typeinfo = &m_Dict.Type(MDD_ContentStorage);
   return InterchangeObject::WriteToBuffer(Buffer);
 }
 
@@ -284,7 +284,7 @@ EssenceContainerData::Dump(FILE* stream)
 ASDCP::Result_t
 EssenceContainerData::InitFromBuffer(const byte_t* p, ui32_t l)
 {
-  m_Typeinfo = &Dict::Type(MDD_EssenceContainerData);
+  m_Typeinfo = &m_Dict.Type(MDD_EssenceContainerData);
   return InterchangeObject::InitFromBuffer(p, l);
 }
 
@@ -292,7 +292,7 @@ EssenceContainerData::InitFromBuffer(const byte_t* p, ui32_t l)
 ASDCP::Result_t
 EssenceContainerData::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 {
-  m_Typeinfo = &Dict::Type(MDD_EssenceContainerData);
+  m_Typeinfo = &m_Dict.Type(MDD_EssenceContainerData);
   return InterchangeObject::WriteToBuffer(Buffer);
 }
 
@@ -381,7 +381,7 @@ MaterialPackage::Dump(FILE* stream)
 ASDCP::Result_t
 MaterialPackage::InitFromBuffer(const byte_t* p, ui32_t l)
 {
-  m_Typeinfo = &Dict::Type(MDD_MaterialPackage);
+  m_Typeinfo = &m_Dict.Type(MDD_MaterialPackage);
   return InterchangeObject::InitFromBuffer(p, l);
 }
 
@@ -389,7 +389,7 @@ MaterialPackage::InitFromBuffer(const byte_t* p, ui32_t l)
 ASDCP::Result_t
 MaterialPackage::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 {
-  m_Typeinfo = &Dict::Type(MDD_MaterialPackage);
+  m_Typeinfo = &m_Dict.Type(MDD_MaterialPackage);
   return InterchangeObject::WriteToBuffer(Buffer);
 }
 
@@ -432,7 +432,7 @@ SourcePackage::Dump(FILE* stream)
 ASDCP::Result_t
 SourcePackage::InitFromBuffer(const byte_t* p, ui32_t l)
 {
-  m_Typeinfo = &Dict::Type(MDD_SourcePackage);
+  m_Typeinfo = &m_Dict.Type(MDD_SourcePackage);
   return InterchangeObject::InitFromBuffer(p, l);
 }
 
@@ -440,7 +440,7 @@ SourcePackage::InitFromBuffer(const byte_t* p, ui32_t l)
 ASDCP::Result_t
 SourcePackage::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 {
-  m_Typeinfo = &Dict::Type(MDD_SourcePackage);
+  m_Typeinfo = &m_Dict.Type(MDD_SourcePackage);
   return InterchangeObject::WriteToBuffer(Buffer);
 }
 
@@ -525,7 +525,7 @@ StaticTrack::Dump(FILE* stream)
 ASDCP::Result_t
 StaticTrack::InitFromBuffer(const byte_t* p, ui32_t l)
 {
-  m_Typeinfo = &Dict::Type(MDD_StaticTrack);
+  m_Typeinfo = &m_Dict.Type(MDD_StaticTrack);
   return InterchangeObject::InitFromBuffer(p, l);
 }
 
@@ -533,7 +533,7 @@ StaticTrack::InitFromBuffer(const byte_t* p, ui32_t l)
 ASDCP::Result_t
 StaticTrack::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 {
-  m_Typeinfo = &Dict::Type(MDD_StaticTrack);
+  m_Typeinfo = &m_Dict.Type(MDD_StaticTrack);
   return InterchangeObject::WriteToBuffer(Buffer);
 }
 
@@ -579,7 +579,7 @@ Track::Dump(FILE* stream)
 ASDCP::Result_t
 Track::InitFromBuffer(const byte_t* p, ui32_t l)
 {
-  m_Typeinfo = &Dict::Type(MDD_Track);
+  m_Typeinfo = &m_Dict.Type(MDD_Track);
   return InterchangeObject::InitFromBuffer(p, l);
 }
 
@@ -587,7 +587,7 @@ Track::InitFromBuffer(const byte_t* p, ui32_t l)
 ASDCP::Result_t
 Track::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 {
-  m_Typeinfo = &Dict::Type(MDD_Track);
+  m_Typeinfo = &m_Dict.Type(MDD_Track);
   return InterchangeObject::WriteToBuffer(Buffer);
 }
 
@@ -670,7 +670,7 @@ Sequence::Dump(FILE* stream)
 ASDCP::Result_t
 Sequence::InitFromBuffer(const byte_t* p, ui32_t l)
 {
-  m_Typeinfo = &Dict::Type(MDD_Sequence);
+  m_Typeinfo = &m_Dict.Type(MDD_Sequence);
   return InterchangeObject::InitFromBuffer(p, l);
 }
 
@@ -678,7 +678,7 @@ Sequence::InitFromBuffer(const byte_t* p, ui32_t l)
 ASDCP::Result_t
 Sequence::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 {
-  m_Typeinfo = &Dict::Type(MDD_Sequence);
+  m_Typeinfo = &m_Dict.Type(MDD_Sequence);
   return InterchangeObject::WriteToBuffer(Buffer);
 }
 
@@ -727,7 +727,7 @@ SourceClip::Dump(FILE* stream)
 ASDCP::Result_t
 SourceClip::InitFromBuffer(const byte_t* p, ui32_t l)
 {
-  m_Typeinfo = &Dict::Type(MDD_SourceClip);
+  m_Typeinfo = &m_Dict.Type(MDD_SourceClip);
   return InterchangeObject::InitFromBuffer(p, l);
 }
 
@@ -735,7 +735,7 @@ SourceClip::InitFromBuffer(const byte_t* p, ui32_t l)
 ASDCP::Result_t
 SourceClip::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 {
-  m_Typeinfo = &Dict::Type(MDD_SourceClip);
+  m_Typeinfo = &m_Dict.Type(MDD_SourceClip);
   return InterchangeObject::WriteToBuffer(Buffer);
 }
 
@@ -784,7 +784,7 @@ TimecodeComponent::Dump(FILE* stream)
 ASDCP::Result_t
 TimecodeComponent::InitFromBuffer(const byte_t* p, ui32_t l)
 {
-  m_Typeinfo = &Dict::Type(MDD_TimecodeComponent);
+  m_Typeinfo = &m_Dict.Type(MDD_TimecodeComponent);
   return InterchangeObject::InitFromBuffer(p, l);
 }
 
@@ -792,7 +792,7 @@ TimecodeComponent::InitFromBuffer(const byte_t* p, ui32_t l)
 ASDCP::Result_t
 TimecodeComponent::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 {
-  m_Typeinfo = &Dict::Type(MDD_TimecodeComponent);
+  m_Typeinfo = &m_Dict.Type(MDD_TimecodeComponent);
   return InterchangeObject::WriteToBuffer(Buffer);
 }
 
@@ -888,7 +888,7 @@ FileDescriptor::Dump(FILE* stream)
 ASDCP::Result_t
 FileDescriptor::InitFromBuffer(const byte_t* p, ui32_t l)
 {
-  m_Typeinfo = &Dict::Type(MDD_FileDescriptor);
+  m_Typeinfo = &m_Dict.Type(MDD_FileDescriptor);
   return InterchangeObject::InitFromBuffer(p, l);
 }
 
@@ -896,7 +896,7 @@ FileDescriptor::InitFromBuffer(const byte_t* p, ui32_t l)
 ASDCP::Result_t
 FileDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 {
-  m_Typeinfo = &Dict::Type(MDD_FileDescriptor);
+  m_Typeinfo = &m_Dict.Type(MDD_FileDescriptor);
   return InterchangeObject::WriteToBuffer(Buffer);
 }
 
@@ -954,7 +954,7 @@ GenericSoundEssenceDescriptor::Dump(FILE* stream)
 ASDCP::Result_t
 GenericSoundEssenceDescriptor::InitFromBuffer(const byte_t* p, ui32_t l)
 {
-  m_Typeinfo = &Dict::Type(MDD_GenericSoundEssenceDescriptor);
+  m_Typeinfo = &m_Dict.Type(MDD_GenericSoundEssenceDescriptor);
   return InterchangeObject::InitFromBuffer(p, l);
 }
 
@@ -962,7 +962,7 @@ GenericSoundEssenceDescriptor::InitFromBuffer(const byte_t* p, ui32_t l)
 ASDCP::Result_t
 GenericSoundEssenceDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 {
-  m_Typeinfo = &Dict::Type(MDD_GenericSoundEssenceDescriptor);
+  m_Typeinfo = &m_Dict.Type(MDD_GenericSoundEssenceDescriptor);
   return InterchangeObject::WriteToBuffer(Buffer);
 }
 
@@ -1014,7 +1014,7 @@ WaveAudioDescriptor::Dump(FILE* stream)
 ASDCP::Result_t
 WaveAudioDescriptor::InitFromBuffer(const byte_t* p, ui32_t l)
 {
-  m_Typeinfo = &Dict::Type(MDD_WaveAudioDescriptor);
+  m_Typeinfo = &m_Dict.Type(MDD_WaveAudioDescriptor);
   return InterchangeObject::InitFromBuffer(p, l);
 }
 
@@ -1022,7 +1022,7 @@ WaveAudioDescriptor::InitFromBuffer(const byte_t* p, ui32_t l)
 ASDCP::Result_t
 WaveAudioDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 {
-  m_Typeinfo = &Dict::Type(MDD_WaveAudioDescriptor);
+  m_Typeinfo = &m_Dict.Type(MDD_WaveAudioDescriptor);
   return InterchangeObject::WriteToBuffer(Buffer);
 }
 
@@ -1077,7 +1077,7 @@ GenericPictureEssenceDescriptor::Dump(FILE* stream)
 ASDCP::Result_t
 GenericPictureEssenceDescriptor::InitFromBuffer(const byte_t* p, ui32_t l)
 {
-  m_Typeinfo = &Dict::Type(MDD_GenericPictureEssenceDescriptor);
+  m_Typeinfo = &m_Dict.Type(MDD_GenericPictureEssenceDescriptor);
   return InterchangeObject::InitFromBuffer(p, l);
 }
 
@@ -1085,7 +1085,7 @@ GenericPictureEssenceDescriptor::InitFromBuffer(const byte_t* p, ui32_t l)
 ASDCP::Result_t
 GenericPictureEssenceDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 {
-  m_Typeinfo = &Dict::Type(MDD_GenericPictureEssenceDescriptor);
+  m_Typeinfo = &m_Dict.Type(MDD_GenericPictureEssenceDescriptor);
   return InterchangeObject::WriteToBuffer(Buffer);
 }
 
@@ -1131,7 +1131,7 @@ RGBAEssenceDescriptor::Dump(FILE* stream)
 ASDCP::Result_t
 RGBAEssenceDescriptor::InitFromBuffer(const byte_t* p, ui32_t l)
 {
-  m_Typeinfo = &Dict::Type(MDD_RGBAEssenceDescriptor);
+  m_Typeinfo = &m_Dict.Type(MDD_RGBAEssenceDescriptor);
   return InterchangeObject::InitFromBuffer(p, l);
 }
 
@@ -1139,7 +1139,7 @@ RGBAEssenceDescriptor::InitFromBuffer(const byte_t* p, ui32_t l)
 ASDCP::Result_t
 RGBAEssenceDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 {
-  m_Typeinfo = &Dict::Type(MDD_RGBAEssenceDescriptor);
+  m_Typeinfo = &m_Dict.Type(MDD_RGBAEssenceDescriptor);
   return InterchangeObject::WriteToBuffer(Buffer);
 }
 
@@ -1218,7 +1218,7 @@ JPEG2000PictureSubDescriptor::Dump(FILE* stream)
 ASDCP::Result_t
 JPEG2000PictureSubDescriptor::InitFromBuffer(const byte_t* p, ui32_t l)
 {
-  m_Typeinfo = &Dict::Type(MDD_JPEG2000PictureSubDescriptor);
+  m_Typeinfo = &m_Dict.Type(MDD_JPEG2000PictureSubDescriptor);
   return InterchangeObject::InitFromBuffer(p, l);
 }
 
@@ -1226,7 +1226,7 @@ JPEG2000PictureSubDescriptor::InitFromBuffer(const byte_t* p, ui32_t l)
 ASDCP::Result_t
 JPEG2000PictureSubDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 {
-  m_Typeinfo = &Dict::Type(MDD_JPEG2000PictureSubDescriptor);
+  m_Typeinfo = &m_Dict.Type(MDD_JPEG2000PictureSubDescriptor);
   return InterchangeObject::WriteToBuffer(Buffer);
 }
 
@@ -1278,7 +1278,7 @@ CDCIEssenceDescriptor::Dump(FILE* stream)
 ASDCP::Result_t
 CDCIEssenceDescriptor::InitFromBuffer(const byte_t* p, ui32_t l)
 {
-  m_Typeinfo = &Dict::Type(MDD_CDCIEssenceDescriptor);
+  m_Typeinfo = &m_Dict.Type(MDD_CDCIEssenceDescriptor);
   return InterchangeObject::InitFromBuffer(p, l);
 }
 
@@ -1286,7 +1286,7 @@ CDCIEssenceDescriptor::InitFromBuffer(const byte_t* p, ui32_t l)
 ASDCP::Result_t
 CDCIEssenceDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 {
-  m_Typeinfo = &Dict::Type(MDD_CDCIEssenceDescriptor);
+  m_Typeinfo = &m_Dict.Type(MDD_CDCIEssenceDescriptor);
   return InterchangeObject::WriteToBuffer(Buffer);
 }
 
@@ -1338,7 +1338,7 @@ MPEG2VideoDescriptor::Dump(FILE* stream)
 ASDCP::Result_t
 MPEG2VideoDescriptor::InitFromBuffer(const byte_t* p, ui32_t l)
 {
-  m_Typeinfo = &Dict::Type(MDD_MPEG2VideoDescriptor);
+  m_Typeinfo = &m_Dict.Type(MDD_MPEG2VideoDescriptor);
   return InterchangeObject::InitFromBuffer(p, l);
 }
 
@@ -1346,7 +1346,7 @@ MPEG2VideoDescriptor::InitFromBuffer(const byte_t* p, ui32_t l)
 ASDCP::Result_t
 MPEG2VideoDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 {
-  m_Typeinfo = &Dict::Type(MDD_MPEG2VideoDescriptor);
+  m_Typeinfo = &m_Dict.Type(MDD_MPEG2VideoDescriptor);
   return InterchangeObject::WriteToBuffer(Buffer);
 }
 
@@ -1401,7 +1401,7 @@ DMSegment::Dump(FILE* stream)
 ASDCP::Result_t
 DMSegment::InitFromBuffer(const byte_t* p, ui32_t l)
 {
-  m_Typeinfo = &Dict::Type(MDD_DMSegment);
+  m_Typeinfo = &m_Dict.Type(MDD_DMSegment);
   return InterchangeObject::InitFromBuffer(p, l);
 }
 
@@ -1409,7 +1409,7 @@ DMSegment::InitFromBuffer(const byte_t* p, ui32_t l)
 ASDCP::Result_t
 DMSegment::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 {
-  m_Typeinfo = &Dict::Type(MDD_DMSegment);
+  m_Typeinfo = &m_Dict.Type(MDD_DMSegment);
   return InterchangeObject::WriteToBuffer(Buffer);
 }
 
@@ -1452,7 +1452,7 @@ CryptographicFramework::Dump(FILE* stream)
 ASDCP::Result_t
 CryptographicFramework::InitFromBuffer(const byte_t* p, ui32_t l)
 {
-  m_Typeinfo = &Dict::Type(MDD_CryptographicFramework);
+  m_Typeinfo = &m_Dict.Type(MDD_CryptographicFramework);
   return InterchangeObject::InitFromBuffer(p, l);
 }
 
@@ -1460,7 +1460,7 @@ CryptographicFramework::InitFromBuffer(const byte_t* p, ui32_t l)
 ASDCP::Result_t
 CryptographicFramework::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 {
-  m_Typeinfo = &Dict::Type(MDD_CryptographicFramework);
+  m_Typeinfo = &m_Dict.Type(MDD_CryptographicFramework);
   return InterchangeObject::WriteToBuffer(Buffer);
 }
 
@@ -1515,7 +1515,7 @@ CryptographicContext::Dump(FILE* stream)
 ASDCP::Result_t
 CryptographicContext::InitFromBuffer(const byte_t* p, ui32_t l)
 {
-  m_Typeinfo = &Dict::Type(MDD_CryptographicContext);
+  m_Typeinfo = &m_Dict.Type(MDD_CryptographicContext);
   return InterchangeObject::InitFromBuffer(p, l);
 }
 
@@ -1523,7 +1523,7 @@ CryptographicContext::InitFromBuffer(const byte_t* p, ui32_t l)
 ASDCP::Result_t
 CryptographicContext::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 {
-  m_Typeinfo = &Dict::Type(MDD_CryptographicContext);
+  m_Typeinfo = &m_Dict.Type(MDD_CryptographicContext);
   return InterchangeObject::WriteToBuffer(Buffer);
 }
 
@@ -1566,7 +1566,7 @@ GenericDataEssenceDescriptor::Dump(FILE* stream)
 ASDCP::Result_t
 GenericDataEssenceDescriptor::InitFromBuffer(const byte_t* p, ui32_t l)
 {
-  m_Typeinfo = &Dict::Type(MDD_GenericDataEssenceDescriptor);
+  m_Typeinfo = &m_Dict.Type(MDD_GenericDataEssenceDescriptor);
   return InterchangeObject::InitFromBuffer(p, l);
 }
 
@@ -1574,7 +1574,7 @@ GenericDataEssenceDescriptor::InitFromBuffer(const byte_t* p, ui32_t l)
 ASDCP::Result_t
 GenericDataEssenceDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 {
-  m_Typeinfo = &Dict::Type(MDD_GenericDataEssenceDescriptor);
+  m_Typeinfo = &m_Dict.Type(MDD_GenericDataEssenceDescriptor);
   return InterchangeObject::WriteToBuffer(Buffer);
 }
 
@@ -1623,7 +1623,7 @@ TimedTextDescriptor::Dump(FILE* stream)
 ASDCP::Result_t
 TimedTextDescriptor::InitFromBuffer(const byte_t* p, ui32_t l)
 {
-  m_Typeinfo = &Dict::Type(MDD_TimedTextDescriptor);
+  m_Typeinfo = &m_Dict.Type(MDD_TimedTextDescriptor);
   return InterchangeObject::InitFromBuffer(p, l);
 }
 
@@ -1631,7 +1631,7 @@ TimedTextDescriptor::InitFromBuffer(const byte_t* p, ui32_t l)
 ASDCP::Result_t
 TimedTextDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 {
-  m_Typeinfo = &Dict::Type(MDD_TimedTextDescriptor);
+  m_Typeinfo = &m_Dict.Type(MDD_TimedTextDescriptor);
   return InterchangeObject::WriteToBuffer(Buffer);
 }
 
@@ -1680,7 +1680,7 @@ TimedTextResourceSubDescriptor::Dump(FILE* stream)
 ASDCP::Result_t
 TimedTextResourceSubDescriptor::InitFromBuffer(const byte_t* p, ui32_t l)
 {
-  m_Typeinfo = &Dict::Type(MDD_TimedTextResourceSubDescriptor);
+  m_Typeinfo = &m_Dict.Type(MDD_TimedTextResourceSubDescriptor);
   return InterchangeObject::InitFromBuffer(p, l);
 }
 
@@ -1688,7 +1688,7 @@ TimedTextResourceSubDescriptor::InitFromBuffer(const byte_t* p, ui32_t l)
 ASDCP::Result_t
 TimedTextResourceSubDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 {
-  m_Typeinfo = &Dict::Type(MDD_TimedTextResourceSubDescriptor);
+  m_Typeinfo = &m_Dict.Type(MDD_TimedTextResourceSubDescriptor);
   return InterchangeObject::WriteToBuffer(Buffer);
 }
 
@@ -1728,7 +1728,7 @@ StereoscopicPictureSubDescriptor::Dump(FILE* stream)
 ASDCP::Result_t
 StereoscopicPictureSubDescriptor::InitFromBuffer(const byte_t* p, ui32_t l)
 {
-  m_Typeinfo = &Dict::Type(MDD_StereoscopicPictureSubDescriptor);
+  m_Typeinfo = &m_Dict.Type(MDD_StereoscopicPictureSubDescriptor);
   return InterchangeObject::InitFromBuffer(p, l);
 }
 
@@ -1736,7 +1736,7 @@ StereoscopicPictureSubDescriptor::InitFromBuffer(const byte_t* p, ui32_t l)
 ASDCP::Result_t
 StereoscopicPictureSubDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 {
-  m_Typeinfo = &Dict::Type(MDD_StereoscopicPictureSubDescriptor);
+  m_Typeinfo = &m_Dict.Type(MDD_StereoscopicPictureSubDescriptor);
   return InterchangeObject::WriteToBuffer(Buffer);
 }
 
