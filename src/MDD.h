@@ -310,6 +310,9 @@ namespace ASDCP {
         MDD_GenericDescriptor_MXFInterop_SubDescriptors,  // 272
 	MDD_Max
     }; // enum MDD_t
+
+    const ui32_t MDD_Table_size = 273;
+ 
 } // namespaceASDCP
 
 

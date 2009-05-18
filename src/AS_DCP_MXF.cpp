@@ -163,8 +163,7 @@ ASDCP::MD_to_CryptoInfo(CryptographicContext* InfoObj, WriterInfo& Info, const D
 ASDCP::Result_t
 ASDCP::EssenceType(const char* filename, EssenceType_t& type)
 {
-  // TODO
-  Dictionary m_Dict;
+  const Dictionary& m_Dict = DefaultCompositeDict();
 
   ASDCP_TEST_NULL_STR(filename);
   Kumu::FileReader   Reader;

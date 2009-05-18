@@ -1737,15 +1737,15 @@ show_file_info(CommandOptions& Options)
 
       if ( ASDCP_SUCCESS(result) )
 	{
-	  TestHeader.Partition::Dump();
+	  TestHeader.Partition::Dump(stdout);
 
 	  if ( MXF::Identification* ID = TestHeader.GetIdentification() )
-	    ID->Dump();
+	    ID->Dump(stdout);
 	  else
 	    fputs("File contains no Identification object.\n", stdout);
 
 	  if ( MXF::SourcePackage* SP = TestHeader.GetSourcePackage() )
-	    SP->Dump();
+	    SP->Dump(stdout);
 	  else
 	    fputs("File contains no SourcePackage object.\n", stdout);
 	}
@@ -1851,20 +1851,13 @@ main(int argc, const char** argv)
       for ( ui32_t i = 0; i < Options.file_count && ASDCP_SUCCESS(result); i++ )
 	result = digest_file(Options.filenames[i]);
     }
-#if 0
   else if ( Options.mode == MMT_UL_LIST )
     {
-      MDD_t di = (MDD_t)0;
-
-      while ( di < MDD_Max )
-	{
-	  MDDEntry TmpType = Dict::Type(di);
-	  UL TmpUL(TmpType.ul);
-	  fprintf(stdout, "%s: %s\n", TmpUL.EncodeString(str_buf, 64), TmpType.name);
-	  di = (MDD_t)(di + 1);
-	}
+      if ( Options.use_smpte_labels )
+	DefaultSMPTEDict().Dump(stdout);
+      else
+	DefaultInteropDict().Dump(stdout);
     }
-#endif
   else if ( Options.mode == MMT_EXTRACT )
     {
       EssenceType_t EssenceType;

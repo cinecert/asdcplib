@@ -1382,9 +1382,6 @@ ASDCP::MXF::SetObjectFactory(ASDCP::UL label, ASDCP::MXF::MXFObjectFactory_t fac
 ASDCP::MXF::InterchangeObject*
 ASDCP::MXF::CreateObject(const Dictionary& Dict, const UL& label)
 {
-  if ( label == 0 )
-    return 0;
-
   if ( ! s_TypesInit )
     {
       Kumu::AutoMutex BlockLock(s_InitLock);
@@ -1396,7 +1393,7 @@ ASDCP::MXF::CreateObject(const Dictionary& Dict, const UL& label)
 	}
     }
 
-  FLi_t i = s_FactoryList.find(label);
+  FLi_t i = s_FactoryList.find(label.Value());
 
   if ( i == s_FactoryList.end() )
     return new InterchangeObject(Dict);

@@ -36,6 +36,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <KM_memio.h>
 #include "AS_DCP.h"
 #include "MDD.h"
+#include <map>
 
 
 namespace ASDCP
@@ -138,20 +139,17 @@ inline const char* ui64sz(ui64_t i, char* buf)
     {
     public:
 #if 0
-      static const MDDEntry* FindUL(const byte_t*);
       static const MDDEntry* FindName(const char*);
       static const MDDEntry& Type(MDD_t type_id);
       static bool            Replace(const MDDEntry& Entry);
       static void            Restore(const byte_t* ul);
       static void            RestoreAll();
-
-      inline static const byte_t* ul(MDD_t type_id) {
-	return Type(type_id).ul;
-      }
 #endif
 
     private:
-      //      Dictionary* m_Dict;
+      std::map<ASDCP::UL, ui32_t> m_md_lookup;
+      MDDEntry m_MDD_Table[ASDCP::MDD_Table_size];
+
       ASDCP_NO_COPY_CONSTRUCT(Dictionary);
 
 
@@ -159,13 +157,16 @@ inline const char* ui64sz(ui64_t i, char* buf)
       Dictionary();
       ~Dictionary();
 
+      bool AddEntry(const MDDEntry& Entry, ui32_t index);
+
       const MDDEntry* FindUL(const byte_t*) const;
+      const MDDEntry& Type(MDD_t type_id) const;
 
       inline const byte_t* ul(MDD_t type_id) const {
 	return Type(type_id).ul;
       }
 
-      const MDDEntry& Type(MDD_t type_id) const;
+      void Dump(FILE* = 0) const;
     };
 
 

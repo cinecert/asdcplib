@@ -858,8 +858,6 @@ static const ASDCP::MDDEntry s_MDD_Table[] = {
   { {0}, {0}, false, 0 }
 };
 
-const ui32_t s_MDD_Table_size = 273;
-
 //
 // end MDD.cpp
 //

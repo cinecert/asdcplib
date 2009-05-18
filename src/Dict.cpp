@@ -33,41 +33,33 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "KM_mutex.h"
 #include "KLV.h"
 #include "MDD.cpp"
-#include <map>
- 
-static Kumu::Mutex s_Lock;
-static bool    s_md_init = false;
-static std::map<ASDCP::UL, ui32_t> s_md_lookup;
 
 //------------------------------------------------------------------------------------------
 
-static ASDCP::Dictionary s_SMPTEDict;
-static ASDCP::Dictionary s_InteropDict;
-static ASDCP::Dictionary s_CompositeDict;
+//static ASDCP::Dictionary s_SMPTEDict;
+//static ASDCP::Dictionary s_InteropDict;
 
 const ASDCP::Dictionary&
-ASDCP::DefaultSMPTEDict() { return s_SMPTEDict; }
-
-const ASDCP::Dictionary&
-ASDCP::DefaultInteropDict() { return s_InteropDict; }
-
-const ASDCP::Dictionary&
-ASDCP::DefaultCompositeDict() { return s_CompositeDict; }
-
-
-// singleton wrapper
-#if 0
-//
-const ASDCP::MDDEntry&
-ASDCP::Dict::Type(MDD_t type_id)
-{
-  return s_MDD_Table[type_id];
+ASDCP::DefaultSMPTEDict() {
+  // return s_SMPTEDict;
+  return DefaultCompositeDict();
 }
 
+const ASDCP::Dictionary&
+ASDCP::DefaultInteropDict() {
+  // return s_InteropDict;
+  return DefaultCompositeDict();
+}
 
 //
-const ASDCP::MDDEntry*
-ASDCP::Dict::FindUL(const byte_t* ul_buf)
+//
+static ASDCP::Dictionary s_CompositeDict;
+static Kumu::Mutex s_Lock;
+static bool s_md_init = false;
+
+//
+const ASDCP::Dictionary&
+ASDCP::DefaultCompositeDict()
 {
   if ( ! s_md_init )
     {
@@ -75,31 +67,80 @@ ASDCP::Dict::FindUL(const byte_t* ul_buf)
 
       if ( ! s_md_init )
 	{
-	  for ( ui32_t x = 0; x < s_MDD_Table_size; x++ )
-	    s_md_lookup.insert(std::map<UL, ui32_t>::value_type(UL(s_MDD_Table[x].ul), x));
+	  for ( ui32_t x = 0; x < ASDCP::MDD_Table_size; x++ )
+	    s_CompositeDict.AddEntry(s_MDD_Table[x], x);
+	  //	    s_md_lookup.insert(std::map<UL, ui32_t>::value_type(UL(s_MDD_Table[x].ul), x));
 
 	  s_md_init = true;
 	}
     }
 
-  std::map<UL, ui32_t>::iterator i = s_md_lookup.find(UL(ul_buf));
+  return s_CompositeDict;
+}
+
+//------------------------------------------------------------------------------------------
+//
+
+ASDCP::Dictionary::Dictionary() {}
+ASDCP::Dictionary::~Dictionary() {}
+
+
+//
+bool
+ASDCP::Dictionary::AddEntry(const MDDEntry& Entry, ui32_t index)
+{
+  m_MDD_Table[index] = Entry;
+  m_md_lookup.insert(std::map<UL, ui32_t>::value_type(UL(Entry.ul), index));
+  return true;
+}
+
+//
+const ASDCP::MDDEntry&
+ASDCP::Dictionary::Type(MDD_t type_id) const
+{
+  return m_MDD_Table[type_id];
+}
+
+//
+const ASDCP::MDDEntry*
+ASDCP::Dictionary::FindUL(const byte_t* ul_buf) const
+{
+  std::map<UL, ui32_t>::const_iterator i = m_md_lookup.find(UL(ul_buf));
   
-  if ( i == s_md_lookup.end() )
+  if ( i == m_md_lookup.end() )
     {
       byte_t tmp_ul[SMPTE_UL_LENGTH];
       memcpy(tmp_ul, ul_buf, SMPTE_UL_LENGTH);
       tmp_ul[SMPTE_UL_LENGTH-1] = 0;
 
-      i = s_md_lookup.find(UL(tmp_ul));
+      i = m_md_lookup.find(UL(tmp_ul));
 
-      if ( i == s_md_lookup.end() )
+      if ( i == m_md_lookup.end() )
 	return 0;
     }
 
-  return &s_MDD_Table[(*i).second];
+  return &m_MDD_Table[(*i).second];
 }
 
-#endif
+//
+void
+ASDCP::Dictionary::Dump(FILE* stream) const
+{
+  if ( stream == 0 )
+    stream = stderr;
+
+  MDD_t di = (MDD_t)0;
+  char     str_buf[64];
+
+  while ( di < MDD_Max )
+    {
+      MDDEntry TmpType = m_MDD_Table[di];
+      UL TmpUL(TmpType.ul);
+      fprintf(stream, "%s: %s\n", TmpUL.EncodeString(str_buf, 64), TmpType.name);
+      di = (MDD_t)(di + 1);
+    }
+}
+
 //
 // end Dict.cpp
 //
