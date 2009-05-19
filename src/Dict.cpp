@@ -174,9 +174,10 @@ ASDCP::Dictionary::AddEntry(const MDDEntry& Entry, ui32_t index)
       result = false;
     }
 
+  UL TmpUL(Entry.ul);
+
 #ifdef MDD_AUTHORING_MODE
   char buf[64];
-  UL TmpUL(Entry.ul);
   std::map<ASDCP::UL, ui32_t>::iterator ii = m_md_lookup.find(TmpUL);
   if ( ii != m_md_lookup.end() )
     {
