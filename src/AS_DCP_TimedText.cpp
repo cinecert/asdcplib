@@ -233,6 +233,7 @@ ASDCP::TimedText::MXFReader::h__Reader::ReadTimedTextResource(FrameBuffer& Frame
   if ( ! m_File.IsOpen() )
     return RESULT_INIT;
 
+  assert(m_Dict);
   Result_t result = ReadEKLVFrame(0, FrameBuf, m_Dict->ul(MDD_TimedTextEssence), Ctx, HMAC);
 
  if( ASDCP_SUCCESS(result) )
@@ -317,6 +318,7 @@ ASDCP::TimedText::MXFReader::h__Reader::ReadAncillaryResource(const byte_t* uuid
 		}
 
 	      // read the essence packet
+	      assert(m_Dict);
 	      if( ASDCP_SUCCESS(result) )
 		result = ReadEKLVPacket(0, 1, FrameBuf, m_Dict->ul(MDD_GenericStream_DataElement), Ctx, HMAC);
 	    }
@@ -515,6 +517,7 @@ ASDCP::TimedText::MXFWriter::h__Writer::SetSourceStream(ASDCP::TimedText::TimedT
     }
 
   m_EssenceStreamID = 10;
+  assert(m_Dict);
 
   if ( ASDCP_SUCCESS(result) )
     {
@@ -583,6 +586,7 @@ ASDCP::TimedText::MXFWriter::h__Writer::WriteAncillaryResource(const ASDCP::Time
     return RESULT_STATE;
 
   Kumu::fpos_t here = m_File.Tell();
+  assert(m_Dict);
 
   // create generic stream partition header
   static UL GenericStream_DataElement(m_Dict->ul(MDD_GenericStream_DataElement));

@@ -85,6 +85,7 @@ void
 AddDMScrypt(Partition& HeaderPart, SourcePackage& Package,
 	    WriterInfo& Descr, const UL& WrappingUL, const Dictionary*& Dict)
 {
+  assert(Dict);
   // Essence Track
   StaticTrack* NewTrack = new StaticTrack(Dict);
   HeaderPart.AddChildObject(NewTrack);
@@ -121,6 +122,7 @@ AddDMScrypt(Partition& HeaderPart, SourcePackage& Package,
 void
 ASDCP::h__Writer::InitHeader()
 {
+  assert(m_Dict);
   assert(m_EssenceDescriptor);
 
   m_HeaderPart.m_Primer.ClearTagList();
@@ -201,6 +203,7 @@ TrackSet<TimecodeComponent>
 CreateTimecodeTrack(OPAtomHeader& Header, PackageT& Package,
 		    const MXF::Rational& EditRate, ui32_t TCFrameRate, ui64_t TCStart, const Dictionary*& Dict)
 {
+  assert(Dict);
   UL TCUL(Dict->ul(MDD_TimecodeDataDef));
 
   TrackSet<TimecodeComponent> NewTrack = CreateTrackAndSequence<PackageT, TimecodeComponent>(Header, Package, "Timecode Track", EditRate, TCUL, 1, Dict);
@@ -396,6 +399,7 @@ ASDCP::h__Writer::AddEssenceDescriptor(const UL& WrappingUL)
   //
   // Essence Descriptors
   //
+  assert(m_Dict);
   UL GenericContainerUL(m_Dict->ul(MDD_GCMulti));
   m_HeaderPart.EssenceContainers.push_back(GenericContainerUL);
 
@@ -425,6 +429,7 @@ ASDCP::h__Writer::AddEssenceDescriptor(const UL& WrappingUL)
 Result_t
 ASDCP::h__Writer::CreateBodyPart(const MXF::Rational& EditRate, ui32_t BytesPerEditUnit)
 {
+  assert(m_Dict);
   Result_t result = RESULT_OK;
 
   // create a body partition if we're writing proper 429-3/OP-Atom
@@ -490,6 +495,7 @@ ASDCP::h__Writer::WriteEKLVPacket(const ASDCP::FrameBuffer& FrameBuf, const byte
 
   byte_t overhead[128];
   Kumu::MemIOWriter Overhead(overhead, 128);
+  assert(m_Dict);
 
   if ( FrameBuf.Size() == 0 )
     {
@@ -517,10 +523,10 @@ ASDCP::h__Writer::WriteEKLVPacket(const ASDCP::FrameBuffer& FrameBuf, const byte
 
       if ( ASDCP_SUCCESS(result) )
 	{ // write UL
-	  if ( m_Info.LabelSetType == LS_MXF_INTEROP )
-	    Overhead.WriteRaw(m_Dict->ul(MDD_MXFInterop_CryptEssence), SMPTE_UL_LENGTH);
-	  else
-	    Overhead.WriteRaw(m_Dict->ul(MDD_CryptEssence), SMPTE_UL_LENGTH);
+	  //	  if ( m_Info.LabelSetType == LS_MXF_INTEROP )
+	  //	    Overhead.WriteRaw(m_Dict->ul(MDD_MXFInterop_CryptEssence), SMPTE_UL_LENGTH);
+	  //	  else
+	  Overhead.WriteRaw(m_Dict->ul(MDD_CryptEssence), SMPTE_UL_LENGTH);
 
 	  // construct encrypted triplet header
 	  ui32_t ETLength = klv_cryptinfo_size + m_CtFrameBuf.Size();
@@ -616,11 +622,12 @@ ASDCP::h__Writer::WriteMXFFooter()
   m_HeaderPart.m_RIP.PairArray.push_back(RIP::Pair(0, here)); // Last RIP Entry
   m_HeaderPart.FooterPartition = here;
 
+  assert(m_Dict);
   // re-label the partition
   UL OPAtomUL(m_Dict->ul(MDD_OPAtom));
 
-  if ( m_Info.LabelSetType == LS_MXF_INTEROP )
-    OPAtomUL.Set(m_Dict->ul(MDD_MXFInterop_OPAtom));
+  //  if ( m_Info.LabelSetType == LS_MXF_INTEROP )
+  //    OPAtomUL.Set(m_Dict->ul(MDD_MXFInterop_OPAtom));
   
   m_HeaderPart.OperationalPattern = OPAtomUL;
   m_HeaderPart.m_Preface->OperationalPattern = m_HeaderPart.OperationalPattern;

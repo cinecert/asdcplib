@@ -113,6 +113,7 @@ ASDCP::MXF::RIP::GetPairBySID(ui32_t SID, Pair& outPair) const
 ASDCP::Result_t
 ASDCP::MXF::RIP::InitFromFile(const Kumu::FileReader& Reader)
 {
+  assert(m_Dict);
   Result_t result = KLVFilePacket::InitFromFile(Reader, m_Dict->ul(MDD_RandomIndexMetadata));
 
   if ( ASDCP_SUCCESS(result) )
@@ -131,6 +132,7 @@ ASDCP::MXF::RIP::InitFromFile(const Kumu::FileReader& Reader)
 ASDCP::Result_t
 ASDCP::MXF::RIP::WriteToFile(Kumu::FileWriter& Writer)
 {
+  assert(m_Dict);
   ASDCP::FrameBuffer Buffer;
   ui32_t RIPSize = ( PairArray.size() * (sizeof(ui32_t) + sizeof(ui64_t)) ) + 4;
   Result_t result = Buffer.Capacity(RIPSize);
@@ -435,6 +437,7 @@ ASDCP::MXF::Primer::ClearTagList()
 ASDCP::Result_t
 ASDCP::MXF::Primer::InitFromBuffer(const byte_t* p, ui32_t l)
 {
+  assert(m_Dict);
   Result_t result = KLVPacket::InitFromBuffer(p, l, m_Dict->ul(MDD_Primer));
 
   if ( ASDCP_SUCCESS(result) )
@@ -475,6 +478,7 @@ ASDCP::MXF::Primer::WriteToFile(Kumu::FileWriter& Writer)
 ASDCP::Result_t
 ASDCP::MXF::Primer::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 {
+  assert(m_Dict);
   ASDCP::FrameBuffer LocalTagBuffer;
   Kumu::MemIOWriter MemWRT(Buffer.Data() + kl_length, Buffer.Capacity() - kl_length);
   Result_t result = LocalTagEntryBatch.Archive(&MemWRT) ? RESULT_OK : RESULT_KLV_CODING;
@@ -551,6 +555,7 @@ ASDCP::MXF::Primer::TagForKey(const ASDCP::UL& Key, ASDCP::TagValue& Tag)
 void
 ASDCP::MXF::Primer::Dump(FILE* stream)
 {
+  assert(m_Dict);
   char identbuf[IdentBufferLen];
 
   if ( stream == 0 )
@@ -611,6 +616,7 @@ ASDCP::MXF::Preface::WriteToTLVSet(TLVWriter& TLVSet)
 ASDCP::Result_t
 ASDCP::MXF::Preface::InitFromBuffer(const byte_t* p, ui32_t l)
 {
+  assert(m_Dict);
   m_Typeinfo = &(m_Dict->Type(MDD_Preface));
   return InterchangeObject::InitFromBuffer(p, l);
 }
@@ -619,6 +625,7 @@ ASDCP::MXF::Preface::InitFromBuffer(const byte_t* p, ui32_t l)
 ASDCP::Result_t
 ASDCP::MXF::Preface::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 {
+  assert(m_Dict);
   m_Typeinfo = &(m_Dict->Type(MDD_Preface));
   return InterchangeObject::WriteToBuffer(Buffer);
 }
@@ -702,6 +709,7 @@ ASDCP::MXF::OPAtomHeader::InitFromFile(const Kumu::FileReader& Reader)
     return result;
 
   // is it really OP-Atom?
+  assert(m_Dict);
   UL OPAtomUL(m_Dict->ul(MDD_OPAtom));
   UL InteropOPAtomUL(m_Dict->ul(MDD_MXFInterop_OPAtom));
 
@@ -777,6 +785,7 @@ ASDCP::MXF::OPAtomHeader::InitFromPartitionBuffer(const byte_t* p, ui32_t l)
 ASDCP::Result_t
 ASDCP::MXF::OPAtomHeader::InitFromBuffer(const byte_t* p, ui32_t l)
 {
+  assert(m_Dict);
   Result_t result = RESULT_OK;
   const byte_t* end_p = p + l;
 
@@ -798,7 +807,7 @@ ASDCP::MXF::OPAtomHeader::InitFromBuffer(const byte_t* p, ui32_t l)
 	    {
 	      delete object;
 	    }
-	  else if ( object->IsA(m_Dict->ul(MDD_Primer)) )
+	  else if ( object->IsA(m_Dict->ul(MDD_Primer)) ) // TODO: only one primer should be found
 	    {
 	      delete object;
 	      result = m_Primer.InitFromBuffer(redo_p, end_p - redo_p);
@@ -875,6 +884,7 @@ ASDCP::MXF::OPAtomHeader::GetSourcePackage()
 ASDCP::Result_t
 ASDCP::MXF::OPAtomHeader::WriteToFile(Kumu::FileWriter& Writer, ui32_t HeaderSize)
 {
+  assert(m_Dict);
   if ( m_Preface == 0 )
     return RESULT_STATE;
 
@@ -1079,6 +1089,7 @@ ASDCP::MXF::OPAtomIndexFooter::InitFromBuffer(const byte_t* p, ui32_t l)
 ASDCP::Result_t
 ASDCP::MXF::OPAtomIndexFooter::WriteToFile(Kumu::FileWriter& Writer, ui64_t duration)
 {
+  assert(m_Dict);
   ASDCP::FrameBuffer FooterBuffer;
   ui32_t   footer_size = m_PacketList->m_List.size() * MaxIndexSegmentSize; // segment-count * max-segment-size
   Result_t result = FooterBuffer.Capacity(footer_size); 

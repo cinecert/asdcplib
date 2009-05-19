@@ -359,6 +359,7 @@ lh__Reader::ReadFrame(ui32_t FrameNum, JP2K::FrameBuffer& FrameBuf,
   if ( ! m_File.IsOpen() )
     return RESULT_INIT;
 
+  assert(m_Dict);
   return ReadEKLVFrame(FrameNum, FrameBuf, m_Dict->ul(MDD_JPEG2000Essence), Ctx, HMAC);
 }
 
@@ -547,6 +548,7 @@ public:
       {
 	ui32_t SequenceNum = FrameNum * 2;
 	SequenceNum += ( phase == SP_RIGHT ) ? 2 : 1;
+	assert(m_Dict);
 	result = ReadEKLVPacket(FrameNum, SequenceNum, FrameBuf, m_Dict->ul(MDD_JPEG2000Essence), Ctx, HMAC);
       }
 
@@ -706,6 +708,7 @@ lh__Writer::JP2K_PDesc_to_MD(JP2K::PictureDescriptor& PDesc)
   // PixelLayout          byte_t[PixelLayoutSize] = s_PixelLayoutXYZ
   //    }
 
+  assert(m_Dict);
   if ( PDesc.StoredWidth < 2049 )
     {
       PDescObj->PictureEssenceCoding.Set(m_Dict->ul(MDD_JP2KEssenceCompression_2K));
@@ -796,6 +799,7 @@ lh__Writer::OpenWrite(const char* filename, EssenceType_t type, ui32_t HeaderSiz
 ASDCP::Result_t
 lh__Writer::SetSourceStream(const PictureDescriptor& PDesc, const std::string& label, ASDCP::Rational LocalEditRate)
 {
+  assert(m_Dict);
   if ( ! m_State.Test_INIT() )
     return RESULT_STATE;
 

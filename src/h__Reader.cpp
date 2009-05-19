@@ -59,6 +59,7 @@ ASDCP::h__Reader::Close()
 Result_t
 ASDCP::h__Reader::InitInfo()
 {
+  assert(m_Dict);
   InterchangeObject* Object;
 
   m_Info.LabelSetType = LS_MXF_UNKNOWN;
@@ -214,6 +215,7 @@ ASDCP::h__Reader::ReadEKLVPacket(ui32_t FrameNum, ui32_t SequenceNum, ASDCP::Fra
   UL Key(Reader.Key());
   ui64_t PacketLength = Reader.Length();
   m_LastPosition = m_LastPosition + Reader.KLLength() + PacketLength;
+  assert(m_Dict);
 
   if ( memcmp(Key.Value(), m_Dict->ul(MDD_CryptEssence), Key.Size() - 1) == 0  // ignore the stream numbers
        || memcmp(Key.Value(), m_Dict->ul(MDD_MXFInterop_CryptEssence), Key.Size() - 1) == 0 )

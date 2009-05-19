@@ -252,6 +252,7 @@ ASDCP::Result_t
 ASDCP::MPEG2::MXFReader::h__Reader::ReadFrame(ui32_t FrameNum, FrameBuffer& FrameBuf,
 					      AESDecContext* Ctx, HMACContext* HMAC)
 {
+  assert(m_Dict);
   if ( ! m_File.IsOpen() )
     return RESULT_INIT;
 
@@ -453,6 +454,7 @@ ASDCP::MPEG2::MXFWriter::h__Writer::OpenWrite(const char* filename, ui32_t Heade
 ASDCP::Result_t
 ASDCP::MPEG2::MXFWriter::h__Writer::SetSourceStream(const VideoDescriptor& VDesc)
 {
+  assert(m_Dict);
   if ( ! m_State.Test_INIT() )
     return RESULT_STATE;
 

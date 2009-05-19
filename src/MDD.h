@@ -65,11 +65,11 @@ namespace ASDCP {
         MDD_PartitionMetadata_FooterPartition,  // 27
         MDD_PartitionMetadata_HeaderByteCount,  // 28
         MDD_PartitionMetadata_IndexByteCount,  // 29
-        MDD_PartitionMetadata_IndexSID,  // 30
+        MDD_PartitionMetadata_IndexSID_DEPRECATED,  // 30
         MDD_PartitionMetadata_BodyOffset,  // 31
-        MDD_PartitionMetadata_BodySID,  // 32
-        MDD_PartitionMetadata_OperationalPattern,  // 33
-        MDD_PartitionMetadata_EssenceContainers,  // 34
+        MDD_PartitionMetadata_BodySID_DEPRECATED,  // 32
+        MDD_PartitionMetadata_OperationalPattern_DEPRECATED,  // 33
+        MDD_PartitionMetadata_EssenceContainers_DEPRECATED,  // 34
         MDD_OpenHeader,  // 35
         MDD_OpenCompleteHeader,  // 36
         MDD_ClosedHeader,  // 37
@@ -91,8 +91,8 @@ namespace ASDCP {
         MDD_IndexTableSegmentBase_IndexStartPosition,  // 53
         MDD_IndexTableSegmentBase_IndexDuration,  // 54
         MDD_IndexTableSegmentBase_EditUnitByteCount,  // 55
-        MDD_IndexTableSegmentBase_IndexSID,  // 56
-        MDD_IndexTableSegmentBase_BodySID,  // 57
+        MDD_IndexTableSegmentBase_IndexSID_DEPRECATED,  // 56
+        MDD_IndexTableSegmentBase_BodySID_DEPRECATED,  // 57
         MDD_IndexTableSegmentBase_SliceCount,  // 58
         MDD_IndexTableSegmentBase_PosTableCount,  // 59
         MDD_IndexTableSegment,  // 60
@@ -108,7 +108,7 @@ namespace ASDCP {
         MDD_IndexEntryArray_IndexTableSegment_SliceOffsetArray,  // 70
         MDD_IndexEntryArray_IndexTableSegment_PosTableArray,  // 71
         MDD_RandomIndexMetadata,  // 72
-        MDD_PartitionArray_RandomIndexMetadata_BodySID,  // 73
+        MDD_PartitionArray_RandomIndexMetadata_BodySID_DEPRECATED,  // 73
         MDD_PartitionArray_RandomIndexMetadata_ByteOffset,  // 74
         MDD_RandomIndexMetadata_Length,  // 75
         MDD_RandomIndexMetadataV10,  // 76
@@ -119,8 +119,8 @@ namespace ASDCP {
         MDD_Preface_PrimaryPackage,  // 81
         MDD_Preface_Identifications,  // 82
         MDD_Preface_ContentStorage,  // 83
-        MDD_Preface_OperationalPattern,  // 84
-        MDD_Preface_EssenceContainers,  // 85
+        MDD_Preface_OperationalPattern_DEPRECATED,  // 84
+        MDD_Preface_EssenceContainers_DEPRECATED,  // 85
         MDD_Preface_DMSchemes,  // 86
         MDD_Identification,  // 87
         MDD_Identification_ThisGenerationUID,  // 88
@@ -138,8 +138,8 @@ namespace ASDCP {
         MDD_ContentStorageKludge_V10Packages,  // 100
         MDD_EssenceContainerData,  // 101
         MDD_EssenceContainerData_LinkedPackageUID,  // 102
-        MDD_EssenceContainerData_IndexSID,  // 103
-        MDD_EssenceContainerData_BodySID,  // 104
+        MDD_EssenceContainerData_IndexSID_DEPRECATED,  // 103
+        MDD_EssenceContainerData_BodySID_DEPRECATED,  // 104
         MDD_GenericPackage_PackageUID,  // 105
         MDD_GenericPackage_Name,  // 106
         MDD_GenericPackage_PackageCreationDate,  // 107
@@ -299,20 +299,36 @@ namespace ASDCP {
 	MDD_TimedTextResourceSubDescriptor, // 261
 	MDD_TimedTextResourceSubDescriptor_AncillaryResourceID, // 262
 	MDD_TimedTextResourceSubDescriptor_MIMEMediaType, // 263
-	MDD_TimedTextResourceSubDescriptor_EssenceStreamID, // 264
+	MDD_TimedTextResourceSubDescriptor_EssenceStreamID_DEPRECATED, // 264
 	MDD_GenericStreamPartition, // 265
-	MDD_DMSegment_DataDefinition, // 266
-	MDD_DMSegment_Duration, // 267
+	MDD_DMSegment_DataDefinition_DEPRECATED, // 266
+	MDD_DMSegment_Duration_DEPRECATED, // 267
 	MDD_DMSegment_TrackIDList, // 268
 	MDD_StereoscopicPictureSubDescriptor, // 269
         MDD_WaveAudioDescriptor_ChannelAssignment,  // 270
 	MDD_GenericStream_DataElement, // 271
         MDD_MXFInterop_GenericDescriptor_SubDescriptors,  // 272
+	MDD_Core_BodySID, // 273
+	MDD_Core_IndexSID, // 274
+	MDD_Core_OperationalPattern, // 275
+	MDD_Core_EssenceContainers, // 276
+
 	MDD_Max
     }; // enum MDD_t
 
-    const ui32_t MDD_Table_size = 273;
+    //    const ui32_t MDD_Table_size = (ui32_t)MDD_Max;
  
+
+    //
+    const MDD_t MDD_EssenceContainerData_BodySID = MDD_Core_BodySID;
+    const MDD_t MDD_IndexTableSegmentBase_IndexSID = MDD_Core_IndexSID;
+    const MDD_t MDD_EssenceContainerData_IndexSID = MDD_Core_IndexSID;
+    const MDD_t MDD_DMSegment_DataDefinition = MDD_StructuralComponent_DataDefinition;
+    const MDD_t MDD_DMSegment_Duration = MDD_StructuralComponent_Duration;
+    const MDD_t MDD_Preface_EssenceContainers = MDD_Core_EssenceContainers;
+    const MDD_t MDD_Preface_OperationalPattern = MDD_Core_OperationalPattern;
+    const MDD_t MDD_TimedTextResourceSubDescriptor_EssenceStreamID = MDD_Core_BodySID;
+    
 } // namespaceASDCP
 
 

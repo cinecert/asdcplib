@@ -79,23 +79,14 @@ ASDCP::DefaultInteropDict()
 	{
 	  s_InteropDict.Init();
 
-	  s_InteropDict.AddEntry(s_InteropDict.Type(MDD_MXFInterop_OPAtom), MDD_OPAtom);
-	  s_InteropDict.AddEntry(s_InteropDict.Type(MDD_MXFInterop_CryptEssence), MDD_CryptEssence);
-	  s_InteropDict.AddEntry(s_InteropDict.Type(MDD_MXFInterop_GenericDescriptor_SubDescriptors),
+	  s_InteropDict.DeleteEntry(MDD_MXFInterop_OPAtom);
+	  s_InteropDict.DeleteEntry(MDD_MXFInterop_CryptEssence);
+	  s_InteropDict.DeleteEntry(MDD_MXFInterop_GenericDescriptor_SubDescriptors);
+
+	  s_InteropDict.AddEntry(s_MDD_Table[MDD_MXFInterop_OPAtom], MDD_OPAtom);
+	  s_InteropDict.AddEntry(s_MDD_Table[MDD_MXFInterop_CryptEssence], MDD_CryptEssence);
+	  s_InteropDict.AddEntry(s_MDD_Table[MDD_MXFInterop_GenericDescriptor_SubDescriptors],
 				     MDD_GenericDescriptor_SubDescriptors);
-	  s_InteropDict.DeleteEntry(MDD_TimedTextWrapping);
-	  s_InteropDict.DeleteEntry(MDD_TimedTextEssence);
-	  s_InteropDict.DeleteEntry(MDD_TimedTextDescriptor);
-	  s_InteropDict.DeleteEntry(MDD_TimedTextDescriptor_ResourceID);
-	  s_InteropDict.DeleteEntry(MDD_TimedTextDescriptor_UCSEncoding);
-	  s_InteropDict.DeleteEntry(MDD_TimedTextDescriptor_NamespaceURI);
-	  s_InteropDict.DeleteEntry(MDD_TimedTextResourceSubDescriptor);
-	  s_InteropDict.DeleteEntry(MDD_TimedTextResourceSubDescriptor_AncillaryResourceID);
-	  s_InteropDict.DeleteEntry(MDD_TimedTextResourceSubDescriptor_MIMEMediaType);
-	  s_InteropDict.DeleteEntry(MDD_TimedTextResourceSubDescriptor_EssenceStreamID);
-	  s_InteropDict.DeleteEntry(MDD_GenericStreamPartition);
-	  s_InteropDict.DeleteEntry(MDD_StereoscopicPictureSubDescriptor);
-	  s_InteropDict.DeleteEntry(MDD_GenericStream_DataElement);
 
 	  s_InteropDictInit = true;
 	}
@@ -146,8 +137,27 @@ ASDCP::Dictionary::Init()
   m_md_lookup.clear();
   memset(m_MDD_Table, 0, sizeof(m_MDD_Table));
 
-  for ( ui32_t x = 0; x < ASDCP::MDD_Table_size; x++ )
-    AddEntry(s_MDD_Table[x], x);
+  for ( ui32_t x = 0; x < (ui32_t)ASDCP::MDD_Max; x++ )
+    {
+      if ( x == MDD_PartitionMetadata_IndexSID_DEPRECATED  // 30
+	   || x == MDD_PartitionMetadata_BodySID_DEPRECATED  // 32
+	   || x == MDD_PartitionMetadata_EssenceContainers_DEPRECATED  // 34
+	   || x == MDD_IndexTableSegmentBase_IndexSID_DEPRECATED  // 56
+	   || x == MDD_IndexTableSegmentBase_BodySID_DEPRECATED  // 57
+	   || x == MDD_PartitionArray_RandomIndexMetadata_BodySID_DEPRECATED  // 73
+	   || x == MDD_Preface_EssenceContainers_DEPRECATED  // 85
+	   || x == MDD_EssenceContainerData_IndexSID_DEPRECATED  // 103
+	   || x == MDD_EssenceContainerData_BodySID_DEPRECATED  // 104
+	   || x == MDD_DMSegment_DataDefinition_DEPRECATED // 266
+	   || x == MDD_DMSegment_Duration_DEPRECATED // 267
+	   || x == MDD_PartitionMetadata_OperationalPattern_DEPRECATED  // 33
+	   || x == MDD_Preface_OperationalPattern_DEPRECATED  // 84
+	   || x == MDD_TimedTextResourceSubDescriptor_EssenceStreamID_DEPRECATED // 264
+	   )
+	continue;
+
+      AddEntry(s_MDD_Table[x], x);
+    }
 }
 
 //
@@ -164,8 +174,22 @@ ASDCP::Dictionary::AddEntry(const MDDEntry& Entry, ui32_t index)
       result = false;
     }
 
-  m_md_lookup.insert(std::map<UL, ui32_t>::value_type(UL(Entry.ul), index));
-  m_md_rev_lookup.insert(std::map<ui32_t, UL>::value_type(index, UL(Entry.ul)));
+#ifdef MDD_AUTHORING_MODE
+  char buf[64];
+  UL TmpUL(Entry.ul);
+  std::map<ASDCP::UL, ui32_t>::iterator ii = m_md_lookup.find(TmpUL);
+  if ( ii != m_md_lookup.end() )
+    {
+      fprintf(stderr, "DUPE! %s (%02x, %02x) %s | (%02x, %02x) %s\n",
+	      TmpUL.EncodeString(buf, 64),
+	      m_MDD_Table[ii->second].tag.a, m_MDD_Table[ii->second].tag.b,
+	      m_MDD_Table[ii->second].name,
+	      Entry.tag.a, Entry.tag.b, Entry.name);
+    }
+#endif
+
+  m_md_lookup.insert(std::map<UL, ui32_t>::value_type(TmpUL, index));
+  m_md_rev_lookup.insert(std::map<ui32_t, UL>::value_type(index, TmpUL));
   m_MDD_Table[index] = Entry;
 
   return result;
@@ -197,6 +221,7 @@ ASDCP::Dictionary::DeleteEntry(ui32_t index)
 const ASDCP::MDDEntry&
 ASDCP::Dictionary::Type(MDD_t type_id) const
 {
+  assert(m_MDD_Table[0].name[0]);
   std::map<ui32_t, ASDCP::UL>::const_iterator rii = m_md_rev_lookup.find(type_id);
 
   if ( rii == m_md_rev_lookup.end() )
@@ -209,6 +234,7 @@ ASDCP::Dictionary::Type(MDD_t type_id) const
 const ASDCP::MDDEntry*
 ASDCP::Dictionary::FindUL(const byte_t* ul_buf) const
 {
+  assert(m_MDD_Table[0].name[0]);
   std::map<UL, ui32_t>::const_iterator i = m_md_lookup.find(UL(ul_buf));
   
   if ( i == m_md_lookup.end() )
@@ -243,9 +269,12 @@ ASDCP::Dictionary::Dump(FILE* stream) const
 
   while ( di < MDD_Max )
     {
-      MDDEntry TmpType = m_MDD_Table[di];
-      UL TmpUL(TmpType.ul);
-      fprintf(stream, "%s: %s\n", TmpUL.EncodeString(str_buf, 64), TmpType.name);
+      if ( m_MDD_Table[di].name != 0 )
+	{
+	  UL TmpUL(m_MDD_Table[di].ul);
+	  fprintf(stream, "%s: %s\n", TmpUL.EncodeString(str_buf, 64), m_MDD_Table[di].name);
+	}
+
       di = (MDD_t)(di + 1);
     }
 }

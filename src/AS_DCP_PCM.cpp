@@ -267,6 +267,7 @@ ASDCP::PCM::MXFReader::h__Reader::ReadFrame(ui32_t FrameNum, FrameBuffer& FrameB
   if ( ! m_File.IsOpen() )
     return RESULT_INIT;
 
+  assert(m_Dict);
   return ReadEKLVFrame(FrameNum, FrameBuf, m_Dict->ul(MDD_WAVEssence), Ctx, HMAC);
 }
 
@@ -440,6 +441,7 @@ ASDCP::PCM::MXFWriter::h__Writer::SetSourceStream(const AudioDescriptor& ADesc)
       return RESULT_RAW_FORMAT;
     }
 
+  assert(m_Dict);
   m_ADesc = ADesc;
   Result_t result = PCM_ADesc_to_MD(m_ADesc, (WaveAudioDescriptor*)m_EssenceDescriptor);
   

@@ -139,7 +139,7 @@ inline const char* ui64sz(ui64_t i, char* buf)
     {
       std::map<ASDCP::UL, ui32_t> m_md_lookup;
       std::map<ui32_t, ASDCP::UL> m_md_rev_lookup;
-      MDDEntry m_MDD_Table[ASDCP::MDD_Table_size];
+      MDDEntry m_MDD_Table[(ui32_t)ASDCP::MDD_Max];
 
       ASDCP_NO_COPY_CONSTRUCT(Dictionary);
 

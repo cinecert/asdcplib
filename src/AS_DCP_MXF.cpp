@@ -164,6 +164,7 @@ ASDCP::Result_t
 ASDCP::EssenceType(const char* filename, EssenceType_t& type)
 {
   const Dictionary* m_Dict = &DefaultCompositeDict();
+  assert(m_Dict);
 
   ASDCP_TEST_NULL_STR(filename);
   Kumu::FileReader   Reader;

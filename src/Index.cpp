@@ -56,7 +56,7 @@ ASDCP::MXF::IndexTableSegment::InitFromTLVSet(TLVReader& TLVSet)
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadUi64(OBJ_READ_ARGS(IndexTableSegmentBase, IndexDuration));
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadUi32(OBJ_READ_ARGS(IndexTableSegmentBase, EditUnitByteCount));
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadUi32(OBJ_READ_ARGS(IndexTableSegmentBase, IndexSID));
-  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadUi32(OBJ_READ_ARGS(IndexTableSegmentBase, BodySID));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadUi32(OBJ_READ_ARGS(EssenceContainerData, BodySID));
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadUi8(OBJ_READ_ARGS(IndexTableSegmentBase, SliceCount));
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadUi8(OBJ_READ_ARGS(IndexTableSegmentBase, PosTableCount));
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(IndexTableSegment, DeltaEntryArray));
@@ -74,7 +74,7 @@ ASDCP::MXF::IndexTableSegment::WriteToTLVSet(TLVWriter& TLVSet)
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi64(OBJ_WRITE_ARGS(IndexTableSegmentBase, IndexDuration));
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi32(OBJ_WRITE_ARGS(IndexTableSegmentBase, EditUnitByteCount));
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi32(OBJ_WRITE_ARGS(IndexTableSegmentBase, IndexSID));
-  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi32(OBJ_WRITE_ARGS(IndexTableSegmentBase, BodySID));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi32(OBJ_WRITE_ARGS(EssenceContainerData, BodySID));
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi8(OBJ_WRITE_ARGS(IndexTableSegmentBase, SliceCount));
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi8(OBJ_WRITE_ARGS(IndexTableSegmentBase, PosTableCount));
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(IndexTableSegment, DeltaEntryArray));
@@ -86,6 +86,7 @@ ASDCP::MXF::IndexTableSegment::WriteToTLVSet(TLVWriter& TLVSet)
 ASDCP::Result_t
 ASDCP::MXF::IndexTableSegment::InitFromBuffer(const byte_t* p, ui32_t l)
 {
+  assert(m_Dict);
   m_Typeinfo = &(m_Dict->Type(MDD_IndexTableSegment));
   return InterchangeObject::InitFromBuffer(p, l);
 }
@@ -94,6 +95,7 @@ ASDCP::MXF::IndexTableSegment::InitFromBuffer(const byte_t* p, ui32_t l)
 ASDCP::Result_t
 ASDCP::MXF::IndexTableSegment::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 {
+  assert(m_Dict);
   m_Typeinfo = &(m_Dict->Type(MDD_IndexTableSegment));
   return InterchangeObject::WriteToBuffer(Buffer);
 }
