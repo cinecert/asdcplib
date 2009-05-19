@@ -133,7 +133,6 @@ ASDCP::DefaultSMPTEDict()
   return s_SMPTEDict;
 }
 
-
 //------------------------------------------------------------------------------------------
 //
 
@@ -176,16 +175,18 @@ ASDCP::Dictionary::AddEntry(const MDDEntry& Entry, ui32_t index)
 bool
 ASDCP::Dictionary::DeleteEntry(ui32_t index)
 {
-  // is this index already there?
   std::map<ui32_t, ASDCP::UL>::iterator rii = m_md_rev_lookup.find(index);
-
   if ( rii != m_md_rev_lookup.end() )
     {
       std::map<ASDCP::UL, ui32_t>::iterator ii = m_md_lookup.find(rii->second);
       assert(ii != m_md_lookup.end());
 
-      char buf[64];
-      Kumu::DefaultLogSink().Warn("Deleting %s: %s\n", ii->first.EncodeString(buf, 64), m_MDD_Table[index].name);
+      MDDEntry NilEntry;
+      memset(&NilEntry, 0, sizeof(NilEntry));
+
+      m_md_lookup.erase(ii);
+      m_md_rev_lookup.erase(rii);
+      m_MDD_Table[index] = NilEntry;
       return true;
     }
 
@@ -196,6 +197,11 @@ ASDCP::Dictionary::DeleteEntry(ui32_t index)
 const ASDCP::MDDEntry&
 ASDCP::Dictionary::Type(MDD_t type_id) const
 {
+  std::map<ui32_t, ASDCP::UL>::const_iterator rii = m_md_rev_lookup.find(type_id);
+
+  if ( rii == m_md_rev_lookup.end() )
+    Kumu::DefaultLogSink().Warn("Unknown UL type_id: %d\n", type_id);
+
   return m_MDD_Table[type_id];
 }
 
@@ -214,7 +220,12 @@ ASDCP::Dictionary::FindUL(const byte_t* ul_buf) const
       i = m_md_lookup.find(UL(tmp_ul));
 
       if ( i == m_md_lookup.end() )
-	return 0;
+	{
+	  char buf[64];
+	  UL TmpUL(ul_buf);
+	  Kumu::DefaultLogSink().Warn("Unknown UL: %s\n", TmpUL.EncodeString(buf, 64));
+	  return 0;
+	}
     }
 
   return &m_MDD_Table[(*i).second];
