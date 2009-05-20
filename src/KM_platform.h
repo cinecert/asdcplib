@@ -43,6 +43,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #  define VC_EXTRALEAN
 #  include <windows.h>
 #  include <stdlib.h>
+#  include <stdio.h>
+#  include <stdarg.h>
 #  pragma warning(disable:4786)			// Ignore "identifer > 255 characters" warning
 
 typedef unsigned __int64   ui64_t;
