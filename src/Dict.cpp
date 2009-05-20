@@ -124,6 +124,19 @@ ASDCP::DefaultSMPTEDict()
   return s_SMPTEDict;
 }
 
+//
+const ASDCP::MDDEntry&
+ASDCP::MXFInterop_OPAtom_Entry() {
+  return s_MDD_Table[MDD_MXFInterop_OPAtom];
+}
+
+//
+const ASDCP::MDDEntry&
+ASDCP::SMPTE_390_OPAtom_Entry() {
+  return s_MDD_Table[MDD_OPAtom];
+}
+
+
 //------------------------------------------------------------------------------------------
 //
 
@@ -164,6 +177,12 @@ ASDCP::Dictionary::Init()
 bool
 ASDCP::Dictionary::AddEntry(const MDDEntry& Entry, ui32_t index)
 {
+  if ( index >= (ui32_t)MDD_Max )
+    {
+      Kumu::DefaultLogSink().Warn("UL Dictionary: index exceeds maximum: %d\n", index);
+      return false;
+    }
+
   bool result = true;
   // is this index already there?
   std::map<ui32_t, ASDCP::UL>::iterator rii = m_md_rev_lookup.find(index);
@@ -226,7 +245,7 @@ ASDCP::Dictionary::Type(MDD_t type_id) const
   std::map<ui32_t, ASDCP::UL>::const_iterator rii = m_md_rev_lookup.find(type_id);
 
   if ( rii == m_md_rev_lookup.end() )
-    Kumu::DefaultLogSink().Warn("Unknown UL type_id: %d\n", type_id);
+    Kumu::DefaultLogSink().Warn("UL Dictionary: unknown UL type_id: %d\n", type_id);
 
   return m_MDD_Table[type_id];
 }
@@ -250,7 +269,7 @@ ASDCP::Dictionary::FindUL(const byte_t* ul_buf) const
 	{
 	  char buf[64];
 	  UL TmpUL(ul_buf);
-	  Kumu::DefaultLogSink().Warn("Unknown UL: %s\n", TmpUL.EncodeString(buf, 64));
+	  Kumu::DefaultLogSink().Warn("UL Dictionary: unknown UL: %s\n", TmpUL.EncodeString(buf, 64));
 	  return 0;
 	}
     }

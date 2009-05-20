@@ -710,8 +710,8 @@ ASDCP::MXF::OPAtomHeader::InitFromFile(const Kumu::FileReader& Reader)
 
   // is it really OP-Atom?
   assert(m_Dict);
-  UL OPAtomUL(m_Dict->ul(MDD_OPAtom));
-  UL InteropOPAtomUL(m_Dict->ul(MDD_MXFInterop_OPAtom));
+  UL OPAtomUL(SMPTE_390_OPAtom_Entry().ul);
+  UL InteropOPAtomUL(MXFInterop_OPAtom_Entry().ul);
 
   if ( OperationalPattern == OPAtomUL ) // SMPTE
     {

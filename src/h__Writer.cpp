@@ -523,9 +523,6 @@ ASDCP::h__Writer::WriteEKLVPacket(const ASDCP::FrameBuffer& FrameBuf, const byte
 
       if ( ASDCP_SUCCESS(result) )
 	{ // write UL
-	  //	  if ( m_Info.LabelSetType == LS_MXF_INTEROP )
-	  //	    Overhead.WriteRaw(m_Dict->ul(MDD_MXFInterop_CryptEssence), SMPTE_UL_LENGTH);
-	  //	  else
 	  Overhead.WriteRaw(m_Dict->ul(MDD_CryptEssence), SMPTE_UL_LENGTH);
 
 	  // construct encrypted triplet header
@@ -625,10 +622,6 @@ ASDCP::h__Writer::WriteMXFFooter()
   assert(m_Dict);
   // re-label the partition
   UL OPAtomUL(m_Dict->ul(MDD_OPAtom));
-
-  //  if ( m_Info.LabelSetType == LS_MXF_INTEROP )
-  //    OPAtomUL.Set(m_Dict->ul(MDD_MXFInterop_OPAtom));
-  
   m_HeaderPart.OperationalPattern = OPAtomUL;
   m_HeaderPart.m_Preface->OperationalPattern = m_HeaderPart.OperationalPattern;
 

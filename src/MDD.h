@@ -312,12 +312,8 @@ namespace ASDCP {
 	MDD_Core_IndexSID, // 274
 	MDD_Core_OperationalPattern, // 275
 	MDD_Core_EssenceContainers, // 276
-
 	MDD_Max
     }; // enum MDD_t
-
-    //    const ui32_t MDD_Table_size = (ui32_t)MDD_Max;
- 
 
     //
     const MDD_t MDD_EssenceContainerData_BodySID = MDD_Core_BodySID;

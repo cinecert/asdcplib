@@ -63,8 +63,8 @@ ASDCP::h__Reader::InitInfo()
   InterchangeObject* Object;
 
   m_Info.LabelSetType = LS_MXF_UNKNOWN;
-  UL OPAtomUL(m_Dict->ul(MDD_OPAtom));
-  UL Interop_OPAtomUL(m_Dict->ul(MDD_MXFInterop_OPAtom));
+  UL OPAtomUL(SMPTE_390_OPAtom_Entry().ul);
+  UL Interop_OPAtomUL(MXFInterop_OPAtom_Entry().ul);
 
   if ( m_HeaderPart.OperationalPattern == Interop_OPAtomUL )
     m_Info.LabelSetType = LS_MXF_INTEROP;
@@ -217,8 +217,7 @@ ASDCP::h__Reader::ReadEKLVPacket(ui32_t FrameNum, ui32_t SequenceNum, ASDCP::Fra
   m_LastPosition = m_LastPosition + Reader.KLLength() + PacketLength;
   assert(m_Dict);
 
-  if ( memcmp(Key.Value(), m_Dict->ul(MDD_CryptEssence), Key.Size() - 1) == 0  // ignore the stream numbers
-       || memcmp(Key.Value(), m_Dict->ul(MDD_MXFInterop_CryptEssence), Key.Size() - 1) == 0 )
+  if ( memcmp(Key.Value(), m_Dict->ul(MDD_CryptEssence), Key.Size() - 1) == 0 )  // ignore the stream numbers
     {
       if ( ! m_Info.EncryptedEssence )
 	{

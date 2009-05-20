@@ -134,6 +134,9 @@ inline const char* ui64sz(ui64_t i, char* buf)
     const char*   name;
   };
 
+  const MDDEntry& MXFInterop_OPAtom_Entry();
+  const MDDEntry& SMPTE_390_OPAtom_Entry();
+
   //
   class Dictionary
     {
