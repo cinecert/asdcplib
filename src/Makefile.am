@@ -83,7 +83,7 @@ lib_LTLIBRARIES += libpyasdcp.la
 nodist_libpyasdcp_la_SOURCES = asdcp_python.cpp asdcp_python.h \
 		asdcp_python_writerinfo.h asdcp_python_misc.cpp \
 		asdcp_python_reader.cpp asdcp_python_writer.cpp asdcp_wrappers.h \
-		asdcp_python_timedtext.cpp \
+		asdcp_python_descriptor.cpp \
 		kumu_python.cpp kumu_python.h
 
 libpyasdcp_la_CPPFLAGS = @PYTHON_CPPFLAGS@
