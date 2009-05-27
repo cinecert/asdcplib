@@ -116,7 +116,9 @@ Change History
  o Fixed a bug that caused incorrect SubDescriptors UL values to be 
    written into interop format MXF track files.  Note that this involved
    a substantial reogrganization of MXF internals.  Please test thoroughly
-   in your application before using in production.
+   in your application before using in production.  Note that is is a 
+   significant bug fix and track files created with 1.4.22 may be incompatible
+   with other systems.  
 
 2009.04.09 - SMPTE format fixes, enhancements and bug fixes, v.1.4.22
  o asdcplib now uses GNU autotools on POSIX systems to configure 
