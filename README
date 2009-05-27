@@ -115,7 +115,7 @@ Change History
 2009.05.21 - bug fixes, v.1.4.24
  o Fixed a bug that caused incorrect SubDescriptors UL values to be 
    written into interop format MXF track files.  Note that this involved
-   a substantial reogrganization of MXF internals.  Please test thoroughly
+   a substantial reorganization of MXF internals.  Please test thoroughly
    in your application before using in production.  Note that this is a 
    significant bug fix and track files created with 1.4.22 may be incompatible
    with other systems.  
