@@ -292,6 +292,22 @@ namespace Kumu
 
       void WriteEntry(const LogEntry&);
     };
+
+  // write messages to the syslog facility
+  class SyslogLogSink : public ILogSink
+    {
+      KM_NO_COPY_CONSTRUCT(SyslogLogSink);
+      SyslogLogSink();
+  
+    public:
+      SyslogLogSink(const std::string& source_name, int facility);
+      virtual ~SyslogLogSink();
+      void WriteEntry(const LogEntry&);
+    };
+
+  // convert a string into the appropriate syslog facility id
+  int SyslogNameToFacility(const std::string& facility_name);
+
 #endif
 
 

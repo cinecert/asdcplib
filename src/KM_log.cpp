@@ -147,6 +147,77 @@ Kumu::StreamLogSink::WriteEntry(const LogEntry& Entry)
       write(m_fd, buf.c_str(), buf.size());
     }
 }
+
+// foolin with symbols
+//------------------------------------------------------------------------------------------
+#include <syslog.h>
+int const SYSLOG_ALERT = LOG_ALERT;
+int const SYSLOG_CRIT = LOG_CRIT;
+int const SYSLOG_ERR = LOG_ERR;
+int const SYSLOG_WARNING = LOG_WARNING;
+int const SYSLOG_NOTICE = LOG_NOTICE;
+int const SYSLOG_INFO = LOG_INFO;
+int const SYSLOG_DEBUG = LOG_DEBUG;
+#undef LOG_ALERT
+#undef LOG_CRIT
+#undef LOG_ERR
+#undef LOG_WARNING
+#undef LOG_NOTICE
+#undef LOG_INFO
+#undef LOG_DEBUG
+//------------------------------------------------------------------------------------------
+
+Kumu::SyslogLogSink::SyslogLogSink(const std::string& source_name, int facility)
+{
+  if ( facility == 0 )
+    facility == LOG_DAEMON;
+
+  openlog(source_name.c_str(), LOG_CONS|LOG_NDELAY||LOG_PID, facility);
+}
+
+Kumu::SyslogLogSink::~SyslogLogSink()
+{
+  closelog();
+}
+
+//
+void
+Kumu::SyslogLogSink::WriteEntry(const LogEntry& e)
+{
+  int priority;
+
+  switch ( e.Type )
+    {
+    case Kumu::LOG_ALERT:   priority = SYSLOG_ALERT; break;
+    case Kumu::LOG_CRIT:    priority = SYSLOG_CRIT; break;
+    case Kumu::LOG_ERROR:   priority = SYSLOG_ERR; break;
+    case Kumu::LOG_WARN:    priority = SYSLOG_WARNING; break;
+    case Kumu::LOG_NOTICE:  priority = SYSLOG_NOTICE; break;
+    case Kumu::LOG_INFO:    priority = SYSLOG_INFO; break;
+    case Kumu::LOG_DEBUG:   priority = SYSLOG_DEBUG; break;
+    }
+
+  syslog(priority, "%s", e.Msg.substr(0, e.Msg.size() - 1).c_str());
+}
+
+//
+int
+Kumu::SyslogNameToFacility(const std::string& facility_name)
+{
+  if ( facility_name == "LOG_DAEMON" ) return LOG_DAEMON;
+  if ( facility_name == "LOG_LOCAL0" ) return LOG_LOCAL0;
+  if ( facility_name == "LOG_LOCAL1" ) return LOG_LOCAL1;
+  if ( facility_name == "LOG_LOCAL2" ) return LOG_LOCAL2;
+  if ( facility_name == "LOG_LOCAL3" ) return LOG_LOCAL3;
+  if ( facility_name == "LOG_LOCAL4" ) return LOG_LOCAL4;
+  if ( facility_name == "LOG_LOCAL5" ) return LOG_LOCAL5;
+  if ( facility_name == "LOG_LOCAL6" ) return LOG_LOCAL6;
+  if ( facility_name == "LOG_LOCAL7" ) return LOG_LOCAL7;
+
+  DefaultLogSink().Error("Unsupported facility name: %s, using default value LOG_DAEMON\n", facility_name.c_str());
+  return LOG_DAEMON;
+}
+
 #endif
 
 //------------------------------------------------------------------------------------------
