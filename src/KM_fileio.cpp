@@ -57,6 +57,7 @@ struct iovec {
 # if defined(__linux__)
 #   include <sys/statfs.h>
 # else
+#  include <sys/param.h>
 #  include <sys/mount.h>
 # endif
 
