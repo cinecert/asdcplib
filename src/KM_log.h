@@ -296,6 +296,7 @@ namespace Kumu
   // write messages to the syslog facility
   class SyslogLogSink : public ILogSink
     {
+      Mutex m_Lock;
       KM_NO_COPY_CONSTRUCT(SyslogLogSink);
       SyslogLogSink();
   

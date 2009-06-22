@@ -136,7 +136,7 @@ namespace Kumu
   bool        PathsAreEquivalent(const std::string& lhs, const std::string& rhs); // true if paths point to the same filesystem entry
 
   // Returns free space and total space available for the given path
-  Result_t   FreeSpaceForPath(const std::string& path, Kumu::fsize_t& free_space, Kumu::fsize_t& total_space);
+  Result_t    FreeSpaceForPath(const std::string& path, Kumu::fsize_t& free_space, Kumu::fsize_t& total_space);
 
   // split and reassemble paths as lists of path components
   PathCompList_t& PathToComponents(const std::string& Path, PathCompList_t& CList, char separator = '/'); // removes '//'
@@ -154,6 +154,11 @@ namespace Kumu
   std::string PathDirname(const std::string& Path, char separator = '/'); // returns everything but the right-most element
   std::string PathGetExtension(const std::string& Path); // returns everything in the right-most element following the right-most '.'
   std::string PathSetExtension(const std::string& Path, const std::string& Extension); // empty extension removes '.' as well
+
+  std::string PathJoin(const std::string& Path1, const std::string& Path2, char separator = '/');
+  std::string PathJoin(const std::string& Path1, const std::string& Path2, const std::string& Path3, char separator = '/');
+  std::string PathJoin(const std::string& Path1, const std::string& Path2,
+		       const std::string& Path3, const std::string& Path4, char separator = '/');
 
 
   //------------------------------------------------------------------------------------------

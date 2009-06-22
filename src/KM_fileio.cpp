@@ -213,7 +213,7 @@ Kumu::FileSize(const std::string& pathname)
 
 //
 static PathCompList_t&
-s_PathMakeCanonical(PathCompList_t& CList, char separator, bool is_absolute)
+s_PathMakeCanonical(PathCompList_t& CList, bool is_absolute)
 {
   PathCompList_t::iterator ci, ri; // component and removal iterators
 
@@ -247,7 +247,7 @@ Kumu::PathMakeCanonical(const std::string& Path, char separator)
 {
   PathCompList_t CList;
   bool is_absolute = PathIsAbsolute(Path, separator);
-  s_PathMakeCanonical(PathToComponents(Path, CList, separator), separator, is_absolute);
+  s_PathMakeCanonical(PathToComponents(Path, CList, separator), is_absolute);
 
   if ( is_absolute )
     return ComponentsToAbsolutePath(CList, separator);
@@ -353,7 +353,7 @@ Kumu::PathMakeAbsolute(const std::string& Path, char separator)
   CList.push_back(cwd_buf);
   CList.push_back(Path);
 
-  return ComponentsToAbsolutePath(s_PathMakeCanonical(CList, separator, true), separator);
+  return ComponentsToAbsolutePath(s_PathMakeCanonical(CList, true), separator);
 }
 
 //
@@ -427,6 +427,28 @@ Kumu::PathSetExtension(const std::string& Path, const std::string& Extension) //
     return Basename;
 
   return Basename + "." + Extension;
+}
+
+//
+std::string
+Kumu::PathJoin(const std::string& Path1, const std::string& Path2, char separator)
+{
+  return Path1 + separator + Path2;
+}
+
+//
+std::string
+Kumu::PathJoin(const std::string& Path1, const std::string& Path2, const std::string& Path3, char separator)
+{
+  return Path1 + separator + Path2 + separator + Path3;
+}
+
+//
+std::string
+Kumu::PathJoin(const std::string& Path1, const std::string& Path2,
+	       const std::string& Path3, const std::string& Path4, char separator)
+{
+  return Path1 + separator + Path2 + separator + Path3 + separator + Path4;
 }
 
 //

@@ -182,11 +182,11 @@ Kumu::SyslogLogSink::~SyslogLogSink()
 
 //
 void
-Kumu::SyslogLogSink::WriteEntry(const LogEntry& e)
+Kumu::SyslogLogSink::WriteEntry(const LogEntry& Entry)
 {
   int priority;
 
-  switch ( e.Type )
+  switch ( Entry.Type )
     {
     case Kumu::LOG_ALERT:   priority = SYSLOG_ALERT; break;
     case Kumu::LOG_CRIT:    priority = SYSLOG_CRIT; break;
@@ -197,7 +197,12 @@ Kumu::SyslogLogSink::WriteEntry(const LogEntry& e)
     case Kumu::LOG_DEBUG:   priority = SYSLOG_DEBUG; break;
     }
 
-  syslog(priority, "%s", e.Msg.substr(0, e.Msg.size() - 1).c_str());
+  AutoMutex L(m_Lock);
+
+  if ( Entry.TestFilter(m_filter) )
+    {
+      syslog(priority, "%s", Entry.Msg.substr(0, Entry.Msg.size() - 1).c_str());
+    }
 }
 
 //

@@ -765,6 +765,7 @@ Kumu::XMLElement::ParseString(const std::string& document)
   MyTreeHandler* docHandler = new MyTreeHandler(this);
   ErrorHandler* errHandler = (ErrorHandler*)docHandler;
   parser->setDocumentHandler(docHandler);
+  parser->setErrorHandler(docHandler);
 
   try
     {
@@ -849,7 +850,7 @@ Kumu::StringIsXML(const char* document, ui32_t len)
 bool
 Kumu::XMLElement::ParseString(const std::string& document)
 {
-  DefaultLogSink().Error("asdcplib compiled without XML parser support.\n");
+  DefaultLogSink().Error("Kumu compiled without XML parser support.\n");
   return false;
 }
 
