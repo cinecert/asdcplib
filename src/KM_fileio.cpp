@@ -350,7 +350,7 @@ Kumu::PathMakeAbsolute(const std::string& Path, char separator)
     }
 
   PathCompList_t CList;
-  CList.push_back(cwd_buf);
+  PathToComponents(cwd_buf, CList);
   CList.push_back(Path);
 
   return ComponentsToAbsolutePath(s_PathMakeCanonical(CList, true), separator);
@@ -1400,7 +1400,6 @@ Result_t
 Kumu::CreateDirectoriesInPath(const std::string& Path)
 {
   bool abs = PathIsAbsolute(Path);
-  assert(abs);
   PathCompList_t PathComps, TmpPathComps;
 
   PathToComponents(Path, PathComps);

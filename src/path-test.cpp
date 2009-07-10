@@ -60,6 +60,10 @@ main(int argc, const char** argv)
 
   string Path_4 = ComponentsToPath(PathList_3);
   string Path_5 = PathMakeAbsolute(Path_4);
+
+  fprintf(stderr, "PathMakeAbsolute in: %s\n", Path_4.c_str());
+  fprintf(stderr, "PathMakeAbsolute out: %s\n", Path_5.c_str());
+
   string Path_6 = ComponentsToAbsolutePath(PathList_3);
   assert(Path_3 == Path_6);
   assert(PathsAreEquivalent(Path_3, Path_6));
