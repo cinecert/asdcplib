@@ -342,6 +342,8 @@ namespace Kumu
   void GenRandomUUID(byte_t* buf); // buf must be UUID_Length or longer
   void GenRandomValue(UUID&);
   
+  typedef ArchivableList<UUID> UUIDList;
+
   // a self-wiping key container
   //
   const ui32_t SymmetricKey_Length = 16;

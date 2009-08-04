@@ -1455,7 +1455,9 @@ Kumu::DeleteFile(const std::string& filename)
 Result_t
 h__DeletePath(const std::string& pathname)
 {
-  fprintf(stderr, "h__DeletePath %s\n", pathname.c_str());
+  if ( pathname.empty() )
+    return RESULT_NULL_STR;
+
   Result_t result = RESULT_OK;
 
   if ( ! PathIsDirectory(pathname) )

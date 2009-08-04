@@ -234,7 +234,11 @@ ASDCP::RawEssenceType(const char* filename, EssenceType_t& type)
 	    {
 	      type = ESS_MPEG2_VES;
 	    }
-	  else if ( ASDCP_SUCCESS(WavHeader.ReadFromBuffer(p, read_count, &data_offset)) )
+	  else if ( memcmp(FB.RoData(), ASDCP::JP2K::Magic, sizeof(ASDCP::JP2K::Magic)) == 0 )
+	    {
+	      type = ESS_JPEG_2000;
+	    }
+	  else if ( ASDCP_SUCCESS(WavHeader.ReadFromBuffer(FB.RoData(), read_count, &data_offset)) )
 	    {
 	      switch ( WavHeader.samplespersec )
 		{
@@ -244,11 +248,11 @@ ASDCP::RawEssenceType(const char* filename, EssenceType_t& type)
 		  return RESULT_FORMAT;
 		}
 	    }
-	  else if ( ASDCP_SUCCESS(AIFFHeader.ReadFromBuffer(p, read_count, &data_offset)) )
+	  else if ( ASDCP_SUCCESS(AIFFHeader.ReadFromBuffer(FB.RoData(), read_count, &data_offset)) )
 	    {
 	      type = ESS_PCM_24b_48k;
 	    }
-	  else if ( Kumu::StringIsXML((const char*)p, FB.Size()) )
+	  else if ( Kumu::StringIsXML((const char*)FB.RoData(), FB.Size()) )
 	    {
 	      type = ESS_TIMED_TEXT;
 	    }
@@ -281,10 +285,19 @@ ASDCP::RawEssenceType(const char* filename, EssenceType_t& type)
 	      if ( ASDCP_SUCCESS(result) )
 		{
 		  if ( memcmp(FB.RoData(), ASDCP::JP2K::Magic, sizeof(ASDCP::JP2K::Magic)) == 0 )
-		    type = ESS_JPEG_2000;
-
+		    {
+		      type = ESS_JPEG_2000;
+		    }
 		  else if ( ASDCP_SUCCESS(WavHeader.ReadFromBuffer(FB.RoData(), read_count, &data_offset)) )
-		    type = ESS_PCM_24b_48k;
+		    {
+		      switch ( WavHeader.samplespersec )
+			{
+			case 48000: type = ESS_PCM_24b_48k; break;
+			case 96000: type = ESS_PCM_24b_96k; break;
+			default:
+			  return RESULT_FORMAT;
+			}
+		    }
 		}
 
 	      break;

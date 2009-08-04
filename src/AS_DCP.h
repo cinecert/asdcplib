@@ -1070,6 +1070,15 @@ namespace ASDCP {
 	  // mismatch is detected.
 	  Result_t OpenRead(const char* filename, bool pedantic = false) const;
 
+	  // Opens a file sequence for reading.  The sequence is expected to contain one or
+	  // more filenames, each naming a file containing the codestream for exactly one
+	  // picture. The parser will automatically parse enough data
+	  // from the first file to provide a complete set of stream metadata for the
+	  // MXFWriter below.  If the "pedantic" parameter is given and is true, the
+	  // parser will check the metadata for each codestream and fail if a 
+	  // mismatch is detected.
+	  Result_t OpenRead(const std::list<std::string>& file_list, bool pedantic = false) const;
+
 	  // Fill a PictureDescriptor struct with the values from the first file's codestream.
 	  // Returns RESULT_INIT if the directory is not open.
 	  Result_t FillPictureDescriptor(PictureDescriptor&) const;

@@ -50,6 +50,12 @@ public:
   FileList() {}
   ~FileList() {}
 
+  const FileList& operator=(const std::list<std::string>& pathlist) {
+    std::list<std::string>::const_iterator i;
+    for ( i = pathlist.begin(); i != pathlist.end(); i++ )
+      push_back(*i);
+  }
+
   //
   Result_t InitFromDirectory(const char* path)
   {
@@ -89,13 +95,16 @@ class ASDCP::JP2K::SequenceParser::h__SequenceParser
   FileList           m_FileList;
   FileList::iterator m_CurrentFile;
   CodestreamParser   m_Parser;
+  bool               m_Pedantic;
+
+  Result_t OpenRead();
 
   ASDCP_NO_COPY_CONSTRUCT(h__SequenceParser);
 
 public:
   PictureDescriptor  m_PDesc;
 
-  h__SequenceParser() : m_FramesRead(0)
+  h__SequenceParser() : m_FramesRead(0), m_Pedantic(false)
   {
     memset(&m_PDesc, 0, sizeof(m_PDesc));
     m_PDesc.EditRate = Rational(24,1); 
@@ -106,7 +115,8 @@ public:
     Close();
   }
 
-  Result_t OpenRead(const char* filename);
+  Result_t OpenRead(const char* filename, bool pedantic);
+  Result_t OpenRead(const std::list<std::string>& file_list, bool pedantic);
   void     Close() {}
 
   Result_t Reset()
@@ -122,48 +132,61 @@ public:
 
 //
 ASDCP::Result_t
-ASDCP::JP2K::SequenceParser::h__SequenceParser::OpenRead(const char* filename)
+ASDCP::JP2K::SequenceParser::h__SequenceParser::OpenRead()
 {
-  ASDCP_TEST_NULL_STR(filename);
-
-  Result_t result = m_FileList.InitFromDirectory(filename);
-
   if ( m_FileList.empty() )
     return RESULT_ENDOFFILE;
 
+  m_CurrentFile = m_FileList.begin();
+  CodestreamParser Parser;
+  FrameBuffer TmpBuffer;
+
+  Kumu::fsize_t file_size = Kumu::FileSize((*m_CurrentFile).c_str());
+
+  if ( file_size == 0 )
+    return RESULT_NOT_FOUND;
+
+  assert(file_size <= 0xFFFFFFFFL);
+  Result_t result = TmpBuffer.Capacity((ui32_t) file_size);
+
   if ( ASDCP_SUCCESS(result) )
-    {
-      m_CurrentFile = m_FileList.begin();
-
-      CodestreamParser Parser;
-      FrameBuffer TmpBuffer;
-
-      Kumu::fsize_t file_size = Kumu::FileSize((*m_CurrentFile).c_str());
-
-      if ( file_size == 0 )
-	result = RESULT_NOT_FOUND;
-
-      if ( ASDCP_SUCCESS(result) )
-	{
-	  assert(file_size <= 0xFFFFFFFFL);
-	  result = TmpBuffer.Capacity((ui32_t) file_size);
-	}
-
-      if ( ASDCP_SUCCESS(result) )
-	result = Parser.OpenReadFrame((*m_CurrentFile).c_str(), TmpBuffer);
+    result = Parser.OpenReadFrame((*m_CurrentFile).c_str(), TmpBuffer);
       
-      if ( ASDCP_SUCCESS(result) )
-	result = Parser.FillPictureDescriptor(m_PDesc);
+  if ( ASDCP_SUCCESS(result) )
+    result = Parser.FillPictureDescriptor(m_PDesc);
 
-      // how big is it?
-      if ( ASDCP_SUCCESS(result) )
-	m_PDesc.ContainerDuration = m_FileList.size();
-    }
+  // how big is it?
+  if ( ASDCP_SUCCESS(result) )
+    m_PDesc.ContainerDuration = m_FileList.size();
 
   return result;
 }
 
 //
+ASDCP::Result_t
+ASDCP::JP2K::SequenceParser::h__SequenceParser::OpenRead(const char* filename, bool pedantic)
+{
+  ASDCP_TEST_NULL_STR(filename);
+  m_Pedantic = pedantic;
+
+  Result_t result = m_FileList.InitFromDirectory(filename);
+
+  if ( ASDCP_SUCCESS(result) )
+    result = OpenRead();
+
+  return result;
+}
+
+
+//
+ASDCP::Result_t
+ASDCP::JP2K::SequenceParser::h__SequenceParser::OpenRead(const std::list<std::string>& file_list, bool pedantic)
+{
+  m_Pedantic = pedantic;
+  m_FileList = file_list;
+  return OpenRead();
+}
+
 //
 ASDCP::Result_t
 ASDCP::JP2K::SequenceParser::h__SequenceParser::ReadFrame(FrameBuffer& FB)
@@ -201,13 +224,28 @@ ASDCP::JP2K::SequenceParser::OpenRead(const char* filename, bool pedantic) const
 {
   const_cast<ASDCP::JP2K::SequenceParser*>(this)->m_Parser = new h__SequenceParser;
 
-  Result_t result = m_Parser->OpenRead(filename);
+  Result_t result = m_Parser->OpenRead(filename, pedantic);
 
   if ( ASDCP_FAILURE(result) )
     const_cast<ASDCP::JP2K::SequenceParser*>(this)->m_Parser.release();
 
   return result;
 }
+
+//
+Result_t
+ASDCP::JP2K::SequenceParser::OpenRead(const std::list<std::string>& file_list, bool pedantic) const
+{
+  const_cast<ASDCP::JP2K::SequenceParser*>(this)->m_Parser = new h__SequenceParser;
+
+  Result_t result = m_Parser->OpenRead(file_list, pedantic);
+
+  if ( ASDCP_FAILURE(result) )
+    const_cast<ASDCP::JP2K::SequenceParser*>(this)->m_Parser.release();
+
+  return result;
+}
+
 
 // Rewinds the stream to the beginning.
 ASDCP::Result_t
@@ -230,6 +268,7 @@ ASDCP::JP2K::SequenceParser::ReadFrame(FrameBuffer& FB) const
   return m_Parser->ReadFrame(FB);
 }
 
+//
 ASDCP::Result_t
 ASDCP::JP2K::SequenceParser::FillPictureDescriptor(PictureDescriptor& PDesc) const
 {
