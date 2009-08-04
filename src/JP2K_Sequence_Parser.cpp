@@ -54,6 +54,7 @@ public:
     std::list<std::string>::const_iterator i;
     for ( i = pathlist.begin(); i != pathlist.end(); i++ )
       push_back(*i);
+    return *this;
   }
 
   //
