@@ -64,6 +64,8 @@ AC_DEFUN([AX_LIB_OPENSSL],
         if test "$withval" = "yes"; then
             if test -d /var/local/ssl/include ; then
                 openssl_prefix=/var/local/ssl
+            elif test -d /var/local/include/openssl ; then
+                openssl_prefix=/var/local
             elif test -d /usr/local/ssl/include ; then
                 openssl_prefix=/usr/local/ssl
             elif test -d /usr/lib/ssl/include ; then
@@ -86,6 +88,8 @@ AC_DEFUN([AX_LIB_OPENSSL],
         dnl Default behavior is implicit yes
         if test -d /var/local/ssl/include ; then
             openssl_prefix=/var/local/ssl
+        elif test -d /var/local/include/openssl ; then
+            openssl_prefix=/var/local
         elif test -d /usr/local/ssl/include ; then
             openssl_prefix=/usr/local/ssl
         elif test -d /usr/lib/ssl/include ; then
