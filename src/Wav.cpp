@@ -138,7 +138,7 @@ ASDCP::Wav::SimpleWaveHeader::ReadFromBuffer(const byte_t* buf, ui32_t buf_len, 
   fourcc test_RIFF(p); p += 4;
   if ( test_RIFF != FCC_RIFF )
     {
-      DefaultLogSink().Debug("File does not begin with RIFF header\n");      
+      //      DefaultLogSink().Debug("File does not begin with RIFF header\n");      
       return RESULT_RAW_FORMAT;
     }
 
@@ -305,7 +305,7 @@ ASDCP::AIFF::SimpleAIFFHeader::ReadFromBuffer(const byte_t* buf, ui32_t buf_len,
   fourcc test_FORM(p); p += 4;
   if ( test_FORM != FCC_FORM )
     {
-      DefaultLogSink().Debug("File does not begin with FORM header\n");
+      //      DefaultLogSink().Debug("File does not begin with FORM header\n");
       return RESULT_RAW_FORMAT;
     }
 

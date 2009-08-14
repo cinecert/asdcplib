@@ -44,7 +44,7 @@ static const char* PROGRAM_NAME = "wavesplit";    // program name for messages
 // Macros used to test command option data state.
 
 // True if a major mode has already been selected.
-#define TEST_MAJOR_MODE()     ( create_flag )
+#define TEST_MAJOR_MODE()     ( create_flag || info_flag )
 
 // Causes the caller to return if a major mode has already been selected,
 // otherwise sets the given flag.
@@ -82,21 +82,23 @@ void
 usage(FILE* stream = stderr)
 {
   fprintf(stream, "\
-USAGE: %s [-i|-c <root-name> [-v]] <filename>\n\
+USAGE: %s [-v] -V\n\
+       %s [-v] -c <root-name> [-d <duration>] [-f <start-frame>] <filename>\n\
+       %s [-v] -i <filename>\n\
 \n\
 Major modes:\n\
-  -c <root-name>  - Create a WAV file for each channel in the input file (default is two channel files)\n\
-  -V              - Show version\n\
-  -h              - Show help\n\
-\n\
-Read/Write Options:\n\
-  -f <frame-num>  - Starting frame number, default 0\n\
+  -c <root-name>  - Create a WAV file for each channel in the input file\n\
+                    (default is two-channel files)\n\
   -d <duration>   - Number of frames to process, default all\n\
+  -f <frame-num>  - Starting frame number, default 0\n\
+  -h              - Show help\n\
+  -i              - Show input file metadata (no output created)\n\
+  -V              - Show version\n\
   -v              - Print extra info while processing\n\
 \n\
   NOTES: o There is no option grouping, all options must be distinct arguments.\n\
          o All option arguments must be separated from the option by whitespace.\n\
-\n", PROGRAM_NAME);
+\n", PROGRAM_NAME, PROGRAM_NAME, PROGRAM_NAME);
 }
 
 //
@@ -108,6 +110,7 @@ class CommandOptions
 public:
   bool   error_flag;     // true if the given options are in error or not complete
   bool   create_flag;    // true if the file create mode was selected
+  bool   info_flag;      // true if the file info mode was selected
   bool   version_flag;   // true if the version display option was selected
   bool   help_flag;      // true if the help display option was selected
   bool   verbose_flag;   // true for extra info during procesing
@@ -127,12 +130,15 @@ public:
 	  {
 	    switch ( argv[i][1] )
 	      {
-	      case 'V': version_flag = true; break;
-	      case 'h': help_flag = true; break;
 	      case 'c':
 		TEST_SET_MAJOR_MODE(create_flag);
 		TEST_EXTRA_ARG(i, 'c');
 		file_root = argv[i];
+		break;
+
+	      case 'd':
+		TEST_EXTRA_ARG(i, 'd');
+		duration = atoi(argv[i]); // TODO: test for negative value, should use strtol()
 		break;
 
 	      case 'f':
@@ -140,10 +146,9 @@ public:
 		start_frame = atoi(argv[i]); // TODO: test for negative value, should use strtol()
 		break;
 
-	      case 'd':
-		TEST_EXTRA_ARG(i, 'd');
-		duration = atoi(argv[i]); // TODO: test for negative value, should use strtol()
-		break;
+	      case 'h': help_flag = true; break;
+	      case 'i': TEST_SET_MAJOR_MODE(info_flag); break;
+	      case 'V': version_flag = true; break;
 
 	      default:
 		fprintf(stderr, "Unrecognized option: %c\n", argv[i][1]);
@@ -181,8 +186,30 @@ public:
   }
 };
 
-
 //
+Result_t
+wav_file_info(CommandOptions& Options)
+{
+  PCM::AudioDescriptor ADesc;
+  Rational         PictureRate = EditRate_24;
+  PCM::WAVParser Parser;
+
+  // set up essence parser
+  Result_t result = Parser.OpenRead(Options.filename, PictureRate);
+
+  if ( ASDCP_SUCCESS(result) )
+    {
+      Parser.FillAudioDescriptor(ADesc);
+      ADesc.SampleRate = PictureRate;
+      fprintf(stderr, "48Khz PCM Audio, %s fps (%u spf)\n", "24",
+	      PCM::CalcSamplesPerFrame(ADesc));
+      fputs("AudioDescriptor:\n", stderr);
+      PCM::AudioDescriptorDump(ADesc);
+    }
+
+  return result;
+}
+
 //
 void
 split_buffer(ui32_t sample_size, PCM::FrameBuffer& FrameBuffer,
@@ -208,8 +235,6 @@ split_buffer(ui32_t sample_size, PCM::FrameBuffer& FrameBuffer,
   R_FrameBuffer.Size(R_FrameBuffer.Capacity());
 }
 
-
-// 
 //
 Result_t
 split_wav_file(CommandOptions& Options)
@@ -345,6 +370,9 @@ main(int argc, const char** argv)
 
   if ( Options.version_flag )
     banner();
+
+  if ( Options.info_flag )
+    result = wav_file_info(Options);
 
   if ( Options.create_flag )
     result = split_wav_file(Options);

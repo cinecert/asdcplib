@@ -97,6 +97,7 @@ class ASDCP::TimedText::DCSubtitleParser::h__SubtitleParser
 {
   XMLElement  m_Root;
   ResourceTypeMap_t m_ResourceTypes;
+  Result_t OpenRead();
 
   ASDCP_NO_COPY_CONSTRUCT(h__SubtitleParser);
 
@@ -122,6 +123,7 @@ public:
   }
 
   Result_t OpenRead(const char* filename);
+  Result_t OpenRead(const std::string& xml_doc, const char* filename);
   Result_t ReadAncillaryResource(const byte_t* uuid, FrameBuffer& FrameBuf, const IResourceResolver& Resolver) const;
 };
 
@@ -166,13 +168,34 @@ ASDCP::TimedText::DCSubtitleParser::h__SubtitleParser::OpenRead(const char* file
 {
   Result_t result = ReadFileIntoString(filename, m_XMLDoc);
 
-  if ( KM_FAILURE(result) )
-    return result;
+  if ( KM_SUCCESS(result) )
+    result = OpenRead();
 
+  m_Filename = filename;
+  return result;
+}
+
+//
+Result_t
+ASDCP::TimedText::DCSubtitleParser::h__SubtitleParser::OpenRead(const std::string& xml_doc, const char* filename)
+{
+  m_XMLDoc = xml_doc;
+
+  if ( filename != 0 )
+    m_Filename = filename;
+  else
+    m_Filename = "<string>";
+
+  return OpenRead();
+}
+
+//
+Result_t
+ASDCP::TimedText::DCSubtitleParser::h__SubtitleParser::OpenRead()
+{
   if ( ! m_Root.ParseString(m_XMLDoc.c_str()) )
     return RESULT_FORMAT;
 
-  m_Filename = filename;
   m_TDesc.EncodingName = "UTF-8"; // the XML parser demands UTF-8
   m_TDesc.ResourceList.clear();
   m_TDesc.ContainerDuration = 0;
@@ -184,7 +207,9 @@ ASDCP::TimedText::DCSubtitleParser::h__SubtitleParser::OpenRead(const char* file
       m_TDesc.NamespaceName = c_dcst_namespace_name;
     }
   else
-    m_TDesc.NamespaceName = ns->Name();
+    {
+      m_TDesc.NamespaceName = ns->Name();
+    }
 
   UUID DocID;
   if ( ! get_UUID_from_child_element("Id", &m_Root, DocID) )
@@ -348,6 +373,20 @@ ASDCP::TimedText::DCSubtitleParser::OpenRead(const char* filename) const
   const_cast<ASDCP::TimedText::DCSubtitleParser*>(this)->m_Parser = new h__SubtitleParser;
 
   Result_t result = m_Parser->OpenRead(filename);
+
+  if ( ASDCP_FAILURE(result) )
+    const_cast<ASDCP::TimedText::DCSubtitleParser*>(this)->m_Parser = 0;
+
+  return result;
+}
+
+// Parses an XML document to provide a complete set of stream metadata for the MXFWriter below.
+Result_t
+ASDCP::TimedText::DCSubtitleParser::OpenRead(const std::string& xml_doc, const char* filename) const
+{
+  const_cast<ASDCP::TimedText::DCSubtitleParser*>(this)->m_Parser = new h__SubtitleParser;
+
+  Result_t result = m_Parser->OpenRead(xml_doc, filename);
 
   if ( ASDCP_FAILURE(result) )
     const_cast<ASDCP::TimedText::DCSubtitleParser*>(this)->m_Parser = 0;

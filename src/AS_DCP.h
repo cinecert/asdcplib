@@ -1346,9 +1346,14 @@ namespace ASDCP {
 	  DCSubtitleParser();
 	  virtual ~DCSubtitleParser();
 
-	  // Opens the XML file for reading, parse data to provide a complete
+	  // Opens an XML file for reading, parses data to provide a complete
 	  // set of stream metadata for the MXFWriter below.
 	  Result_t OpenRead(const char* filename) const;
+
+	  // Parses an XML document to provide a complete set of stream metadata
+	  // for the MXFWriter below. The optional filename argument is used to
+	  // initialize the default resource resolver (see ReadAncillaryResource).
+	  Result_t OpenRead(const std::string& xml_doc, const char* filename = 0) const;
 
 	  // Fill a TimedTextDescriptor struct with the values from the file's contents.
 	  // Returns RESULT_INIT if the file is not open.

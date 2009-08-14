@@ -310,11 +310,14 @@ void
 Kumu::XMLElement::DeleteAttrWithName(const char* name)
 {
   assert(name);
-  AttributeList::iterator i;
-  for ( i = m_AttrList.begin(); i != m_AttrList.end(); i++ )
+  AttributeList::iterator i = m_AttrList.begin();
+
+  while ( i != m_AttrList.end() )
     {
       if ( i->name == std::string(name) )
-	m_AttrList.erase(i);
+	m_AttrList.erase(i++);
+      else
+	++i;
     }
 }
 
@@ -322,10 +325,10 @@ Kumu::XMLElement::DeleteAttrWithName(const char* name)
 void
 Kumu::XMLElement::DeleteChildren()
 {
-  for ( ElementList::iterator i = m_ChildList.begin(); i != m_ChildList.end(); i++ )
+  while ( ! m_ChildList.empty() )
     {
-      delete *i;
-      m_ChildList.erase(i);
+      delete m_ChildList.back();
+      m_ChildList.pop_back();
     }
 }
 
@@ -763,7 +766,6 @@ Kumu::XMLElement::ParseString(const std::string& document)
   parser->setDoNamespaces(true);    // optional
 
   MyTreeHandler* docHandler = new MyTreeHandler(this);
-  ErrorHandler* errHandler = (ErrorHandler*)docHandler;
   parser->setDocumentHandler(docHandler);
   parser->setErrorHandler(docHandler);
 
