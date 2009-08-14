@@ -120,7 +120,7 @@ public:
   const char* filename;  // filename to be processed
 
   CommandOptions(int argc, const char** argv) :
-    error_flag(true), create_flag(false),
+    error_flag(true), create_flag(false), info_flag(false),
     version_flag(false), help_flag(false), start_frame(0),
     duration(0xffffffff), file_root(0), filename(0)
   {
@@ -374,7 +374,7 @@ main(int argc, const char** argv)
   if ( Options.info_flag )
     result = wav_file_info(Options);
 
-  if ( Options.create_flag )
+  else if ( Options.create_flag )
     result = split_wav_file(Options);
 
   if ( result != RESULT_OK )
