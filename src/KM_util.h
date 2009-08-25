@@ -413,6 +413,9 @@ namespace Kumu
       virtual ui32_t ArchiveLength() const { return 8L; }
       virtual bool   Archive(MemIOWriter* Writer) const;
       virtual bool   Unarchive(MemIOReader* Reader);
+
+      // Get the number of seconds since the Unix epoch (1970-01-01T00:00:00+00:00)
+      long GetSecondsSinceEpoch(void) const;
     };
 
   //

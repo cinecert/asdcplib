@@ -50,7 +50,7 @@ static const char* PROGRAM_NAME = "wavesplit";    // program name for messages
 // otherwise sets the given flag.
 #define TEST_SET_MAJOR_MODE(f) if ( TEST_MAJOR_MODE() ) \
                                  { \
-                                   fputs("Conflicting major mode, choose one of -(ic)).\n", stderr); \
+                                   fputs("Conflicting major mode, choose one of -(ic).\n", stderr); \
                                    return; \
                                  } \
                                  (f) = true;

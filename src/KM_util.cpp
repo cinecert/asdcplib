@@ -1125,6 +1125,18 @@ Kumu::Timestamp::Archive(MemIOWriter* Writer) const
   return true;
 }
 
+//
+long
+Kumu::Timestamp::GetSecondsSinceEpoch(void) const
+{
+  Kumu::TAI::caltime ct;
+  Kumu::TAI::tai t;
+  TIMESTAMP_TO_CALTIME(*this, &ct);
+  t = ct;
+
+  return (long) (t.x - ui64_C(4611686018427387914));
+}
+
 //------------------------------------------------------------------------------------------
 
 Kumu::MemIOWriter::MemIOWriter(ByteString* Buf)

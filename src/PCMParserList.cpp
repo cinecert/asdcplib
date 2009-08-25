@@ -30,9 +30,11 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include <PCMParserList.h>
+#include <KM_log.h>
 #include <assert.h>
 
 using namespace ASDCP;
+using namespace Kumu;
 
 
 ASDCP::ParserInstance::ParserInstance() : m_p(0), m_SampleSize(0)
@@ -121,10 +123,28 @@ ASDCP::PCMParserList::OpenRead(ui32_t argc, const char** argv, Rational& Picture
       if ( ASDCP_SUCCESS(result) )
 	{
 	  if ( i == 0 )
-	    m_ADesc = I->ADesc;
-
+	    {
+	      m_ADesc = I->ADesc;
+	    }
 	  else
-	    m_ADesc.BlockAlign += I->ADesc.BlockAlign;
+	    {
+	      if ( I->ADesc.AudioSamplingRate != m_ADesc.AudioSamplingRate )
+		{
+		  DefaultLogSink().Error("AudioSamplingRate mismatch in PCM parser list.");
+		  return RESULT_FORMAT;
+		}
+
+	      if ( I->ADesc.QuantizationBits  != m_ADesc.QuantizationBits )
+		{
+		  DefaultLogSink().Error("QuantizationBits mismatch in PCM parser list.");
+		  return RESULT_FORMAT;
+		}
+
+	      if ( I->ADesc.ContainerDuration < m_ADesc.ContainerDuration )
+		m_ADesc.ContainerDuration = I->ADesc.ContainerDuration;
+
+	      m_ADesc.BlockAlign += I->ADesc.BlockAlign;
+	    }
 
 	  m_ChannelCount += I->ADesc.ChannelCount;
 	}
