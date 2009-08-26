@@ -1129,12 +1129,39 @@ Kumu::Timestamp::Archive(MemIOWriter* Writer) const
 long
 Kumu::Timestamp::GetSecondsSinceEpoch(void) const
 {
+#ifdef KM_WIN32
+  SYSTEMTIME timeST;
+  TIMESTAMP_TO_SYSTIME(*this, &timeST);
+  FILETIME timeFT;
+  SystemTimeToFileTime(&timeST, &timeFT);
+  ULARGE_INTEGER timeUL;
+  timeUL.LowPart = timeFT.dwLowDateTime;
+  timeUL.HighPart = timeFT.dwHighDateTime;
+
+  SYSTEMTIME epochST;
+  epochST.wYear = 1970;
+  epochST.wMonth = 0;
+  epochST.wDayOfWeek = 4;
+  epochST.wDay = 1;
+  epochST.wHour = 0;
+  epochST.wMinute = 0;
+  epochST.wSecond = 0;
+  epochST.wMilliseconds = 0;
+  FILETIME epochFT;
+  SystemTimeToFileTime(&epochST, &epochFT);
+  ULARGE_INTEGER epochUL;
+  epochUL.LowPart = epochFT.dwLowDateTime;
+  epochUL.HighPart = epochFT.dwHighDateTime;
+
+  return (timeUL.QuadPart - epochUL.QuadPart) / 10000000;
+#else
   Kumu::TAI::caltime ct;
   Kumu::TAI::tai t;
   TIMESTAMP_TO_CALTIME(*this, &ct);
   t = ct;
 
   return (long) (t.x - ui64_C(4611686018427387914));
+#endif
 }
 
 //------------------------------------------------------------------------------------------
