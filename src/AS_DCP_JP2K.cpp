@@ -312,8 +312,8 @@ lh__Reader::OpenRead(const char* filename, EssenceType_t type)
 	{
 	  if ( m_EditRate != m_SampleRate )
 	    {
-	      DefaultLogSink().Error("EditRate and SampleRate do not match (%.03f, %.03f).\n",
-				     m_EditRate.Quotient(), m_SampleRate.Quotient());
+	      DefaultLogSink().Warn("EditRate and SampleRate do not match (%.03f, %.03f).\n",
+				    m_EditRate.Quotient(), m_SampleRate.Quotient());
 	      
 	      if ( m_EditRate == EditRate_24 && m_SampleRate == EditRate_48 )
 		{

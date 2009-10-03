@@ -283,6 +283,8 @@ namespace Kumu
       inline bool DecodeHex(const char* str) {
 	ui32_t char_count;
 	m_HasValue = ( hex2bin(str, m_Value, SIZE, &char_count) == 0 );
+	if ( m_HasValue && char_count != SIZE )
+	  m_HasValue = false;
 	return m_HasValue;
       }
 
@@ -297,6 +299,8 @@ namespace Kumu
       inline bool DecodeBase64(const char* str) {
 	ui32_t char_count;
 	m_HasValue = ( base64decode(str, m_Value, SIZE, &char_count) == 0 );
+	if ( m_HasValue && char_count != SIZE )
+	  m_HasValue = false;
 	return m_HasValue;
       }
 
