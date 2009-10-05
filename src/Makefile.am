@@ -43,7 +43,7 @@ include_HEADERS = KM_error.h KM_fileio.h KM_log.h KM_memio.h KM_mutex.h \
 		KM_platform.h KM_prng.h KM_util.h KM_xml.h AS_DCP.h
 if DEV_HEADERS
 include_HEADERS += S12MTimecode.h MDD.h Metadata.h KLV.h MXFTypes.h MXF.h Wav.h \
-		PCMParserList.h
+		PCMParserList.h TimedText_Transform.h
 endif
 
 # list of the libraries to build and install
@@ -69,6 +69,9 @@ libasdcp_la_SOURCES = MPEG2_Parser.cpp MPEG.cpp JP2K_Codestream_Parser.cpp \
 		Wav.h WavFileWriter.h MXF.h Metadata.h \
 		JP2K.h AS_DCP.h AS_DCP_internal.h KLV.h MPEG.h MXFTypes.h MDD.h \
 		PCMParserList.h S12MTimecode.h MDD.cpp
+if DEV_HEADERS
+libasdcp_la_SOURCES += TimedText_Transform.cpp
+endif
 
 libasdcp_la_LDFLAGS = -release @VERSION@
 
@@ -83,7 +86,7 @@ lib_LTLIBRARIES += libpyasdcp.la
 nodist_libpyasdcp_la_SOURCES = asdcp_python.cpp asdcp_python.h \
 		asdcp_python_writerinfo.h asdcp_python_misc.cpp \
 		asdcp_python_reader.cpp asdcp_python_writer.cpp asdcp_wrappers.h \
-		asdcp_python_descriptor.cpp TimedText_Transform.h TimedText_Transform.cpp \
+		asdcp_python_descriptor.cpp \
 		kumu_python.cpp kumu_python.h
 
 libpyasdcp_la_CPPFLAGS = @PYTHON_CPPFLAGS@
