@@ -199,28 +199,36 @@ void
 Kumu::Gen_FIPS_186_Value(const byte_t* key, ui32_t key_size, byte_t* out_buf, ui32_t out_buf_len)
 {
   byte_t sha_buf[SHA_DIGEST_LENGTH];
-  const ui32_t key_buf_len = 64;
-  byte_t key_buf[key_buf_len];
-  SHA_CTX SHA;
+  ui32_t const xkey_len = 64; // 512/8
+  byte_t xkey[xkey_len];
   BN_CTX* ctx1 = BN_CTX_new(); // used by BN_* functions
   assert(ctx1);
 
-  // init key
-  memset(key_buf, 0, key_buf_len);
-  memcpy(key_buf, key, xmin<ui32_t>(key_buf_len, key_size));
+  if ( key_size > xkey_len )
+    DefaultLogSink().Warn("Key too large for FIPS 186 seed, truncating to 64 bytes.\n");
 
-  // create the 2^160 constant
-  BIGNUM c_2powb, c_2, c_160;
-  BN_init(&c_2powb);  BN_init(&c_2);  BN_init(&c_160);
+  // init key
+  memset(xkey, 0, xkey_len);
+  memcpy(xkey, key, xmin<ui32_t>(key_size, xkey_len));
+
+  if ( key_size < SHA_DIGEST_LENGTH )
+    key_size = SHA_DIGEST_LENGTH; // pad short key ( b < 160 )
+
+  // create the 2^b constant
+  BIGNUM c_2powb, c_2, c_b;
+  BN_init(&c_2powb);  BN_init(&c_2);  BN_init(&c_b);
   BN_set_word(&c_2, 2);
-  BN_set_word(&c_160, 160);
-  BN_exp(&c_2powb, &c_2, &c_160, ctx1);
+  BN_set_word(&c_b, key_size * 8);
+  BN_exp(&c_2powb, &c_2, &c_b, ctx1);
 
   for (;;)
     {
+      SHA_CTX SHA;
+
       // step c -- x = G(t,xkey)
-      SHA1_Init(&SHA);
-      SHA1_Update(&SHA, key_buf, key_buf_len);
+      SHA1_Init(&SHA); // set t
+      SHA1_Update(&SHA, xkey, xkey_len);
+
       ui32_t* buf_p = (ui32_t*)sha_buf;
       *buf_p++ = KM_i32_BE(SHA.h0);
       *buf_p++ = KM_i32_BE(SHA.h1);
@@ -235,20 +243,20 @@ Kumu::Gen_FIPS_186_Value(const byte_t* key, ui32_t key_size, byte_t* out_buf, ui
       out_buf_len -= SHA_DIGEST_LENGTH;
       out_buf += SHA_DIGEST_LENGTH;
 
-      // step d ...
-      BIGNUM xkey1, xkey_buf, x0;
-      BN_init(&xkey1);  BN_init(&xkey_buf);    BN_init(&x0);
+      // step d -- XKEY = (1 + XKEY + x) mod 2^b
+      BIGNUM bn_tmp, bn_xkey, bn_x_n;
+      BN_init(&bn_tmp);  BN_init(&bn_xkey);    BN_init(&bn_x_n);
 
-      BN_bin2bn(key_buf, SHA_DIGEST_LENGTH, &xkey1);
-      BN_bin2bn(sha_buf, SHA_DIGEST_LENGTH, &x0);
-      BN_add_word(&xkey1, 1);            // xkey += 1
-      BN_add(&xkey_buf, &xkey1, &x0);       // xkey += x
-      BN_mod(&xkey1, &xkey_buf, &c_2powb, ctx1);  // xkey = xkey mod (2^160)
+      BN_bin2bn(xkey, key_size, &bn_xkey);
+      BN_bin2bn(sha_buf, SHA_DIGEST_LENGTH, &bn_x_n);
+      BN_add_word(&bn_xkey, 1);            // xkey += 1
+      BN_add(&bn_tmp, &bn_xkey, &bn_x_n);       // xkey += x
+      BN_mod(&bn_xkey, &bn_tmp, &c_2powb, ctx1);  // xkey = xkey mod (2^b)
 
-      ui32_t bn_buf_len = BN_num_bytes(&xkey1);
-      assert(bn_buf_len < SHA_DIGEST_LENGTH+1);
-      memset(key_buf, 0, key_buf_len);
-      BN_bn2bin(&xkey1, key_buf);
+      memset(xkey, 0, xkey_len);
+      ui32_t bn_buf_len = BN_num_bytes(&bn_xkey);
+      ui32_t idx = ( bn_buf_len < key_size ) ? key_size - bn_buf_len : 0;
+      BN_bn2bin(&bn_xkey, &xkey[idx]);
     }
 
   BN_CTX_free(ctx1);

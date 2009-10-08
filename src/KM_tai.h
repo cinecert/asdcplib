@@ -64,6 +64,7 @@ namespace Kumu
     struct tai
     {
       ui64_t x;
+      inline void add_seconds(i32_t s)  { x += s * 1; }
       inline void add_minutes(i32_t m) { x += m * 60; }
       inline void add_hours(i32_t h) { x += h * 3600; }
       inline void add_days(i32_t d) { x += d * 86400; }

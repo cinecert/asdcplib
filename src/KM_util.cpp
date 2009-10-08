@@ -774,6 +774,26 @@ Kumu::Timestamp::AddMinutes(i32_t minutes)
     }
 }
 
+//
+void
+Kumu::Timestamp::AddSeconds(i32_t seconds)
+{
+  SYSTEMTIME current_st;
+  FILETIME current_ft;
+  ULARGE_INTEGER current_ul;
+
+  if ( minutes != 0 )
+    {
+      TIMESTAMP_TO_SYSTIME(*this, &current_st);
+      SystemTimeToFileTime(&current_st, &current_ft);
+      memcpy(&current_ul, &current_ft, sizeof(current_ul));
+      current_ul.QuadPart += ( seconds_to_ns100(1) * (i64_t)seconds );
+      memcpy(&current_ft, &current_ul, sizeof(current_ft));
+      FileTimeToSystemTime(&current_ft, &current_st);
+      SYSTIME_TO_TIMESTAMP(&current_st, *this);
+    }
+}
+
 #else // KM_WIN32
 
 #include <time.h>
@@ -884,6 +904,23 @@ Kumu::Timestamp::AddMinutes(i32_t minutes)
       TIMESTAMP_TO_CALTIME(*this, &ct)
       t = ct;
       t.add_minutes(minutes);
+      ct = t;
+      CALTIME_TO_TIMESTAMP(&ct, *this)
+    }
+}
+
+//
+void
+Kumu::Timestamp::AddSeconds(i32_t seconds)
+{
+  Kumu::TAI::caltime ct;
+  Kumu::TAI::tai t;
+
+  if ( seconds != 0 )
+    {
+      TIMESTAMP_TO_CALTIME(*this, &ct)
+      t = ct;
+      t.add_seconds(seconds);
       ct = t;
       CALTIME_TO_TIMESTAMP(&ct, *this)
     }

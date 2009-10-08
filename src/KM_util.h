@@ -402,11 +402,12 @@ namespace Kumu
       // decode and set value from string formatted by EncodeString
       bool        DecodeString(const char* datestr);
 
-      // Add the given number of days, hours, or minutes to the timestamp value.
+      // Add the given number of days, hours, minutes, or seconds to the timestamp value.
       // Values less than zero will cause the timestamp to decrease
       void AddDays(i32_t);
       void AddHours(i32_t);
       void AddMinutes(i32_t);
+      void AddSeconds(i32_t);
 
       // Read and write the timestamp value as a byte string having
       // the following format:

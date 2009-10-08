@@ -281,6 +281,9 @@ public:
   {
     byte_t rng_buf[SHA_DIGEST_LENGTH*2];
     Kumu::Gen_FIPS_186_Value(key, KeyLen, rng_buf, SHA_DIGEST_LENGTH*2);
+
+    // rng_buf contains two rounds, x0 and x1 (each 160 bits).
+    // Use x1 per SMPTE 430-6-2006 Sec. 7.10
     memcpy(m_key, rng_buf+SHA_DIGEST_LENGTH, KeyLen);
     Reset();
   }
