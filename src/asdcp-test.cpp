@@ -115,10 +115,10 @@ void
 usage(FILE* stream = stdout)
 {
   fprintf(stream, "\
-USAGE: %s -c <output-file> [-3] [-b <buffer-size>] [-d <duration>] [-e|-E]\n\
-       [-f <start-frame>] [-j <key-id-string>] [-k <key-string>] [-l <label>]\n\
-       [-L] [-M] [-p <frame-rate>] [-R] [-s <num>] [-v] [-W]\n\
-       <input-file> [<input-file-2> ...]\n\
+USAGE: %s -c <output-file> [-3] [-a <uuid>] [-b <buffer-size>]\n\
+       [-d <duration>] [-e|-E] [-f <start-frame>] [-j <key-id-string>]\n\
+       [-k <key-string>] [-l <label>] [-L] [-M] [-p <frame-rate>] [-R]\n\
+       [-s <num>] [-v] [-W] <input-file> [<input-file-2> ...]\n\
 \n\
        %s [-h|-help] [-V]\n\
 \n\
@@ -166,6 +166,7 @@ Security Options:\n\
 
   fprintf(stream, "\
 Read/Write Options:\n\
+  -a <UUID>         - Specify the Asset ID of a file (with -c)\n\
   -b <buffer-size>  - Specify size in bytes of picture frame buffer.\n\
                       Defaults to 4,194,304 (4MB)\n\
   -d <duration>     - Number of frames to process, default all\n\
@@ -247,6 +248,7 @@ public:
   bool   error_flag;     // true if the given options are in error or not complete
   bool   key_flag;       // true if an encryption key was given
   bool   key_id_flag;    // true if a key ID was given
+  bool   asset_id_flag;  // true if an asset ID was given
   bool   encrypt_header_flag; // true if mpeg headers are to be encrypted
   bool   write_hmac;     // true if HMAC values are to be generated and written
   bool   read_hmac;      // true if HMAC values are to be validated
@@ -273,6 +275,7 @@ public:
   const char* out_file;  // name of mxf file created by create mode
   byte_t key_value[KeyLen];  // value of given encryption key (when key_flag is true)
   byte_t key_id_value[UUIDlen];// value of given key ID (when key_id_flag is true)
+  byte_t asset_id_value[UUIDlen];// value of asset ID (when asset_id_flag is true)
   const char* filenames[MAX_IN_FILES]; // list of filenames to be processed
   PCM::ChannelFormat_t channel_fmt; // audio channel arrangement
 
@@ -294,8 +297,8 @@ public:
 
   //
   CommandOptions(int argc, const char** argv) :
-    mode(MMT_NONE), error_flag(true), key_flag(false), key_id_flag(false), encrypt_header_flag(true),
-    write_hmac(true), read_hmac(false), split_wav(false), mono_wav(false),
+    mode(MMT_NONE), error_flag(true), key_flag(false), key_id_flag(false), asset_id_flag(false),
+    encrypt_header_flag(true), write_hmac(true), read_hmac(false), split_wav(false), mono_wav(false),
     verbose_flag(false), fb_dump_size(0), showindex_flag(false), showheader_flag(false),
     no_write_flag(false), version_flag(false), help_flag(false), stereo_image_flag(false),
     number_width(6), start_frame(0),
@@ -324,6 +327,21 @@ public:
 	      case '1': mono_wav = true; break;
 	      case '2': split_wav = true; break;
 	      case '3': stereo_image_flag = true; break;
+
+	      case 'a':
+		asset_id_flag = true;
+		TEST_EXTRA_ARG(i, 'a');
+		{
+		  ui32_t length;
+		  Kumu::hex2bin(argv[i], asset_id_value, UUIDlen, &length);
+
+		  if ( length != UUIDlen )
+		    {
+		      fprintf(stderr, "Unexpected asset ID length: %u, expecting %u characters.\n", length, UUIDlen);
+		      return;
+		    }
+		}
+		break;
 
 	      case 'b':
 		TEST_EXTRA_ARG(i, 'b');
@@ -516,7 +534,10 @@ write_MPEG2_file(CommandOptions& Options)
   if ( ASDCP_SUCCESS(result) && ! Options.no_write_flag )
     {
       WriterInfo Info = s_MyInfo;  // fill in your favorite identifiers here
-      Kumu::GenRandomUUID(Info.AssetUUID);
+      if ( Options.asset_id_flag )
+	memcpy(Info.AssetUUID, Options.asset_id_value, UUIDlen);
+      else
+	Kumu::GenRandomUUID(Info.AssetUUID);
 
       if ( Options.use_smpte_labels )
 	{
@@ -773,7 +794,10 @@ write_JP2K_S_file(CommandOptions& Options)
   if ( ASDCP_SUCCESS(result) && ! Options.no_write_flag )
     {
       WriterInfo Info = s_MyInfo;  // fill in your favorite identifiers here
-      Kumu::GenRandomUUID(Info.AssetUUID);
+      if ( Options.asset_id_flag )
+	memcpy(Info.AssetUUID, Options.asset_id_value, UUIDlen);
+      else
+	Kumu::GenRandomUUID(Info.AssetUUID);
 
       if ( Options.use_smpte_labels )
 	{
@@ -992,7 +1016,10 @@ write_JP2K_file(CommandOptions& Options)
   if ( ASDCP_SUCCESS(result) && ! Options.no_write_flag )
     {
       WriterInfo Info = s_MyInfo;  // fill in your favorite identifiers here
-      Kumu::GenRandomUUID(Info.AssetUUID);
+      if ( Options.asset_id_flag )
+	memcpy(Info.AssetUUID, Options.asset_id_value, UUIDlen);
+      else
+	Kumu::GenRandomUUID(Info.AssetUUID);
 
       if ( Options.use_smpte_labels )
 	{
@@ -1205,7 +1232,10 @@ write_PCM_file(CommandOptions& Options)
   if ( ASDCP_SUCCESS(result) && ! Options.no_write_flag )
     {
       WriterInfo Info = s_MyInfo;  // fill in your favorite identifiers here
-      Kumu::GenRandomUUID(Info.AssetUUID);
+      if ( Options.asset_id_flag )
+	memcpy(Info.AssetUUID, Options.asset_id_value, UUIDlen);
+      else
+	Kumu::GenRandomUUID(Info.AssetUUID);
 
       if ( Options.use_smpte_labels )
 	{
@@ -1421,7 +1451,10 @@ write_timed_text_file(CommandOptions& Options)
   if ( ASDCP_SUCCESS(result) && ! Options.no_write_flag )
     {
       WriterInfo Info = s_MyInfo;  // fill in your favorite identifiers here
-      Kumu::GenRandomUUID(Info.AssetUUID);
+      if ( Options.asset_id_flag )
+	memcpy(Info.AssetUUID, Options.asset_id_value, UUIDlen);
+      else
+	Kumu::GenRandomUUID(Info.AssetUUID);
 
       if ( Options.use_smpte_labels )
 	{
