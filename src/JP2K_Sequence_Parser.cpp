@@ -31,6 +31,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <AS_DCP.h>
 #include <KM_fileio.h>
+#include <KM_log.h>
 #include <list>
 #include <string>
 #include <algorithm>
@@ -188,6 +189,97 @@ ASDCP::JP2K::SequenceParser::h__SequenceParser::OpenRead(const std::list<std::st
   return OpenRead();
 }
 
+
+//
+bool
+operator==(const ASDCP::JP2K::ImageComponent_t& lhs, const ASDCP::JP2K::ImageComponent_t& rhs)
+{
+  if ( lhs.Ssize != rhs.Ssize ) return false;
+  if ( lhs.XRsize != rhs.XRsize ) return false;
+  if ( lhs.YRsize != rhs.YRsize ) return false;
+  return true;
+}
+
+//
+bool
+operator==(const ASDCP::JP2K::QuantizationDefault_t& lhs, const ASDCP::JP2K::QuantizationDefault_t& rhs)
+{
+  if ( lhs.Sqcd != rhs.Sqcd ) return false;
+  if ( lhs.SPqcdLength != rhs.SPqcdLength ) return false;
+  
+  for ( ui32_t i = 0; i < JP2K::MaxDefaults; i++ )
+    {
+      if ( lhs.SPqcd[i] != rhs.SPqcd[i]  )
+	return false;
+    }
+
+  return true;
+}
+
+//
+bool
+operator==(const ASDCP::JP2K::CodingStyleDefault_t& lhs, const ASDCP::JP2K::CodingStyleDefault_t& rhs)
+{
+  if ( lhs.Scod != rhs.Scod ) return false;
+
+  // SGcod
+  if ( lhs.SGcod.ProgressionOrder != rhs.SGcod.ProgressionOrder ) return false;
+  if ( lhs.SGcod.MultiCompTransform != rhs.SGcod.MultiCompTransform ) return false;
+
+  for ( ui32_t i = 0; i < sizeof(ui16_t); i++ )
+    {
+      if ( lhs.SGcod.NumberOfLayers[i] != lhs.SGcod.NumberOfLayers[i]  )
+	return false;
+    }
+
+  // SPcod
+  if ( lhs.SPcod.DecompositionLevels != rhs.SPcod.DecompositionLevels ) return false;
+  if ( lhs.SPcod.CodeblockWidth != rhs.SPcod.CodeblockWidth ) return false;
+  if ( lhs.SPcod.CodeblockHeight != rhs.SPcod.CodeblockHeight ) return false;
+  if ( lhs.SPcod.CodeblockStyle != rhs.SPcod.CodeblockStyle ) return false;
+  if ( lhs.SPcod.Transformation != rhs.SPcod.Transformation ) return false;
+  
+  for ( ui32_t i = 0; i < JP2K::MaxPrecincts; i++ )
+    {
+      if ( lhs.SPcod.PrecinctSize[i] != rhs.SPcod.PrecinctSize[i]  )
+	return false;
+    }
+
+  return true;
+}
+
+//
+bool
+operator==(const ASDCP::JP2K::PictureDescriptor& lhs, const ASDCP::JP2K::PictureDescriptor& rhs)
+{
+  if ( lhs.EditRate != rhs.EditRate ) return false;
+  //  if ( lhs.ContainerDuration != rhs.ContainerDuration ) return false;
+  if ( lhs.SampleRate != rhs.SampleRate ) return false;
+  if ( lhs.StoredWidth != rhs.StoredWidth ) return false;
+  if ( lhs.StoredHeight != rhs.StoredHeight ) return false;
+  if ( lhs.AspectRatio != rhs.AspectRatio ) return false;
+  if ( lhs.Rsize != rhs.Rsize ) return false;
+  if ( lhs.Xsize != rhs.Xsize ) return false;
+  if ( lhs.Ysize != rhs.Ysize ) return false;
+  if ( lhs.XOsize != rhs.XOsize ) return false;
+  if ( lhs.YOsize != rhs.YOsize ) return false;
+  if ( lhs.XTsize != rhs.XTsize ) return false;
+  if ( lhs.YTsize != rhs.YTsize ) return false;
+  if ( lhs.XTOsize != rhs.XTOsize ) return false;
+  if ( lhs.YTOsize != rhs.YTOsize ) return false;
+  if ( lhs.Csize != rhs.Csize ) return false;
+  if ( ! ( lhs.CodingStyleDefault == rhs.CodingStyleDefault ) ) return false;
+  if ( ! ( lhs.QuantizationDefault == rhs.QuantizationDefault ) ) return false;
+  
+  for ( ui32_t i = 0; i < JP2K::MaxComponents; i++ )
+    {
+      if ( ! ( lhs.ImageComponents[i] == rhs.ImageComponents[i] ) )
+	return false;
+    }
+
+  return true;
+}
+
 //
 ASDCP::Result_t
 ASDCP::JP2K::SequenceParser::h__SequenceParser::ReadFrame(FrameBuffer& FB)
@@ -197,6 +289,18 @@ ASDCP::JP2K::SequenceParser::h__SequenceParser::ReadFrame(FrameBuffer& FB)
 
   // open the file
   Result_t result = m_Parser.OpenReadFrame((*m_CurrentFile).c_str(), FB);
+
+  if ( ASDCP_SUCCESS(result) && m_Pedantic )
+    {
+      PictureDescriptor PDesc;
+      result = m_Parser.FillPictureDescriptor(PDesc);
+
+      if ( ASDCP_SUCCESS(result) && ! ( m_PDesc == PDesc ) )
+	{
+	  Kumu::DefaultLogSink().Error("JPEG-2000 codestream parameters do not match at frame %d\n", m_FramesRead + 1);
+	  result = RESULT_RAW_FORMAT;
+	}
+    }
 
   if ( ASDCP_SUCCESS(result) )
     {
