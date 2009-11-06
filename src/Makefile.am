@@ -43,7 +43,8 @@ include_HEADERS = KM_error.h KM_fileio.h KM_log.h KM_memio.h KM_mutex.h \
 		KM_platform.h KM_prng.h KM_util.h KM_xml.h AS_DCP.h
 if DEV_HEADERS
 include_HEADERS += S12MTimecode.h MDD.h Metadata.h KLV.h MXFTypes.h MXF.h Wav.h \
-		PCMParserList.h TimedText_Transform.h
+		PCMParserList.h
+nodist_include_HEADERS = TimedText_Transform.h
 endif
 
 # list of the libraries to build and install
@@ -69,8 +70,9 @@ libasdcp_la_SOURCES = MPEG2_Parser.cpp MPEG.cpp JP2K_Codestream_Parser.cpp \
 		Wav.h WavFileWriter.h MXF.h Metadata.h \
 		JP2K.h AS_DCP.h AS_DCP_internal.h KLV.h MPEG.h MXFTypes.h MDD.h \
 		PCMParserList.h S12MTimecode.h MDD.cpp
-if DEV_HEADERS
-libasdcp_la_SOURCES += TimedText_Transform.cpp
+
+if !FREEDIST
+nodist_libasdcp_la_SOURCES += TimedText_Transform.h TimedText_Transform.cpp
 endif
 
 libasdcp_la_LDFLAGS = -release @VERSION@
@@ -133,7 +135,10 @@ wavesplit_LDADD = libasdcp.la
 
 # list of programs that need to be compiled for use in test suite
 check_PROGRAMS = asdcp-mem-test path-test jp2k-test S429-5-cgi \
-	fips-186-rng-test asdcp-version tt-xform
+	fips-186-rng-test asdcp-version
+if !FREEDIST
+check_PROGRAMS += tt-xform
+endif
 
 # sources for a test program
 # list of libraries to link against for a test program
@@ -149,8 +154,10 @@ fips_186_rng_test_SOURCES = fips-186-rng-test.cpp
 fips_186_rng_test_LDADD = libasdcp.la
 asdcp_version_SOURCES = asdcp-version.cpp
 asdcp_version_LDADD = libkumu.la
-tt_xform_SOURCES = tt-xform.cpp TimedText_Transform.h TimedText_Transform.cpp
+if !FREEDIST
+nodist_tt_xform_SOURCES = tt-xform.cpp
 tt_xform_LDADD = libasdcp.la
+endif
 
 
 # list of test scripts to execute during "make check"
@@ -165,8 +172,9 @@ TESTS_ENVIRONMENT = BUILD_DIR="." TEST_FILES=../tests TEST_FILE_PREFIX=DCPd1-M1 
 
 # files to include in the distribution that automake doesn't automatically include
 EXTRA_DIST = fips-186-test-harness.pl $(TESTS)
-if PYTHON_USE
 if !FREEDIST
+EXTRA_DIST += $(nodist_libasdcp_la_SOURCES) $(nodist_tt_xform_SOURCES)
+if PYTHON_USE
 EXTRA_DIST += $(nodist_pyexec_include_HEADERS) $(nodist_libpyasdcp_la_SOURCES) $(nodist_kumu_la_SOURCES) $(nodist_asdcp_la_SOURCES)
 endif
 endif
