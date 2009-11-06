@@ -111,6 +111,22 @@ utilities all respond to -h.
 
 
 Change History
+2009.11.06 - bug fixes, enhancements, v1.5.29
+ o Fixed a bug that could cause HMAC values to be incorrectly
+   stored in MXF files.  Files created with versions of asdcplib
+   prior to this version may have incorrect HMAC values. 
+ o Improved handing of XML files for MXF wrapping.  
+ o Jpeg2000 codestream EditRate and SampleRate mismatches
+   now warns instead of returning an error. 
+ o Improved error handling in Jpeg2000 sequence parsing routines.  
+ o Added two methods to Kumu::Timestamp, AddSeconds(), to add (or subtract) 
+   seconds to a time value, and GetSecondsSinceEpoch() to get the number of 
+   seconds since the unix epoch.
+ o Added new option to asdcp-test, '-a', to specify a UUID when creating MXF files. 
+ o Added support for specifying the intrinsic duration of MXF files containing
+   timed text.  
+ o Added new option to wavesplit, '-i', to display WAV file metadata.
+
 
 2009.05.21 - bug fixes, v.1.4.24
  o Fixed a bug that caused incorrect SubDescriptors UL values to be 
