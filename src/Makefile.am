@@ -71,7 +71,7 @@ libasdcp_la_SOURCES = MPEG2_Parser.cpp MPEG.cpp JP2K_Codestream_Parser.cpp \
 		JP2K.h AS_DCP.h AS_DCP_internal.h KLV.h MPEG.h MXFTypes.h MDD.h \
 		PCMParserList.h S12MTimecode.h MDD.cpp
 
-if !FREEDIST
+if DEV_HEADERS
 nodist_libasdcp_la_SOURCES += TimedText_Transform.h TimedText_Transform.cpp
 endif
 
@@ -136,7 +136,7 @@ wavesplit_LDADD = libasdcp.la
 # list of programs that need to be compiled for use in test suite
 check_PROGRAMS = asdcp-mem-test path-test jp2k-test S429-5-cgi \
 	fips-186-rng-test asdcp-version
-if !FREEDIST
+if DEV_HEADERS
 check_PROGRAMS += tt-xform
 endif
 
@@ -154,7 +154,7 @@ fips_186_rng_test_SOURCES = fips-186-rng-test.cpp
 fips_186_rng_test_LDADD = libasdcp.la
 asdcp_version_SOURCES = asdcp-version.cpp
 asdcp_version_LDADD = libkumu.la
-if !FREEDIST
+if DEV_HEADERS
 nodist_tt_xform_SOURCES = tt-xform.cpp
 tt_xform_LDADD = libasdcp.la
 endif
@@ -173,7 +173,9 @@ TESTS_ENVIRONMENT = BUILD_DIR="." TEST_FILES=../tests TEST_FILE_PREFIX=DCPd1-M1 
 # files to include in the distribution that automake doesn't automatically include
 EXTRA_DIST = fips-186-test-harness.pl $(TESTS)
 if !FREEDIST
+if DEV_HEADERS
 EXTRA_DIST += $(nodist_libasdcp_la_SOURCES) $(nodist_tt_xform_SOURCES)
+endif
 if PYTHON_USE
 EXTRA_DIST += $(nodist_pyexec_include_HEADERS) $(nodist_libpyasdcp_la_SOURCES) $(nodist_kumu_la_SOURCES) $(nodist_asdcp_la_SOURCES)
 endif
