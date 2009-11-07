@@ -113,7 +113,7 @@ AC_DEFUN([AX_LIB_OPENSSL],
 
     if test -n "$openssl_prefix"; then
         openssl_include_dir="$openssl_prefix/include"
-        openssl_ldflags="-L$openssl_prefix/lib"
+        openssl_ldflags="-L$openssl_prefix/lib64 -L$openssl_prefix/lib"
         run_openssl_test="yes"
     elif test "$openssl_requested" = "yes"; then
         if test -n "$openssl_include_dir" -a -n "$openssl_lib_flags"; then

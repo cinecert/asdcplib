@@ -110,7 +110,7 @@ AC_DEFUN([AX_LIB_EXPAT],
 
     if test -n "$expat_prefix"; then
         expat_include_dir="$expat_prefix/include"
-        expat_lib_flags="-L$expat_prefix/lib -lexpat"
+        expat_lib_flags="-L$expat_prefix/lib64 -L$expat_prefix/lib -lexpat"
         run_expat_test="yes"
     elif test "$expat_requested" = "yes"; then
         if test -n "$expat_include_dir" -a -n "$expat_lib_flags"; then
