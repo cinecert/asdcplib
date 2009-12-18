@@ -78,8 +78,12 @@ public:
 
     if ( KM_SUCCESS(result) )
       {
-	ui32_t read_count = 0;
-	result = Reader.Read(FrameBuf.Data(), FrameBuf.Capacity(), &read_count);
+	ui32_t read_count, read_size = Reader.Size();
+
+	result = FrameBuf.Capacity(read_size);
+
+	if ( KM_SUCCESS(result) )
+	  result = Reader.Read(FrameBuf.Data(), read_size, &read_count);
 
 	if ( KM_SUCCESS(result) )
 	  FrameBuf.Size(read_count);
