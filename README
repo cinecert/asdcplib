@@ -111,6 +111,12 @@ utilities all respond to -h.
 
 
 Change History
+-- NEW STUFF FROM JH --
+ o Added get_BER_length_for_value() subroutine.
+ o Modified ASDCP::h__Writer::WriteEKLVPacket() to allow larger BER
+   lengths for KLV packets larger than 16 MB. This was required to
+   support large font files in the SMPTE 429-5 implementation.
+
 2009.11.06 - bug fixes, enhancements, v1.5.29
  o Fixed a bug that could cause HMAC values to be incorrectly
    stored in MXF files.  Files created with versions of asdcplib
@@ -119,12 +125,13 @@ Change History
  o Jpeg2000 codestream EditRate and SampleRate mismatches
    now warns instead of returning an error. 
  o Improved error handling in Jpeg2000 sequence parsing routines.  
- o Added two methods to Kumu::Timestamp, AddSeconds(), to add (or subtract) 
-   seconds to a time value, and GetSecondsSinceEpoch() to get the number of 
-   seconds since the unix epoch.
- o Added new option to asdcp-test, '-a', to specify a UUID when creating MXF files. 
- o Added support for specifying the intrinsic duration of MXF files containing
-   timed text.  
+ o Added two methods to Kumu::Timestamp, AddSeconds(), to add (or
+   subtract) seconds to a time value, and GetSecondsSinceEpoch()
+   to get the number of seconds since the unix epoch.
+ o Added new option to asdcp-test, '-a', to specify a UUID when
+   creating MXF files.
+ o Added support for specifying the intrinsic duration of MXF files
+   containing timed text.
  o Added new option to wavesplit, '-i', to display WAV file metadata.
 
 

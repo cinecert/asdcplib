@@ -154,6 +154,10 @@ namespace Kumu
       return (*buf & 0x0f) + 1;
     }
 
+  // Return the BER length required to encode value. A return value of zero
+  // indicates a value too large for this library.
+  ui32_t get_BER_length_for_value(ui64_t valuse);
+
   // read a BER value
   bool read_BER(const byte_t* buf, ui64_t* val);
 

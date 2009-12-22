@@ -527,24 +527,40 @@ ASDCP::h__Writer::WriteEKLVPacket(const ASDCP::FrameBuffer& FrameBuf, const byte
 
 	  // construct encrypted triplet header
 	  ui32_t ETLength = klv_cryptinfo_size + m_CtFrameBuf.Size();
+	  ui32_t BER_length = MXF_BER_LENGTH;
 
 	  if ( m_Info.UsesHMAC )
 	    ETLength += klv_intpack_size;
 	  else
 	    ETLength += (MXF_BER_LENGTH * 3); // for empty intpack
 
-	  Overhead.WriteBER(ETLength, MXF_BER_LENGTH);                  // write encrypted triplet length
-	  Overhead.WriteBER(UUIDlen, MXF_BER_LENGTH);                   // write ContextID length
-	  Overhead.WriteRaw(m_Info.ContextID, UUIDlen);                  // write ContextID
-	  Overhead.WriteBER(sizeof(ui64_t), MXF_BER_LENGTH);            // write PlaintextOffset length
-	  Overhead.WriteUi64BE(FrameBuf.PlaintextOffset());              // write PlaintextOffset
-	  Overhead.WriteBER(SMPTE_UL_LENGTH, MXF_BER_LENGTH);              // write essence UL length
-	  Overhead.WriteRaw((byte_t*)EssenceUL, SMPTE_UL_LENGTH);           // write the essence UL
-	  Overhead.WriteBER(sizeof(ui64_t), MXF_BER_LENGTH);            // write SourceLength length
-	  Overhead.WriteUi64BE(FrameBuf.Size());                         // write SourceLength
-	  Overhead.WriteBER(m_CtFrameBuf.Size(), MXF_BER_LENGTH);       // write ESV length
+	  if ( ETLength > 0x00ffffff ) // Need BER integer longer than MXF_BER_LENGTH bytes
+	    {
+	      BER_length = Kumu::get_BER_length_for_value(ETLength);
 
-	  result = m_File.Writev(Overhead.Data(), Overhead.Length());
+	      if ( BER_length == 0 )
+		result = RESULT_KLV_CODING;
+	    }
+
+	  if ( ASDCP_SUCCESS(result) )
+	    {
+	      if ( ! ( Overhead.WriteBER(ETLength, BER_length)                      // write encrypted triplet length
+		       && Overhead.WriteBER(UUIDlen, MXF_BER_LENGTH)                // write ContextID length
+		       && Overhead.WriteRaw(m_Info.ContextID, UUIDlen)              // write ContextID
+		       && Overhead.WriteBER(sizeof(ui64_t), MXF_BER_LENGTH)         // write PlaintextOffset length
+		       && Overhead.WriteUi64BE(FrameBuf.PlaintextOffset())          // write PlaintextOffset
+		       && Overhead.WriteBER(SMPTE_UL_LENGTH, MXF_BER_LENGTH)        // write essence UL length
+		       && Overhead.WriteRaw((byte_t*)EssenceUL, SMPTE_UL_LENGTH)    // write the essence UL
+		       && Overhead.WriteBER(sizeof(ui64_t), MXF_BER_LENGTH)         // write SourceLength length
+		       && Overhead.WriteUi64BE(FrameBuf.Size())                     // write SourceLength
+		       && Overhead.WriteBER(m_CtFrameBuf.Size(), BER_length) ) )    // write ESV length
+		{
+		  result = RESULT_KLV_CODING;
+		}
+	    }
+
+	  if ( ASDCP_SUCCESS(result) )
+	    result = m_File.Writev(Overhead.Data(), Overhead.Length());
 	}
 
       if ( ASDCP_SUCCESS(result) )
