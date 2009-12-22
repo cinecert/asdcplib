@@ -112,6 +112,7 @@ utilities all respond to -h.
 
 Change History
 -- NEW STUFF FROM JH --
+ o Fixed swapped Interop and SMPTE OP Atom UL values.
  o Added get_BER_length_for_value() subroutine.
  o Modified ASDCP::h__Writer::WriteEKLVPacket() to allow larger BER
    lengths for KLV packets larger than 16 MB. This was required to
