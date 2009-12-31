@@ -111,12 +111,14 @@ utilities all respond to -h.
 
 
 Change History
--- NEW STUFF FROM JH --
+
+2009.12.31 -  bug fixes, enhancements, v1.5.31
  o Fixed swapped Interop and SMPTE OP Atom UL values.
  o Added get_BER_length_for_value() subroutine.
  o Modified ASDCP::h__Writer::WriteEKLVPacket() to allow larger BER
    lengths for KLV packets larger than 16 MB. This was required to
    support large font files in the SMPTE 429-5 implementation.
+
 
 2009.11.06 - bug fixes, enhancements, v1.5.29
  o Fixed a bug that could cause HMAC values to be incorrectly
@@ -143,6 +145,7 @@ Change History
    in your application before using in production.  Note that this is a 
    significant bug fix and track files created with 1.4.22 may be incompatible
    with other systems.  
+
 
 2009.04.09 - SMPTE format fixes, enhancements and bug fixes, v.1.4.22
  o asdcplib now uses GNU autotools on POSIX systems to configure 

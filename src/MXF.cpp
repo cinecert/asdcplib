@@ -720,8 +720,8 @@ ASDCP::MXF::OPAtomHeader::InitFromFile(const Kumu::FileReader& Reader)
     }
   else if ( OperationalPattern == InteropOPAtomUL ) // Interop
     {
-      if ( m_Dict == &DefaultCompositeDict() )
-	m_Dict = &DefaultInteropDict();
+      //      if ( m_Dict == &DefaultCompositeDict() )
+      //	m_Dict = &DefaultInteropDict();
     }
   else
     {
