@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2003-2009, John Hurst
+Copyright (c) 2003-2010, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -103,7 +103,7 @@ banner(FILE* stream = stdout)
 {
   fprintf(stream, "\n\
 %s (asdcplib %s)\n\n\
-Copyright (c) 2003-2009 John Hurst\n\n\
+Copyright (c) 2003-2010 John Hurst\n\n\
 asdcplib may be copied only under the terms of the license found at\n\
 the top of every file in the asdcplib distribution kit.\n\n\
 Specify the -h (help) option for further information about %s\n\n",
@@ -118,7 +118,7 @@ usage(FILE* stream = stdout)
 USAGE: %s -c <output-file> [-3] [-a <uuid>] [-b <buffer-size>]\n\
        [-d <duration>] [-e|-E] [-f <start-frame>] [-j <key-id-string>]\n\
        [-k <key-string>] [-l <label>] [-L] [-M] [-p <frame-rate>] [-R]\n\
-       [-s <num>] [-v] [-W] <input-file> [<input-file-2> ...]\n\
+       [-s <num>] [-v] [-W] [-z|-Z] <input-file> [<input-file-2> ...]\n\
 \n\
        %s [-h|-help] [-V]\n\
 \n\
@@ -186,6 +186,8 @@ Read/Write Options:\n\
   -W                - Read input file only, do not write source file\n\
   -w <width>        - Width of numeric element in a series of frame file names\n\
                       (use with -x, default 6).\n\
+  -z                - Fail if j2c inputs have unequal parameters (default)\n\
+  -Z                - Ignore unequal parameters in j2c inputs\n\
 \n");
 
   fprintf(stream, "\
@@ -268,6 +270,7 @@ public:
   bool   duration_flag;  // true if duration argument given
   bool   do_repeat;      // if true and -c -d, repeat first input frame
   bool   use_smpte_labels; // if true, SMPTE UL values will be written instead of MXF Interop values
+  bool   j2c_pedantic;   // passed to JP2K::SequenceParser::OpenRead
   ui32_t picture_rate;   // fps of picture when wrapping PCM
   ui32_t fb_size;        // size of picture frame buffer
   ui32_t file_count;     // number of elements in filenames[]
@@ -302,7 +305,7 @@ public:
     verbose_flag(false), fb_dump_size(0), showindex_flag(false), showheader_flag(false),
     no_write_flag(false), version_flag(false), help_flag(false), stereo_image_flag(false),
     number_width(6), start_frame(0),
-    duration(0xffffffff), duration_flag(false), do_repeat(false), use_smpte_labels(false),
+    duration(0xffffffff), duration_flag(false), do_repeat(false), use_smpte_labels(false), j2c_pedantic(true),
     picture_rate(24), fb_size(FRAME_BUFFER_SIZE), file_count(0), file_root(0), out_file(0),
     channel_fmt(PCM::CF_NONE)
   {
@@ -446,6 +449,9 @@ public:
 		mode = MMT_EXTRACT;
 		file_root = argv[i];
 		break;
+
+	      case 'Z': j2c_pedantic = false; break;
+	      case 'z': j2c_pedantic = true; break;
 
 	      default:
 		fprintf(stderr, "Unrecognized option: %s\n", argv[i]);
@@ -772,10 +778,10 @@ write_JP2K_S_file(CommandOptions& Options)
     }
 
   // set up essence parser
-  Result_t result = ParserLeft.OpenRead(Options.filenames[0]);
+  Result_t result = ParserLeft.OpenRead(Options.filenames[0], Options.j2c_pedantic);
 
   if ( ASDCP_SUCCESS(result) )
-    result = ParserRight.OpenRead(Options.filenames[1]);
+    result = ParserRight.OpenRead(Options.filenames[1], Options.j2c_pedantic);
 
   // set up MXF writer
   if ( ASDCP_SUCCESS(result) )
@@ -996,7 +1002,7 @@ write_JP2K_file(CommandOptions& Options)
   Kumu::FortunaRNG        RNG;
 
   // set up essence parser
-  Result_t result = Parser.OpenRead(Options.filenames[0]);
+  Result_t result = Parser.OpenRead(Options.filenames[0], Options.j2c_pedantic);
 
   // set up MXF writer
   if ( ASDCP_SUCCESS(result) )

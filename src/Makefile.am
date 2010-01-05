@@ -112,7 +112,7 @@ asdcp_la_LIBADD = libpyasdcp.la
 endif
 
 # list of programs to be built and installed
-bin_PROGRAMS = asdcp-test blackwave klvwalk kmfilegen kmrandgen \
+bin_PROGRAMS = asdcp-test j2c-test blackwave klvwalk kmfilegen kmrandgen \
 		kmuuidgen wavesplit
 
 # sources for a program
@@ -132,9 +132,11 @@ klvwalk_SOURCES = klvwalk.cpp
 klvwalk_LDADD = libasdcp.la
 wavesplit_SOURCES = wavesplit.cpp
 wavesplit_LDADD = libasdcp.la
+j2c_test_SOURCES = j2c-test.cpp
+j2c_test_LDADD = libasdcp.la
 
 # list of programs that need to be compiled for use in test suite
-check_PROGRAMS = asdcp-mem-test path-test jp2k-test S429-5-cgi \
+check_PROGRAMS = asdcp-mem-test path-test S429-5-cgi \
 	fips-186-rng-test asdcp-version
 if DEV_HEADERS
 check_PROGRAMS += tt-xform
@@ -146,8 +148,6 @@ asdcp_mem_test_SOURCES = asdcp-mem-test.cpp
 asdcp_mem_test_LDADD = libasdcp.la
 path_test_SOURCES = path-test.cpp
 path_test_LDADD = libkumu.la
-jp2k_test_SOURCES = jp2k-test.cpp
-jp2k_test_LDADD = libasdcp.la
 S429_5_cgi_SOURCES = S429-5-cgi.cpp
 S429_5_cgi_LDADD = libasdcp.la
 fips_186_rng_test_SOURCES = fips-186-rng-test.cpp

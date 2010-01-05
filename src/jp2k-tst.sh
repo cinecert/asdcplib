@@ -48,7 +48,7 @@ for file in `ls ${TEST_FILES}/${TEST_FILE_PREFIX}`; do \
 done
 
 
-#${BUILD_DIR}/jp2k-test${EXEEXT} ${TEST_FILES}/${TEST_FILE_PREFIX}/MM_2k_XYZ_000000.j2c
+#${BUILD_DIR}/j2c-test${EXEEXT} ${TEST_FILES}/${TEST_FILE_PREFIX}/MM_2k_XYZ_000000.j2c
 #if [ $? -ne 0 ]; then
 #    exit 1
 #fi

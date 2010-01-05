@@ -112,6 +112,14 @@ utilities all respond to -h.
 
 Change History
 
+2010.01.05 -  bug fixes, enhancements, v1.5.32
+ o Re-fixed swapped Interop and SMPTE OP Atom UL values. The swap
+   introduced in v1.5.31 was done in error.
+ o Added -z,-Z options to asdcp-test (j2c parameter checking)
+ o Reformed jp2k-test as j2c-test, added help and list processing,
+   added to standard install target.
+
+
 2009.12.31 -  bug fixes, enhancements, v1.5.31
  o Fixed swapped Interop and SMPTE OP Atom UL values.
  o Added get_BER_length_for_value() subroutine.

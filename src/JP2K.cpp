@@ -162,6 +162,7 @@ ASDCP::JP2K::Accessor::COM::Dump(FILE* stream)
     }
   else
     {
+      fprintf(stream, "COM:\n");
       Kumu::hexdump(CommentData(), CommentSize(), stream);
     }
 }
