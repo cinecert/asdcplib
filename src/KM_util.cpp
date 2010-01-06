@@ -793,7 +793,7 @@ Kumu::Timestamp::AddSeconds(i32_t seconds)
   FILETIME current_ft;
   ULARGE_INTEGER current_ul;
 
-  if ( minutes != 0 )
+  if ( seconds != 0 )
     {
       TIMESTAMP_TO_SYSTIME(*this, &current_st);
       SystemTimeToFileTime(&current_st, &current_ft);

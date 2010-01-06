@@ -21,6 +21,10 @@ software in conjuction with CineCert's other software, the use of Xerces-C++ is 
 with OpenSSL above, if you need/desire XML parsing, extract the source package and build in a
 directory of your choice.
 
+Header files and libraries from the OpenSSL and XML packages must be available to the compiler
+and linker. You may need to modify the makefile to make include files (/I...) and library files
+(/LIBPATH...) available.
+
 
 III. BUILDING
 =============
