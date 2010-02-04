@@ -226,7 +226,11 @@ ASDCP::PCM::MXFReader::h__Reader::OpenRead(const char* filename)
   // check for sample/frame rate sanity
   if ( ASDCP_SUCCESS(result)
        && m_ADesc.SampleRate != EditRate_24
+       && m_ADesc.SampleRate != EditRate_25
+       && m_ADesc.SampleRate != EditRate_30
        && m_ADesc.SampleRate != EditRate_48
+       && m_ADesc.SampleRate != EditRate_50
+       && m_ADesc.SampleRate != EditRate_60
        && m_ADesc.SampleRate != EditRate_23_98 )
     {
       DefaultLogSink().Error("PCM file SampleRate is not 24/1, 48/1 or 24000/1001: %08x/%08x\n", // lu
@@ -426,7 +430,11 @@ ASDCP::PCM::MXFWriter::h__Writer::SetSourceStream(const AudioDescriptor& ADesc)
     return RESULT_STATE;
 
   if ( ADesc.SampleRate != EditRate_24
+       && ADesc.SampleRate != EditRate_25
+       && ADesc.SampleRate != EditRate_30
        && ADesc.SampleRate != EditRate_48
+       && ADesc.SampleRate != EditRate_50
+       && ADesc.SampleRate != EditRate_60
        && ADesc.SampleRate != EditRate_23_98 )
     {
       DefaultLogSink().Error("AudioDescriptor.SampleRate is not 24/1, 48/1 or 24000/1001: %d/%d\n",
