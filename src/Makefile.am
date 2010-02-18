@@ -85,11 +85,14 @@ libasdcp_la_CPPFLAGS = -DASDCP_PLATFORM=\"@host@\"
 if PYTHON_USE
 lib_LTLIBRARIES += libpyasdcp.la
 
-nodist_libpyasdcp_la_SOURCES = asdcp_python.cpp asdcp_python.h \
-		asdcp_python_writerinfo.h asdcp_python_misc.cpp \
-		asdcp_python_reader.cpp asdcp_python_writer.cpp asdcp_wrappers.h \
-		asdcp_python_descriptor.cpp \
-		kumu_python.cpp kumu_python.h
+nodist_libpyasdcp_la_SOURCES = \
+	kumu_python.cpp kumu_python.h \
+	asdcp_python.cpp asdcp_python.h \
+	asdcp_python_descriptor.cpp \
+	asdcp_python_misc.cpp asdcp_python_writerinfo.h \
+	asdcp_wrappers.h asdcp_python_mxf.cpp
+
+# asdcp_python_reader.cpp asdcp_python_writer.cpp
 
 libpyasdcp_la_CPPFLAGS = @PYTHON_CPPFLAGS@
 libpyasdcp_la_LDFLAGS = @PYTHON_LSPEC@
@@ -105,7 +108,7 @@ kumu_la_CPPFLAGS = @PYTHON_CPPFLAGS@
 kumu_la_LDFLAGS = @PYTHON_LSPEC@ -avoid-version -module
 kumu_la_LIBADD = libpyasdcp.la
 
-nodist_asdcp_la_SOURCES = pyasdcp.cpp asdcp_python.h asdcp_wrappers.h
+nodist_asdcp_la_SOURCES = pyasdcp.cpp kumu_python.h asdcp_python.h asdcp_wrappers.h
 asdcp_la_CPPFLAGS = @PYTHON_CPPFLAGS@
 asdcp_la_LDFLAGS = @PYTHON_LSPEC@ -avoid-version -module
 asdcp_la_LIBADD = libpyasdcp.la

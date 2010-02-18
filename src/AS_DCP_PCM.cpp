@@ -53,7 +53,7 @@ Result_t
 PCM_ADesc_to_MD(PCM::AudioDescriptor& ADesc, MXF::WaveAudioDescriptor* ADescObj)
 {
   ASDCP_TEST_NULL(ADescObj);
-  ADescObj->SampleRate = ADesc.SampleRate;
+  ADescObj->SampleRate = ADesc.EditRate;
   ADescObj->AudioSamplingRate = ADesc.AudioSamplingRate;
   ADescObj->Locked = ADesc.Locked;
   ADescObj->ChannelCount = ADesc.ChannelCount;
@@ -88,7 +88,7 @@ ASDCP::Result_t
 MD_to_PCM_ADesc(MXF::WaveAudioDescriptor* ADescObj, PCM::AudioDescriptor& ADesc)
 {
   ASDCP_TEST_NULL(ADescObj);
-  ADesc.SampleRate = ADescObj->SampleRate;
+  ADesc.EditRate = ADescObj->SampleRate;
   ADesc.AudioSamplingRate = ADescObj->AudioSamplingRate;
   ADesc.Locked = ADescObj->Locked;
   ADesc.ChannelCount = ADescObj->ChannelCount;
@@ -120,7 +120,7 @@ MD_to_PCM_ADesc(MXF::WaveAudioDescriptor* ADescObj, PCM::AudioDescriptor& ADesc)
 std::ostream&
 ASDCP::PCM::operator << (std::ostream& strm, const AudioDescriptor& ADesc)
 {
-  strm << "        SampleRate: " << ADesc.SampleRate.Numerator << "/" << ADesc.SampleRate.Denominator << std::endl;
+  strm << "        SampleRate: " << ADesc.EditRate.Numerator << "/" << ADesc.EditRate.Denominator << std::endl;
   strm << " AudioSamplingRate: " << ADesc.AudioSamplingRate.Numerator << "/" << ADesc.AudioSamplingRate.Denominator << std::endl;
   strm << "            Locked: " << (unsigned) ADesc.Locked << std::endl;
   strm << "      ChannelCount: " << (unsigned) ADesc.ChannelCount << std::endl;
@@ -141,7 +141,7 @@ ASDCP::PCM::AudioDescriptorDump(const AudioDescriptor& ADesc, FILE* stream)
     stream = stderr;
 
   fprintf(stream, "\
-        SampleRate: %d/%d\n\
+        EditRate: %d/%d\n\
  AudioSamplingRate: %d/%d\n\
             Locked: %u\n\
       ChannelCount: %u\n\
@@ -150,8 +150,8 @@ ASDCP::PCM::AudioDescriptorDump(const AudioDescriptor& ADesc, FILE* stream)
             AvgBps: %u\n\
      LinkedTrackID: %u\n\
  ContainerDuration: %u\n",
-	  ADesc.SampleRate.Numerator ,ADesc.SampleRate.Denominator,
-	  ADesc.AudioSamplingRate.Numerator ,ADesc.AudioSamplingRate.Denominator,
+	  ADesc.EditRate.Numerator, ADesc.EditRate.Denominator,
+	  ADesc.AudioSamplingRate.Numerator, ADesc.AudioSamplingRate.Denominator,
 	  ADesc.Locked,
 	  ADesc.ChannelCount,
 	  ADesc.QuantizationBits,
@@ -225,23 +225,22 @@ ASDCP::PCM::MXFReader::h__Reader::OpenRead(const char* filename)
 
   // check for sample/frame rate sanity
   if ( ASDCP_SUCCESS(result)
-       && m_ADesc.SampleRate != EditRate_24
-       && m_ADesc.SampleRate != EditRate_25
-       && m_ADesc.SampleRate != EditRate_30
-       && m_ADesc.SampleRate != EditRate_48
-       && m_ADesc.SampleRate != EditRate_50
-       && m_ADesc.SampleRate != EditRate_60
-       && m_ADesc.SampleRate != EditRate_23_98 )
+       && m_ADesc.EditRate != EditRate_24
+       && m_ADesc.EditRate != EditRate_25
+       && m_ADesc.EditRate != EditRate_30
+       && m_ADesc.EditRate != EditRate_48
+       && m_ADesc.EditRate != EditRate_50
+       && m_ADesc.EditRate != EditRate_60
+       && m_ADesc.EditRate != EditRate_23_98 )
     {
-      DefaultLogSink().Error("PCM file SampleRate is not 24/1, 48/1 or 24000/1001: %08x/%08x\n", // lu
-			     m_ADesc.SampleRate.Numerator, m_ADesc.SampleRate.Denominator);
+      DefaultLogSink().Error("PCM file EditRate is not a supported value: %d/%d\n", // lu
+			     m_ADesc.EditRate.Numerator, m_ADesc.EditRate.Denominator);
 
       // oh, they gave us the audio sampling rate instead, assume 24/1
-      if ( m_ADesc.SampleRate == SampleRate_48k )
+      if ( m_ADesc.EditRate == SampleRate_48k )
 	{
-	  DefaultLogSink().Warn("adjusting SampleRate to 24/1\n"); 
-	  m_ADesc.SampleRate.Numerator = 24;
-	  m_ADesc.SampleRate.Denominator = 1;
+	  DefaultLogSink().Warn("adjusting EditRate to 24/1\n"); 
+	  m_ADesc.EditRate = EditRate_24;
 	}
       else
 	{
@@ -429,16 +428,16 @@ ASDCP::PCM::MXFWriter::h__Writer::SetSourceStream(const AudioDescriptor& ADesc)
   if ( ! m_State.Test_INIT() )
     return RESULT_STATE;
 
-  if ( ADesc.SampleRate != EditRate_24
-       && ADesc.SampleRate != EditRate_25
-       && ADesc.SampleRate != EditRate_30
-       && ADesc.SampleRate != EditRate_48
-       && ADesc.SampleRate != EditRate_50
-       && ADesc.SampleRate != EditRate_60
-       && ADesc.SampleRate != EditRate_23_98 )
+  if ( ADesc.EditRate != EditRate_24
+       && ADesc.EditRate != EditRate_25
+       && ADesc.EditRate != EditRate_30
+       && ADesc.EditRate != EditRate_48
+       && ADesc.EditRate != EditRate_50
+       && ADesc.EditRate != EditRate_60
+       && ADesc.EditRate != EditRate_23_98 )
     {
-      DefaultLogSink().Error("AudioDescriptor.SampleRate is not 24/1, 48/1 or 24000/1001: %d/%d\n",
-			     ADesc.SampleRate.Numerator, ADesc.SampleRate.Denominator);
+      DefaultLogSink().Error("AudioDescriptor.EditRate is not a supported value: %d/%d\n",
+			     ADesc.EditRate.Numerator, ADesc.EditRate.Denominator);
       return RESULT_RAW_FORMAT;
     }
 
@@ -451,12 +450,14 @@ ASDCP::PCM::MXFWriter::h__Writer::SetSourceStream(const AudioDescriptor& ADesc)
 
   assert(m_Dict);
   m_ADesc = ADesc;
+  ui32_t TCFrameRate = ( ADesc.EditRate == EditRate_23_98  ) ? 24 : m_ADesc.EditRate.Numerator;
+
   Result_t result = PCM_ADesc_to_MD(m_ADesc, (WaveAudioDescriptor*)m_EssenceDescriptor);
   
   if ( ASDCP_SUCCESS(result) )
       result = WriteMXFHeader(PCM_PACKAGE_LABEL, UL(m_Dict->ul(MDD_WAVWrapping)),
 			      SOUND_DEF_LABEL,   UL(m_Dict->ul(MDD_SoundDataDef)),
-			      m_ADesc.SampleRate, 24 /* TCFrameRate */, calc_CBR_frame_size(m_Info, m_ADesc));
+			      m_ADesc.EditRate, TCFrameRate, calc_CBR_frame_size(m_Info, m_ADesc));
 
   if ( ASDCP_SUCCESS(result) )
     {

@@ -54,7 +54,7 @@ ASDCP::Wav::SimpleWaveHeader::SimpleWaveHeader(ASDCP::PCM::AudioDescriptor& ADes
 void
 ASDCP::Wav::SimpleWaveHeader::FillADesc(ASDCP::PCM::AudioDescriptor& ADesc, ASDCP::Rational PictureRate) const
 {
-  ADesc.SampleRate = PictureRate;
+  ADesc.EditRate = PictureRate;
 
   ADesc.LinkedTrackID = 0;
   ADesc.Locked = 0;
@@ -260,7 +260,7 @@ extended_to_Rat(const byte_t* buf)
 void
 ASDCP::AIFF::SimpleAIFFHeader::FillADesc(ASDCP::PCM::AudioDescriptor& ADesc, ASDCP::Rational PictureRate) const
 {
-  ADesc.SampleRate = PictureRate;
+  ADesc.EditRate = PictureRate;
 
   ADesc.ChannelCount = numChannels;
   ADesc.AudioSamplingRate = extended_to_Rat(sampleRate);

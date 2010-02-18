@@ -326,9 +326,34 @@ lh__Reader::OpenRead(const char* filename, EssenceType_t type)
 	}
       else if ( type == ASDCP::ESS_JPEG_2000_S )
 	{
-	  if ( ! ( m_EditRate == EditRate_24 && m_SampleRate == EditRate_48 ) )
+	  if ( m_EditRate == EditRate_24 )
 	    {
-	      DefaultLogSink().Error("EditRate and SampleRate not correct for 24/48 stereoscopic essence.\n");
+	      if ( m_SampleRate != EditRate_48 )
+		{
+		  DefaultLogSink().Error("EditRate and SampleRate not correct for 24/48 stereoscopic essence.\n");
+		  return RESULT_FORMAT;
+		}
+	    }
+	  else if ( m_EditRate == EditRate_25 )
+	    {
+	      if ( m_SampleRate != EditRate_50 )
+		{
+		  DefaultLogSink().Error("EditRate and SampleRate not correct for 25/50 stereoscopic essence.\n");
+		  return RESULT_FORMAT;
+		}
+	    }
+	  else if ( m_EditRate == EditRate_30 )
+	    {
+	      if ( m_SampleRate != EditRate_60 )
+		{
+		  DefaultLogSink().Error("EditRate and SampleRate not correct for 30/60 stereoscopic essence.\n");
+		  return RESULT_FORMAT;
+		}
+	    }
+	  else
+	    {
+	      DefaultLogSink().Error("EditRate not correct for stereoscopic essence: %d/%d.\n",
+				     m_EditRate.Numerator, m_EditRate.Denominator);
 	      return RESULT_FORMAT;
 	    }
 	}
@@ -1006,9 +1031,11 @@ ASDCP::JP2K::MXFSWriter::OpenWrite(const char* filename, const WriterInfo& Info,
   else
     m_Writer = new h__SWriter(DefaultInteropDict());
 
-  if ( PDesc.EditRate != ASDCP::EditRate_24 )
+  if ( PDesc.EditRate != ASDCP::EditRate_24
+       && PDesc.EditRate != ASDCP::EditRate_25
+       && PDesc.EditRate != ASDCP::EditRate_30 )
     {
-      DefaultLogSink().Error("Stereoscopic wrapping requires 24 fps input streams.\n");
+      DefaultLogSink().Error("Stereoscopic wrapping requires 24, 25 or 30 fps input streams.\n");
       return RESULT_FORMAT;
     }
 
@@ -1022,9 +1049,17 @@ ASDCP::JP2K::MXFSWriter::OpenWrite(const char* filename, const WriterInfo& Info,
   if ( ASDCP_SUCCESS(result) )
     {
       PictureDescriptor TmpPDesc = PDesc;
-      TmpPDesc.EditRate = ASDCP::EditRate_48;
 
-      result = m_Writer->SetSourceStream(TmpPDesc, JP2K_S_PACKAGE_LABEL, ASDCP::EditRate_24);
+      if ( PDesc.EditRate == ASDCP::EditRate_24 )
+	TmpPDesc.EditRate = ASDCP::EditRate_48;
+
+      else if ( PDesc.EditRate == ASDCP::EditRate_25 )
+	TmpPDesc.EditRate = ASDCP::EditRate_50;
+
+      else if ( PDesc.EditRate == ASDCP::EditRate_30 )
+	TmpPDesc.EditRate = ASDCP::EditRate_60;
+
+      result = m_Writer->SetSourceStream(TmpPDesc, JP2K_S_PACKAGE_LABEL, PDesc.EditRate);
     }
 
   if ( ASDCP_FAILURE(result) )

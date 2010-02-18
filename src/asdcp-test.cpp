@@ -1215,7 +1215,7 @@ write_PCM_file(CommandOptions& Options)
     {
       Parser.FillAudioDescriptor(ADesc);
 
-      ADesc.SampleRate = PictureRate;
+      ADesc.EditRate = PictureRate;
       FrameBuffer.Capacity(PCM::CalcFrameBufferSize(ADesc));
       ADesc.ChannelFormat = Options.channel_fmt;
 
@@ -1345,10 +1345,13 @@ read_PCM_file(CommandOptions& Options)
     {
       Reader.FillAudioDescriptor(ADesc);
 
-      if ( ADesc.SampleRate != EditRate_23_98
-	   && ADesc.SampleRate != EditRate_24
-	   && ADesc.SampleRate != EditRate_48 )
-	ADesc.SampleRate = Options.PictureRate();
+      if ( ADesc.EditRate != EditRate_23_98
+	   && ADesc.EditRate != EditRate_24
+	   && ADesc.EditRate != EditRate_25
+	   && ADesc.EditRate != EditRate_48
+	   && ADesc.EditRate != EditRate_50
+	   && ADesc.EditRate != EditRate_60 )
+	ADesc.EditRate = Options.PictureRate();
 
       FrameBuffer.Capacity(PCM::CalcFrameBufferSize(ADesc));
 

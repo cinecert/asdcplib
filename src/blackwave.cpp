@@ -152,7 +152,7 @@ make_black_wav_file(CommandOptions& Options)
   PCM::FrameBuffer FrameBuffer;
   PCM::AudioDescriptor ADesc;
 
-  ADesc.SampleRate = Rational(24,1);
+  ADesc.EditRate = Rational(24,1);
   ADesc.AudioSamplingRate = ASDCP::SampleRate_48k;
   ADesc.Locked = 0;
   ADesc.ChannelCount = 1;

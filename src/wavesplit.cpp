@@ -200,7 +200,7 @@ wav_file_info(CommandOptions& Options)
   if ( ASDCP_SUCCESS(result) )
     {
       Parser.FillAudioDescriptor(ADesc);
-      ADesc.SampleRate = PictureRate;
+      ADesc.EditRate = PictureRate;
       fprintf(stderr, "48Khz PCM Audio, %s fps (%u spf)\n", "24",
 	      PCM::CalcSamplesPerFrame(ADesc));
       fputs("AudioDescriptor:\n", stderr);
@@ -253,7 +253,7 @@ split_wav_file(CommandOptions& Options)
     {
       Parser.FillAudioDescriptor(ADesc);
 
-      ADesc.SampleRate = PictureRate;
+      ADesc.EditRate = PictureRate;
       ui32_t fb_size = PCM::CalcFrameBufferSize(ADesc);
       assert((fb_size % 2) == 0);
       FrameBuffer.Capacity(fb_size);

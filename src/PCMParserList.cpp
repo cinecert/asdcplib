@@ -58,7 +58,7 @@ ASDCP::ParserInstance::OpenRead(const char* filename, Rational& PictureRate)
 
   if ( ASDCP_SUCCESS(result) )
     {
-      ADesc.SampleRate = PictureRate;
+      ADesc.EditRate = PictureRate;
       m_SampleSize = PCM::CalcSampleSize(ADesc);
       result = FB.Capacity(PCM::CalcFrameBufferSize(ADesc));
     }

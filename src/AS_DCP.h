@@ -785,7 +785,7 @@ namespace ASDCP {
 
       struct AudioDescriptor
 	{
-	  Rational SampleRate;         // rate of frame wrapping
+	  Rational EditRate;         // rate of frame wrapping
 	  Rational AudioSamplingRate;  // rate of audio sample
 	  ui32_t   Locked;             // 
 	  ui32_t   ChannelCount;       // number of channels
@@ -811,7 +811,7 @@ namespace ASDCP {
       // Returns number of samples per frame of data described by ADesc
       inline ui32_t CalcSamplesPerFrame(const AudioDescriptor& ADesc)
 	{
-	  double tmpd = ADesc.AudioSamplingRate.Quotient() / ADesc.SampleRate.Quotient();
+	  double tmpd = ADesc.AudioSamplingRate.Quotient() / ADesc.EditRate.Quotient();
 	  return (ui32_t)ceil(tmpd);
 	}
 

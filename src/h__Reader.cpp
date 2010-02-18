@@ -345,6 +345,7 @@ ASDCP::h__Reader::ReadEKLVPacket(ui32_t FrameNum, ui32_t SequenceNum, ASDCP::Fra
 
 	  memcpy(FrameBuf.Data(), ess_p, tmp_len);
 	  FrameBuf.Size(tmp_len);
+	  FrameBuf.FrameNumber(FrameNum);
 	  FrameBuf.SourceLength(SourceLength);
 	  FrameBuf.PlaintextOffset(PlaintextOffset);
 	}
