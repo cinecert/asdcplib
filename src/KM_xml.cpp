@@ -762,7 +762,13 @@ Kumu::XMLElement::ParseString(const std::string& document)
 
   int errorCount = 0;
   SAXParser* parser = new SAXParser();
-  parser->setDoValidation(true);
+
+// #if XERCES_VERSION_MAJOR < 3
+//   parser->setDoValidation(true);
+// #else
+  parser->setValidationScheme(SAXParser::Val_Always);
+// #endif
+
   parser->setDoNamespaces(true);    // optional
 
   MyTreeHandler* docHandler = new MyTreeHandler(this);

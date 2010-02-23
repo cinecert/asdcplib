@@ -246,6 +246,18 @@ namespace ASDCP {
     inline bool operator!=(const Rational& rhs) const {
       return ( rhs.Numerator != Numerator || rhs.Denominator != Denominator );
     }
+
+    inline bool operator<(const Rational& rhs) {
+      if ( Numerator < rhs.Numerator )     return true;
+      if ( Numerator == rhs.Numerator && Denominator < rhs.Denominator )    return true;
+      return false;
+    }
+ 
+    inline bool operator>(const Rational& rhs) {
+      if ( Numerator > rhs.Numerator )     return true;
+      if ( Numerator == rhs.Numerator && Denominator > rhs.Denominator )     return true;
+      return false;
+    }
   };
 
   // common edit rates, use these instead of hard coded constants

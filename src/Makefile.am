@@ -90,7 +90,7 @@ nodist_libpyasdcp_la_SOURCES = \
 	asdcp_python.cpp asdcp_python.h \
 	asdcp_python_descriptor.cpp \
 	asdcp_python_misc.cpp asdcp_python_writerinfo.h \
-	asdcp_wrappers.h asdcp_python_mxf.cpp
+	asdcp_wrappers.h asdcp_python_mxf.cpp asdcp_python_mxf_text.cpp
 
 # asdcp_python_reader.cpp asdcp_python_writer.cpp
 

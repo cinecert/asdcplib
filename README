@@ -112,6 +112,13 @@ utilities all respond to -h.
 
 Change History
 
+NEW STUFF:
+ o Changed AudioDescriptor "SampelRate" element name to "EditRate"
+   to make it consistent with the other types. 
+
+o Now builds with XercesC 3.x
+
+
 2010.01.05 -  bug fixes, enhancements, v1.5.32
  o Re-fixed swapped Interop and SMPTE OP Atom UL values. The swap
    introduced in v1.5.31 was done in error.
