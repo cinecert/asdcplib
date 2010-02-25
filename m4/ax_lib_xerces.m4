@@ -136,7 +136,7 @@ AC_DEFUN([AX_LIB_XERCES],
         CPPFLAGS="$CPPFLAGS -I$xerces_include_dir -I$xerces_include_dir2"
 
         saved_LDFLAGS="$LDFLAGS"
-        LDFLAGS="$LDFLAGS $xerces_ldflags $PTHREAD_LDFLAGS"
+        LDFLAGS="$xerces_ldflags $PTHREAD_LDFLAGS $LDFLAGS"
 
         saved_LIBS="$LIBS"
         LIBS="$xerces_libs $PTHREAD_LIBS $LIBS"
