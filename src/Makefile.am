@@ -95,7 +95,7 @@ nodist_libpyasdcp_la_SOURCES = \
 # asdcp_python_reader.cpp asdcp_python_writer.cpp
 
 libpyasdcp_la_CPPFLAGS = @PYTHON_CPPFLAGS@
-libpyasdcp_la_LDFLAGS = @PYTHON_LSPEC@
+libpyasdcp_la_LDFLAGS = @PYTHON_LSPEC@  -release @VERSION@
 libpyasdcp_la_LIBADD = libkumu.la libasdcp.la
 
 pyexecdir = @PYTHON_EXECDIR@
