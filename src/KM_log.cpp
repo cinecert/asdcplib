@@ -170,7 +170,7 @@ int const SYSLOG_DEBUG = LOG_DEBUG;
 Kumu::SyslogLogSink::SyslogLogSink(const std::string& source_name, int facility)
 {
   if ( facility == 0 )
-    facility == LOG_DAEMON;
+    facility = LOG_DAEMON;
 
   openlog(source_name.c_str(), LOG_CONS|LOG_NDELAY||LOG_PID, facility);
 }
