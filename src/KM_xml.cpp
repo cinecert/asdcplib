@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2005-2009, John Hurst
+Copyright (c) 2005-2010, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -35,9 +35,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <stack>
 #include <map>
 
-//#undef HAVE_EXPAT
-//#define HAVE_XERCES_C
-
 #ifdef HAVE_EXPAT
 # ifdef HAVE_XERCES_C
 #  error "Both HAVE_EXPAT and HAVE_XERCES_C defined"
@@ -52,6 +49,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <xercesc/util/PlatformUtils.hpp>
 #include <xercesc/util/XMLString.hpp>
+#include <xercesc/util/TransService.hpp>
 #include <xercesc/sax/AttributeList.hpp>
 #include <xercesc/sax/HandlerBase.hpp>
 #include <xercesc/sax/ErrorHandler.hpp>
@@ -62,6 +60,16 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 XERCES_CPP_NAMESPACE_USE 
+
+namespace Kumu {
+  void init_xml_dom();
+  typedef std::basic_string<XMLCh> XercesString;
+  bool UTF_8_to_XercesString(const std::string& in_str, XercesString& out_str);
+  bool UTF_8_to_XercesString(const char* in_str, XercesString& out_str);
+  bool XercesString_to_UTF_8(const XercesString& in_str, std::string& out_str);
+  bool XercesString_to_UTF_8(const XMLCh* in_str, std::string& out_str);
+}
+
 #endif
 
 using namespace Kumu;
@@ -580,17 +588,25 @@ Kumu::StringIsXML(const char* document, ui32_t len)
 
 #ifdef HAVE_XERCES_C
 
-static Mutex sg_Lock;
-static bool  sg_xml_init = false;
+static Mutex sg_xerces_init_lock; // protect the xerces initialized
+static bool  sg_xml_init = false; // signal initialization
+static Mutex sg_coder_lock;       // protect the transcoder context 
+static XMLTranscoder*   sg_coder = 0;
+static const int sg_coder_buf_len = 128 * 1024;
+static char sg_coder_buf[sg_coder_buf_len + 8];
+static unsigned char sg_coder_counts[sg_coder_buf_len / sizeof(XMLCh)]; // see XMLTranscoder::transcodeFrom
 
+static const XMLCh sg_LS[] = { chLatin_L, chLatin_S, chNull };
+static const XMLCh sg_label_UTF_8[] = { chLatin_U, chLatin_T, chLatin_F,
+					chDash, chDigit_8, chNull}; 
 
 //
 void
-asdcp_init_xml_dom()
+Kumu::init_xml_dom()
 {
   if ( ! sg_xml_init )
     {
-      AutoMutex AL(sg_Lock);
+      AutoMutex AL(sg_xerces_init_lock);
 
       if ( ! sg_xml_init )
 	{
@@ -598,6 +614,23 @@ asdcp_init_xml_dom()
 	    {
 	      XMLPlatformUtils::Initialize();
 	      sg_xml_init = true;
+
+	      XMLTransService::Codes ret;
+	      sg_coder = XMLPlatformUtils::fgTransService->makeNewTranscoderFor(sg_label_UTF_8, ret, sg_coder_buf_len);
+
+	      if ( ret != XMLTransService::Ok )
+		{
+		  const char* message = "Undefined Error";
+
+		  switch ( ret )
+		    {
+		    case XMLTransService::UnsupportedEncoding:  message = "Unsupported encoding";  break;
+		    case XMLTransService::InternalFailure: 	message = "Internal failure";  break;
+		    case XMLTransService::SupportFilesNotFound: message = "Support files not found";  break;
+		    }
+
+		  DefaultLogSink().Error("Xerces transform initialization error: %s\n", message);
+		}
 	    }
 	  catch (const XMLException &e)
 	    {
@@ -607,6 +640,83 @@ asdcp_init_xml_dom()
     }
 }
 
+//
+bool
+Kumu::XercesString_to_UTF_8(const Kumu::XercesString& in_str, std::string& out_str) {
+  return XercesString_to_UTF_8(in_str.c_str(), out_str);
+}
+
+//
+bool
+Kumu::XercesString_to_UTF_8(const XMLCh* in_str, std::string& out_str)
+{
+  assert(in_str);
+  assert(sg_xml_init);
+  AutoMutex AL(sg_coder_lock);
+  ui32_t str_len = XMLString::stringLen(in_str);
+  ui32_t read_total = 0;
+
+  try
+    {
+      while ( str_len > 0 )
+	{
+	  ui32_t read_count = 0;
+	  ui32_t write_count = sg_coder->transcodeTo(in_str + read_total, str_len,
+						     (XMLByte*)sg_coder_buf, sg_coder_buf_len,
+						     read_count, XMLTranscoder::UnRep_Throw);
+
+	  out_str.append(sg_coder_buf, write_count);
+	  str_len -= read_count;
+	  read_total += read_count;
+	  assert(str_len >= 0);
+	}
+    }
+  catch (...)
+    {
+      return false;
+    }
+
+  return true;
+}
+
+//
+bool
+Kumu::UTF_8_to_XercesString(const std::string& in_str, Kumu::XercesString& out_str) {
+  return UTF_8_to_XercesString(in_str.c_str(), out_str);
+}
+
+//
+bool
+Kumu::UTF_8_to_XercesString(const char* in_str, Kumu::XercesString& out_str)
+{
+  assert(in_str);
+  assert(sg_xml_init);
+  AutoMutex AL(sg_coder_lock);
+  ui32_t str_len = strlen(in_str);
+  ui32_t read_total = 0;
+
+  try
+    {
+      while ( str_len > 0 )
+	{
+	  ui32_t read_count = 0;
+	  ui32_t write_count = sg_coder->transcodeFrom((const XMLByte*)(in_str + read_total), str_len,
+						       (XMLCh*)sg_coder_buf, sg_coder_buf_len / sizeof(XMLCh),
+						       read_count, sg_coder_counts);
+
+	  out_str.append((XMLCh*)sg_coder_buf, write_count * sizeof(XMLCh));
+	  str_len -= read_count;
+	  read_total += read_count;
+	  assert(str_len >= 0);
+	}
+    }
+  catch (...)
+    {
+      return false;
+    }
+
+  return true;
+}
 
 //
 class MyTreeHandler : public HandlerBase
@@ -614,9 +724,11 @@ class MyTreeHandler : public HandlerBase
   ns_map*                  m_Namespaces;
   std::stack<XMLElement*>  m_Scope;
   XMLElement*              m_Root;
+  bool                     m_HasEncodeErrors;
 
 public:
-  MyTreeHandler(XMLElement* root) : m_Namespaces(0), m_Root(root) {
+  MyTreeHandler(XMLElement* root) : m_Namespaces(0), m_Root(root), m_HasEncodeErrors(false)
+  {
     assert(m_Root);
     m_Namespaces = new ns_map;
   }
@@ -625,7 +737,10 @@ public:
     delete m_Namespaces;
   }
 
-  ns_map* TakeNamespaceMap() {
+  bool HasEncodeErrors() const { return m_HasEncodeErrors; }
+
+  ns_map* TakeNamespaceMap()
+  {
     if ( m_Namespaces == 0 || m_Namespaces->empty() )
       return 0;
 
@@ -674,9 +789,12 @@ public:
 		    XERCES_CPP_NAMESPACE::AttributeList& attributes)
   {
     assert(x_name);
+    std::string tx_name;
 
-    const char* tx_name = XMLString::transcode(x_name);
-    const char* name = tx_name;
+    if ( ! XercesString_to_UTF_8(x_name, tx_name) )
+      m_HasEncodeErrors = true;
+
+    const char* name = tx_name.c_str();
     XMLElement* Element;
     const char* ns_root = name;
     const char* local_name = strchr(name, ':');
@@ -702,13 +820,15 @@ public:
 
     for ( ui32_t i = 0; i < a_len; i++)
       {
-	const XMLCh* aname = attributes.getName(i);
-	const XMLCh* value = attributes.getValue(i);
-	assert(aname);
-	assert(value);
+	std::string aname, value;
+	if ( ! XercesString_to_UTF_8(attributes.getName(i), aname) )
+	  m_HasEncodeErrors = true;
 
-	char* x_aname = XMLString::transcode(aname);
-	char* x_value = XMLString::transcode(value);
+	if ( ! XercesString_to_UTF_8(attributes.getValue(i), value) )
+	  m_HasEncodeErrors = true;
+
+	const char* x_aname = aname.c_str();
+	const char* x_value = value.c_str();
 
 	if ( strncmp(x_aname, "xmlns", 5) == 0 )
 	  AddNamespace(x_aname+5, x_value);
@@ -719,9 +839,6 @@ public:
 	  local_name++;
 
 	Element->SetAttr(local_name, x_value);
-
-	XMLString::release(&x_aname);
-	XMLString::release(&x_value);
       }
 
     // map the namespace
@@ -732,8 +849,6 @@ public:
     ns_map::iterator ni = m_Namespaces->find(key);
     if ( ni != m_Namespaces->end() )
       Element->SetNamespace(ni->second);
-
-    XMLString::release((char**)&tx_name);
   }
 
   void endElement(const XMLCh *const name) {
@@ -744,9 +859,11 @@ public:
   {
     if ( length > 0 )
       {
-	char* text = XMLString::transcode(chars);
-	m_Scope.top()->AppendBody(text);
-	XMLString::release(&text);
+	std::string tmp;
+	if ( ! XercesString_to_UTF_8(chars, tmp) )
+	  m_HasEncodeErrors = true;
+
+	m_Scope.top()->AppendBody(tmp);
       }
   }
 };
@@ -758,17 +875,12 @@ Kumu::XMLElement::ParseString(const std::string& document)
   if ( document.empty() )
     return false;
 
-  asdcp_init_xml_dom();
+  init_xml_dom();
 
   int errorCount = 0;
   SAXParser* parser = new SAXParser();
 
-// #if XERCES_VERSION_MAJOR < 3
-//   parser->setDoValidation(true);
-// #else
   parser->setValidationScheme(SAXParser::Val_Always);
-// #endif
-
   parser->setDoNamespaces(true);    // optional
 
   MyTreeHandler* docHandler = new MyTreeHandler(this);
@@ -819,7 +931,7 @@ Kumu::StringIsXML(const char* document, ui32_t len)
   if ( document == 0 || *document == 0 )
     return false;
 
-  asdcp_init_xml_dom();
+  init_xml_dom();
 
   if ( len == 0 )
     len = strlen(document);
