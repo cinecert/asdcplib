@@ -61,9 +61,10 @@ namespace Kumu
 
       inline void    Reset() { m_size = 0; }
       inline byte_t* Data() { return m_p; }
+      inline const byte_t* RoData() const { return m_p; }
       inline byte_t* CurrentData() { return m_p + m_size; }
-      inline ui32_t  Length() { return m_size; }
-      inline ui32_t  Remainder() { return m_capacity - m_size; }
+      inline ui32_t  Length() const { return m_size; }
+      inline ui32_t  Remainder() const { return m_capacity - m_size; }
 
       inline bool AddOffset(ui32_t offset) {
 	if ( ( m_size + offset ) > m_capacity )
@@ -143,10 +144,10 @@ namespace Kumu
       ~MemIOReader() {}
 
       inline void          Reset() { m_size = 0; }
-      inline const byte_t* Data() { return m_p; }
-      inline const byte_t* CurrentData() { return m_p + m_size; }
-      inline ui32_t        Offset() { return m_size; }
-      inline ui32_t        Remainder() { return m_capacity - m_size; }
+      inline const byte_t* Data() const { return m_p; }
+      inline const byte_t* CurrentData() const { return m_p + m_size; }
+      inline ui32_t        Offset() const { return m_size; }
+      inline ui32_t        Remainder() const { return m_capacity - m_size; }
 
       inline bool SkipOffset(ui32_t offset) {
 	if ( ( m_size + offset ) > m_capacity )
