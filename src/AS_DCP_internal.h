@@ -212,18 +212,18 @@ namespace ASDCP
 
       void InitHeader();
       void AddSourceClip(const MXF::Rational& EditRate, ui32_t TCFrameRate,
-			 const std::string& TrackName, const UL& DataDefinition,
-			 const std::string& PackageLabel);
+			 const std::string& TrackName, const UL& EssenceUL,
+			 const UL& DataDefinition, const std::string& PackageLabel);
       void AddDMSegment(const MXF::Rational& EditRate, ui32_t TCFrameRate,
-			 const std::string& TrackName, const UL& DataDefinition,
+			const std::string& TrackName, const UL& DataDefinition,
 			const std::string& PackageLabel);
       void AddEssenceDescriptor(const UL& WrappingUL);
       Result_t CreateBodyPart(const MXF::Rational& EditRate, ui32_t BytesPerEditUnit = 0);
 
       // all the above for a single source clip
       Result_t WriteMXFHeader(const std::string& PackageLabel, const UL& WrappingUL,
-			      const std::string& TrackName, const UL& DataDefinition,
-			      const MXF::Rational& EditRate,
+			      const std::string& TrackName, const UL& EssenceUL,
+			      const UL& DataDefinition, const MXF::Rational& EditRate,
 			      ui32_t TCFrameRate, ui32_t BytesPerEditUnit = 0);
 
       Result_t WriteEKLVPacket(const ASDCP::FrameBuffer& FrameBuf,

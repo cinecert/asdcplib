@@ -230,6 +230,35 @@ namespace Kumu
 	}
     };
 
+  // archivable version of std::string
+
+  //
+  class ArchivableString : public std::string, public Kumu::IArchive
+    {
+
+    public:
+      ArchivableString() {}
+      ArchivableString(const char* sz) : std::string(sz) {}
+      ArchivableString(const std::string& s) : std::string(s) {}
+      virtual ~ArchivableString() {}
+
+      bool   HasValue() const { return ! this->empty(); }
+      ui32_t ArchiveLength() const { return sizeof(ui32_t) + this->size(); }
+
+      bool   Archive(MemIOWriter* Writer) const {
+	if ( Writer == 0 ) return false;
+	return Writer->WriteString(*this);
+      }
+
+      bool   Unarchive(MemIOReader* Reader) {
+	if ( Reader == 0 ) return false;
+	return Reader->ReadString(*this);
+      }
+    };
+
+  //
+  typedef Kumu::ArchivableList<ArchivableString> StringList;
+
   //
   // the base of all identifier classes, Identifier is not usually used directly
   // see UUID and SymmetricKey below for more detail.

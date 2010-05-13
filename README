@@ -104,19 +104,25 @@ blackwave - Write a WAVE file full of zeros,  Used to make filler
 
 Documentation
 
-Currently, the API documentation is mostly in AS_DCP.h. Read
-that file for a detailed description of the library's capabilities.
-Read asdcp-test.cpp for library usage examples. The command-line
+The API documentation is mostly in AS_DCP.h. Read that file for
+a detailed description of the library's capabilities. Read
+asdcp-test.cpp for library usage examples. The command-line
 utilities all respond to -h.
 
 
 Change History
 
-NEW STUFF:
+2010.05.13 -  bug fixes, enhancements, v1.6.34
+ o ST 429-5 files have corrected ULs for DCTimedTextDescriptor and
+   GenericStream DataElement. Files made with previous versions of
+   the library are incompatible with this and future versions.
+ o Fixed File Package TrackNumber values. Thanks to Sankar.
+ o Added edit rate constants to AS_DCP.h (25, 30, 50, 60).
  o Changed AudioDescriptor "SampelRate" element name to "EditRate"
-   to make it consistent with the other types. 
- o Now builds with XercesC 3.x
- o KM_memio.h has better const behavior
+   to make it consistent with the other types.
+ o Now builds with XercesC 3.x.
+ o KM_memio.h has better const behavior.
+ o Fixed a bug in KM_memio.h string archiving.
 
 
 2010.01.05 -  bug fixes, enhancements, v1.5.32

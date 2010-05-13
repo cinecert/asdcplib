@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2004-2009, John Hurst
+Copyright (c) 2004-2010, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -455,16 +455,16 @@ ASDCP::PCM::MXFWriter::h__Writer::SetSourceStream(const AudioDescriptor& ADesc)
   Result_t result = PCM_ADesc_to_MD(m_ADesc, (WaveAudioDescriptor*)m_EssenceDescriptor);
   
   if ( ASDCP_SUCCESS(result) )
-      result = WriteMXFHeader(PCM_PACKAGE_LABEL, UL(m_Dict->ul(MDD_WAVWrapping)),
-			      SOUND_DEF_LABEL,   UL(m_Dict->ul(MDD_SoundDataDef)),
-			      m_ADesc.EditRate, TCFrameRate, calc_CBR_frame_size(m_Info, m_ADesc));
-
-  if ( ASDCP_SUCCESS(result) )
     {
       memcpy(m_EssenceUL, m_Dict->ul(MDD_WAVEssence), SMPTE_UL_LENGTH);
       m_EssenceUL[SMPTE_UL_LENGTH-1] = 1; // first (and only) essence container
       result = m_State.Goto_READY();
     }
+
+  if ( ASDCP_SUCCESS(result) )
+      result = WriteMXFHeader(PCM_PACKAGE_LABEL, UL(m_Dict->ul(MDD_WAVWrapping)),
+			      SOUND_DEF_LABEL, UL(m_EssenceUL), UL(m_Dict->ul(MDD_SoundDataDef)),
+			      m_ADesc.EditRate, TCFrameRate, calc_CBR_frame_size(m_Info, m_ADesc));
 
   return result;
 }

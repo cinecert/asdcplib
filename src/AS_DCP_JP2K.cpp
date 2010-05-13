@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2004-2009, John Hurst
+Copyright (c) 2004-2010, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -835,16 +835,16 @@ lh__Writer::SetSourceStream(const PictureDescriptor& PDesc, const std::string& l
   Result_t result = JP2K_PDesc_to_MD(m_PDesc);
 
   if ( ASDCP_SUCCESS(result) )
-      result = WriteMXFHeader(label, UL(m_Dict->ul(MDD_JPEG_2000Wrapping)),
-			      PICT_DEF_LABEL,     UL(m_Dict->ul(MDD_PictureDataDef)),
-			      LocalEditRate, 24 /* TCFrameRate */);
-
-  if ( ASDCP_SUCCESS(result) )
     {
       memcpy(m_EssenceUL, m_Dict->ul(MDD_JPEG2000Essence), SMPTE_UL_LENGTH);
       m_EssenceUL[SMPTE_UL_LENGTH-1] = 1; // first (and only) essence container
       result = m_State.Goto_READY();
     }
+
+  if ( ASDCP_SUCCESS(result) )
+      result = WriteMXFHeader(label, UL(m_Dict->ul(MDD_JPEG_2000Wrapping)),
+			      PICT_DEF_LABEL, UL(m_EssenceUL), UL(m_Dict->ul(MDD_PictureDataDef)),
+			      LocalEditRate, 24 /* TCFrameRate */);
 
   return result;
 }

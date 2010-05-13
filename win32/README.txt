@@ -15,11 +15,10 @@ if this will be used in conjunction with CineCert's other software, the later 0.
 is needed. That said, the latest revision of OpenSSL as of this writing (0.9.8j) works great.
 Extract and build in the directory of your choice.
 
-For optional XML parsing support, you'll need to use Xerces-C++ 2.7 or 2.8 (3.0 isn't yet
-supported) or Expat 2.0.1 (supported in previous versions of asdcplib). If you'll be using this
-software in conjuction with CineCert's other software, the use of Xerces-C++ is required. As
-with OpenSSL above, if you need/desire XML parsing, extract the source package and build in a
-directory of your choice.
+For optional XML parsing support, you'll need to use Xerces-C++ 2.7 or 3.x, or Expat 2.0.1
+(supported in previous versions of asdcplib). If you'll be using this software in conjuction with
+CineCert's other software, the use of Xerces-C++ is required. As with OpenSSL above, if you
+need/desire XML parsing, extract the source package and build in a directory of your choice.
 
 Header files and libraries from the OpenSSL and XML packages must be available to the compiler
 and linker. You may need to modify the makefile to make include files (/I...) and library files
@@ -49,6 +48,11 @@ C:\Program Files\asdcplib\win32>nmake WITH_OPENSSL="c:\Program Files\openssl-0.9
 Without XML parsing:
 C:\Program Files\asdcplib\win32>nmake WITH_OPENSSL="c:\Program Files\openssl-0.9.8j"
 	/f Makefile.mak
+
+Want a 64-bit build? Change the following line in Makefile.mak:
+    LINKFLAGS1 = /NOLOGO /SUBSYSTEM:console /MACHINE:I386 /LIBPATH:. /DEBUG
+to
+    LINKFLAGS1 = /NOLOGO /SUBSYSTEM:console /MACHINE:X64 /LIBPATH:. /DEBUG
 
 
 IV. CONCLUSION

@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2004-2009, John Hurst
+Copyright (c) 2004-2010, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -462,16 +462,16 @@ ASDCP::MPEG2::MXFWriter::h__Writer::SetSourceStream(const VideoDescriptor& VDesc
   Result_t result = MPEG2_VDesc_to_MD(m_VDesc, (MPEG2VideoDescriptor*)m_EssenceDescriptor);
 
   if ( ASDCP_SUCCESS(result) )
-      result = WriteMXFHeader(MPEG_PACKAGE_LABEL, UL(m_Dict->ul(MDD_MPEG2_VESWrapping)), 
-			      PICT_DEF_LABEL,     UL(m_Dict->ul(MDD_PictureDataDef)),
-			      m_VDesc.EditRate, 24 /* TCFrameRate */);
-
-  if ( ASDCP_SUCCESS(result) )
     {
       memcpy(m_EssenceUL, m_Dict->ul(MDD_MPEG2Essence), SMPTE_UL_LENGTH);
       m_EssenceUL[SMPTE_UL_LENGTH-1] = 1; // first (and only) essence container
       result = m_State.Goto_READY();
     }
+
+  if ( ASDCP_SUCCESS(result) )
+      result = WriteMXFHeader(MPEG_PACKAGE_LABEL, UL(m_Dict->ul(MDD_MPEG2_VESWrapping)), 
+			      PICT_DEF_LABEL, UL(m_EssenceUL), UL(m_Dict->ul(MDD_PictureDataDef)),
+			      m_VDesc.EditRate, 24 /* TCFrameRate */);
 
   return result;
 }

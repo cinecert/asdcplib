@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2004-2009, John Hurst
+Copyright (c) 2004-2010, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -222,8 +222,8 @@ CreateTimecodeTrack(OPAtomHeader& Header, PackageT& Package,
 //
 void
 ASDCP::h__Writer::AddSourceClip(const MXF::Rational& EditRate, ui32_t TCFrameRate,
-				const std::string& TrackName, const UL& DataDefinition,
-				const std::string& PackageLabel)
+				const std::string& TrackName, const UL& EssenceUL,
+				const UL& DataDefinition, const std::string& PackageLabel)
 {
   //
   ContentStorage* Storage = new ContentStorage(m_Dict);
@@ -250,14 +250,16 @@ ASDCP::h__Writer::AddSourceClip(const MXF::Rational& EditRate, ui32_t TCFrameRat
   m_HeaderPart.AddChildObject(m_MaterialPackage);
   Storage->Packages.push_back(m_MaterialPackage->InstanceUID);
 
-  TrackSet<TimecodeComponent> MPTCTrack = CreateTimecodeTrack<MaterialPackage>(m_HeaderPart, *m_MaterialPackage,
-									       EditRate, TCFrameRate, 0, m_Dict);
+  TrackSet<TimecodeComponent> MPTCTrack =
+    CreateTimecodeTrack<MaterialPackage>(m_HeaderPart, *m_MaterialPackage,
+					 EditRate, TCFrameRate, 0, m_Dict);
   m_DurationUpdateList.push_back(&(MPTCTrack.Sequence->Duration));
   m_DurationUpdateList.push_back(&(MPTCTrack.Clip->Duration));
 
-  TrackSet<SourceClip> MPTrack = CreateTrackAndSequence<MaterialPackage, SourceClip>(m_HeaderPart, *m_MaterialPackage,
-										     TrackName, EditRate, DataDefinition,
-										     2, m_Dict);
+  TrackSet<SourceClip> MPTrack =
+    CreateTrackAndSequence<MaterialPackage, SourceClip>(m_HeaderPart, *m_MaterialPackage,
+							TrackName, EditRate, DataDefinition,
+							2, m_Dict);
   m_DurationUpdateList.push_back(&(MPTrack.Sequence->Duration));
 
   MPTrack.Clip = new SourceClip(m_Dict);
@@ -280,16 +282,20 @@ ASDCP::h__Writer::AddSourceClip(const MXF::Rational& EditRate, ui32_t TCFrameRat
   m_HeaderPart.AddChildObject(m_FilePackage);
   Storage->Packages.push_back(m_FilePackage->InstanceUID);
 
-  TrackSet<TimecodeComponent> FPTCTrack = CreateTimecodeTrack<SourcePackage>(m_HeaderPart, *m_FilePackage,
-									     EditRate, TCFrameRate,
-									     ui64_C(3600) * TCFrameRate, m_Dict);
+  TrackSet<TimecodeComponent> FPTCTrack =
+    CreateTimecodeTrack<SourcePackage>(m_HeaderPart, *m_FilePackage,
+				       EditRate, TCFrameRate,
+				       ui64_C(3600) * TCFrameRate, m_Dict);
   m_DurationUpdateList.push_back(&(FPTCTrack.Sequence->Duration));
   m_DurationUpdateList.push_back(&(FPTCTrack.Clip->Duration));
-
-  TrackSet<SourceClip> FPTrack = CreateTrackAndSequence<SourcePackage, SourceClip>(m_HeaderPart, *m_FilePackage,
-										   TrackName, EditRate, DataDefinition,
-										   2, m_Dict);
+  TrackSet<SourceClip> FPTrack =
+    CreateTrackAndSequence<SourcePackage, SourceClip>(m_HeaderPart, *m_FilePackage,
+						      TrackName, EditRate, DataDefinition,
+						      2, m_Dict);
   m_DurationUpdateList.push_back(&(FPTrack.Sequence->Duration));
+
+  // Consult ST 379:2004 Sec. 6.3, "Element to track relationship" to see where "12" comes from.
+  FPTrack.Track->TrackNumber = KM_i32_BE(Kumu::cp2i<ui32_t>((EssenceUL.Value() + 12)));
 
   FPTrack.Clip = new SourceClip(m_Dict);
   m_HeaderPart.AddChildObject(FPTrack.Clip);
@@ -307,7 +313,7 @@ ASDCP::h__Writer::AddSourceClip(const MXF::Rational& EditRate, ui32_t TCFrameRat
 //
 void
 ASDCP::h__Writer::AddDMSegment(const MXF::Rational& EditRate, ui32_t TCFrameRate,
-				const std::string& TrackName, const UL& DataDefinition,
+			       const std::string& TrackName, const UL& DataDefinition,
 			       const std::string& PackageLabel)
 {
   //
@@ -335,14 +341,16 @@ ASDCP::h__Writer::AddDMSegment(const MXF::Rational& EditRate, ui32_t TCFrameRate
   m_HeaderPart.AddChildObject(m_MaterialPackage);
   Storage->Packages.push_back(m_MaterialPackage->InstanceUID);
 
-  TrackSet<TimecodeComponent> MPTCTrack = CreateTimecodeTrack<MaterialPackage>(m_HeaderPart, *m_MaterialPackage,
-									       EditRate, TCFrameRate, 0, m_Dict);
+  TrackSet<TimecodeComponent> MPTCTrack =
+    CreateTimecodeTrack<MaterialPackage>(m_HeaderPart, *m_MaterialPackage,
+					 EditRate, TCFrameRate, 0, m_Dict);
   m_DurationUpdateList.push_back(&(MPTCTrack.Sequence->Duration));
   m_DurationUpdateList.push_back(&(MPTCTrack.Clip->Duration));
 
-  TrackSet<DMSegment> MPTrack = CreateTrackAndSequence<MaterialPackage, DMSegment>(m_HeaderPart, *m_MaterialPackage,
-										   TrackName, EditRate, DataDefinition,
-										   2, m_Dict);
+  TrackSet<DMSegment> MPTrack =
+    CreateTrackAndSequence<MaterialPackage, DMSegment>(m_HeaderPart, *m_MaterialPackage,
+						       TrackName, EditRate, DataDefinition,
+						       2, m_Dict);
   m_DurationUpdateList.push_back(&(MPTrack.Sequence->Duration));
 
   MPTrack.Clip = new DMSegment(m_Dict);
@@ -365,15 +373,17 @@ ASDCP::h__Writer::AddDMSegment(const MXF::Rational& EditRate, ui32_t TCFrameRate
   m_HeaderPart.AddChildObject(m_FilePackage);
   Storage->Packages.push_back(m_FilePackage->InstanceUID);
 
-  TrackSet<TimecodeComponent> FPTCTrack = CreateTimecodeTrack<SourcePackage>(m_HeaderPart, *m_FilePackage,
-									     EditRate, TCFrameRate,
-									     ui64_C(3600) * TCFrameRate, m_Dict);
+  TrackSet<TimecodeComponent> FPTCTrack =
+    CreateTimecodeTrack<SourcePackage>(m_HeaderPart, *m_FilePackage,
+				       EditRate, TCFrameRate,
+				       ui64_C(3600) * TCFrameRate, m_Dict);
   m_DurationUpdateList.push_back(&(FPTCTrack.Sequence->Duration));
   m_DurationUpdateList.push_back(&(FPTCTrack.Clip->Duration));
 
-  TrackSet<DMSegment> FPTrack = CreateTrackAndSequence<SourcePackage, DMSegment>(m_HeaderPart, *m_FilePackage,
-										 TrackName, EditRate, DataDefinition,
-										 2, m_Dict);
+  TrackSet<DMSegment> FPTrack =
+    CreateTrackAndSequence<SourcePackage, DMSegment>(m_HeaderPart, *m_FilePackage,
+						     TrackName, EditRate, DataDefinition,
+						     2, m_Dict);
   m_DurationUpdateList.push_back(&(FPTrack.Sequence->Duration));
 
   FPTrack.Clip = new DMSegment(m_Dict);
@@ -469,11 +479,11 @@ ASDCP::h__Writer::CreateBodyPart(const MXF::Rational& EditRate, ui32_t BytesPerE
 //
 Result_t
 ASDCP::h__Writer::WriteMXFHeader(const std::string& PackageLabel, const UL& WrappingUL,
-				 const std::string& TrackName, const UL& DataDefinition,
+				 const std::string& TrackName, const UL& EssenceUL, const UL& DataDefinition,
 				 const MXF::Rational& EditRate, ui32_t TCFrameRate, ui32_t BytesPerEditUnit)
 {
   InitHeader();
-  AddSourceClip(EditRate, TCFrameRate, TrackName, DataDefinition, PackageLabel);
+  AddSourceClip(EditRate, TCFrameRate, TrackName, EssenceUL, DataDefinition, PackageLabel);
   AddEssenceDescriptor(WrappingUL);
 
   Result_t result = m_HeaderPart.WriteToFile(m_File, m_HeaderSize);

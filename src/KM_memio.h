@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2006-2009, John Hurst
+Copyright (c) 2006-2010, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -121,6 +121,13 @@ namespace Kumu
 	m_size += sizeof(ui64_t);
 	return true;
       }
+
+      inline bool WriteString(const std::string& str)
+      {
+	if ( ! WriteUi32BE(str.length()) ) return false;
+	if ( ! WriteRaw((const byte_t*)str.c_str(), str.length()) ) return false;
+	return true;
+      }
     };
 
   //
@@ -207,27 +214,31 @@ namespace Kumu
 	m_size += sizeof(ui64_t);
 	return true;
       }
+
+      inline bool ReadString(std::string& str)
+      {
+	ui32_t str_length;
+	if ( ! ReadUi32BE(&str_length) ) return false;
+	if ( ( m_size + str_length ) > m_capacity ) return false;
+	str.assign((const char*)CurrentData(), str_length);
+	if ( ! SkipOffset(str_length) ) return false;
+	return true;
+      }
     };
 
   //
   inline bool
-    UnarchiveString(MemIOReader& Reader, std::string& str)
-    {
-      ui32_t str_length;
-      if ( ! Reader.ReadUi32BE(&str_length) ) return false;
-      str.assign((const char*)Reader.CurrentData(), str_length);
-      if ( ! Reader.SkipOffset(str_length) ) return false;
-      return true;
-    }
+  UnarchiveString(MemIOReader& Reader, std::string& str) {
+    return Reader.ReadString(str);
+  }
 
   //
   inline bool
-    ArchiveString(MemIOWriter& Writer, const std::string& str)
-    {
-      if ( ! Writer.WriteUi32BE(str.length()) ) return false;
-      if ( ! Writer.WriteRaw((const byte_t*)str.c_str(), str.length()) ) return false;
-      return true;
-    }
+  ArchiveString(MemIOWriter& Writer, const std::string& str)
+  {
+    return Writer.WriteString(str);
+  }
+
 
 } // namespace Kumu
 

@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2003-2009, John Hurst
+Copyright (c) 2003-2010, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -267,9 +267,9 @@ namespace ASDCP {
   const Rational SampleRate_48k(48000,1);
   const Rational SampleRate_96k(96000,1);
 
-  // Additional frame rates, see SMPTE 428-11
-  // These rates are new and not supported by all systems. Do not assume that a package
-  // made using on of these rates will work just anywhere!
+  // Additional frame rates, see ST 428-11
+  // These rates are new and not supported by all systems. Do not assume that
+  // a package made using on of these rates will work just anywhere!
   const Rational EditRate_25(25,1);
   const Rational EditRate_30(30,1);
   const Rational EditRate_50(50,1);
