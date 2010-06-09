@@ -286,7 +286,11 @@ public:
   Rational PictureRate()
   {
     if ( picture_rate == 23 ) return EditRate_23_98;
+    if ( picture_rate == 25 ) return EditRate_25;
+    if ( picture_rate == 30 ) return EditRate_30;
     if ( picture_rate == 48 ) return EditRate_48;
+    if ( picture_rate == 50 ) return EditRate_50;
+    if ( picture_rate == 60 ) return EditRate_60;
     return EditRate_24;
   }
 
@@ -294,7 +298,11 @@ public:
   const char* szPictureRate()
   {
     if ( picture_rate == 23 ) return "23.976";
+    if ( picture_rate == 25 ) return "25";
+    if ( picture_rate == 30 ) return "30";
     if ( picture_rate == 48 ) return "48";
+    if ( picture_rate == 50 ) return "50";
+    if ( picture_rate == 60 ) return "60";
     return "24";
   }
 
@@ -1448,7 +1456,7 @@ write_timed_text_file(CommandOptions& Options)
   if ( ASDCP_SUCCESS(result) )
     {
       Parser.FillTimedTextDescriptor(TDesc);
-      FrameBuffer.Capacity(2*Kumu::Megabyte);
+      FrameBuffer.Capacity(Options.fb_size);
 
       if ( Options.verbose_flag )
 	{
@@ -1562,7 +1570,7 @@ read_timed_text_file(CommandOptions& Options)
   if ( ASDCP_SUCCESS(result) )
     {
       Reader.FillTimedTextDescriptor(TDesc);
-      FrameBuffer.Capacity(2*Kumu::Megabyte);
+      FrameBuffer.Capacity(Options.fb_size);
 
       if ( Options.verbose_flag )
 	TimedText::DescriptorDump(TDesc);
@@ -1594,23 +1602,38 @@ read_timed_text_file(CommandOptions& Options)
     return result;
 
   std::string XMLDoc;
+  std::string out_path = Kumu::PathDirname(Options.file_root);
+  ui32_t write_count;
+  char buf[64];
   TimedText::ResourceList_t::const_iterator ri;
 
   result = Reader.ReadTimedTextResource(XMLDoc, Context, HMAC);
 
-  // do something with the XML here
-  fprintf(stderr, "XMLDoc size: %lu\n", XMLDoc.size());
+  if ( ASDCP_SUCCESS(result) )
+    {
+      Kumu::FileWriter Writer;
+      result = Writer.OpenWrite(Options.file_root);
+
+      if ( ASDCP_SUCCESS(result) )
+	result = Writer.Write(reinterpret_cast<const byte_t*>(XMLDoc.c_str()), XMLDoc.size(), &write_count);
+    }
 
   for ( ri = TDesc.ResourceList.begin() ; ri != TDesc.ResourceList.end() && ASDCP_SUCCESS(result); ri++ )
     {
-      result = Reader.ReadAncillaryResource((*ri).ResourceID, FrameBuffer, Context, HMAC);
+      result = Reader.ReadAncillaryResource(ri->ResourceID, FrameBuffer, Context, HMAC);
 
       if ( ASDCP_SUCCESS(result) )
 	{
-	  //	  if ( Options.verbose_flag )
-	    FrameBuffer.Dump(stderr, Options.fb_dump_size);
+	  Kumu::FileWriter Writer;
+	  result = Writer.OpenWrite(Kumu::PathJoin(out_path, Kumu::UUID(ri->ResourceID).EncodeHex(buf, 64)).c_str());
 
-	  // do something with the resource data here
+	  if ( ASDCP_SUCCESS(result) )
+	    {
+	      if ( Options.verbose_flag )
+		FrameBuffer.Dump(stderr, Options.fb_dump_size);
+
+	      result = Writer.Write(FrameBuffer.RoData(), FrameBuffer.Size(), &write_count);
+	    }
 	}
     }
 

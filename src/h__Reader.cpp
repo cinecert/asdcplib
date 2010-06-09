@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2004-2009, John Hurst
+Copyright (c) 2004-2010, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -159,16 +159,51 @@ ASDCP::KLReader::ReadKLFromFile(Kumu::FileReader& Reader)
   ui32_t header_length = SMPTE_UL_LENGTH + MXF_BER_LENGTH;
   Result_t result = Reader.Read(m_KeyBuf, header_length, &read_count);
 
-  if ( ASDCP_SUCCESS(result) )
+  if ( ASDCP_FAILURE(result) )
+    return result;
+
+  if ( read_count != header_length )
+    return RESULT_READFAIL;
+
+  const byte_t* ber_start = m_KeyBuf + SMPTE_UL_LENGTH;
+
+  if ( ( *ber_start & 0x80 ) == 0 )
     {
-      if ( read_count != header_length )
-	result = RESULT_READFAIL;
-  
-      else
-	result = InitFromBuffer(m_KeyBuf, header_length);
+      DefaultLogSink().Error("BER encoding error.\n");
+      return RESULT_FORMAT;
     }
 
-  return result;
+  ui8_t ber_size = ( *ber_start & 0x0f ) + 1;
+
+  if ( ber_size > 9 )
+    {
+      DefaultLogSink().Error("BER size encoding error.\n");
+      return RESULT_FORMAT;
+    }
+
+  if ( ber_size < MXF_BER_LENGTH )
+    {
+      DefaultLogSink().Error("BER size %d shorter than AS-DCP minimum %d.\n",
+			     ber_size, MXF_BER_LENGTH);
+      return RESULT_FORMAT;
+    }
+
+  if ( ber_size > MXF_BER_LENGTH )
+    {
+      ui32_t diff = ber_size - MXF_BER_LENGTH;
+      assert((SMPTE_UL_LENGTH + MXF_BER_LENGTH + diff) <= (SMPTE_UL_LENGTH * 2));
+      result = Reader.Read(m_KeyBuf + SMPTE_UL_LENGTH + MXF_BER_LENGTH, diff, &read_count);
+
+      if ( ASDCP_FAILURE(result) )
+	return result;
+
+      if ( read_count != diff )
+	return RESULT_READFAIL;
+
+      header_length += diff;
+    }
+
+  return InitFromBuffer(m_KeyBuf, header_length);
 }
 
 // standard method of reading a plaintext or encrypted frame

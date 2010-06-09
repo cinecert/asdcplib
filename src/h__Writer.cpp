@@ -605,9 +605,21 @@ ASDCP::h__Writer::WriteEKLVPacket(const ASDCP::FrameBuffer& FrameBuf, const byte
     }
   else
     {
+      ui32_t BER_length = MXF_BER_LENGTH;
+
+      if ( FrameBuf.Size() > 0x00ffffff ) // Need BER integer longer than MXF_BER_LENGTH bytes
+	{
+	  BER_length = Kumu::get_BER_length_for_value(FrameBuf.Size());
+
+	  if ( BER_length == 0 )
+	    result = RESULT_KLV_CODING;
+	}
+
       Overhead.WriteRaw((byte_t*)EssenceUL, SMPTE_UL_LENGTH);
-      Overhead.WriteBER(FrameBuf.Size(), MXF_BER_LENGTH);
-      result = m_File.Writev(Overhead.Data(), Overhead.Length());
+      Overhead.WriteBER(FrameBuf.Size(), BER_length);
+
+      if ( ASDCP_SUCCESS(result) )
+	result = m_File.Writev(Overhead.Data(), Overhead.Length());
  
       if ( ASDCP_SUCCESS(result) )
 	result = m_File.Writev((byte_t*)FrameBuf.RoData(), FrameBuf.Size());
