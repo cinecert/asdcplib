@@ -157,7 +157,7 @@ ASDCP::PCMParserList::OpenRead(ui32_t argc, const char** argv, Rational& Picture
     }
 
   m_ADesc.ChannelCount = m_ChannelCount;
-  m_ADesc.AvgBps = m_ADesc.AvgBps * m_ChannelCount;
+  m_ADesc.AvgBps = ( m_ADesc.AvgBps  / m_ADesc.ChannelCount ) * m_ChannelCount;
 
   if ( ASDCP_FAILURE(result) )
     clear();

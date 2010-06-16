@@ -112,12 +112,13 @@ utilities all respond to -h.
 
 Change History
 
-2010.06.09 -  bug fixes, v1.6.36
+2010.06.16 -  bug fixes, v1.6.36
  o Added support for new Edit Rates to asdcp-test.cpp.
  o Expanded timed-text file reader in asdcp-test.cpp.
  o Fixed large BER value encoding (plaintext) and decoding
    (plaintext and ciphertext). This feature was introduced in
    v1.5.31).
+ o Fixed AvgBps value for multi-channel Wave input.
 
 
 2010.05.13 -  bug fixes, enhancements, v1.6.34
