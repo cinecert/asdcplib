@@ -172,7 +172,7 @@ main(int argc, const char** argv)
   
   for ( i = Options.filename_list.begin(); ASDCP_SUCCESS(result) && i != Options.filename_list.end(); i++ )
     {
-      result = Parser.OpenReadFrame(argv[1], FB);
+      result = Parser.OpenReadFrame(i->c_str(), FB);
 
       if ( ASDCP_SUCCESS(result) )
 	{
