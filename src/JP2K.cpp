@@ -121,11 +121,11 @@ ASDCP::JP2K::Accessor::SIZ::Dump(FILE* stream)
   fprintf(stream, "SIZ: \n");
   fprintf(stream, "  Rsize: %hu\n", Rsize());
   fprintf(stream, "  Xsize: %u\n",  Xsize());
-  fprintf(stream, "  Ysize: %u\n",  Xsize());
+  fprintf(stream, "  Ysize: %u\n",  Ysize());
   fprintf(stream, " XOsize: %u\n",  XOsize());
-  fprintf(stream, " YOsize: %u\n",  XOsize());
+  fprintf(stream, " YOsize: %u\n",  YOsize());
   fprintf(stream, " XTsize: %u\n",  XTsize());
-  fprintf(stream, " YTsize: %u\n",  XTsize());
+  fprintf(stream, " YTsize: %u\n",  YTsize());
   fprintf(stream, "XTOsize: %u\n",  XTOsize());
   fprintf(stream, "YTOsize: %u\n",  YTOsize());
   fprintf(stream, "  Csize: %u\n",  Csize());
