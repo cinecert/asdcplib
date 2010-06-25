@@ -203,7 +203,7 @@ Other Options:\n\
   NOTES: o There is no option grouping, all options must be distinct arguments.\n\
          o All option arguments must be separated from the option by whitespace.\n\
          o An argument of \"23\" to the -p option will be interpreted\n\
-           as 23000/1001 fps.\n\
+           as 24000/1001 fps.\n\
 \n");
 }
 
