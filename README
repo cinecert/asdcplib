@@ -112,6 +112,10 @@ utilities all respond to -h.
 
 Change History
 
+2010.07.20 -  bug fixes, v1.6.37
+ o Fixed TimedTextResourceSubDescriptor UL value.
+
+
 2010.06.16 -  bug fixes, v1.6.36
  o Added support for new Edit Rates to asdcp-test.cpp.
  o Expanded timed-text file reader in asdcp-test.cpp.
