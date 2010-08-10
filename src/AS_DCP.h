@@ -180,21 +180,21 @@ namespace ASDCP {
   using Kumu::RESULT_ENDOFFILE;
   using Kumu::RESULT_CONFIG;
 
-  const Kumu::Result_t RESULT_FORMAT     (-101, "The file format is not proper OP-Atom/AS-DCP.");
-  const Kumu::Result_t RESULT_RAW_ESS    (-102, "Unknown raw essence file type.");
-  const Kumu::Result_t RESULT_RAW_FORMAT (-103, "Raw essence format invalid.");
-  const Kumu::Result_t RESULT_RANGE      (-104, "Frame number out of range.");
-  const Kumu::Result_t RESULT_CRYPT_CTX  (-105, "AESEncContext required when writing to encrypted file.");
-  const Kumu::Result_t RESULT_LARGE_PTO  (-106, "Plaintext offset exceeds frame buffer size.");
-  const Kumu::Result_t RESULT_CAPEXTMEM  (-107, "Cannot resize externally allocated memory.");
-  const Kumu::Result_t RESULT_CHECKFAIL  (-108, "The check value did not decrypt correctly.");
-  const Kumu::Result_t RESULT_HMACFAIL   (-109, "HMAC authentication failure.");
-  const Kumu::Result_t RESULT_HMAC_CTX   (-110, "HMAC context required.");
-  const Kumu::Result_t RESULT_CRYPT_INIT (-111, "Error initializing block cipher context.");
-  const Kumu::Result_t RESULT_EMPTY_FB   (-112, "Empty frame buffer.");
-  const Kumu::Result_t RESULT_KLV_CODING (-113, "KLV coding error.");
-  const Kumu::Result_t RESULT_SPHASE     (-114, "Stereoscopic phase mismatch.");
-  const Kumu::Result_t RESULT_SFORMAT    (-115, "Rate mismatch, file may contain stereoscopic essence.");
+  KM_DECLARE_RESULT(FORMAT,     -101, "The file format is not proper OP-Atom/AS-DCP.");
+  KM_DECLARE_RESULT(RAW_ESS,    -102, "Unknown raw essence file type.");
+  KM_DECLARE_RESULT(RAW_FORMAT, -103, "Raw essence format invalid.");
+  KM_DECLARE_RESULT(RANGE,      -104, "Frame number out of range.");
+  KM_DECLARE_RESULT(CRYPT_CTX,  -105, "AESEncContext required when writing to encrypted file.");
+  KM_DECLARE_RESULT(LARGE_PTO,  -106, "Plaintext offset exceeds frame buffer size.");
+  KM_DECLARE_RESULT(CAPEXTMEM,  -107, "Cannot resize externally allocated memory.");
+  KM_DECLARE_RESULT(CHECKFAIL,  -108, "The check value did not decrypt correctly.");
+  KM_DECLARE_RESULT(HMACFAIL,   -109, "HMAC authentication failure.");
+  KM_DECLARE_RESULT(HMAC_CTX,   -110, "HMAC context required.");
+  KM_DECLARE_RESULT(CRYPT_INIT, -111, "Error initializing block cipher context.");
+  KM_DECLARE_RESULT(EMPTY_FB,   -112, "Empty frame buffer.");
+  KM_DECLARE_RESULT(KLV_CODING, -113, "KLV coding error.");
+  KM_DECLARE_RESULT(SPHASE,     -114, "Stereoscopic phase mismatch.");
+  KM_DECLARE_RESULT(SFORMAT,    -115, "Rate mismatch, file may contain stereoscopic essence.");
 
   //---------------------------------------------------------------------------------
   // file identification

@@ -184,6 +184,54 @@ namespace Kumu
           T(const T&); \
           T& operator=(const T&)
 
+/*
+// Example
+  class foo
+    {
+      KM_NO_COPY_CONSTRUCT(foo); // accessing private mthods will cause compile time error
+    public:
+      // ...
+    };
+*/
+
+// Produces copy constructor boilerplate. Implements
+// copy and assignment, see example below
+# define KM_EXPLICIT_COPY_CONSTRUCT(T)	\
+  T(const T&);				\
+  const T& operator=(const T&)
+
+# define KM_EXPLICIT_COPY_CONSTRUCT_IMPL_START(N, T)	\
+  void T##_copy_impl(N::T& lhs, const N::T& rhs)	\
+  {
+
+#define KM_COPY_ITEM(I) lhs.I = rhs.I;
+
+# define KM_EXPLICIT_COPY_CONSTRUCT_IMPL_END(N, T)	\
+  }							\
+  N::T::T(const N::T& rhs) { T##_copy_impl(*this, rhs); }		\
+  const N::T& N::T::operator=(const N::T& rhs) { T##_copy_impl(*this, rhs); return *this; }
+
+/*
+// Example
+namespace bar {
+  class foo
+    {
+    public:
+      std::string param_a;
+      int param_b;
+
+      KM_EXPLICIT_COPY_CONSTRUCT(foo);
+      // ...
+    };
+}
+
+//
+KM_EXPLICIT_COPY_CONSTRUCT_IMPL_START(bar, foo)
+KM_COPY_ITEM(param_a)
+KM_COPY_ITEM(param_b)
+KM_EXPLICIT_COPY_CONSTRUCT_IMPL_END(bar, foo)
+*/
+
 #endif // _KM_PLATFORM_H_
 
 //

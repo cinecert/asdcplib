@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2004-2009, John Hurst
+Copyright (c) 2004-2010, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -34,6 +34,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef _KM_ERROR_H_
 #define _KM_ERROR_H_
 
+#define KM_DECLARE_RESULT(sym, i, l) const Result_t RESULT_##sym(i, #sym, l);
+
 namespace Kumu
 {
   // Result code container. Both a signed integer and a text string are stored in the object.
@@ -45,13 +47,25 @@ namespace Kumu
     {
       int value;
       const char* label;
+      const char* symbol;
       Result_t();
 
     public:
-      static const Result_t& Find(int);
-      static Result_t Delete(int);
+      // Return registered Result_t for the given "value" code.
+      static const Result_t& Find(int value);
 
-      Result_t(int v, const char* l);
+      // Unregister the Result_t matching the given "value" code. Returns
+      // RESULT_FALSE if "value" does not match a registered Result_t.
+      // Returns RESULT_FAIL if ( value < -99 || value > 99 ) (Kumu core
+      // codes may not be deleted).
+      static Result_t Delete(int value);
+
+      // Iteration through registered result codes, not thread safe.
+      // Get accepts contiguous values from 0 to End() - 1.
+      static unsigned int End();
+      static const Result_t& Get(unsigned int);
+
+      Result_t(int v, const char* s, const char* l);
       ~Result_t();
 
       inline bool        operator==(const Result_t& rhs) const { return value == rhs.value; }
@@ -64,31 +78,33 @@ namespace Kumu
 
       inline const char* Label() const { return label; }
       inline operator    const char*() const { return label; }
+
+      inline const char* Symbol() const { return symbol; }
     };
 
-  const Result_t RESULT_FALSE      ( 1,   "Successful but not true.");
-  const Result_t RESULT_OK         ( 0,   "Success.");
-  const Result_t RESULT_FAIL       (-1,   "An undefined error was detected.");
-  const Result_t RESULT_PTR        (-2,   "An unexpected NULL pointer was given.");
-  const Result_t RESULT_NULL_STR   (-3,   "An unexpected empty string was given.");
-  const Result_t RESULT_ALLOC      (-4,   "Error allocating memory.");
-  const Result_t RESULT_PARAM      (-5,   "Invalid parameter.");
-  const Result_t RESULT_NOTIMPL    (-6,   "Unimplemented Feature.");
-  const Result_t RESULT_SMALLBUF   (-7,   "The given buffer is too small.");
-  const Result_t RESULT_INIT       (-8,   "The object is not yet initialized.");
-  const Result_t RESULT_NOT_FOUND  (-9,   "The requested file does not exist on the system.");
-  const Result_t RESULT_NO_PERM    (-10,  "Insufficient privilege exists to perform the operation.");
-  const Result_t RESULT_STATE      (-11,  "Object state error.");
-  const Result_t RESULT_CONFIG     (-12,  "Invalid configuration option detected.");
-  const Result_t RESULT_FILEOPEN   (-13,  "File open failure.");
-  const Result_t RESULT_BADSEEK    (-14,  "An invalid file location was requested.");
-  const Result_t RESULT_READFAIL   (-15,  "File read error.");
-  const Result_t RESULT_WRITEFAIL  (-16,  "File write error.");
-  const Result_t RESULT_ENDOFFILE  (-17,  "Attempt to read past end of file.");
-  const Result_t RESULT_FILEEXISTS (-18,  "Filename already exists.");
-  const Result_t RESULT_NOTAFILE   (-19,  "Filename not found.");
-  const Result_t RESULT_UNKNOWN    (-20,  "Unknown result code.");
-  const Result_t RESULT_DIR_CREATE (-21,  "Unable to create directory.");
+  KM_DECLARE_RESULT(FALSE,       1,   "Successful but not true.");
+  KM_DECLARE_RESULT(OK,          0,   "Success.");
+  KM_DECLARE_RESULT(FAIL,       -1,   "An undefined error was detected.");
+  KM_DECLARE_RESULT(PTR,        -2,   "An unexpected NULL pointer was given.");
+  KM_DECLARE_RESULT(NULL_STR,   -3,   "An unexpected empty string was given.");
+  KM_DECLARE_RESULT(ALLOC,      -4,   "Error allocating memory.");
+  KM_DECLARE_RESULT(PARAM,      -5,   "Invalid parameter.");
+  KM_DECLARE_RESULT(NOTIMPL,    -6,   "Unimplemented Feature.");
+  KM_DECLARE_RESULT(SMALLBUF,   -7,   "The given buffer is too small.");
+  KM_DECLARE_RESULT(INIT,       -8,   "The object is not yet initialized.");
+  KM_DECLARE_RESULT(NOT_FOUND,  -9,   "The requested file does not exist on the system.");
+  KM_DECLARE_RESULT(NO_PERM,    -10,  "Insufficient privilege exists to perform the operation.");
+  KM_DECLARE_RESULT(STATE,      -11,  "Object state error.");
+  KM_DECLARE_RESULT(CONFIG,     -12,  "Invalid configuration option detected.");
+  KM_DECLARE_RESULT(FILEOPEN,   -13,  "File open failure.");
+  KM_DECLARE_RESULT(BADSEEK,    -14,  "An invalid file location was requested.");
+  KM_DECLARE_RESULT(READFAIL,   -15,  "File read error.");
+  KM_DECLARE_RESULT(WRITEFAIL,  -16,  "File write error.");
+  KM_DECLARE_RESULT(ENDOFFILE,  -17,  "Attempt to read past end of file.");
+  KM_DECLARE_RESULT(FILEEXISTS, -18,  "Filename already exists.");
+  KM_DECLARE_RESULT(NOTAFILE,   -19,  "Filename not found.");
+  KM_DECLARE_RESULT(UNKNOWN,    -20,  "Unknown result code.");
+  KM_DECLARE_RESULT(DIR_CREATE, -21,  "Unable to create directory.");
   // -22 is reserved
  
 } // namespace Kumu

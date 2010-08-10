@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2005-2009, John Hurst
+Copyright (c) 2005-2010, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -35,6 +35,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <KM_fileio.h>
 #include <KM_log.h>
 #include <KM_tai.h>
+#include <KM_mutex.h>
 #include <ctype.h>
 #include <list>
 #include <map>
@@ -53,14 +54,16 @@ Kumu::Version()
 
 struct map_entry_t
 {
-  int             rcode;
+  int rcode;
   Kumu::Result_t* result;
 };
 
-const ui32_t MapMax = 1024;
-const ui32_t MapSize = MapMax * (sizeof(struct map_entry_t));
-static bool s_MapInit = false;
-static struct map_entry_t s_ResultMap[MapSize];
+const ui32_t MapMax = 2048;
+
+static Kumu::Mutex s_MapLock;
+static ui32_t s_MapSize = 0;
+static struct map_entry_t s_ResultMap[MapMax];
+
 
 //
 const Kumu::Result_t&
@@ -69,7 +72,9 @@ Kumu::Result_t::Find(int v)
   if ( v == 0 )
     return RESULT_OK;
 
-  for ( ui32_t i = 0; s_ResultMap[i].result != 0 && i < MapMax; i++ )
+  AutoMutex L(s_MapLock);
+
+  for ( ui32_t i = 0; i < s_MapSize; ++i )
     {
       if ( s_ResultMap[i].rcode == v )
 	return *s_ResultMap[i].result;
@@ -82,22 +87,22 @@ Kumu::Result_t::Find(int v)
 Kumu::Result_t
 Kumu::Result_t::Delete(int v)
 {
-  if ( v >= RESULT_NOTAFILE.Value() )
+  if ( v < -99 || v > 99 )
     {
       DefaultLogSink().Error("Cannot delete core result code: %ld\n", v);
       return RESULT_FAIL;
     }
 
-  for ( ui32_t i = 0; s_ResultMap[i].result != 0 && i < MapMax; i++ )
+  AutoMutex L(s_MapLock);
+
+  for ( ui32_t i = 0; i < s_MapSize; ++i )
     {
       if ( s_ResultMap[i].rcode == v )
 	{
-	  s_ResultMap[i].rcode = 0;
-	  s_ResultMap[i++].result = 0;
-
-	  for ( ; s_ResultMap[i].result != 0 && i < MapMax; i++ )
+	  for ( ++i; i < s_MapSize; ++i )
 	    s_ResultMap[i-1] = s_ResultMap[i];
 
+	  --s_MapSize;
 	  return RESULT_OK;
 	}
     }
@@ -105,41 +110,43 @@ Kumu::Result_t::Delete(int v)
   return RESULT_FALSE;
 }
 
+//
+unsigned int
+Kumu::Result_t::End()
+{
+  return s_MapSize;
+}
 
 //
-Kumu::Result_t::Result_t(int v, const char* l) : value(v), label(l)
+const Kumu::Result_t&
+Kumu::Result_t::Get(unsigned int i)
+{
+  return *s_ResultMap[i].result;
+}
+
+//
+Kumu::Result_t::Result_t(int v, const char* s, const char* l) : value(v), symbol(s), label(l)
 {
   assert(l);
-  assert(value < (int)MapMax);
+  assert(s);
 
   if ( v == 0 )
     return;
 
-  if ( ! s_MapInit )
-    {
-      s_MapInit = true;
-      s_ResultMap[0].rcode = v;
-      s_ResultMap[0].result = this;
-      s_ResultMap[1].rcode = 0;
-      s_ResultMap[1].result = 0;
-      return;
-    }
+  AutoMutex L(s_MapLock);
 
-  ui32_t i = 0;
-  while ( s_ResultMap[i].result != 0 && i < MapMax )
+  for ( ui32_t i = 0; i < s_MapSize; ++i )
     {
-      if ( s_ResultMap[i].rcode == v && s_ResultMap[i].result != 0 )
+      if ( s_ResultMap[i].rcode == v )
 	return;
-
-      i++;
     }
 
-  assert(i+2 < MapMax);
+  assert(s_MapSize+1 < MapMax);
 
-  s_ResultMap[i].rcode = v;
-  s_ResultMap[i].result = this;
-  s_ResultMap[i+1].rcode = 0;
-  s_ResultMap[i+1].result = 0;
+  s_ResultMap[s_MapSize].rcode = v;
+  s_ResultMap[s_MapSize].result = this;
+  ++s_MapSize;
+
   return;
 }
 
