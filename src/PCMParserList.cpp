@@ -30,6 +30,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include <PCMParserList.h>
+#include <KM_fileio.h>
 #include <KM_log.h>
 #include <assert.h>
 
@@ -114,15 +115,49 @@ ASDCP::PCMParserList::OpenRead(ui32_t argc, const char** argv, Rational& Picture
 {
   ASDCP_TEST_NULL_STR(argv);
   Result_t result = RESULT_OK;
+  PathList_t::iterator fi;
+  PathList_t TmpFileList;
 
-  for ( ui32_t i = 0; i < argc && ASDCP_SUCCESS(result); i++ )
+  if ( argc == 1 && PathIsDirectory(argv[0]) )
     {
-      ParserInstance* I = new ParserInstance;
-      result = I->OpenRead(argv[i], PictureRate);
+      DirScanner Dir;
+      char name_buf[MaxFilePath];
+      result = Dir.Open(argv[0]);
+
+      if ( KM_SUCCESS(result) )
+	result = Dir.GetNext(name_buf);
+
+      while ( KM_SUCCESS(result) )
+	{
+	  if ( name_buf[0] != '.' ) // no hidden files
+	    {
+	      std::string tmp_path = std::string(argv[0]) + "/" + name_buf;
+	      TmpFileList.push_back(tmp_path);
+	    }
+
+	  result = Dir.GetNext(name_buf);
+	}
+
+      if ( result == RESULT_ENDOFFILE )
+	{
+	  result = RESULT_OK;
+	  TmpFileList.sort();
+	}
+    }
+  else
+    {
+      for ( ui32_t i = 0; i < argc; ++i )
+	TmpFileList.push_back(argv[i]);
+    }
+
+  for ( fi = TmpFileList.begin(); KM_SUCCESS(result) && fi != TmpFileList.end(); fi++ )
+    {
+      mem_ptr<ParserInstance> I = new ParserInstance;
+      result = I->OpenRead(fi->c_str(), PictureRate);
 
       if ( ASDCP_SUCCESS(result) )
 	{
-	  if ( i == 0 )
+	  if ( fi == TmpFileList.begin() )
 	    {
 	      m_ADesc = I->ADesc;
 	    }
@@ -153,15 +188,22 @@ ASDCP::PCMParserList::OpenRead(ui32_t argc, const char** argv, Rational& Picture
 	result = I->FB.Capacity(PCM::CalcFrameBufferSize(m_ADesc));
 
       if ( ASDCP_SUCCESS(result) )
-	push_back(I);
+	{
+	  push_back(I);
+	  I.release();
+	}
     }
 
-  m_ADesc.ChannelCount = m_ChannelCount;
-  m_ADesc.AvgBps = ( m_ADesc.AvgBps  / m_ADesc.ChannelCount ) * m_ChannelCount;
+  if ( ASDCP_SUCCESS(result) )
+    {
+      m_ADesc.ChannelCount = m_ChannelCount;
+      m_ADesc.AvgBps = ceil(m_ADesc.AudioSamplingRate.Quotient()) * m_ADesc.BlockAlign;
+    }
+  else
+    {
+      clear();
+    }
 
-  if ( ASDCP_FAILURE(result) )
-    clear();
-  
   return result;
 }
 

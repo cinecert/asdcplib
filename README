@@ -112,6 +112,24 @@ utilities all respond to -h.
 
 Change History
 
+ o Fixed bug in JP2K PictureDescriptor initialization in
+   JP2K::MXFReader::OpenRead() and JP2K::MXFSReader::OpenRead()
+ o Once again fiddling with AvgBbs. How can something so simple
+   be such a constant cause of trouble? Tested with 1-, 2- and
+   6-channel input Wav files.
+ o asdcp-test now accepts a directory name when making PCM
+   files (-c). The directory name should be the only filename
+   argument. All files in the directory must be Wav files
+   (mixed channel sizes OK). Files are sorted alphabetically by
+   filename. Hint: use numeric name infix to define order:
+   my_movie_00_L.wav
+   my_movie_01_R.wav
+   my_movie_02_C.wav
+   my_movie_03_LFE.wav
+   my_movie_04_LS.wav
+   my_movie_05_RS.wav
+
+
 2010.07.20 -  bug fixes, v1.6.37
  o Fixed TimedTextResourceSubDescriptor UL value.
 

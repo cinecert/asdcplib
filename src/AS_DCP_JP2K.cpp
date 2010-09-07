@@ -263,18 +263,18 @@ lh__Reader::MD_to_JP2K_PDesc(JP2K::PictureDescriptor& PDesc)
 	DefaultLogSink().Error("Unexpected PictureComponentSizing size: %u, should be 17\n", tmp_size);
 
       // CodingStyleDefault
-      memset(&m_PDesc.CodingStyleDefault, 0, sizeof(CodingStyleDefault_t));
-      memcpy(&m_PDesc.CodingStyleDefault,
+      memset(&PDesc.CodingStyleDefault, 0, sizeof(CodingStyleDefault_t));
+      memcpy(&PDesc.CodingStyleDefault,
 	     m_EssenceSubDescriptor->CodingStyleDefault.RoData(),
 	     m_EssenceSubDescriptor->CodingStyleDefault.Length());
 
       // QuantizationDefault
-      memset(&m_PDesc.QuantizationDefault, 0, sizeof(QuantizationDefault_t));
-      memcpy(&m_PDesc.QuantizationDefault,
+      memset(&PDesc.QuantizationDefault, 0, sizeof(QuantizationDefault_t));
+      memcpy(&PDesc.QuantizationDefault,
 	     m_EssenceSubDescriptor->QuantizationDefault.RoData(),
 	     m_EssenceSubDescriptor->QuantizationDefault.Length());
 
-      m_PDesc.QuantizationDefault.SPqcdLength = m_EssenceSubDescriptor->QuantizationDefault.Length() - 1;
+      PDesc.QuantizationDefault.SPqcdLength = m_EssenceSubDescriptor->QuantizationDefault.Length() - 1;
     }
 
   return RESULT_OK;

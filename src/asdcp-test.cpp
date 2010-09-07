@@ -1893,6 +1893,12 @@ main(int argc, const char** argv)
   if ( Options.mode == MMT_INFO )
     {
       result = show_file_info(Options);
+
+      for ( int i = 1; ASDCP_SUCCESS(result) && i < Options.file_count; ++i )
+	{
+	  Options.filenames[0] = Options.filenames[i]; // oh-so hackish
+	  result = show_file_info(Options);
+	}
     }
   else if ( Options.mode == MMT_GOP_START )
     {
