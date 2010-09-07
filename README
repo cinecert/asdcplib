@@ -112,6 +112,7 @@ utilities all respond to -h.
 
 Change History
 
+2010.09.07 -  bug fixes, enhancements, v1.6.38
  o Fixed bug in JP2K PictureDescriptor initialization in
    JP2K::MXFReader::OpenRead() and JP2K::MXFSReader::OpenRead()
  o Once again fiddling with AvgBbs. How can something so simple
