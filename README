@@ -112,7 +112,7 @@ utilities all respond to -h.
 
 Change History
 
-2010.11.15 - bug fixes, enhancements x1.7.40
+2010.11.15 - bug fixes, enhancements v1.7.40
  o Fixed bug in long KLV packet support (Thanks to Jim R.).
  o Fixed AvgBps in PCM files, *again*. Sorry for the crazy.
  o More fixes and changes in support of 25, 30, 50, 60 fps.
