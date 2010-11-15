@@ -83,7 +83,7 @@ libasdcp_la_CPPFLAGS = -DASDCP_PLATFORM=\"@host@\"
 
 # Python extension
 if PYTHON_USE
-lib_LTLIBRARIES += libpyasdcp.la
+lib_LTLIBRARIES += libpyasdcp.la libnapali.la
 
 nodist_libpyasdcp_la_SOURCES = \
 	kumu_python.cpp kumu_python.h \
@@ -92,16 +92,21 @@ nodist_libpyasdcp_la_SOURCES = \
 	asdcp_python_misc.cpp asdcp_python_writerinfo.h \
 	asdcp_wrappers.h asdcp_python_mxf.cpp asdcp_python_mxf_text.cpp
 
-# asdcp_python_reader.cpp asdcp_python_writer.cpp
+nodist_libnapali_la_SOURCES = \
+	napali_python.cpp napali_python.h
 
 libpyasdcp_la_CPPFLAGS = @PYTHON_CPPFLAGS@
 libpyasdcp_la_LDFLAGS = @PYTHON_LSPEC@  -release @VERSION@
 libpyasdcp_la_LIBADD = libkumu.la libasdcp.la
 
+libnapali_la_CPPFLAGS = @PYTHON_CPPFLAGS@
+libnapali_la_LDFLAGS = @PYTHON_LSPEC@  -release @VERSION@
+libnapali_la_LIBADD = libkumu.la libasdcp.la
+
 pyexecdir = @PYTHON_EXECDIR@
 pyexec_includedir = $(PYTHON_PREFIX)/include/python$(PYTHON_SHORTVERSION)
-nodist_pyexec_include_HEADERS = kumu_python.h asdcp_python.h asdcp_wrappers.h
-pyexec_LTLIBRARIES = kumu.la asdcp.la
+nodist_pyexec_include_HEADERS = kumu_python.h asdcp_python.h napali_python.h asdcp_wrappers.h
+pyexec_LTLIBRARIES = kumu.la asdcp.la napali.la
 
 nodist_kumu_la_SOURCES = pykumu.cpp kumu_python.h
 kumu_la_CPPFLAGS = @PYTHON_CPPFLAGS@
@@ -112,6 +117,11 @@ nodist_asdcp_la_SOURCES = pyasdcp.cpp kumu_python.h asdcp_python.h asdcp_wrapper
 asdcp_la_CPPFLAGS = @PYTHON_CPPFLAGS@
 asdcp_la_LDFLAGS = @PYTHON_LSPEC@ -avoid-version -module
 asdcp_la_LIBADD = libpyasdcp.la
+
+nodist_napali_la_SOURCES = pynapali.cpp kumu_python.h napali_python.h
+napali_la_CPPFLAGS = @PYTHON_CPPFLAGS@
+napali_la_LDFLAGS = @PYTHON_LSPEC@ -avoid-version -module
+napali_la_LIBADD = libnapali.la libpyasdcp.la
 endif
 
 # list of programs to be built and installed

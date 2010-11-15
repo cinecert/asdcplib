@@ -660,7 +660,11 @@ Kumu::XercesString_to_UTF_8(const XMLCh* in_str, std::string& out_str)
     {
       while ( str_len > 0 )
 	{
-	  ui32_t read_count = 0;
+#if XERCES_VERSION_MAJOR < 3
+ 	  ui32_t read_count = 0;
+#else
+	  XMLSize_t read_count = 0;
+#endif
 	  ui32_t write_count = sg_coder->transcodeTo(in_str + read_total, str_len,
 						     (XMLByte*)sg_coder_buf, sg_coder_buf_len,
 						     read_count, XMLTranscoder::UnRep_Throw);
@@ -699,7 +703,11 @@ Kumu::UTF_8_to_XercesString(const char* in_str, Kumu::XercesString& out_str)
     {
       while ( str_len > 0 )
 	{
-	  ui32_t read_count = 0;
+#if XERCES_VERSION_MAJOR < 3
+ 	  ui32_t read_count = 0;
+#else
+	  XMLSize_t read_count = 0;
+#endif
 	  ui32_t write_count = sg_coder->transcodeFrom((const XMLByte*)(in_str + read_total), str_len,
 						       (XMLCh*)sg_coder_buf, sg_coder_buf_len / sizeof(XMLCh),
 						       read_count, sg_coder_counts);

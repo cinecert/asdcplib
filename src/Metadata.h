@@ -683,6 +683,26 @@ namespace ASDCP
 	  virtual Result_t WriteToBuffer(ASDCP::FrameBuffer&);
 	};
 
+      //
+      class NetworkLocator : public InterchangeObject
+	{
+	  ASDCP_NO_COPY_CONSTRUCT(NetworkLocator);
+	  NetworkLocator();
+
+	public:
+	  const Dictionary*& m_Dict;
+          UTF16String URLString;
+
+  NetworkLocator(const Dictionary*& d) : InterchangeObject(d), m_Dict(d) {}
+	  virtual ~NetworkLocator() {}
+          virtual const char* HasName() { return "NetworkLocator"; }
+          virtual Result_t InitFromTLVSet(TLVReader& TLVSet);
+          virtual Result_t WriteToTLVSet(TLVWriter& TLVSet);
+	  virtual void     Dump(FILE* = 0);
+	  virtual Result_t InitFromBuffer(const byte_t* p, ui32_t l);
+	  virtual Result_t WriteToBuffer(ASDCP::FrameBuffer&);
+	};
+
     } // namespace MXF
 } // namespace ASDCP
 

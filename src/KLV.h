@@ -150,7 +150,7 @@ inline const char* ui64sz(ui64_t i, char* buf)
       Dictionary();
       ~Dictionary();
 
-      bool operator==(const Dictionary& rhs) const { return this == &rhs; }
+      //      bool operator==(const Dictionary& rhs) const { return this == &rhs; }
 
       void Init();
       bool AddEntry(const MDDEntry& Entry, ui32_t index);
@@ -201,6 +201,15 @@ inline const char* ui64sz(ui64_t i, char* buf)
 	return m_KLLength + m_ValueLength;
       }
 
+      ui32_t   ValueLength() {
+	return m_ValueLength;
+      }
+
+      ui32_t   KLLength() {
+	return m_KLLength;
+      }
+
+      virtual UL       GetUL();
       virtual bool     HasUL(const byte_t*);
       virtual Result_t InitFromBuffer(const byte_t*, ui32_t);
       virtual Result_t InitFromBuffer(const byte_t*, ui32_t, const UL& label);

@@ -548,6 +548,9 @@ ASDCP::h__Writer::WriteEKLVPacket(const ASDCP::FrameBuffer& FrameBuf, const byte
 	    {
 	      BER_length = Kumu::get_BER_length_for_value(ETLength);
 
+	      // the packet is longer by the difference in expected vs. actual BER length
+	      ETLength += BER_length - MXF_BER_LENGTH;
+
 	      if ( BER_length == 0 )
 		result = RESULT_KLV_CODING;
 	    }

@@ -68,6 +68,7 @@ static InterchangeObject* GenericDataEssenceDescriptor_Factory(const Dictionary*
 static InterchangeObject* TimedTextDescriptor_Factory(const Dictionary*& Dict) { return new TimedTextDescriptor(Dict); }
 static InterchangeObject* TimedTextResourceSubDescriptor_Factory(const Dictionary*& Dict) { return new TimedTextResourceSubDescriptor(Dict); }
 static InterchangeObject* StereoscopicPictureSubDescriptor_Factory(const Dictionary*& Dict) { return new StereoscopicPictureSubDescriptor(Dict); }
+static InterchangeObject* NetworkLocator_Factory(const Dictionary*& Dict) { return new NetworkLocator(Dict); }
 
 
 void
@@ -102,6 +103,7 @@ ASDCP::MXF::Metadata_InitTypes(const Dictionary*& Dict)
   SetObjectFactory(Dict->ul(MDD_TimedTextDescriptor), TimedTextDescriptor_Factory);
   SetObjectFactory(Dict->ul(MDD_TimedTextResourceSubDescriptor), TimedTextResourceSubDescriptor_Factory);
   SetObjectFactory(Dict->ul(MDD_StereoscopicPictureSubDescriptor), StereoscopicPictureSubDescriptor_Factory);
+  SetObjectFactory(Dict->ul(MDD_NetworkLocator), NetworkLocator_Factory);
 }
 
 //------------------------------------------------------------------------------------------
@@ -1846,6 +1848,61 @@ StereoscopicPictureSubDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 {
   assert(m_Dict);
   m_Typeinfo = &(m_Dict->Type(MDD_StereoscopicPictureSubDescriptor));
+  return InterchangeObject::WriteToBuffer(Buffer);
+}
+
+//------------------------------------------------------------------------------------------
+// NetworkLocator
+
+//
+ASDCP::Result_t
+NetworkLocator::InitFromTLVSet(TLVReader& TLVSet)
+{
+  assert(m_Dict);
+  Result_t result = InterchangeObject::InitFromTLVSet(TLVSet);
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(NetworkLocator, URLString));
+  return result;
+}
+
+//
+ASDCP::Result_t
+NetworkLocator::WriteToTLVSet(TLVWriter& TLVSet)
+{
+  assert(m_Dict);
+  Result_t result = InterchangeObject::WriteToTLVSet(TLVSet);
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(NetworkLocator, URLString));
+  return result;
+}
+
+//
+void
+NetworkLocator::Dump(FILE* stream)
+{
+  char identbuf[IdentBufferLen];
+  *identbuf = 0;
+
+  if ( stream == 0 )
+    stream = stderr;
+
+  InterchangeObject::Dump(stream);
+  fprintf(stream, "  %22s = %s\n",  "URLString", URLString.EncodeString(identbuf, IdentBufferLen));
+}
+
+//
+ASDCP::Result_t
+NetworkLocator::InitFromBuffer(const byte_t* p, ui32_t l)
+{
+  assert(m_Dict);
+  m_Typeinfo = &(m_Dict->Type(MDD_NetworkLocator));
+  return InterchangeObject::InitFromBuffer(p, l);
+}
+
+//
+ASDCP::Result_t
+NetworkLocator::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
+{
+  assert(m_Dict);
+  m_Typeinfo = &(m_Dict->Type(MDD_NetworkLocator));
   return InterchangeObject::WriteToBuffer(Buffer);
 }
 

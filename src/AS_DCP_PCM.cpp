@@ -450,7 +450,6 @@ ASDCP::PCM::MXFWriter::h__Writer::SetSourceStream(const AudioDescriptor& ADesc)
 
   assert(m_Dict);
   m_ADesc = ADesc;
-  ui32_t TCFrameRate = ( ADesc.EditRate == EditRate_23_98  ) ? 24 : m_ADesc.EditRate.Numerator;
 
   Result_t result = PCM_ADesc_to_MD(m_ADesc, (WaveAudioDescriptor*)m_EssenceDescriptor);
   
@@ -462,9 +461,13 @@ ASDCP::PCM::MXFWriter::h__Writer::SetSourceStream(const AudioDescriptor& ADesc)
     }
 
   if ( ASDCP_SUCCESS(result) )
+    {
+      ui32_t TCFrameRate = ( m_ADesc.EditRate == EditRate_23_98  ) ? 24 : m_ADesc.EditRate.Numerator;
+      
       result = WriteMXFHeader(PCM_PACKAGE_LABEL, UL(m_Dict->ul(MDD_WAVWrapping)),
 			      SOUND_DEF_LABEL, UL(m_EssenceUL), UL(m_Dict->ul(MDD_SoundDataDef)),
 			      m_ADesc.EditRate, TCFrameRate, calc_CBR_frame_size(m_Info, m_ADesc));
+    }
 
   return result;
 }

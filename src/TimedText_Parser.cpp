@@ -233,9 +233,16 @@ ASDCP::TimedText::DCSubtitleParser::h__SubtitleParser::OpenRead()
 
   m_TDesc.EditRate = decode_rational(EditRate->GetBody().c_str());
 
-  if ( m_TDesc.EditRate != EditRate_24 && m_TDesc.EditRate != EditRate_48 )
+  if ( m_TDesc.EditRate != EditRate_23_98
+       && m_TDesc.EditRate != EditRate_24
+       && m_TDesc.EditRate != EditRate_25
+       && m_TDesc.EditRate != EditRate_30
+       && m_TDesc.EditRate != EditRate_48
+       && m_TDesc.EditRate != EditRate_50
+       && m_TDesc.EditRate != EditRate_60 )
     {
-      DefaultLogSink(). Error("EditRate must be 24/1 or 48/1\n");
+      DefaultLogSink(). Error("Unexpected EditRate: %d/%d\n",
+			      m_TDesc.EditRate.Numerator, m_TDesc.EditRate.Denominator);
       return RESULT_FORMAT;
     }
 
@@ -296,11 +303,11 @@ ASDCP::TimedText::DCSubtitleParser::h__SubtitleParser::OpenRead()
       return RESULT_FORMAT;
     }
 
-  // assumes 24/1 or 48/1 as constrained above
-  assert(m_TDesc.EditRate.Denominator == 1);
+  // assumes edit rate is constrained above
+  ui32_t TCFrameRate = ( m_TDesc.EditRate == EditRate_23_98  ) ? 24 : m_TDesc.EditRate.Numerator;
 
   S12MTimecode beginTC;
-  beginTC.SetFPS(m_TDesc.EditRate.Numerator);
+  beginTC.SetFPS(TCFrameRate);
   XMLElement* StartTime = m_Root.GetChildWithName("StartTime");
 
   if ( StartTime != 0 )
@@ -308,7 +315,7 @@ ASDCP::TimedText::DCSubtitleParser::h__SubtitleParser::OpenRead()
 
   for ( ei = InstanceList.begin(); ei != InstanceList.end(); ei++ )
     {
-      S12MTimecode tmpTC((*ei)->GetAttrWithName("TimeOut"), m_TDesc.EditRate.Numerator);
+      S12MTimecode tmpTC((*ei)->GetAttrWithName("TimeOut"), TCFrameRate);
       if ( end_count < tmpTC.GetFrames() )
 	end_count = tmpTC.GetFrames();
     }

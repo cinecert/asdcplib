@@ -56,6 +56,12 @@ ASDCP::KLVPacket::InitFromBuffer(const byte_t* buf, ui32_t buf_len, const UL& la
 }
 
 //
+ASDCP::UL
+ASDCP::KLVPacket::GetUL() {
+  return UL(m_KeyStart);
+}
+
+//
 ASDCP::Result_t
 ASDCP::KLVPacket::InitFromBuffer(const byte_t* buf, ui32_t buf_len)
 {

@@ -245,7 +245,8 @@ main(int argc, const char** argv)
 	{
 	  Kumu::FileReader Reader;
 	  KLVFilePacket KP;
-	  
+	  ui64_t pos = 0;
+
 	  result = Reader.OpenRead((*fi).c_str());
 	  
 	  if ( ASDCP_SUCCESS(result) )
@@ -253,7 +254,9 @@ main(int argc, const char** argv)
 	  
 	  while ( ASDCP_SUCCESS(result) )
 	    {
+	      fprintf(stdout, "@0x%08qx: ", pos);
 	      KP.Dump(stdout, DefaultCompositeDict(), true);
+	      pos = Reader.Tell();
 	      result = KP.InitFromFile(Reader);
 	    }
 	  

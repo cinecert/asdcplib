@@ -842,9 +842,13 @@ lh__Writer::SetSourceStream(const PictureDescriptor& PDesc, const std::string& l
     }
 
   if ( ASDCP_SUCCESS(result) )
+    {
+      ui32_t TCFrameRate = ( m_PDesc.EditRate == EditRate_23_98  ) ? 24 : m_PDesc.EditRate.Numerator;
+
       result = WriteMXFHeader(label, UL(m_Dict->ul(MDD_JPEG_2000Wrapping)),
 			      PICT_DEF_LABEL, UL(m_EssenceUL), UL(m_Dict->ul(MDD_PictureDataDef)),
-			      LocalEditRate, 24 /* TCFrameRate */);
+			      LocalEditRate, TCFrameRate);
+    }
 
   return result;
 }

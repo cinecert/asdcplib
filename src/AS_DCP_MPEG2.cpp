@@ -469,9 +469,13 @@ ASDCP::MPEG2::MXFWriter::h__Writer::SetSourceStream(const VideoDescriptor& VDesc
     }
 
   if ( ASDCP_SUCCESS(result) )
+    {
+      ui32_t TCFrameRate = ( m_VDesc.EditRate == EditRate_23_98  ) ? 24 : m_VDesc.EditRate.Numerator;
+
       result = WriteMXFHeader(MPEG_PACKAGE_LABEL, UL(m_Dict->ul(MDD_MPEG2_VESWrapping)), 
 			      PICT_DEF_LABEL, UL(m_EssenceUL), UL(m_Dict->ul(MDD_PictureDataDef)),
-			      m_VDesc.EditRate, 24 /* TCFrameRate */);
+			      m_VDesc.EditRate, TCFrameRate);
+    }
 
   return result;
 }

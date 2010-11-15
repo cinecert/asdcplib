@@ -112,6 +112,17 @@ utilities all respond to -h.
 
 Change History
 
+2010.11.15 - bug fixes, enhancements x1.7.40
+ o Fixed bug in long KLV packet support (Thanks to Jim R.).
+ o Fixed AvgBps in PCM files, *again*. Sorry for the crazy.
+ o More fixes and changes in support of 25, 30, 50, 60 fps.
+   (Thanks to Hans K. for the TC rate bug).
+ o Updated KLVFill UL version element to 0x02.
+ o Type change to support Xerces-C 3.x. (Thanks to Matt S.).
+ o Some internal API changes to KLV types. Does not affect
+   operation.
+ o Added NetworkLocator type to MXF metadata types.
+ o Added file offset display to klvwalk.
 
 
 2010.09.09 -  bug fixes, enhancements, v1.7.39

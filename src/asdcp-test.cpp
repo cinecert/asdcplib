@@ -176,7 +176,7 @@ Read/Write Options:\n\
                       is no label (valid for Interop only).\n\
   -L                - Write SMPTE UL values instead of MXF Interop\n\
   -p <rate>         - fps of picture when wrapping PCM or JP2K:\n\
-                      Use one of [23|24|48], 24 is default\n\
+                      Use one of [23|24|25|30|48|50|60], 24 is default\n\
   -R                - Repeat the first frame over the entire file (picture\n\
                       essence only, requires -c, -d)\n\
   -S                - Split Wave essence to stereo WAV files during extract.\n\
@@ -286,6 +286,7 @@ public:
   Rational PictureRate()
   {
     if ( picture_rate == 23 ) return EditRate_23_98;
+    if ( picture_rate == 24 ) return EditRate_24;
     if ( picture_rate == 25 ) return EditRate_25;
     if ( picture_rate == 30 ) return EditRate_30;
     if ( picture_rate == 48 ) return EditRate_48;
@@ -298,6 +299,7 @@ public:
   const char* szPictureRate()
   {
     if ( picture_rate == 23 ) return "23.976";
+    if ( picture_rate == 24 ) return "24";
     if ( picture_rate == 25 ) return "25";
     if ( picture_rate == 30 ) return "30";
     if ( picture_rate == 48 ) return "48";
@@ -1356,6 +1358,7 @@ read_PCM_file(CommandOptions& Options)
       if ( ADesc.EditRate != EditRate_23_98
 	   && ADesc.EditRate != EditRate_24
 	   && ADesc.EditRate != EditRate_25
+	   && ADesc.EditRate != EditRate_30
 	   && ADesc.EditRate != EditRate_48
 	   && ADesc.EditRate != EditRate_50
 	   && ADesc.EditRate != EditRate_60 )
