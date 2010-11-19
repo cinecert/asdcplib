@@ -101,6 +101,8 @@ blackwave - Write a WAVE file full of zeros,  Used to make filler
   tracks (though you would be better off modifying asdcp-test if
   this is a common use case).
 
+j2c-test - Displays information about JP2K codestreams.
+
 
 Documentation
 
@@ -163,7 +165,7 @@ Change History
    the library are incompatible with this and future versions.
  o Fixed File Package TrackNumber values. Thanks to Sankar.
  o Added edit rate constants to AS_DCP.h (25, 30, 50, 60).
- o Changed AudioDescriptor "SampelRate" element name to "EditRate"
+ o Changed AudioDescriptor "SampleRate" element name to "EditRate"
    to make it consistent with the other types.
  o Now builds with XercesC 3.x.
  o KM_memio.h has better const behavior.
