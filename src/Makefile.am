@@ -187,10 +187,10 @@ TESTS_ENVIRONMENT = BUILD_DIR="." TEST_FILES=../tests TEST_FILE_PREFIX=DCPd1-M1 
 EXTRA_DIST = fips-186-test-harness.pl $(TESTS)
 if !FREEDIST
 if DEV_HEADERS
-EXTRA_DIST += $(nodist_libasdcp_la_SOURCES) $(nodist_tt_xform_SOURCES) $(nodist_napali_la_SOURCES)
+EXTRA_DIST += $(nodist_libasdcp_la_SOURCES) $(nodist_tt_xform_SOURCES) $(nodist_napali_la_SOURCES) $(nodist_libnapali_la_SOURCES)
 endif
 if PYTHON_USE
-EXTRA_DIST += $(nodist_pyexec_include_HEADERS) $(nodist_libpyasdcp_la_SOURCES) $(nodist_kumu_la_SOURCES) $(nodist_asdcp_la_SOURCES) $(nodist_napali_la_SOURCES)
+EXTRA_DIST += $(nodist_pyexec_include_HEADERS) $(nodist_libpyasdcp_la_SOURCES) $(nodist_kumu_la_SOURCES) $(nodist_asdcp_la_SOURCES) $(nodist_napali_la_SOURCES) $(nodist_libnapali_la_SOURCES)
 endif
 endif
 
