@@ -58,10 +58,13 @@ struct map_entry_t
   Kumu::Result_t* result;
 };
 
-const ui32_t MapMax = 2048;
 
-static Kumu::Mutex s_MapLock;
+// WIN32 does not init this in time for use with Result_t(...) below, so it is
+// now a pointer that Result_t(...) fills in when it needs it.
+static Kumu::Mutex* s_MapLock = 0;
+
 static ui32_t s_MapSize = 0;
+static const ui32_t MapMax = 2048;
 static struct map_entry_t s_ResultMap[MapMax];
 
 
@@ -72,7 +75,8 @@ Kumu::Result_t::Find(int v)
   if ( v == 0 )
     return RESULT_OK;
 
-  AutoMutex L(s_MapLock);
+  assert(s_MapLock);
+  AutoMutex L(*s_MapLock);
 
   for ( ui32_t i = 0; i < s_MapSize; ++i )
     {
@@ -93,7 +97,8 @@ Kumu::Result_t::Delete(int v)
       return RESULT_FAIL;
     }
 
-  AutoMutex L(s_MapLock);
+  assert(s_MapLock);
+  AutoMutex L(*s_MapLock);
 
   for ( ui32_t i = 0; i < s_MapSize; ++i )
     {
@@ -133,7 +138,15 @@ Kumu::Result_t::Result_t(int v, const char* s, const char* l) : value(v), symbol
   if ( v == 0 )
     return;
 
-  AutoMutex L(s_MapLock);
+  // This may seem tricky, but it is certain that the static values declared in KM_error.h will
+  // be created (and thus this method will be called) before main(...) is called.  It is not
+  // until then that threads could be created, thus the mutex will exist before multi-threaded
+  // access could occur.
+  if ( s_MapLock == 0 )
+    s_MapLock = new Kumu::Mutex;
+
+  assert(s_MapLock);
+  AutoMutex L(*s_MapLock);
 
   for ( ui32_t i = 0; i < s_MapSize; ++i )
     {
