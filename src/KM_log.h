@@ -40,6 +40,9 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <errno.h>
 #include <iosfwd>
 
+#include <atlbase.h>
+#include <atlcom.h>
+
 #define LOG_MSG_IMPL(t) \
   va_list args; \
   va_start(args, fmt); \
