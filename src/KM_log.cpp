@@ -116,6 +116,8 @@ Kumu::StdioLogSink::WriteEntry(const LogEntry& Entry)
 
 #ifdef KM_WIN32
 //
+// http://www.codeguru.com/forum/showthread.php?t=231165
+//
 void
 Kumu::WinDbgLogSink::WriteEntry(const LogEntry& Entry)
 {
@@ -125,7 +127,20 @@ Kumu::WinDbgLogSink::WriteEntry(const LogEntry& Entry)
   if ( Entry.TestFilter(m_filter) )
     {
       Entry.CreateStringWithOptions(buf, m_options);
-      ::OutputDebugString(buf.c_str());
+      int lenW = ::MultiByteToWideChar(CP_ACP, 0, buf.c_str(), buf.size(), 0, 0);
+
+      if ( lenW > 0 )
+	{
+	  // Check whether conversion was successful
+	  BSTR unicodestr = ::SysAllocStringLen(0, lenW);
+	  ::MultiByteToWideChar(CP_ACP, 0, buf.c_str(), buf.size(), unicodestr, lenW);
+	  ::OutputDebugString(unicodestr);
+	  ::SysFreeString(unicodestr);
+	}
+      else
+	{
+	  ::OutputDebugString(L("MultiByteToWideChar failed, log sink output discarded.\n"));
+	}
     }
 }
 #endif
