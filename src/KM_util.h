@@ -221,7 +221,7 @@ namespace Kumu
       bool Archive(Kumu::MemIOWriter* Writer) const
 	{
 	  if ( Writer == 0 ) return false;
-	  if ( ! Writer->WriteUi32BE(this->size()) ) return false;
+	  if ( ! Writer->WriteUi32BE(static_cast<ui32_t>(this->size())) ) return false;
 	  typename ArchivableList<T>::const_iterator i = this->begin();
 	  for ( ; i != this->end(); i++ )
 	    if ( ! i->Archive(Writer) ) return false;
@@ -243,7 +243,7 @@ namespace Kumu
       virtual ~ArchivableString() {}
 
       bool   HasValue() const { return ! this->empty(); }
-      ui32_t ArchiveLength() const { return sizeof(ui32_t) + this->size(); }
+      ui32_t ArchiveLength() const { return static_cast<ui32_t>((sizeof(ui32_t) + this->size())|0xffffffff); }
 
       bool   Archive(MemIOWriter* Writer) const {
 	if ( Writer == 0 ) return false;
