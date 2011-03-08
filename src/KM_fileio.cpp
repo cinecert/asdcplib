@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2004-2009, John Hurst
+Copyright (c) 2004-2011, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -37,6 +37,10 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #ifdef KM_WIN32
 #include <direct.h>
+#else
+#define _getcwd getcwd
+#define _unlink unlink
+#define _rmdir rmdir
 #endif
 
 using namespace Kumu;

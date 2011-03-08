@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2004-2009, John Hurst
+Copyright (c) 2004-2011, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -126,7 +126,7 @@ Kumu::WinDbgLogSink::WriteEntry(const LogEntry& Entry)
 
   if ( Entry.TestFilter(m_filter) )
     {
-
+      Entry.CreateStringWithOptions(buf, m_options);
       ::OutputDebugStringA(buf.c_str());
     }
 }
