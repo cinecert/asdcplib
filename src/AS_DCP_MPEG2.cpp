@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2004-2010, John Hurst
+Copyright (c) 2004-2011, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -174,6 +174,7 @@ public:
   Result_t    ReadFrame(ui32_t, FrameBuffer&, AESDecContext*, HMACContext*);
   Result_t    ReadFrameGOPStart(ui32_t, FrameBuffer&, AESDecContext*, HMACContext*);
   Result_t    FindFrameGOPStart(ui32_t, ui32_t&);
+  Result_t    FrameType(ui32_t FrameNum, FrameType_t& type);
 };
 
 
@@ -242,6 +243,26 @@ ASDCP::MPEG2::MXFReader::h__Reader::FindFrameGOPStart(ui32_t FrameNum, ui32_t& K
 
   KeyFrameNum = FrameNum - TmpEntry.KeyFrameOffset;
 
+  return RESULT_OK;
+}
+
+//
+ASDCP::Result_t
+ASDCP::MPEG2::MXFReader::h__Reader::FrameType(ui32_t FrameNum, FrameType_t& type)
+{
+  if ( ! m_File.IsOpen() )
+    return RESULT_INIT;
+
+  // look up frame index node
+  IndexTableSegment::IndexEntry TmpEntry;
+
+  if ( ASDCP_FAILURE(m_FooterPart.Lookup(FrameNum, TmpEntry)) )
+    {
+      DefaultLogSink().Error("Frame value out of range: %u\n", FrameNum);
+      return RESULT_RANGE;
+    }
+
+  type = ( (TmpEntry.Flags & 0x0f) == 3 ) ? FRAME_B : ( (TmpEntry.Flags & 0x0f) == 2 ) ? FRAME_P : FRAME_I;
   return RESULT_OK;
 }
 
@@ -401,6 +422,29 @@ ASDCP::MPEG2::MXFReader::DumpIndex(FILE* stream) const
 {
   if ( m_Reader->m_File.IsOpen() )
     m_Reader->m_FooterPart.Dump(stream);
+}
+
+//
+ASDCP::Result_t
+ASDCP::MPEG2::MXFReader::Close() const
+{
+  if ( m_Reader && m_Reader->m_File.IsOpen() )
+    {
+      m_Reader->Close();
+      return RESULT_OK;
+    }
+
+  return RESULT_INIT;
+}
+
+//
+ASDCP::Result_t
+ASDCP::MPEG2::MXFReader::FrameType(ui32_t FrameNum, FrameType_t& type) const
+{
+  if ( ! m_Reader )
+    return RESULT_INIT;
+
+  return m_Reader->FrameType(FrameNum, type);
 }
 
 

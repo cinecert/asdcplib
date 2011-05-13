@@ -970,6 +970,16 @@ Kumu::Timestamp::Timestamp(const Timestamp& rhs) : IArchive()
   Second = rhs.Second;
 }
 
+//
+Kumu::Timestamp::Timestamp(const char* datestr) : IArchive()
+{
+  if ( ! DecodeString(datestr) )
+    {
+      *this = Timestamp();
+    }
+}
+
+//
 Kumu::Timestamp::~Timestamp()
 {
 }

@@ -498,6 +498,19 @@ ASDCP::JP2K::MXFReader::DumpIndex(FILE* stream) const
     m_Reader->m_FooterPart.Dump(stream);
 }
 
+//
+ASDCP::Result_t
+ASDCP::JP2K::MXFReader::Close() const
+{
+  if ( m_Reader && m_Reader->m_File.IsOpen() )
+    {
+      m_Reader->Close();
+      return RESULT_OK;
+    }
+
+  return RESULT_INIT;
+}
+
 
 //------------------------------------------------------------------------------------------
 
@@ -674,6 +687,20 @@ ASDCP::JP2K::MXFSReader::DumpIndex(FILE* stream) const
   if ( m_Reader->m_File.IsOpen() )
     m_Reader->m_FooterPart.Dump(stream);
 }
+
+//
+ASDCP::Result_t
+ASDCP::JP2K::MXFSReader::Close() const
+{
+  if ( m_Reader && m_Reader->m_File.IsOpen() )
+    {
+      m_Reader->Close();
+      return RESULT_OK;
+    }
+
+  return RESULT_INIT;
+}
+
 
 //------------------------------------------------------------------------------------------
 

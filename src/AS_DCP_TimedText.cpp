@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2008-2009, John Hurst
+Copyright (c) 2008-2011, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -430,6 +430,20 @@ ASDCP::TimedText::MXFReader::DumpIndex(FILE* stream) const
   if ( m_Reader->m_File.IsOpen() )
     m_Reader->m_FooterPart.Dump(stream);
 }
+
+//
+ASDCP::Result_t
+ASDCP::TimedText::MXFReader::Close() const
+{
+  if ( m_Reader && m_Reader->m_File.IsOpen() )
+    {
+      m_Reader->Close();
+      return RESULT_OK;
+    }
+
+  return RESULT_INIT;
+}
+
 
 //------------------------------------------------------------------------------------------
 

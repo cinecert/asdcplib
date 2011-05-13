@@ -106,6 +106,7 @@ inline const char* ui64sz(ui64_t i, char* buf)
       virtual ~UL() {}
 
       const char* EncodeString(char* str_buf, ui32_t buf_len) const;
+      bool operator==(const UL& rhs) const;
     };
 
   // UMID

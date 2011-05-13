@@ -373,6 +373,19 @@ ASDCP::PCM::MXFReader::DumpIndex(FILE* stream) const
     m_Reader->m_FooterPart.Dump(stream);
 }
 
+//
+ASDCP::Result_t
+ASDCP::PCM::MXFReader::Close() const
+{
+  if ( m_Reader && m_Reader->m_File.IsOpen() )
+    {
+      m_Reader->Close();
+      return RESULT_OK;
+    }
+
+  return RESULT_INIT;
+}
+
 
 //------------------------------------------------------------------------------------------
 

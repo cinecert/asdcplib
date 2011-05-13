@@ -114,13 +114,30 @@ utilities all respond to -h.
 
 Change History
 
+new stuff:
+ o UL version byte now ignored when comparing UL values.
+ o JP2K Sequence Parser modified to skip directory entries that
+   are not files in the case where the parser is initialized with
+   a directory path.  When initialized with a list of file names
+   this check is not performed.  Based on a hint by Steve Q.
+ o Added missing FrameType() implementation to ASDCP::MPEG2::MXFReader.
+ o Added missing Close() implementations to MXF reader classes.
+ o Added missing Timestamp::Timestamp(const char* datestr)
+   implementation. (Thanks to Matt Sheby for this and the previous
+   item)
+
+
+
+
+
+
 2010.11.15 - bug fixes, enhancements v1.7.40
- o Fixed bug in long KLV packet support (Thanks to Jim R.).
+ o Fixed bug in long KLV packet support (Thanks to Jim Radford).
  o Fixed AvgBps in PCM files, *again*. Sorry for the crazy.
  o More fixes and changes in support of 25, 30, 50, 60 fps.
    (Thanks to Hans K. for the TC rate bug).
  o Updated KLVFill UL version element to 0x02.
- o Type change to support Xerces-C 3.x. (Thanks to Matt S.).
+ o Type change to support Xerces-C 3.x. (Thanks to Matt Sheby).
  o Some internal API changes to KLV types. Does not affect
    operation.
  o Added NetworkLocator type to MXF metadata types.

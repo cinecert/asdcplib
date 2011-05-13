@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2004-2009, John Hurst
+Copyright (c) 2004-2011, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -78,7 +78,9 @@ public:
 	    std::string Str(m_DirName);
 	    Str += "/";
 	    Str += next_file;
-	    push_back(Str);
+
+	    if ( ! Kumu::PathIsDirectory(Str) )
+	      push_back(Str);
 	  }
 
 	sort();
