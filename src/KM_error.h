@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2004-2010, John Hurst
+Copyright (c) 2004-2011, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -34,7 +34,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef _KM_ERROR_H_
 #define _KM_ERROR_H_
 
-#define KM_DECLARE_RESULT(sym, i, l) const Result_t RESULT_##sym(i, #sym, l);
+#define KM_DECLARE_RESULT(sym, i, l) const Result_t RESULT_##sym = Result_t(i, #sym, l);
 
 namespace Kumu
 {

@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2003-2010, John Hurst
+Copyright (c) 2003-2011, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -34,20 +34,20 @@ D-Cinema Technology Committee 21DC. The file format, labeled AS-DCP,
 is described in series of separate documents which include but may not
 be be limited to:
 
- o SMPTE 429-2-2009 DCP Operational Constraints
- o SMPTE 429-3-2006 Track File Specification
- o SMPTE 429-4-2006 JPEG 2000 for D-Cinema
- o SMPTE 429-5-2009 Timed Text Track File
- o SMPTE 429-6-2006 Essence Encryption Specification
- o SMPTE 429-10-2008 Stereoscopic Image Track File
- o SMPTE 330M - UMID
- o SMPTE 336M - KLV
- o SMPTE 377M - MXF
- o SMPTE 390M - OP-Atom
- o SMPTE 379M - Generic Container
- o SMPTE 381M - MPEG2 picture
- o SMPTE 422M - JPEG 2000 picture
- o SMPTE 382M - WAV/PCM sound
+ o SMPTE ST 429-2:2009 DCP Operational Constraints
+ o SMPTE ST 429-3:2006 Track File Specification
+ o SMPTE ST 429-4:2006 JPEG 2000 for D-Cinema
+ o SMPTE ST 429-5:2009 Timed Text Track File
+ o SMPTE ST 429-6:2006 Essence Encryption
+ o SMPTE ST 429-10:2008 Stereoscopic Image Track File
+ o SMPTE ST 330:2004 - UMID
+ o SMPTE ST 336:2001 - KLV
+ o SMPTE ST 377:2000 - MXF
+ o SMPTE ST 390:2004 - MXF OP-Atom
+ o SMPTE ST 379:2004 - MXF Generic Container (GC)
+ o SMPTE ST 381:2005 - MPEG2 picture in GC
+ o SMPTE ST 422:2006 - JPEG 2000 picture in GC
+ o SMPTE ST 382:2007 - WAV/PCM sound in GC
  o IETF RFC 2104 - HMAC/SHA1
  o NIST FIPS 197 - AES (Rijndael)
 
@@ -79,7 +79,7 @@ This project depends upon the following libraries:
  - OpenSSL http://www.openssl.org/
  - Expat http://expat.sourceforge.net/  or
      Xerces-C http://xerces.apache.org/xerces-c/
-   An XML library is not needed if you don't need support for SMPTE 429-5-2009.
+   An XML library is not needed if you don't need support for SMPTE ST 429-5:2009.
 */
 
 #ifndef _AS_DCP_H_
@@ -261,19 +261,19 @@ namespace ASDCP {
   };
 
   // common edit rates, use these instead of hard coded constants
-  const Rational EditRate_24(24,1);
-  const Rational EditRate_23_98(24000,1001); // Not a DCI-compliant value!
-  const Rational EditRate_48(48,1);
-  const Rational SampleRate_48k(48000,1);
-  const Rational SampleRate_96k(96000,1);
+  const Rational EditRate_24 = Rational(24,1);
+  const Rational EditRate_23_98 = Rational(24000,1001); // Not a DCI-compliant value!
+  const Rational EditRate_48 = Rational(48,1);
+  const Rational SampleRate_48k = Rational(48000,1);
+  const Rational SampleRate_96k = Rational(96000,1);
 
-  // Additional frame rates, see ST 428-11
+  // Additional frame rates, see ST 428-11, ST 429-13
   // These rates are new and not supported by all systems. Do not assume that
-  // a package made using on of these rates will work just anywhere!
-  const Rational EditRate_25(25,1);
-  const Rational EditRate_30(30,1);
-  const Rational EditRate_50(50,1);
-  const Rational EditRate_60(60,1);
+  // a package made using one of these rates will work just anywhere!
+  const Rational EditRate_25 = Rational(25,1);
+  const Rational EditRate_30 = Rational(30,1);
+  const Rational EditRate_50 = Rational(50,1);
+  const Rational EditRate_60 = Rational(60,1);
 
   // Non-reference counting container for internal member objects.
   // Please do not use this class for any other purpose.
