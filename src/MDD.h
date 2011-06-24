@@ -312,7 +312,13 @@ namespace ASDCP {
 	MDD_Core_IndexSID, // 274
 	MDD_Core_OperationalPattern, // 275
 	MDD_Core_EssenceContainers, // 276
+	MDD_DCAudioChannelCfg_1_5p1, // 277
+	MDD_DCAudioChannelCfg_2_6p1, // 278
+	MDD_DCAudioChannelCfg_3_7p1, // 279
+	MDD_DCAudioChannelCfg_4_WTF, // 280
+	MDD_DCAudioChannelCfg_5_7p1_DS, // 281
 	MDD_Max
+
     }; // enum MDD_t
 
     //

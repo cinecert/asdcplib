@@ -64,6 +64,31 @@ ASDCP::UL::operator==(const UL& rhs) const
 }
 
 
+bool
+ASDCP::UL::ExactMatch(const UL& rhs) const
+{
+  if ( m_Value[0] == rhs.m_Value[0] &&
+       m_Value[1] == rhs.m_Value[1] &&
+       m_Value[2] == rhs.m_Value[2] &&
+       m_Value[3] == rhs.m_Value[3] &&
+       m_Value[4] == rhs.m_Value[4] &&
+       m_Value[5] == rhs.m_Value[5] &&
+       m_Value[6] == rhs.m_Value[6] &&
+       m_Value[7] == rhs.m_Value[7] &&
+       m_Value[8] == rhs.m_Value[8] &&
+       m_Value[9] == rhs.m_Value[9] &&
+       m_Value[10] == rhs.m_Value[10] &&
+       m_Value[11] == rhs.m_Value[11] &&
+       m_Value[12] == rhs.m_Value[12] &&
+       m_Value[13] == rhs.m_Value[13] &&
+       m_Value[14] == rhs.m_Value[14] &&
+       m_Value[15] == rhs.m_Value[15]
+       )
+    return true;
+
+  return false;
+}
+
 const char*
 ASDCP::UL::EncodeString(char* str_buf, ui32_t buf_len) const
 {

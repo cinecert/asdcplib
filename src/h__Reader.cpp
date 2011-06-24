@@ -63,12 +63,10 @@ ASDCP::h__Reader::InitInfo()
   InterchangeObject* Object;
 
   m_Info.LabelSetType = LS_MXF_UNKNOWN;
-  UL OPAtomUL(SMPTE_390_OPAtom_Entry().ul);
-  UL Interop_OPAtomUL(MXFInterop_OPAtom_Entry().ul);
 
-  if ( m_HeaderPart.OperationalPattern == Interop_OPAtomUL )
+  if ( m_HeaderPart.OperationalPattern.ExactMatch(MXFInterop_OPAtom_Entry().ul) )
     m_Info.LabelSetType = LS_MXF_INTEROP;
-  else if ( m_HeaderPart.OperationalPattern == OPAtomUL )
+  else if ( m_HeaderPart.OperationalPattern.ExactMatch(SMPTE_390_OPAtom_Entry().ul) )
     m_Info.LabelSetType = LS_MXF_SMPTE;
 
   // Identification

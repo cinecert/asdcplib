@@ -39,15 +39,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 static std::string PCM_PACKAGE_LABEL = "File Package: SMPTE 382M frame wrapping of wave audio";
 static std::string SOUND_DEF_LABEL = "Sound Track";
 
-static byte_t SNDFMT_CFG_1_UL[16] = { 0x06, 0x0e, 0x2b, 0x34, 0x04, 0x01, 0x01, 0x0b,
-				      0x04, 0x02, 0x02, 0x10, 0x03, 0x01, 0x01, 0x00 };
-
-static byte_t SNDFMT_CFG_2_UL[16] = { 0x06, 0x0e, 0x2b, 0x34, 0x04, 0x01, 0x01, 0x0b,
-				      0x04, 0x02, 0x02, 0x10, 0x03, 0x01, 0x02, 0x00 };
-
-static byte_t SNDFMT_CFG_3_UL[16] = { 0x06, 0x0e, 0x2b, 0x34, 0x04, 0x01, 0x01, 0x0b,
-				      0x04, 0x02, 0x02, 0x10, 0x03, 0x01, 0x03, 0x00 };
-
 //
 Result_t
 PCM_ADesc_to_MD(PCM::AudioDescriptor& ADesc, MXF::WaveAudioDescriptor* ADescObj)
@@ -68,15 +59,23 @@ PCM_ADesc_to_MD(PCM::AudioDescriptor& ADesc, MXF::WaveAudioDescriptor* ADescObj)
   switch ( ADesc.ChannelFormat )
     {
       case PCM::CF_CFG_1:
-	ADescObj->ChannelAssignment = UL(SNDFMT_CFG_1_UL);
+	ADescObj->ChannelAssignment = DefaultSMPTEDict().Type(MDD_DCAudioChannelCfg_1_5p1).ul;
 	break;
 
       case PCM::CF_CFG_2:
-	ADescObj->ChannelAssignment = UL(SNDFMT_CFG_2_UL);
+	ADescObj->ChannelAssignment = DefaultSMPTEDict().Type(MDD_DCAudioChannelCfg_2_6p1).ul;
 	break;
 
       case PCM::CF_CFG_3:
-	ADescObj->ChannelAssignment = UL(SNDFMT_CFG_3_UL);
+	ADescObj->ChannelAssignment = DefaultSMPTEDict().Type(MDD_DCAudioChannelCfg_3_7p1).ul;
+	break;
+
+      case PCM::CF_CFG_4:
+	ADescObj->ChannelAssignment = DefaultSMPTEDict().Type(MDD_DCAudioChannelCfg_4_WTF).ul;
+	break;
+
+      case PCM::CF_CFG_5:
+	ADescObj->ChannelAssignment = DefaultSMPTEDict().Type(MDD_DCAudioChannelCfg_5_7p1_DS).ul;
 	break;
     }
 
@@ -103,14 +102,20 @@ MD_to_PCM_ADesc(MXF::WaveAudioDescriptor* ADescObj, PCM::AudioDescriptor& ADesc)
 
   if ( ADescObj->ChannelAssignment.HasValue() )
     {
-      if ( ADescObj->ChannelAssignment == UL(SNDFMT_CFG_1_UL) )
+      if ( ADescObj->ChannelAssignment == DefaultSMPTEDict().Type(MDD_DCAudioChannelCfg_1_5p1).ul )
 	ADesc.ChannelFormat = PCM::CF_CFG_1;
 
-      else if ( ADescObj->ChannelAssignment == UL(SNDFMT_CFG_2_UL) )
+      else if ( ADescObj->ChannelAssignment == DefaultSMPTEDict().Type(MDD_DCAudioChannelCfg_2_6p1).ul )
 	ADesc.ChannelFormat = PCM::CF_CFG_2;
 
-      else if ( ADescObj->ChannelAssignment == UL(SNDFMT_CFG_3_UL) )
+      else if ( ADescObj->ChannelAssignment == DefaultSMPTEDict().Type(MDD_DCAudioChannelCfg_3_7p1).ul )
 	ADesc.ChannelFormat = PCM::CF_CFG_3;
+
+      else if ( ADescObj->ChannelAssignment == DefaultSMPTEDict().Type(MDD_DCAudioChannelCfg_4_WTF).ul )
+	ADesc.ChannelFormat = PCM::CF_CFG_4;
+
+      else if ( ADescObj->ChannelAssignment == DefaultSMPTEDict().Type(MDD_DCAudioChannelCfg_5_7p1_DS).ul )
+	ADesc.ChannelFormat = PCM::CF_CFG_5;
     }
 
   return RESULT_OK;

@@ -792,7 +792,9 @@ namespace ASDCP {
 	CF_NONE,
 	CF_CFG_1, // 5.1 with optional HI/VI
 	CF_CFG_2, // 6.1 (5.1 + center surround) with optional HI/VI
-	CF_CFG_3, // 7.1 with optional HI/VI
+	CF_CFG_3, // 7.1 (SDDS) with optional HI/VI
+	CF_CFG_4, // Wild Track Format
+	CF_CFG_5, // 7.1 DS with optional HI/VI
       };
 
       struct AudioDescriptor

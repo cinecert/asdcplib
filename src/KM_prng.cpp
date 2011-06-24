@@ -163,6 +163,7 @@ Kumu::FortunaRNG::FillRandom(byte_t* buf, ui32_t len)
 {
   assert(buf);
   assert(s_RNG);
+  const byte_t* front_of_buffer = buf;
 
   while ( len )
     {
@@ -179,7 +180,7 @@ Kumu::FortunaRNG::FillRandom(byte_t* buf, ui32_t len)
       s_RNG->set_key(rng_key);
   }
   
-  return buf;
+  return front_of_buffer;
 }
 
 //

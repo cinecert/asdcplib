@@ -172,8 +172,8 @@ Read/Write Options:\n\
   -d <duration>     - Number of frames to process, default all\n\
   -f <start-frame>  - Starting frame number, default 0\n\
   -l <label>        - Use given channel format label when writing MXF sound\n\
-                      files. SMPTE 429-2 labels: '5.1', '6.1', '7.1'. Default\n\
-                      is no label (valid for Interop only).\n\
+                      files. SMPTE 429-2 labels: '5.1', '6.1', '7.1', '7.1DS', 'WTF'.\n\
+                      Default is no label (valid for Interop only).\n\
   -L                - Write SMPTE UL values instead of MXF Interop\n\
   -p <rate>         - fps of picture when wrapping PCM or JP2K:\n\
                       Use one of [23|24|25|30|48|50|60], 24 is default\n\
@@ -234,8 +234,14 @@ decode_channel_fmt(const std::string& label_name)
   else if ( label_name == "7.1" )
     return PCM::CF_CFG_3;
 
+  else if ( label_name == "WTF" )
+    return PCM::CF_CFG_4;
+
+  else if ( label_name == "7.1DS" )
+    return PCM::CF_CFG_5;
+
   fprintf(stderr, "Error decoding channel format string: %s\n", label_name.c_str());
-  fprintf(stderr, "Expecting '5.1', '6.1', or '7.1'\n");
+  fprintf(stderr, "Expecting '5.1', '6.1', '7.1', '7.1DS' or 'WTF'\n");
   return PCM::CF_NONE;
 }
 
