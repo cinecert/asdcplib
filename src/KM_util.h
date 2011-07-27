@@ -519,6 +519,11 @@ namespace Kumu
       }
     };
 
+  inline void hexdump(const ByteString& buf, FILE* stream = 0) {
+    hexdump(buf.RoData(), buf.Length());
+  }
+
+
 } // namespace Kumu
 
 

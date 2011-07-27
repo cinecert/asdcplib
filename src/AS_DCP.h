@@ -274,6 +274,9 @@ namespace ASDCP {
   const Rational EditRate_30 = Rational(30,1);
   const Rational EditRate_50 = Rational(50,1);
   const Rational EditRate_60 = Rational(60,1);
+  const Rational EditRate_96 = Rational(96,1);
+  const Rational EditRate_100 = Rational(100,1);
+  const Rational EditRate_120 = Rational(120,1);
 
   // Non-reference counting container for internal member objects.
   // Please do not use this class for any other purpose.

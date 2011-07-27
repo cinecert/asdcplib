@@ -499,7 +499,7 @@ xph_namespace_start(void* p, const XML_Char* ns_prefix, const XML_Char* ns_name)
 
 //
 bool
-Kumu::XMLElement::ParseString(const std::string& document)
+Kumu::XMLElement::ParseString(const char* document, ui32_t doc_len)
 {
   XML_Parser Parser = XML_ParserCreateNS("UTF-8", '|');
 
@@ -515,7 +515,7 @@ Kumu::XMLElement::ParseString(const std::string& document)
   XML_SetCharacterDataHandler(Parser, xph_char);
   XML_SetStartNamespaceDeclHandler(Parser, xph_namespace_start);
 
-  if ( ! XML_Parse(Parser, document.c_str(), document.size(), 1) )
+  if ( ! XML_Parse(Parser, document, doc_len, 1) )
     {
       XML_ParserFree(Parser);
       DefaultLogSink().Error("XML Parse error on line %d: %s\n",
@@ -878,9 +878,9 @@ public:
 
 //
 bool
-Kumu::XMLElement::ParseString(const std::string& document)
+Kumu::XMLElement::ParseString(const char* document, ui32_t doc_len)
 {
-  if ( document.empty() )
+  if ( doc_len == 0 )
     return false;
 
   init_xml_dom();
@@ -897,8 +897,8 @@ Kumu::XMLElement::ParseString(const std::string& document)
 
   try
     {
-      MemBufInputSource xmlSource(reinterpret_cast<const XMLByte*>(document.c_str()),
-				  static_cast<const unsigned int>(document.size()),
+      MemBufInputSource xmlSource(reinterpret_cast<const XMLByte*>(document),
+				  static_cast<const unsigned int>(doc_len),
 				  "pidc_rules_file");
 
       parser->parse(xmlSource);

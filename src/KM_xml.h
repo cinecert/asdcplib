@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2005-2009, John Hurst
+Copyright (c) 2005-2011, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -96,13 +96,16 @@ namespace Kumu
       inline const XMLNamespace* Namespace() const { return m_Namespace; }
       inline void                SetNamespace(const XMLNamespace* ns) { assert(ns); m_Namespace = ns; }
 
-      bool        ParseString(const std::string& document);
+      bool        ParseString(const char* document, ui32_t doc_len);
+      bool        ParseString(const ByteString& document) { return ParseString((const char*)document.RoData(), document.Length()); }
+      bool        ParseString(const std::string& document) { return ParseString(document.c_str(), document.size()); }
 
       // building
       void        SetName(const char* name);
       void        SetBody(const std::string& value);
       void        AppendBody(const std::string& value);
       void        SetAttr(const char* name, const char* value);
+      void        SetAttr(const char* name, const std::string& value) { SetAttr(name, value.c_str()); }
       XMLElement* AddChild(XMLElement* element);
       XMLElement* AddChild(const char* name);
       XMLElement* AddChildWithContent(const char* name, const char* value);
