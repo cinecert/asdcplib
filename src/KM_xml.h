@@ -97,8 +97,8 @@ namespace Kumu
       inline void                SetNamespace(const XMLNamespace* ns) { assert(ns); m_Namespace = ns; }
 
       bool        ParseString(const char* document, ui32_t doc_len);
-      bool        ParseString(const ByteString& document) { return ParseString((const char*)document.RoData(), document.Length()); }
-      bool        ParseString(const std::string& document) { return ParseString(document.c_str(), document.size()); }
+      bool        ParseString(const ByteString& document);
+      bool        ParseString(const std::string& document);
 
       // building
       void        SetName(const char* name);

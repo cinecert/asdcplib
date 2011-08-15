@@ -375,6 +375,20 @@ Kumu::XMLElement::ForgetChild(const XMLElement* element)
     }
 }
 
+//
+bool
+Kumu::XMLElement::ParseString(const ByteString& document)
+{
+  return ParseString((const char*)document.RoData(), document.Length());
+}
+
+//
+bool
+Kumu::XMLElement::ParseString(const std::string& document)
+{
+  return ParseString(document.c_str(), document.size());
+}
+
 
 //----------------------------------------------------------------------------------------------------
 
