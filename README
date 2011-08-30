@@ -114,21 +114,26 @@ utilities all respond to -h.
 
 Change History
 
-new stuff:
+2011-08-30 - bug fixes, enhancements v1.8.41
  o UL version byte now ignored when comparing UL values.
+ o Changed the version byte in the TimedTextEssence UL to 0x01.  There
+   is no published Essence Keys registry so it can't have a maintained
+   version number.
  o JP2K Sequence Parser modified to skip directory entries that
    are not files in the case where the parser is initialized with
    a directory path.  When initialized with a list of file names
-   this check is not performed.  Based on a hint by Steve Q.
+   this check is not performed.  Based on a hint by Steve Quartly.
+ o Increased the size of the MPEG header parser buffer.
  o Added missing FrameType() implementation to ASDCP::MPEG2::MXFReader.
  o Added missing Close() implementations to MXF reader classes.
- o Added missing Timestamp::Timestamp(const char* datestr)
-   implementation. (Thanks to Matt Sheby for this and the previous
-   item)
-
-
-
-
+ o Added missing Timestamp::Timestamp(const char* datestr) implementation.
+   (Thanks to Matt Sheby for this and the previous three items.)
+ o Fixed error in Kumu::FortunaRNG::FillRandom() that was returning the
+   end of the random buffer instead of the front (Mike Radford).
+ o Added support for proposed sound channel format identifiers
+   '7.1DS' and 'WTF'.  Optimistically chose version '0x0c'.
+ o Added support for stereoscopic images in JP2K files at edit
+   rates of 48, 50 and 60 eups (96, 100 and 120 fps).
 
 
 2010.11.15 - bug fixes, enhancements v1.7.40

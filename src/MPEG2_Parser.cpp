@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2004-2009, John Hurst
+Copyright (c) 2004-2011, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -368,7 +368,7 @@ class ASDCP::MPEG2::Parser::h__Parser
   ASDCP_NO_COPY_CONSTRUCT(h__Parser);
 
 public:
-  h__Parser() : m_TmpBuffer(VESReadSize*2) {}
+  h__Parser() : m_TmpBuffer(VESReadSize*8) {}
   ~h__Parser() { Close(); }
 
   Result_t OpenRead(const char* filename);

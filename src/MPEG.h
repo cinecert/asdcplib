@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2005-2009, John Hurst
+Copyright (c) 2005-2011, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -83,7 +83,7 @@ namespace ASDCP
 
       //
       class VESParserDelegate; // the delegate is declared later
-      const ui32_t VESHeaderBufSize = 1024*16; // should be larger than any expected header
+      const ui32_t VESHeaderBufSize = 1024*32; // should be larger than any expected header
 
       // MPEG VES parser class - call Parse() as many times as you want with buffers
       // of any size. State is maintained between calls. When complete headers are
