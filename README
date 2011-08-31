@@ -114,6 +114,10 @@ utilities all respond to -h.
 
 Change History
 
+2011-08-31 - bug fixes v1.8.42
+ o Added missing HFR support for PCM essence reader/writer.
+
+
 2011-08-30 - bug fixes, enhancements v1.8.41
  o UL version byte now ignored when comparing UL values.
  o Changed the version byte in the TimedTextEssence UL to 0x01.  There
