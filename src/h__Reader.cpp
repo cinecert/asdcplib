@@ -250,7 +250,7 @@ ASDCP::h__Reader::ReadEKLVPacket(ui32_t FrameNum, ui32_t SequenceNum, ASDCP::Fra
   m_LastPosition = m_LastPosition + Reader.KLLength() + PacketLength;
   assert(m_Dict);
 
-  if ( memcmp(Key.Value(), m_Dict->ul(MDD_CryptEssence), Key.Size() - 1) == 0 )  // ignore the stream numbers
+  if ( Key.MatchIgnoreStream(m_Dict->ul(MDD_CryptEssence)) )  // ignore the stream numbers
     {
       if ( ! m_Info.EncryptedEssence )
 	{
@@ -303,7 +303,7 @@ ASDCP::h__Reader::ReadEKLVPacket(ui32_t FrameNum, ui32_t SequenceNum, ASDCP::Fra
 	return RESULT_FORMAT;
 
       // test essence UL
-      if ( memcmp(ess_p, EssenceUL, SMPTE_UL_LENGTH - 1) != 0 ) // ignore the stream number
+      if ( UL(ess_p).MatchIgnoreStream(EssenceUL) ) // ignore the stream number
 	{
 	  char strbuf[IntBufferLen];
 	  const MDDEntry* Entry = m_Dict->FindUL(Key.Value());
@@ -383,7 +383,7 @@ ASDCP::h__Reader::ReadEKLVPacket(ui32_t FrameNum, ui32_t SequenceNum, ASDCP::Fra
 	  FrameBuf.PlaintextOffset(PlaintextOffset);
 	}
     }
-  else if ( memcmp(Key.Value(), EssenceUL, Key.Size() - 1) == 0 ) // ignore the stream number
+  else if ( Key.MatchIgnoreStream(EssenceUL) ) // ignore the stream number
     { // read plaintext frame
        if ( FrameBuf.Capacity() < PacketLength )
 	{

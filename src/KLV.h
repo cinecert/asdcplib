@@ -107,6 +107,7 @@ inline const char* ui64sz(ui64_t i, char* buf)
 
       const char* EncodeString(char* str_buf, ui32_t buf_len) const;
       bool operator==(const UL& rhs) const;
+      bool MatchIgnoreStream(const UL& rhs) const;
       bool ExactMatch(const UL& rhs) const;
     };
 

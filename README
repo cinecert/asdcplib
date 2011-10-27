@@ -114,6 +114,10 @@ utilities all respond to -h.
 
 Change History
 
+2011-10-27 - bug fixes v1.8.43
+ o Corrected broken Essence UL matching. (Thanks to Michael Loder).
+
+
 2011-08-31 - bug fixes v1.8.42
  o Added missing HFR support for PCM essence reader/writer.
 
@@ -133,7 +137,7 @@ Change History
  o Added missing Timestamp::Timestamp(const char* datestr) implementation.
    (Thanks to Matt Sheby for this and the previous three items.)
  o Fixed error in Kumu::FortunaRNG::FillRandom() that was returning the
-   end of the random buffer instead of the front (Mike Radford).
+   end of the random buffer instead of the front (Thanks to Mike Radford).
  o Added support for proposed sound channel format identifiers
    '7.1DS' and 'WTF'.  Optimistically chose version '0x0c'.
  o Added support for stereoscopic images in JP2K files at edit

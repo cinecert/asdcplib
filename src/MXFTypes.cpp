@@ -38,6 +38,7 @@ using Kumu::DefaultLogSink;
 //------------------------------------------------------------------------------------------
 //
 
+//
 bool
 ASDCP::UL::operator==(const UL& rhs) const
 {
@@ -48,7 +49,7 @@ ASDCP::UL::operator==(const UL& rhs) const
        m_Value[4] == rhs.m_Value[4] &&
        m_Value[5] == rhs.m_Value[5] &&
        m_Value[6] == rhs.m_Value[6] &&
-       //       m_Value[7] == rhs.m_Value[7] &&  version is ignored when performing lookups
+       //       m_Value[7] == rhs.m_Value[7] &&  // version is ignored when performing lookups
        m_Value[8] == rhs.m_Value[8] &&
        m_Value[9] == rhs.m_Value[9] &&
        m_Value[10] == rhs.m_Value[10] &&
@@ -63,7 +64,33 @@ ASDCP::UL::operator==(const UL& rhs) const
   return false;
 }
 
+//
+bool
+ASDCP::UL::MatchIgnoreStream(const UL& rhs) const
+{
+  if ( m_Value[0] == rhs.m_Value[0] &&
+       m_Value[1] == rhs.m_Value[1] &&
+       m_Value[2] == rhs.m_Value[2] &&
+       m_Value[3] == rhs.m_Value[3] &&
+       m_Value[4] == rhs.m_Value[4] &&
+       m_Value[5] == rhs.m_Value[5] &&
+       m_Value[6] == rhs.m_Value[6] &&
+       //       m_Value[7] == rhs.m_Value[7] &&  // version is ignored when performing lookups
+       m_Value[8] == rhs.m_Value[8] &&
+       m_Value[9] == rhs.m_Value[9] &&
+       m_Value[10] == rhs.m_Value[10] &&
+       m_Value[11] == rhs.m_Value[11] &&
+       m_Value[12] == rhs.m_Value[12] &&
+       m_Value[13] == rhs.m_Value[13] &&
+       m_Value[14] == rhs.m_Value[14]
+       //       m_Value[15] == rhs.m_Value[15] // ignore stream number
+       )
+    return true;
 
+  return false;
+}
+
+//
 bool
 ASDCP::UL::ExactMatch(const UL& rhs) const
 {
