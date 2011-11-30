@@ -303,14 +303,14 @@ ASDCP::h__Reader::ReadEKLVPacket(ui32_t FrameNum, ui32_t SequenceNum, ASDCP::Fra
 	return RESULT_FORMAT;
 
       // test essence UL
-      if ( UL(ess_p).MatchIgnoreStream(EssenceUL) ) // ignore the stream number
+      if ( ! UL(ess_p).MatchIgnoreStream(EssenceUL) ) // ignore the stream number
 	{
 	  char strbuf[IntBufferLen];
 	  const MDDEntry* Entry = m_Dict->FindUL(Key.Value());
 	  if ( Entry == 0 )
-	    DefaultLogSink().Warn("Unexpected Essence UL found: %s.\n", Key.EncodeString(strbuf, IntBufferLen));
+	    DefaultLogSink().Warn("Unexpected Encrypted Essence UL found: %s.\n", Key.EncodeString(strbuf, IntBufferLen));
 	  else
-	    DefaultLogSink().Warn("Unexpected Essence UL found: %s.\n", Entry->name);
+	    DefaultLogSink().Warn("Unexpected Encrypted Essence UL found: %s.\n", Entry->name);
 	  return RESULT_FORMAT;
 	}
       ess_p += SMPTE_UL_LENGTH;

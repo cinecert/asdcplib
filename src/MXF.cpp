@@ -713,15 +713,15 @@ ASDCP::MXF::OPAtomHeader::InitFromFile(const Kumu::FileReader& Reader)
   UL OPAtomUL(SMPTE_390_OPAtom_Entry().ul);
   UL InteropOPAtomUL(MXFInterop_OPAtom_Entry().ul);
 
-  if ( OperationalPattern == OPAtomUL ) // SMPTE
+  if ( OperationalPattern.ExactMatch(OPAtomUL) ) // SMPTE
     {
       if ( m_Dict == &DefaultCompositeDict() )
 	m_Dict = &DefaultSMPTEDict();
     }
-  else if ( OperationalPattern == InteropOPAtomUL ) // Interop
+  else if ( OperationalPattern.ExactMatch(InteropOPAtomUL) ) // Interop
     {
       if ( m_Dict == &DefaultCompositeDict() )
-      	m_Dict = &DefaultInteropDict();
+	m_Dict = &DefaultInteropDict();
     }
   else
     {
