@@ -60,16 +60,16 @@ is simple AS-DCP support.
 
 Build Instructions
 
-On more-or-less POSIX systems (OS X, Linux, and BSD), GNU make is
-required to build asdcplib. The same configure script will also
-build this package on Windows machines with Cygwin and
+On more-or-less POSIX systems (OS X, Linux, and BSD), GNU make and 
+autotools are required to build asdcplib. The same configure script 
+will also build this package on Windows machines with Cygwin and
 MinGW installed. For those Windows users who would prefer to build
 this natively, an "nmake" build file and instructions can be found
-in the win32 subdirectory.
+in the win32 subdirectory.  
 
-OpenSSL is also required, version 0.9.8k is recommended. See 
-http://www.openssl.org/ for more information and download 
-instructions.
+OpenSSL is also required, and the most recent version of v0.9.8 
+is recommended. See http://www.openssl.org/ for more information
+and download instructions.
 
 Optional support for writing Timed Text Track Files is supported by
 either Xerces-C or Expat. See http://xerces.apache.org/xerces-c/ or
@@ -77,7 +77,7 @@ http://expat.sourceforge.net/ for source and build instructions.
 
 To configure and build, type './configure' followed by 'make'. There
 are several test targets on the POSIX side, but you need to assemble
-a set of test files to use them.
+a set of test files to use them.  
 
 I have tested this build on win32, Linux, OpenBSD, and Darwin
 platforms. Others may work as well.
@@ -113,6 +113,9 @@ utilities all respond to -h.
 
 
 Change History
+2011-11-30 - bug fixes v1.8.44
+ o Corrected a wrong decryption UL selection when unwrapping MXF.
+
 
 2011-10-27 - bug fixes v1.8.43
  o Corrected broken Essence UL matching. (Thanks to Michael Loder).
