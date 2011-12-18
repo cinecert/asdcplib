@@ -990,7 +990,7 @@ Kumu::StringIsXML(const char* document, ui32_t len)
 
 //
 bool
-Kumu::XMLElement::ParseString(const std::string& document)
+Kumu::XMLElement::ParseString(const char* document, ui32_t doc_len)
 {
   DefaultLogSink().Error("Kumu compiled without XML parser support.\n");
   return false;
