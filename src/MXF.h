@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2005-2009, John Hurst
+Copyright (c) 2005-2012, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -136,7 +136,7 @@ namespace ASDCP
 
 	  Partition(const Dictionary*&);
 	  virtual ~Partition();
-	  virtual void     AddChildObject(InterchangeObject*);
+	  virtual void     AddChildObject(InterchangeObject*); // takes ownership
 	  virtual Result_t InitFromFile(const Kumu::FileReader& Reader);
 	  virtual Result_t InitFromBuffer(const byte_t* p, ui32_t l);
 	  virtual Result_t WriteToFile(Kumu::FileWriter& Writer, UL& PartitionLabel);
@@ -363,7 +363,9 @@ namespace ASDCP
 	  ui32_t              m_BytesPerEditUnit;
 	  Rational            m_EditRate;
 	  ui32_t              m_BodySID;
+
 	  ASDCP_NO_COPY_CONSTRUCT(OPAtomIndexFooter);
+	  OPAtomIndexFooter();
 
 	public:
 	  const Dictionary*&   m_Dict;

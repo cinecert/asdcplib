@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2004-2011, John Hurst
+Copyright (c) 2004-2012, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -35,6 +35,10 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 //------------------------------------------------------------------------------------------
+
+static const ASDCP::Dictionary *sg_dict = &DefaultSMPTEDict();
+static MXF::OPAtomHeader sg_OPAtomHeader(sg_dict);
+static MXF::OPAtomIndexFooter sg_OPAtomIndexFooter(sg_dict);
 
 static std::string MPEG_PACKAGE_LABEL = "File Package: SMPTE 381M frame wrapping of MPEG2 video elementary stream";
 static std::string PICT_DEF_LABEL = "Picture Track";
@@ -335,6 +339,30 @@ ASDCP::MPEG2::MXFReader::~MXFReader()
 {
 }
 
+// Warning: direct manipulation of MXF structures can interfere
+// with the normal operation of the wrapper.  Caveat emptor!
+//
+ASDCP::MXF::OPAtomHeader&
+ASDCP::MPEG2::MXFReader::OPAtomHeader()
+{
+  if ( m_Reader.empty() )
+    return sg_OPAtomHeader;
+
+  return m_Reader->m_HeaderPart;
+}
+
+// Warning: direct manipulation of MXF structures can interfere
+// with the normal operation of the wrapper.  Caveat emptor!
+//
+ASDCP::MXF::OPAtomIndexFooter&
+ASDCP::MPEG2::MXFReader::OPAtomIndexFooter()
+{
+  if ( m_Reader.empty() )
+    return sg_OPAtomIndexFooter;
+
+  return m_Reader->m_FooterPart;
+}
+
 // Open the file for reading. The file must exist. Returns error if the
 // operation cannot be completed.
 ASDCP::Result_t
@@ -611,6 +639,29 @@ ASDCP::MPEG2::MXFWriter::~MXFWriter()
 {
 }
 
+// Warning: direct manipulation of MXF structures can interfere
+// with the normal operation of the wrapper.  Caveat emptor!
+//
+ASDCP::MXF::OPAtomHeader&
+ASDCP::MPEG2::MXFWriter::OPAtomHeader()
+{
+  if ( m_Writer.empty() )
+    return sg_OPAtomHeader;
+
+  return m_Writer->m_HeaderPart;
+}
+
+// Warning: direct manipulation of MXF structures can interfere
+// with the normal operation of the wrapper.  Caveat emptor!
+//
+ASDCP::MXF::OPAtomIndexFooter&
+ASDCP::MPEG2::MXFWriter::OPAtomIndexFooter()
+{
+  if ( m_Writer.empty() )
+    return sg_OPAtomIndexFooter;
+
+  return m_Writer->m_FooterPart;
+}
 
 // Open the file for writing. The file must not exist. Returns error if
 // the operation cannot be completed.

@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2003-2011, John Hurst
+Copyright (c) 2003-2012, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -34,22 +34,23 @@ D-Cinema Technology Committee 21DC. The file format, labeled AS-DCP,
 is described in series of separate documents which include but may not
 be be limited to:
 
- o SMPTE ST 429-2:2009 DCP Operational Constraints
- o SMPTE ST 429-3:2006 Track File Specification
- o SMPTE ST 429-4:2006 JPEG 2000 for D-Cinema
+ o SMPTE ST 429-2:2011 DCP Operational Constraints
+ o SMPTE ST 429-3:2006 Sound and Picture Track File
+ o SMPTE ST 429-4:2006 MXF JPEG 2000 Application
  o SMPTE ST 429-5:2009 Timed Text Track File
- o SMPTE ST 429-6:2006 Essence Encryption
- o SMPTE ST 429-10:2008 Stereoscopic Image Track File
+ o SMPTE ST 429-6:2006 MXF Track File Essence Encryption
+ o SMPTE ST 429-10:2008 Stereoscopic Picture Track File
  o SMPTE ST 330:2004 - UMID
  o SMPTE ST 336:2001 - KLV
- o SMPTE ST 377:2000 - MXF
- o SMPTE ST 390:2004 - MXF OP-Atom
- o SMPTE ST 379:2004 - MXF Generic Container (GC)
- o SMPTE ST 381:2005 - MPEG2 picture in GC
+ o SMPTE ST 377-1:2011 - MXF
+ o SMPTE ST 377-4:2012 - MXF Multichannel Audio Labeling Framework
+ o SMPTE ST 390:2011 - MXF OP-Atom
+ o SMPTE ST 379-1:2009 - MXF Generic Container (GC)
+ o SMPTE ST 381-1:2005 - MPEG2 picture in GC
  o SMPTE ST 422:2006 - JPEG 2000 picture in GC
  o SMPTE ST 382:2007 - WAV/PCM sound in GC
  o IETF RFC 2104 - HMAC/SHA1
- o NIST FIPS 197 - AES (Rijndael)
+ o NIST FIPS 197 - AES (Rijndael) (via OpenSSL)
 
  o MXF Interop Track File Specification
  o MXF Interop Track File Essence Encryption Specification
@@ -551,6 +552,15 @@ namespace ASDCP {
       inline ui32_t  PlaintextOffset() const { return m_PlaintextOffset; }
     };
 
+  //---------------------------------------------------------------------------------
+  // Accessors in the MXFReader and MXFWriter classes below return these types to
+  // provide direct access to MXF metadata structures declared in MXF.h and Metadata.h
+
+  namespace MXF {
+    // #include<Metadata.h> to use these
+    class OPAtomHeader;
+    class OPAtomIndexFooter;
+  };
 
   //---------------------------------------------------------------------------------
   // MPEG2 video elementary stream support
@@ -707,6 +717,11 @@ namespace ASDCP {
 	  MXFWriter();
 	  virtual ~MXFWriter();
 
+	  // Warning: direct manipulation of MXF structures can interfere
+	  // with the normal operation of the wrapper.  Caveat emptor!
+	  virtual MXF::OPAtomHeader& OPAtomHeader();
+	  virtual MXF::OPAtomIndexFooter& OPAtomIndexFooter();
+
 	  // Open the file for writing. The file must not exist. Returns error if
 	  // the operation cannot be completed or if nonsensical data is discovered
 	  // in the essence descriptor.
@@ -733,6 +748,11 @@ namespace ASDCP {
 	public:
 	  MXFReader();
 	  virtual ~MXFReader();
+
+	  // Warning: direct manipulation of MXF structures can interfere
+	  // with the normal operation of the wrapper.  Caveat emptor!
+	  virtual MXF::OPAtomHeader& OPAtomHeader();
+	  virtual MXF::OPAtomIndexFooter& OPAtomIndexFooter();
 
 	  // Open the file for reading. The file must exist. Returns error if the
 	  // operation cannot be completed.
@@ -780,6 +800,9 @@ namespace ASDCP {
 
   //---------------------------------------------------------------------------------
   //
+
+
+
   namespace PCM
     {
       // The default value of the ChannelFormat element of the AudioDescriptor struct
@@ -893,6 +916,11 @@ namespace ASDCP {
 	  MXFWriter();
 	  virtual ~MXFWriter();
 
+	  // Warning: direct manipulation of MXF structures can interfere
+	  // with the normal operation of the wrapper.  Caveat emptor!
+	  virtual MXF::OPAtomHeader& OPAtomHeader();
+	  virtual MXF::OPAtomIndexFooter& OPAtomIndexFooter();
+
 	  // Open the file for writing. The file must not exist. Returns error if
 	  // the operation cannot be completed or if nonsensical data is discovered
 	  // in the essence descriptor.
@@ -919,6 +947,11 @@ namespace ASDCP {
 	public:
 	  MXFReader();
 	  virtual ~MXFReader();
+
+	  // Warning: direct manipulation of MXF structures can interfere
+	  // with the normal operation of the wrapper.  Caveat emptor!
+	  virtual MXF::OPAtomHeader& OPAtomHeader();
+	  virtual MXF::OPAtomIndexFooter& OPAtomIndexFooter();
 
 	  // Open the file for reading. The file must exist. Returns error if the
 	  // operation cannot be completed.
@@ -1124,6 +1157,11 @@ namespace ASDCP {
 	  MXFWriter();
 	  virtual ~MXFWriter();
 
+	  // Warning: direct manipulation of MXF structures can interfere
+	  // with the normal operation of the wrapper.  Caveat emptor!
+	  virtual MXF::OPAtomHeader& OPAtomHeader();
+	  virtual MXF::OPAtomIndexFooter& OPAtomIndexFooter();
+
 	  // Open the file for writing. The file must not exist. Returns error if
 	  // the operation cannot be completed or if nonsensical data is discovered
 	  // in the essence descriptor.
@@ -1150,6 +1188,11 @@ namespace ASDCP {
 	public:
 	  MXFReader();
 	  virtual ~MXFReader();
+
+	  // Warning: direct manipulation of MXF structures can interfere
+	  // with the normal operation of the wrapper.  Caveat emptor!
+	  virtual MXF::OPAtomHeader& OPAtomHeader();
+	  virtual MXF::OPAtomIndexFooter& OPAtomIndexFooter();
 
 	  // Open the file for reading. The file must exist. Returns error if the
 	  // operation cannot be completed.
@@ -1211,6 +1254,11 @@ namespace ASDCP {
 	  MXFSWriter();
 	  virtual ~MXFSWriter();
 
+	  // Warning: direct manipulation of MXF structures can interfere
+	  // with the normal operation of the wrapper.  Caveat emptor!
+	  virtual MXF::OPAtomHeader& OPAtomHeader();
+	  virtual MXF::OPAtomIndexFooter& OPAtomIndexFooter();
+
 	  // Open the file for writing. The file must not exist. Returns error if
 	  // the operation cannot be completed or if nonsensical data is discovered
 	  // in the essence descriptor.
@@ -1247,6 +1295,11 @@ namespace ASDCP {
 	public:
 	  MXFSReader();
 	  virtual ~MXFSReader();
+
+	  // Warning: direct manipulation of MXF structures can interfere
+	  // with the normal operation of the wrapper.  Caveat emptor!
+	  virtual MXF::OPAtomHeader& OPAtomHeader();
+	  virtual MXF::OPAtomIndexFooter& OPAtomIndexFooter();
 
 	  // Open the file for reading. The file must exist. Returns error if the
 	  // operation cannot be completed.
@@ -1401,6 +1454,11 @@ namespace ASDCP {
 	  MXFWriter();
 	  virtual ~MXFWriter();
 
+	  // Warning: direct manipulation of MXF structures can interfere
+	  // with the normal operation of the wrapper.  Caveat emptor!
+	  virtual MXF::OPAtomHeader& OPAtomHeader();
+	  virtual MXF::OPAtomIndexFooter& OPAtomIndexFooter();
+
 	  // Open the file for writing. The file must not exist. Returns error if
 	  // the operation cannot be completed or if nonsensical data is discovered
 	  // in the essence descriptor.
@@ -1437,6 +1495,11 @@ namespace ASDCP {
 	public:
 	  MXFReader();
 	  virtual ~MXFReader();
+
+	  // Warning: direct manipulation of MXF structures can interfere
+	  // with the normal operation of the wrapper.  Caveat emptor!
+	  virtual MXF::OPAtomHeader& OPAtomHeader();
+	  virtual MXF::OPAtomIndexFooter& OPAtomIndexFooter();
 
 	  // Open the file for reading. The file must exist. Returns error if the
 	  // operation cannot be completed.

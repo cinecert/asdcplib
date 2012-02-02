@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2005-2009, John Hurst
+Copyright (c) 2005-2012, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -289,6 +289,23 @@ namespace ASDCP
 	};
 
       //
+    class ISO8String : public std::string, public Kumu::IArchive
+	{
+	public:
+	  ISO8String() {}
+	  ~ISO8String() {}
+
+	  const ISO8String& operator=(const char*);
+	  const ISO8String& operator=(const std::string&);
+
+	  const char* EncodeString(char* str_buf, ui32_t buf_len) const;
+	  inline virtual bool HasValue() const { return ! empty(); }
+	  inline virtual ui32_t ArchiveLength() const { return sizeof(ui32_t) + size(); }
+	  virtual bool Unarchive(Kumu::MemIOReader* Reader);
+	  virtual bool Archive(Kumu::MemIOWriter* Writer) const;
+	};
+
+      //
     class UTF16String : public std::string, public Kumu::IArchive
 	{
 	public:
@@ -359,8 +376,6 @@ namespace ASDCP
       //
       class VersionType : public Kumu::IArchive
 	{
-	  ASDCP_NO_COPY_CONSTRUCT(VersionType);
-
 	public:
 	  enum Release_t { RL_UNKNOWN, RL_RELEASE, RL_DEVELOPMENT, RL_PATCHED, RL_BETA, RL_PRIVATE };
 	  ui16_t Major;
@@ -370,7 +385,19 @@ namespace ASDCP
 	  Release_t Release;
 
 	  VersionType() : Major(0), Minor(0), Patch(0), Build(0), Release(RL_UNKNOWN) {}
-	  ~VersionType() {}
+	  VersionType(const VersionType& rhs) { Copy(rhs); }
+	  virtual ~VersionType() {}
+
+	  const VersionType& operator=(const VersionType& rhs) { Copy(rhs); return *this; }
+
+	  void Copy(const VersionType& rhs) {
+	    Major = rhs.Major;
+	    Minor = rhs.Minor;
+	    Patch = rhs.Patch;
+	    Build = rhs.Build;
+	    Release = rhs.Release;
+	  }
+
 	  void Dump(FILE* = 0);
 
 	  const char* EncodeString(char* str_buf, ui32_t buf_len) const {
@@ -405,11 +432,18 @@ namespace ASDCP
       //
       class Raw : public Kumu::ByteString
 	{
-	  ASDCP_NO_COPY_CONSTRUCT(Raw);
-
 	public:
 	  Raw();
-	  ~Raw();
+	  Raw(const Raw& rhs) { Copy(rhs); }
+	  virtual ~Raw();
+
+	  const Raw& operator=(const Raw& rhs) { Copy(rhs); return *this; }
+	  void Copy(const Raw& rhs) {
+	    if ( KM_SUCCESS(Capacity(rhs.Length())) )
+	      {
+		Set(rhs);
+	      }
+	  }
 
 	  //
           virtual bool Unarchive(Kumu::MemIOReader* Reader);

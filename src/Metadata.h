@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2005-2009, John Hurst
+Copyright (c) 2005-2012, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -45,7 +45,6 @@ namespace ASDCP
       //
       class Identification : public InterchangeObject
 	{
-	  ASDCP_NO_COPY_CONSTRUCT(Identification);
 	  Identification();
 
 	public:
@@ -61,7 +60,10 @@ namespace ASDCP
           UTF16String Platform;
 
   Identification(const Dictionary*& d) : InterchangeObject(d), m_Dict(d) {}
+  Identification(const Identification& rhs) : InterchangeObject(rhs.m_Dict), m_Dict(rhs.m_Dict) { Copy(rhs); }
 	  virtual ~Identification() {}
+	  const Identification& operator=(const Identification& rhs) { Copy(rhs); return *this; }
+	  virtual void Copy(const Identification& rhs);
           virtual const char* HasName() { return "Identification"; }
           virtual Result_t InitFromTLVSet(TLVReader& TLVSet);
           virtual Result_t WriteToTLVSet(TLVWriter& TLVSet);
@@ -73,7 +75,6 @@ namespace ASDCP
       //
       class ContentStorage : public InterchangeObject
 	{
-	  ASDCP_NO_COPY_CONSTRUCT(ContentStorage);
 	  ContentStorage();
 
 	public:
@@ -82,7 +83,10 @@ namespace ASDCP
           Batch<UUID> EssenceContainerData;
 
   ContentStorage(const Dictionary*& d) : InterchangeObject(d), m_Dict(d) {}
+  ContentStorage(const ContentStorage& rhs) : InterchangeObject(rhs.m_Dict), m_Dict(rhs.m_Dict) { Copy(rhs); }
 	  virtual ~ContentStorage() {}
+	  const ContentStorage& operator=(const ContentStorage& rhs) { Copy(rhs); return *this; }
+	  virtual void Copy(const ContentStorage& rhs);
           virtual const char* HasName() { return "ContentStorage"; }
           virtual Result_t InitFromTLVSet(TLVReader& TLVSet);
           virtual Result_t WriteToTLVSet(TLVWriter& TLVSet);
@@ -94,7 +98,6 @@ namespace ASDCP
       //
       class EssenceContainerData : public InterchangeObject
 	{
-	  ASDCP_NO_COPY_CONSTRUCT(EssenceContainerData);
 	  EssenceContainerData();
 
 	public:
@@ -104,7 +107,10 @@ namespace ASDCP
           ui32_t BodySID;
 
   EssenceContainerData(const Dictionary*& d) : InterchangeObject(d), m_Dict(d), IndexSID(0), BodySID(0) {}
+  EssenceContainerData(const EssenceContainerData& rhs) : InterchangeObject(rhs.m_Dict), m_Dict(rhs.m_Dict) { Copy(rhs); }
 	  virtual ~EssenceContainerData() {}
+	  const EssenceContainerData& operator=(const EssenceContainerData& rhs) { Copy(rhs); return *this; }
+	  virtual void Copy(const EssenceContainerData& rhs);
           virtual const char* HasName() { return "EssenceContainerData"; }
           virtual Result_t InitFromTLVSet(TLVReader& TLVSet);
           virtual Result_t WriteToTLVSet(TLVWriter& TLVSet);
@@ -116,7 +122,6 @@ namespace ASDCP
       //
       class GenericPackage : public InterchangeObject
 	{
-	  ASDCP_NO_COPY_CONSTRUCT(GenericPackage);
 	  GenericPackage();
 
 	public:
@@ -128,7 +133,10 @@ namespace ASDCP
           Batch<UUID> Tracks;
 
   GenericPackage(const Dictionary*& d) : InterchangeObject(d), m_Dict(d) {}
+  GenericPackage(const GenericPackage& rhs) : InterchangeObject(rhs.m_Dict), m_Dict(rhs.m_Dict) { Copy(rhs); }
 	  virtual ~GenericPackage() {}
+	  const GenericPackage& operator=(const GenericPackage& rhs) { Copy(rhs); return *this; }
+	  virtual void Copy(const GenericPackage& rhs);
           virtual const char* HasName() { return "GenericPackage"; }
           virtual Result_t InitFromTLVSet(TLVReader& TLVSet);
           virtual Result_t WriteToTLVSet(TLVWriter& TLVSet);
@@ -138,14 +146,16 @@ namespace ASDCP
       //
       class MaterialPackage : public GenericPackage
 	{
-	  ASDCP_NO_COPY_CONSTRUCT(MaterialPackage);
 	  MaterialPackage();
 
 	public:
 	  const Dictionary*& m_Dict;
 
   MaterialPackage(const Dictionary*& d) : GenericPackage(d), m_Dict(d) {}
+  MaterialPackage(const MaterialPackage& rhs) : GenericPackage(rhs.m_Dict), m_Dict(rhs.m_Dict) { Copy(rhs); }
 	  virtual ~MaterialPackage() {}
+	  const MaterialPackage& operator=(const MaterialPackage& rhs) { Copy(rhs); return *this; }
+	  virtual void Copy(const MaterialPackage& rhs);
           virtual const char* HasName() { return "MaterialPackage"; }
           virtual Result_t InitFromTLVSet(TLVReader& TLVSet);
           virtual Result_t WriteToTLVSet(TLVWriter& TLVSet);
@@ -157,7 +167,6 @@ namespace ASDCP
       //
       class SourcePackage : public GenericPackage
 	{
-	  ASDCP_NO_COPY_CONSTRUCT(SourcePackage);
 	  SourcePackage();
 
 	public:
@@ -165,7 +174,10 @@ namespace ASDCP
           UUID Descriptor;
 
   SourcePackage(const Dictionary*& d) : GenericPackage(d), m_Dict(d) {}
+  SourcePackage(const SourcePackage& rhs) : GenericPackage(rhs.m_Dict), m_Dict(rhs.m_Dict) { Copy(rhs); }
 	  virtual ~SourcePackage() {}
+	  const SourcePackage& operator=(const SourcePackage& rhs) { Copy(rhs); return *this; }
+	  virtual void Copy(const SourcePackage& rhs);
           virtual const char* HasName() { return "SourcePackage"; }
           virtual Result_t InitFromTLVSet(TLVReader& TLVSet);
           virtual Result_t WriteToTLVSet(TLVWriter& TLVSet);
@@ -177,7 +189,6 @@ namespace ASDCP
       //
       class GenericTrack : public InterchangeObject
 	{
-	  ASDCP_NO_COPY_CONSTRUCT(GenericTrack);
 	  GenericTrack();
 
 	public:
@@ -188,7 +199,10 @@ namespace ASDCP
           UUID Sequence;
 
   GenericTrack(const Dictionary*& d) : InterchangeObject(d), m_Dict(d), TrackID(0), TrackNumber(0) {}
+  GenericTrack(const GenericTrack& rhs) : InterchangeObject(rhs.m_Dict), m_Dict(rhs.m_Dict) { Copy(rhs); }
 	  virtual ~GenericTrack() {}
+	  const GenericTrack& operator=(const GenericTrack& rhs) { Copy(rhs); return *this; }
+	  virtual void Copy(const GenericTrack& rhs);
           virtual const char* HasName() { return "GenericTrack"; }
           virtual Result_t InitFromTLVSet(TLVReader& TLVSet);
           virtual Result_t WriteToTLVSet(TLVWriter& TLVSet);
@@ -198,14 +212,16 @@ namespace ASDCP
       //
       class StaticTrack : public GenericTrack
 	{
-	  ASDCP_NO_COPY_CONSTRUCT(StaticTrack);
 	  StaticTrack();
 
 	public:
 	  const Dictionary*& m_Dict;
 
   StaticTrack(const Dictionary*& d) : GenericTrack(d), m_Dict(d) {}
+  StaticTrack(const StaticTrack& rhs) : GenericTrack(rhs.m_Dict), m_Dict(rhs.m_Dict) { Copy(rhs); }
 	  virtual ~StaticTrack() {}
+	  const StaticTrack& operator=(const StaticTrack& rhs) { Copy(rhs); return *this; }
+	  virtual void Copy(const StaticTrack& rhs);
           virtual const char* HasName() { return "StaticTrack"; }
           virtual Result_t InitFromTLVSet(TLVReader& TLVSet);
           virtual Result_t WriteToTLVSet(TLVWriter& TLVSet);
@@ -217,7 +233,6 @@ namespace ASDCP
       //
       class Track : public GenericTrack
 	{
-	  ASDCP_NO_COPY_CONSTRUCT(Track);
 	  Track();
 
 	public:
@@ -226,7 +241,10 @@ namespace ASDCP
           ui64_t Origin;
 
   Track(const Dictionary*& d) : GenericTrack(d), m_Dict(d), Origin(0) {}
+  Track(const Track& rhs) : GenericTrack(rhs.m_Dict), m_Dict(rhs.m_Dict) { Copy(rhs); }
 	  virtual ~Track() {}
+	  const Track& operator=(const Track& rhs) { Copy(rhs); return *this; }
+	  virtual void Copy(const Track& rhs);
           virtual const char* HasName() { return "Track"; }
           virtual Result_t InitFromTLVSet(TLVReader& TLVSet);
           virtual Result_t WriteToTLVSet(TLVWriter& TLVSet);
@@ -238,7 +256,6 @@ namespace ASDCP
       //
       class StructuralComponent : public InterchangeObject
 	{
-	  ASDCP_NO_COPY_CONSTRUCT(StructuralComponent);
 	  StructuralComponent();
 
 	public:
@@ -247,7 +264,10 @@ namespace ASDCP
           ui64_t Duration;
 
   StructuralComponent(const Dictionary*& d) : InterchangeObject(d), m_Dict(d), Duration(0) {}
+  StructuralComponent(const StructuralComponent& rhs) : InterchangeObject(rhs.m_Dict), m_Dict(rhs.m_Dict) { Copy(rhs); }
 	  virtual ~StructuralComponent() {}
+	  const StructuralComponent& operator=(const StructuralComponent& rhs) { Copy(rhs); return *this; }
+	  virtual void Copy(const StructuralComponent& rhs);
           virtual const char* HasName() { return "StructuralComponent"; }
           virtual Result_t InitFromTLVSet(TLVReader& TLVSet);
           virtual Result_t WriteToTLVSet(TLVWriter& TLVSet);
@@ -257,7 +277,6 @@ namespace ASDCP
       //
       class Sequence : public StructuralComponent
 	{
-	  ASDCP_NO_COPY_CONSTRUCT(Sequence);
 	  Sequence();
 
 	public:
@@ -265,7 +284,10 @@ namespace ASDCP
           Batch<UUID> StructuralComponents;
 
   Sequence(const Dictionary*& d) : StructuralComponent(d), m_Dict(d) {}
+  Sequence(const Sequence& rhs) : StructuralComponent(rhs.m_Dict), m_Dict(rhs.m_Dict) { Copy(rhs); }
 	  virtual ~Sequence() {}
+	  const Sequence& operator=(const Sequence& rhs) { Copy(rhs); return *this; }
+	  virtual void Copy(const Sequence& rhs);
           virtual const char* HasName() { return "Sequence"; }
           virtual Result_t InitFromTLVSet(TLVReader& TLVSet);
           virtual Result_t WriteToTLVSet(TLVWriter& TLVSet);
@@ -277,7 +299,6 @@ namespace ASDCP
       //
       class SourceClip : public StructuralComponent
 	{
-	  ASDCP_NO_COPY_CONSTRUCT(SourceClip);
 	  SourceClip();
 
 	public:
@@ -287,7 +308,10 @@ namespace ASDCP
           ui32_t SourceTrackID;
 
   SourceClip(const Dictionary*& d) : StructuralComponent(d), m_Dict(d), StartPosition(0), SourceTrackID(0) {}
+  SourceClip(const SourceClip& rhs) : StructuralComponent(rhs.m_Dict), m_Dict(rhs.m_Dict) { Copy(rhs); }
 	  virtual ~SourceClip() {}
+	  const SourceClip& operator=(const SourceClip& rhs) { Copy(rhs); return *this; }
+	  virtual void Copy(const SourceClip& rhs);
           virtual const char* HasName() { return "SourceClip"; }
           virtual Result_t InitFromTLVSet(TLVReader& TLVSet);
           virtual Result_t WriteToTLVSet(TLVWriter& TLVSet);
@@ -299,7 +323,6 @@ namespace ASDCP
       //
       class TimecodeComponent : public StructuralComponent
 	{
-	  ASDCP_NO_COPY_CONSTRUCT(TimecodeComponent);
 	  TimecodeComponent();
 
 	public:
@@ -309,7 +332,10 @@ namespace ASDCP
           ui8_t DropFrame;
 
   TimecodeComponent(const Dictionary*& d) : StructuralComponent(d), m_Dict(d), RoundedTimecodeBase(0), StartTimecode(0), DropFrame(0) {}
+  TimecodeComponent(const TimecodeComponent& rhs) : StructuralComponent(rhs.m_Dict), m_Dict(rhs.m_Dict) { Copy(rhs); }
 	  virtual ~TimecodeComponent() {}
+	  const TimecodeComponent& operator=(const TimecodeComponent& rhs) { Copy(rhs); return *this; }
+	  virtual void Copy(const TimecodeComponent& rhs);
           virtual const char* HasName() { return "TimecodeComponent"; }
           virtual Result_t InitFromTLVSet(TLVReader& TLVSet);
           virtual Result_t WriteToTLVSet(TLVWriter& TLVSet);
@@ -321,7 +347,6 @@ namespace ASDCP
       //
       class GenericDescriptor : public InterchangeObject
 	{
-	  ASDCP_NO_COPY_CONSTRUCT(GenericDescriptor);
 	  GenericDescriptor();
 
 	public:
@@ -330,7 +355,10 @@ namespace ASDCP
           Batch<UUID> SubDescriptors;
 
   GenericDescriptor(const Dictionary*& d) : InterchangeObject(d), m_Dict(d) {}
+  GenericDescriptor(const GenericDescriptor& rhs) : InterchangeObject(rhs.m_Dict), m_Dict(rhs.m_Dict) { Copy(rhs); }
 	  virtual ~GenericDescriptor() {}
+	  const GenericDescriptor& operator=(const GenericDescriptor& rhs) { Copy(rhs); return *this; }
+	  virtual void Copy(const GenericDescriptor& rhs);
           virtual const char* HasName() { return "GenericDescriptor"; }
           virtual Result_t InitFromTLVSet(TLVReader& TLVSet);
           virtual Result_t WriteToTLVSet(TLVWriter& TLVSet);
@@ -340,7 +368,6 @@ namespace ASDCP
       //
       class FileDescriptor : public GenericDescriptor
 	{
-	  ASDCP_NO_COPY_CONSTRUCT(FileDescriptor);
 	  FileDescriptor();
 
 	public:
@@ -352,7 +379,10 @@ namespace ASDCP
           UL Codec;
 
   FileDescriptor(const Dictionary*& d) : GenericDescriptor(d), m_Dict(d), LinkedTrackID(0), ContainerDuration(0) {}
+  FileDescriptor(const FileDescriptor& rhs) : GenericDescriptor(rhs.m_Dict), m_Dict(rhs.m_Dict) { Copy(rhs); }
 	  virtual ~FileDescriptor() {}
+	  const FileDescriptor& operator=(const FileDescriptor& rhs) { Copy(rhs); return *this; }
+	  virtual void Copy(const FileDescriptor& rhs);
           virtual const char* HasName() { return "FileDescriptor"; }
           virtual Result_t InitFromTLVSet(TLVReader& TLVSet);
           virtual Result_t WriteToTLVSet(TLVWriter& TLVSet);
@@ -364,7 +394,6 @@ namespace ASDCP
       //
       class GenericSoundEssenceDescriptor : public FileDescriptor
 	{
-	  ASDCP_NO_COPY_CONSTRUCT(GenericSoundEssenceDescriptor);
 	  GenericSoundEssenceDescriptor();
 
 	public:
@@ -377,7 +406,10 @@ namespace ASDCP
           ui8_t DialNorm;
 
   GenericSoundEssenceDescriptor(const Dictionary*& d) : FileDescriptor(d), m_Dict(d), Locked(0), AudioRefLevel(0), ChannelCount(0), QuantizationBits(0), DialNorm(0) {}
+  GenericSoundEssenceDescriptor(const GenericSoundEssenceDescriptor& rhs) : FileDescriptor(rhs.m_Dict), m_Dict(rhs.m_Dict) { Copy(rhs); }
 	  virtual ~GenericSoundEssenceDescriptor() {}
+	  const GenericSoundEssenceDescriptor& operator=(const GenericSoundEssenceDescriptor& rhs) { Copy(rhs); return *this; }
+	  virtual void Copy(const GenericSoundEssenceDescriptor& rhs);
           virtual const char* HasName() { return "GenericSoundEssenceDescriptor"; }
           virtual Result_t InitFromTLVSet(TLVReader& TLVSet);
           virtual Result_t WriteToTLVSet(TLVWriter& TLVSet);
@@ -389,7 +421,6 @@ namespace ASDCP
       //
       class WaveAudioDescriptor : public GenericSoundEssenceDescriptor
 	{
-	  ASDCP_NO_COPY_CONSTRUCT(WaveAudioDescriptor);
 	  WaveAudioDescriptor();
 
 	public:
@@ -400,7 +431,10 @@ namespace ASDCP
           UL ChannelAssignment;
 
   WaveAudioDescriptor(const Dictionary*& d) : GenericSoundEssenceDescriptor(d), m_Dict(d), BlockAlign(0), SequenceOffset(0), AvgBps(0) {}
+  WaveAudioDescriptor(const WaveAudioDescriptor& rhs) : GenericSoundEssenceDescriptor(rhs.m_Dict), m_Dict(rhs.m_Dict) { Copy(rhs); }
 	  virtual ~WaveAudioDescriptor() {}
+	  const WaveAudioDescriptor& operator=(const WaveAudioDescriptor& rhs) { Copy(rhs); return *this; }
+	  virtual void Copy(const WaveAudioDescriptor& rhs);
           virtual const char* HasName() { return "WaveAudioDescriptor"; }
           virtual Result_t InitFromTLVSet(TLVReader& TLVSet);
           virtual Result_t WriteToTLVSet(TLVWriter& TLVSet);
@@ -412,7 +446,6 @@ namespace ASDCP
       //
       class GenericPictureEssenceDescriptor : public FileDescriptor
 	{
-	  ASDCP_NO_COPY_CONSTRUCT(GenericPictureEssenceDescriptor);
 	  GenericPictureEssenceDescriptor();
 
 	public:
@@ -424,7 +457,10 @@ namespace ASDCP
           UL PictureEssenceCoding;
 
   GenericPictureEssenceDescriptor(const Dictionary*& d) : FileDescriptor(d), m_Dict(d), FrameLayout(0), StoredWidth(0), StoredHeight(0) {}
+  GenericPictureEssenceDescriptor(const GenericPictureEssenceDescriptor& rhs) : FileDescriptor(rhs.m_Dict), m_Dict(rhs.m_Dict) { Copy(rhs); }
 	  virtual ~GenericPictureEssenceDescriptor() {}
+	  const GenericPictureEssenceDescriptor& operator=(const GenericPictureEssenceDescriptor& rhs) { Copy(rhs); return *this; }
+	  virtual void Copy(const GenericPictureEssenceDescriptor& rhs);
           virtual const char* HasName() { return "GenericPictureEssenceDescriptor"; }
           virtual Result_t InitFromTLVSet(TLVReader& TLVSet);
           virtual Result_t WriteToTLVSet(TLVWriter& TLVSet);
@@ -436,7 +472,6 @@ namespace ASDCP
       //
       class RGBAEssenceDescriptor : public GenericPictureEssenceDescriptor
 	{
-	  ASDCP_NO_COPY_CONSTRUCT(RGBAEssenceDescriptor);
 	  RGBAEssenceDescriptor();
 
 	public:
@@ -445,7 +480,10 @@ namespace ASDCP
           ui32_t ComponentMinRef;
 
   RGBAEssenceDescriptor(const Dictionary*& d) : GenericPictureEssenceDescriptor(d), m_Dict(d), ComponentMaxRef(0), ComponentMinRef(0) {}
+  RGBAEssenceDescriptor(const RGBAEssenceDescriptor& rhs) : GenericPictureEssenceDescriptor(rhs.m_Dict), m_Dict(rhs.m_Dict) { Copy(rhs); }
 	  virtual ~RGBAEssenceDescriptor() {}
+	  const RGBAEssenceDescriptor& operator=(const RGBAEssenceDescriptor& rhs) { Copy(rhs); return *this; }
+	  virtual void Copy(const RGBAEssenceDescriptor& rhs);
           virtual const char* HasName() { return "RGBAEssenceDescriptor"; }
           virtual Result_t InitFromTLVSet(TLVReader& TLVSet);
           virtual Result_t WriteToTLVSet(TLVWriter& TLVSet);
@@ -457,7 +495,6 @@ namespace ASDCP
       //
       class JPEG2000PictureSubDescriptor : public InterchangeObject
 	{
-	  ASDCP_NO_COPY_CONSTRUCT(JPEG2000PictureSubDescriptor);
 	  JPEG2000PictureSubDescriptor();
 
 	public:
@@ -477,7 +514,10 @@ namespace ASDCP
           Raw QuantizationDefault;
 
   JPEG2000PictureSubDescriptor(const Dictionary*& d) : InterchangeObject(d), m_Dict(d), Rsize(0), Xsize(0), Ysize(0), XOsize(0), YOsize(0), XTsize(0), YTsize(0), XTOsize(0), YTOsize(0), Csize(0) {}
+  JPEG2000PictureSubDescriptor(const JPEG2000PictureSubDescriptor& rhs) : InterchangeObject(rhs.m_Dict), m_Dict(rhs.m_Dict) { Copy(rhs); }
 	  virtual ~JPEG2000PictureSubDescriptor() {}
+	  const JPEG2000PictureSubDescriptor& operator=(const JPEG2000PictureSubDescriptor& rhs) { Copy(rhs); return *this; }
+	  virtual void Copy(const JPEG2000PictureSubDescriptor& rhs);
           virtual const char* HasName() { return "JPEG2000PictureSubDescriptor"; }
           virtual Result_t InitFromTLVSet(TLVReader& TLVSet);
           virtual Result_t WriteToTLVSet(TLVWriter& TLVSet);
@@ -489,7 +529,6 @@ namespace ASDCP
       //
       class CDCIEssenceDescriptor : public GenericPictureEssenceDescriptor
 	{
-	  ASDCP_NO_COPY_CONSTRUCT(CDCIEssenceDescriptor);
 	  CDCIEssenceDescriptor();
 
 	public:
@@ -500,7 +539,10 @@ namespace ASDCP
           ui8_t ColorSiting;
 
   CDCIEssenceDescriptor(const Dictionary*& d) : GenericPictureEssenceDescriptor(d), m_Dict(d), ComponentDepth(0), HorizontalSubsampling(0), VerticalSubsampling(0), ColorSiting(0) {}
+  CDCIEssenceDescriptor(const CDCIEssenceDescriptor& rhs) : GenericPictureEssenceDescriptor(rhs.m_Dict), m_Dict(rhs.m_Dict) { Copy(rhs); }
 	  virtual ~CDCIEssenceDescriptor() {}
+	  const CDCIEssenceDescriptor& operator=(const CDCIEssenceDescriptor& rhs) { Copy(rhs); return *this; }
+	  virtual void Copy(const CDCIEssenceDescriptor& rhs);
           virtual const char* HasName() { return "CDCIEssenceDescriptor"; }
           virtual Result_t InitFromTLVSet(TLVReader& TLVSet);
           virtual Result_t WriteToTLVSet(TLVWriter& TLVSet);
@@ -512,7 +554,6 @@ namespace ASDCP
       //
       class MPEG2VideoDescriptor : public CDCIEssenceDescriptor
 	{
-	  ASDCP_NO_COPY_CONSTRUCT(MPEG2VideoDescriptor);
 	  MPEG2VideoDescriptor();
 
 	public:
@@ -523,7 +564,10 @@ namespace ASDCP
           ui8_t ProfileAndLevel;
 
   MPEG2VideoDescriptor(const Dictionary*& d) : CDCIEssenceDescriptor(d), m_Dict(d), CodedContentType(0), LowDelay(0), BitRate(0), ProfileAndLevel(0) {}
+  MPEG2VideoDescriptor(const MPEG2VideoDescriptor& rhs) : CDCIEssenceDescriptor(rhs.m_Dict), m_Dict(rhs.m_Dict) { Copy(rhs); }
 	  virtual ~MPEG2VideoDescriptor() {}
+	  const MPEG2VideoDescriptor& operator=(const MPEG2VideoDescriptor& rhs) { Copy(rhs); return *this; }
+	  virtual void Copy(const MPEG2VideoDescriptor& rhs);
           virtual const char* HasName() { return "MPEG2VideoDescriptor"; }
           virtual Result_t InitFromTLVSet(TLVReader& TLVSet);
           virtual Result_t WriteToTLVSet(TLVWriter& TLVSet);
@@ -535,7 +579,6 @@ namespace ASDCP
       //
       class DMSegment : public InterchangeObject
 	{
-	  ASDCP_NO_COPY_CONSTRUCT(DMSegment);
 	  DMSegment();
 
 	public:
@@ -547,7 +590,10 @@ namespace ASDCP
           UUID DMFramework;
 
   DMSegment(const Dictionary*& d) : InterchangeObject(d), m_Dict(d), EventStartPosition(0), Duration(0) {}
+  DMSegment(const DMSegment& rhs) : InterchangeObject(rhs.m_Dict), m_Dict(rhs.m_Dict) { Copy(rhs); }
 	  virtual ~DMSegment() {}
+	  const DMSegment& operator=(const DMSegment& rhs) { Copy(rhs); return *this; }
+	  virtual void Copy(const DMSegment& rhs);
           virtual const char* HasName() { return "DMSegment"; }
           virtual Result_t InitFromTLVSet(TLVReader& TLVSet);
           virtual Result_t WriteToTLVSet(TLVWriter& TLVSet);
@@ -559,7 +605,6 @@ namespace ASDCP
       //
       class CryptographicFramework : public InterchangeObject
 	{
-	  ASDCP_NO_COPY_CONSTRUCT(CryptographicFramework);
 	  CryptographicFramework();
 
 	public:
@@ -567,7 +612,10 @@ namespace ASDCP
           UUID ContextSR;
 
   CryptographicFramework(const Dictionary*& d) : InterchangeObject(d), m_Dict(d) {}
+  CryptographicFramework(const CryptographicFramework& rhs) : InterchangeObject(rhs.m_Dict), m_Dict(rhs.m_Dict) { Copy(rhs); }
 	  virtual ~CryptographicFramework() {}
+	  const CryptographicFramework& operator=(const CryptographicFramework& rhs) { Copy(rhs); return *this; }
+	  virtual void Copy(const CryptographicFramework& rhs);
           virtual const char* HasName() { return "CryptographicFramework"; }
           virtual Result_t InitFromTLVSet(TLVReader& TLVSet);
           virtual Result_t WriteToTLVSet(TLVWriter& TLVSet);
@@ -579,7 +627,6 @@ namespace ASDCP
       //
       class CryptographicContext : public InterchangeObject
 	{
-	  ASDCP_NO_COPY_CONSTRUCT(CryptographicContext);
 	  CryptographicContext();
 
 	public:
@@ -591,7 +638,10 @@ namespace ASDCP
           UUID CryptographicKeyID;
 
   CryptographicContext(const Dictionary*& d) : InterchangeObject(d), m_Dict(d) {}
+  CryptographicContext(const CryptographicContext& rhs) : InterchangeObject(rhs.m_Dict), m_Dict(rhs.m_Dict) { Copy(rhs); }
 	  virtual ~CryptographicContext() {}
+	  const CryptographicContext& operator=(const CryptographicContext& rhs) { Copy(rhs); return *this; }
+	  virtual void Copy(const CryptographicContext& rhs);
           virtual const char* HasName() { return "CryptographicContext"; }
           virtual Result_t InitFromTLVSet(TLVReader& TLVSet);
           virtual Result_t WriteToTLVSet(TLVWriter& TLVSet);
@@ -603,7 +653,6 @@ namespace ASDCP
       //
       class GenericDataEssenceDescriptor : public FileDescriptor
 	{
-	  ASDCP_NO_COPY_CONSTRUCT(GenericDataEssenceDescriptor);
 	  GenericDataEssenceDescriptor();
 
 	public:
@@ -611,7 +660,10 @@ namespace ASDCP
           UL DataEssenceCoding;
 
   GenericDataEssenceDescriptor(const Dictionary*& d) : FileDescriptor(d), m_Dict(d) {}
+  GenericDataEssenceDescriptor(const GenericDataEssenceDescriptor& rhs) : FileDescriptor(rhs.m_Dict), m_Dict(rhs.m_Dict) { Copy(rhs); }
 	  virtual ~GenericDataEssenceDescriptor() {}
+	  const GenericDataEssenceDescriptor& operator=(const GenericDataEssenceDescriptor& rhs) { Copy(rhs); return *this; }
+	  virtual void Copy(const GenericDataEssenceDescriptor& rhs);
           virtual const char* HasName() { return "GenericDataEssenceDescriptor"; }
           virtual Result_t InitFromTLVSet(TLVReader& TLVSet);
           virtual Result_t WriteToTLVSet(TLVWriter& TLVSet);
@@ -623,7 +675,6 @@ namespace ASDCP
       //
       class TimedTextDescriptor : public GenericDataEssenceDescriptor
 	{
-	  ASDCP_NO_COPY_CONSTRUCT(TimedTextDescriptor);
 	  TimedTextDescriptor();
 
 	public:
@@ -633,7 +684,10 @@ namespace ASDCP
           UTF16String NamespaceURI;
 
   TimedTextDescriptor(const Dictionary*& d) : GenericDataEssenceDescriptor(d), m_Dict(d) {}
+  TimedTextDescriptor(const TimedTextDescriptor& rhs) : GenericDataEssenceDescriptor(rhs.m_Dict), m_Dict(rhs.m_Dict) { Copy(rhs); }
 	  virtual ~TimedTextDescriptor() {}
+	  const TimedTextDescriptor& operator=(const TimedTextDescriptor& rhs) { Copy(rhs); return *this; }
+	  virtual void Copy(const TimedTextDescriptor& rhs);
           virtual const char* HasName() { return "TimedTextDescriptor"; }
           virtual Result_t InitFromTLVSet(TLVReader& TLVSet);
           virtual Result_t WriteToTLVSet(TLVWriter& TLVSet);
@@ -645,7 +699,6 @@ namespace ASDCP
       //
       class TimedTextResourceSubDescriptor : public InterchangeObject
 	{
-	  ASDCP_NO_COPY_CONSTRUCT(TimedTextResourceSubDescriptor);
 	  TimedTextResourceSubDescriptor();
 
 	public:
@@ -655,7 +708,10 @@ namespace ASDCP
           ui32_t EssenceStreamID;
 
   TimedTextResourceSubDescriptor(const Dictionary*& d) : InterchangeObject(d), m_Dict(d), EssenceStreamID(0) {}
+  TimedTextResourceSubDescriptor(const TimedTextResourceSubDescriptor& rhs) : InterchangeObject(rhs.m_Dict), m_Dict(rhs.m_Dict) { Copy(rhs); }
 	  virtual ~TimedTextResourceSubDescriptor() {}
+	  const TimedTextResourceSubDescriptor& operator=(const TimedTextResourceSubDescriptor& rhs) { Copy(rhs); return *this; }
+	  virtual void Copy(const TimedTextResourceSubDescriptor& rhs);
           virtual const char* HasName() { return "TimedTextResourceSubDescriptor"; }
           virtual Result_t InitFromTLVSet(TLVReader& TLVSet);
           virtual Result_t WriteToTLVSet(TLVWriter& TLVSet);
@@ -667,14 +723,16 @@ namespace ASDCP
       //
       class StereoscopicPictureSubDescriptor : public InterchangeObject
 	{
-	  ASDCP_NO_COPY_CONSTRUCT(StereoscopicPictureSubDescriptor);
 	  StereoscopicPictureSubDescriptor();
 
 	public:
 	  const Dictionary*& m_Dict;
 
   StereoscopicPictureSubDescriptor(const Dictionary*& d) : InterchangeObject(d), m_Dict(d) {}
+  StereoscopicPictureSubDescriptor(const StereoscopicPictureSubDescriptor& rhs) : InterchangeObject(rhs.m_Dict), m_Dict(rhs.m_Dict) { Copy(rhs); }
 	  virtual ~StereoscopicPictureSubDescriptor() {}
+	  const StereoscopicPictureSubDescriptor& operator=(const StereoscopicPictureSubDescriptor& rhs) { Copy(rhs); return *this; }
+	  virtual void Copy(const StereoscopicPictureSubDescriptor& rhs);
           virtual const char* HasName() { return "StereoscopicPictureSubDescriptor"; }
           virtual Result_t InitFromTLVSet(TLVReader& TLVSet);
           virtual Result_t WriteToTLVSet(TLVWriter& TLVSet);
@@ -686,7 +744,6 @@ namespace ASDCP
       //
       class NetworkLocator : public InterchangeObject
 	{
-	  ASDCP_NO_COPY_CONSTRUCT(NetworkLocator);
 	  NetworkLocator();
 
 	public:
@@ -694,8 +751,103 @@ namespace ASDCP
           UTF16String URLString;
 
   NetworkLocator(const Dictionary*& d) : InterchangeObject(d), m_Dict(d) {}
+  NetworkLocator(const NetworkLocator& rhs) : InterchangeObject(rhs.m_Dict), m_Dict(rhs.m_Dict) { Copy(rhs); }
 	  virtual ~NetworkLocator() {}
+	  const NetworkLocator& operator=(const NetworkLocator& rhs) { Copy(rhs); return *this; }
+	  virtual void Copy(const NetworkLocator& rhs);
           virtual const char* HasName() { return "NetworkLocator"; }
+          virtual Result_t InitFromTLVSet(TLVReader& TLVSet);
+          virtual Result_t WriteToTLVSet(TLVWriter& TLVSet);
+	  virtual void     Dump(FILE* = 0);
+	  virtual Result_t InitFromBuffer(const byte_t* p, ui32_t l);
+	  virtual Result_t WriteToBuffer(ASDCP::FrameBuffer&);
+	};
+
+      //
+      class MCALabelSubDescriptor : public InterchangeObject
+	{
+	  MCALabelSubDescriptor();
+
+	public:
+	  const Dictionary*& m_Dict;
+          UL MCALabelDictionaryID;
+          UUID MCALinkID;
+          UTF16String MCATagSymbol;
+          UTF16String MCATagName;
+          ui32_t MCAChannelID;
+          ISO8String RFC5646SpokenLanguage;
+
+  MCALabelSubDescriptor(const Dictionary*& d) : InterchangeObject(d), m_Dict(d), MCAChannelID(0) {}
+  MCALabelSubDescriptor(const MCALabelSubDescriptor& rhs) : InterchangeObject(rhs.m_Dict), m_Dict(rhs.m_Dict) { Copy(rhs); }
+	  virtual ~MCALabelSubDescriptor() {}
+	  const MCALabelSubDescriptor& operator=(const MCALabelSubDescriptor& rhs) { Copy(rhs); return *this; }
+	  virtual void Copy(const MCALabelSubDescriptor& rhs);
+          virtual const char* HasName() { return "MCALabelSubDescriptor"; }
+          virtual Result_t InitFromTLVSet(TLVReader& TLVSet);
+          virtual Result_t WriteToTLVSet(TLVWriter& TLVSet);
+	  virtual void     Dump(FILE* = 0);
+	  virtual Result_t InitFromBuffer(const byte_t* p, ui32_t l);
+	  virtual Result_t WriteToBuffer(ASDCP::FrameBuffer&);
+	};
+
+      //
+      class AudioChannelLabelSubDescriptor : public MCALabelSubDescriptor
+	{
+	  AudioChannelLabelSubDescriptor();
+
+	public:
+	  const Dictionary*& m_Dict;
+          UUID SoundfieldGroupLinkID;
+
+  AudioChannelLabelSubDescriptor(const Dictionary*& d) : MCALabelSubDescriptor(d), m_Dict(d) {}
+  AudioChannelLabelSubDescriptor(const AudioChannelLabelSubDescriptor& rhs) : MCALabelSubDescriptor(rhs.m_Dict), m_Dict(rhs.m_Dict) { Copy(rhs); }
+	  virtual ~AudioChannelLabelSubDescriptor() {}
+	  const AudioChannelLabelSubDescriptor& operator=(const AudioChannelLabelSubDescriptor& rhs) { Copy(rhs); return *this; }
+	  virtual void Copy(const AudioChannelLabelSubDescriptor& rhs);
+          virtual const char* HasName() { return "AudioChannelLabelSubDescriptor"; }
+          virtual Result_t InitFromTLVSet(TLVReader& TLVSet);
+          virtual Result_t WriteToTLVSet(TLVWriter& TLVSet);
+	  virtual void     Dump(FILE* = 0);
+	  virtual Result_t InitFromBuffer(const byte_t* p, ui32_t l);
+	  virtual Result_t WriteToBuffer(ASDCP::FrameBuffer&);
+	};
+
+      //
+      class SoundfieldGroupLabelSubDescriptor : public MCALabelSubDescriptor
+	{
+	  SoundfieldGroupLabelSubDescriptor();
+
+	public:
+	  const Dictionary*& m_Dict;
+          Array<UUID> GroupOfSoundfieldGroupsLinkID;
+
+  SoundfieldGroupLabelSubDescriptor(const Dictionary*& d) : MCALabelSubDescriptor(d), m_Dict(d) {}
+  SoundfieldGroupLabelSubDescriptor(const SoundfieldGroupLabelSubDescriptor& rhs) : MCALabelSubDescriptor(rhs.m_Dict), m_Dict(rhs.m_Dict) { Copy(rhs); }
+	  virtual ~SoundfieldGroupLabelSubDescriptor() {}
+	  const SoundfieldGroupLabelSubDescriptor& operator=(const SoundfieldGroupLabelSubDescriptor& rhs) { Copy(rhs); return *this; }
+	  virtual void Copy(const SoundfieldGroupLabelSubDescriptor& rhs);
+          virtual const char* HasName() { return "SoundfieldGroupLabelSubDescriptor"; }
+          virtual Result_t InitFromTLVSet(TLVReader& TLVSet);
+          virtual Result_t WriteToTLVSet(TLVWriter& TLVSet);
+	  virtual void     Dump(FILE* = 0);
+	  virtual Result_t InitFromBuffer(const byte_t* p, ui32_t l);
+	  virtual Result_t WriteToBuffer(ASDCP::FrameBuffer&);
+	};
+
+      //
+      class GroupOfSoundfieldGroupsLabelSubDescriptor : public MCALabelSubDescriptor
+	{
+	  GroupOfSoundfieldGroupsLabelSubDescriptor();
+
+	public:
+	  const Dictionary*& m_Dict;
+
+  GroupOfSoundfieldGroupsLabelSubDescriptor(const Dictionary*& d) : MCALabelSubDescriptor(d), m_Dict(d) {}
+  GroupOfSoundfieldGroupsLabelSubDescriptor(const GroupOfSoundfieldGroupsLabelSubDescriptor& rhs) : MCALabelSubDescriptor(rhs.m_Dict), m_Dict(rhs.m_Dict) { Copy(rhs); }
+	  virtual ~GroupOfSoundfieldGroupsLabelSubDescriptor() {}
+	  const GroupOfSoundfieldGroupsLabelSubDescriptor& operator=(const GroupOfSoundfieldGroupsLabelSubDescriptor& rhs) { Copy(rhs); return *this; }
+	  virtual void Copy(const GroupOfSoundfieldGroupsLabelSubDescriptor& rhs);
+          virtual const char* HasName() { return "GroupOfSoundfieldGroupsLabelSubDescriptor"; }
           virtual Result_t InitFromTLVSet(TLVReader& TLVSet);
           virtual Result_t WriteToTLVSet(TLVWriter& TLVSet);
 	  virtual void     Dump(FILE* = 0);

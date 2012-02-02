@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2005-2009, John Hurst
+Copyright (c) 2005-2012, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -69,6 +69,10 @@ static InterchangeObject* TimedTextDescriptor_Factory(const Dictionary*& Dict) {
 static InterchangeObject* TimedTextResourceSubDescriptor_Factory(const Dictionary*& Dict) { return new TimedTextResourceSubDescriptor(Dict); }
 static InterchangeObject* StereoscopicPictureSubDescriptor_Factory(const Dictionary*& Dict) { return new StereoscopicPictureSubDescriptor(Dict); }
 static InterchangeObject* NetworkLocator_Factory(const Dictionary*& Dict) { return new NetworkLocator(Dict); }
+static InterchangeObject* MCALabelSubDescriptor_Factory(const Dictionary*& Dict) { return new MCALabelSubDescriptor(Dict); }
+static InterchangeObject* AudioChannelLabelSubDescriptor_Factory(const Dictionary*& Dict) { return new AudioChannelLabelSubDescriptor(Dict); }
+static InterchangeObject* SoundfieldGroupLabelSubDescriptor_Factory(const Dictionary*& Dict) { return new SoundfieldGroupLabelSubDescriptor(Dict); }
+static InterchangeObject* GroupOfSoundfieldGroupsLabelSubDescriptor_Factory(const Dictionary*& Dict) { return new GroupOfSoundfieldGroupsLabelSubDescriptor(Dict); }
 
 
 void
@@ -104,6 +108,10 @@ ASDCP::MXF::Metadata_InitTypes(const Dictionary*& Dict)
   SetObjectFactory(Dict->ul(MDD_TimedTextResourceSubDescriptor), TimedTextResourceSubDescriptor_Factory);
   SetObjectFactory(Dict->ul(MDD_StereoscopicPictureSubDescriptor), StereoscopicPictureSubDescriptor_Factory);
   SetObjectFactory(Dict->ul(MDD_NetworkLocator), NetworkLocator_Factory);
+  SetObjectFactory(Dict->ul(MDD_MCALabelSubDescriptor), MCALabelSubDescriptor_Factory);
+  SetObjectFactory(Dict->ul(MDD_AudioChannelLabelSubDescriptor), AudioChannelLabelSubDescriptor_Factory);
+  SetObjectFactory(Dict->ul(MDD_SoundfieldGroupLabelSubDescriptor), SoundfieldGroupLabelSubDescriptor_Factory);
+  SetObjectFactory(Dict->ul(MDD_GroupOfSoundfieldGroupsLabelSubDescriptor), GroupOfSoundfieldGroupsLabelSubDescriptor_Factory);
 }
 
 //------------------------------------------------------------------------------------------
@@ -148,6 +156,21 @@ Identification::WriteToTLVSet(TLVWriter& TLVSet)
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(Identification, ToolkitVersion));
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(Identification, Platform));
   return result;
+}
+
+//
+void
+Identification::Copy(const Identification& rhs)
+{
+  ThisGenerationUID = rhs.ThisGenerationUID;
+  CompanyName = rhs.CompanyName;
+  ProductName = rhs.ProductName;
+  ProductVersion = rhs.ProductVersion;
+  VersionString = rhs.VersionString;
+  ProductUID = rhs.ProductUID;
+  ModificationDate = rhs.ModificationDate;
+  ToolkitVersion = rhs.ToolkitVersion;
+  Platform = rhs.Platform;
 }
 
 //
@@ -217,6 +240,14 @@ ContentStorage::WriteToTLVSet(TLVWriter& TLVSet)
 
 //
 void
+ContentStorage::Copy(const ContentStorage& rhs)
+{
+  Packages = rhs.Packages;
+  EssenceContainerData = rhs.EssenceContainerData;
+}
+
+//
+void
 ContentStorage::Dump(FILE* stream)
 {
   char identbuf[IdentBufferLen];
@@ -275,6 +306,15 @@ EssenceContainerData::WriteToTLVSet(TLVWriter& TLVSet)
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi32(OBJ_WRITE_ARGS(EssenceContainerData, IndexSID));
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi32(OBJ_WRITE_ARGS(EssenceContainerData, BodySID));
   return result;
+}
+
+//
+void
+EssenceContainerData::Copy(const EssenceContainerData& rhs)
+{
+  LinkedPackageUID = rhs.LinkedPackageUID;
+  IndexSID = rhs.IndexSID;
+  BodySID = rhs.BodySID;
 }
 
 //
@@ -344,6 +384,17 @@ GenericPackage::WriteToTLVSet(TLVWriter& TLVSet)
 
 //
 void
+GenericPackage::Copy(const GenericPackage& rhs)
+{
+  PackageUID = rhs.PackageUID;
+  Name = rhs.Name;
+  PackageCreationDate = rhs.PackageCreationDate;
+  PackageModifiedDate = rhs.PackageModifiedDate;
+  Tracks = rhs.Tracks;
+}
+
+//
+void
 GenericPackage::Dump(FILE* stream)
 {
   char identbuf[IdentBufferLen];
@@ -381,6 +432,12 @@ MaterialPackage::WriteToTLVSet(TLVWriter& TLVSet)
   assert(m_Dict);
   Result_t result = GenericPackage::WriteToTLVSet(TLVSet);
   return result;
+}
+
+//
+void
+MaterialPackage::Copy(const MaterialPackage& rhs)
+{
 }
 
 //
@@ -435,6 +492,13 @@ SourcePackage::WriteToTLVSet(TLVWriter& TLVSet)
   Result_t result = GenericPackage::WriteToTLVSet(TLVSet);
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(SourcePackage, Descriptor));
   return result;
+}
+
+//
+void
+SourcePackage::Copy(const SourcePackage& rhs)
+{
+  Descriptor = rhs.Descriptor;
 }
 
 //
@@ -500,6 +564,16 @@ GenericTrack::WriteToTLVSet(TLVWriter& TLVSet)
 
 //
 void
+GenericTrack::Copy(const GenericTrack& rhs)
+{
+  TrackID = rhs.TrackID;
+  TrackNumber = rhs.TrackNumber;
+  TrackName = rhs.TrackName;
+  Sequence = rhs.Sequence;
+}
+
+//
+void
 GenericTrack::Dump(FILE* stream)
 {
   char identbuf[IdentBufferLen];
@@ -535,6 +609,12 @@ StaticTrack::WriteToTLVSet(TLVWriter& TLVSet)
   assert(m_Dict);
   Result_t result = GenericTrack::WriteToTLVSet(TLVSet);
   return result;
+}
+
+//
+void
+StaticTrack::Copy(const StaticTrack& rhs)
+{
 }
 
 //
@@ -591,6 +671,14 @@ Track::WriteToTLVSet(TLVWriter& TLVSet)
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(Track, EditRate));
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi64(OBJ_WRITE_ARGS(Track, Origin));
   return result;
+}
+
+//
+void
+Track::Copy(const Track& rhs)
+{
+  EditRate = rhs.EditRate;
+  Origin = rhs.Origin;
 }
 
 //
@@ -653,6 +741,14 @@ StructuralComponent::WriteToTLVSet(TLVWriter& TLVSet)
 
 //
 void
+StructuralComponent::Copy(const StructuralComponent& rhs)
+{
+  DataDefinition = rhs.DataDefinition;
+  Duration = rhs.Duration;
+}
+
+//
+void
 StructuralComponent::Dump(FILE* stream)
 {
   char identbuf[IdentBufferLen];
@@ -688,6 +784,13 @@ Sequence::WriteToTLVSet(TLVWriter& TLVSet)
   Result_t result = StructuralComponent::WriteToTLVSet(TLVSet);
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(Sequence, StructuralComponents));
   return result;
+}
+
+//
+void
+Sequence::Copy(const Sequence& rhs)
+{
+  StructuralComponents = rhs.StructuralComponents;
 }
 
 //
@@ -748,6 +851,15 @@ SourceClip::WriteToTLVSet(TLVWriter& TLVSet)
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(SourceClip, SourcePackageID));
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi32(OBJ_WRITE_ARGS(SourceClip, SourceTrackID));
   return result;
+}
+
+//
+void
+SourceClip::Copy(const SourceClip& rhs)
+{
+  StartPosition = rhs.StartPosition;
+  SourcePackageID = rhs.SourcePackageID;
+  SourceTrackID = rhs.SourceTrackID;
 }
 
 //
@@ -813,6 +925,15 @@ TimecodeComponent::WriteToTLVSet(TLVWriter& TLVSet)
 
 //
 void
+TimecodeComponent::Copy(const TimecodeComponent& rhs)
+{
+  RoundedTimecodeBase = rhs.RoundedTimecodeBase;
+  StartTimecode = rhs.StartTimecode;
+  DropFrame = rhs.DropFrame;
+}
+
+//
+void
 TimecodeComponent::Dump(FILE* stream)
 {
   char identbuf[IdentBufferLen];
@@ -872,6 +993,14 @@ GenericDescriptor::WriteToTLVSet(TLVWriter& TLVSet)
 
 //
 void
+GenericDescriptor::Copy(const GenericDescriptor& rhs)
+{
+  Locators = rhs.Locators;
+  SubDescriptors = rhs.SubDescriptors;
+}
+
+//
+void
 GenericDescriptor::Dump(FILE* stream)
 {
   char identbuf[IdentBufferLen];
@@ -917,6 +1046,17 @@ FileDescriptor::WriteToTLVSet(TLVWriter& TLVSet)
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(FileDescriptor, EssenceContainer));
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(FileDescriptor, Codec));
   return result;
+}
+
+//
+void
+FileDescriptor::Copy(const FileDescriptor& rhs)
+{
+  LinkedTrackID = rhs.LinkedTrackID;
+  SampleRate = rhs.SampleRate;
+  ContainerDuration = rhs.ContainerDuration;
+  EssenceContainer = rhs.EssenceContainer;
+  Codec = rhs.Codec;
 }
 
 //
@@ -990,6 +1130,18 @@ GenericSoundEssenceDescriptor::WriteToTLVSet(TLVWriter& TLVSet)
 
 //
 void
+GenericSoundEssenceDescriptor::Copy(const GenericSoundEssenceDescriptor& rhs)
+{
+  AudioSamplingRate = rhs.AudioSamplingRate;
+  Locked = rhs.Locked;
+  AudioRefLevel = rhs.AudioRefLevel;
+  ChannelCount = rhs.ChannelCount;
+  QuantizationBits = rhs.QuantizationBits;
+  DialNorm = rhs.DialNorm;
+}
+
+//
+void
 GenericSoundEssenceDescriptor::Dump(FILE* stream)
 {
   char identbuf[IdentBufferLen];
@@ -1052,6 +1204,16 @@ WaveAudioDescriptor::WriteToTLVSet(TLVWriter& TLVSet)
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi32(OBJ_WRITE_ARGS(WaveAudioDescriptor, AvgBps));
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(WaveAudioDescriptor, ChannelAssignment));
   return result;
+}
+
+//
+void
+WaveAudioDescriptor::Copy(const WaveAudioDescriptor& rhs)
+{
+  BlockAlign = rhs.BlockAlign;
+  SequenceOffset = rhs.SequenceOffset;
+  AvgBps = rhs.AvgBps;
+  ChannelAssignment = rhs.ChannelAssignment;
 }
 
 //
@@ -1122,6 +1284,17 @@ GenericPictureEssenceDescriptor::WriteToTLVSet(TLVWriter& TLVSet)
 
 //
 void
+GenericPictureEssenceDescriptor::Copy(const GenericPictureEssenceDescriptor& rhs)
+{
+  FrameLayout = rhs.FrameLayout;
+  StoredWidth = rhs.StoredWidth;
+  StoredHeight = rhs.StoredHeight;
+  AspectRatio = rhs.AspectRatio;
+  PictureEssenceCoding = rhs.PictureEssenceCoding;
+}
+
+//
+void
 GenericPictureEssenceDescriptor::Dump(FILE* stream)
 {
   char identbuf[IdentBufferLen];
@@ -1179,6 +1352,14 @@ RGBAEssenceDescriptor::WriteToTLVSet(TLVWriter& TLVSet)
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi32(OBJ_WRITE_ARGS(RGBAEssenceDescriptor, ComponentMaxRef));
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi32(OBJ_WRITE_ARGS(RGBAEssenceDescriptor, ComponentMinRef));
   return result;
+}
+
+//
+void
+RGBAEssenceDescriptor::Copy(const RGBAEssenceDescriptor& rhs)
+{
+  ComponentMaxRef = rhs.ComponentMaxRef;
+  ComponentMinRef = rhs.ComponentMinRef;
 }
 
 //
@@ -1263,6 +1444,25 @@ JPEG2000PictureSubDescriptor::WriteToTLVSet(TLVWriter& TLVSet)
 
 //
 void
+JPEG2000PictureSubDescriptor::Copy(const JPEG2000PictureSubDescriptor& rhs)
+{
+  Rsize = rhs.Rsize;
+  Xsize = rhs.Xsize;
+  Ysize = rhs.Ysize;
+  XOsize = rhs.XOsize;
+  YOsize = rhs.YOsize;
+  XTsize = rhs.XTsize;
+  YTsize = rhs.YTsize;
+  XTOsize = rhs.XTOsize;
+  YTOsize = rhs.YTOsize;
+  Csize = rhs.Csize;
+  PictureComponentSizing = rhs.PictureComponentSizing;
+  CodingStyleDefault = rhs.CodingStyleDefault;
+  QuantizationDefault = rhs.QuantizationDefault;
+}
+
+//
+void
 JPEG2000PictureSubDescriptor::Dump(FILE* stream)
 {
   char identbuf[IdentBufferLen];
@@ -1336,6 +1536,16 @@ CDCIEssenceDescriptor::WriteToTLVSet(TLVWriter& TLVSet)
 
 //
 void
+CDCIEssenceDescriptor::Copy(const CDCIEssenceDescriptor& rhs)
+{
+  ComponentDepth = rhs.ComponentDepth;
+  HorizontalSubsampling = rhs.HorizontalSubsampling;
+  VerticalSubsampling = rhs.VerticalSubsampling;
+  ColorSiting = rhs.ColorSiting;
+}
+
+//
+void
 CDCIEssenceDescriptor::Dump(FILE* stream)
 {
   char identbuf[IdentBufferLen];
@@ -1396,6 +1606,16 @@ MPEG2VideoDescriptor::WriteToTLVSet(TLVWriter& TLVSet)
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi32(OBJ_WRITE_ARGS(MPEG2VideoDescriptor, BitRate));
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi8(OBJ_WRITE_ARGS(MPEG2VideoDescriptor, ProfileAndLevel));
   return result;
+}
+
+//
+void
+MPEG2VideoDescriptor::Copy(const MPEG2VideoDescriptor& rhs)
+{
+  CodedContentType = rhs.CodedContentType;
+  LowDelay = rhs.LowDelay;
+  BitRate = rhs.BitRate;
+  ProfileAndLevel = rhs.ProfileAndLevel;
 }
 
 //
@@ -1466,6 +1686,17 @@ DMSegment::WriteToTLVSet(TLVWriter& TLVSet)
 
 //
 void
+DMSegment::Copy(const DMSegment& rhs)
+{
+  DataDefinition = rhs.DataDefinition;
+  EventStartPosition = rhs.EventStartPosition;
+  Duration = rhs.Duration;
+  EventComment = rhs.EventComment;
+  DMFramework = rhs.DMFramework;
+}
+
+//
+void
 DMSegment::Dump(FILE* stream)
 {
   char identbuf[IdentBufferLen];
@@ -1521,6 +1752,13 @@ CryptographicFramework::WriteToTLVSet(TLVWriter& TLVSet)
   Result_t result = InterchangeObject::WriteToTLVSet(TLVSet);
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(CryptographicFramework, ContextSR));
   return result;
+}
+
+//
+void
+CryptographicFramework::Copy(const CryptographicFramework& rhs)
+{
+  ContextSR = rhs.ContextSR;
 }
 
 //
@@ -1588,6 +1826,17 @@ CryptographicContext::WriteToTLVSet(TLVWriter& TLVSet)
 
 //
 void
+CryptographicContext::Copy(const CryptographicContext& rhs)
+{
+  ContextID = rhs.ContextID;
+  SourceEssenceContainer = rhs.SourceEssenceContainer;
+  CipherAlgorithm = rhs.CipherAlgorithm;
+  MICAlgorithm = rhs.MICAlgorithm;
+  CryptographicKeyID = rhs.CryptographicKeyID;
+}
+
+//
+void
 CryptographicContext::Dump(FILE* stream)
 {
   char identbuf[IdentBufferLen];
@@ -1647,6 +1896,13 @@ GenericDataEssenceDescriptor::WriteToTLVSet(TLVWriter& TLVSet)
 
 //
 void
+GenericDataEssenceDescriptor::Copy(const GenericDataEssenceDescriptor& rhs)
+{
+  DataEssenceCoding = rhs.DataEssenceCoding;
+}
+
+//
+void
 GenericDataEssenceDescriptor::Dump(FILE* stream)
 {
   char identbuf[IdentBufferLen];
@@ -1702,6 +1958,15 @@ TimedTextDescriptor::WriteToTLVSet(TLVWriter& TLVSet)
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(TimedTextDescriptor, UCSEncoding));
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(TimedTextDescriptor, NamespaceURI));
   return result;
+}
+
+//
+void
+TimedTextDescriptor::Copy(const TimedTextDescriptor& rhs)
+{
+  ResourceID = rhs.ResourceID;
+  UCSEncoding = rhs.UCSEncoding;
+  NamespaceURI = rhs.NamespaceURI;
 }
 
 //
@@ -1767,6 +2032,15 @@ TimedTextResourceSubDescriptor::WriteToTLVSet(TLVWriter& TLVSet)
 
 //
 void
+TimedTextResourceSubDescriptor::Copy(const TimedTextResourceSubDescriptor& rhs)
+{
+  AncillaryResourceID = rhs.AncillaryResourceID;
+  MIMEMediaType = rhs.MIMEMediaType;
+  EssenceStreamID = rhs.EssenceStreamID;
+}
+
+//
+void
 TimedTextResourceSubDescriptor::Dump(FILE* stream)
 {
   char identbuf[IdentBufferLen];
@@ -1818,6 +2092,12 @@ StereoscopicPictureSubDescriptor::WriteToTLVSet(TLVWriter& TLVSet)
   assert(m_Dict);
   Result_t result = InterchangeObject::WriteToTLVSet(TLVSet);
   return result;
+}
+
+//
+void
+StereoscopicPictureSubDescriptor::Copy(const StereoscopicPictureSubDescriptor& rhs)
+{
 }
 
 //
@@ -1876,6 +2156,13 @@ NetworkLocator::WriteToTLVSet(TLVWriter& TLVSet)
 
 //
 void
+NetworkLocator::Copy(const NetworkLocator& rhs)
+{
+  URLString = rhs.URLString;
+}
+
+//
+void
 NetworkLocator::Dump(FILE* stream)
 {
   char identbuf[IdentBufferLen];
@@ -1903,6 +2190,271 @@ NetworkLocator::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 {
   assert(m_Dict);
   m_Typeinfo = &(m_Dict->Type(MDD_NetworkLocator));
+  return InterchangeObject::WriteToBuffer(Buffer);
+}
+
+//------------------------------------------------------------------------------------------
+// MCALabelSubDescriptor
+
+//
+ASDCP::Result_t
+MCALabelSubDescriptor::InitFromTLVSet(TLVReader& TLVSet)
+{
+  assert(m_Dict);
+  Result_t result = InterchangeObject::InitFromTLVSet(TLVSet);
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(MCALabelSubDescriptor, MCALabelDictionaryID));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(MCALabelSubDescriptor, MCALinkID));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(MCALabelSubDescriptor, MCATagSymbol));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(MCALabelSubDescriptor, MCATagName));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadUi32(OBJ_READ_ARGS(MCALabelSubDescriptor, MCAChannelID));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(MCALabelSubDescriptor, RFC5646SpokenLanguage));
+  return result;
+}
+
+//
+ASDCP::Result_t
+MCALabelSubDescriptor::WriteToTLVSet(TLVWriter& TLVSet)
+{
+  assert(m_Dict);
+  Result_t result = InterchangeObject::WriteToTLVSet(TLVSet);
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(MCALabelSubDescriptor, MCALabelDictionaryID));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(MCALabelSubDescriptor, MCALinkID));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(MCALabelSubDescriptor, MCATagSymbol));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(MCALabelSubDescriptor, MCATagName));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi32(OBJ_WRITE_ARGS(MCALabelSubDescriptor, MCAChannelID));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(MCALabelSubDescriptor, RFC5646SpokenLanguage));
+  return result;
+}
+
+//
+void
+MCALabelSubDescriptor::Copy(const MCALabelSubDescriptor& rhs)
+{
+  MCALabelDictionaryID = rhs.MCALabelDictionaryID;
+  MCALinkID = rhs.MCALinkID;
+  MCATagSymbol = rhs.MCATagSymbol;
+  MCATagName = rhs.MCATagName;
+  MCAChannelID = rhs.MCAChannelID;
+  RFC5646SpokenLanguage = rhs.RFC5646SpokenLanguage;
+}
+
+//
+void
+MCALabelSubDescriptor::Dump(FILE* stream)
+{
+  char identbuf[IdentBufferLen];
+  *identbuf = 0;
+
+  if ( stream == 0 )
+    stream = stderr;
+
+  InterchangeObject::Dump(stream);
+  fprintf(stream, "  %22s = %s\n",  "MCALabelDictionaryID", MCALabelDictionaryID.EncodeString(identbuf, IdentBufferLen));
+  fprintf(stream, "  %22s = %s\n",  "MCALinkID", MCALinkID.EncodeString(identbuf, IdentBufferLen));
+  fprintf(stream, "  %22s = %s\n",  "MCATagSymbol", MCATagSymbol.EncodeString(identbuf, IdentBufferLen));
+  fprintf(stream, "  %22s = %s\n",  "MCATagName", MCATagName.EncodeString(identbuf, IdentBufferLen));
+  fprintf(stream, "  %22s = %d\n",  "MCAChannelID", MCAChannelID);
+  fprintf(stream, "  %22s = %s\n",  "RFC5646SpokenLanguage", RFC5646SpokenLanguage.EncodeString(identbuf, IdentBufferLen));
+}
+
+//
+ASDCP::Result_t
+MCALabelSubDescriptor::InitFromBuffer(const byte_t* p, ui32_t l)
+{
+  assert(m_Dict);
+  m_Typeinfo = &(m_Dict->Type(MDD_MCALabelSubDescriptor));
+  return InterchangeObject::InitFromBuffer(p, l);
+}
+
+//
+ASDCP::Result_t
+MCALabelSubDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
+{
+  assert(m_Dict);
+  m_Typeinfo = &(m_Dict->Type(MDD_MCALabelSubDescriptor));
+  return InterchangeObject::WriteToBuffer(Buffer);
+}
+
+//------------------------------------------------------------------------------------------
+// AudioChannelLabelSubDescriptor
+
+//
+ASDCP::Result_t
+AudioChannelLabelSubDescriptor::InitFromTLVSet(TLVReader& TLVSet)
+{
+  assert(m_Dict);
+  Result_t result = MCALabelSubDescriptor::InitFromTLVSet(TLVSet);
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(AudioChannelLabelSubDescriptor, SoundfieldGroupLinkID));
+  return result;
+}
+
+//
+ASDCP::Result_t
+AudioChannelLabelSubDescriptor::WriteToTLVSet(TLVWriter& TLVSet)
+{
+  assert(m_Dict);
+  Result_t result = MCALabelSubDescriptor::WriteToTLVSet(TLVSet);
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(AudioChannelLabelSubDescriptor, SoundfieldGroupLinkID));
+  return result;
+}
+
+//
+void
+AudioChannelLabelSubDescriptor::Copy(const AudioChannelLabelSubDescriptor& rhs)
+{
+  SoundfieldGroupLinkID = rhs.SoundfieldGroupLinkID;
+}
+
+//
+void
+AudioChannelLabelSubDescriptor::Dump(FILE* stream)
+{
+  char identbuf[IdentBufferLen];
+  *identbuf = 0;
+
+  if ( stream == 0 )
+    stream = stderr;
+
+  MCALabelSubDescriptor::Dump(stream);
+  fprintf(stream, "  %22s = %s\n",  "SoundfieldGroupLinkID", SoundfieldGroupLinkID.EncodeString(identbuf, IdentBufferLen));
+}
+
+//
+ASDCP::Result_t
+AudioChannelLabelSubDescriptor::InitFromBuffer(const byte_t* p, ui32_t l)
+{
+  assert(m_Dict);
+  m_Typeinfo = &(m_Dict->Type(MDD_AudioChannelLabelSubDescriptor));
+  return InterchangeObject::InitFromBuffer(p, l);
+}
+
+//
+ASDCP::Result_t
+AudioChannelLabelSubDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
+{
+  assert(m_Dict);
+  m_Typeinfo = &(m_Dict->Type(MDD_AudioChannelLabelSubDescriptor));
+  return InterchangeObject::WriteToBuffer(Buffer);
+}
+
+//------------------------------------------------------------------------------------------
+// SoundfieldGroupLabelSubDescriptor
+
+//
+ASDCP::Result_t
+SoundfieldGroupLabelSubDescriptor::InitFromTLVSet(TLVReader& TLVSet)
+{
+  assert(m_Dict);
+  Result_t result = MCALabelSubDescriptor::InitFromTLVSet(TLVSet);
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(SoundfieldGroupLabelSubDescriptor, GroupOfSoundfieldGroupsLinkID));
+  return result;
+}
+
+//
+ASDCP::Result_t
+SoundfieldGroupLabelSubDescriptor::WriteToTLVSet(TLVWriter& TLVSet)
+{
+  assert(m_Dict);
+  Result_t result = MCALabelSubDescriptor::WriteToTLVSet(TLVSet);
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(SoundfieldGroupLabelSubDescriptor, GroupOfSoundfieldGroupsLinkID));
+  return result;
+}
+
+//
+void
+SoundfieldGroupLabelSubDescriptor::Copy(const SoundfieldGroupLabelSubDescriptor& rhs)
+{
+  GroupOfSoundfieldGroupsLinkID = rhs.GroupOfSoundfieldGroupsLinkID;
+}
+
+//
+void
+SoundfieldGroupLabelSubDescriptor::Dump(FILE* stream)
+{
+  char identbuf[IdentBufferLen];
+  *identbuf = 0;
+
+  if ( stream == 0 )
+    stream = stderr;
+
+  MCALabelSubDescriptor::Dump(stream);
+  fprintf(stream, "  %22s:\n",  "GroupOfSoundfieldGroupsLinkID");
+  GroupOfSoundfieldGroupsLinkID.Dump(stream);
+}
+
+//
+ASDCP::Result_t
+SoundfieldGroupLabelSubDescriptor::InitFromBuffer(const byte_t* p, ui32_t l)
+{
+  assert(m_Dict);
+  m_Typeinfo = &(m_Dict->Type(MDD_SoundfieldGroupLabelSubDescriptor));
+  return InterchangeObject::InitFromBuffer(p, l);
+}
+
+//
+ASDCP::Result_t
+SoundfieldGroupLabelSubDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
+{
+  assert(m_Dict);
+  m_Typeinfo = &(m_Dict->Type(MDD_SoundfieldGroupLabelSubDescriptor));
+  return InterchangeObject::WriteToBuffer(Buffer);
+}
+
+//------------------------------------------------------------------------------------------
+// GroupOfSoundfieldGroupsLabelSubDescriptor
+
+//
+ASDCP::Result_t
+GroupOfSoundfieldGroupsLabelSubDescriptor::InitFromTLVSet(TLVReader& TLVSet)
+{
+  assert(m_Dict);
+  Result_t result = MCALabelSubDescriptor::InitFromTLVSet(TLVSet);
+  return result;
+}
+
+//
+ASDCP::Result_t
+GroupOfSoundfieldGroupsLabelSubDescriptor::WriteToTLVSet(TLVWriter& TLVSet)
+{
+  assert(m_Dict);
+  Result_t result = MCALabelSubDescriptor::WriteToTLVSet(TLVSet);
+  return result;
+}
+
+//
+void
+GroupOfSoundfieldGroupsLabelSubDescriptor::Copy(const GroupOfSoundfieldGroupsLabelSubDescriptor& rhs)
+{
+}
+
+//
+void
+GroupOfSoundfieldGroupsLabelSubDescriptor::Dump(FILE* stream)
+{
+  char identbuf[IdentBufferLen];
+  *identbuf = 0;
+
+  if ( stream == 0 )
+    stream = stderr;
+
+  MCALabelSubDescriptor::Dump(stream);
+}
+
+//
+ASDCP::Result_t
+GroupOfSoundfieldGroupsLabelSubDescriptor::InitFromBuffer(const byte_t* p, ui32_t l)
+{
+  assert(m_Dict);
+  m_Typeinfo = &(m_Dict->Type(MDD_GroupOfSoundfieldGroupsLabelSubDescriptor));
+  return InterchangeObject::InitFromBuffer(p, l);
+}
+
+//
+ASDCP::Result_t
+GroupOfSoundfieldGroupsLabelSubDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
+{
+  assert(m_Dict);
+  m_Typeinfo = &(m_Dict->Type(MDD_GroupOfSoundfieldGroupsLabelSubDescriptor));
   return InterchangeObject::WriteToBuffer(Buffer);
 }
 

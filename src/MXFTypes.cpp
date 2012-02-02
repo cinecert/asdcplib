@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2005-2011, John Hurst
+Copyright (c) 2005-2012, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -323,6 +323,61 @@ ASDCP::MXF::UTF16String::Archive(Kumu::MemIOWriter* Writer) const
     }
 
   return true;
+}
+
+//------------------------------------------------------------------------------------------
+//
+
+//
+const ASDCP::MXF::ISO8String&
+ASDCP::MXF::ISO8String::operator=(const char* sz)
+{
+  if ( sz == 0 || *sz == 0 )
+    erase();
+
+  else
+    this->assign(sz);
+  
+  return *this;
+}
+
+//
+const ASDCP::MXF::ISO8String&
+ASDCP::MXF::ISO8String::operator=(const std::string& str)
+{
+  this->assign(str);
+  return *this;
+}
+
+//
+const char*
+ASDCP::MXF::ISO8String::EncodeString(char* str_buf, ui32_t buf_len) const
+{
+  ui32_t write_len = Kumu::xmin(buf_len - 1, (ui32_t)size());
+  strncpy(str_buf, c_str(), write_len);
+  str_buf[write_len] = 0;
+  return str_buf;
+}
+
+//
+bool
+ASDCP::MXF::ISO8String::Unarchive(Kumu::MemIOReader* Reader)
+{
+  assign((char*)Reader->CurrentData(), Reader->Remainder());
+  return true;
+}
+
+//
+bool
+ASDCP::MXF::ISO8String::Archive(Kumu::MemIOWriter* Writer) const
+{
+  if ( size() > IdentBufferLen )
+    {
+      DefaultLogSink().Error("String length exceeds maximum %u bytes\n", IdentBufferLen);
+      return false;
+    }
+
+  return Writer->WriteString(*this);
 }
 
 

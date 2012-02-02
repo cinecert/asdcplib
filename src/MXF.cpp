@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2005-2009, John Hurst
+Copyright (c) 2005-2012, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -189,7 +189,7 @@ public:
   }
 
   //
-  void AddPacket(InterchangeObject* ThePacket)
+  void AddPacket(InterchangeObject* ThePacket) // takes ownership
   {
     assert(ThePacket);
     m_Map.insert(std::map<UUID, InterchangeObject*>::value_type(ThePacket->InstanceUID, ThePacket));
@@ -267,7 +267,7 @@ ASDCP::MXF::Partition::~Partition()
 {
 }
 
-//
+// takes ownership
 void
 ASDCP::MXF::Partition::AddChildObject(InterchangeObject* Object)
 {
@@ -814,7 +814,7 @@ ASDCP::MXF::OPAtomHeader::InitFromBuffer(const byte_t* p, ui32_t l)
 	    }
 	  else
 	    {
-	      m_PacketList->AddPacket(object);
+	      m_PacketList->AddPacket(object); // takes ownership
 
 	      if ( object->IsA(m_Dict->ul(MDD_Preface)) && m_Preface == 0 )
 		m_Preface = (Preface*)object;
@@ -1070,7 +1070,7 @@ ASDCP::MXF::OPAtomIndexFooter::InitFromBuffer(const byte_t* p, ui32_t l)
 
       if ( ASDCP_SUCCESS(result) )
 	{
-	  m_PacketList->AddPacket(object);
+	  m_PacketList->AddPacket(object); // takes ownership
 	}
       else
 	{

@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2006-2009, John Hurst
+Copyright (c) 2006-2012, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -317,6 +317,18 @@ namespace ASDCP {
 	MDD_DCAudioChannelCfg_3_7p1, // 279
 	MDD_DCAudioChannelCfg_4_WTF, // 280
 	MDD_DCAudioChannelCfg_5_7p1_DS, // 281
+	MDD_MCALabelSubDescriptor, // 282
+	MDD_AudioChannelLabelSubDescriptor, // 283
+	MDD_SoundfieldGroupLabelSubDescriptor, // 284
+	MDD_GroupOfSoundfieldGroupsLabelSubDescriptor, // 285
+	MDD_MCALabelSubDescriptor_MCALabelDictionaryID, // 286
+	MDD_MCALabelSubDescriptor_MCALinkID, // 287
+	MDD_MCALabelSubDescriptor_MCATagSymbol, // 288
+	MDD_MCALabelSubDescriptor_MCATagName, // 289
+	MDD_MCALabelSubDescriptor_MCAChannelID, // 290
+	MDD_MCALabelSubDescriptor_RFC5646SpokenLanguage, // 291
+	MDD_AudioChannelLabelSubDescriptor_SoundfieldGroupLinkID, // 292
+	MDD_SoundfieldGroupLabelSubDescriptor_GroupOfSoundfieldGroupsLinkID, // 293
 	MDD_Max
 
     }; // enum MDD_t
