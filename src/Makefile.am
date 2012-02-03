@@ -125,31 +125,50 @@ napali_la_LIBADD = libnapali.la libpyasdcp.la
 endif
 
 # list of programs to be built and installed
-bin_PROGRAMS = asdcp-test j2c-test blackwave klvwalk kmfilegen kmrandgen \
-		kmuuidgen wavesplit
+bin_PROGRAMS = \
+	asdcp-wrap asdcp-unwrap asdcp-util asdcp-info asdcp-test \
+	j2c-test blackwave klvwalk wavesplit \
+	kmfilegen kmrandgen kmuuidgen
 
-# sources for a program
+# sources and linkage for CLI utilities
 asdcp_test_SOURCES = asdcp-test.cpp
-
-# list of libraries to link against for a program
 asdcp_test_LDADD = libasdcp.la
+
+asdcp_wrap_SOURCES = asdcp-wrap.cpp
+asdcp_wrap_LDADD = libasdcp.la
+
+asdcp_unwrap_SOURCES = asdcp-unwrap.cpp
+asdcp_unwrap_LDADD = libasdcp.la
+
+asdcp_util_SOURCES = asdcp-util.cpp
+asdcp_util_LDADD = libasdcp.la
+
+asdcp_info_SOURCES = asdcp-info.cpp
+asdcp_info_LDADD = libasdcp.la
+
 kmfilegen_SOURCES = kmfilegen.cpp
 kmfilegen_LDADD = libkumu.la
+
 kmrandgen_SOURCES = kmrandgen.cpp
 kmrandgen_LDADD = libkumu.la
+
 kmuuidgen_SOURCES = kmuuidgen.cpp
 kmuuidgen_LDADD = libkumu.la
+
 blackwave_SOURCES = blackwave.cpp
 blackwave_LDADD = libasdcp.la
+
 klvwalk_SOURCES = klvwalk.cpp
 klvwalk_LDADD = libasdcp.la
+
 wavesplit_SOURCES = wavesplit.cpp
 wavesplit_LDADD = libasdcp.la
+
 j2c_test_SOURCES = j2c-test.cpp
 j2c_test_LDADD = libasdcp.la
 
 # list of programs that need to be compiled for use in test suite
-check_PROGRAMS = asdcp-mem-test path-test S429-5-cgi \
+check_PROGRAMS = asdcp-mem-test path-test \
 	fips-186-rng-test asdcp-version
 if DEV_HEADERS
 check_PROGRAMS += tt-xform
@@ -159,14 +178,16 @@ endif
 # list of libraries to link against for a test program
 asdcp_mem_test_SOURCES = asdcp-mem-test.cpp
 asdcp_mem_test_LDADD = libasdcp.la
+
 path_test_SOURCES = path-test.cpp
 path_test_LDADD = libkumu.la
-S429_5_cgi_SOURCES = S429-5-cgi.cpp
-S429_5_cgi_LDADD = libasdcp.la
+
 fips_186_rng_test_SOURCES = fips-186-rng-test.cpp
 fips_186_rng_test_LDADD = libasdcp.la
+
 asdcp_version_SOURCES = asdcp-version.cpp
 asdcp_version_LDADD = libkumu.la
+
 if DEV_HEADERS
 nodist_tt_xform_SOURCES = tt-xform.cpp
 tt_xform_LDADD = libasdcp.la

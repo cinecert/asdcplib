@@ -113,6 +113,21 @@ utilities all respond to -h.
 
 
 Change History
+2012-01-30 - bug fixes v1.8.45
+ o Corrected UL version segment in "7.1 DS" and "WTF" audio format
+   labels (corresponds with publication of ST 429-2:2011).
+ o Exposed MXF object interface (MXF.h, Metadata.h) via ASDCP MXFReader
+   and MXFWriter classes.
+ o Added UL values from ST 377-4:2012. >>>>NOTE: These are preliminary
+   values, subject to change upon final publication of not only ST 377-4
+   but also the relevant registries.  This is a good time to compare them
+   to the standard and complain if you think they are wrong!
+ o Added MCALabelSubDescriptor, AudioChannelLabelSubDescriptor,
+   SoundfieldGroupLabelSubDescriptor, and
+   GroupOfSoundfieldGroupsLabelSubDescriptor (from ST 377-4:2012) to
+   Metadata.h
+
+
 2011-11-30 - bug fixes v1.8.44
  o Corrected a wrong decryption UL selection when unwrapping MXF.
 

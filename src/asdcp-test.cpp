@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2003-2011, John Hurst
+Copyright (c) 2003-2012, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -103,7 +103,7 @@ banner(FILE* stream = stdout)
 {
   fprintf(stream, "\n\
 %s (asdcplib %s)\n\n\
-Copyright (c) 2003-2011 John Hurst\n\n\
+Copyright (c) 2003-2012 John Hurst\n\n\
 asdcplib may be copied only under the terms of the license found at\n\
 the top of every file in the asdcplib distribution kit.\n\n\
 Specify the -h (help) option for further information about %s\n\n",
@@ -132,8 +132,9 @@ USAGE: %s -c <output-file> [-3] [-a <uuid>] [-b <buffer-size>]\n\
 \n\
        %s -x <file-prefix> [-3] [-b <buffer-size>] [-d <duration>]\n\
        [-f <starting-frame>] [-m] [-p <frame-rate>] [-R] [-s <num>] [-S|-1]\n\
-       [-v] [-W] [-w] <input-file>\n\
-\n", PROGRAM_NAME, PROGRAM_NAME, PROGRAM_NAME, PROGRAM_NAME, PROGRAM_NAME, PROGRAM_NAME, PROGRAM_NAME);
+       [-v] [-W] [-w] <input-file>\n\n",
+	  PROGRAM_NAME, PROGRAM_NAME, PROGRAM_NAME, PROGRAM_NAME,
+	  PROGRAM_NAME, PROGRAM_NAME, PROGRAM_NAME);
 
   fprintf(stream, "\
 Major modes:\n\
@@ -1782,28 +1783,54 @@ show_file_info(CommandOptions& Options)
     return result;
 
   if ( EssenceType == ESS_MPEG2_VES )
-    result = FileInfoWrapper<ASDCP::MPEG2::MXFReader, MyVideoDescriptor>::file_info(Options, "MPEG2 video");
-
+    {
+      result = FileInfoWrapper<ASDCP::MPEG2::MXFReader, MyVideoDescriptor>::file_info(Options, "MPEG2 video");
+    }
   else if ( EssenceType == ESS_PCM_24b_48k || EssenceType == ESS_PCM_24b_96k )
-    result = FileInfoWrapper<ASDCP::PCM::MXFReader, MyAudioDescriptor>::file_info(Options, "PCM audio");
+    {
+      result = FileInfoWrapper<ASDCP::PCM::MXFReader, MyAudioDescriptor>::file_info(Options, "PCM audio");
 
+      if ( ASDCP_SUCCESS(result) )
+	{
+	  const Dictionary* Dict = &DefaultCompositeDict();
+	  PCM::MXFReader Reader;
+	  MXF::OPAtomHeader OPAtomHeader(Dict);
+	  MXF::WaveAudioDescriptor *descriptor = 0;
+
+	  result = Reader.OpenRead(Options.filenames[0]);
+
+	  if ( ASDCP_SUCCESS(result) )
+	    result = Reader.OPAtomHeader().GetMDObjectByType(Dict->ul(MDD_WaveAudioDescriptor), reinterpret_cast<MXF::InterchangeObject**>(&descriptor));
+
+	  if ( ASDCP_SUCCESS(result) )
+	    {
+	      char buf[64];
+	      fprintf(stdout, " ChannelAssignment: %s\n", descriptor->ChannelAssignment.EncodeString(buf, 64));
+	    }
+	}
+    }
   else if ( EssenceType == ESS_JPEG_2000 )
     {
       if ( Options.stereo_image_flag )
-	result = FileInfoWrapper<ASDCP::JP2K::MXFSReader,
-	MyStereoPictureDescriptor>::file_info(Options, "JPEG 2000 stereoscopic pictures");
-
+	{
+	  result = FileInfoWrapper<ASDCP::JP2K::MXFSReader,
+				   MyStereoPictureDescriptor>::file_info(Options, "JPEG 2000 stereoscopic pictures");
+	}
       else
-	result = FileInfoWrapper<ASDCP::JP2K::MXFReader,
-	MyPictureDescriptor>::file_info(Options, "JPEG 2000 pictures");
+	{
+	  result = FileInfoWrapper<ASDCP::JP2K::MXFReader,
+				   MyPictureDescriptor>::file_info(Options, "JPEG 2000 pictures");
+	}
     }
   else if ( EssenceType == ESS_JPEG_2000_S )
-    result = FileInfoWrapper<ASDCP::JP2K::MXFSReader,
-    MyStereoPictureDescriptor>::file_info(Options, "JPEG 2000 stereoscopic pictures");
-
+    {
+      result = FileInfoWrapper<ASDCP::JP2K::MXFSReader,
+			       MyStereoPictureDescriptor>::file_info(Options, "JPEG 2000 stereoscopic pictures");
+    }
   else if ( EssenceType == ESS_TIMED_TEXT )
-    result = FileInfoWrapper<ASDCP::TimedText::MXFReader, MyTextDescriptor>::file_info(Options, "Timed Text");
-
+    {
+      result = FileInfoWrapper<ASDCP::TimedText::MXFReader, MyTextDescriptor>::file_info(Options, "Timed Text");
+    }
   else
     {
       fprintf(stderr, "File is not AS-DCP: %s\n", Options.filenames[0]);

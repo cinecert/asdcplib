@@ -206,17 +206,16 @@ namespace ASDCP
 	{
 	  InterchangeObject();
 
-	protected:
-	  const MDDEntry* m_Typeinfo;
-
 	public:
 	  const Dictionary*& m_Dict;
 	  IPrimerLookup* m_Lookup;
 	  UUID           InstanceUID;
 	  UUID           GenerationUID;
 
-	InterchangeObject(const Dictionary*& d) : m_Typeinfo(0), m_Dict(d), m_Lookup(0) {}
+	InterchangeObject(const Dictionary*& d) : m_Dict(d), m_Lookup(0) {}
 	  virtual ~InterchangeObject() {}
+
+	  virtual void Copy(const InterchangeObject& rhs);
           virtual Result_t InitFromTLVSet(TLVReader& TLVSet);
 	  virtual Result_t InitFromBuffer(const byte_t* p, ui32_t l);
 	  virtual Result_t WriteToTLVSet(TLVWriter& TLVSet);
@@ -234,7 +233,7 @@ namespace ASDCP
 
 	public:
 	  const Dictionary*& m_Dict;
-	  UUID         GenerationUID;
+	  ////	  UUID         GenerationUID;
 	  Timestamp    LastModifiedDate;
 	  ui16_t       Version;
 	  ui32_t       ObjectModelVersion;
@@ -245,8 +244,10 @@ namespace ASDCP
 	  Batch<UL>    EssenceContainers;
 	  Batch<UL>    DMSchemes;
 
-	Preface(const Dictionary*& d) : InterchangeObject(d), m_Dict(d), Version(258), ObjectModelVersion(0) {}
+	  Preface(const Dictionary*& d);
 	  virtual ~Preface() {}
+
+	  virtual void Copy(const Preface& rhs);
           virtual Result_t InitFromTLVSet(TLVReader& TLVSet);
 	  virtual Result_t InitFromBuffer(const byte_t* p, ui32_t l);
 	  virtual Result_t WriteToTLVSet(TLVWriter& TLVSet);
@@ -315,6 +316,8 @@ namespace ASDCP
 
 	  IndexTableSegment(const Dictionary*&);
 	  virtual ~IndexTableSegment();
+
+	  virtual void Copy(const IndexTableSegment& rhs);
 	  virtual Result_t InitFromTLVSet(TLVReader& TLVSet);
 	  virtual Result_t InitFromBuffer(const byte_t* p, ui32_t l);
 	  virtual Result_t WriteToTLVSet(TLVWriter& TLVSet);

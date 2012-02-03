@@ -420,7 +420,9 @@ public:
 
 
 //
-ASDCP::MXF::Primer::Primer(const Dictionary*& d) : m_LocalTag(0xff), m_Dict(d) {}
+ASDCP::MXF::Primer::Primer(const Dictionary*& d) : m_LocalTag(0xff), m_Dict(d) {
+  m_UL = m_Dict->ul(MDD_Primer);
+}
 
 //
 ASDCP::MXF::Primer::~Primer() {}
@@ -486,7 +488,7 @@ ASDCP::MXF::Primer::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
   if ( ASDCP_SUCCESS(result) )
     {
       ui32_t packet_length = MemWRT.Length();
-      result = WriteKLToBuffer(Buffer, m_Dict->ul(MDD_Primer), packet_length);
+      result = WriteKLToBuffer(Buffer, packet_length);
 
       if ( ASDCP_SUCCESS(result) )
 	Buffer.Size(Buffer.Size() + packet_length);
@@ -579,6 +581,31 @@ ASDCP::MXF::Primer::Dump(FILE* stream)
 //
 
 //
+ASDCP::MXF::Preface::Preface(const Dictionary*& d) :
+  InterchangeObject(d), m_Dict(d), Version(258), ObjectModelVersion(0)
+{
+  assert(m_Dict);
+  m_UL = m_Dict->Type(MDD_Preface).ul;
+}
+
+//
+void
+ASDCP::MXF::Preface::Copy(const Preface& rhs)
+{
+  InterchangeObject::Copy(rhs);
+
+  LastModifiedDate = rhs.LastModifiedDate;
+  Version = rhs.Version;
+  ObjectModelVersion = rhs.ObjectModelVersion;
+  PrimaryPackage = rhs.PrimaryPackage;
+  Identifications = rhs.Identifications;
+  ContentStorage = rhs.ContentStorage;
+  OperationalPattern = rhs.OperationalPattern;
+  EssenceContainers = rhs.EssenceContainers;
+  DMSchemes = rhs.DMSchemes;
+}
+
+//
 ASDCP::Result_t
 ASDCP::MXF::Preface::InitFromTLVSet(TLVReader& TLVSet)
 {
@@ -616,8 +643,6 @@ ASDCP::MXF::Preface::WriteToTLVSet(TLVWriter& TLVSet)
 ASDCP::Result_t
 ASDCP::MXF::Preface::InitFromBuffer(const byte_t* p, ui32_t l)
 {
-  assert(m_Dict);
-  m_Typeinfo = &(m_Dict->Type(MDD_Preface));
   return InterchangeObject::InitFromBuffer(p, l);
 }
 
@@ -625,8 +650,6 @@ ASDCP::MXF::Preface::InitFromBuffer(const byte_t* p, ui32_t l)
 ASDCP::Result_t
 ASDCP::MXF::Preface::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 {
-  assert(m_Dict);
-  m_Typeinfo = &(m_Dict->Type(MDD_Preface));
   return InterchangeObject::WriteToBuffer(Buffer);
 }
 
@@ -1262,6 +1285,15 @@ ASDCP::MXF::OPAtomIndexFooter::PushIndexEntry(const IndexTableSegment::IndexEntr
 //
 
 //
+void
+ASDCP::MXF::InterchangeObject::Copy(const InterchangeObject& rhs)
+{
+  m_UL = rhs.m_UL;
+  InstanceUID = rhs.InstanceUID;
+  GenerationUID = rhs.GenerationUID;
+}
+
+//
 ASDCP::Result_t
 ASDCP::MXF::InterchangeObject::InitFromTLVSet(TLVReader& TLVSet)
 {
@@ -1288,19 +1320,19 @@ ASDCP::MXF::InterchangeObject::InitFromBuffer(const byte_t* p, ui32_t l)
   ASDCP_TEST_NULL(p);
   Result_t result = RESULT_FALSE;
 
-  if ( m_Typeinfo == 0 )
+  if ( m_UL.HasValue() )
     {
-      result = KLVPacket::InitFromBuffer(p, l);
-    }
-  else
-    {
-      result = KLVPacket::InitFromBuffer(p, l, m_Typeinfo->ul);
+      result = KLVPacket::InitFromBuffer(p, l, m_UL);
 
       if ( ASDCP_SUCCESS(result) )
 	{
 	  TLVReader MemRDR(m_ValueStart, m_ValueLength, m_Lookup);
 	  result = InitFromTLVSet(MemRDR);
 	}
+    }
+  else
+    {
+      result = KLVPacket::InitFromBuffer(p, l);
     }
   
   return result;
@@ -1310,7 +1342,7 @@ ASDCP::MXF::InterchangeObject::InitFromBuffer(const byte_t* p, ui32_t l)
 ASDCP::Result_t
 ASDCP::MXF::InterchangeObject::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 {
-  if ( m_Typeinfo == 0 )
+  if ( ! m_UL.HasValue() )
     return RESULT_STATE;
 
   TLVWriter MemWRT(Buffer.Data() + kl_length, Buffer.Capacity() - kl_length, m_Lookup);
@@ -1319,7 +1351,7 @@ ASDCP::MXF::InterchangeObject::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
   if ( ASDCP_SUCCESS(result) )
     {
       ui32_t packet_length = MemWRT.Length();
-      result = WriteKLToBuffer(Buffer, m_Typeinfo->ul, packet_length);
+      result = WriteKLToBuffer(Buffer, packet_length);
 
       if ( ASDCP_SUCCESS(result) )
 	Buffer.Size(Buffer.Size() + packet_length);

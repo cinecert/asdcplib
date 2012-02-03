@@ -123,6 +123,22 @@ ASDCP::MXF::Metadata_InitTypes(const Dictionary*& Dict)
 // Identification
 
 //
+
+Identification::Identification(const Dictionary*& d) : InterchangeObject(d), m_Dict(d)
+{
+  assert(m_Dict);
+  m_UL = m_Dict->ul(MDD_Identification);
+}
+
+Identification::Identification(const Identification& rhs) : InterchangeObject(rhs.m_Dict), m_Dict(rhs.m_Dict)
+{
+  assert(m_Dict);
+  m_UL = m_Dict->ul(MDD_Identification);
+  Copy(rhs);
+}
+
+
+//
 ASDCP::Result_t
 Identification::InitFromTLVSet(TLVReader& TLVSet)
 {
@@ -162,6 +178,7 @@ Identification::WriteToTLVSet(TLVWriter& TLVSet)
 void
 Identification::Copy(const Identification& rhs)
 {
+  InterchangeObject::Copy(rhs);
   ThisGenerationUID = rhs.ThisGenerationUID;
   CompanyName = rhs.CompanyName;
   ProductName = rhs.ProductName;
@@ -199,8 +216,6 @@ Identification::Dump(FILE* stream)
 ASDCP::Result_t
 Identification::InitFromBuffer(const byte_t* p, ui32_t l)
 {
-  assert(m_Dict);
-  m_Typeinfo = &(m_Dict->Type(MDD_Identification));
   return InterchangeObject::InitFromBuffer(p, l);
 }
 
@@ -208,13 +223,27 @@ Identification::InitFromBuffer(const byte_t* p, ui32_t l)
 ASDCP::Result_t
 Identification::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 {
-  assert(m_Dict);
-  m_Typeinfo = &(m_Dict->Type(MDD_Identification));
   return InterchangeObject::WriteToBuffer(Buffer);
 }
 
 //------------------------------------------------------------------------------------------
 // ContentStorage
+
+//
+
+ContentStorage::ContentStorage(const Dictionary*& d) : InterchangeObject(d), m_Dict(d)
+{
+  assert(m_Dict);
+  m_UL = m_Dict->ul(MDD_ContentStorage);
+}
+
+ContentStorage::ContentStorage(const ContentStorage& rhs) : InterchangeObject(rhs.m_Dict), m_Dict(rhs.m_Dict)
+{
+  assert(m_Dict);
+  m_UL = m_Dict->ul(MDD_ContentStorage);
+  Copy(rhs);
+}
+
 
 //
 ASDCP::Result_t
@@ -242,6 +271,7 @@ ContentStorage::WriteToTLVSet(TLVWriter& TLVSet)
 void
 ContentStorage::Copy(const ContentStorage& rhs)
 {
+  InterchangeObject::Copy(rhs);
   Packages = rhs.Packages;
   EssenceContainerData = rhs.EssenceContainerData;
 }
@@ -267,8 +297,6 @@ ContentStorage::Dump(FILE* stream)
 ASDCP::Result_t
 ContentStorage::InitFromBuffer(const byte_t* p, ui32_t l)
 {
-  assert(m_Dict);
-  m_Typeinfo = &(m_Dict->Type(MDD_ContentStorage));
   return InterchangeObject::InitFromBuffer(p, l);
 }
 
@@ -276,13 +304,27 @@ ContentStorage::InitFromBuffer(const byte_t* p, ui32_t l)
 ASDCP::Result_t
 ContentStorage::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 {
-  assert(m_Dict);
-  m_Typeinfo = &(m_Dict->Type(MDD_ContentStorage));
   return InterchangeObject::WriteToBuffer(Buffer);
 }
 
 //------------------------------------------------------------------------------------------
 // EssenceContainerData
+
+//
+
+EssenceContainerData::EssenceContainerData(const Dictionary*& d) : InterchangeObject(d), m_Dict(d), IndexSID(0), BodySID(0)
+{
+  assert(m_Dict);
+  m_UL = m_Dict->ul(MDD_EssenceContainerData);
+}
+
+EssenceContainerData::EssenceContainerData(const EssenceContainerData& rhs) : InterchangeObject(rhs.m_Dict), m_Dict(rhs.m_Dict)
+{
+  assert(m_Dict);
+  m_UL = m_Dict->ul(MDD_EssenceContainerData);
+  Copy(rhs);
+}
+
 
 //
 ASDCP::Result_t
@@ -312,6 +354,7 @@ EssenceContainerData::WriteToTLVSet(TLVWriter& TLVSet)
 void
 EssenceContainerData::Copy(const EssenceContainerData& rhs)
 {
+  InterchangeObject::Copy(rhs);
   LinkedPackageUID = rhs.LinkedPackageUID;
   IndexSID = rhs.IndexSID;
   BodySID = rhs.BodySID;
@@ -337,8 +380,6 @@ EssenceContainerData::Dump(FILE* stream)
 ASDCP::Result_t
 EssenceContainerData::InitFromBuffer(const byte_t* p, ui32_t l)
 {
-  assert(m_Dict);
-  m_Typeinfo = &(m_Dict->Type(MDD_EssenceContainerData));
   return InterchangeObject::InitFromBuffer(p, l);
 }
 
@@ -346,13 +387,20 @@ EssenceContainerData::InitFromBuffer(const byte_t* p, ui32_t l)
 ASDCP::Result_t
 EssenceContainerData::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 {
-  assert(m_Dict);
-  m_Typeinfo = &(m_Dict->Type(MDD_EssenceContainerData));
   return InterchangeObject::WriteToBuffer(Buffer);
 }
 
 //------------------------------------------------------------------------------------------
 // GenericPackage
+
+//
+GenericPackage::GenericPackage(const Dictionary*& d) : InterchangeObject(d), m_Dict(d) {}
+
+GenericPackage::GenericPackage(const GenericPackage& rhs) : InterchangeObject(rhs.m_Dict), m_Dict(rhs.m_Dict)
+{
+  Copy(rhs);
+}
+
 
 //
 ASDCP::Result_t
@@ -386,6 +434,7 @@ GenericPackage::WriteToTLVSet(TLVWriter& TLVSet)
 void
 GenericPackage::Copy(const GenericPackage& rhs)
 {
+  InterchangeObject::Copy(rhs);
   PackageUID = rhs.PackageUID;
   Name = rhs.Name;
   PackageCreationDate = rhs.PackageCreationDate;
@@ -417,6 +466,22 @@ GenericPackage::Dump(FILE* stream)
 // MaterialPackage
 
 //
+
+MaterialPackage::MaterialPackage(const Dictionary*& d) : GenericPackage(d), m_Dict(d)
+{
+  assert(m_Dict);
+  m_UL = m_Dict->ul(MDD_MaterialPackage);
+}
+
+MaterialPackage::MaterialPackage(const MaterialPackage& rhs) : GenericPackage(rhs.m_Dict), m_Dict(rhs.m_Dict)
+{
+  assert(m_Dict);
+  m_UL = m_Dict->ul(MDD_MaterialPackage);
+  Copy(rhs);
+}
+
+
+//
 ASDCP::Result_t
 MaterialPackage::InitFromTLVSet(TLVReader& TLVSet)
 {
@@ -438,6 +503,7 @@ MaterialPackage::WriteToTLVSet(TLVWriter& TLVSet)
 void
 MaterialPackage::Copy(const MaterialPackage& rhs)
 {
+  GenericPackage::Copy(rhs);
 }
 
 //
@@ -457,8 +523,6 @@ MaterialPackage::Dump(FILE* stream)
 ASDCP::Result_t
 MaterialPackage::InitFromBuffer(const byte_t* p, ui32_t l)
 {
-  assert(m_Dict);
-  m_Typeinfo = &(m_Dict->Type(MDD_MaterialPackage));
   return InterchangeObject::InitFromBuffer(p, l);
 }
 
@@ -466,13 +530,27 @@ MaterialPackage::InitFromBuffer(const byte_t* p, ui32_t l)
 ASDCP::Result_t
 MaterialPackage::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 {
-  assert(m_Dict);
-  m_Typeinfo = &(m_Dict->Type(MDD_MaterialPackage));
   return InterchangeObject::WriteToBuffer(Buffer);
 }
 
 //------------------------------------------------------------------------------------------
 // SourcePackage
+
+//
+
+SourcePackage::SourcePackage(const Dictionary*& d) : GenericPackage(d), m_Dict(d)
+{
+  assert(m_Dict);
+  m_UL = m_Dict->ul(MDD_SourcePackage);
+}
+
+SourcePackage::SourcePackage(const SourcePackage& rhs) : GenericPackage(rhs.m_Dict), m_Dict(rhs.m_Dict)
+{
+  assert(m_Dict);
+  m_UL = m_Dict->ul(MDD_SourcePackage);
+  Copy(rhs);
+}
+
 
 //
 ASDCP::Result_t
@@ -498,6 +576,7 @@ SourcePackage::WriteToTLVSet(TLVWriter& TLVSet)
 void
 SourcePackage::Copy(const SourcePackage& rhs)
 {
+  GenericPackage::Copy(rhs);
   Descriptor = rhs.Descriptor;
 }
 
@@ -519,8 +598,6 @@ SourcePackage::Dump(FILE* stream)
 ASDCP::Result_t
 SourcePackage::InitFromBuffer(const byte_t* p, ui32_t l)
 {
-  assert(m_Dict);
-  m_Typeinfo = &(m_Dict->Type(MDD_SourcePackage));
   return InterchangeObject::InitFromBuffer(p, l);
 }
 
@@ -528,13 +605,20 @@ SourcePackage::InitFromBuffer(const byte_t* p, ui32_t l)
 ASDCP::Result_t
 SourcePackage::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 {
-  assert(m_Dict);
-  m_Typeinfo = &(m_Dict->Type(MDD_SourcePackage));
   return InterchangeObject::WriteToBuffer(Buffer);
 }
 
 //------------------------------------------------------------------------------------------
 // GenericTrack
+
+//
+GenericTrack::GenericTrack(const Dictionary*& d) : InterchangeObject(d), m_Dict(d), TrackID(0), TrackNumber(0) {}
+
+GenericTrack::GenericTrack(const GenericTrack& rhs) : InterchangeObject(rhs.m_Dict), m_Dict(rhs.m_Dict)
+{
+  Copy(rhs);
+}
+
 
 //
 ASDCP::Result_t
@@ -566,6 +650,7 @@ GenericTrack::WriteToTLVSet(TLVWriter& TLVSet)
 void
 GenericTrack::Copy(const GenericTrack& rhs)
 {
+  InterchangeObject::Copy(rhs);
   TrackID = rhs.TrackID;
   TrackNumber = rhs.TrackNumber;
   TrackName = rhs.TrackName;
@@ -594,6 +679,22 @@ GenericTrack::Dump(FILE* stream)
 // StaticTrack
 
 //
+
+StaticTrack::StaticTrack(const Dictionary*& d) : GenericTrack(d), m_Dict(d)
+{
+  assert(m_Dict);
+  m_UL = m_Dict->ul(MDD_StaticTrack);
+}
+
+StaticTrack::StaticTrack(const StaticTrack& rhs) : GenericTrack(rhs.m_Dict), m_Dict(rhs.m_Dict)
+{
+  assert(m_Dict);
+  m_UL = m_Dict->ul(MDD_StaticTrack);
+  Copy(rhs);
+}
+
+
+//
 ASDCP::Result_t
 StaticTrack::InitFromTLVSet(TLVReader& TLVSet)
 {
@@ -615,6 +716,7 @@ StaticTrack::WriteToTLVSet(TLVWriter& TLVSet)
 void
 StaticTrack::Copy(const StaticTrack& rhs)
 {
+  GenericTrack::Copy(rhs);
 }
 
 //
@@ -634,8 +736,6 @@ StaticTrack::Dump(FILE* stream)
 ASDCP::Result_t
 StaticTrack::InitFromBuffer(const byte_t* p, ui32_t l)
 {
-  assert(m_Dict);
-  m_Typeinfo = &(m_Dict->Type(MDD_StaticTrack));
   return InterchangeObject::InitFromBuffer(p, l);
 }
 
@@ -643,13 +743,27 @@ StaticTrack::InitFromBuffer(const byte_t* p, ui32_t l)
 ASDCP::Result_t
 StaticTrack::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 {
-  assert(m_Dict);
-  m_Typeinfo = &(m_Dict->Type(MDD_StaticTrack));
   return InterchangeObject::WriteToBuffer(Buffer);
 }
 
 //------------------------------------------------------------------------------------------
 // Track
+
+//
+
+Track::Track(const Dictionary*& d) : GenericTrack(d), m_Dict(d), Origin(0)
+{
+  assert(m_Dict);
+  m_UL = m_Dict->ul(MDD_Track);
+}
+
+Track::Track(const Track& rhs) : GenericTrack(rhs.m_Dict), m_Dict(rhs.m_Dict)
+{
+  assert(m_Dict);
+  m_UL = m_Dict->ul(MDD_Track);
+  Copy(rhs);
+}
+
 
 //
 ASDCP::Result_t
@@ -677,6 +791,7 @@ Track::WriteToTLVSet(TLVWriter& TLVSet)
 void
 Track::Copy(const Track& rhs)
 {
+  GenericTrack::Copy(rhs);
   EditRate = rhs.EditRate;
   Origin = rhs.Origin;
 }
@@ -700,8 +815,6 @@ Track::Dump(FILE* stream)
 ASDCP::Result_t
 Track::InitFromBuffer(const byte_t* p, ui32_t l)
 {
-  assert(m_Dict);
-  m_Typeinfo = &(m_Dict->Type(MDD_Track));
   return InterchangeObject::InitFromBuffer(p, l);
 }
 
@@ -709,13 +822,20 @@ Track::InitFromBuffer(const byte_t* p, ui32_t l)
 ASDCP::Result_t
 Track::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 {
-  assert(m_Dict);
-  m_Typeinfo = &(m_Dict->Type(MDD_Track));
   return InterchangeObject::WriteToBuffer(Buffer);
 }
 
 //------------------------------------------------------------------------------------------
 // StructuralComponent
+
+//
+StructuralComponent::StructuralComponent(const Dictionary*& d) : InterchangeObject(d), m_Dict(d), Duration(0) {}
+
+StructuralComponent::StructuralComponent(const StructuralComponent& rhs) : InterchangeObject(rhs.m_Dict), m_Dict(rhs.m_Dict)
+{
+  Copy(rhs);
+}
+
 
 //
 ASDCP::Result_t
@@ -743,6 +863,7 @@ StructuralComponent::WriteToTLVSet(TLVWriter& TLVSet)
 void
 StructuralComponent::Copy(const StructuralComponent& rhs)
 {
+  InterchangeObject::Copy(rhs);
   DataDefinition = rhs.DataDefinition;
   Duration = rhs.Duration;
 }
@@ -765,6 +886,22 @@ StructuralComponent::Dump(FILE* stream)
 
 //------------------------------------------------------------------------------------------
 // Sequence
+
+//
+
+Sequence::Sequence(const Dictionary*& d) : StructuralComponent(d), m_Dict(d)
+{
+  assert(m_Dict);
+  m_UL = m_Dict->ul(MDD_Sequence);
+}
+
+Sequence::Sequence(const Sequence& rhs) : StructuralComponent(rhs.m_Dict), m_Dict(rhs.m_Dict)
+{
+  assert(m_Dict);
+  m_UL = m_Dict->ul(MDD_Sequence);
+  Copy(rhs);
+}
+
 
 //
 ASDCP::Result_t
@@ -790,6 +927,7 @@ Sequence::WriteToTLVSet(TLVWriter& TLVSet)
 void
 Sequence::Copy(const Sequence& rhs)
 {
+  StructuralComponent::Copy(rhs);
   StructuralComponents = rhs.StructuralComponents;
 }
 
@@ -812,8 +950,6 @@ Sequence::Dump(FILE* stream)
 ASDCP::Result_t
 Sequence::InitFromBuffer(const byte_t* p, ui32_t l)
 {
-  assert(m_Dict);
-  m_Typeinfo = &(m_Dict->Type(MDD_Sequence));
   return InterchangeObject::InitFromBuffer(p, l);
 }
 
@@ -821,13 +957,27 @@ Sequence::InitFromBuffer(const byte_t* p, ui32_t l)
 ASDCP::Result_t
 Sequence::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 {
-  assert(m_Dict);
-  m_Typeinfo = &(m_Dict->Type(MDD_Sequence));
   return InterchangeObject::WriteToBuffer(Buffer);
 }
 
 //------------------------------------------------------------------------------------------
 // SourceClip
+
+//
+
+SourceClip::SourceClip(const Dictionary*& d) : StructuralComponent(d), m_Dict(d), StartPosition(0), SourceTrackID(0)
+{
+  assert(m_Dict);
+  m_UL = m_Dict->ul(MDD_SourceClip);
+}
+
+SourceClip::SourceClip(const SourceClip& rhs) : StructuralComponent(rhs.m_Dict), m_Dict(rhs.m_Dict)
+{
+  assert(m_Dict);
+  m_UL = m_Dict->ul(MDD_SourceClip);
+  Copy(rhs);
+}
+
 
 //
 ASDCP::Result_t
@@ -857,6 +1007,7 @@ SourceClip::WriteToTLVSet(TLVWriter& TLVSet)
 void
 SourceClip::Copy(const SourceClip& rhs)
 {
+  StructuralComponent::Copy(rhs);
   StartPosition = rhs.StartPosition;
   SourcePackageID = rhs.SourcePackageID;
   SourceTrackID = rhs.SourceTrackID;
@@ -882,8 +1033,6 @@ SourceClip::Dump(FILE* stream)
 ASDCP::Result_t
 SourceClip::InitFromBuffer(const byte_t* p, ui32_t l)
 {
-  assert(m_Dict);
-  m_Typeinfo = &(m_Dict->Type(MDD_SourceClip));
   return InterchangeObject::InitFromBuffer(p, l);
 }
 
@@ -891,13 +1040,27 @@ SourceClip::InitFromBuffer(const byte_t* p, ui32_t l)
 ASDCP::Result_t
 SourceClip::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 {
-  assert(m_Dict);
-  m_Typeinfo = &(m_Dict->Type(MDD_SourceClip));
   return InterchangeObject::WriteToBuffer(Buffer);
 }
 
 //------------------------------------------------------------------------------------------
 // TimecodeComponent
+
+//
+
+TimecodeComponent::TimecodeComponent(const Dictionary*& d) : StructuralComponent(d), m_Dict(d), RoundedTimecodeBase(0), StartTimecode(0), DropFrame(0)
+{
+  assert(m_Dict);
+  m_UL = m_Dict->ul(MDD_TimecodeComponent);
+}
+
+TimecodeComponent::TimecodeComponent(const TimecodeComponent& rhs) : StructuralComponent(rhs.m_Dict), m_Dict(rhs.m_Dict)
+{
+  assert(m_Dict);
+  m_UL = m_Dict->ul(MDD_TimecodeComponent);
+  Copy(rhs);
+}
+
 
 //
 ASDCP::Result_t
@@ -927,6 +1090,7 @@ TimecodeComponent::WriteToTLVSet(TLVWriter& TLVSet)
 void
 TimecodeComponent::Copy(const TimecodeComponent& rhs)
 {
+  StructuralComponent::Copy(rhs);
   RoundedTimecodeBase = rhs.RoundedTimecodeBase;
   StartTimecode = rhs.StartTimecode;
   DropFrame = rhs.DropFrame;
@@ -952,8 +1116,6 @@ TimecodeComponent::Dump(FILE* stream)
 ASDCP::Result_t
 TimecodeComponent::InitFromBuffer(const byte_t* p, ui32_t l)
 {
-  assert(m_Dict);
-  m_Typeinfo = &(m_Dict->Type(MDD_TimecodeComponent));
   return InterchangeObject::InitFromBuffer(p, l);
 }
 
@@ -961,13 +1123,20 @@ TimecodeComponent::InitFromBuffer(const byte_t* p, ui32_t l)
 ASDCP::Result_t
 TimecodeComponent::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 {
-  assert(m_Dict);
-  m_Typeinfo = &(m_Dict->Type(MDD_TimecodeComponent));
   return InterchangeObject::WriteToBuffer(Buffer);
 }
 
 //------------------------------------------------------------------------------------------
 // GenericDescriptor
+
+//
+GenericDescriptor::GenericDescriptor(const Dictionary*& d) : InterchangeObject(d), m_Dict(d) {}
+
+GenericDescriptor::GenericDescriptor(const GenericDescriptor& rhs) : InterchangeObject(rhs.m_Dict), m_Dict(rhs.m_Dict)
+{
+  Copy(rhs);
+}
+
 
 //
 ASDCP::Result_t
@@ -995,6 +1164,7 @@ GenericDescriptor::WriteToTLVSet(TLVWriter& TLVSet)
 void
 GenericDescriptor::Copy(const GenericDescriptor& rhs)
 {
+  InterchangeObject::Copy(rhs);
   Locators = rhs.Locators;
   SubDescriptors = rhs.SubDescriptors;
 }
@@ -1019,6 +1189,22 @@ GenericDescriptor::Dump(FILE* stream)
 
 //------------------------------------------------------------------------------------------
 // FileDescriptor
+
+//
+
+FileDescriptor::FileDescriptor(const Dictionary*& d) : GenericDescriptor(d), m_Dict(d), LinkedTrackID(0), ContainerDuration(0)
+{
+  assert(m_Dict);
+  m_UL = m_Dict->ul(MDD_FileDescriptor);
+}
+
+FileDescriptor::FileDescriptor(const FileDescriptor& rhs) : GenericDescriptor(rhs.m_Dict), m_Dict(rhs.m_Dict)
+{
+  assert(m_Dict);
+  m_UL = m_Dict->ul(MDD_FileDescriptor);
+  Copy(rhs);
+}
+
 
 //
 ASDCP::Result_t
@@ -1052,6 +1238,7 @@ FileDescriptor::WriteToTLVSet(TLVWriter& TLVSet)
 void
 FileDescriptor::Copy(const FileDescriptor& rhs)
 {
+  GenericDescriptor::Copy(rhs);
   LinkedTrackID = rhs.LinkedTrackID;
   SampleRate = rhs.SampleRate;
   ContainerDuration = rhs.ContainerDuration;
@@ -1081,8 +1268,6 @@ FileDescriptor::Dump(FILE* stream)
 ASDCP::Result_t
 FileDescriptor::InitFromBuffer(const byte_t* p, ui32_t l)
 {
-  assert(m_Dict);
-  m_Typeinfo = &(m_Dict->Type(MDD_FileDescriptor));
   return InterchangeObject::InitFromBuffer(p, l);
 }
 
@@ -1090,13 +1275,27 @@ FileDescriptor::InitFromBuffer(const byte_t* p, ui32_t l)
 ASDCP::Result_t
 FileDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 {
-  assert(m_Dict);
-  m_Typeinfo = &(m_Dict->Type(MDD_FileDescriptor));
   return InterchangeObject::WriteToBuffer(Buffer);
 }
 
 //------------------------------------------------------------------------------------------
 // GenericSoundEssenceDescriptor
+
+//
+
+GenericSoundEssenceDescriptor::GenericSoundEssenceDescriptor(const Dictionary*& d) : FileDescriptor(d), m_Dict(d), Locked(0), AudioRefLevel(0), ChannelCount(0), QuantizationBits(0), DialNorm(0)
+{
+  assert(m_Dict);
+  m_UL = m_Dict->ul(MDD_GenericSoundEssenceDescriptor);
+}
+
+GenericSoundEssenceDescriptor::GenericSoundEssenceDescriptor(const GenericSoundEssenceDescriptor& rhs) : FileDescriptor(rhs.m_Dict), m_Dict(rhs.m_Dict)
+{
+  assert(m_Dict);
+  m_UL = m_Dict->ul(MDD_GenericSoundEssenceDescriptor);
+  Copy(rhs);
+}
+
 
 //
 ASDCP::Result_t
@@ -1132,6 +1331,7 @@ GenericSoundEssenceDescriptor::WriteToTLVSet(TLVWriter& TLVSet)
 void
 GenericSoundEssenceDescriptor::Copy(const GenericSoundEssenceDescriptor& rhs)
 {
+  FileDescriptor::Copy(rhs);
   AudioSamplingRate = rhs.AudioSamplingRate;
   Locked = rhs.Locked;
   AudioRefLevel = rhs.AudioRefLevel;
@@ -1163,8 +1363,6 @@ GenericSoundEssenceDescriptor::Dump(FILE* stream)
 ASDCP::Result_t
 GenericSoundEssenceDescriptor::InitFromBuffer(const byte_t* p, ui32_t l)
 {
-  assert(m_Dict);
-  m_Typeinfo = &(m_Dict->Type(MDD_GenericSoundEssenceDescriptor));
   return InterchangeObject::InitFromBuffer(p, l);
 }
 
@@ -1172,13 +1370,27 @@ GenericSoundEssenceDescriptor::InitFromBuffer(const byte_t* p, ui32_t l)
 ASDCP::Result_t
 GenericSoundEssenceDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 {
-  assert(m_Dict);
-  m_Typeinfo = &(m_Dict->Type(MDD_GenericSoundEssenceDescriptor));
   return InterchangeObject::WriteToBuffer(Buffer);
 }
 
 //------------------------------------------------------------------------------------------
 // WaveAudioDescriptor
+
+//
+
+WaveAudioDescriptor::WaveAudioDescriptor(const Dictionary*& d) : GenericSoundEssenceDescriptor(d), m_Dict(d), BlockAlign(0), SequenceOffset(0), AvgBps(0)
+{
+  assert(m_Dict);
+  m_UL = m_Dict->ul(MDD_WaveAudioDescriptor);
+}
+
+WaveAudioDescriptor::WaveAudioDescriptor(const WaveAudioDescriptor& rhs) : GenericSoundEssenceDescriptor(rhs.m_Dict), m_Dict(rhs.m_Dict)
+{
+  assert(m_Dict);
+  m_UL = m_Dict->ul(MDD_WaveAudioDescriptor);
+  Copy(rhs);
+}
+
 
 //
 ASDCP::Result_t
@@ -1210,6 +1422,7 @@ WaveAudioDescriptor::WriteToTLVSet(TLVWriter& TLVSet)
 void
 WaveAudioDescriptor::Copy(const WaveAudioDescriptor& rhs)
 {
+  GenericSoundEssenceDescriptor::Copy(rhs);
   BlockAlign = rhs.BlockAlign;
   SequenceOffset = rhs.SequenceOffset;
   AvgBps = rhs.AvgBps;
@@ -1237,8 +1450,6 @@ WaveAudioDescriptor::Dump(FILE* stream)
 ASDCP::Result_t
 WaveAudioDescriptor::InitFromBuffer(const byte_t* p, ui32_t l)
 {
-  assert(m_Dict);
-  m_Typeinfo = &(m_Dict->Type(MDD_WaveAudioDescriptor));
   return InterchangeObject::InitFromBuffer(p, l);
 }
 
@@ -1246,13 +1457,27 @@ WaveAudioDescriptor::InitFromBuffer(const byte_t* p, ui32_t l)
 ASDCP::Result_t
 WaveAudioDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 {
-  assert(m_Dict);
-  m_Typeinfo = &(m_Dict->Type(MDD_WaveAudioDescriptor));
   return InterchangeObject::WriteToBuffer(Buffer);
 }
 
 //------------------------------------------------------------------------------------------
 // GenericPictureEssenceDescriptor
+
+//
+
+GenericPictureEssenceDescriptor::GenericPictureEssenceDescriptor(const Dictionary*& d) : FileDescriptor(d), m_Dict(d), FrameLayout(0), StoredWidth(0), StoredHeight(0)
+{
+  assert(m_Dict);
+  m_UL = m_Dict->ul(MDD_GenericPictureEssenceDescriptor);
+}
+
+GenericPictureEssenceDescriptor::GenericPictureEssenceDescriptor(const GenericPictureEssenceDescriptor& rhs) : FileDescriptor(rhs.m_Dict), m_Dict(rhs.m_Dict)
+{
+  assert(m_Dict);
+  m_UL = m_Dict->ul(MDD_GenericPictureEssenceDescriptor);
+  Copy(rhs);
+}
+
 
 //
 ASDCP::Result_t
@@ -1286,6 +1511,7 @@ GenericPictureEssenceDescriptor::WriteToTLVSet(TLVWriter& TLVSet)
 void
 GenericPictureEssenceDescriptor::Copy(const GenericPictureEssenceDescriptor& rhs)
 {
+  FileDescriptor::Copy(rhs);
   FrameLayout = rhs.FrameLayout;
   StoredWidth = rhs.StoredWidth;
   StoredHeight = rhs.StoredHeight;
@@ -1315,8 +1541,6 @@ GenericPictureEssenceDescriptor::Dump(FILE* stream)
 ASDCP::Result_t
 GenericPictureEssenceDescriptor::InitFromBuffer(const byte_t* p, ui32_t l)
 {
-  assert(m_Dict);
-  m_Typeinfo = &(m_Dict->Type(MDD_GenericPictureEssenceDescriptor));
   return InterchangeObject::InitFromBuffer(p, l);
 }
 
@@ -1324,13 +1548,27 @@ GenericPictureEssenceDescriptor::InitFromBuffer(const byte_t* p, ui32_t l)
 ASDCP::Result_t
 GenericPictureEssenceDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 {
-  assert(m_Dict);
-  m_Typeinfo = &(m_Dict->Type(MDD_GenericPictureEssenceDescriptor));
   return InterchangeObject::WriteToBuffer(Buffer);
 }
 
 //------------------------------------------------------------------------------------------
 // RGBAEssenceDescriptor
+
+//
+
+RGBAEssenceDescriptor::RGBAEssenceDescriptor(const Dictionary*& d) : GenericPictureEssenceDescriptor(d), m_Dict(d), ComponentMaxRef(0), ComponentMinRef(0)
+{
+  assert(m_Dict);
+  m_UL = m_Dict->ul(MDD_RGBAEssenceDescriptor);
+}
+
+RGBAEssenceDescriptor::RGBAEssenceDescriptor(const RGBAEssenceDescriptor& rhs) : GenericPictureEssenceDescriptor(rhs.m_Dict), m_Dict(rhs.m_Dict)
+{
+  assert(m_Dict);
+  m_UL = m_Dict->ul(MDD_RGBAEssenceDescriptor);
+  Copy(rhs);
+}
+
 
 //
 ASDCP::Result_t
@@ -1358,6 +1596,7 @@ RGBAEssenceDescriptor::WriteToTLVSet(TLVWriter& TLVSet)
 void
 RGBAEssenceDescriptor::Copy(const RGBAEssenceDescriptor& rhs)
 {
+  GenericPictureEssenceDescriptor::Copy(rhs);
   ComponentMaxRef = rhs.ComponentMaxRef;
   ComponentMinRef = rhs.ComponentMinRef;
 }
@@ -1381,8 +1620,6 @@ RGBAEssenceDescriptor::Dump(FILE* stream)
 ASDCP::Result_t
 RGBAEssenceDescriptor::InitFromBuffer(const byte_t* p, ui32_t l)
 {
-  assert(m_Dict);
-  m_Typeinfo = &(m_Dict->Type(MDD_RGBAEssenceDescriptor));
   return InterchangeObject::InitFromBuffer(p, l);
 }
 
@@ -1390,13 +1627,27 @@ RGBAEssenceDescriptor::InitFromBuffer(const byte_t* p, ui32_t l)
 ASDCP::Result_t
 RGBAEssenceDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 {
-  assert(m_Dict);
-  m_Typeinfo = &(m_Dict->Type(MDD_RGBAEssenceDescriptor));
   return InterchangeObject::WriteToBuffer(Buffer);
 }
 
 //------------------------------------------------------------------------------------------
 // JPEG2000PictureSubDescriptor
+
+//
+
+JPEG2000PictureSubDescriptor::JPEG2000PictureSubDescriptor(const Dictionary*& d) : InterchangeObject(d), m_Dict(d), Rsize(0), Xsize(0), Ysize(0), XOsize(0), YOsize(0), XTsize(0), YTsize(0), XTOsize(0), YTOsize(0), Csize(0)
+{
+  assert(m_Dict);
+  m_UL = m_Dict->ul(MDD_JPEG2000PictureSubDescriptor);
+}
+
+JPEG2000PictureSubDescriptor::JPEG2000PictureSubDescriptor(const JPEG2000PictureSubDescriptor& rhs) : InterchangeObject(rhs.m_Dict), m_Dict(rhs.m_Dict)
+{
+  assert(m_Dict);
+  m_UL = m_Dict->ul(MDD_JPEG2000PictureSubDescriptor);
+  Copy(rhs);
+}
+
 
 //
 ASDCP::Result_t
@@ -1446,6 +1697,7 @@ JPEG2000PictureSubDescriptor::WriteToTLVSet(TLVWriter& TLVSet)
 void
 JPEG2000PictureSubDescriptor::Copy(const JPEG2000PictureSubDescriptor& rhs)
 {
+  InterchangeObject::Copy(rhs);
   Rsize = rhs.Rsize;
   Xsize = rhs.Xsize;
   Ysize = rhs.Ysize;
@@ -1491,8 +1743,6 @@ JPEG2000PictureSubDescriptor::Dump(FILE* stream)
 ASDCP::Result_t
 JPEG2000PictureSubDescriptor::InitFromBuffer(const byte_t* p, ui32_t l)
 {
-  assert(m_Dict);
-  m_Typeinfo = &(m_Dict->Type(MDD_JPEG2000PictureSubDescriptor));
   return InterchangeObject::InitFromBuffer(p, l);
 }
 
@@ -1500,13 +1750,27 @@ JPEG2000PictureSubDescriptor::InitFromBuffer(const byte_t* p, ui32_t l)
 ASDCP::Result_t
 JPEG2000PictureSubDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 {
-  assert(m_Dict);
-  m_Typeinfo = &(m_Dict->Type(MDD_JPEG2000PictureSubDescriptor));
   return InterchangeObject::WriteToBuffer(Buffer);
 }
 
 //------------------------------------------------------------------------------------------
 // CDCIEssenceDescriptor
+
+//
+
+CDCIEssenceDescriptor::CDCIEssenceDescriptor(const Dictionary*& d) : GenericPictureEssenceDescriptor(d), m_Dict(d), ComponentDepth(0), HorizontalSubsampling(0), VerticalSubsampling(0), ColorSiting(0)
+{
+  assert(m_Dict);
+  m_UL = m_Dict->ul(MDD_CDCIEssenceDescriptor);
+}
+
+CDCIEssenceDescriptor::CDCIEssenceDescriptor(const CDCIEssenceDescriptor& rhs) : GenericPictureEssenceDescriptor(rhs.m_Dict), m_Dict(rhs.m_Dict)
+{
+  assert(m_Dict);
+  m_UL = m_Dict->ul(MDD_CDCIEssenceDescriptor);
+  Copy(rhs);
+}
+
 
 //
 ASDCP::Result_t
@@ -1538,6 +1802,7 @@ CDCIEssenceDescriptor::WriteToTLVSet(TLVWriter& TLVSet)
 void
 CDCIEssenceDescriptor::Copy(const CDCIEssenceDescriptor& rhs)
 {
+  GenericPictureEssenceDescriptor::Copy(rhs);
   ComponentDepth = rhs.ComponentDepth;
   HorizontalSubsampling = rhs.HorizontalSubsampling;
   VerticalSubsampling = rhs.VerticalSubsampling;
@@ -1565,8 +1830,6 @@ CDCIEssenceDescriptor::Dump(FILE* stream)
 ASDCP::Result_t
 CDCIEssenceDescriptor::InitFromBuffer(const byte_t* p, ui32_t l)
 {
-  assert(m_Dict);
-  m_Typeinfo = &(m_Dict->Type(MDD_CDCIEssenceDescriptor));
   return InterchangeObject::InitFromBuffer(p, l);
 }
 
@@ -1574,13 +1837,27 @@ CDCIEssenceDescriptor::InitFromBuffer(const byte_t* p, ui32_t l)
 ASDCP::Result_t
 CDCIEssenceDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 {
-  assert(m_Dict);
-  m_Typeinfo = &(m_Dict->Type(MDD_CDCIEssenceDescriptor));
   return InterchangeObject::WriteToBuffer(Buffer);
 }
 
 //------------------------------------------------------------------------------------------
 // MPEG2VideoDescriptor
+
+//
+
+MPEG2VideoDescriptor::MPEG2VideoDescriptor(const Dictionary*& d) : CDCIEssenceDescriptor(d), m_Dict(d), CodedContentType(0), LowDelay(0), BitRate(0), ProfileAndLevel(0)
+{
+  assert(m_Dict);
+  m_UL = m_Dict->ul(MDD_MPEG2VideoDescriptor);
+}
+
+MPEG2VideoDescriptor::MPEG2VideoDescriptor(const MPEG2VideoDescriptor& rhs) : CDCIEssenceDescriptor(rhs.m_Dict), m_Dict(rhs.m_Dict)
+{
+  assert(m_Dict);
+  m_UL = m_Dict->ul(MDD_MPEG2VideoDescriptor);
+  Copy(rhs);
+}
+
 
 //
 ASDCP::Result_t
@@ -1612,6 +1889,7 @@ MPEG2VideoDescriptor::WriteToTLVSet(TLVWriter& TLVSet)
 void
 MPEG2VideoDescriptor::Copy(const MPEG2VideoDescriptor& rhs)
 {
+  CDCIEssenceDescriptor::Copy(rhs);
   CodedContentType = rhs.CodedContentType;
   LowDelay = rhs.LowDelay;
   BitRate = rhs.BitRate;
@@ -1639,8 +1917,6 @@ MPEG2VideoDescriptor::Dump(FILE* stream)
 ASDCP::Result_t
 MPEG2VideoDescriptor::InitFromBuffer(const byte_t* p, ui32_t l)
 {
-  assert(m_Dict);
-  m_Typeinfo = &(m_Dict->Type(MDD_MPEG2VideoDescriptor));
   return InterchangeObject::InitFromBuffer(p, l);
 }
 
@@ -1648,13 +1924,27 @@ MPEG2VideoDescriptor::InitFromBuffer(const byte_t* p, ui32_t l)
 ASDCP::Result_t
 MPEG2VideoDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 {
-  assert(m_Dict);
-  m_Typeinfo = &(m_Dict->Type(MDD_MPEG2VideoDescriptor));
   return InterchangeObject::WriteToBuffer(Buffer);
 }
 
 //------------------------------------------------------------------------------------------
 // DMSegment
+
+//
+
+DMSegment::DMSegment(const Dictionary*& d) : InterchangeObject(d), m_Dict(d), EventStartPosition(0), Duration(0)
+{
+  assert(m_Dict);
+  m_UL = m_Dict->ul(MDD_DMSegment);
+}
+
+DMSegment::DMSegment(const DMSegment& rhs) : InterchangeObject(rhs.m_Dict), m_Dict(rhs.m_Dict)
+{
+  assert(m_Dict);
+  m_UL = m_Dict->ul(MDD_DMSegment);
+  Copy(rhs);
+}
+
 
 //
 ASDCP::Result_t
@@ -1688,6 +1978,7 @@ DMSegment::WriteToTLVSet(TLVWriter& TLVSet)
 void
 DMSegment::Copy(const DMSegment& rhs)
 {
+  InterchangeObject::Copy(rhs);
   DataDefinition = rhs.DataDefinition;
   EventStartPosition = rhs.EventStartPosition;
   Duration = rhs.Duration;
@@ -1717,8 +2008,6 @@ DMSegment::Dump(FILE* stream)
 ASDCP::Result_t
 DMSegment::InitFromBuffer(const byte_t* p, ui32_t l)
 {
-  assert(m_Dict);
-  m_Typeinfo = &(m_Dict->Type(MDD_DMSegment));
   return InterchangeObject::InitFromBuffer(p, l);
 }
 
@@ -1726,13 +2015,27 @@ DMSegment::InitFromBuffer(const byte_t* p, ui32_t l)
 ASDCP::Result_t
 DMSegment::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 {
-  assert(m_Dict);
-  m_Typeinfo = &(m_Dict->Type(MDD_DMSegment));
   return InterchangeObject::WriteToBuffer(Buffer);
 }
 
 //------------------------------------------------------------------------------------------
 // CryptographicFramework
+
+//
+
+CryptographicFramework::CryptographicFramework(const Dictionary*& d) : InterchangeObject(d), m_Dict(d)
+{
+  assert(m_Dict);
+  m_UL = m_Dict->ul(MDD_CryptographicFramework);
+}
+
+CryptographicFramework::CryptographicFramework(const CryptographicFramework& rhs) : InterchangeObject(rhs.m_Dict), m_Dict(rhs.m_Dict)
+{
+  assert(m_Dict);
+  m_UL = m_Dict->ul(MDD_CryptographicFramework);
+  Copy(rhs);
+}
+
 
 //
 ASDCP::Result_t
@@ -1758,6 +2061,7 @@ CryptographicFramework::WriteToTLVSet(TLVWriter& TLVSet)
 void
 CryptographicFramework::Copy(const CryptographicFramework& rhs)
 {
+  InterchangeObject::Copy(rhs);
   ContextSR = rhs.ContextSR;
 }
 
@@ -1779,8 +2083,6 @@ CryptographicFramework::Dump(FILE* stream)
 ASDCP::Result_t
 CryptographicFramework::InitFromBuffer(const byte_t* p, ui32_t l)
 {
-  assert(m_Dict);
-  m_Typeinfo = &(m_Dict->Type(MDD_CryptographicFramework));
   return InterchangeObject::InitFromBuffer(p, l);
 }
 
@@ -1788,13 +2090,27 @@ CryptographicFramework::InitFromBuffer(const byte_t* p, ui32_t l)
 ASDCP::Result_t
 CryptographicFramework::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 {
-  assert(m_Dict);
-  m_Typeinfo = &(m_Dict->Type(MDD_CryptographicFramework));
   return InterchangeObject::WriteToBuffer(Buffer);
 }
 
 //------------------------------------------------------------------------------------------
 // CryptographicContext
+
+//
+
+CryptographicContext::CryptographicContext(const Dictionary*& d) : InterchangeObject(d), m_Dict(d)
+{
+  assert(m_Dict);
+  m_UL = m_Dict->ul(MDD_CryptographicContext);
+}
+
+CryptographicContext::CryptographicContext(const CryptographicContext& rhs) : InterchangeObject(rhs.m_Dict), m_Dict(rhs.m_Dict)
+{
+  assert(m_Dict);
+  m_UL = m_Dict->ul(MDD_CryptographicContext);
+  Copy(rhs);
+}
+
 
 //
 ASDCP::Result_t
@@ -1828,6 +2144,7 @@ CryptographicContext::WriteToTLVSet(TLVWriter& TLVSet)
 void
 CryptographicContext::Copy(const CryptographicContext& rhs)
 {
+  InterchangeObject::Copy(rhs);
   ContextID = rhs.ContextID;
   SourceEssenceContainer = rhs.SourceEssenceContainer;
   CipherAlgorithm = rhs.CipherAlgorithm;
@@ -1857,8 +2174,6 @@ CryptographicContext::Dump(FILE* stream)
 ASDCP::Result_t
 CryptographicContext::InitFromBuffer(const byte_t* p, ui32_t l)
 {
-  assert(m_Dict);
-  m_Typeinfo = &(m_Dict->Type(MDD_CryptographicContext));
   return InterchangeObject::InitFromBuffer(p, l);
 }
 
@@ -1866,13 +2181,27 @@ CryptographicContext::InitFromBuffer(const byte_t* p, ui32_t l)
 ASDCP::Result_t
 CryptographicContext::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 {
-  assert(m_Dict);
-  m_Typeinfo = &(m_Dict->Type(MDD_CryptographicContext));
   return InterchangeObject::WriteToBuffer(Buffer);
 }
 
 //------------------------------------------------------------------------------------------
 // GenericDataEssenceDescriptor
+
+//
+
+GenericDataEssenceDescriptor::GenericDataEssenceDescriptor(const Dictionary*& d) : FileDescriptor(d), m_Dict(d)
+{
+  assert(m_Dict);
+  m_UL = m_Dict->ul(MDD_GenericDataEssenceDescriptor);
+}
+
+GenericDataEssenceDescriptor::GenericDataEssenceDescriptor(const GenericDataEssenceDescriptor& rhs) : FileDescriptor(rhs.m_Dict), m_Dict(rhs.m_Dict)
+{
+  assert(m_Dict);
+  m_UL = m_Dict->ul(MDD_GenericDataEssenceDescriptor);
+  Copy(rhs);
+}
+
 
 //
 ASDCP::Result_t
@@ -1898,6 +2227,7 @@ GenericDataEssenceDescriptor::WriteToTLVSet(TLVWriter& TLVSet)
 void
 GenericDataEssenceDescriptor::Copy(const GenericDataEssenceDescriptor& rhs)
 {
+  FileDescriptor::Copy(rhs);
   DataEssenceCoding = rhs.DataEssenceCoding;
 }
 
@@ -1919,8 +2249,6 @@ GenericDataEssenceDescriptor::Dump(FILE* stream)
 ASDCP::Result_t
 GenericDataEssenceDescriptor::InitFromBuffer(const byte_t* p, ui32_t l)
 {
-  assert(m_Dict);
-  m_Typeinfo = &(m_Dict->Type(MDD_GenericDataEssenceDescriptor));
   return InterchangeObject::InitFromBuffer(p, l);
 }
 
@@ -1928,13 +2256,27 @@ GenericDataEssenceDescriptor::InitFromBuffer(const byte_t* p, ui32_t l)
 ASDCP::Result_t
 GenericDataEssenceDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 {
-  assert(m_Dict);
-  m_Typeinfo = &(m_Dict->Type(MDD_GenericDataEssenceDescriptor));
   return InterchangeObject::WriteToBuffer(Buffer);
 }
 
 //------------------------------------------------------------------------------------------
 // TimedTextDescriptor
+
+//
+
+TimedTextDescriptor::TimedTextDescriptor(const Dictionary*& d) : GenericDataEssenceDescriptor(d), m_Dict(d)
+{
+  assert(m_Dict);
+  m_UL = m_Dict->ul(MDD_TimedTextDescriptor);
+}
+
+TimedTextDescriptor::TimedTextDescriptor(const TimedTextDescriptor& rhs) : GenericDataEssenceDescriptor(rhs.m_Dict), m_Dict(rhs.m_Dict)
+{
+  assert(m_Dict);
+  m_UL = m_Dict->ul(MDD_TimedTextDescriptor);
+  Copy(rhs);
+}
+
 
 //
 ASDCP::Result_t
@@ -1964,6 +2306,7 @@ TimedTextDescriptor::WriteToTLVSet(TLVWriter& TLVSet)
 void
 TimedTextDescriptor::Copy(const TimedTextDescriptor& rhs)
 {
+  GenericDataEssenceDescriptor::Copy(rhs);
   ResourceID = rhs.ResourceID;
   UCSEncoding = rhs.UCSEncoding;
   NamespaceURI = rhs.NamespaceURI;
@@ -1989,8 +2332,6 @@ TimedTextDescriptor::Dump(FILE* stream)
 ASDCP::Result_t
 TimedTextDescriptor::InitFromBuffer(const byte_t* p, ui32_t l)
 {
-  assert(m_Dict);
-  m_Typeinfo = &(m_Dict->Type(MDD_TimedTextDescriptor));
   return InterchangeObject::InitFromBuffer(p, l);
 }
 
@@ -1998,13 +2339,27 @@ TimedTextDescriptor::InitFromBuffer(const byte_t* p, ui32_t l)
 ASDCP::Result_t
 TimedTextDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 {
-  assert(m_Dict);
-  m_Typeinfo = &(m_Dict->Type(MDD_TimedTextDescriptor));
   return InterchangeObject::WriteToBuffer(Buffer);
 }
 
 //------------------------------------------------------------------------------------------
 // TimedTextResourceSubDescriptor
+
+//
+
+TimedTextResourceSubDescriptor::TimedTextResourceSubDescriptor(const Dictionary*& d) : InterchangeObject(d), m_Dict(d), EssenceStreamID(0)
+{
+  assert(m_Dict);
+  m_UL = m_Dict->ul(MDD_TimedTextResourceSubDescriptor);
+}
+
+TimedTextResourceSubDescriptor::TimedTextResourceSubDescriptor(const TimedTextResourceSubDescriptor& rhs) : InterchangeObject(rhs.m_Dict), m_Dict(rhs.m_Dict)
+{
+  assert(m_Dict);
+  m_UL = m_Dict->ul(MDD_TimedTextResourceSubDescriptor);
+  Copy(rhs);
+}
+
 
 //
 ASDCP::Result_t
@@ -2034,6 +2389,7 @@ TimedTextResourceSubDescriptor::WriteToTLVSet(TLVWriter& TLVSet)
 void
 TimedTextResourceSubDescriptor::Copy(const TimedTextResourceSubDescriptor& rhs)
 {
+  InterchangeObject::Copy(rhs);
   AncillaryResourceID = rhs.AncillaryResourceID;
   MIMEMediaType = rhs.MIMEMediaType;
   EssenceStreamID = rhs.EssenceStreamID;
@@ -2059,8 +2415,6 @@ TimedTextResourceSubDescriptor::Dump(FILE* stream)
 ASDCP::Result_t
 TimedTextResourceSubDescriptor::InitFromBuffer(const byte_t* p, ui32_t l)
 {
-  assert(m_Dict);
-  m_Typeinfo = &(m_Dict->Type(MDD_TimedTextResourceSubDescriptor));
   return InterchangeObject::InitFromBuffer(p, l);
 }
 
@@ -2068,13 +2422,27 @@ TimedTextResourceSubDescriptor::InitFromBuffer(const byte_t* p, ui32_t l)
 ASDCP::Result_t
 TimedTextResourceSubDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 {
-  assert(m_Dict);
-  m_Typeinfo = &(m_Dict->Type(MDD_TimedTextResourceSubDescriptor));
   return InterchangeObject::WriteToBuffer(Buffer);
 }
 
 //------------------------------------------------------------------------------------------
 // StereoscopicPictureSubDescriptor
+
+//
+
+StereoscopicPictureSubDescriptor::StereoscopicPictureSubDescriptor(const Dictionary*& d) : InterchangeObject(d), m_Dict(d)
+{
+  assert(m_Dict);
+  m_UL = m_Dict->ul(MDD_StereoscopicPictureSubDescriptor);
+}
+
+StereoscopicPictureSubDescriptor::StereoscopicPictureSubDescriptor(const StereoscopicPictureSubDescriptor& rhs) : InterchangeObject(rhs.m_Dict), m_Dict(rhs.m_Dict)
+{
+  assert(m_Dict);
+  m_UL = m_Dict->ul(MDD_StereoscopicPictureSubDescriptor);
+  Copy(rhs);
+}
+
 
 //
 ASDCP::Result_t
@@ -2098,6 +2466,7 @@ StereoscopicPictureSubDescriptor::WriteToTLVSet(TLVWriter& TLVSet)
 void
 StereoscopicPictureSubDescriptor::Copy(const StereoscopicPictureSubDescriptor& rhs)
 {
+  InterchangeObject::Copy(rhs);
 }
 
 //
@@ -2117,8 +2486,6 @@ StereoscopicPictureSubDescriptor::Dump(FILE* stream)
 ASDCP::Result_t
 StereoscopicPictureSubDescriptor::InitFromBuffer(const byte_t* p, ui32_t l)
 {
-  assert(m_Dict);
-  m_Typeinfo = &(m_Dict->Type(MDD_StereoscopicPictureSubDescriptor));
   return InterchangeObject::InitFromBuffer(p, l);
 }
 
@@ -2126,13 +2493,27 @@ StereoscopicPictureSubDescriptor::InitFromBuffer(const byte_t* p, ui32_t l)
 ASDCP::Result_t
 StereoscopicPictureSubDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 {
-  assert(m_Dict);
-  m_Typeinfo = &(m_Dict->Type(MDD_StereoscopicPictureSubDescriptor));
   return InterchangeObject::WriteToBuffer(Buffer);
 }
 
 //------------------------------------------------------------------------------------------
 // NetworkLocator
+
+//
+
+NetworkLocator::NetworkLocator(const Dictionary*& d) : InterchangeObject(d), m_Dict(d)
+{
+  assert(m_Dict);
+  m_UL = m_Dict->ul(MDD_NetworkLocator);
+}
+
+NetworkLocator::NetworkLocator(const NetworkLocator& rhs) : InterchangeObject(rhs.m_Dict), m_Dict(rhs.m_Dict)
+{
+  assert(m_Dict);
+  m_UL = m_Dict->ul(MDD_NetworkLocator);
+  Copy(rhs);
+}
+
 
 //
 ASDCP::Result_t
@@ -2158,6 +2539,7 @@ NetworkLocator::WriteToTLVSet(TLVWriter& TLVSet)
 void
 NetworkLocator::Copy(const NetworkLocator& rhs)
 {
+  InterchangeObject::Copy(rhs);
   URLString = rhs.URLString;
 }
 
@@ -2179,8 +2561,6 @@ NetworkLocator::Dump(FILE* stream)
 ASDCP::Result_t
 NetworkLocator::InitFromBuffer(const byte_t* p, ui32_t l)
 {
-  assert(m_Dict);
-  m_Typeinfo = &(m_Dict->Type(MDD_NetworkLocator));
   return InterchangeObject::InitFromBuffer(p, l);
 }
 
@@ -2188,13 +2568,27 @@ NetworkLocator::InitFromBuffer(const byte_t* p, ui32_t l)
 ASDCP::Result_t
 NetworkLocator::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 {
-  assert(m_Dict);
-  m_Typeinfo = &(m_Dict->Type(MDD_NetworkLocator));
   return InterchangeObject::WriteToBuffer(Buffer);
 }
 
 //------------------------------------------------------------------------------------------
 // MCALabelSubDescriptor
+
+//
+
+MCALabelSubDescriptor::MCALabelSubDescriptor(const Dictionary*& d) : InterchangeObject(d), m_Dict(d), MCAChannelID(0)
+{
+  assert(m_Dict);
+  m_UL = m_Dict->ul(MDD_MCALabelSubDescriptor);
+}
+
+MCALabelSubDescriptor::MCALabelSubDescriptor(const MCALabelSubDescriptor& rhs) : InterchangeObject(rhs.m_Dict), m_Dict(rhs.m_Dict)
+{
+  assert(m_Dict);
+  m_UL = m_Dict->ul(MDD_MCALabelSubDescriptor);
+  Copy(rhs);
+}
+
 
 //
 ASDCP::Result_t
@@ -2230,6 +2624,7 @@ MCALabelSubDescriptor::WriteToTLVSet(TLVWriter& TLVSet)
 void
 MCALabelSubDescriptor::Copy(const MCALabelSubDescriptor& rhs)
 {
+  InterchangeObject::Copy(rhs);
   MCALabelDictionaryID = rhs.MCALabelDictionaryID;
   MCALinkID = rhs.MCALinkID;
   MCATagSymbol = rhs.MCATagSymbol;
@@ -2261,8 +2656,6 @@ MCALabelSubDescriptor::Dump(FILE* stream)
 ASDCP::Result_t
 MCALabelSubDescriptor::InitFromBuffer(const byte_t* p, ui32_t l)
 {
-  assert(m_Dict);
-  m_Typeinfo = &(m_Dict->Type(MDD_MCALabelSubDescriptor));
   return InterchangeObject::InitFromBuffer(p, l);
 }
 
@@ -2270,13 +2663,27 @@ MCALabelSubDescriptor::InitFromBuffer(const byte_t* p, ui32_t l)
 ASDCP::Result_t
 MCALabelSubDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 {
-  assert(m_Dict);
-  m_Typeinfo = &(m_Dict->Type(MDD_MCALabelSubDescriptor));
   return InterchangeObject::WriteToBuffer(Buffer);
 }
 
 //------------------------------------------------------------------------------------------
 // AudioChannelLabelSubDescriptor
+
+//
+
+AudioChannelLabelSubDescriptor::AudioChannelLabelSubDescriptor(const Dictionary*& d) : MCALabelSubDescriptor(d), m_Dict(d)
+{
+  assert(m_Dict);
+  m_UL = m_Dict->ul(MDD_AudioChannelLabelSubDescriptor);
+}
+
+AudioChannelLabelSubDescriptor::AudioChannelLabelSubDescriptor(const AudioChannelLabelSubDescriptor& rhs) : MCALabelSubDescriptor(rhs.m_Dict), m_Dict(rhs.m_Dict)
+{
+  assert(m_Dict);
+  m_UL = m_Dict->ul(MDD_AudioChannelLabelSubDescriptor);
+  Copy(rhs);
+}
+
 
 //
 ASDCP::Result_t
@@ -2302,6 +2709,7 @@ AudioChannelLabelSubDescriptor::WriteToTLVSet(TLVWriter& TLVSet)
 void
 AudioChannelLabelSubDescriptor::Copy(const AudioChannelLabelSubDescriptor& rhs)
 {
+  MCALabelSubDescriptor::Copy(rhs);
   SoundfieldGroupLinkID = rhs.SoundfieldGroupLinkID;
 }
 
@@ -2323,8 +2731,6 @@ AudioChannelLabelSubDescriptor::Dump(FILE* stream)
 ASDCP::Result_t
 AudioChannelLabelSubDescriptor::InitFromBuffer(const byte_t* p, ui32_t l)
 {
-  assert(m_Dict);
-  m_Typeinfo = &(m_Dict->Type(MDD_AudioChannelLabelSubDescriptor));
   return InterchangeObject::InitFromBuffer(p, l);
 }
 
@@ -2332,13 +2738,27 @@ AudioChannelLabelSubDescriptor::InitFromBuffer(const byte_t* p, ui32_t l)
 ASDCP::Result_t
 AudioChannelLabelSubDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 {
-  assert(m_Dict);
-  m_Typeinfo = &(m_Dict->Type(MDD_AudioChannelLabelSubDescriptor));
   return InterchangeObject::WriteToBuffer(Buffer);
 }
 
 //------------------------------------------------------------------------------------------
 // SoundfieldGroupLabelSubDescriptor
+
+//
+
+SoundfieldGroupLabelSubDescriptor::SoundfieldGroupLabelSubDescriptor(const Dictionary*& d) : MCALabelSubDescriptor(d), m_Dict(d)
+{
+  assert(m_Dict);
+  m_UL = m_Dict->ul(MDD_SoundfieldGroupLabelSubDescriptor);
+}
+
+SoundfieldGroupLabelSubDescriptor::SoundfieldGroupLabelSubDescriptor(const SoundfieldGroupLabelSubDescriptor& rhs) : MCALabelSubDescriptor(rhs.m_Dict), m_Dict(rhs.m_Dict)
+{
+  assert(m_Dict);
+  m_UL = m_Dict->ul(MDD_SoundfieldGroupLabelSubDescriptor);
+  Copy(rhs);
+}
+
 
 //
 ASDCP::Result_t
@@ -2364,6 +2784,7 @@ SoundfieldGroupLabelSubDescriptor::WriteToTLVSet(TLVWriter& TLVSet)
 void
 SoundfieldGroupLabelSubDescriptor::Copy(const SoundfieldGroupLabelSubDescriptor& rhs)
 {
+  MCALabelSubDescriptor::Copy(rhs);
   GroupOfSoundfieldGroupsLinkID = rhs.GroupOfSoundfieldGroupsLinkID;
 }
 
@@ -2386,8 +2807,6 @@ SoundfieldGroupLabelSubDescriptor::Dump(FILE* stream)
 ASDCP::Result_t
 SoundfieldGroupLabelSubDescriptor::InitFromBuffer(const byte_t* p, ui32_t l)
 {
-  assert(m_Dict);
-  m_Typeinfo = &(m_Dict->Type(MDD_SoundfieldGroupLabelSubDescriptor));
   return InterchangeObject::InitFromBuffer(p, l);
 }
 
@@ -2395,13 +2814,27 @@ SoundfieldGroupLabelSubDescriptor::InitFromBuffer(const byte_t* p, ui32_t l)
 ASDCP::Result_t
 SoundfieldGroupLabelSubDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 {
-  assert(m_Dict);
-  m_Typeinfo = &(m_Dict->Type(MDD_SoundfieldGroupLabelSubDescriptor));
   return InterchangeObject::WriteToBuffer(Buffer);
 }
 
 //------------------------------------------------------------------------------------------
 // GroupOfSoundfieldGroupsLabelSubDescriptor
+
+//
+
+GroupOfSoundfieldGroupsLabelSubDescriptor::GroupOfSoundfieldGroupsLabelSubDescriptor(const Dictionary*& d) : MCALabelSubDescriptor(d), m_Dict(d)
+{
+  assert(m_Dict);
+  m_UL = m_Dict->ul(MDD_GroupOfSoundfieldGroupsLabelSubDescriptor);
+}
+
+GroupOfSoundfieldGroupsLabelSubDescriptor::GroupOfSoundfieldGroupsLabelSubDescriptor(const GroupOfSoundfieldGroupsLabelSubDescriptor& rhs) : MCALabelSubDescriptor(rhs.m_Dict), m_Dict(rhs.m_Dict)
+{
+  assert(m_Dict);
+  m_UL = m_Dict->ul(MDD_GroupOfSoundfieldGroupsLabelSubDescriptor);
+  Copy(rhs);
+}
+
 
 //
 ASDCP::Result_t
@@ -2425,6 +2858,7 @@ GroupOfSoundfieldGroupsLabelSubDescriptor::WriteToTLVSet(TLVWriter& TLVSet)
 void
 GroupOfSoundfieldGroupsLabelSubDescriptor::Copy(const GroupOfSoundfieldGroupsLabelSubDescriptor& rhs)
 {
+  MCALabelSubDescriptor::Copy(rhs);
 }
 
 //
@@ -2444,8 +2878,6 @@ GroupOfSoundfieldGroupsLabelSubDescriptor::Dump(FILE* stream)
 ASDCP::Result_t
 GroupOfSoundfieldGroupsLabelSubDescriptor::InitFromBuffer(const byte_t* p, ui32_t l)
 {
-  assert(m_Dict);
-  m_Typeinfo = &(m_Dict->Type(MDD_GroupOfSoundfieldGroupsLabelSubDescriptor));
   return InterchangeObject::InitFromBuffer(p, l);
 }
 
@@ -2453,8 +2885,6 @@ GroupOfSoundfieldGroupsLabelSubDescriptor::InitFromBuffer(const byte_t* p, ui32_
 ASDCP::Result_t
 GroupOfSoundfieldGroupsLabelSubDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 {
-  assert(m_Dict);
-  m_Typeinfo = &(m_Dict->Type(MDD_GroupOfSoundfieldGroupsLabelSubDescriptor));
   return InterchangeObject::WriteToBuffer(Buffer);
 }
 

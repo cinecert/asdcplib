@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2005-2009, John Hurst
+Copyright (c) 2005-2012, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -39,11 +39,30 @@ ASDCP::MXF::IndexTableSegment::IndexTableSegment(const Dictionary*& d) :
   IndexStartPosition(0), IndexDuration(0), EditUnitByteCount(0),
   IndexSID(129), BodySID(1), SliceCount(0), PosTableCount(0)
 {
+  assert(m_Dict);
+  m_UL = m_Dict->ul(MDD_IndexTableSegment);
 }
 
 //
 ASDCP::MXF::IndexTableSegment::~IndexTableSegment()
 {
+}
+
+//
+void
+ASDCP::MXF::IndexTableSegment::Copy(const IndexTableSegment& rhs)
+{
+  InterchangeObject::Copy(rhs);
+  IndexEditRate = rhs.IndexEditRate;
+  IndexStartPosition = rhs.IndexStartPosition;
+  IndexDuration = rhs.IndexDuration;
+  EditUnitByteCount = rhs.EditUnitByteCount;
+  IndexSID = rhs.IndexSID;
+  BodySID = rhs.BodySID;
+  SliceCount = rhs.SliceCount;
+  PosTableCount = rhs.PosTableCount;
+  DeltaEntryArray = rhs.DeltaEntryArray;
+  IndexEntryArray = rhs.IndexEntryArray;
 }
 
 //
@@ -86,8 +105,6 @@ ASDCP::MXF::IndexTableSegment::WriteToTLVSet(TLVWriter& TLVSet)
 ASDCP::Result_t
 ASDCP::MXF::IndexTableSegment::InitFromBuffer(const byte_t* p, ui32_t l)
 {
-  assert(m_Dict);
-  m_Typeinfo = &(m_Dict->Type(MDD_IndexTableSegment));
   return InterchangeObject::InitFromBuffer(p, l);
 }
 
@@ -95,8 +112,6 @@ ASDCP::MXF::IndexTableSegment::InitFromBuffer(const byte_t* p, ui32_t l)
 ASDCP::Result_t
 ASDCP::MXF::IndexTableSegment::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 {
-  assert(m_Dict);
-  m_Typeinfo = &(m_Dict->Type(MDD_IndexTableSegment));
   return InterchangeObject::WriteToBuffer(Buffer);
 }
 

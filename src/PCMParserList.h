@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2004-2009, John Hurst
+Copyright (c) 2004-2012, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -32,6 +32,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef _PCMPARSERLIST_H_
 #define _PCMPARSERLIST_H_
 
+#include <KM_fileio.h>
 #include <AS_DCP.h>
 #include <vector>
 
@@ -53,7 +54,7 @@ namespace ASDCP
       ParserInstance();
       virtual ~ParserInstance();
 
-      Result_t OpenRead(const char* filename, Rational& PictureRate);
+      Result_t OpenRead(const char* filename, const Rational& PictureRate);
       Result_t PutSample(byte_t* p);
       Result_t ReadFrame();
       inline ui32_t SampleSize()  { return m_SampleSize; }
@@ -72,7 +73,8 @@ namespace ASDCP
       PCMParserList();
       virtual ~PCMParserList();
 
-      Result_t OpenRead(ui32_t argc, const char** argv, Rational& PictureRate);
+      Result_t OpenRead(ui32_t argc, const char** argv, const Rational& PictureRate);
+      Result_t OpenRead(const Kumu::PathList_t& argv, const Rational& PictureRate);
       Result_t FillAudioDescriptor(PCM::AudioDescriptor& ADesc) const;
       Result_t Reset();
       Result_t ReadFrame(PCM::FrameBuffer& OutFB);

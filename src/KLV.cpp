@@ -57,8 +57,23 @@ ASDCP::KLVPacket::InitFromBuffer(const byte_t* buf, ui32_t buf_len, const UL& la
 
 //
 ASDCP::UL
-ASDCP::KLVPacket::GetUL() {
-  return UL(m_KeyStart);
+ASDCP::KLVPacket::GetUL()
+{
+  if ( m_KeyStart != 0 )
+    return UL(m_KeyStart);
+
+  return m_UL;
+}
+
+//
+bool
+ASDCP::KLVPacket::SetUL(const UL& new_ul)
+{
+  if ( m_KeyStart != 0 )
+    return false;
+
+  m_UL = new_ul;
+  return true;
 }
 
 //
@@ -105,16 +120,25 @@ ASDCP::KLVPacket::InitFromBuffer(const byte_t* buf, ui32_t buf_len)
 bool
 ASDCP::KLVPacket::HasUL(const byte_t* ul)
 {
-  if ( m_KeyStart == 0 )
-    return false;
+  if ( m_KeyStart != 0 )
+    {
+      return ( memcmp(ul, m_KeyStart, SMPTE_UL_LENGTH) == 0 ) ? true : false;
+    }
 
-  return ( memcmp(ul, m_KeyStart, SMPTE_UL_LENGTH) == 0 ) ? true : false;
+  if ( m_UL.HasValue() )
+    {
+      return UL(ul) == m_UL;
+    }
+
+  return false;
 }
 
 //
 ASDCP::Result_t
 ASDCP::KLVPacket::WriteKLToBuffer(ASDCP::FrameBuffer& Buffer, const UL& label, ui32_t length)
 {
+  assert(label.HasValue());
+
   if ( Buffer.Size() + kl_length > Buffer.Capacity() )
     {
       DefaultLogSink().Error("Small write buffer\n");
@@ -134,6 +158,8 @@ ASDCP::KLVPacket::WriteKLToBuffer(ASDCP::FrameBuffer& Buffer, const UL& label, u
 void
 ASDCP::KLVPacket::Dump(FILE* stream, const Dictionary& Dict, bool show_value)
 {
+  char buf[64];
+
   if ( stream == 0 )
     stream = stderr;
 
@@ -141,7 +167,6 @@ ASDCP::KLVPacket::Dump(FILE* stream, const Dictionary& Dict, bool show_value)
     {
       assert(m_ValueStart);
       UL TmpUL(m_KeyStart);
-      char buf[64];
       fprintf(stream, "%s", TmpUL.EncodeString(buf, 64));
 
       const MDDEntry* Entry = Dict.FindUL(m_KeyStart);
@@ -149,6 +174,10 @@ ASDCP::KLVPacket::Dump(FILE* stream, const Dictionary& Dict, bool show_value)
 
       if ( show_value && m_ValueLength < 1000 )
 	Kumu::hexdump(m_ValueStart, Kumu::xmin(m_ValueLength, (ui32_t)128), stream);
+    }
+  else if ( m_UL.HasValue() )
+    {
+      fprintf(stream, "%s\n", m_UL.EncodeString(buf, 64));
     }
   else
     {
