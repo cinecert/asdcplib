@@ -113,7 +113,7 @@ utilities all respond to -h.
 
 
 Change History
-2012-01-30 - bug fixes v1.8.45
+2012-02-03 - bug fixes 1.9.44d
  o Corrected UL version segment in "7.1 DS" and "WTF" audio format
    labels (corresponds with publication of ST 429-2:2011).
  o Exposed MXF object interface (MXF.h, Metadata.h) via ASDCP MXFReader
@@ -126,6 +126,18 @@ Change History
    SoundfieldGroupLabelSubDescriptor, and
    GroupOfSoundfieldGroupsLabelSubDescriptor (from ST 377-4:2012) to
    Metadata.h
+ o Changed some internals to make MXFWriter::OPAtomHeader() work correctly.
+ o Split asdcp-test into several different programs to help relieve
+   the impenetrable-list-of-arguments problem. asdcp-wrap, asdcp-unwrap
+   and asdcp-info take the place of asdcp-test's -c, -x and -i options,
+   respectively.  asdcp-util contains the remaining functions. Note that
+   asdcp-test is now DEPRECATED, new functionality and bug fixes will be
+   aimed at the new tools.  Also note that some options and calling
+   conventions are different for the new tools as compared to asdcp-test.
+   Please read the synopses and make sure you understand the new idioms.
+ o asdcp-wrap has a new argument, -C <UL>, that writes the given UL to the
+   ChannelAssignment item in the WaveAudioDescriptor (only useful when
+   writing PCM essence).
 
 
 2011-11-30 - bug fixes v1.8.44

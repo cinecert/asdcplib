@@ -110,7 +110,10 @@ usage(FILE* stream = stdout)
   fprintf(stream, "\
 USAGE: %s [-h|-help] [-V]\n\
 \n\
-       %s [-3] [-a <uuid>] [-b <buffer-size>] [-C <UL>] [-d <duration>] [-e|-E] [-f <start-frame>] [-j <key-id-string>] [-k <key-string>] [-l <label>] [-L] [-M] [-p <frame-rate>] [-s <num>] [-v] [-W] [-z|-Z] <input-file>+ <output-file>\n\n",
+       %s [-3] [-a <uuid>] [-b <buffer-size>] [-C <UL>] [-d <duration>]\n\
+          [-e|-E] [-f <start-frame>] [-j <key-id-string>] [-k <key-string>]\n\
+          [-l <label>] [-L] [-M] [-p <frame-rate>] [-s <num>] [-v] [-W]\n\
+          [-z|-Z] <input-file>+ <output-file>\n\n",
 	  PROGRAM_NAME, PROGRAM_NAME);
 
   fprintf(stream, "\
