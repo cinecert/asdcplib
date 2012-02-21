@@ -55,7 +55,7 @@ namespace ASDCP
           VersionType ProductVersion;
           UTF16String VersionString;
           UUID ProductUID;
-          Timestamp ModificationDate;
+          Kumu::Timestamp ModificationDate;
           VersionType ToolkitVersion;
           UTF16String Platform;
 
@@ -131,8 +131,8 @@ namespace ASDCP
 	  const Dictionary*& m_Dict;
           UMID PackageUID;
           UTF16String Name;
-          Timestamp PackageCreationDate;
-          Timestamp PackageModifiedDate;
+          Kumu::Timestamp PackageCreationDate;
+          Kumu::Timestamp PackageModifiedDate;
           Batch<UUID> Tracks;
 
       GenericPackage(const Dictionary*& d);

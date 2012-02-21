@@ -38,10 +38,6 @@ using Kumu::GenRandomValue;
 
 //------------------------------------------------------------------------------------------
 
-static const ASDCP::Dictionary *sg_dict = &DefaultSMPTEDict();
-static MXF::OPAtomHeader sg_OPAtomHeader(sg_dict);
-static MXF::OPAtomIndexFooter sg_OPAtomIndexFooter(sg_dict);
-
 static std::string JP2K_PACKAGE_LABEL = "File Package: SMPTE 429-4 frame wrapping of JPEG 2000 codestreams";
 static std::string JP2K_S_PACKAGE_LABEL = "File Package: SMPTE 429-10 frame wrapping of stereoscopic JPEG 2000 codestreams";
 static std::string PICT_DEF_LABEL = "Picture Track";
@@ -472,7 +468,10 @@ ASDCP::MXF::OPAtomHeader&
 ASDCP::JP2K::MXFReader::OPAtomHeader()
 {
   if ( m_Reader.empty() )
-    return sg_OPAtomHeader;
+    {
+      assert(g_OPAtomHeader);
+      return *g_OPAtomHeader;
+    }
 
   return m_Reader->m_HeaderPart;
 }
@@ -484,7 +483,10 @@ ASDCP::MXF::OPAtomIndexFooter&
 ASDCP::JP2K::MXFReader::OPAtomIndexFooter()
 {
   if ( m_Reader.empty() )
-    return sg_OPAtomIndexFooter;
+    {
+      assert(g_OPAtomIndexFooter);
+      return *g_OPAtomIndexFooter;
+    }
 
   return m_Reader->m_FooterPart;
 }
@@ -670,7 +672,10 @@ ASDCP::MXF::OPAtomHeader&
 ASDCP::JP2K::MXFSReader::OPAtomHeader()
 {
   if ( m_Reader.empty() )
-    return sg_OPAtomHeader;
+    {
+      assert(g_OPAtomHeader);
+      return *g_OPAtomHeader;
+    }
 
   return m_Reader->m_HeaderPart;
 }
@@ -682,7 +687,10 @@ ASDCP::MXF::OPAtomIndexFooter&
 ASDCP::JP2K::MXFSReader::OPAtomIndexFooter()
 {
   if ( m_Reader.empty() )
-    return sg_OPAtomIndexFooter;
+    {
+      assert(g_OPAtomIndexFooter);
+      return *g_OPAtomIndexFooter;
+    }
 
   return m_Reader->m_FooterPart;
 }
@@ -1036,7 +1044,10 @@ ASDCP::MXF::OPAtomHeader&
 ASDCP::JP2K::MXFWriter::OPAtomHeader()
 {
   if ( m_Writer.empty() )
-    return sg_OPAtomHeader;
+    {
+      assert(g_OPAtomHeader);
+      return *g_OPAtomHeader;
+    }
 
   return m_Writer->m_HeaderPart;
 }
@@ -1048,7 +1059,10 @@ ASDCP::MXF::OPAtomIndexFooter&
 ASDCP::JP2K::MXFWriter::OPAtomIndexFooter()
 {
   if ( m_Writer.empty() )
-    return sg_OPAtomIndexFooter;
+    {
+      assert(g_OPAtomIndexFooter);
+      return *g_OPAtomIndexFooter;
+    }
 
   return m_Writer->m_FooterPart;
 }
@@ -1161,7 +1175,10 @@ ASDCP::MXF::OPAtomHeader&
 ASDCP::JP2K::MXFSWriter::OPAtomHeader()
 {
   if ( m_Writer.empty() )
-    return sg_OPAtomHeader;
+    {
+      assert(g_OPAtomHeader);
+      return *g_OPAtomHeader;
+    }
 
   return m_Writer->m_HeaderPart;
 }
@@ -1173,7 +1190,10 @@ ASDCP::MXF::OPAtomIndexFooter&
 ASDCP::JP2K::MXFSWriter::OPAtomIndexFooter()
 {
   if ( m_Writer.empty() )
-    return sg_OPAtomIndexFooter;
+    {
+      assert(g_OPAtomIndexFooter);
+      return *g_OPAtomIndexFooter;
+    }
 
   return m_Writer->m_FooterPart;
 }

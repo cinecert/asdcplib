@@ -36,10 +36,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 //------------------------------------------------------------------------------------------
 
-static const ASDCP::Dictionary *sg_dict = &DefaultSMPTEDict();
-static MXF::OPAtomHeader sg_OPAtomHeader(sg_dict);
-static MXF::OPAtomIndexFooter sg_OPAtomIndexFooter(sg_dict);
-
 static std::string MPEG_PACKAGE_LABEL = "File Package: SMPTE 381M frame wrapping of MPEG2 video elementary stream";
 static std::string PICT_DEF_LABEL = "Picture Track";
 
@@ -346,7 +342,10 @@ ASDCP::MXF::OPAtomHeader&
 ASDCP::MPEG2::MXFReader::OPAtomHeader()
 {
   if ( m_Reader.empty() )
-    return sg_OPAtomHeader;
+    {
+      assert(g_OPAtomHeader);
+      return *g_OPAtomHeader;
+    }
 
   return m_Reader->m_HeaderPart;
 }
@@ -358,7 +357,10 @@ ASDCP::MXF::OPAtomIndexFooter&
 ASDCP::MPEG2::MXFReader::OPAtomIndexFooter()
 {
   if ( m_Reader.empty() )
-    return sg_OPAtomIndexFooter;
+    {
+      assert(g_OPAtomIndexFooter);
+      return *g_OPAtomIndexFooter;
+    }
 
   return m_Reader->m_FooterPart;
 }
@@ -646,7 +648,10 @@ ASDCP::MXF::OPAtomHeader&
 ASDCP::MPEG2::MXFWriter::OPAtomHeader()
 {
   if ( m_Writer.empty() )
-    return sg_OPAtomHeader;
+    {
+      assert(g_OPAtomHeader);
+      return *g_OPAtomHeader;
+    }
 
   return m_Writer->m_HeaderPart;
 }
@@ -658,7 +663,10 @@ ASDCP::MXF::OPAtomIndexFooter&
 ASDCP::MPEG2::MXFWriter::OPAtomIndexFooter()
 {
   if ( m_Writer.empty() )
-    return sg_OPAtomIndexFooter;
+    {
+      assert(g_OPAtomIndexFooter);
+      return *g_OPAtomIndexFooter;
+    }
 
   return m_Writer->m_FooterPart;
 }

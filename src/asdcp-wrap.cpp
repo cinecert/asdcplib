@@ -137,7 +137,8 @@ Options:\n\
   -d <duration>     - Number of frames to process, default all\n\
   -f <start-frame>  - Starting frame number, default 0\n\
   -l <label>        - Use given channel format label when writing MXF sound\n\
-                      files. SMPTE 429-2 labels: '5.1', '6.1', '7.1', '7.1DS', 'WTF'.\n\
+                      files. SMPTE 429-2 labels: '5.1', '6.1', '7.1',\n\
+                      '7.1DS', 'WTF'\n\
                       Default is no label (valid for Interop only).\n\
   -L                - Write SMPTE UL values instead of MXF Interop\n\
   -p <rate>         - fps of picture when wrapping PCM or JP2K:\n\
@@ -306,6 +307,15 @@ public:
 
 		break;
 
+	      case 'C':
+		TEST_EXTRA_ARG(i, 'U');
+		if ( ! channel_assignment.DecodeHex(argv[i]) )
+		  {
+		    fprintf(stderr, "Error decoding UL value: %s\n", argv[i]);
+		    return;
+		  }
+		break;
+
 	      case 'd':
 		TEST_EXTRA_ARG(i, 'd');
 		duration = abs(atoi(argv[i]));
@@ -360,15 +370,6 @@ public:
 	      case 'p':
 		TEST_EXTRA_ARG(i, 'p');
 		picture_rate = abs(atoi(argv[i]));
-		break;
-
-	      case 'U':
-		TEST_EXTRA_ARG(i, 'U');
-		if ( ! channel_assignment.DecodeHex(argv[i]) )
-		  {
-		    fprintf(stderr, "Error decoding UL value: %s\n", argv[i]);
-		    return;
-		  }
 		break;
 
 	      case 'V': version_flag = true; break;

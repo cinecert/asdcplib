@@ -83,30 +83,38 @@ libasdcp_la_CPPFLAGS = -DASDCP_PLATFORM=\"@host@\"
 
 # Python extension
 if PYTHON_USE
-lib_LTLIBRARIES += libpyasdcp.la libnapali.la
+lib_LTLIBRARIES += libpyasdcp.la
+#### libnapali.la
 
 nodist_libpyasdcp_la_SOURCES = \
-	kumu_python.cpp kumu_python.h \
-	asdcp_python.cpp asdcp_python.h \
+	kumu_python.cpp \
+	kumu_python.h \
+	asdcp_python.cpp \
+	asdcp_python.h \
 	asdcp_python_descriptor.cpp \
-	asdcp_python_misc.cpp asdcp_python_writerinfo.h \
-	asdcp_wrappers.h asdcp_python_mxf.cpp asdcp_python_mxf_text.cpp
+	asdcp_python_misc.cpp \
+	asdcp_python_writerinfo.h \
+	asdcp_wrappers.h \
+	asdcp_python_mxf.cpp \
+	asdcp_python_mxf_text.cpp \
+	asdcp_python_mxf_metadata.cpp
 
-nodist_libnapali_la_SOURCES = \
-	napali_python.cpp napali_python.h
+####nodist_libnapali_la_SOURCES = \
+####	napali_python.cpp napali_python.h
 
 libpyasdcp_la_CPPFLAGS = @PYTHON_CPPFLAGS@
 libpyasdcp_la_LDFLAGS = @PYTHON_LSPEC@  -release @VERSION@
 libpyasdcp_la_LIBADD = libkumu.la libasdcp.la
 
-libnapali_la_CPPFLAGS = @PYTHON_CPPFLAGS@
-libnapali_la_LDFLAGS = @PYTHON_LSPEC@  -release @VERSION@
-libnapali_la_LIBADD = libkumu.la libasdcp.la
+####libnapali_la_CPPFLAGS = @PYTHON_CPPFLAGS@
+####libnapali_la_LDFLAGS = @PYTHON_LSPEC@  -release @VERSION@
+####libnapali_la_LIBADD = libkumu.la libasdcp.la
 
 pyexecdir = @PYTHON_EXECDIR@
 pyexec_includedir = $(PYTHON_PREFIX)/include/python$(PYTHON_SHORTVERSION)
-nodist_pyexec_include_HEADERS = kumu_python.h asdcp_python.h napali_python.h asdcp_wrappers.h
-pyexec_LTLIBRARIES = kumu.la asdcp.la napali.la
+nodist_pyexec_include_HEADERS = kumu_python.h asdcp_python.h asdcp_wrappers.h
+pyexec_LTLIBRARIES = kumu.la asdcp.la
+#### napali_python.h  napali.la
 
 nodist_kumu_la_SOURCES = pykumu.cpp kumu_python.h
 kumu_la_CPPFLAGS = @PYTHON_CPPFLAGS@
@@ -118,10 +126,10 @@ asdcp_la_CPPFLAGS = @PYTHON_CPPFLAGS@
 asdcp_la_LDFLAGS = @PYTHON_LSPEC@ -avoid-version -module
 asdcp_la_LIBADD = libpyasdcp.la
 
-nodist_napali_la_SOURCES = pynapali.cpp kumu_python.h napali_python.h
-napali_la_CPPFLAGS = @PYTHON_CPPFLAGS@
-napali_la_LDFLAGS = @PYTHON_LSPEC@ -avoid-version -module
-napali_la_LIBADD = libnapali.la libpyasdcp.la
+####nodist_napali_la_SOURCES = pynapali.cpp kumu_python.h napali_python.h
+####napali_la_CPPFLAGS = @PYTHON_CPPFLAGS@
+####napali_la_LDFLAGS = @PYTHON_LSPEC@ -avoid-version -module
+####napali_la_LIBADD = libnapali.la libpyasdcp.la
 endif
 
 # list of programs to be built and installed
@@ -208,10 +216,12 @@ TESTS_ENVIRONMENT = BUILD_DIR="." TEST_FILES=../tests TEST_FILE_PREFIX=DCPd1-M1 
 EXTRA_DIST = fips-186-test-harness.pl $(TESTS)
 if !FREEDIST
 if DEV_HEADERS
-EXTRA_DIST += $(nodist_libasdcp_la_SOURCES) $(nodist_tt_xform_SOURCES) $(nodist_napali_la_SOURCES) $(nodist_libnapali_la_SOURCES)
+EXTRA_DIST += $(nodist_libasdcp_la_SOURCES) $(nodist_tt_xform_SOURCES)
+#### $(nodist_napali_la_SOURCES) $(nodist_libnapali_la_SOURCES)
 endif
 if PYTHON_USE
-EXTRA_DIST += $(nodist_pyexec_include_HEADERS) $(nodist_libpyasdcp_la_SOURCES) $(nodist_kumu_la_SOURCES) $(nodist_asdcp_la_SOURCES) $(nodist_napali_la_SOURCES) $(nodist_libnapali_la_SOURCES)
+EXTRA_DIST += $(nodist_pyexec_include_HEADERS) $(nodist_libpyasdcp_la_SOURCES) $(nodist_kumu_la_SOURCES) $(nodist_asdcp_la_SOURCES)
+#### $(nodist_napali_la_SOURCES) $(nodist_libnapali_la_SOURCES)
 endif
 endif
 

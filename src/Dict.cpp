@@ -210,6 +210,7 @@ ASDCP::Dictionary::AddEntry(const MDDEntry& Entry, ui32_t index)
 
   m_md_lookup.insert(std::map<UL, ui32_t>::value_type(TmpUL, index));
   m_md_rev_lookup.insert(std::map<ui32_t, UL>::value_type(index, TmpUL));
+  m_md_sym_lookup.insert(std::map<std::string, ui32_t>::value_type(Entry.name, index));
   m_MDD_Table[index] = Entry;
 
   return result;
@@ -274,7 +275,23 @@ ASDCP::Dictionary::FindUL(const byte_t* ul_buf) const
 	}
     }
 
-  return &m_MDD_Table[(*i).second];
+  return &m_MDD_Table[i->second];
+}
+
+//
+const ASDCP::MDDEntry*
+ASDCP::Dictionary::FindSymbol(const std::string& str) const
+{
+  assert(m_MDD_Table[0].name[0]);
+  std::map<std::string, ui32_t>::const_iterator i = m_md_sym_lookup.find(str);
+  
+  if ( i == m_md_sym_lookup.end() )
+    {
+      Kumu::DefaultLogSink().Warn("UL Dictionary: unknown symbol: %s\n", str.c_str());
+      return 0;
+    }
+
+  return &m_MDD_Table[i->second];
 }
 
 //

@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2005-2011, John Hurst
+Copyright (c) 2005-2012, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -34,6 +34,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <KM_memio.h>
 #include <KM_error.h>
+#include <KM_tai.h>
 #include <string.h>
 #include <string>
 #include <list>
@@ -407,17 +408,16 @@ namespace Kumu
   // UTC time+date representation
   class Timestamp : public IArchive
     {
-    public:
-      ui16_t Year;
-      ui8_t  Month;
-      ui8_t  Day;
-      ui8_t  Hour;
-      ui8_t  Minute;
-      ui8_t  Second;
+      TAI::tai m_Timestamp; // always UTC
+      i32_t m_TZOffsetMinutes;
 
+   public:
       Timestamp();
       Timestamp(const Timestamp& rhs);
       Timestamp(const char* datestr);
+      Timestamp(const ui16_t& Year, const ui8_t&  Month, const ui8_t&  Day);
+      Timestamp(const ui16_t& Year, const ui8_t&  Month, const ui8_t&  Day,
+		const ui8_t&  Hour, const ui8_t&  Minute, const ui8_t&  Second);
       virtual ~Timestamp();
 
       const Timestamp& operator=(const Timestamp& rhs);
@@ -426,23 +426,34 @@ namespace Kumu
       bool operator==(const Timestamp& rhs) const;
       bool operator!=(const Timestamp& rhs) const;
 
+      // always UTC
+      void GetComponents(ui16_t& Year, ui8_t&  Month, ui8_t&  Day,
+			 ui8_t&  Hour, ui8_t&  Minute, ui8_t&  Second) const;      
+      void SetComponents(const ui16_t& Year, const ui8_t&  Month, const ui8_t&  Day,
+			 const ui8_t&  Hour, const ui8_t&  Minute, const ui8_t&  Second);
+
       // Write the timestamp value to the given buffer in the form 2004-05-01T13:20:00+00:00
       // returns 0 if the buffer is smaller than DateTimeLen
       const char* EncodeString(char* str_buf, ui32_t buf_len) const;
-      const char* EncodeStringWithOffset(char* str_buf, ui32_t buf_len,
-					 i32_t offset_minutes = 0) const;
 
       // decode and set value from string formatted by EncodeString
       bool        DecodeString(const char* datestr);
 
       // Add the given number of days, hours, minutes, or seconds to the timestamp value.
       // Values less than zero will cause the timestamp to decrease
-      void AddDays(i32_t);
-      void AddHours(i32_t);
-      void AddMinutes(i32_t);
-      void AddSeconds(i32_t);
+      inline void AddDays(const i32_t& d) { m_Timestamp.add_days(d); }
+      inline  void AddHours(const i32_t& h) { m_Timestamp.add_hours(h); }
+      inline  void AddMinutes(const i32_t& m) { m_Timestamp.add_minutes(m); }
+      inline  void AddSeconds(const i32_t& s) { m_Timestamp.add_seconds(s); }
 
-      // Read and write the timestamp value as a byte string having
+      // returns false if the requested adjustment is out of range
+      bool SetTZOffsetMinutes(const i32_t& minutes);
+      inline i32_t GetTZOffsetMinutes() const { return m_TZOffsetMinutes; }
+
+      // Return the number of seconds since the Unix epoch UTC (1970-01-01T00:00:00+00:00)
+      ui64_t GetCTime() const;
+
+      // Read and write the timestamp (always UTC) value as a byte string having
       // the following format:
       // | 16 bits int, big-endian |    8 bits   |   8 bits  |   8 bits   |    8 bits    |    8 bits    |
       // |        Year A.D         | Month(1-12) | Day(1-31) | Hour(0-23) | Minute(0-59) | Second(0-59) |
@@ -451,9 +462,6 @@ namespace Kumu
       virtual ui32_t ArchiveLength() const { return 8L; }
       virtual bool   Archive(MemIOWriter* Writer) const;
       virtual bool   Unarchive(MemIOReader* Reader);
-
-      // Get the number of seconds since the Unix epoch (1970-01-01T00:00:00+00:00)
-      long GetSecondsSinceEpoch(void) const;
     };
 
   //

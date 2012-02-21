@@ -207,7 +207,7 @@ ASDCP::PCMParserList::OpenRead(const Kumu::PathList_t& argv, const Rational& Pic
   if ( ASDCP_SUCCESS(result) )
     {
       m_ADesc.ChannelCount = m_ChannelCount;
-      m_ADesc.AvgBps = ceil(m_ADesc.AudioSamplingRate.Quotient()) * m_ADesc.BlockAlign;
+      m_ADesc.AvgBps = (ui32_t)(ceil(m_ADesc.AudioSamplingRate.Quotient()) * m_ADesc.BlockAlign);
     }
   else
     {

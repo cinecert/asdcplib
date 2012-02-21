@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2004-2010, John Hurst
+Copyright (c) 2004-2012, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -29,16 +29,41 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     \brief   MXF file reader base class
 */
 
+#define DEFAULT_MD_DECL
 #include "AS_DCP_internal.h"
 #include "KLV.h"
 
 using namespace ASDCP;
 using namespace ASDCP::MXF;
 
+static Kumu::Mutex sg_DefaultMDInitLock;
+static bool        sg_DefaultMDTypesInit = false;
+static const ASDCP::Dictionary *sg_dict;
+
+//
+void
+ASDCP::default_md_object_init()
+{
+  if ( ! sg_DefaultMDTypesInit )
+    {
+      Kumu::AutoMutex BlockLock(sg_DefaultMDInitLock);
+
+      if ( ! sg_DefaultMDTypesInit )
+	{
+	  sg_dict = &DefaultSMPTEDict();
+	  g_OPAtomHeader = new ASDCP::MXF::OPAtomHeader(sg_dict);
+	  g_OPAtomIndexFooter = new ASDCP::MXF::OPAtomIndexFooter(sg_dict);
+	  sg_DefaultMDTypesInit = true;
+	}
+    }
+}
+
+
 //
 ASDCP::h__Reader::h__Reader(const Dictionary& d) :
   m_HeaderPart(m_Dict), m_BodyPart(m_Dict), m_FooterPart(m_Dict), m_Dict(&d), m_EssenceStart(0)
 {
+  default_md_object_init();
 }
 
 ASDCP::h__Reader::~h__Reader()

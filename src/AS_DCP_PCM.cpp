@@ -36,10 +36,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 //------------------------------------------------------------------------------------------
 
-static const ASDCP::Dictionary *sg_dict = &DefaultSMPTEDict();
-static MXF::OPAtomHeader sg_OPAtomHeader(sg_dict);
-static MXF::OPAtomIndexFooter sg_OPAtomIndexFooter(sg_dict);
-
 static std::string PCM_PACKAGE_LABEL = "File Package: SMPTE 382M frame wrapping of wave audio";
 static std::string SOUND_DEF_LABEL = "Sound Track";
 
@@ -324,7 +320,10 @@ ASDCP::MXF::OPAtomHeader&
 ASDCP::PCM::MXFReader::OPAtomHeader()
 {
   if ( m_Reader.empty() )
-    return sg_OPAtomHeader;
+    {
+      assert(g_OPAtomHeader);
+      return *g_OPAtomHeader;
+    }
 
   return m_Reader->m_HeaderPart;
 }
@@ -336,7 +335,10 @@ ASDCP::MXF::OPAtomIndexFooter&
 ASDCP::PCM::MXFReader::OPAtomIndexFooter()
 {
   if ( m_Reader.empty() )
-    return sg_OPAtomIndexFooter;
+    {
+      assert(g_OPAtomIndexFooter);
+      return *g_OPAtomIndexFooter;
+    }
 
   return m_Reader->m_FooterPart;
 }
@@ -579,7 +581,10 @@ ASDCP::MXF::OPAtomHeader&
 ASDCP::PCM::MXFWriter::OPAtomHeader()
 {
   if ( m_Writer.empty() )
-    return sg_OPAtomHeader;
+    {
+      assert(g_OPAtomHeader);
+      return *g_OPAtomHeader;
+    }
 
   return m_Writer->m_HeaderPart;
 }
@@ -591,7 +596,10 @@ ASDCP::MXF::OPAtomIndexFooter&
 ASDCP::PCM::MXFWriter::OPAtomIndexFooter()
 {
   if ( m_Writer.empty() )
-    return sg_OPAtomIndexFooter;
+    {
+      assert(g_OPAtomIndexFooter);
+      return *g_OPAtomIndexFooter;
+    }
 
   return m_Writer->m_FooterPart;
 }

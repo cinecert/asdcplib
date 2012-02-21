@@ -237,58 +237,6 @@ namespace ASDCP
 	};
 
       //
-      class Timestamp : public Kumu::IArchive
-	{
-	public:
-	  ui16_t Year;
-	  ui8_t  Month;
-	  ui8_t  Day;
-	  ui8_t  Hour;
-	  ui8_t  Minute;
-	  ui8_t  Second;
-	  ui8_t  Tick;
-
-	  Timestamp();
-	  Timestamp(const Timestamp& rhs);
-	  Timestamp(const char* datestr);
-	  virtual ~Timestamp();
-
-	  const Timestamp& operator=(const Timestamp& rhs);
-	  bool operator<(const Timestamp& rhs) const;
-	  bool operator==(const Timestamp& rhs) const;
-	  bool operator!=(const Timestamp& rhs) const;
-
-	  // decode and set value from string formatted by EncodeAsString
-	  Result_t    SetFromString(const char* datestr);
-	  
-	  // add the given number of days or hours to the timestamp value. Values less than zero
-	  // will cause the value to decrease
-	  void AddDays(i32_t);
-	  void AddHours(i32_t);
-
-	  // Write the timestamp value to the given buffer in the form 2004-05-01 13:20:00.000
-	  // returns 0 if the buffer is smaller than DateTimeLen
-	  const char* EncodeString(char* str_buf, ui32_t buf_len) const;
-
-	  //
-	  inline virtual bool Unarchive(Kumu::MemIOReader* Reader) {
-	    if ( ! Reader->ReadUi16BE(&Year) ) return false;
-	    if ( ! Reader->ReadRaw(&Month, 6) ) return false;
-	    return true;
-	  }
-
-	  inline virtual bool HasValue() const { return true; }
-	  inline virtual ui32_t ArchiveLength() const { return 8L; }
-
-	  //
-	  inline virtual bool Archive(Kumu::MemIOWriter* Writer) const {
-	    if ( ! Writer->WriteUi16BE(Year) ) return false;
-	    if ( ! Writer->WriteRaw(&Month, 6) ) return false;
-	    return true;
-	  }
-	};
-
-      //
     class ISO8String : public std::string, public Kumu::IArchive
 	{
 	public:
@@ -389,7 +337,6 @@ namespace ASDCP
 	  virtual ~VersionType() {}
 
 	  const VersionType& operator=(const VersionType& rhs) { Copy(rhs); return *this; }
-
 	  void Copy(const VersionType& rhs) {
 	    Major = rhs.Major;
 	    Minor = rhs.Minor;

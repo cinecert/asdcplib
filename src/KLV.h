@@ -143,8 +143,9 @@ inline const char* ui64sz(ui64_t i, char* buf)
   //
   class Dictionary
     {
-      std::map<ASDCP::UL, ui32_t> m_md_lookup;
-      std::map<ui32_t, ASDCP::UL> m_md_rev_lookup;
+      std::map<ASDCP::UL, ui32_t>   m_md_lookup;
+      std::map<std::string, ui32_t> m_md_sym_lookup;
+      std::map<ui32_t, ASDCP::UL>   m_md_rev_lookup;
       MDDEntry m_MDD_Table[(ui32_t)ASDCP::MDD_Max];
 
       ASDCP_NO_COPY_CONSTRUCT(Dictionary);
@@ -160,6 +161,7 @@ inline const char* ui64sz(ui64_t i, char* buf)
       bool DeleteEntry(ui32_t index);
 
       const MDDEntry* FindUL(const byte_t*) const;
+      const MDDEntry* FindSymbol(const std::string&) const;
       const MDDEntry& Type(MDD_t type_id) const;
 
       inline const byte_t* ul(MDD_t type_id) const {

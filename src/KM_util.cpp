@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2005-2011, John Hurst
+Copyright (c) 2005-2012, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -34,7 +34,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <KM_memio.h>
 #include <KM_fileio.h>
 #include <KM_log.h>
-#include <KM_tai.h>
 #include <KM_mutex.h>
 #include <ctype.h>
 #include <list>
@@ -682,389 +681,133 @@ Kumu::write_BER(byte_t* buf, ui64_t val, ui32_t ber_len)
 
 
 //------------------------------------------------------------------------------------------
-#ifdef KM_WIN32
 
-#define TIMESTAMP_TO_SYSTIME(ts, t) \
-  (t)->wYear    = (ts).Year;   /* year */ \
-  (t)->wMonth   = (ts).Month;  /* month of year (1 - 12) */ \
-  (t)->wDay     = (ts).Day;    /* day of month (1 - 31) */ \
-  (t)->wHour    = (ts).Hour;   /* hours (0 - 23) */ \
-  (t)->wMinute  = (ts).Minute; /* minutes (0 - 59) */ \
-  (t)->wSecond  = (ts).Second; /* seconds (0 - 60) */ \
-  (t)->wDayOfWeek = 0; \
-  (t)->wMilliseconds = 0
-
-#define SYSTIME_TO_TIMESTAMP(t, ts) \
-  (ts).Year   = (t)->wYear;    /* year */ \
-  (ts).Month  = (t)->wMonth;   /* month of year (1 - 12) */ \
-  (ts).Day    = (t)->wDay;     /* day of month (1 - 31) */ \
-  (ts).Hour   = (t)->wHour;    /* hours (0 - 23) */ \
-  (ts).Minute = (t)->wMinute;  /* minutes (0 - 59) */ \
-  (ts).Second = (t)->wSecond;  /* seconds (0 - 60) */
-
-//
-Kumu::Timestamp::Timestamp() :
-  Year(0), Month(0),  Day(0), Hour(0), Minute(0), Second(0)
-{
-  SYSTEMTIME sys_time;
-  GetSystemTime(&sys_time);
-  SYSTIME_TO_TIMESTAMP(&sys_time, *this);
-}
-
-//
-bool
-Kumu::Timestamp::operator<(const Timestamp& rhs) const
-{
-  SYSTEMTIME lhst, rhst;
-  FILETIME lft, rft;
-
-  TIMESTAMP_TO_SYSTIME(*this, &lhst);
-  TIMESTAMP_TO_SYSTIME(rhs, &rhst);
-  SystemTimeToFileTime(&lhst, &lft);
-  SystemTimeToFileTime(&rhst, &rft);
-  return ( CompareFileTime(&lft, &rft) == -1 );
-}
-
-//
-bool
-Kumu::Timestamp::operator>(const Timestamp& rhs) const
-{
-  SYSTEMTIME lhst, rhst;
-  FILETIME lft, rft;
-
-  TIMESTAMP_TO_SYSTIME(*this, &lhst);
-  TIMESTAMP_TO_SYSTIME(rhs, &rhst);
-  SystemTimeToFileTime(&lhst, &lft);
-  SystemTimeToFileTime(&rhst, &rft);
-  return ( CompareFileTime(&lft, &rft) == 1 );
-}
-
-inline ui64_t
-seconds_to_ns100(ui32_t seconds)
-{
-  return ((ui64_t)seconds * 10000000);
-}
-
-//
-void
-Kumu::Timestamp::AddDays(i32_t days)
-{
-  SYSTEMTIME current_st;
-  FILETIME current_ft;
-  ULARGE_INTEGER current_ul;
-
-  if ( days != 0 )
-    {
-      TIMESTAMP_TO_SYSTIME(*this, &current_st);
-      SystemTimeToFileTime(&current_st, &current_ft);
-      memcpy(&current_ul, &current_ft, sizeof(current_ul));
-      current_ul.QuadPart += ( seconds_to_ns100(86400) * (i64_t)days );
-      memcpy(&current_ft, &current_ul, sizeof(current_ft));
-      FileTimeToSystemTime(&current_ft, &current_st);
-      SYSTIME_TO_TIMESTAMP(&current_st, *this);
-    }
-}
-
-//
-void
-Kumu::Timestamp::AddHours(i32_t hours)
-{
-  SYSTEMTIME current_st;
-  FILETIME current_ft;
-  ULARGE_INTEGER current_ul;
-
-  if ( hours != 0 )
-    {
-      TIMESTAMP_TO_SYSTIME(*this, &current_st);
-      SystemTimeToFileTime(&current_st, &current_ft);
-      memcpy(&current_ul, &current_ft, sizeof(current_ul));
-      current_ul.QuadPart += ( seconds_to_ns100(3600) * (i64_t)hours );
-      memcpy(&current_ft, &current_ul, sizeof(current_ft));
-      FileTimeToSystemTime(&current_ft, &current_st);
-      SYSTIME_TO_TIMESTAMP(&current_st, *this);
-    }
-}
-
-//
-void
-Kumu::Timestamp::AddMinutes(i32_t minutes)
-{
-  SYSTEMTIME current_st;
-  FILETIME current_ft;
-  ULARGE_INTEGER current_ul;
-
-  if ( minutes != 0 )
-    {
-      TIMESTAMP_TO_SYSTIME(*this, &current_st);
-      SystemTimeToFileTime(&current_st, &current_ft);
-      memcpy(&current_ul, &current_ft, sizeof(current_ul));
-      current_ul.QuadPart += ( seconds_to_ns100(60) * (i64_t)minutes );
-      memcpy(&current_ft, &current_ul, sizeof(current_ft));
-      FileTimeToSystemTime(&current_ft, &current_st);
-      SYSTIME_TO_TIMESTAMP(&current_st, *this);
-    }
-}
-
-//
-void
-Kumu::Timestamp::AddSeconds(i32_t seconds)
-{
-  SYSTEMTIME current_st;
-  FILETIME current_ft;
-  ULARGE_INTEGER current_ul;
-
-  if ( seconds != 0 )
-    {
-      TIMESTAMP_TO_SYSTIME(*this, &current_st);
-      SystemTimeToFileTime(&current_st, &current_ft);
-      memcpy(&current_ul, &current_ft, sizeof(current_ul));
-      current_ul.QuadPart += ( seconds_to_ns100(1) * (i64_t)seconds );
-      memcpy(&current_ft, &current_ul, sizeof(current_ft));
-      FileTimeToSystemTime(&current_ft, &current_st);
-      SYSTIME_TO_TIMESTAMP(&current_st, *this);
-    }
-}
-
-#else // KM_WIN32
-
+#ifndef KM_WIN32
 #include <time.h>
-
-#define TIMESTAMP_TO_CALTIME(ts, ct)				       \
-  (ct)->date.year  = (ts).Year;    /* year */			       \
-  (ct)->date.month = (ts).Month;   /* month of year (1 - 12) */	       \
-  (ct)->date.day   = (ts).Day;     /* day of month (1 - 31) */	       \
-  (ct)->hour       = (ts).Hour;    /* hours (0 - 23) */		       \
-  (ct)->minute     = (ts).Minute;  /* minutes (0 - 59) */	       \
-  (ct)->second     = (ts).Second;  /* seconds (0 - 60) */	       \
-  (ct)->offset     = 0;
-
-#define CALTIME_TO_TIMESTAMP(ct, ts)				       \
-  assert((ct)->offset == 0);					       \
-  (ts).Year   = (ct)->date.year;    /* year */			       \
-  (ts).Month  = (ct)->date.month;   /* month of year (1 - 12) */       \
-  (ts).Day    = (ct)->date.day;     /* day of month (1 - 31) */	       \
-  (ts).Hour   = (ct)->hour;         /* hours (0 - 23) */	       \
-  (ts).Minute = (ct)->minute;       /* minutes (0 - 59) */	       \
-  (ts).Second = (ct)->second;       /* seconds (0 - 60) */
-
+#endif
 
 //
-Kumu::Timestamp::Timestamp() :
-  Year(0), Month(0), Day(0), Hour(0), Minute(0), Second(0)
-{
-  Kumu::TAI::tai now;
-  Kumu::TAI::caltime ct;
-  now.now();
-  ct = now;
-  CALTIME_TO_TIMESTAMP(&ct, *this)
+Kumu::Timestamp::Timestamp() : m_TZOffsetMinutes(0) {
+  m_Timestamp.now();
 }
 
-//
-bool
-Kumu::Timestamp::operator<(const Timestamp& rhs) const
-{
-  Kumu::TAI::caltime lh_ct, rh_ct;
-  TIMESTAMP_TO_CALTIME(*this, &lh_ct)
-  TIMESTAMP_TO_CALTIME(rhs, &rh_ct)
-
-  Kumu::TAI::tai lh_tai, rh_tai;
-  lh_tai = lh_ct;
-  rh_tai = rh_ct;
-
-  return ( lh_tai.x < rh_tai.x );
+Kumu::Timestamp::Timestamp(const Timestamp& rhs) {
+  m_Timestamp = rhs.m_Timestamp;
+  m_TZOffsetMinutes = rhs.m_TZOffsetMinutes;
 }
 
-//
-bool
-Kumu::Timestamp::operator>(const Timestamp& rhs) const
-{
-  Kumu::TAI::caltime lh_ct, rh_ct;
-  TIMESTAMP_TO_CALTIME(*this, &lh_ct)
-  TIMESTAMP_TO_CALTIME(rhs, &rh_ct)
-
-  Kumu::TAI::tai lh_tai, rh_tai;
-  lh_tai = lh_ct;
-  rh_tai = rh_ct;
-
-  return ( lh_tai.x > rh_tai.x );
+Kumu::Timestamp::Timestamp(const char* datestr) : m_TZOffsetMinutes(0) {
+  DecodeString(datestr);
 }
 
-//
-void
-Kumu::Timestamp::AddDays(i32_t days)
-{
-  Kumu::TAI::caltime ct;
-  Kumu::TAI::tai t;
-
-  if ( days != 0 )
-    {
-      TIMESTAMP_TO_CALTIME(*this, &ct)
-      t = ct;
-      t.add_days(days);
-      ct = t;
-      CALTIME_TO_TIMESTAMP(&ct, *this)
-    }
-}
-
-//
-void
-Kumu::Timestamp::AddHours(i32_t hours)
-{
-  Kumu::TAI::caltime ct;
-  Kumu::TAI::tai t;
-
-  if ( hours != 0 )
-    {
-      TIMESTAMP_TO_CALTIME(*this, &ct)
-      t = ct;
-      t.add_hours(hours);
-      ct = t;
-      CALTIME_TO_TIMESTAMP(&ct, *this)
-    }
-}
-
-//
-void
-Kumu::Timestamp::AddMinutes(i32_t minutes)
-{
-  Kumu::TAI::caltime ct;
-  Kumu::TAI::tai t;
-
-  if ( minutes != 0 )
-    {
-      TIMESTAMP_TO_CALTIME(*this, &ct)
-      t = ct;
-      t.add_minutes(minutes);
-      ct = t;
-      CALTIME_TO_TIMESTAMP(&ct, *this)
-    }
-}
-
-//
-void
-Kumu::Timestamp::AddSeconds(i32_t seconds)
-{
-  Kumu::TAI::caltime ct;
-  Kumu::TAI::tai t;
-
-  if ( seconds != 0 )
-    {
-      TIMESTAMP_TO_CALTIME(*this, &ct)
-      t = ct;
-      t.add_seconds(seconds);
-      ct = t;
-      CALTIME_TO_TIMESTAMP(&ct, *this)
-    }
-}
-
-#endif // KM_WIN32
-
-
-Kumu::Timestamp::Timestamp(const Timestamp& rhs) : IArchive()
-{
-  Year   = rhs.Year;
-  Month  = rhs.Month;
-  Day    = rhs.Day;
-  Hour   = rhs.Hour;
-  Minute = rhs.Minute;
-  Second = rhs.Second;
-}
-
-//
-Kumu::Timestamp::Timestamp(const char* datestr) : IArchive()
-{
-  if ( ! DecodeString(datestr) )
-    {
-      *this = Timestamp();
-    }
-}
-
-//
-Kumu::Timestamp::~Timestamp()
-{
+Kumu::Timestamp::~Timestamp() {
 }
 
 //
 const Kumu::Timestamp&
 Kumu::Timestamp::operator=(const Timestamp& rhs)
 {
-  Year   = rhs.Year;
-  Month  = rhs.Month;
-  Day    = rhs.Day;
-  Hour   = rhs.Hour;
-  Minute = rhs.Minute;
-  Second = rhs.Second;
+  m_Timestamp = rhs.m_Timestamp;
+  m_TZOffsetMinutes = rhs.m_TZOffsetMinutes;
   return *this;
 }
 
-//
-bool
-Kumu::Timestamp::operator==(const Timestamp& rhs) const
-{
-  if ( Year == rhs.Year
-       && Month  == rhs.Month
-       && Day    == rhs.Day
-       && Hour   == rhs.Hour
-       && Minute == rhs.Minute
-       && Second == rhs.Second )
-    return true;
+bool Kumu::Timestamp::operator<(const Timestamp& rhs) const {
+  return m_Timestamp.x < rhs.m_Timestamp.x;
+}
 
-  return false;
+bool Kumu::Timestamp::operator>(const Timestamp& rhs) const {
+  return m_Timestamp.x > rhs.m_Timestamp.x;
+}
+
+bool Kumu::Timestamp::operator==(const Timestamp& rhs) const {
+  return m_Timestamp.x == rhs.m_Timestamp.x;
+}
+
+bool Kumu::Timestamp::operator!=(const Timestamp& rhs) const {
+  return m_Timestamp.x != rhs.m_Timestamp.x;
 }
 
 //
-bool
-Kumu::Timestamp::operator!=(const Timestamp& rhs) const
+void
+Kumu::Timestamp::GetComponents(ui16_t& Year, ui8_t&  Month, ui8_t&  Day,
+			       ui8_t&  Hour, ui8_t&  Minute, ui8_t&  Second) const
 {
-  if ( Year != rhs.Year
-       || Month  != rhs.Month
-       || Day    != rhs.Day
-       || Hour   != rhs.Hour
-       || Minute != rhs.Minute
-       || Second != rhs.Second )
-    return true;
+  TAI::caltime ct;
+  ct = m_Timestamp;
+  Year = ct.date.year;
+  Month = ct.date.month;
+  Day = ct.date.day;
+  Hour = ct.hour;
+  Minute = ct.minute;
+  Second = ct.second;
+}
 
-  return false;
+//
+void
+Kumu::Timestamp::SetComponents(const ui16_t& Year, const ui8_t&  Month, const ui8_t&  Day,
+			       const ui8_t&  Hour, const ui8_t&  Minute, const ui8_t&  Second)
+{
+  TAI::caltime ct;
+  ct.date.year = Year;
+  ct.date.month = Month;
+  ct.date.day = Day;
+  ct.hour = Hour;
+  ct.minute = Minute;
+  ct.second = Second;
+  ct.offset = 0;
+  m_Timestamp = ct;
+  m_TZOffsetMinutes = 0;
+}
+
+// returns false if the requested adjustment is out of range
+bool
+Kumu::Timestamp::SetTZOffsetMinutes(const i32_t& minutes)
+{
+  static const i32_t tz_limit = 14 * 60 * 60;
+
+  if ( minutes < ( - tz_limit) || minutes > tz_limit )
+    return false;
+
+  m_TZOffsetMinutes = minutes;
+  return true;
 }
 
 // 
 const char*
 Kumu::Timestamp::EncodeString(char* str_buf, ui32_t buf_len) const
 {
-  return EncodeStringWithOffset(str_buf, buf_len, 0);
-}
-
-// 
-const char*
-Kumu::Timestamp::EncodeStringWithOffset(char* str_buf, ui32_t buf_len,
-					i32_t offset_minutes) const
-{
   if ( buf_len < ( DateTimeLen + 1 ) )
     return 0;
 
-  // ensure offset is within +/- 14 hours
-  if ((offset_minutes < -14 * 60) || (offset_minutes > 14 * 60))
-    return 0;
-
-  // set the apparent time
-  Kumu::Timestamp tmp_t(*this);
-  tmp_t.AddMinutes(offset_minutes);
-
+  ui16_t year;
+  ui8_t month, day, hour, minute, second;
+  ui32_t ofst_hours = 0, ofst_minutes = 0;
   char direction = '+';
-  if (offset_minutes < 0) {
-    direction = '-';
-    // need absolute offset from zero
-    offset_minutes = -offset_minutes;
-  }
 
+  if ( m_TZOffsetMinutes == 0 )
+    {
+      GetComponents(year, month, day, hour, minute, second);
+    }
+  else
+    {
+      // calculate local time
+      Kumu::Timestamp tmp_t(*this);
+      tmp_t.AddMinutes(m_TZOffsetMinutes);
+      tmp_t.GetComponents(year, month, day, hour, minute, second);
+
+      ofst_hours = abs(m_TZOffsetMinutes) / 60;
+      ofst_minutes = abs(m_TZOffsetMinutes) % 60;
+
+      if ( m_TZOffsetMinutes < 0 )
+	direction = '-';
+    }
+  
   // 2004-05-01T13:20:00+00:00
   snprintf(str_buf, buf_len,
 	   "%04hu-%02hu-%02huT%02hu:%02hu:%02hu%c%02hu:%02hu",
-	   tmp_t.Year, tmp_t.Month, tmp_t.Day,
-	   tmp_t.Hour, tmp_t.Minute, tmp_t.Second,
-	   direction,
-	   offset_minutes / 60,
-	   offset_minutes % 60);
+	   year, month, day, hour, minute, second,
+	   direction, ofst_hours, ofst_minutes);
 
   return str_buf;
 }
@@ -1073,8 +816,6 @@ Kumu::Timestamp::EncodeStringWithOffset(char* str_buf, ui32_t buf_len,
 bool
 Kumu::Timestamp::DecodeString(const char* datestr)
 {
-  Timestamp TmpStamp;
-
   if ( ! ( isdigit(datestr[0]) && isdigit(datestr[1]) && isdigit(datestr[2]) && isdigit(datestr[3]) )
        || datestr[4] != '-'
        || ! ( isdigit(datestr[5]) && isdigit(datestr[6]) )
@@ -1083,10 +824,11 @@ Kumu::Timestamp::DecodeString(const char* datestr)
     return false;
 
   ui32_t char_count = 10;
-  TmpStamp.Year = atoi(datestr);
-  TmpStamp.Month = atoi(datestr + 5);
-  TmpStamp.Day = atoi(datestr + 8);
-  TmpStamp.Hour = TmpStamp.Minute = TmpStamp.Second = 0;
+  TAI::caltime YMDhms;
+  YMDhms.offset = 0;
+  YMDhms.date.year = atoi(datestr);
+  YMDhms.date.month = atoi(datestr + 5);
+  YMDhms.date.day = atoi(datestr + 8);
  
   if ( datestr[10] == 'T' )
     {
@@ -1096,8 +838,8 @@ Kumu::Timestamp::DecodeString(const char* datestr)
 	return false;
 
       char_count += 6;
-      TmpStamp.Hour = atoi(datestr + 11);
-      TmpStamp.Minute = atoi(datestr + 14);
+      YMDhms.hour = atoi(datestr + 11);
+      YMDhms.minute = atoi(datestr + 14);
 
       if ( datestr[16] == ':' )
 	{
@@ -1105,7 +847,7 @@ Kumu::Timestamp::DecodeString(const char* datestr)
 	    return false;
 
 	  char_count += 3;
-	  TmpStamp.Second = atoi(datestr + 17);
+	  YMDhms.second = atoi(datestr + 17);
 	}
 
       if ( datestr[19] == '.' )
@@ -1138,7 +880,7 @@ Kumu::Timestamp::DecodeString(const char* datestr)
 
 	  /* a negative offset is behind UTC and so needs to increment to
 	   * convert, while a positive offset must do the reverse */
-	  TmpStamp.AddMinutes(-TZ_offset);
+	  YMDhms.offset = TZ_offset;
 	}
       else if (datestr[19] == 'Z')
 	{
@@ -1153,23 +895,9 @@ Kumu::Timestamp::DecodeString(const char* datestr)
 				   datestr, char_count);
       return false;
     }
-
-#ifdef KM_WIN32
-  SYSTEMTIME st;
-  FILETIME ft;
-  TIMESTAMP_TO_SYSTIME(TmpStamp, &st);
-  if ( SystemTimeToFileTime(&st, &ft) == 0 )
-    return false;
-  SYSTIME_TO_TIMESTAMP(&st, *this);
-#else
-  Kumu::TAI::tai t;
-  Kumu::TAI::caltime ct;
-  TIMESTAMP_TO_CALTIME(TmpStamp, &ct);
-  t = ct; // back and forth to tai to normalize offset
-  ct = t;
-  CALTIME_TO_TIMESTAMP(&ct, *this)
-#endif
-
+  
+  m_Timestamp = YMDhms;
+  m_TZOffsetMinutes = YMDhms.offset;
   return true;
 }
 
@@ -1177,19 +905,24 @@ Kumu::Timestamp::DecodeString(const char* datestr)
 bool
 Kumu::Timestamp::HasValue() const
 {
-  if ( Year || Month || Day || Hour || Minute || Second )
-    return true;
-
-  return false;
+  return true;
 }
 
 //
 bool
 Kumu::Timestamp::Unarchive(MemIOReader* Reader)
 {
+  ui16_t year;
+  ui8_t month, day, hour, minute, second;
+
   assert(Reader);
-  if ( ! Reader->ReadUi16BE(&Year) ) return false;	
-  if ( ! Reader->ReadRaw(&Month, 6) ) return false;
+  if ( ! Reader->ReadUi16BE(&year) ) return false;
+  if ( ! Reader->ReadUi8(&month) ) return false;
+  if ( ! Reader->ReadUi8(&day) ) return false;
+  if ( ! Reader->ReadUi8(&hour) ) return false;
+  if ( ! Reader->ReadUi8(&minute) ) return false;
+  if ( ! Reader->ReadUi8(&second) ) return false;
+  SetComponents(year, month, day, hour, minute, second);
   return true;
 }
 
@@ -1198,49 +931,27 @@ bool
 Kumu::Timestamp::Archive(MemIOWriter* Writer) const
 {
   assert(Writer);
-  if ( ! Writer->WriteUi16BE(Year) ) return false;	
-  if ( ! Writer->WriteRaw(&Month, 6) ) return false;
+
+  ui16_t year;
+  ui8_t month, day, hour, minute, second;
+  GetComponents(year, month, day, hour, minute, second);
+
+  if ( ! Writer->WriteUi16BE(year) ) return false;	
+  if ( ! Writer->WriteUi8(month) ) return false;
+  if ( ! Writer->WriteUi8(day) ) return false;
+  if ( ! Writer->WriteUi8(hour) ) return false;
+  if ( ! Writer->WriteUi8(minute) ) return false;
+  if ( ! Writer->WriteUi8(second) ) return false;
   return true;
 }
 
 //
-long
-Kumu::Timestamp::GetSecondsSinceEpoch(void) const
+ui64_t
+Kumu::Timestamp::GetCTime() const
 {
-#ifdef KM_WIN32
-  SYSTEMTIME timeST;
-  TIMESTAMP_TO_SYSTIME(*this, &timeST);
-  FILETIME timeFT;
-  SystemTimeToFileTime(&timeST, &timeFT);
-  ULARGE_INTEGER timeUL;
-  timeUL.LowPart = timeFT.dwLowDateTime;
-  timeUL.HighPart = timeFT.dwHighDateTime;
-
-  SYSTEMTIME epochST;
-  epochST.wYear = 1970;
-  epochST.wMonth = 0;
-  epochST.wDayOfWeek = 4;
-  epochST.wDay = 1;
-  epochST.wHour = 0;
-  epochST.wMinute = 0;
-  epochST.wSecond = 0;
-  epochST.wMilliseconds = 0;
-  FILETIME epochFT;
-  SystemTimeToFileTime(&epochST, &epochFT);
-  ULARGE_INTEGER epochUL;
-  epochUL.LowPart = epochFT.dwLowDateTime;
-  epochUL.HighPart = epochFT.dwHighDateTime;
-
-  return (timeUL.QuadPart - epochUL.QuadPart) / 10000000;
-#else
-  Kumu::TAI::caltime ct;
-  Kumu::TAI::tai t;
-  TIMESTAMP_TO_CALTIME(*this, &ct);
-  t = ct;
-
-  return (long) (t.x - ui64_C(4611686018427387914));
-#endif
+  return m_Timestamp.x - ui64_C(4611686018427387914);
 }
+
 
 //------------------------------------------------------------------------------------------
 

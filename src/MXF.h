@@ -162,6 +162,9 @@ namespace ASDCP
 	      TagValue    Tag;
 	      ASDCP::UL   UL;
 
+	      LocalTagEntry() { Tag.a = Tag.b = 0; }
+	    LocalTagEntry(const TagValue& tag, ASDCP::UL& ul) : Tag(tag), UL(ul) {}
+
 	      inline const char* EncodeString(char* str_buf, ui32_t buf_len) const {
 		snprintf(str_buf, buf_len, "%02x %02x: ", Tag.a, Tag.b);
 		UL.EncodeString(str_buf + strlen(str_buf), buf_len - strlen(str_buf));
@@ -233,8 +236,7 @@ namespace ASDCP
 
 	public:
 	  const Dictionary*& m_Dict;
-	  ////	  UUID         GenerationUID;
-	  Timestamp    LastModifiedDate;
+	  Kumu::Timestamp    LastModifiedDate;
 	  ui16_t       Version;
 	  ui32_t       ObjectModelVersion;
 	  UUID         PrimaryPackage;
@@ -272,6 +274,7 @@ namespace ASDCP
 	      ui32_t  ElementData;
 
 	      DeltaEntry() : PosTableIndex(-1), Slice(0), ElementData(0) {}
+	      DeltaEntry(i8_t pos, ui8_t slice, ui32_t data) : PosTableIndex(pos), Slice(slice), ElementData(data) {}
 	      inline bool HasValue() const { return true; }
 	      ui32_t      ArchiveLength() const { return sizeof(ui32_t) + 2; }
 	      bool        Unarchive(Kumu::MemIOReader* Reader);
@@ -293,7 +296,9 @@ namespace ASDCP
 	      //	      std::list<ui32_t>  SliceOffset;
 	      //	      Array<Rational>    PosTable;
 
-	      IndexEntry() : TemporalOffset(0), KeyFrameOffset(0), Flags(0), StreamOffset() {}
+	      IndexEntry() : TemporalOffset(0), KeyFrameOffset(0), Flags(0), StreamOffset(0) {}
+	      IndexEntry(i8_t t_ofst, i8_t k_ofst, ui8_t flags, ui64_t s_ofst) :
+	            TemporalOffset(t_ofst), KeyFrameOffset(k_ofst), Flags(flags), StreamOffset(s_ofst) {}
 	      inline bool HasValue() const { return true; }
 	      ui32_t      ArchiveLength() const { return sizeof(ui64_t) + 3; };
 	      bool        Unarchive(Kumu::MemIOReader* Reader);

@@ -37,10 +37,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 using Kumu::GenRandomValue;
 
-static const ASDCP::Dictionary *sg_dict = &DefaultSMPTEDict();
-static MXF::OPAtomHeader sg_OPAtomHeader(sg_dict);
-static MXF::OPAtomIndexFooter sg_OPAtomIndexFooter(sg_dict);
-
 static std::string TIMED_TEXT_PACKAGE_LABEL = "File Package: SMPTE 429-5 clip wrapping of D-Cinema Timed Text data";
 static std::string TIMED_TEXT_DEF_LABEL = "Timed Text Track";
 
@@ -352,7 +348,10 @@ ASDCP::MXF::OPAtomHeader&
 ASDCP::TimedText::MXFReader::OPAtomHeader()
 {
   if ( m_Reader.empty() )
-    return sg_OPAtomHeader;
+    {
+      assert(g_OPAtomHeader);
+      return *g_OPAtomHeader;
+    }
 
   return m_Reader->m_HeaderPart;
 }
@@ -364,7 +363,10 @@ ASDCP::MXF::OPAtomIndexFooter&
 ASDCP::TimedText::MXFReader::OPAtomIndexFooter()
 {
   if ( m_Reader.empty() )
-    return sg_OPAtomIndexFooter;
+    {
+      assert(g_OPAtomIndexFooter);
+      return *g_OPAtomIndexFooter;
+    }
 
   return m_Reader->m_FooterPart;
 }
@@ -682,7 +684,10 @@ ASDCP::MXF::OPAtomHeader&
 ASDCP::TimedText::MXFWriter::OPAtomHeader()
 {
   if ( m_Writer.empty() )
-    return sg_OPAtomHeader;
+    {
+      assert(g_OPAtomHeader);
+      return *g_OPAtomHeader;
+    }
 
   return m_Writer->m_HeaderPart;
 }
@@ -694,7 +699,10 @@ ASDCP::MXF::OPAtomIndexFooter&
 ASDCP::TimedText::MXFWriter::OPAtomIndexFooter()
 {
   if ( m_Writer.empty() )
-    return sg_OPAtomIndexFooter;
+    {
+      assert(g_OPAtomIndexFooter);
+      return *g_OPAtomIndexFooter;
+    }
 
   return m_Writer->m_FooterPart;
 }

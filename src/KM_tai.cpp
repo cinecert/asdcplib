@@ -142,15 +142,8 @@ caltime_utc(Kumu::TAI::caltime* ct, const Kumu::TAI::tai* t)
 {
   assert(ct&&t);
   Kumu::TAI::tai t2 = *t;
-  ui64_t u;
-  i32_t s;
-
-  /* XXX: check for overfow? */
-
-  u = t2.x;
-
-  u += 58486;
-  s = u % ui64_C(86400);
+  ui64_t u = t2.x + 58486;
+  i32_t s = (i32_t)(u % ui64_C(86400));
 
   ct->second = (s % 60); s /= 60;
   ct->minute = s % 60; s /= 60;
@@ -183,10 +176,24 @@ caltime_tai(const Kumu::TAI::caltime* ct, Kumu::TAI::tai* t)
 void
 Kumu::TAI::tai::now()
 {
+#ifdef KM_WIN32
+  SYSTEMTIME st;
+  ::GetSystemTime(&st);
+  TAI::caltime ct;
+  ct.date.year = st.wYear;
+  ct.date.month = st.wMonth;
+  ct.date.day = st.wDay;
+  ct.hour = st.wHour;
+  ct.minute = st.wMinute;
+  ct.second = st.wSecond;
+  caltime_tai(&ct, this);
+#else
   struct timeval now;
   gettimeofday(&now, 0);
   x = ui64_C(4611686018427387914) + (ui64_t)now.tv_sec;
+#endif
 }
+
 
 //
 const Kumu::TAI::tai&

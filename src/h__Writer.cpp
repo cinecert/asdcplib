@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2004-2010, John Hurst
+Copyright (c) 2004-2012, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -73,6 +73,7 @@ ASDCP::h__Writer::h__Writer(const Dictionary& d) :
   m_HeaderSize(0), m_EssenceStart(0),
   m_EssenceDescriptor(0), m_FramesWritten(0), m_StreamOffset(0)
 {
+  default_md_object_init();
 }
 
 ASDCP::h__Writer::~h__Writer()

@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2004-2009, John Hurst
+Copyright (c) 2004-2012, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -42,10 +42,20 @@ using Kumu::DefaultLogSink;
 using namespace ASDCP;
 using namespace ASDCP::MXF;
 
+#ifdef DEFAULT_MD_DECL
+ASDCP::MXF::OPAtomHeader *g_OPAtomHeader;
+ASDCP::MXF::OPAtomIndexFooter *g_OPAtomIndexFooter;
+#else
+extern MXF::OPAtomHeader *g_OPAtomHeader;
+extern MXF::OPAtomIndexFooter *g_OPAtomIndexFooter;
+#endif
 
 
 namespace ASDCP
 {
+  void default_md_object_init();
+
+
   // constant values used to calculate KLV and EKLV packet sizes
   static const ui32_t klv_cryptinfo_size =
     MXF_BER_LENGTH
