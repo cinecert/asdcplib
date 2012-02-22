@@ -113,7 +113,16 @@ utilities all respond to -h.
 
 
 Change History
-2012-02-03 - bug fixes 1.9.44d
+
+2012-02-22 - bug fixes, enhancements 1.9.45
+ o Removed ASDCP::Timestamp, all items that were of that class are now 
+   of class Kumu::Timestamp
+ o Refactored Kumu::Timestamp to use KM_tai for internal representation 
+   (replaced public Y M D, h, m, s variables)
+ o Refactored Kumu::Timestamp to use KM_tai for WIN32 builds
+ o Added UTC offset awareness to Kumu::Timestamp
+ o Replaced "long GetSecondsSinceEpoch(void) const" with 
+   "ui64_t GetCTime() const"
  o Corrected UL version segment in "7.1 DS" and "WTF" audio format
    labels (corresponds with publication of ST 429-2:2011).
  o Exposed MXF object interface (MXF.h, Metadata.h) via ASDCP MXFReader
