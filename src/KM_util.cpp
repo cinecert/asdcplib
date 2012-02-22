@@ -913,7 +913,7 @@ bool
 Kumu::Timestamp::Unarchive(MemIOReader* Reader)
 {
   ui16_t year;
-  ui8_t month, day, hour, minute, second;
+  ui8_t month, day, hour, minute, second, tick;
 
   assert(Reader);
   if ( ! Reader->ReadUi16BE(&year) ) return false;
@@ -922,6 +922,7 @@ Kumu::Timestamp::Unarchive(MemIOReader* Reader)
   if ( ! Reader->ReadUi8(&hour) ) return false;
   if ( ! Reader->ReadUi8(&minute) ) return false;
   if ( ! Reader->ReadUi8(&second) ) return false;
+  if ( ! Reader->ReadUi8(&tick) ) return false;
   SetComponents(year, month, day, hour, minute, second);
   return true;
 }
@@ -933,7 +934,7 @@ Kumu::Timestamp::Archive(MemIOWriter* Writer) const
   assert(Writer);
 
   ui16_t year;
-  ui8_t month, day, hour, minute, second;
+  ui8_t month, day, hour, minute, second, tick = 0;
   GetComponents(year, month, day, hour, minute, second);
 
   if ( ! Writer->WriteUi16BE(year) ) return false;	
@@ -942,6 +943,7 @@ Kumu::Timestamp::Archive(MemIOWriter* Writer) const
   if ( ! Writer->WriteUi8(hour) ) return false;
   if ( ! Writer->WriteUi8(minute) ) return false;
   if ( ! Writer->WriteUi8(second) ) return false;
+  if ( ! Writer->WriteUi8(tick) ) return false;
   return true;
 }
 
