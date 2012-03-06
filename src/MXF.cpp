@@ -902,6 +902,9 @@ ASDCP::MXF::OPAtomHeader::GetSourcePackage()
   return 0;
 }
 
+//
+ASDCP::MXF::RIP&
+ASDCP::MXF::OPAtomHeader::GetRIP() { return m_RIP; }
 
 //
 ASDCP::Result_t
@@ -1180,6 +1183,31 @@ ASDCP::MXF::OPAtomIndexFooter::Dump(FILE* stream)
   std::list<InterchangeObject*>::iterator i = m_PacketList->m_List.begin();
   for ( ; i != m_PacketList->m_List.end(); i++ )
     (*i)->Dump(stream);
+}
+
+ASDCP::Result_t
+ASDCP::MXF::OPAtomIndexFooter::GetMDObjectByID(const UUID& ObjectID, InterchangeObject** Object)
+{
+  return m_PacketList->GetMDObjectByID(ObjectID, Object);
+}
+
+//
+ASDCP::Result_t
+ASDCP::MXF::OPAtomIndexFooter::GetMDObjectByType(const byte_t* ObjectID, InterchangeObject** Object)
+{
+  InterchangeObject* TmpObject;
+
+  if ( Object == 0 )
+    Object = &TmpObject;
+
+  return m_PacketList->GetMDObjectByType(ObjectID, Object);
+}
+
+//
+ASDCP::Result_t
+ASDCP::MXF::OPAtomIndexFooter::GetMDObjectsByType(const byte_t* ObjectID, std::list<InterchangeObject*>& ObjectList)
+{
+  return m_PacketList->GetMDObjectsByType(ObjectID, ObjectList);
 }
 
 //

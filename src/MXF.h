@@ -359,6 +359,7 @@ namespace ASDCP
 	  virtual Result_t GetMDObjectByID(const UUID&, InterchangeObject** = 0);
 	  virtual Result_t GetMDObjectByType(const byte_t*, InterchangeObject** = 0);
 	  virtual Result_t GetMDObjectsByType(const byte_t* ObjectID, std::list<InterchangeObject*>& ObjectList);
+	  virtual ASDCP::MXF::RIP& GetRIP();
 	  Identification*  GetIdentification();
 	  SourcePackage*   GetSourcePackage();
 	};
@@ -387,6 +388,10 @@ namespace ASDCP
 	  virtual Result_t InitFromBuffer(const byte_t* p, ui32_t l);
 	  virtual Result_t WriteToFile(Kumu::FileWriter& Writer, ui64_t duration);
 	  virtual void     Dump(FILE* = 0);
+
+	  virtual Result_t GetMDObjectByID(const UUID&, InterchangeObject** = 0);
+	  virtual Result_t GetMDObjectByType(const byte_t*, InterchangeObject** = 0);
+	  virtual Result_t GetMDObjectsByType(const byte_t* ObjectID, std::list<InterchangeObject*>& ObjectList);
 
 	  virtual Result_t Lookup(ui32_t frame_num, IndexTableSegment::IndexEntry&) const;
 	  virtual void     PushIndexEntry(const IndexTableSegment::IndexEntry&);
