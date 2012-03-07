@@ -118,11 +118,9 @@ USAGE: %s [-h|-help] [-V]\n\
 
   fprintf(stream, "\
 Options:\n\
-  -3                - With -c, create a stereoscopic image file. Expects two\n\
+  -3                - Create a stereoscopic image file. Expects two\n\
                       directories of JP2K codestreams (directories must have\n\
                       an equal number of frames; left eye is first).\n\
-                    - With -x, force stereoscopic interpretation of a JP2K\n\
-                      track file.\n\
   -C <UL>           - Set ChannelAssignment UL value\n\
   -h | -help        - Show help\n\
   -V                - Show version information\n\
