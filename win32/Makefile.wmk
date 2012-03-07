@@ -1,5 +1,5 @@
 # $Id$
-# Copyright (c) 2007-2009 John Hurst. All rights reserved.
+# Copyright (c) 2007-2012 John Hurst. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -76,7 +76,7 @@ LIBFLAGS = $(LIBFLAGS1)
 
 CPPFLAGS = $(CXXFLAGS)
 
-KUMU_OBJS = KM_fileio.obj KM_log.obj KM_prng.obj KM_util.obj KM_xml.obj
+KUMU_OBJS = KM_fileio.obj KM_log.obj KM_prng.obj KM_util.obj KM_xml.obj KM_tai.obj
 ASDCP_OBJS = MPEG2_Parser.obj MPEG.obj JP2K_Codestream_Parser.obj \
 	JP2K_Sequence_Parser.obj JP2K.obj PCM_Parser.obj Wav.obj \
 	TimedText_Parser.obj KLV.obj Dict.obj MXFTypes.obj MXF.obj \
@@ -88,7 +88,9 @@ ASDCP_OBJS = MPEG2_Parser.obj MPEG.obj JP2K_Codestream_Parser.obj \
 {$(SRCDIR)\}.cpp{}.obj:
 	$(CXX) $(CXXFLAGS) -Fd$(OBJDIR)\ /c $<
 
-all: kmfilegen.exe kmrandgen.exe kmuuidgen.exe asdcp-test.exe blackwave.exe klvwalk.exe wavesplit.exe
+all: kmfilegen.exe kmrandgen.exe kmuuidgen.exe asdcp-test.exe \
+     asdcp-wrap.exe asdcp-unwrap.exe asdcp-info.exe \
+     blackwave.exe klvwalk.exe j2c-test.exe wavesplit.exe 
 
 clean:
 	erase *.exe *.lib *.obj *.ilk *.pdb *.idb
@@ -129,3 +131,17 @@ klvwalk.exe: libasdcp.lib klvwalk.obj
 
 asdcp-test.exe: libasdcp.lib asdcp-test.obj
 	$(LINK) $(LINKFLAGS) /OUT:asdcp-test.exe $** Advapi32.lib
+
+asdcp-wrap.exe: libasdcp.lib asdcp-wrap.obj
+	$(LINK) $(LINKFLAGS) /OUT:asdcp-wrap.exe $** Advapi32.lib
+
+asdcp-unwrap.exe: libasdcp.lib asdcp-unwrap.obj
+	$(LINK) $(LINKFLAGS) /OUT:asdcp-unwrap.exe $** Advapi32.lib
+
+asdcp-info.exe: libasdcp.lib asdcp-info.obj
+	$(LINK) $(LINKFLAGS) /OUT:asdcp-info.exe $** Advapi32.lib
+
+j2c-test.exe: libasdcp.lib j2c-test.obj
+	$(LINK) $(LINKFLAGS) /OUT:j2c-test.exe $** Advapi32.lib
+
+# end 

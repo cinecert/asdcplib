@@ -49,7 +49,11 @@ The libtai source code is in the public domain.
   */
 
 #include <KM_tai.h>
+#ifdef KM_WIN32
+#include <time.h>
+#else
 #include <sys/time.h>
+#endif
 
 //
 void
