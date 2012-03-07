@@ -144,4 +144,5 @@ asdcp-info.exe: libasdcp.lib asdcp-info.obj
 j2c-test.exe: libasdcp.lib j2c-test.obj
 	$(LINK) $(LINKFLAGS) /OUT:j2c-test.exe $** Advapi32.lib
 
-# end 
+
+# END Makefile

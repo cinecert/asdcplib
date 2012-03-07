@@ -1,5 +1,5 @@
 # $Id$
-# Copyright (c) 2007-2009 John Hurst. All rights reserved.
+# Copyright (c) 2007-2012 John Hurst. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -92,7 +92,6 @@ all: kmfilegen.exe kmrandgen.exe kmuuidgen.exe asdcp-test.exe \
      asdcp-wrap.exe asdcp-unwrap.exe asdcp-info.exe \
      blackwave.exe klvwalk.exe j2c-test.exe wavesplit.exe 
 
-
 clean:
 	erase *.exe *.lib *.obj *.ilk *.pdb *.idb
 
@@ -145,4 +144,5 @@ asdcp-info.exe: libasdcp.lib asdcp-info.obj
 j2c-test.exe: libasdcp.lib j2c-test.obj
 	$(LINK) $(LINKFLAGS) /OUT:j2c-test.exe $** Advapi32.lib
 
-@ end 
+
+# END Makefile
