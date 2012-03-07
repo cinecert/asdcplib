@@ -141,6 +141,9 @@ asdcp-unwrap.exe: libasdcp.lib asdcp-unwrap.obj
 asdcp-info.exe: libasdcp.lib asdcp-info.obj
 	$(LINK) $(LINKFLAGS) /OUT:asdcp-info.exe $** Advapi32.lib
 
+asdcp-util.exe: libasdcp.lib asdcp-util.obj
+	$(LINK) $(LINKFLAGS) /OUT:asdcp-util.exe $** Advapi32.lib
+
 j2c-test.exe: libasdcp.lib j2c-test.obj
 	$(LINK) $(LINKFLAGS) /OUT:j2c-test.exe $** Advapi32.lib
 
