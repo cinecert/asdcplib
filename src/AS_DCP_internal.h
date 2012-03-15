@@ -99,6 +99,10 @@ namespace ASDCP
   Result_t MD_to_CryptoInfo(MXF::CryptographicContext*, WriterInfo&, const Dictionary&);
   Result_t EncryptFrameBuffer(const ASDCP::FrameBuffer&, ASDCP::FrameBuffer&, AESEncContext*);
   Result_t DecryptFrameBuffer(const ASDCP::FrameBuffer&, ASDCP::FrameBuffer&, AESDecContext*);
+  Result_t PCM_ADesc_to_MD(PCM::AudioDescriptor& ADesc, ASDCP::MXF::WaveAudioDescriptor* ADescObj);
+  Result_t MD_to_PCM_ADesc(ASDCP::MXF::WaveAudioDescriptor* ADescObj, PCM::AudioDescriptor& ADesc);
+  void     AddDMScrypt(Partition& HeaderPart, SourcePackage& Package,
+		       WriterInfo& Descr, const UL& WrappingUL, const Dictionary*& Dict);
 
   //
  class KLReader : public ASDCP::KLVPacket

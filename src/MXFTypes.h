@@ -99,7 +99,7 @@ namespace ASDCP
 	{
 	public:
 	  Batch() {}
-	  ~Batch() {}
+	  virtual ~Batch() {}
 
 	  //
 	  virtual bool Unarchive(Kumu::MemIOReader* Reader) {
@@ -117,7 +117,7 @@ namespace ASDCP
 		result = Tmp.Unarchive(Reader);
 
 		if ( result )
-		  push_back(Tmp);
+		  this->push_back(Tmp);
 	      }
 
 	    return result;
@@ -181,7 +181,7 @@ namespace ASDCP
 	{
 	public:
 	  Array() {}
-	  ~Array() {}
+	  virtual ~Array() {}
 
 	  //
 	  virtual bool Unarchive(Kumu::MemIOReader* Reader)
@@ -192,7 +192,7 @@ namespace ASDCP
 		{
 		  T Tmp;
 		  result = Tmp.Unarchive(Reader);
-		  push_back(Tmp);
+		  this->push_back(Tmp);
 		}
 
 	      return result;

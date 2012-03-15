@@ -41,7 +41,7 @@ static std::string SOUND_DEF_LABEL = "Sound Track";
 
 //
 Result_t
-PCM_ADesc_to_MD(PCM::AudioDescriptor& ADesc, MXF::WaveAudioDescriptor* ADescObj)
+ASDCP::PCM_ADesc_to_MD(PCM::AudioDescriptor& ADesc, MXF::WaveAudioDescriptor* ADescObj)
 {
   ASDCP_TEST_NULL(ADescObj);
   ADescObj->SampleRate = ADesc.EditRate;
@@ -84,7 +84,7 @@ PCM_ADesc_to_MD(PCM::AudioDescriptor& ADesc, MXF::WaveAudioDescriptor* ADescObj)
 
 //
 ASDCP::Result_t
-MD_to_PCM_ADesc(MXF::WaveAudioDescriptor* ADescObj, PCM::AudioDescriptor& ADesc)
+ASDCP::MD_to_PCM_ADesc(MXF::WaveAudioDescriptor* ADescObj, PCM::AudioDescriptor& ADesc)
 {
   ASDCP_TEST_NULL(ADescObj);
   ADesc.EditRate = ADescObj->SampleRate;

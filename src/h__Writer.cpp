@@ -83,8 +83,8 @@ ASDCP::h__Writer::~h__Writer()
 //
 // add DMS CryptographicFramework entry to source package
 void
-AddDMScrypt(Partition& HeaderPart, SourcePackage& Package,
-	    WriterInfo& Descr, const UL& WrappingUL, const Dictionary*& Dict)
+ASDCP::AddDMScrypt(Partition& HeaderPart, SourcePackage& Package,
+		   WriterInfo& Descr, const UL& WrappingUL, const Dictionary*& Dict)
 {
   assert(Dict);
   // Essence Track

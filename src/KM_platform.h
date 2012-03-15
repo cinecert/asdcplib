@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2004-2009, John Hurst
+Copyright (c) 2004-2012, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -42,37 +42,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #  define WIN32_LEAN_AND_MEAN
 #  define VC_EXTRALEAN
 #  include <windows.h>
-/* we like the "SendMessage" name, so get rid of the preprocessor define
- * and replace with an inline function */
-#  undef SendMessage
-#ifdef UNICODE
-inline
-WINUSERAPI
-LRESULT
-WINAPI
-SendMessage(
-    __in HWND hWnd,
-    __in UINT Msg,
-    __in WPARAM wParam,
-    __in LPARAM lParam)
-{
-	return SendMessageW(hWnd, Msg, wParam, lParam);
-}
-#else
-inline
-WINUSERAPI
-LRESULT
-WINAPI
-SendMessage(
-    __in HWND hWnd,
-    __in UINT Msg,
-    __in WPARAM wParam,
-    __in LPARAM lParam)
-{
-	return SendMessageA(hWnd, Msg, wParam, lParam);
-}
-#endif // !UNICODE
-
 #  include <stdlib.h>
 #  include <stdio.h>
 #  include <stdarg.h>

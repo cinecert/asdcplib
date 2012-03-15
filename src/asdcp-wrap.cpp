@@ -129,8 +129,8 @@ Options:\n\
   -j <key-id-str>   - Write key ID instead of creating a random value\n\
   -k <key-string>   - Use key for ciphertext operations\n\
   -M                - Do not create HMAC values when writing\n\
-  -a <UUID>         - Specify the Asset ID of a file (with -c)\n\
-  -b <buffer-size>  - Specify size in bytes of picture frame buffer.\n\
+  -a <UUID>         - Specify the Asset ID of a file\n\
+  -b <buffer-size>  - Specify size in bytes of picture frame buffer\n\
                       Defaults to 4,194,304 (4MB)\n\
   -d <duration>     - Number of frames to process, default all\n\
   -f <start-frame>  - Starting frame number, default 0\n\

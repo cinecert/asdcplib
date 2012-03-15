@@ -89,7 +89,7 @@ Options:\n\
   -2                - Split Wave essence to stereo WAV files during extract.\n\
                       Default is multichannel WAV\n\
   -3                - Force stereoscopic interpretation of a JP2K file.\n\
-  -b <buffer-size>  - Specify size in bytes of picture frame buffer.\n\
+  -b <buffer-size>  - Specify size in bytes of picture frame buffer\n\
                       Defaults to 4,194,304 (4MB)\n\
   -d <duration>     - Number of frames to process, default all\n\
   -f <start-frame>  - Starting frame number, default 0\n\
@@ -104,7 +104,7 @@ Options:\n\
   -v                - Verbose, prints informative messages to stderr\n\
   -W                - Read input file only, do not write destination file\n\
   -w <width>        - Width of numeric element in a series of frame file names\n\
-                      (default 6).\n\
+                      (default 6)\n\
   -z                - Fail if j2c inputs have unequal parameters (default)\n\
   -Z                - Ignore unequal parameters in j2c inputs\n\
 \n\
