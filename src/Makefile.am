@@ -69,7 +69,8 @@ libasdcp_la_SOURCES = MPEG2_Parser.cpp MPEG.cpp JP2K_Codestream_Parser.cpp \
 		AS_DCP_PCM.cpp AS_DCP_TimedText.cpp PCMParserList.cpp \
 		Wav.h WavFileWriter.h MXF.h Metadata.h \
 		JP2K.h AS_DCP.h AS_DCP_internal.h KLV.h MPEG.h MXFTypes.h MDD.h \
-		PCMParserList.h S12MTimecode.h MDD.cpp
+		PCMParserList.h S12MTimecode.h MDD.cpp \
+		AS_02_MXF.cpp AS_02_JP2K.cpp AS_02_PCM.cpp h__02_Reader.cpp h__02_Writer.cpp
 
 if DEV_HEADERS
 nodist_libasdcp_la_SOURCES += TimedText_Transform.h TimedText_Transform.cpp
@@ -135,12 +136,19 @@ endif
 # list of programs to be built and installed
 bin_PROGRAMS = \
 	asdcp-wrap asdcp-unwrap asdcp-util asdcp-info asdcp-test \
+	as-02-wrap as-02-unwrap \
 	j2c-test blackwave klvwalk wavesplit \
 	kmfilegen kmrandgen kmuuidgen
 
 # sources and linkage for CLI utilities
 asdcp_test_SOURCES = asdcp-test.cpp
 asdcp_test_LDADD = libasdcp.la
+
+as_02_wrap_SOURCES = as-02-wrap.cpp
+as_02_wrap_LDADD = libasdcp.la
+
+as_02_unwrap_SOURCES = as-02-unwrap.cpp
+as_02_unwrap_LDADD = libasdcp.la
 
 asdcp_wrap_SOURCES = asdcp-wrap.cpp
 asdcp_wrap_LDADD = libasdcp.la

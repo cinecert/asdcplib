@@ -55,6 +55,30 @@ namespace ASDCP
 {
   void default_md_object_init();
 
+  //
+  static std::vector<int>
+    version_split(const char* str)
+  {
+    std::vector<int> result;
+    const char* pstr = str;
+    const char* r = strchr(pstr, '.');
+    
+    while ( r != 0 )
+      {
+	assert(r >= pstr);
+	if ( r > pstr )
+	  result.push_back(atoi(pstr));
+
+	pstr = r + 1;
+	r = strchr(pstr, '.');
+      }
+
+    if( strlen(pstr) > 0 )
+      result.push_back(atoi(pstr));
+
+    assert(result.size() == 3);
+    return result;
+  }
 
   // constant values used to calculate KLV and EKLV packet sizes
   static const ui32_t klv_cryptinfo_size =

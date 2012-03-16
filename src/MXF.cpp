@@ -43,8 +43,6 @@ const ui32_t CBRIndexEntriesPerSegment = 5000;
 //------------------------------------------------------------------------------------------
 //
 
-const ui32_t kl_length = ASDCP::SMPTE_UL_LENGTH + ASDCP::MXF_BER_LENGTH;
-
 //
 ASDCP::Result_t
 ASDCP::MXF::SeekToRIP(const Kumu::FileReader& Reader)
@@ -174,80 +172,77 @@ ASDCP::MXF::RIP::Dump(FILE* stream)
 //
 
 //
-class ASDCP::MXF::Partition::h__PacketList
+ASDCP::MXF::Partition::PacketList::~PacketList() {
+  while ( ! m_List.empty() )
+    {
+      delete m_List.back();
+      m_List.pop_back();
+    }
+}
+
+//
+void
+ASDCP::MXF::Partition::PacketList::AddPacket(InterchangeObject* ThePacket) // takes ownership
 {
-public:
-  std::list<InterchangeObject*> m_List;
-  std::map<UUID, InterchangeObject*> m_Map;
+  assert(ThePacket);
+  m_Map.insert(std::map<UUID, InterchangeObject*>::value_type(ThePacket->InstanceUID, ThePacket));
+  m_List.push_back(ThePacket);
+}
 
-  ~h__PacketList() {
-    while ( ! m_List.empty() )
-      {
-	delete m_List.back();
-	m_List.pop_back();
-      }
-  }
+//
+ASDCP::Result_t
+ASDCP::MXF::Partition::PacketList::GetMDObjectByID(const UUID& ObjectID, InterchangeObject** Object)
+{
+  ASDCP_TEST_NULL(Object);
 
-  //
-  void AddPacket(InterchangeObject* ThePacket) // takes ownership
-  {
-    assert(ThePacket);
-    m_Map.insert(std::map<UUID, InterchangeObject*>::value_type(ThePacket->InstanceUID, ThePacket));
-    m_List.push_back(ThePacket);
-  }
+  std::map<UUID, InterchangeObject*>::iterator mi = m_Map.find(ObjectID);
+  
+  if ( mi == m_Map.end() )
+    {
+      *Object = 0;
+      return RESULT_FAIL;
+    }
 
-  //
-  Result_t GetMDObjectByID(const UUID& ObjectID, InterchangeObject** Object)
-  {
-    ASDCP_TEST_NULL(Object);
+  *Object = (*mi).second;
+  return RESULT_OK;
+}
 
-    std::map<UUID, InterchangeObject*>::iterator mi = m_Map.find(ObjectID);
+//
+ASDCP::Result_t
+ASDCP::MXF::Partition::PacketList::GetMDObjectByType(const byte_t* ObjectID, InterchangeObject** Object)
+{
+  ASDCP_TEST_NULL(ObjectID);
+  ASDCP_TEST_NULL(Object);
+  std::list<InterchangeObject*>::iterator li;
+  *Object = 0;
 
-    if ( mi == m_Map.end() )
-      {
-	*Object = 0;
-	return RESULT_FAIL;
-      }
+  for ( li = m_List.begin(); li != m_List.end(); li++ )
+    {
+      if ( (*li)->HasUL(ObjectID) )
+	{
+	  *Object = *li;
+	  return RESULT_OK;
+	}
+    }
 
-    *Object = (*mi).second;
-    return RESULT_OK;
-  }
+  return RESULT_FAIL;
+}
 
-  //
-  Result_t GetMDObjectByType(const byte_t* ObjectID, InterchangeObject** Object)
-  {
-    ASDCP_TEST_NULL(ObjectID);
-    ASDCP_TEST_NULL(Object);
-    std::list<InterchangeObject*>::iterator li;
-    *Object = 0;
+//
+ASDCP::Result_t
+ASDCP::MXF::Partition::PacketList::GetMDObjectsByType(const byte_t* ObjectID, std::list<InterchangeObject*>& ObjectList)
+{
+  ASDCP_TEST_NULL(ObjectID);
+  std::list<InterchangeObject*>::iterator li;
 
-    for ( li = m_List.begin(); li != m_List.end(); li++ )
-      {
-	if ( (*li)->HasUL(ObjectID) )
-	  {
-	    *Object = *li;
-	    return RESULT_OK;
-	  }
-      }
+  for ( li = m_List.begin(); li != m_List.end(); li++ )
+    {
+      if ( (*li)->HasUL(ObjectID) )
+	ObjectList.push_back(*li);
+    }
 
-    return RESULT_FAIL;
-  }
-
-  //
-  Result_t GetMDObjectsByType(const byte_t* ObjectID, std::list<InterchangeObject*>& ObjectList)
-  {
-    ASDCP_TEST_NULL(ObjectID);
-    std::list<InterchangeObject*>::iterator li;
-
-    for ( li = m_List.begin(); li != m_List.end(); li++ )
-      {
-	if ( (*li)->HasUL(ObjectID) )
-	  ObjectList.push_back(*li);
-      }
-
-    return ObjectList.empty() ? RESULT_FAIL : RESULT_OK;
-  }
-};
+  return ObjectList.empty() ? RESULT_FAIL : RESULT_OK;
+}
 
 //------------------------------------------------------------------------------------------
 //
@@ -260,7 +255,7 @@ ASDCP::MXF::Partition::Partition(const Dictionary*& d) :
   FooterPartition(0), HeaderByteCount(0), IndexByteCount(0), IndexSID(0),
   BodyOffset(0), BodySID(0)
 {
-  m_PacketList = new h__PacketList;
+  m_PacketList = new PacketList;
 }
 
 ASDCP::MXF::Partition::~Partition()

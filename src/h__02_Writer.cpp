@@ -1,36 +1,35 @@
 /*
-Copyright (c) 2004-2012, John Hurst
-All rights reserved.
+  Copyright (c) 2011-2012, Robert Scheler, Heiko Sparenberg Fraunhofer IIS, John Hurst
+  All rights reserved.
 
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions
-are met:
-1. Redistributions of source code must retain the above copyright
-   notice, this list of conditions and the following disclaimer.
-2. Redistributions in binary form must reproduce the above copyright
-   notice, this list of conditions and the following disclaimer in the
-   documentation and/or other materials provided with the distribution.
-3. The name of the author may not be used to endorse or promote products
-   derived from this software without specific prior written permission.
+  Redistribution and use in source and binary forms, with or without
+  modification, are permitted provided that the following conditions
+  are met:
+  1. Redistributions of source code must retain the above copyright
+  notice, this list of conditions and the following disclaimer.
+  2. Redistributions in binary form must reproduce the above copyright
+  notice, this list of conditions and the following disclaimer in the
+  documentation and/or other materials provided with the distribution.
+  3. The name of the author may not be used to endorse or promote products
+  derived from this software without specific prior written permission.
 
-THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
-IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
-OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
-IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
-INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
-NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
-THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+  THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
+  IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+  OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+  IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
+  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+  NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+  THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/ 
+/*! \file    h__02_Writer.cpp
+  \version $Id$
+  \brief   MXF file writer base class
 */
-/*! \file    h__Writer.cpp
-    \version $Id$
-    \brief   MXF file writer base class
-*/
 
-#include "AS_DCP_internal.h"
-#include "KLV.h"
+#include "AS_02_internal.h"
 
 using namespace ASDCP;
 using namespace ASDCP::MXF;
@@ -40,63 +39,29 @@ using namespace ASDCP::MXF;
 #define ASDCP_BUILD_NUMBER 0x6A68
 #endif
 
-
-
 //
-ASDCP::h__Writer::h__Writer(const Dictionary& d) :
-  m_HeaderPart(m_Dict), m_BodyPart(m_Dict), m_FooterPart(m_Dict), m_Dict(&d),
+AS_02::h__Writer::h__Writer(const Dictionary& d) :
+  m_HeaderPart(m_Dict), m_FooterPart(m_Dict), m_Dict(&d),
   m_HeaderSize(0), m_EssenceStart(0),
-  m_EssenceDescriptor(0), m_FramesWritten(0), m_StreamOffset(0)
-{
-  default_md_object_init();
-}
-
-ASDCP::h__Writer::~h__Writer()
+  m_EssenceDescriptor(0), m_FramesWritten(0),
+  m_StreamOffset(0), m_BodyOffset(0),
+  m_CurrentBodySID(0), m_CurrentIndexSID(0),
+  m_PartitionSpace(60), m_IndexStrategy(AS_02::IS_FOLLOW)
 {
 }
 
-//
-// add DMS CryptographicFramework entry to source package
-void
-ASDCP::AddDMScrypt(Partition& HeaderPart, SourcePackage& Package,
-		   WriterInfo& Descr, const UL& WrappingUL, const Dictionary*& Dict)
+AS_02::h__Writer::~h__Writer()
 {
-  assert(Dict);
-  // Essence Track
-  StaticTrack* NewTrack = new StaticTrack(Dict);
-  HeaderPart.AddChildObject(NewTrack);
-  Package.Tracks.push_back(NewTrack->InstanceUID);
-  NewTrack->TrackName = "Descriptive Track";
-  NewTrack->TrackID = 3;
-
-  Sequence* Seq = new Sequence(Dict);
-  HeaderPart.AddChildObject(Seq);
-  NewTrack->Sequence = Seq->InstanceUID;
-  Seq->DataDefinition = UL(Dict->ul(MDD_DescriptiveMetaDataDef));
-
-  DMSegment* Segment = new DMSegment(Dict);
-  HeaderPart.AddChildObject(Segment);
-  Seq->StructuralComponents.push_back(Segment->InstanceUID);
-  Segment->EventComment = "AS-DCP KLV Encryption";
-  
-  CryptographicFramework* CFW = new CryptographicFramework(Dict);
-  HeaderPart.AddChildObject(CFW);
-  Segment->DMFramework = CFW->InstanceUID;
-
-  CryptographicContext* Context = new CryptographicContext(Dict);
-  HeaderPart.AddChildObject(Context);
-  CFW->ContextSR = Context->InstanceUID;
-
-  Context->ContextID.Set(Descr.ContextID);
-  Context->SourceEssenceContainer = WrappingUL; // ??????
-  Context->CipherAlgorithm.Set(Dict->ul(MDD_CipherAlgorithm_AES));
-  Context->MICAlgorithm.Set( Descr.UsesHMAC ? Dict->ul(MDD_MICAlgorithm_HMAC_SHA1) : Dict->ul(MDD_MICAlgorithm_NONE) );
-  Context->CryptographicKeyID.Set(Descr.CryptographicKeyID);
+  while (! m_BodyPartList.empty() )
+    {
+      delete m_BodyPartList.back();
+      m_BodyPartList.pop_back();
+    }
 }
 
 //
 void
-ASDCP::h__Writer::InitHeader()
+AS_02::h__Writer::InitHeader()
 {
   assert(m_Dict);
   assert(m_EssenceDescriptor);
@@ -110,11 +75,8 @@ ASDCP::h__Writer::InitHeader()
   m_HeaderPart.m_Preface->OperationalPattern = UL(m_Dict->ul(MDD_OP1a));
   m_HeaderPart.OperationalPattern = m_HeaderPart.m_Preface->OperationalPattern;
 
-  // First RIP Entry
-  if ( m_Info.LabelSetType == LS_MXF_SMPTE )
-    m_HeaderPart.m_RIP.PairArray.push_back(RIP::Pair(0, 0)); // 3-part, no essence in header
-  else
-    m_HeaderPart.m_RIP.PairArray.push_back(RIP::Pair(1, 0)); // 2-part, essence in header
+  //always more than 3 partition in AS-02; essence is not permitted to be existent in the header
+  m_HeaderPart.m_RIP.PairArray.push_back(RIP::Pair(0, 0)); // no essence in header
 
   //
   // Identification
@@ -139,7 +101,6 @@ ASDCP::h__Writer::InitHeader()
   Ident->ToolkitVersion.Release = VersionType::RL_RELEASE;
 }
 
-//
 template <class ClipT>
 struct TrackSet
 {
@@ -197,7 +158,7 @@ CreateTimecodeTrack(OPAtomHeader& Header, PackageT& Package,
 
 //
 void
-ASDCP::h__Writer::AddSourceClip(const MXF::Rational& EditRate, ui32_t TCFrameRate,
+AS_02::h__Writer::AddSourceClip(const ASDCP::MXF::Rational& EditRate, ui32_t TCFrameRate,
 				const std::string& TrackName, const UL& EssenceUL,
 				const UL& DataDefinition, const std::string& PackageLabel)
 {
@@ -221,7 +182,7 @@ ASDCP::h__Writer::AddSourceClip(const MXF::Rational& EditRate, ui32_t TCFrameRat
   // Material Package
   //
   m_MaterialPackage = new MaterialPackage(m_Dict);
-  m_MaterialPackage->Name = "AS-DCP Material Package";
+  m_MaterialPackage->Name = "AS_02 Material Package";
   m_MaterialPackage->PackageUID = MaterialPackageUMID;
   m_HeaderPart.AddChildObject(m_MaterialPackage);
   Storage->Packages.push_back(m_MaterialPackage->InstanceUID);
@@ -246,7 +207,7 @@ ASDCP::h__Writer::AddSourceClip(const MXF::Rational& EditRate, ui32_t TCFrameRat
   MPTrack.Clip->SourceTrackID = 2;
   m_DurationUpdateList.push_back(&(MPTrack.Clip->Duration));
 
-  
+
   //
   // File (Source) Package
   //
@@ -288,7 +249,7 @@ ASDCP::h__Writer::AddSourceClip(const MXF::Rational& EditRate, ui32_t TCFrameRat
 
 //
 void
-ASDCP::h__Writer::AddDMSegment(const MXF::Rational& EditRate, ui32_t TCFrameRate,
+AS_02::h__Writer::AddDMSegment(const ASDCP::MXF::Rational& EditRate, ui32_t TCFrameRate,
 			       const std::string& TrackName, const UL& DataDefinition,
 			       const std::string& PackageLabel)
 {
@@ -312,7 +273,7 @@ ASDCP::h__Writer::AddDMSegment(const MXF::Rational& EditRate, ui32_t TCFrameRate
   // Material Package
   //
   m_MaterialPackage = new MaterialPackage(m_Dict);
-  m_MaterialPackage->Name = "AS-DCP Material Package";
+  m_MaterialPackage->Name = "AS_02 Material Package";
   m_MaterialPackage->PackageUID = MaterialPackageUMID;
   m_HeaderPart.AddChildObject(m_MaterialPackage);
   Storage->Packages.push_back(m_MaterialPackage->InstanceUID);
@@ -337,7 +298,7 @@ ASDCP::h__Writer::AddDMSegment(const MXF::Rational& EditRate, ui32_t TCFrameRate
   //  MPTrack.Clip->SourceTrackID = 2;
   m_DurationUpdateList.push_back(&(MPTrack.Clip->Duration));
 
-  
+
   //
   // File (Source) Package
   //
@@ -374,7 +335,7 @@ ASDCP::h__Writer::AddDMSegment(const MXF::Rational& EditRate, ui32_t TCFrameRate
 
 //
 void
-ASDCP::h__Writer::AddEssenceDescriptor(const UL& WrappingUL)
+AS_02::h__Writer::AddEssenceDescriptor(const UL& WrappingUL)
 {
   //
   // Essence Descriptor
@@ -386,8 +347,9 @@ ASDCP::h__Writer::AddEssenceDescriptor(const UL& WrappingUL)
   // Essence Descriptors
   //
   assert(m_Dict);
-  UL GenericContainerUL(m_Dict->ul(MDD_GCMulti));
-  m_HeaderPart.EssenceContainers.push_back(GenericContainerUL);
+  //TODO: Mono Essence, only one GenericContainer ? 
+  //UL GenericContainerUL(m_Dict->ul(MDD_GCMulti));
+  //m_HeaderPart.EssenceContainers.push_back(GenericContainerUL);
 
   if ( m_Info.EncryptedEssence )
     {
@@ -406,63 +368,155 @@ ASDCP::h__Writer::AddEssenceDescriptor(const UL& WrappingUL)
 
   std::list<InterchangeObject*>::iterator sdli = m_EssenceSubDescriptorList.begin();
   for ( ; sdli != m_EssenceSubDescriptorList.end(); sdli++ )
-      m_HeaderPart.AddChildObject(*sdli);
+    m_HeaderPart.AddChildObject(*sdli);
 
   m_FilePackage->Descriptor = m_EssenceDescriptor->InstanceUID;
 }
 
 //
 Result_t
-ASDCP::h__Writer::CreateBodyPart(const MXF::Rational& EditRate, ui32_t BytesPerEditUnit)
+AS_02::h__Writer::CreateBodyPart(const ASDCP::MXF::Rational& EditRate, ui32_t BytesPerEditUnit)
 {
   assert(m_Dict);
   Result_t result = RESULT_OK;
+  m_EditRate = EditRate;
+  m_BytesPerEditUnit = BytesPerEditUnit;
 
-  // create a body partition if we're writing proper 429-3/OP-Atom
-  if ( m_Info.LabelSetType == LS_MXF_SMPTE )
+  result = CreateBodyPartPair();
+
+  //TODO: no IndexTables in the footer -> The spec is silent on that topic
+  m_FooterPart.IndexSID = 0;//129;
+
+  return result;
+}
+
+// standard method of creating a new BodyPartition Pair for Essence and IndexTables
+Result_t AS_02::h__Writer::CreateBodyPartPair()
+{
+  Result_t result = RESULT_OK;
+
+  if ( m_IndexStrategy == AS_02::IS_FILE_SPECIFIC ){
+    result = RESULT_FAIL;
+  }
+
+  //similar to both index strategies  
+
+  Partition *m_BodyPartEssence = new ASDCP::MXF::Partition(m_Dict);       
+  m_BodyPartEssence->EssenceContainers = m_HeaderPart.EssenceContainers;
+  //necessary? - here we must increment the BodySID, when a new BodyPartion is created
+  m_BodyPartEssence->BodySID = 1;//++m_CurrentBodySID;
+  UL OperationalPattern(m_Dict->ul(MDD_OP1a));
+  m_BodyPartEssence->OperationalPattern = OperationalPattern;
+
+  m_BodyPartEssence->FooterPartition = 0;
+  m_BodyPartEssence->IndexSID = 0;
+  m_BodyPartEssence->BodyOffset = m_BodyOffset;
+
+  m_CurrentIndexBodyPartition = new AS_02::MXF::OP1aIndexBodyPartion(this->m_Dict);    
+  m_CurrentIndexBodyPartition->EssenceContainers = m_HeaderPart.EssenceContainers;
+  m_CurrentIndexBodyPartition->BodySID = 0;
+  m_CurrentIndexBodyPartition->OperationalPattern = OperationalPattern;
+  m_CurrentIndexBodyPartition->FooterPartition = 0;
+  m_CurrentIndexBodyPartition->IndexSID = 129;//++m_CurrentIndexSID;
+
+  //we must differentiate between index_strategy "lead" and "follow"
+  if ( m_IndexStrategy == AS_02::IS_FOLLOW )
     {
-      // Body Partition
-      m_BodyPart.EssenceContainers = m_HeaderPart.EssenceContainers;
-      m_BodyPart.ThisPartition = m_File.Tell();
-      m_BodyPart.BodySID = 1;
-      UL OPAtomUL(m_Dict->ul(MDD_OPAtom));
-      m_BodyPart.OperationalPattern = OPAtomUL;
-      m_HeaderPart.m_RIP.PairArray.push_back(RIP::Pair(1, m_BodyPart.ThisPartition)); // Second RIP Entry
-      
-      UL BodyUL(m_Dict->ul(MDD_ClosedCompleteBodyPartition));
-      result = m_BodyPart.WriteToFile(m_File, BodyUL);
+      if(m_BodyPartList.size()>0){
+	m_BodyPartEssence->PreviousPartition = m_BodyPartList.back()->ThisPartition;
+      }
+      else{
+	m_BodyPartEssence->PreviousPartition = m_HeaderPart.ThisPartition;
+      }
+      /* Write partition header for the body partition and create IndexBodyPartition.
+	 When "all" essence packets are written, write out index table. */
+      m_CurrentIndexBodyPartition->ThisPartition = 0;
+      m_BodyPartEssence->ThisPartition = m_File.Tell();
+      m_CurrentIndexBodyPartition->PreviousPartition = m_BodyPartEssence->ThisPartition;
+	m_HeaderPart.m_RIP.PairArray.push_back(RIP::Pair(m_CurrentIndexBodyPartition->BodySID, m_CurrentIndexBodyPartition->ThisPartition));
+
+	this->m_BodyPartList.push_back(m_CurrentIndexBodyPartition);
+	this->m_BodyPartList.push_back(m_BodyPartEssence);
     }
-  else
+  else if ( m_IndexStrategy == AS_02::IS_LEAD )
     {
-      m_HeaderPart.BodySID = 1;
+      /* Write KLVFill packet large enough to hold the completed index data */
+      m_CurrentIndexBodyPartition->ThisPartition = m_File.Tell();
+      m_CurrentIndexBodyPartition->FillWriteToFile(m_File,m_PartitionSpace);
+      m_BodyPartEssence->ThisPartition = m_File.Tell();
+      m_BodyPartEssence->PreviousPartition = m_CurrentIndexBodyPartition->ThisPartition;
+	m_HeaderPart.m_RIP.PairArray.push_back(RIP::Pair(m_CurrentIndexBodyPartition->BodySID, m_CurrentIndexBodyPartition->ThisPartition));
+
+	if(m_BodyPartList.size()>0){
+	  m_CurrentIndexBodyPartition->PreviousPartition = m_BodyPartList.back()->ThisPartition;
+	}
+	else{
+	  m_CurrentIndexBodyPartition->PreviousPartition = m_HeaderPart.ThisPartition;
+	}
+
+	//necessary to traverse across all of the body partition packs and update the FooterPartition entries at the end of writing			
+	this->m_BodyPartList.push_back(m_CurrentIndexBodyPartition);
+	this->m_BodyPartList.push_back(m_BodyPartEssence);
+
     }
+
+  /* similar to both index strategies */
+
+  m_HeaderPart.m_RIP.PairArray.push_back(RIP::Pair(m_BodyPartEssence->BodySID, m_BodyPartEssence->ThisPartition));
+  UL BodyUL(m_Dict->ul(MDD_ClosedCompleteBodyPartition));
+  result = m_BodyPartEssence->WriteToFile(m_File, BodyUL);
 
   if ( ASDCP_SUCCESS(result) )
     {
+      //TODO: Is this necessary?What means ECoffset?Never used in the code? If necessary check if it is set correctly.
+
       // Index setup
       Kumu::fpos_t ECoffset = m_File.Tell();
-      m_FooterPart.IndexSID = 129;
 
-      if ( BytesPerEditUnit == 0 )
-	m_FooterPart.SetIndexParamsVBR(&m_HeaderPart.m_Primer, EditRate, ECoffset);
-      else
-	m_FooterPart.SetIndexParamsCBR(&m_HeaderPart.m_Primer, BytesPerEditUnit, EditRate);
+      if(m_BytesPerEditUnit == 0){
+	m_CurrentIndexBodyPartition->SetIndexParamsVBR(&m_HeaderPart.m_Primer, m_EditRate, ECoffset);
+      }
+      else{
+	m_CurrentIndexBodyPartition->SetIndexParamsCBR(&m_HeaderPart.m_Primer, m_BytesPerEditUnit, m_EditRate);
+      }
     }
 
   return result;
 }
 
+Result_t AS_02::h__Writer::CompleteIndexBodyPart()
+{
+  Result_t result = RESULT_OK;
+  if ( m_IndexStrategy == AS_02::IS_FOLLOW )
+    {
+      m_CurrentIndexBodyPartition->ThisPartition = m_File.Tell();
+	m_HeaderPart.m_RIP.PairArray.push_back(RIP::Pair(m_CurrentIndexBodyPartition->BodySID, m_CurrentIndexBodyPartition->ThisPartition));
+	  }
+
+  UL BodyUL(m_Dict->ul(MDD_ClosedCompleteBodyPartition));
+    ui64_t cur_pos = m_File.Tell();
+      m_File.Seek(m_CurrentIndexBodyPartition->ThisPartition);
+	result = m_CurrentIndexBodyPartition->WriteToFile(m_File, BodyUL);
+	m_File.Seek(cur_pos);
+	return result;
+}
+
 //
 Result_t
-ASDCP::h__Writer::WriteMXFHeader(const std::string& PackageLabel, const UL& WrappingUL,
+AS_02::h__Writer::WriteMXFHeader(const std::string& PackageLabel, const UL& WrappingUL,
 				 const std::string& TrackName, const UL& EssenceUL, const UL& DataDefinition,
-				 const MXF::Rational& EditRate, ui32_t TCFrameRate, ui32_t BytesPerEditUnit)
+				 const ASDCP::MXF::Rational& EditRate, ui32_t TCFrameRate, ui32_t BytesPerEditUnit)
 {
   InitHeader();
   AddSourceClip(EditRate, TCFrameRate, TrackName, EssenceUL, DataDefinition, PackageLabel);
   AddEssenceDescriptor(WrappingUL);
 
   Result_t result = m_HeaderPart.WriteToFile(m_File, m_HeaderSize);
+
+  //use the FrameRate for the indexing; initialize the SID counters
+  m_CurrentBodySID = 0;
+  m_CurrentIndexSID = 0;
+  m_PartitionSpace = m_PartitionSpace * TCFrameRate; ///// TODO ????
 
   if ( KM_SUCCESS(result) )
     result = CreateBodyPart(EditRate, BytesPerEditUnit);
@@ -473,7 +527,7 @@ ASDCP::h__Writer::WriteMXFHeader(const std::string& PackageLabel, const UL& Wrap
 
 // standard method of writing a plaintext or encrypted frame
 Result_t
-ASDCP::h__Writer::WriteEKLVPacket(const ASDCP::FrameBuffer& FrameBuf, const byte_t* EssenceUL,
+AS_02::h__Writer::WriteEKLVPacket(const ASDCP::FrameBuffer& FrameBuf, const byte_t* EssenceUL,
 				  AESEncContext* Ctx, HMACContext* HMAC)
 {
   Result_t result = RESULT_OK;
@@ -505,7 +559,7 @@ ASDCP::h__Writer::WriteEKLVPacket(const ASDCP::FrameBuffer& FrameBuf, const byte
 
       // create HMAC
       if ( ASDCP_SUCCESS(result) && m_Info.UsesHMAC )
-      	result = IntPack.CalcValues(m_CtFrameBuf, m_Info.AssetUUID, m_FramesWritten + 1, HMAC);
+	result = IntPack.CalcValues(m_CtFrameBuf, m_Info.AssetUUID, m_FramesWritten + 1, HMAC);
 
       if ( ASDCP_SUCCESS(result) )
 	{ // write UL
@@ -533,7 +587,7 @@ ASDCP::h__Writer::WriteEKLVPacket(const ASDCP::FrameBuffer& FrameBuf, const byte
 
 	  if ( ASDCP_SUCCESS(result) )
 	    {
-	      if ( ! ( Overhead.WriteBER(ETLength, BER_length)                      // write encrypted triplet length
+	      if ( ! ( Overhead.WriteBER(ETLength, BER_length)                 // write encrypted triplet length
 		       && Overhead.WriteBER(UUIDlen, MXF_BER_LENGTH)                // write ContextID length
 		       && Overhead.WriteRaw(m_Info.ContextID, UUIDlen)              // write ContextID
 		       && Overhead.WriteBER(sizeof(ui64_t), MXF_BER_LENGTH)         // write PlaintextOffset length
@@ -599,7 +653,7 @@ ASDCP::h__Writer::WriteEKLVPacket(const ASDCP::FrameBuffer& FrameBuf, const byte
 
       if ( ASDCP_SUCCESS(result) )
 	result = m_File.Writev(Overhead.Data(), Overhead.Length());
- 
+
       if ( ASDCP_SUCCESS(result) )
 	result = m_File.Writev((byte_t*)FrameBuf.RoData(), FrameBuf.Size());
 
@@ -613,55 +667,6 @@ ASDCP::h__Writer::WriteEKLVPacket(const ASDCP::FrameBuffer& FrameBuf, const byte
   return result;
 }
 
-
-// standard method of writing the header and footer of a completed MXF file
 //
-Result_t
-ASDCP::h__Writer::WriteMXFFooter()
-{
-  // Set top-level file package correctly for OP-Atom
-
-  //  m_MPTCSequence->Duration = m_MPTimecode->Duration = m_MPClSequence->Duration = m_MPClip->Duration = 
-  //    m_FPTCSequence->Duration = m_FPTimecode->Duration = m_FPClSequence->Duration = m_FPClip->Duration = 
-
-  DurationElementList_t::iterator dli = m_DurationUpdateList.begin();
-
-  for (; dli != m_DurationUpdateList.end(); dli++ )
-    **dli = m_FramesWritten;
-
-  m_EssenceDescriptor->ContainerDuration = m_FramesWritten;
-  m_FooterPart.PreviousPartition = m_HeaderPart.m_RIP.PairArray.back().ByteOffset;
-
-  Kumu::fpos_t here = m_File.Tell();
-  m_HeaderPart.m_RIP.PairArray.push_back(RIP::Pair(0, here)); // Last RIP Entry
-  m_HeaderPart.FooterPartition = here;
-
-  assert(m_Dict);
-  // re-label the partition
-  UL OPAtomUL(m_Dict->ul(MDD_OPAtom));
-  m_HeaderPart.OperationalPattern = OPAtomUL;
-  m_HeaderPart.m_Preface->OperationalPattern = m_HeaderPart.OperationalPattern;
-
-  m_FooterPart.OperationalPattern = m_HeaderPart.OperationalPattern;
-  m_FooterPart.EssenceContainers = m_HeaderPart.EssenceContainers;
-  m_FooterPart.FooterPartition = here;
-  m_FooterPart.ThisPartition = here;
-
-  Result_t result = m_FooterPart.WriteToFile(m_File, m_FramesWritten);
-
-  if ( ASDCP_SUCCESS(result) )
-    result = m_HeaderPart.m_RIP.WriteToFile(m_File);
-
-  if ( ASDCP_SUCCESS(result) )
-    result = m_File.Seek(0);
-
-  if ( ASDCP_SUCCESS(result) )
-    result = m_HeaderPart.WriteToFile(m_File, m_HeaderSize);
-
-  m_File.Close();
-  return result;
-}
-
-//
-// end h__Writer.cpp
+// end h__02_Writer.cpp
 //

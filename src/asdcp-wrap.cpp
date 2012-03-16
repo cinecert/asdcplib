@@ -28,7 +28,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     \version $Id$       
     \brief   AS-DCP file manipulation utility
 
-  This program wraps d-cinema essence (picture, sound or text) in t an AS-DCP
+  This program wraps d-cinema essence (picture, sound or text) into an AS-DCP
   MXF file.
 
   For more information about asdcplib, please refer to the header file AS_DCP.h
@@ -129,7 +129,7 @@ Options:\n\
   -j <key-id-str>   - Write key ID instead of creating a random value\n\
   -k <key-string>   - Use key for ciphertext operations\n\
   -M                - Do not create HMAC values when writing\n\
-  -a <UUID>         - Specify the Asset ID of a file\n\
+  -a <UUID>         - Specify the Asset ID of the file\n\
   -b <buffer-size>  - Specify size in bytes of picture frame buffer\n\
                       Defaults to 4,194,304 (4MB)\n\
   -d <duration>     - Number of frames to process, default all\n\
