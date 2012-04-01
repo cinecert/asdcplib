@@ -58,9 +58,8 @@ The following use cases are supported by the module:
 
 namespace ASDCP {
   namespace MXF {
-    // #include<Metadata.h> to use these
+    // #include<Metadata.h> to use this
     class OPAtomHeader;
-    class OPAtomIndexFooter;
   };
 };
 

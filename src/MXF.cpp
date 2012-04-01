@@ -57,7 +57,10 @@ ASDCP::MXF::SeekToRIP(const Kumu::FileReader& Reader)
 
   if ( ASDCP_SUCCESS(result)
        && end_pos < (SMPTE_UL_LENGTH+MXF_BER_LENGTH) )
-    result = RESULT_FAIL;  // File is smaller than an empty packet!
+    {
+      DefaultLogSink().Error("File is smaller than an KLV empty packet.\n");
+      result = RESULT_FAIL;
+    }
 
   if ( ASDCP_SUCCESS(result) )
     result = Reader.Seek(end_pos - 4);
@@ -72,7 +75,10 @@ ASDCP::MXF::SeekToRIP(const Kumu::FileReader& Reader)
       result = Reader.Read(intbuf, MXF_BER_LENGTH, &read_count);
 
       if ( ASDCP_SUCCESS(result) && read_count != 4 )
-	result = RESULT_FAIL;
+	{
+	  DefaultLogSink().Error("RIP contains fewer than four bytes.\n");
+	  result = RESULT_FAIL;
+	}
     }
 
   if ( ASDCP_SUCCESS(result) )
@@ -80,7 +86,10 @@ ASDCP::MXF::SeekToRIP(const Kumu::FileReader& Reader)
       rip_size = KM_i32_BE(Kumu::cp2i<ui32_t>(intbuf));
 
       if ( rip_size > end_pos ) // RIP can't be bigger than the file
-	return RESULT_FAIL;
+	{
+	  DefaultLogSink().Error("RIP size impossibly large.\n");
+	  return RESULT_FAIL;
+	}
     }
 
   // reposition to start of RIP

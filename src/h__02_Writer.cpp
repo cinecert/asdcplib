@@ -447,17 +447,18 @@ Result_t AS_02::h__Writer::CreateBodyPartPair()
       m_BodyPartEssence->PreviousPartition = m_CurrentIndexBodyPartition->ThisPartition;
 	m_HeaderPart.m_RIP.PairArray.push_back(RIP::Pair(m_CurrentIndexBodyPartition->BodySID, m_CurrentIndexBodyPartition->ThisPartition));
 
-	if(m_BodyPartList.size()>0){
-	  m_CurrentIndexBodyPartition->PreviousPartition = m_BodyPartList.back()->ThisPartition;
-	}
-	else{
-	  m_CurrentIndexBodyPartition->PreviousPartition = m_HeaderPart.ThisPartition;
-	}
+	if(m_BodyPartList.size()>0)
+	  {
+	    m_CurrentIndexBodyPartition->PreviousPartition = m_BodyPartList.back()->ThisPartition;
+	  }
+	else
+	  {
+	    m_CurrentIndexBodyPartition->PreviousPartition = m_HeaderPart.ThisPartition;
+	  }
 
 	//necessary to traverse across all of the body partition packs and update the FooterPartition entries at the end of writing			
 	this->m_BodyPartList.push_back(m_CurrentIndexBodyPartition);
 	this->m_BodyPartList.push_back(m_BodyPartEssence);
-
     }
 
   /* similar to both index strategies */

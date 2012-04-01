@@ -40,16 +40,18 @@ endif
 
 # list of all the header files that should be installed
 include_HEADERS = KM_error.h KM_fileio.h KM_log.h KM_memio.h KM_mutex.h \
-		KM_platform.h KM_prng.h KM_util.h KM_tai.h KM_xml.h AS_DCP.h
+		KM_platform.h KM_prng.h KM_util.h KM_tai.h KM_xml.h AS_DCP.h AS_02.h
 if DEV_HEADERS
 include_HEADERS += S12MTimecode.h MDD.h Metadata.h KLV.h MXFTypes.h MXF.h Wav.h \
 		PCMParserList.h
 nodist_include_HEADERS = TimedText_Transform.h
 endif
 
+
 # list of the libraries to build and install
-lib_LTLIBRARIES = libkumu.la libasdcp.la
-# sources for a library
+lib_LTLIBRARIES = libkumu.la libasdcp.la libas02.la
+
+# sources for kumu library
 libkumu_la_SOURCES = KM_error.h KM_fileio.cpp KM_fileio.h KM_log.cpp KM_log.h \
 		KM_memio.h KM_mutex.h KM_platform.h KM_prng.cpp KM_prng.h KM_util.cpp \
 		KM_util.h KM_xml.cpp KM_xml.h KM_tai.h KM_tai.cpp
@@ -57,10 +59,11 @@ libkumu_la_SOURCES = KM_error.h KM_fileio.cpp KM_fileio.h KM_log.cpp KM_log.h \
 # linker flags (*not* including libraries to link against) for a library
 libkumu_la_LDFLAGS = -release @VERSION@
 
-# sources for a library that don't get added to a distribution
+
+# sources for asdcp library that don't get added to a distribution
 nodist_libasdcp_la_SOURCES = Metadata_h.tt2 Metadata_cpp.tt2 \
 		mxfgen.pl MXF_def.pl ullist.pl ULList.xml dict.xml DMS_Crypto.xml
-
+# sources for asdcp library
 libasdcp_la_SOURCES = MPEG2_Parser.cpp MPEG.cpp JP2K_Codestream_Parser.cpp \
 		JP2K_Sequence_Parser.cpp JP2K.cpp PCM_Parser.cpp Wav.cpp \
 		TimedText_Parser.cpp KLV.cpp Dict.cpp MXFTypes.cpp MXF.cpp \
@@ -69,23 +72,27 @@ libasdcp_la_SOURCES = MPEG2_Parser.cpp MPEG.cpp JP2K_Codestream_Parser.cpp \
 		AS_DCP_PCM.cpp AS_DCP_TimedText.cpp PCMParserList.cpp \
 		Wav.h WavFileWriter.h MXF.h Metadata.h \
 		JP2K.h AS_DCP.h AS_DCP_internal.h KLV.h MPEG.h MXFTypes.h MDD.h \
-		PCMParserList.h S12MTimecode.h MDD.cpp \
-		AS_02_MXF.cpp AS_02_JP2K.cpp AS_02_PCM.cpp h__02_Reader.cpp h__02_Writer.cpp
-
+		PCMParserList.h S12MTimecode.h MDD.cpp
 if DEV_HEADERS
 nodist_libasdcp_la_SOURCES += TimedText_Transform.h TimedText_Transform.cpp
 endif
-
 libasdcp_la_LDFLAGS = -release @VERSION@
-
 # additional libraries to link against for a library
 libasdcp_la_LIBADD = libkumu.la
 libasdcp_la_CPPFLAGS = -DASDCP_PLATFORM=\"@host@\"
 
+
+# sources for as-02 library
+libas02_la_SOURCES	= \
+		AS_02.h AS_02_MXF.cpp AS_02_JP2K.cpp AS_02_PCM.cpp h__02_Reader.cpp h__02_Writer.cpp
+libas02_la_LDFLAGS = -release @VERSION@
+libas02_la_LIBADD = libasdcp.la libkumu.la
+libas02_la_CPPFLAGS = -DASDCP_PLATFORM=\"@host@\"
+
+
 # Python extension
 if PYTHON_USE
 lib_LTLIBRARIES += libpyasdcp.la
-#### libnapali.la
 
 nodist_libpyasdcp_la_SOURCES = \
 	kumu_python.cpp \
@@ -100,22 +107,15 @@ nodist_libpyasdcp_la_SOURCES = \
 	asdcp_python_mxf_text.cpp \
 	asdcp_python_mxf_metadata.cpp
 
-####nodist_libnapali_la_SOURCES = \
-####	napali_python.cpp napali_python.h
 
 libpyasdcp_la_CPPFLAGS = @PYTHON_CPPFLAGS@
 libpyasdcp_la_LDFLAGS = @PYTHON_LSPEC@  -release @VERSION@
 libpyasdcp_la_LIBADD = libkumu.la libasdcp.la
 
-####libnapali_la_CPPFLAGS = @PYTHON_CPPFLAGS@
-####libnapali_la_LDFLAGS = @PYTHON_LSPEC@  -release @VERSION@
-####libnapali_la_LIBADD = libkumu.la libasdcp.la
-
 pyexecdir = @PYTHON_EXECDIR@
 pyexec_includedir = $(PYTHON_PREFIX)/include/python$(PYTHON_SHORTVERSION)
 nodist_pyexec_include_HEADERS = kumu_python.h asdcp_python.h asdcp_wrappers.h
 pyexec_LTLIBRARIES = kumu.la asdcp.la
-#### napali_python.h  napali.la
 
 nodist_kumu_la_SOURCES = pykumu.cpp kumu_python.h
 kumu_la_CPPFLAGS = @PYTHON_CPPFLAGS@
@@ -126,11 +126,6 @@ nodist_asdcp_la_SOURCES = pyasdcp.cpp kumu_python.h asdcp_python.h asdcp_wrapper
 asdcp_la_CPPFLAGS = @PYTHON_CPPFLAGS@
 asdcp_la_LDFLAGS = @PYTHON_LSPEC@ -avoid-version -module
 asdcp_la_LIBADD = libpyasdcp.la
-
-####nodist_napali_la_SOURCES = pynapali.cpp kumu_python.h napali_python.h
-####napali_la_CPPFLAGS = @PYTHON_CPPFLAGS@
-####napali_la_LDFLAGS = @PYTHON_LSPEC@ -avoid-version -module
-####napali_la_LIBADD = libnapali.la libpyasdcp.la
 endif
 
 # list of programs to be built and installed
@@ -145,10 +140,10 @@ asdcp_test_SOURCES = asdcp-test.cpp
 asdcp_test_LDADD = libasdcp.la
 
 as_02_wrap_SOURCES = as-02-wrap.cpp
-as_02_wrap_LDADD = libasdcp.la
+as_02_wrap_LDADD = libas02.la
 
 as_02_unwrap_SOURCES = as-02-unwrap.cpp
-as_02_unwrap_LDADD = libasdcp.la
+as_02_unwrap_LDADD = libas02.la
 
 asdcp_wrap_SOURCES = asdcp-wrap.cpp
 asdcp_wrap_LDADD = libasdcp.la
@@ -225,11 +220,9 @@ EXTRA_DIST = fips-186-test-harness.pl $(TESTS)
 if !FREEDIST
 if DEV_HEADERS
 EXTRA_DIST += $(nodist_libasdcp_la_SOURCES) $(nodist_tt_xform_SOURCES)
-#### $(nodist_napali_la_SOURCES) $(nodist_libnapali_la_SOURCES)
 endif
 if PYTHON_USE
 EXTRA_DIST += $(nodist_pyexec_include_HEADERS) $(nodist_libpyasdcp_la_SOURCES) $(nodist_kumu_la_SOURCES) $(nodist_asdcp_la_SOURCES)
-#### $(nodist_napali_la_SOURCES) $(nodist_libnapali_la_SOURCES)
 endif
 endif
 
