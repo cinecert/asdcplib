@@ -84,7 +84,7 @@ libasdcp_la_CPPFLAGS = -DASDCP_PLATFORM=\"@host@\"
 
 # sources for as-02 library
 libas02_la_SOURCES	= \
-		AS_02.h AS_02_MXF.cpp AS_02_JP2K.cpp AS_02_PCM.cpp h__02_Reader.cpp h__02_Writer.cpp
+		AS_02.h AS_02_MXF.cpp AS_02_JP2K.cpp AS_02_PCM.cpp h__02_Reader.cpp h__02_Writer.cpp AS_02_internal.h
 libas02_la_LDFLAGS = -release @VERSION@
 libas02_la_LIBADD = libasdcp.la libkumu.la
 libas02_la_CPPFLAGS = -DASDCP_PLATFORM=\"@host@\"
