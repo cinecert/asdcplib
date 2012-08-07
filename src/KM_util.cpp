@@ -812,7 +812,7 @@ Kumu::Timestamp::EncodeString(char* str_buf, ui32_t buf_len) const
   return str_buf;
 }
 
-//
+// ^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2})(?::(\d{2})(?:\.(\d+))?)?(?:([+-]\d{2}):(\d{2}))?)?$
 bool
 Kumu::Timestamp::DecodeString(const char* datestr)
 {
@@ -825,6 +825,9 @@ Kumu::Timestamp::DecodeString(const char* datestr)
 
   ui32_t char_count = 10;
   TAI::caltime YMDhms;
+  YMDhms.hour = 0;
+  YMDhms.minute = 0;
+  YMDhms.second = 0;
   YMDhms.offset = 0;
   YMDhms.date.year = atoi(datestr);
   YMDhms.date.month = atoi(datestr + 5);
@@ -953,6 +956,15 @@ Kumu::Timestamp::GetCTime() const
 {
   return m_Timestamp.x - ui64_C(4611686018427387914);
 }
+
+//
+void
+Kumu::Timestamp::SetCTime(const ui64_t& ctime)
+{
+  m_Timestamp.x = ctime + ui64_C(4611686018427387914);
+}
+
+
 
 
 //------------------------------------------------------------------------------------------

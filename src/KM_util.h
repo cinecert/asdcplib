@@ -244,7 +244,7 @@ namespace Kumu
       virtual ~ArchivableString() {}
 
       bool   HasValue() const { return ! this->empty(); }
-      ui32_t ArchiveLength() const { return static_cast<ui32_t>((sizeof(ui32_t) + this->size())|0xffffffff); }
+      ui32_t ArchiveLength() const { sizeof(ui32_t) + static_cast<ui32_t>(this->size()); }
 
       bool   Archive(MemIOWriter* Writer) const {
 	if ( Writer == 0 ) return false;
@@ -452,6 +452,9 @@ namespace Kumu
 
       // Return the number of seconds since the Unix epoch UTC (1970-01-01T00:00:00+00:00)
       ui64_t GetCTime() const;
+
+      // Set internal time to the number of seconds since the Unix epoch UTC
+      void SetCTime(const ui64_t& ctime);
 
       // Read and write the timestamp (always UTC) value as a byte string having
       // the following format:

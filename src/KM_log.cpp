@@ -90,7 +90,8 @@ Kumu::DefaultLogSink()
 void
 Kumu::EntryListLogSink::WriteEntry(const LogEntry& Entry)
 {
-  AutoMutex L(m_Lock);
+  AutoMutex L(m_lock);
+  WriteEntryToListeners(Entry);
 
   if ( Entry.TestFilter(m_filter) )
     m_Target.push_back(Entry);
@@ -102,8 +103,9 @@ Kumu::EntryListLogSink::WriteEntry(const LogEntry& Entry)
 void
 Kumu::StdioLogSink::WriteEntry(const LogEntry& Entry)
 {
-  AutoMutex L(m_Lock);
   std::string buf;
+  AutoMutex L(m_lock);
+  WriteEntryToListeners(Entry);
 
   if ( Entry.TestFilter(m_filter) )
     {
@@ -121,8 +123,9 @@ Kumu::StdioLogSink::WriteEntry(const LogEntry& Entry)
 void
 Kumu::WinDbgLogSink::WriteEntry(const LogEntry& Entry)
 {
-  AutoMutex L(m_Lock);
   std::string buf;
+  AutoMutex L(m_lock);
+  WriteEntryToListeners(Entry);
 
   if ( Entry.TestFilter(m_filter) )
     {
@@ -140,8 +143,9 @@ Kumu::WinDbgLogSink::WriteEntry(const LogEntry& Entry)
 void
 Kumu::StreamLogSink::WriteEntry(const LogEntry& Entry)
 {
-  AutoMutex L(m_Lock);
   std::string buf;
+  AutoMutex L(m_lock);
+  WriteEntryToListeners(Entry);
 
   if ( Entry.TestFilter(m_filter) )
     {
@@ -199,7 +203,8 @@ Kumu::SyslogLogSink::WriteEntry(const LogEntry& Entry)
     case Kumu::LOG_DEBUG:   priority = SYSLOG_DEBUG; break;
     }
 
-  AutoMutex L(m_Lock);
+  AutoMutex L(m_lock);
+  WriteEntryToListeners(Entry);
 
   if ( Entry.TestFilter(m_filter) )
     {

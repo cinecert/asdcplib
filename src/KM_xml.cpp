@@ -531,10 +531,10 @@ Kumu::XMLElement::ParseString(const char* document, ui32_t doc_len)
 
   if ( ! XML_Parse(Parser, document, doc_len, 1) )
     {
-      XML_ParserFree(Parser);
       DefaultLogSink().Error("XML Parse error on line %d: %s\n",
 			     XML_GetCurrentLineNumber(Parser),
 			     XML_ErrorString(XML_GetErrorCode(Parser)));
+      XML_ParserFree(Parser);
       return false;
     }
 

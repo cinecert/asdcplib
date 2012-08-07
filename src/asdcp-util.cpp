@@ -78,9 +78,7 @@ USAGE: %s [-h|-help] [-V]\n\
 \n\
        %s -d <input-file>\n\
 \n\
-       %s -g | -u\n\
-\n\
-       %s -u\n\n",
+       %s -g | -u\n",
 	  PROGRAM_NAME, PROGRAM_NAME, PROGRAM_NAME, PROGRAM_NAME);
 
   fprintf(stream, "\

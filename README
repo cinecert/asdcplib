@@ -4,12 +4,23 @@ $Id$
 The asdcplib library is a set of objects that offer
 simplified access to files conforming to the sound and
 picture track file formats developed by the SMPTE Working
-Group DC28.20.
+Group DC28.20 (now TC 21DC).
 
-This work was originally funded by Digital Cinema
-Initiatives, LLC (DCI). Subsequent efforts have been funded
-by Deluxe Laboratories, Doremi Labs, CineCert LLC, Avica
-Technology and others.
+Recently, support has also been added for SMPTE draft ST
+2067-5 "IMF Essence Component", AKA "AS-02".  This code was
+donated by Fraunhofer IIS.  It carries additional copyright
+information which should be listed whenever you link the
+AS-02 elements of the library.  Please look at the top of
+the AS-02 files to see this copyright information.
+
+AS-02 support is carried in separate object modules, so
+unless you #include <AS_02.h> and link libas-02.so you are
+still using plain old asdcp.
+
+This work was originally funded by Digital Cinema Initiatives,
+LLC (DCI). Subsequent efforts have been funded by Deluxe
+Laboratories, Doremi Labs, CineCert LLC, Avica Technology
+and others.
 
 **The asdcplib project was originally housed on SourceForge.
 The project has moved to http://www.cinecert.com/asdcplib/
@@ -32,11 +43,11 @@ supporting this project.
 Design Notes
 
 This library is intended (but of course not limited) for
-use by developers of commercial D-Cinema products.  It is
-designed to be easily integrated into a wide variety of
-development environments.  Commercial users are strongly
-urged to use static linking (at least where you use this
-library) to prevent malicious in-field replacement of
+use by developers of commercial D-Cinema products (and now
+IMF!).  It is designed to be easily integrated into a wide
+variety of development environments.  Commercial users are
+strongly urged to use static linking (at least where you use
+this library) to prevent malicious in-field replacement of
 critical system modules. This recommendation should be
 considered wherever Open Source or Free software is being
 used in conjunction with critical security parameters, such
@@ -50,12 +61,15 @@ crypto functions can be replaced by linking to alternative
 implementations of the ASDCP:: objects which provide those
 services.
 
-AS_DCP.h contains the entire API.  You do not need to read
-any of the other files, except maybe asdcp-test.cpp which
-contains detailed usage examples of each of the API's
-services. The KM_* files may be of interest for general
-development support, but may be ignored if all you want
-is simple AS-DCP support.
+AS_DCP.h contains the entire AS-DCP API.  You do not need to
+read any of the other files, except maybe asdcp-test.cpp which
+contains detailed usage examples of each of the API's services.
+The KM_* files may be of interest for general development
+support, but may be ignored if all you want is simple AS-DCP
+support.
+
+Likewise, draft 2067-5 "IMF Essence Component" (AS-02) support
+is entirely contained in AS-02.h
 
 
 Build Instructions
@@ -67,9 +81,8 @@ MinGW installed. For those Windows users who would prefer to build
 this natively, an "nmake" build file and instructions can be found
 in the win32 subdirectory.  
 
-OpenSSL is also required, and the most recent version of v0.9.8 
-is recommended. See http://www.openssl.org/ for more information
-and download instructions.
+OpenSSL is also required, any recent version should be fine. See
+http://www.openssl.org/ for more information and download instructions.
 
 Optional support for writing Timed Text Track Files is supported by
 either Xerces-C or Expat. See http://xerces.apache.org/xerces-c/ or
@@ -114,13 +127,18 @@ j2c-test - Displays information about JP2K codestreams.
 
 Documentation
 
-The API documentation is mostly in AS_DCP.h. Read that file for
-a detailed description of the library's capabilities. Read
-asdcp-test.cpp for library usage examples. The command-line
-utilities all respond to -h.
+The API documentation is mostly in AS_DCP.h. and AS_02.h  Read those
+files for a detailed description of the library's capabilities. Read
+asdcp-*.cpp files for library usage examples. The
+command-line utilities all respond to -h.
 
 
 Change History
+
+2012-08-07 - bug fix, 1.10.46
+ o Added zero-initializers to time values when parsing a timestamp string
+   (in the case where the (T...) option was not present the time was
+   uninitialized).
 
 2012-03-06 - bug fixes, enhancements 1.9.45
  o Removed ASDCP::Timestamp, all items that were of that class are now 
