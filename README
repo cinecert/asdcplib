@@ -110,6 +110,10 @@ asdcp-info - Displays information about AS-DCP (MXF) track files.
 
 asdcp-util - Calculates digests and generates random numbers and UUIDs.
 
+as-02-wrap - Writes AS-02 Essence Component files.
+
+as-02-unwrap - Extracts essence from AS-02 Essence Component files.
+
 kmfilegen - Writes and verifies large files using a platform-
 independent format. Use it to test issues related to large files.
 
@@ -129,11 +133,17 @@ Documentation
 
 The API documentation is mostly in AS_DCP.h. and AS_02.h  Read those
 files for a detailed description of the library's capabilities. Read
-asdcp-*.cpp files for library usage examples. The
+asdcp-*.cpp and as-02-*.cpp files for library usage examples. The
 command-line utilities all respond to -h.
 
 
 Change History
+
+YYYY-MM-DD - bug fix, first publication of AS-02 EC support 1.10.46
+ o Added support for much of IMF Essence Component (SMPTE draft ST 2067-5,
+   AKA "AS-02".  This code was developed and contributed by Robert Scheler,
+   Fraunhofer IIS. Very special thanks to Siegfried Foessel and Heiko
+   Sparenberg for their support of this essential IMF component.
 
 2012-08-07 - bug fix, 1.10.46
  o Added zero-initializers to time values when parsing a timestamp string
