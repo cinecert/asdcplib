@@ -271,12 +271,12 @@ ASDCP::TimedText::MXFReader::h__Reader::ReadAncillaryResource(const byte_t* uuid
     {
       Array<RIP::Pair>::const_iterator pi;
       RIP::Pair TmpPair;
-      ui32_t sequence = 1;
+      ui32_t sequence = 0;
 
       // Look up the partition start in the RIP using the SID.
       // Count the sequence length in because this is the sequence
       // value needed to  complete the HMAC.
-      for ( pi = m_HeaderPart.m_RIP.PairArray.begin(); pi != m_HeaderPart.m_RIP.PairArray.end(); pi++, sequence++ )
+      for ( pi = m_HeaderPart.m_RIP.PairArray.begin(); pi != m_HeaderPart.m_RIP.PairArray.end(); ++pi, ++sequence )
 	{
 	  if ( (*pi).BodySID == DescObject->EssenceStreamID )
 	    {
@@ -320,7 +320,7 @@ ASDCP::TimedText::MXFReader::h__Reader::ReadAncillaryResource(const byte_t* uuid
 	      // read the essence packet
 	      assert(m_Dict);
 	      if( ASDCP_SUCCESS(result) )
-		result = ReadEKLVPacket(0, 1, FrameBuf, m_Dict->ul(MDD_GenericStream_DataElement), Ctx, HMAC);
+		result = ReadEKLVPacket(0, sequence, FrameBuf, m_Dict->ul(MDD_GenericStream_DataElement), Ctx, HMAC);
 	    }
 	}
     }

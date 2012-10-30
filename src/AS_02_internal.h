@@ -32,9 +32,9 @@
 #ifndef _AS_02_INTERNAL_H_
 #define _AS_02_INTERNAL_H_
 
-#include <KM_platform.h>
-#include <KM_util.h>
-#include <KM_log.h>
+#include "KM_platform.h"
+#include "KM_util.h"
+#include "KM_log.h"
 #include "Metadata.h"
 #include "AS_DCP_internal.h"
 #include "AS_02.h"

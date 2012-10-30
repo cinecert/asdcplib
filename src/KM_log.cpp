@@ -111,6 +111,7 @@ Kumu::StdioLogSink::WriteEntry(const LogEntry& Entry)
     {
       Entry.CreateStringWithOptions(buf, m_options);
       fputs(buf.c_str(), m_stream);
+      fflush(m_stream);
     }
 }
 
