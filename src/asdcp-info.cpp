@@ -37,12 +37,21 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <AS_DCP.h>
 #include <MXF.h>
 #include <Metadata.h>
-#include <openssl/sha.h>
 
 using namespace Kumu;
 using namespace ASDCP;
 
 const ui32_t FRAME_BUFFER_SIZE = 4 * Kumu::Megabyte;
+
+const byte_t P_HFR_UL_2K[16] = {
+  0x06, 0x0e, 0x2b, 0x34, 0x04, 0x01, 0x01, 0x0d,
+  0x0e, 0x16, 0x02, 0x02, 0x03, 0x01, 0x01, 0x03
+};
+
+const byte_t P_HFR_UL_4K[16] = {
+  0x06, 0x0e, 0x2b, 0x34, 0x04, 0x01, 0x01, 0x0d,
+  0x0e, 0x16, 0x02, 0x02, 0x03, 0x01, 0x01, 0x04
+};
 
 //------------------------------------------------------------------------------------------
 //
@@ -80,13 +89,17 @@ usage(FILE* stream = stdout)
   fprintf(stream, "\
 USAGE:%s [-h|-help] [-V]\n\
 \n\
-       %s [-3] [-H] [-n] <input-file>+\n\
+       %s [options] <input-file>+\n\
 \n\
 Options:\n\
   -3                - Force stereoscopic interpretation of a JP2K file\n\
+  -C                - Do not show essence coding UL\n\
+  -d                - Show essence descriptor info\n\
   -h | -help        - Show help\n\
   -H                - Show MXF header metadata\n\
+  -i                - Show identity info\n\
   -n                - Show index\n\
+  -R                - Do not show bit-rate (Mb/s)\n\
   -V                - Show version information\n\
 \n\
   NOTES: o There is no option grouping, all options must be distinct arguments.\n\
@@ -104,15 +117,22 @@ public:
   bool   error_flag;     // true if the given options are in error or not complete
   bool   version_flag;   // true if the version display option was selected
   bool   help_flag;      // true if the help display option was selected
+  bool   verbose_flag;   // true if the verbose option was selected
   PathList_t filenames;  // list of filenames to be processed
   bool   showindex_flag; // true if index is to be displayed
   bool   showheader_flag; // true if MXF file header is to be displayed
   bool   stereo_image_flag; // if true, expect stereoscopic JP2K input (left eye first)
+  bool   showid_flag;
+  bool   showdescriptor_flag;
+  bool   showcoding_flag;
+  bool   showrate_flag;
 
   //
   CommandOptions(int argc, const char** argv) :
-    error_flag(true), version_flag(false), help_flag(false),
-    showindex_flag(), showheader_flag(), stereo_image_flag(false)
+    error_flag(true), version_flag(false), help_flag(false), verbose_flag(false),
+    showindex_flag(), showheader_flag(), stereo_image_flag(false),
+    showid_flag(false), showdescriptor_flag(false), showcoding_flag(true),
+    showrate_flag(true)
   {
     for ( int i = 1; i < argc; ++i )
       {
@@ -130,10 +150,15 @@ public:
 	    switch ( argv[i][1] )
 	      {
 	      case '3': stereo_image_flag = true; break;
+	      case 'C': showcoding_flag = false; break;
+	      case 'd': showdescriptor_flag = true; break;
 	      case 'H': showheader_flag = true; break;
 	      case 'h': help_flag = true; break;
+	      case 'i': showid_flag = true; break;
 	      case 'n': showindex_flag = true; break;
+	      case 'R': showrate_flag = false; break;
 	      case 'V': version_flag = true; break;
+	      case 'v': verbose_flag = true; break;
 
 	      default:
 		fprintf(stderr, "Unrecognized option: %s\n", argv[i]);
@@ -159,7 +184,7 @@ public:
     
     if ( filenames.empty() )
       {
-	fputs("Option requires at least one filename argument.\n", stderr);
+	fputs("At least one filename argument is required.\n", stderr);
 	return;
       }
 
@@ -239,8 +264,15 @@ class MyTextDescriptor : public TimedText::TimedTextDescriptor
 template<class ReaderT, class DescriptorT>
 class FileInfoWrapper
 {
+  ReaderT  m_Reader;
+  DescriptorT m_Desc;
+  KM_NO_COPY_CONSTRUCT(FileInfoWrapper);
+
 public:
-  static Result_t
+  FileInfoWrapper() {}
+  virtual ~FileInfoWrapper() {}
+
+  Result_t
   file_info(CommandOptions& Options, const char* type_string, FILE* stream = 0)
   {
     assert(type_string);
@@ -248,35 +280,122 @@ public:
       stream = stdout;
 
     Result_t result = RESULT_OK;
-    ReaderT     Reader;
-    result = Reader.OpenRead(Options.filenames.front().c_str());
+    result = m_Reader.OpenRead(Options.filenames.front().c_str());
 
     if ( ASDCP_SUCCESS(result) )
       {
-	fprintf(stdout, "File essence type is %s.\n", type_string);
+	m_Desc.FillDescriptor(m_Reader);
+
+	fprintf(stdout, "File essence type is %s, (%d frame%s).\n",
+		type_string, m_Desc.ContainerDuration, (m_Desc.ContainerDuration==1?"":"s"));
 
 	if ( Options.showheader_flag )
-	  Reader.DumpHeaderMetadata(stream);
+	  m_Reader.DumpHeaderMetadata(stream);
 
-	WriterInfo WI;
-	Reader.FillWriterInfo(WI);
-	WriterInfoDump(WI, stream);
+	if ( Options.showid_flag )
+	  {
+	    WriterInfo WI;
+	    m_Reader.FillWriterInfo(WI);
+	    WriterInfoDump(WI, stream);
+	  }
 
-	DescriptorT Desc;
-	Desc.FillDescriptor(Reader);
-	Desc.Dump(stream);
+	if ( Options.showdescriptor_flag )
+	  m_Desc.Dump(stream);
 
 	if ( Options.showindex_flag )
-	  Reader.DumpIndex(stream);
+	  m_Reader.DumpIndex(stream);
       }
     else if ( result == RESULT_FORMAT && Options.showheader_flag )
       {
-	Reader.DumpHeaderMetadata(stream);
+	m_Reader.DumpHeaderMetadata(stream);
       }
 
     return result;
   }
+
+  //
+  void dump_PictureEssenceCoding(FILE* stream = 0)
+  {
+    const Dictionary& Dict = DefaultCompositeDict();
+    MXF::RGBAEssenceDescriptor *descriptor = 0;
+
+    Result_t result = m_Reader.OPAtomHeader().GetMDObjectByType(DefaultCompositeDict().ul(MDD_RGBAEssenceDescriptor),
+								reinterpret_cast<MXF::InterchangeObject**>(&descriptor));
+    
+    if ( KM_SUCCESS(result) )
+      {
+	const char *encoding_ul_type = "**UNKNOWN**";
+
+	if ( descriptor->PictureEssenceCoding == UL(P_HFR_UL_2K) )
+	  encoding_ul_type = "P-HFR-2K";
+	else if ( descriptor->PictureEssenceCoding == UL(P_HFR_UL_4K) )
+	  encoding_ul_type = "**P-HFR-4K**";
+	else if ( descriptor->PictureEssenceCoding == DefaultCompositeDict().ul(MDD_JP2KEssenceCompression_2K) )
+	  encoding_ul_type = "ST-429-4-2K";
+	else if ( descriptor->PictureEssenceCoding == DefaultCompositeDict().ul(MDD_JP2KEssenceCompression_4K) )
+	  encoding_ul_type = "ST-429-4-4K";
+
+	char buf[64];
+	fprintf(stream, "PictureEssenceCoding: %s (%s)\n", descriptor->PictureEssenceCoding.EncodeString(buf, 64), encoding_ul_type);
+      }
+  }
+
+  //
+  void
+  dump_Bitrate(FILE* stream = 0)
+  {
+    MXF::OPAtomIndexFooter& footer = m_Reader.OPAtomIndexFooter();
+    ui64_t total_frame_bytes = 0, last_stream_offset = 0;
+    ui32_t largest_frame = 0;
+    Result_t result = RESULT_OK;
+
+    for ( ui32_t i = 0; KM_SUCCESS(result) && i < m_Desc.ContainerDuration; ++i )
+      {
+	MXF::IndexTableSegment::IndexEntry entry;
+	result = footer.Lookup(i, entry);
+
+	if ( KM_SUCCESS(result) )
+	  {
+	    if ( last_stream_offset != 0 )
+	      {
+		ui64_t this_frame_size = entry.StreamOffset - last_stream_offset;
+		total_frame_bytes += this_frame_size;
+
+		if ( this_frame_size > largest_frame )
+		  largest_frame = this_frame_size;
+	      }
+
+	    last_stream_offset = entry.StreamOffset;
+	  }
+      }
+
+    // we did not test the first or last frame; scale to return bits when the input is bytes
+    static const double mega_const = 1 / ( 1024.0 * 1024.0 / 8.0 );
+    double avg_bytes_frame = total_frame_bytes / ( m_Desc.ContainerDuration - 2 );
+    double avg_mbits_second = avg_bytes_frame * mega_const * m_Desc.EditRate.Quotient();
+
+    fprintf(stream, "Max BitRate: %0.2f Mb/s\n", largest_frame * mega_const * m_Desc.EditRate.Quotient());
+    fprintf(stream, "Average BitRate: %0.2f Mb/s\n", avg_bytes_frame * mega_const * m_Desc.EditRate.Quotient());
+  }
+
+  //
+  void dump_WaveAudioDescriptor(FILE* stream = 0)
+  {
+    const Dictionary& Dict = DefaultCompositeDict();
+    MXF::WaveAudioDescriptor *descriptor = 0;
+
+    Result_t result = m_Reader.OPAtomHeader().GetMDObjectByType(DefaultCompositeDict().ul(MDD_WaveAudioDescriptor),
+								reinterpret_cast<MXF::InterchangeObject**>(&descriptor));
+    
+    if ( KM_SUCCESS(result) )
+      {
+	char buf[64];
+	fprintf(stream, "ChannelAssignment: %s\n", descriptor->ChannelAssignment.EncodeString(buf, 64));
+      }
+  }
+
 };
+
 
 // Read header metadata from an ASDCP file
 //
@@ -291,52 +410,60 @@ show_file_info(CommandOptions& Options)
 
   if ( EssenceType == ESS_MPEG2_VES )
     {
-      result = FileInfoWrapper<ASDCP::MPEG2::MXFReader, MyVideoDescriptor>::file_info(Options, "MPEG2 video");
+      FileInfoWrapper<ASDCP::MPEG2::MXFReader, MyVideoDescriptor> wrapper;
+      result = wrapper.file_info(Options, "MPEG2 video");
+
+      if ( ASDCP_SUCCESS(result) && Options.showrate_flag )
+	wrapper.dump_Bitrate(stdout);
     }
   else if ( EssenceType == ESS_PCM_24b_48k || EssenceType == ESS_PCM_24b_96k )
     {
-      result = FileInfoWrapper<ASDCP::PCM::MXFReader, MyAudioDescriptor>::file_info(Options, "PCM audio");
+      FileInfoWrapper<ASDCP::PCM::MXFReader, MyAudioDescriptor> wrapper;
+      result = wrapper.file_info(Options, "PCM audio");
 
-      if ( ASDCP_SUCCESS(result) )
-	{
-	  const Dictionary* Dict = &DefaultCompositeDict();
-	  PCM::MXFReader Reader;
-	  MXF::OPAtomHeader OPAtomHeader(Dict);
-	  MXF::WaveAudioDescriptor *descriptor = 0;
-
-	  result = Reader.OpenRead(Options.filenames.front().c_str());
-
-	  if ( ASDCP_SUCCESS(result) )
-	    result = Reader.OPAtomHeader().GetMDObjectByType(Dict->ul(MDD_WaveAudioDescriptor), reinterpret_cast<MXF::InterchangeObject**>(&descriptor));
-
-	  if ( ASDCP_SUCCESS(result) )
-	    {
-	      char buf[64];
-	      fprintf(stdout, " ChannelAssignment: %s\n", descriptor->ChannelAssignment.EncodeString(buf, 64));
-	    }
-	}
+      if ( ASDCP_SUCCESS(result) && Options.showcoding_flag )
+	wrapper.dump_WaveAudioDescriptor();
     }
   else if ( EssenceType == ESS_JPEG_2000 )
     {
       if ( Options.stereo_image_flag )
 	{
-	  result = FileInfoWrapper<ASDCP::JP2K::MXFSReader,
-				   MyStereoPictureDescriptor>::file_info(Options, "JPEG 2000 stereoscopic pictures");
+	  FileInfoWrapper<ASDCP::JP2K::MXFSReader, MyStereoPictureDescriptor> wrapper;
+	  result = wrapper.file_info(Options, "JPEG 2000 stereoscopic pictures");
+
+	  if ( ASDCP_SUCCESS(result) && Options.showcoding_flag )
+	    wrapper.dump_PictureEssenceCoding(stdout);
+
+	  if ( ASDCP_SUCCESS(result) && Options.showrate_flag )
+	    wrapper.dump_Bitrate(stdout);
 	}
       else
 	{
-	  result = FileInfoWrapper<ASDCP::JP2K::MXFReader,
-				   MyPictureDescriptor>::file_info(Options, "JPEG 2000 pictures");
+	  FileInfoWrapper<ASDCP::JP2K::MXFReader, MyPictureDescriptor>wrapper;
+	  result = wrapper.file_info(Options, "JPEG 2000 pictures");
+
+	  if ( ASDCP_SUCCESS(result) && Options.showcoding_flag )
+	    wrapper.dump_PictureEssenceCoding(stdout);
+
+	  if ( ASDCP_SUCCESS(result) && Options.showrate_flag )
+	    wrapper.dump_Bitrate(stdout);
 	}
     }
   else if ( EssenceType == ESS_JPEG_2000_S )
     {
-      result = FileInfoWrapper<ASDCP::JP2K::MXFSReader,
-			       MyStereoPictureDescriptor>::file_info(Options, "JPEG 2000 stereoscopic pictures");
+      FileInfoWrapper<ASDCP::JP2K::MXFSReader, MyStereoPictureDescriptor>wrapper;
+      result = wrapper.file_info(Options, "JPEG 2000 stereoscopic pictures");
+      
+      if ( ASDCP_SUCCESS(result) && Options.showcoding_flag )
+	wrapper.dump_PictureEssenceCoding(stdout);
+
+      if ( ASDCP_SUCCESS(result) && Options.showrate_flag )
+	wrapper.dump_Bitrate(stdout);
     }
   else if ( EssenceType == ESS_TIMED_TEXT )
     {
-      result = FileInfoWrapper<ASDCP::TimedText::MXFReader, MyTextDescriptor>::file_info(Options, "Timed Text");
+      FileInfoWrapper<ASDCP::TimedText::MXFReader, MyTextDescriptor>wrapper;
+      result = wrapper.file_info(Options, "Timed Text");
     }
   else
     {
