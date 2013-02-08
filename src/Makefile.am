@@ -39,17 +39,34 @@ AM_CPPFLAGS += -DCONFIG_RANDOM_UUID
 endif
 
 # list of all the header files that should be installed
-include_HEADERS = KM_error.h KM_fileio.h KM_log.h KM_memio.h KM_mutex.h \
-		KM_platform.h KM_prng.h KM_util.h KM_tai.h KM_xml.h AS_DCP.h AS_02.h
+include_HEADERS = \
+	KM_error.h \
+	KM_fileio.h \
+	KM_log.h \
+	KM_memio.h \
+	KM_mutex.h \
+	KM_platform.h \
+	KM_prng.h \
+	KM_util.h \
+	KM_tai.h \
+	KM_xml.h \
+	AS_DCP.h
+
 if DEV_HEADERS
-include_HEADERS += S12MTimecode.h MDD.h Metadata.h KLV.h MXFTypes.h MXF.h Wav.h \
-		PCMParserList.h
+include_HEADERS += \
+	S12MTimecode.h \
+	MDD.h \
+	Metadata.h \
+	KLV.h \
+	MXFTypes.h \
+	MXF.h \
+	Wav.h \
+	PCMParserList.h
 nodist_include_HEADERS = TimedText_Transform.h
 endif
 
-
 # list of the libraries to build and install
-lib_LTLIBRARIES = libkumu.la libasdcp.la libas02.la
+lib_LTLIBRARIES = libkumu.la libasdcp.la
 
 # sources for kumu library
 libkumu_la_SOURCES = KM_error.h KM_fileio.cpp KM_fileio.h KM_log.cpp KM_log.h \
@@ -76,19 +93,11 @@ libasdcp_la_SOURCES = MPEG2_Parser.cpp MPEG.cpp JP2K_Codestream_Parser.cpp \
 if DEV_HEADERS
 nodist_libasdcp_la_SOURCES += TimedText_Transform.h TimedText_Transform.cpp
 endif
+
 libasdcp_la_LDFLAGS = -release @VERSION@
 # additional libraries to link against for a library
 libasdcp_la_LIBADD = libkumu.la
 libasdcp_la_CPPFLAGS = -DASDCP_PLATFORM=\"@host@\"
-
-
-# sources for as-02 library
-libas02_la_SOURCES	= \
-		AS_02.h AS_02_MXF.cpp AS_02_JP2K.cpp AS_02_PCM.cpp h__02_Reader.cpp h__02_Writer.cpp AS_02_internal.h
-libas02_la_LDFLAGS = -release @VERSION@
-libas02_la_LIBADD = libasdcp.la libkumu.la
-libas02_la_CPPFLAGS = -DASDCP_PLATFORM=\"@host@\"
-
 
 # Python extension
 if PYTHON_USE
@@ -132,19 +141,12 @@ endif
 # list of programs to be built and installed
 bin_PROGRAMS = \
 	asdcp-wrap asdcp-unwrap asdcp-util asdcp-info asdcp-test \
-	as-02-wrap as-02-unwrap \
 	j2c-test blackwave klvwalk wavesplit \
 	kmfilegen kmrandgen kmuuidgen
 
 # sources and linkage for CLI utilities
 asdcp_test_SOURCES = asdcp-test.cpp
 asdcp_test_LDADD = libasdcp.la
-
-as_02_wrap_SOURCES = as-02-wrap.cpp
-as_02_wrap_LDADD = libas02.la
-
-as_02_unwrap_SOURCES = as-02-unwrap.cpp
-as_02_unwrap_LDADD = libas02.la
 
 asdcp_wrap_SOURCES = asdcp-wrap.cpp
 asdcp_wrap_LDADD = libasdcp.la

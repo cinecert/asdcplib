@@ -157,6 +157,10 @@ public:
   //
   Rational PictureRate()
   {
+    if ( picture_rate == 16 ) return EditRate_16;
+    if ( picture_rate == 18 ) return EditRate_18;
+    if ( picture_rate == 20 ) return EditRate_20;
+    if ( picture_rate == 22 ) return EditRate_22;
     if ( picture_rate == 23 ) return EditRate_23_98;
     if ( picture_rate == 24 ) return EditRate_24;
     if ( picture_rate == 25 ) return EditRate_25;
@@ -204,10 +208,6 @@ public:
 	      case 'b':
 		TEST_EXTRA_ARG(i, 'b');
 		fb_size = abs(atoi(argv[i]));
-
-		if ( verbose_flag )
-		  fprintf(stderr, "Frame Buffer size: %u bytes.\n", fb_size);
-
 		break;
 
 	      case 'd':
@@ -325,7 +325,7 @@ read_MPEG2_file(CommandOptions& Options)
 	}
     }
 
-  if ( ASDCP_SUCCESS(result) )
+  if ( ASDCP_SUCCESS(result) && ( ! Options.no_write_flag ) )
     {
       char filename[256];
       snprintf(filename, 256, "%s.ves", Options.file_prefix);
@@ -367,8 +367,11 @@ read_MPEG2_file(CommandOptions& Options)
 	  if ( Options.verbose_flag )
 	    FrameBuffer.Dump(stderr, Options.fb_dump_size);
 
-	  ui32_t write_count = 0;
-	  result = OutFile.Write(FrameBuffer.Data(), FrameBuffer.Size(), &write_count);
+	  if ( ! Options.no_write_flag )
+	    {
+	      ui32_t write_count = 0;
+	      result = OutFile.Write(FrameBuffer.Data(), FrameBuffer.Size(), &write_count);
+	    }
 	}
     }
 
@@ -494,13 +497,16 @@ read_JP2K_S_file(CommandOptions& Options)
 
       if ( ASDCP_SUCCESS(result) )
 	{
-	  Kumu::FileWriter OutFile;
-	  ui32_t write_count;
-	  snprintf(filename, filename_max, left_format, Options.file_prefix, i);
-	  result = OutFile.OpenWrite(filename);
+	  if ( ! Options.no_write_flag )
+	    {
+	      Kumu::FileWriter OutFile;
+	      ui32_t write_count;
+	      snprintf(filename, filename_max, left_format, Options.file_prefix, i);
+	      result = OutFile.OpenWrite(filename);
 
-	  if ( ASDCP_SUCCESS(result) )
-	    result = OutFile.Write(FrameBuffer.Data(), FrameBuffer.Size(), &write_count);
+	      if ( ASDCP_SUCCESS(result) )
+		result = OutFile.Write(FrameBuffer.Data(), FrameBuffer.Size(), &write_count);
+	    }
 
 	  if ( Options.verbose_flag )
 	    FrameBuffer.Dump(stderr, Options.fb_dump_size);
@@ -511,13 +517,19 @@ read_JP2K_S_file(CommandOptions& Options)
 
       if ( ASDCP_SUCCESS(result) )
 	{
-	  Kumu::FileWriter OutFile;
-	  ui32_t write_count;
-	  snprintf(filename, filename_max, right_format, Options.file_prefix, i);
-	  result = OutFile.OpenWrite(filename);
+	  if ( ! Options.no_write_flag )
+	    {
+	      Kumu::FileWriter OutFile;
+	      ui32_t write_count;
+	      snprintf(filename, filename_max, right_format, Options.file_prefix, i);
+	      result = OutFile.OpenWrite(filename);
 
-	  if ( ASDCP_SUCCESS(result) )
-	    result = OutFile.Write(FrameBuffer.Data(), FrameBuffer.Size(), &write_count);
+	      if ( ASDCP_SUCCESS(result) )
+		result = OutFile.Write(FrameBuffer.Data(), FrameBuffer.Size(), &write_count);
+	    }
+
+	  if ( Options.verbose_flag )
+	    FrameBuffer.Dump(stderr, Options.fb_dump_size);
 	}
     }
 
@@ -588,14 +600,17 @@ read_JP2K_file(CommandOptions& Options)
 
       if ( ASDCP_SUCCESS(result) )
 	{
-	  Kumu::FileWriter OutFile;
-	  char filename[256];
-	  ui32_t write_count;
-	  snprintf(filename, 256, name_format, Options.file_prefix, i);
-	  result = OutFile.OpenWrite(filename);
+	  if ( ! Options.no_write_flag )
+	    {
+	      Kumu::FileWriter OutFile;
+	      char filename[256];
+	      ui32_t write_count;
+	      snprintf(filename, 256, name_format, Options.file_prefix, i);
+	      result = OutFile.OpenWrite(filename);
 
-	  if ( ASDCP_SUCCESS(result) )
-	    result = OutFile.Write(FrameBuffer.Data(), FrameBuffer.Size(), &write_count);
+	      if ( ASDCP_SUCCESS(result) )
+		result = OutFile.Write(FrameBuffer.Data(), FrameBuffer.Size(), &write_count);
+	    }
 
 	  if ( Options.verbose_flag )
 	    FrameBuffer.Dump(stderr, Options.fb_dump_size);
@@ -638,10 +653,20 @@ read_PCM_file(CommandOptions& Options)
 	   && ADesc.EditRate != EditRate_60 )
 	ADesc.EditRate = Options.PictureRate();
 
-      FrameBuffer.Capacity(PCM::CalcFrameBufferSize(ADesc));
+      if ( Options.fb_size != FRAME_BUFFER_SIZE )
+	{
+	  FrameBuffer.Capacity(Options.fb_size);
+	}
+      else
+	{
+	  FrameBuffer.Capacity(PCM::CalcFrameBufferSize(ADesc));
+	}
 
       if ( Options.verbose_flag )
-	PCM::AudioDescriptorDump(ADesc);
+	{
+	  fprintf(stderr, "Frame Buffer size: %u\n", Options.fb_size);
+	  PCM::AudioDescriptorDump(ADesc);
+	}
     }
 
   if ( ASDCP_SUCCESS(result) )
@@ -663,9 +688,13 @@ read_PCM_file(CommandOptions& Options)
 	}
 
       ADesc.ContainerDuration = last_frame - Options.start_frame;
-      OutWave.OpenWrite(ADesc, Options.file_prefix,
-			( Options.split_wav ? WavFileWriter::ST_STEREO : 
-			  ( Options.mono_wav ? WavFileWriter::ST_MONO : WavFileWriter::ST_NONE ) ));
+
+      if ( ! Options.no_write_flag )
+	{
+	  OutWave.OpenWrite(ADesc, Options.file_prefix,
+			    ( Options.split_wav ? WavFileWriter::ST_STEREO : 
+			      ( Options.mono_wav ? WavFileWriter::ST_MONO : WavFileWriter::ST_NONE ) ));
+	}
     }
 
   if ( ASDCP_SUCCESS(result) && Options.key_flag )
@@ -699,7 +728,10 @@ read_PCM_file(CommandOptions& Options)
 	  if ( Options.verbose_flag )
 	    FrameBuffer.Dump(stderr, Options.fb_dump_size);
 
-	  result = OutWave.WriteFrame(FrameBuffer);
+	  if ( ! Options.no_write_flag )
+	    {
+	      result = OutWave.WriteFrame(FrameBuffer);
+	    }
 	}
     }
 
@@ -767,7 +799,7 @@ read_timed_text_file(CommandOptions& Options)
 
   result = Reader.ReadTimedTextResource(XMLDoc, Context, HMAC);
 
-  if ( ASDCP_SUCCESS(result) )
+  if ( ASDCP_SUCCESS(result) && ( ! Options.no_write_flag ) )
     {
       Kumu::FileWriter Writer;
       result = Writer.OpenWrite(Options.file_prefix);
@@ -780,18 +812,16 @@ read_timed_text_file(CommandOptions& Options)
     {
       result = Reader.ReadAncillaryResource(ri->ResourceID, FrameBuffer, Context, HMAC);
 
-      if ( ASDCP_SUCCESS(result) )
+      if ( ASDCP_SUCCESS(result) && ( ! Options.no_write_flag ) )
 	{
 	  Kumu::FileWriter Writer;
 	  result = Writer.OpenWrite(Kumu::PathJoin(out_path, Kumu::UUID(ri->ResourceID).EncodeHex(buf, 64)).c_str());
 
 	  if ( ASDCP_SUCCESS(result) )
-	    {
-	      if ( Options.verbose_flag )
-		FrameBuffer.Dump(stderr, Options.fb_dump_size);
+	    result = Writer.Write(FrameBuffer.RoData(), FrameBuffer.Size(), &write_count);
 
-	      result = Writer.Write(FrameBuffer.RoData(), FrameBuffer.Size(), &write_count);
-	    }
+	  if ( Options.verbose_flag )
+	    FrameBuffer.Dump(stderr, Options.fb_dump_size);
 	}
     }
 

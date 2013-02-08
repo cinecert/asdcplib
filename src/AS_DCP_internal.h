@@ -128,6 +128,11 @@ namespace ASDCP
   void     AddDMScrypt(Partition& HeaderPart, SourcePackage& Package,
 		       WriterInfo& Descr, const UL& WrappingUL, const Dictionary*& Dict);
 
+  Result_t Read_EKLV_Packet(Kumu::FileReader& File, const ASDCP::Dictionary& Dict, const MXF::OPAtomHeader& HeaderPart,
+			    const ASDCP::WriterInfo& Info, Kumu::fpos_t& LastPosition, ASDCP::FrameBuffer& CtFrameBuf,
+			    ui32_t FrameNum, ui32_t SequenceNum, ASDCP::FrameBuffer& FrameBuf,
+			    const byte_t* EssenceUL, AESDecContext* Ctx, HMACContext* HMAC);
+  
   //
  class KLReader : public ASDCP::KLVPacket
     {
@@ -145,38 +150,147 @@ namespace ASDCP
       Result_t ReadKLFromFile(Kumu::FileReader& Reader);
     };
 
+  namespace MXF
+  {
+      //---------------------------------------------------------------------------------
+      //
+
+    ///      void default_md_object_init();
+
+      template <class HeaderType, class FooterType>
+      class TrackFileReader
+      {
+	KM_NO_COPY_CONSTRUCT(TrackFileReader);
+	TrackFileReader();
+
+      public:
+	const Dictionary*  m_Dict;
+	Kumu::FileReader   m_File;
+	HeaderType         m_HeaderPart;
+	FooterType         m_FooterPart;
+	WriterInfo         m_Info;
+	ASDCP::FrameBuffer m_CtFrameBuf;
+	Kumu::fpos_t       m_LastPosition;
+
+      TrackFileReader(const Dictionary& d) :
+	m_HeaderPart(m_Dict), m_FooterPart(m_Dict), m_Dict(&d)
+	  {
+	    default_md_object_init();
+	  }
+
+	virtual ~TrackFileReader() {
+	  Close();
+	}
+
+	Result_t InitInfo()
+	{
+	  assert(m_Dict);
+	  InterchangeObject* Object;
+
+	  // Identification
+	  Result_t result = m_HeaderPart.GetMDObjectByType(OBJ_TYPE_ARGS(Identification), &Object);
+
+	  // Writer Info and SourcePackage
+	  if ( KM_SUCCESS(result) )
+	    {
+	      MD_to_WriterInfo((Identification*)Object, m_Info);
+	      result = m_HeaderPart.GetMDObjectByType(OBJ_TYPE_ARGS(SourcePackage), &Object);
+	    }
+
+	  if ( KM_SUCCESS(result) )
+	    {
+	      SourcePackage* SP = (SourcePackage*)Object;
+	      memcpy(m_Info.AssetUUID, SP->PackageUID.Value() + 16, UUIDlen);
+	    }
+
+	  // optional CryptographicContext
+	  if ( KM_SUCCESS(result) )
+	    {
+	      Result_t cr_result = m_HeaderPart.GetMDObjectByType(OBJ_TYPE_ARGS(CryptographicContext), &Object);
+	      
+	      if ( KM_SUCCESS(cr_result) )
+		MD_to_CryptoInfo((CryptographicContext*)Object, m_Info, *m_Dict);
+	    }
+
+	  return result;
+	}
+
+	//
+	Result_t OpenMXFRead(const char* filename)
+	{
+	  m_LastPosition = 0;
+	  Result_t result = m_File.OpenRead(filename);
+
+	  if ( KM_SUCCESS(result) )
+	    result = m_HeaderPart.InitFromFile(m_File);
+	  
+	  return result;
+	}
+
+	// positions file before reading
+	Result_t ReadEKLVFrame(const ASDCP::MXF::Partition& CurrentPartition,
+			       ui32_t FrameNum, ASDCP::FrameBuffer& FrameBuf,
+			       const byte_t* EssenceUL, AESDecContext* Ctx, HMACContext* HMAC)
+	{
+	  // look up frame index node
+	  IndexTableSegment::IndexEntry TmpEntry;
+
+	  if ( KM_FAILURE(m_FooterPart.Lookup(FrameNum, TmpEntry)) )
+	    {
+	      DefaultLogSink().Error("Frame value out of range: %u\n", FrameNum);
+	      return RESULT_RANGE;
+	    }
+
+	  // get frame position and go read the frame's key and length
+	  Kumu::fpos_t FilePosition = CurrentPartition.BodyOffset + TmpEntry.StreamOffset;
+	  Result_t result = RESULT_OK;
+
+	  if ( FilePosition != m_LastPosition )
+	    {
+	      m_LastPosition = FilePosition;
+	      result = m_File.Seek(FilePosition);
+	    }
+
+	  if( KM_SUCCESS(result) )
+	    result = ReadEKLVPacket(FrameNum, FrameNum + 1, FrameBuf, EssenceUL, Ctx, HMAC);
+
+	  return result;
+	}
+
+	// reads from current position
+	Result_t ReadEKLVPacket(ui32_t FrameNum, ui32_t SequenceNum, ASDCP::FrameBuffer& FrameBuf,
+				const byte_t* EssenceUL, AESDecContext* Ctx, HMACContext* HMAC)
+	{
+	  assert(m_Dict);
+	  return Read_EKLV_Packet(m_File, *m_Dict, m_HeaderPart, m_Info, m_LastPosition, m_CtFrameBuf,
+				  FrameNum, SequenceNum, FrameBuf, EssenceUL, Ctx, HMAC);
+	}
+
+	//
+	void     Close() {
+	  m_File.Close();
+	}
+      };
+
+  }/// namespace MXF
+
   //
-  class h__Reader
+  class h__ASDCPReader : public MXF::TrackFileReader<OPAtomHeader, OPAtomIndexFooter>
     {
-      ASDCP_NO_COPY_CONSTRUCT(h__Reader);
-      h__Reader();
+      ASDCP_NO_COPY_CONSTRUCT(h__ASDCPReader);
+      h__ASDCPReader();
 
     public:
-      const Dictionary*  m_Dict;
-      Kumu::FileReader   m_File;
-      OPAtomHeader       m_HeaderPart;
-      Partition          m_BodyPart;
-      OPAtomIndexFooter  m_FooterPart;
-      ui64_t             m_EssenceStart;
-      WriterInfo         m_Info;
-      ASDCP::FrameBuffer m_CtFrameBuf;
-      Kumu::fpos_t       m_LastPosition;
+      Partition m_BodyPart;
 
-      h__Reader(const Dictionary&);
-      virtual ~h__Reader();
+      h__ASDCPReader(const Dictionary&);
+      virtual ~h__ASDCPReader();
 
-      Result_t InitInfo();
       Result_t OpenMXFRead(const char* filename);
+      Result_t InitInfo();
       Result_t InitMXFIndex();
-
-      // positions file before reading
       Result_t ReadEKLVFrame(ui32_t FrameNum, ASDCP::FrameBuffer& FrameBuf,
 			     const byte_t* EssenceUL, AESDecContext* Ctx, HMACContext* HMAC);
-
-      // reads from current position
-      Result_t ReadEKLVPacket(ui32_t FrameNum, ui32_t SequenceNum, ASDCP::FrameBuffer& FrameBuf,
-			      const byte_t* EssenceUL, AESDecContext* Ctx, HMACContext* HMAC);
-      void     Close();
     };
 
 
@@ -285,8 +399,8 @@ namespace ASDCP
 
       ~IntegrityPack() {}
   
-      Result_t CalcValues(const ASDCP::FrameBuffer&, byte_t* AssetID, ui32_t sequence, HMACContext* HMAC);
-      Result_t TestValues(const ASDCP::FrameBuffer&, byte_t* AssetID, ui32_t sequence, HMACContext* HMAC);
+      Result_t CalcValues(const ASDCP::FrameBuffer&, const byte_t* AssetID, ui32_t sequence, HMACContext* HMAC);
+      Result_t TestValues(const ASDCP::FrameBuffer&, const byte_t* AssetID, ui32_t sequence, HMACContext* HMAC);
     };
 
 

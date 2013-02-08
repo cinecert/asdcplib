@@ -139,16 +139,46 @@ command-line utilities all respond to -h.
 
 Change History
 
-YYYY-MM-DD - bug fix, first publication of AS-02 EC support 1.10.46
- o Added support for much of IMF Essence Component (SMPTE draft ST 2067-5,
-   AKA "AS-02".  This code was developed and contributed by Robert Scheler,
-   Fraunhofer IIS. Very special thanks to Siegfried Foessel and Heiko
-   Sparenberg for their support of this essential IMF component.
+YYYY-MM-DD - bug fixes, enhancements M.N.RR
+ o Refactored internals of the AS-DCP file readers.  While no
+   changes in behavior are intended, users are cautioned to test
+   thouroughly before use in production.
+ o Fixed a bug in ReadAncillaryResource that was causing bogus HMAC
+   failures when reading resources from a file.
+ o Fixed premature-release bug in the Expat version of the XML parser.
+   Thanks to Carsten Feldheim (IIS) for the tip.
+ o Fixed -W option in asdcp-unwrap.  Thanks to RGB.
+ o Added P-HFR support to asdcp-wrap (see URL for details:
+   http://isdcf.com/papers/ISDCF-HighFrameRate-DCP.pdf).
+ o Added support for SMPTE ST 428-21 "Archival Frame Rates".
+ o Added -P option to asdcp-wrap (inserts arbitrary UL into the
+   PictureEssenceCoding property when wrapping JP2K files.)
+ o Added support for 96 kHz files to blackwave.
+ o Added new path and string manglers to Kumu.
+ o Updated MCA ULs (I warned you...).  Again please take some
+   time to proof this work against ST 477-4 including the latest
+   drafts of the registries.
+       Changed the version byte (8 0f 16) to 0x0e:
+           MCALabelSubDescriptor
+           AudioChannelLabelSubDescriptor
+           SoundfieldGroupLabelSubDescriptor
+           GroupOfSoundfieldGroupsLabelSubDescriptor
+	   GroupOfSoundfieldGroupsLinkID
+       Changed bytes 8 and and 13 of SoundfieldGroupLinkID
+       Added items to the UL dictionary:
+	   MCAPartitionKind
+	   MCAPartitionNumber
+	   MCATitle
+	   MCATitleVersion
+	   MCATitleSubVersion
+	   MCAEpisode
+	   MCAAudioContentKind
+	   MCAAudioElementKind
 
 2012-08-07 - bug fix, 1.10.46
- o Added zero-initializers to time values when parsing a timestamp string
-   (in the case where the (T...) option was not present the time was
-   uninitialized).
+ o Added missing zero-initializers to time values when parsing a
+   timestamp string (in the case where the optional [Thh:mm.[:ss]]
+   syntax is not present in an encoded string).
 
 2012-03-06 - bug fixes, enhancements 1.9.45
  o Removed ASDCP::Timestamp, all items that were of that class are now 
@@ -268,7 +298,8 @@ YYYY-MM-DD - bug fix, first publication of AS-02 EC support 1.10.46
  o ST 429-5 files have corrected ULs for DCTimedTextDescriptor and
    GenericStream DataElement. Files made with previous versions of
    the library are incompatible with this and future versions.
- o Fixed File Package TrackNumber values. Thanks to Sankar.
+ o Fixed File Package TrackNumber values. Th
+anks to Sankar.
  o Added edit rate constants to AS_DCP.h (25, 30, 50, 60).
  o Changed AudioDescriptor "SampleRate" element name to "EditRate"
    to make it consistent with the other types.

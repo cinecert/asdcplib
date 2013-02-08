@@ -111,8 +111,15 @@ main(int argc, const char** argv)
   FindInPaths(PathMatchAny(), InList, OutList);
   PathList_t::iterator pi;
 
-  for ( pi = OutList.begin(); pi != OutList.end(); pi++ )
-    cerr << *pi << endl;
+  if ( false )
+    {
+      for ( pi = OutList.begin(); pi != OutList.end(); pi++ )
+	cerr << *pi << endl;
+    }
+  else
+    {
+      cerr << OutList.size() << ( ( OutList.size() == 1 ) ? " file" : " files" ) << endl;
+    }
 
   cerr << "----------------------------------" << endl;
   OutList.clear();

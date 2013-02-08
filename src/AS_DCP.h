@@ -279,6 +279,15 @@ namespace ASDCP {
   const Rational EditRate_100 = Rational(100,1);
   const Rational EditRate_120 = Rational(120,1);
 
+  // Archival frame rates, see ST 428-21
+  // These rates are new and not supported by all systems. Do not assume that
+  // a package made using one of these rates will work just anywhere!
+  const Rational EditRate_16 = Rational(16,1);
+  const Rational EditRate_18 = Rational(200,11); // 18.182
+  const Rational EditRate_20 = Rational(20,1);
+  const Rational EditRate_22 = Rational(240,11); // 21.818
+
+
   // Non-reference counting container for internal member objects.
   // Please do not use this class for any other purpose.
   template <class T>

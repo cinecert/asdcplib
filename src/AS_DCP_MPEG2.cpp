@@ -160,7 +160,7 @@ ASDCP::MPEG2::VideoDescriptorDump(const VideoDescriptor& VDesc, FILE* stream)
 //
 // hidden, internal implementation of MPEG2 reader
 
-class ASDCP::MPEG2::MXFReader::h__Reader : public ASDCP::h__Reader
+class ASDCP::MPEG2::MXFReader::h__Reader : public ASDCP::h__ASDCPReader
 {
   ASDCP_NO_COPY_CONSTRUCT(h__Reader);
   h__Reader();
@@ -168,7 +168,7 @@ class ASDCP::MPEG2::MXFReader::h__Reader : public ASDCP::h__Reader
 public:
   VideoDescriptor m_VDesc;        // video parameter list
 
-  h__Reader(const Dictionary& d) : ASDCP::h__Reader(d) {}
+  h__Reader(const Dictionary& d) : ASDCP::h__ASDCPReader(d) {}
   ~h__Reader() {}
   Result_t    OpenRead(const char*);
   Result_t    ReadFrame(ui32_t, FrameBuffer&, AESDecContext*, HMACContext*);

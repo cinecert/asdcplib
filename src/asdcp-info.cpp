@@ -92,15 +92,16 @@ USAGE:%s [-h|-help] [-V]\n\
        %s [options] <input-file>+\n\
 \n\
 Options:\n\
-  -3                - Force stereoscopic interpretation of a JP2K file\n\
-  -C                - Do not show essence coding UL\n\
-  -d                - Show essence descriptor info\n\
-  -h | -help        - Show help\n\
-  -H                - Show MXF header metadata\n\
-  -i                - Show identity info\n\
-  -n                - Show index\n\
-  -R                - Do not show bit-rate (Mb/s)\n\
-  -V                - Show version information\n\
+  -3          - Force stereoscopic interpretation of a JP2K file\n\
+  -C          - Do not show essence coding UL\n\
+  -d          - Show essence descriptor info\n\
+  -h | -help  - Show help\n\
+  -H          - Show MXF header metadata\n\
+  -i          - Show identity info\n\
+  -n          - Show index\n\
+  -r          - Show bit-rate (Mb/s)\n\
+  -t <int>    - Set high-bitrate threshold (Mb/s)\n\
+  -V          - Show version information\n\
 \n\
   NOTES: o There is no option grouping, all options must be distinct arguments.\n\
          o All option arguments must be separated from the option by whitespace.\n\n",
@@ -122,17 +123,19 @@ public:
   bool   showindex_flag; // true if index is to be displayed
   bool   showheader_flag; // true if MXF file header is to be displayed
   bool   stereo_image_flag; // if true, expect stereoscopic JP2K input (left eye first)
-  bool   showid_flag;
-  bool   showdescriptor_flag;
-  bool   showcoding_flag;
-  bool   showrate_flag;
+  bool   showid_flag;          // if true, show file identity info (the WriterInfo struct)
+  bool   showdescriptor_flag;  // if true, show the essence descriptor
+  bool   showcoding_flag;      // if true, show the coding UL 
+  bool   showrate_flag;        // if true and is image file, show bit rate
+  bool   max_bitrate_flag;     // true if -t option given
+  double max_bitrate;          // if true and is image file, max bit rate for rate test
 
   //
   CommandOptions(int argc, const char** argv) :
     error_flag(true), version_flag(false), help_flag(false), verbose_flag(false),
     showindex_flag(), showheader_flag(), stereo_image_flag(false),
-    showid_flag(false), showdescriptor_flag(false), showcoding_flag(true),
-    showrate_flag(true)
+    showid_flag(false), showdescriptor_flag(false), showcoding_flag(false),
+    showrate_flag(false), max_bitrate_flag(false), max_bitrate(0.0)
   {
     for ( int i = 1; i < argc; ++i )
       {
@@ -150,13 +153,20 @@ public:
 	    switch ( argv[i][1] )
 	      {
 	      case '3': stereo_image_flag = true; break;
-	      case 'C': showcoding_flag = false; break;
+	      case 'c': showcoding_flag = true; break;
 	      case 'd': showdescriptor_flag = true; break;
 	      case 'H': showheader_flag = true; break;
 	      case 'h': help_flag = true; break;
 	      case 'i': showid_flag = true; break;
 	      case 'n': showindex_flag = true; break;
-	      case 'R': showrate_flag = false; break;
+	      case 'r': showrate_flag = true; break;
+
+	      case 't':
+		TEST_EXTRA_ARG(i, 't');
+		max_bitrate = abs(atoi(argv[i]));
+		max_bitrate_flag = true;
+		break;
+
 	      case 'V': version_flag = true; break;
 	      case 'v': verbose_flag = true; break;
 
@@ -260,16 +270,21 @@ class MyTextDescriptor : public TimedText::TimedTextDescriptor
   }
 };
 
-// MSVC didn't like the function template, so now it's a static class method
+//
+//
 template<class ReaderT, class DescriptorT>
 class FileInfoWrapper
 {
   ReaderT  m_Reader;
   DescriptorT m_Desc;
+  WriterInfo m_WriterInfo;
+  double m_MaxBitrate, m_AvgBitrate;
+  UL m_PictureEssenceCoding;
+
   KM_NO_COPY_CONSTRUCT(FileInfoWrapper);
 
 public:
-  FileInfoWrapper() {}
+  FileInfoWrapper() : m_MaxBitrate(0.0), m_AvgBitrate(0.0) {}
   virtual ~FileInfoWrapper() {}
 
   Result_t
@@ -285,19 +300,16 @@ public:
     if ( ASDCP_SUCCESS(result) )
       {
 	m_Desc.FillDescriptor(m_Reader);
+	m_Reader.FillWriterInfo(m_WriterInfo);
 
-	fprintf(stdout, "File essence type is %s, (%d frame%s).\n",
+	fprintf(stdout, "File essence type is %s, (%d edit unit%s).\n",
 		type_string, m_Desc.ContainerDuration, (m_Desc.ContainerDuration==1?"":"s"));
 
 	if ( Options.showheader_flag )
 	  m_Reader.DumpHeaderMetadata(stream);
 
 	if ( Options.showid_flag )
-	  {
-	    WriterInfo WI;
-	    m_Reader.FillWriterInfo(WI);
-	    WriterInfoDump(WI, stream);
-	  }
+	  WriterInfoDump(m_WriterInfo, stream);
 
 	if ( Options.showdescriptor_flag )
 	  m_Desc.Dump(stream);
@@ -314,7 +326,7 @@ public:
   }
 
   //
-  void dump_PictureEssenceCoding(FILE* stream = 0)
+  void get_PictureEssenceCoding(FILE* stream = 0)
   {
     const Dictionary& Dict = DefaultCompositeDict();
     MXF::RGBAEssenceDescriptor *descriptor = 0;
@@ -323,26 +335,108 @@ public:
 								reinterpret_cast<MXF::InterchangeObject**>(&descriptor));
     
     if ( KM_SUCCESS(result) )
+      m_PictureEssenceCoding = descriptor->PictureEssenceCoding;
+  }
+
+
+  //
+  void dump_PictureEssenceCoding(FILE* stream = 0)
+  {
+    char buf[64];
+
+    if ( m_PictureEssenceCoding.HasValue() )
       {
 	const char *encoding_ul_type = "**UNKNOWN**";
 
-	if ( descriptor->PictureEssenceCoding == UL(P_HFR_UL_2K) )
+	if ( m_PictureEssenceCoding == UL(P_HFR_UL_2K) )
 	  encoding_ul_type = "P-HFR-2K";
-	else if ( descriptor->PictureEssenceCoding == UL(P_HFR_UL_4K) )
+	else if ( m_PictureEssenceCoding == UL(P_HFR_UL_4K) )
 	  encoding_ul_type = "**P-HFR-4K**";
-	else if ( descriptor->PictureEssenceCoding == DefaultCompositeDict().ul(MDD_JP2KEssenceCompression_2K) )
+	else if ( m_PictureEssenceCoding == DefaultCompositeDict().ul(MDD_JP2KEssenceCompression_2K) )
 	  encoding_ul_type = "ST-429-4-2K";
-	else if ( descriptor->PictureEssenceCoding == DefaultCompositeDict().ul(MDD_JP2KEssenceCompression_4K) )
+	else if ( m_PictureEssenceCoding == DefaultCompositeDict().ul(MDD_JP2KEssenceCompression_4K) )
 	  encoding_ul_type = "ST-429-4-4K";
 
-	char buf[64];
-	fprintf(stream, "PictureEssenceCoding: %s (%s)\n", descriptor->PictureEssenceCoding.EncodeString(buf, 64), encoding_ul_type);
+	fprintf(stream, "PictureEssenceCoding: %s (%s)\n", m_PictureEssenceCoding.EncodeString(buf, 64), encoding_ul_type);
       }
   }
 
   //
+  Result_t
+  test_rates(CommandOptions& Options, FILE* stream = 0)
+  {
+    static const double dci_max_bitrate = 250.0;
+    static const double p_hfr_max_bitrate = 400.0;
+
+    double max_bitrate = Options.max_bitrate_flag ? Options.max_bitrate : dci_max_bitrate;
+    ui32_t errors = 0;
+
+    if ( m_PictureEssenceCoding == UL(P_HFR_UL_2K) )
+      {
+	if ( m_Desc.StoredWidth > 2048 ) // 4k
+	  {
+	    fprintf(stream, "4k images marked as 2k HFR.\n");
+	    ++errors;
+	  }
+
+	if ( m_Desc.SampleRate < ASDCP::EditRate_96 )
+	  {
+	    fprintf(stream, "HFR UL used for fps < 96.\n");
+	    ++errors;
+	  }
+
+	if ( ! Options.max_bitrate_flag )
+	  max_bitrate = p_hfr_max_bitrate;
+      }
+    else if ( m_PictureEssenceCoding == UL(P_HFR_UL_4K) )
+      {
+	fprintf(stream, "4k HFR support undefined.\n");
+	++errors;
+
+	if ( m_Desc.StoredWidth <= 2048 ) // 2k
+	  {
+	    fprintf(stream, "2k images marked as 4k HFR.\n");
+	    ++errors;
+	  }
+      }
+    else if ( m_PictureEssenceCoding != DefaultCompositeDict().ul(MDD_JP2KEssenceCompression_2K)
+	      && m_PictureEssenceCoding != DefaultCompositeDict().ul(MDD_JP2KEssenceCompression_4K) )
+      {
+	fprintf(stream, "Unknown PictureEssenceCoding UL value.\n");
+	++errors;
+      }
+    else
+      {
+	if ( m_PictureEssenceCoding == DefaultCompositeDict().ul(MDD_JP2KEssenceCompression_2K) )
+	  {
+	    if ( m_Desc.StoredWidth > 2048 ) // 4k
+	      {
+		fprintf(stream, "4k images marked as 2k ST 429-4.\n");
+		++errors;
+	      }
+	  }
+	else if ( m_PictureEssenceCoding == DefaultCompositeDict().ul(MDD_JP2KEssenceCompression_4K) )
+	  {
+	    if ( m_Desc.StoredWidth <= 2048 ) // 2k
+	      {
+		fprintf(stream, "2k images marked as 4k ST 429-4.\n");
+		++errors;
+	      }
+	  }
+      }
+
+    if ( m_MaxBitrate > max_bitrate )
+      {
+	fprintf(stream, "Bitrate %0.0f exceeds maximum %0.0f (see option -r).\n", m_MaxBitrate, max_bitrate);
+	++errors;
+      }
+
+    return errors ? RESULT_FAIL : RESULT_OK;
+  }
+
+  //
   void
-  dump_Bitrate(FILE* stream = 0)
+  calc_Bitrate(FILE* stream = 0)
   {
     MXF::OPAtomIndexFooter& footer = m_Reader.OPAtomIndexFooter();
     ui64_t total_frame_bytes = 0, last_stream_offset = 0;
@@ -369,13 +463,22 @@ public:
 	  }
       }
 
-    // we did not test the first or last frame; scale to return bits when the input is bytes
+    // scale bytes to megabits
     static const double mega_const = 1 / ( 1024.0 * 1024.0 / 8.0 );
-    double avg_bytes_frame = total_frame_bytes / ( m_Desc.ContainerDuration - 2 );
-    double avg_mbits_second = avg_bytes_frame * mega_const * m_Desc.EditRate.Quotient();
 
-    fprintf(stream, "Max BitRate: %0.2f Mb/s\n", largest_frame * mega_const * m_Desc.EditRate.Quotient());
-    fprintf(stream, "Average BitRate: %0.2f Mb/s\n", avg_bytes_frame * mega_const * m_Desc.EditRate.Quotient());
+    // we did not accumulate the first or last frame, so duration -= 2
+    double avg_bytes_frame = total_frame_bytes / ( m_Desc.ContainerDuration - 2 );
+
+    m_MaxBitrate = largest_frame * mega_const * m_Desc.EditRate.Quotient();
+    m_AvgBitrate = avg_bytes_frame * mega_const * m_Desc.EditRate.Quotient();
+  }
+
+  //
+  void
+  dump_Bitrate(FILE* stream = 0)
+  {
+    fprintf(stream, "Max BitRate: %0.2f Mb/s\n", m_MaxBitrate);
+    fprintf(stream, "Average BitRate: %0.2f Mb/s\n", m_AvgBitrate);
   }
 
   //
@@ -431,22 +534,38 @@ show_file_info(CommandOptions& Options)
 	  FileInfoWrapper<ASDCP::JP2K::MXFSReader, MyStereoPictureDescriptor> wrapper;
 	  result = wrapper.file_info(Options, "JPEG 2000 stereoscopic pictures");
 
-	  if ( ASDCP_SUCCESS(result) && Options.showcoding_flag )
-	    wrapper.dump_PictureEssenceCoding(stdout);
+	  if ( KM_SUCCESS(result) )
+	    {
+	      wrapper.get_PictureEssenceCoding();
+	      wrapper.calc_Bitrate();
 
-	  if ( ASDCP_SUCCESS(result) && Options.showrate_flag )
-	    wrapper.dump_Bitrate(stdout);
+	      if ( Options.showcoding_flag )
+		wrapper.dump_PictureEssenceCoding(stdout);
+
+	      if ( Options.showrate_flag )
+		wrapper.dump_Bitrate(stdout);
+
+	      result = wrapper.test_rates(Options, stdout);
+	    }
 	}
       else
 	{
 	  FileInfoWrapper<ASDCP::JP2K::MXFReader, MyPictureDescriptor>wrapper;
 	  result = wrapper.file_info(Options, "JPEG 2000 pictures");
 
-	  if ( ASDCP_SUCCESS(result) && Options.showcoding_flag )
-	    wrapper.dump_PictureEssenceCoding(stdout);
+	  if ( KM_SUCCESS(result) )
+	    {
+	      wrapper.get_PictureEssenceCoding();
+	      wrapper.calc_Bitrate();
 
-	  if ( ASDCP_SUCCESS(result) && Options.showrate_flag )
-	    wrapper.dump_Bitrate(stdout);
+	      if ( Options.showcoding_flag )
+		wrapper.dump_PictureEssenceCoding(stdout);
+
+	      if ( Options.showrate_flag )
+		wrapper.dump_Bitrate(stdout);
+
+	      result = wrapper.test_rates(Options, stdout);
+	    }
 	}
     }
   else if ( EssenceType == ESS_JPEG_2000_S )
@@ -454,11 +573,19 @@ show_file_info(CommandOptions& Options)
       FileInfoWrapper<ASDCP::JP2K::MXFSReader, MyStereoPictureDescriptor>wrapper;
       result = wrapper.file_info(Options, "JPEG 2000 stereoscopic pictures");
       
-      if ( ASDCP_SUCCESS(result) && Options.showcoding_flag )
-	wrapper.dump_PictureEssenceCoding(stdout);
+      if ( KM_SUCCESS(result) )
+	{
+	  wrapper.get_PictureEssenceCoding();
+	  wrapper.calc_Bitrate();
 
-      if ( ASDCP_SUCCESS(result) && Options.showrate_flag )
-	wrapper.dump_Bitrate(stdout);
+	  if ( Options.showcoding_flag )
+	    wrapper.dump_PictureEssenceCoding(stdout);
+
+	  if ( Options.showrate_flag )
+	    wrapper.dump_Bitrate(stdout);
+
+	  result = wrapper.test_rates(Options, stdout);
+	}
     }
   else if ( EssenceType == ESS_TIMED_TEXT )
     {

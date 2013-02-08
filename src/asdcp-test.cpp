@@ -292,6 +292,10 @@ public:
   //
   Rational PictureRate()
   {
+    if ( picture_rate == 16 ) return EditRate_16;
+    if ( picture_rate == 18 ) return EditRate_18;
+    if ( picture_rate == 20 ) return EditRate_20;
+    if ( picture_rate == 22 ) return EditRate_22;
     if ( picture_rate == 23 ) return EditRate_23_98;
     if ( picture_rate == 24 ) return EditRate_24;
     if ( picture_rate == 25 ) return EditRate_25;
@@ -308,6 +312,10 @@ public:
   //
   const char* szPictureRate()
   {
+    if ( picture_rate == 16 ) return "16";
+    if ( picture_rate == 18 ) return "18.182";
+    if ( picture_rate == 20 ) return "20";
+    if ( picture_rate == 22 ) return "21.818";
     if ( picture_rate == 23 ) return "23.976";
     if ( picture_rate == 24 ) return "24";
     if ( picture_rate == 25 ) return "25";

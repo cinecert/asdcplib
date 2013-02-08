@@ -123,7 +123,7 @@ ASDCP::TimedText::FrameBuffer::Dump(FILE* stream, ui32_t dump_len) const
 
 typedef std::map<UUID, UUID> ResourceMap_t;
 
-class ASDCP::TimedText::MXFReader::h__Reader : public ASDCP::h__Reader
+class ASDCP::TimedText::MXFReader::h__Reader : public ASDCP::h__ASDCPReader
 {
   MXF::TimedTextDescriptor* m_EssenceDescriptor;
   ResourceMap_t             m_ResourceMap;
@@ -133,7 +133,7 @@ class ASDCP::TimedText::MXFReader::h__Reader : public ASDCP::h__Reader
 public:
   TimedTextDescriptor m_TDesc;    
 
-  h__Reader(const Dictionary& d) : ASDCP::h__Reader(d), m_EssenceDescriptor(0) {
+  h__Reader(const Dictionary& d) : ASDCP::h__ASDCPReader(d), m_EssenceDescriptor(0) {
     memset(&m_TDesc.AssetID, 0, UUIDlen);
   }
 

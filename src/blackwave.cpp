@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2005-2009, John Hurst
+Copyright (c) 2005-2012, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -56,7 +56,7 @@ banner(FILE* stream = stderr)
 {
   fprintf(stream, "\n\
 %s (asdcplib %s)\n\n\
-Copyright (c) 2005-2009 John Hurst\n\n\
+Copyright (c) 2005-2012 John Hurst\n\n\
 %s is part of asdcplib.\n\
 asdcplib may be copied only under the terms of the license found at\n\
 the top of every file in the asdcplib distribution kit.\n\n\
@@ -73,7 +73,8 @@ USAGE: %s [-v|-h[-d]] <filename>\n\
 \n\
   -V              - Show version\n\
   -h              - Show help\n\
-  -d <duration>   - Number of 2k-sample frames to process, default 1440\n\
+  -d <duration>   - Number of edit units to process, default 1440\n\
+  -9              - Make a 96 kHz file (default 48 kHz)\n\
 \n\
 Other Options:\n\
   -v              - Verbose, show extra detail during run\n\
@@ -94,6 +95,7 @@ public:
   bool   verbose_flag;   // true if the verbose option was selected
   bool   version_flag;   // true if the version display option was selected
   bool   help_flag;      // true if the help display option was selected
+  bool   s96_flag;       // true if the samples should be at 96 kHz
   ui32_t duration;       // number of frames to be processed
   const char* filename;  // filename prefix for files written by the extract mode
 
@@ -103,7 +105,7 @@ public:
   {
     for ( int i = 1; i < argc; i++ )
       {
-	if ( argv[i][0] == '-' && isalpha(argv[i][1]) && argv[i][2] == 0 )
+	if ( argv[i][0] == '-' && ( isalpha(argv[i][1]) || isdigit(argv[i][1]) ) && argv[i][2] == 0 )
 	  {
 	    switch ( argv[i][1] )
 	      {
@@ -114,6 +116,10 @@ public:
 	      case 'd':
 		TEST_EXTRA_ARG(i, 'd');
 		duration = atoi(argv[i]); // TODO: test for negative value, should use strtol()
+		break;
+
+	      case '9':
+		s96_flag = true;
 		break;
 
 	      default:
@@ -153,12 +159,12 @@ make_black_wav_file(CommandOptions& Options)
   PCM::AudioDescriptor ADesc;
 
   ADesc.EditRate = Rational(24,1);
-  ADesc.AudioSamplingRate = ASDCP::SampleRate_48k;
+  ADesc.AudioSamplingRate = Options.s96_flag ? ASDCP::SampleRate_96k : ASDCP::SampleRate_48k;
   ADesc.Locked = 0;
   ADesc.ChannelCount = 1;
   ADesc.QuantizationBits = 24;
   ADesc.BlockAlign = 3;
-  ADesc.AvgBps = 14400;
+  ADesc.AvgBps = ADesc.BlockAlign * ADesc.AudioSamplingRate.Quotient();
   ADesc.LinkedTrackID = 1;
   ADesc.ContainerDuration = Options.duration;
 
@@ -169,8 +175,8 @@ make_black_wav_file(CommandOptions& Options)
 
   if ( Options.verbose_flag )
     {
-      fprintf(stderr, "48Khz PCM Audio, %s fps (%u spf)\n", "24",
-	      PCM::CalcSamplesPerFrame(ADesc));
+      fprintf(stderr, "%s kHz PCM Audio, %s fps (%u spf)\n", "24",
+	      (Options.s96_flag?"96":"48"), PCM::CalcSamplesPerFrame(ADesc));
       fputs("AudioDescriptor:\n", stderr);
       PCM::AudioDescriptorDump(ADesc);
     }

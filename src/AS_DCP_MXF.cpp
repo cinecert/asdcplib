@@ -439,7 +439,7 @@ ASDCP::DecryptFrameBuffer(const ASDCP::FrameBuffer& FBin, ASDCP::FrameBuffer& FB
 
 //
 Result_t
-ASDCP::IntegrityPack::CalcValues(const ASDCP::FrameBuffer& FB, byte_t* AssetID,
+ASDCP::IntegrityPack::CalcValues(const ASDCP::FrameBuffer& FB, const byte_t* AssetID,
 				 ui32_t sequence, HMACContext* HMAC)
 {
   ASDCP_TEST_NULL(AssetID);
@@ -489,7 +489,7 @@ ASDCP::IntegrityPack::CalcValues(const ASDCP::FrameBuffer& FB, byte_t* AssetID,
 
 
 Result_t
-ASDCP::IntegrityPack::TestValues(const ASDCP::FrameBuffer& FB, byte_t* AssetID,
+ASDCP::IntegrityPack::TestValues(const ASDCP::FrameBuffer& FB, const byte_t* AssetID,
 				 ui32_t sequence, HMACContext* HMAC)
 {
   ASDCP_TEST_NULL(AssetID);

@@ -205,7 +205,7 @@ ASDCP::JP2K::PictureDescriptorDump(const PictureDescriptor& PDesc, FILE* stream)
 // hidden, internal implementation of JPEG 2000 reader
 
 
-class lh__Reader : public ASDCP::h__Reader
+class lh__Reader : public ASDCP::h__ASDCPReader
 {
   RGBAEssenceDescriptor*        m_EssenceDescriptor;
   JPEG2000PictureSubDescriptor* m_EssenceSubDescriptor;
@@ -219,7 +219,7 @@ public:
   PictureDescriptor m_PDesc;        // codestream parameter list
 
   lh__Reader(const Dictionary& d) :
-    ASDCP::h__Reader(d), m_EssenceDescriptor(0), m_EssenceSubDescriptor(0), m_Format(ESS_UNKNOWN) {}
+    ASDCP::h__ASDCPReader(d), m_EssenceDescriptor(0), m_EssenceSubDescriptor(0), m_Format(ESS_UNKNOWN) {}
   Result_t    OpenRead(const char*, EssenceType_t);
   Result_t    ReadFrame(ui32_t, JP2K::FrameBuffer&, AESDecContext*, HMACContext*);
   Result_t    MD_to_JP2K_PDesc(JP2K::PictureDescriptor& PDesc);
@@ -595,7 +595,7 @@ public:
       }
 
     // get frame position
-    Kumu::fpos_t FilePosition = m_EssenceStart + TmpEntry.StreamOffset;
+    Kumu::fpos_t FilePosition = m_HeaderPart.BodyOffset + TmpEntry.StreamOffset;
     Result_t result = RESULT_OK;
 
     if ( phase == SP_LEFT )

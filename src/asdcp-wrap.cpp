@@ -56,6 +56,11 @@ using namespace ASDCP;
 
 const ui32_t FRAME_BUFFER_SIZE = 4 * Kumu::Megabyte;
 
+const byte_t P_HFR_UL_2K[16] = {
+  0x06, 0x0e, 0x2b, 0x34, 0x04, 0x01, 0x01, 0x0d,
+  0x0e, 0x16, 0x02, 0x02, 0x03, 0x01, 0x01, 0x03
+};
+
 //------------------------------------------------------------------------------------------
 //
 // command line option parser class
@@ -120,8 +125,8 @@ USAGE: %s [-h|-help] [-V]\n\
 Options:\n\
   -3                - Create a stereoscopic image file. Expects two\n\
                       directories of JP2K codestreams (directories must have\n\
-                      an equal number of frames; left eye is first).\n\
-  -C <UL>           - Set ChannelAssignment UL value\n\
+                      an equal number of frames; the left eye is first)\n\
+  -C <UL>           - Set ChannelAssignment UL value in a PCM file\n\
   -h | -help        - Show help\n\
   -V                - Show version information\n\
   -e                - Encrypt MPEG or JP2K headers (default)\n\
@@ -139,6 +144,7 @@ Options:\n\
                       '7.1DS', 'WTF'\n\
                       Default is no label (valid for Interop only).\n\
   -L                - Write SMPTE UL values instead of MXF Interop\n\
+  -P <UL>           - Set PictureEssenceCoding UL value in a JP2K file\n\
   -p <rate>         - fps of picture when wrapping PCM or JP2K:\n\
                       Use one of [23|24|25|30|48|50|60], 24 is default\n\
   -v                - Verbose, prints informative messages to stderr\n\
@@ -189,18 +195,12 @@ public:
   bool   asset_id_flag;  // true if an asset ID was given
   bool   encrypt_header_flag; // true if mpeg headers are to be encrypted
   bool   write_hmac;     // true if HMAC values are to be generated and written
-  ///  bool   read_hmac;      // true if HMAC values are to be validated
-  ///  bool   split_wav;      // true if PCM is to be extracted to stereo WAV files
-  ///  bool   mono_wav;       // true if PCM is to be extracted to mono WAV files
   bool   verbose_flag;   // true if the verbose option was selected
   ui32_t fb_dump_size;   // number of bytes of frame buffer to dump
-  ///  bool   showindex_flag; // true if index is to be displayed
-  ///  bool   showheader_flag; // true if MXF file header is to be displayed
   bool   no_write_flag;  // true if no output files are to be written
   bool   version_flag;   // true if the version display option was selected
   bool   help_flag;      // true if the help display option was selected
   bool   stereo_image_flag; // if true, expect stereoscopic JP2K input (left eye first)
-  ///  ui32_t number_width;   // number of digits in a serialized filename (for JPEG extract)
   ui32_t start_frame;    // frame number to begin processing
   ui32_t duration;       // number of frames to be processed
   bool   use_smpte_labels; // if true, SMPTE UL values will be written instead of MXF Interop values
@@ -216,10 +216,15 @@ public:
   bool show_ul_values;    /// if true, dump the UL table before going tp work.
   Kumu::PathList_t filenames;  // list of filenames to be processed
   UL channel_assignment;
+  UL picture_coding;
 
   //
   Rational PictureRate()
   {
+    if ( picture_rate == 16 ) return EditRate_16;
+    if ( picture_rate == 18 ) return EditRate_18;
+    if ( picture_rate == 20 ) return EditRate_20;
+    if ( picture_rate == 22 ) return EditRate_22;
     if ( picture_rate == 23 ) return EditRate_23_98;
     if ( picture_rate == 24 ) return EditRate_24;
     if ( picture_rate == 25 ) return EditRate_25;
@@ -236,6 +241,10 @@ public:
   //
   const char* szPictureRate()
   {
+    if ( picture_rate == 16 ) return "16";
+    if ( picture_rate == 18 ) return "18.182";
+    if ( picture_rate == 20 ) return "20";
+    if ( picture_rate == 22 ) return "21.818";
     if ( picture_rate == 23 ) return "23.976";
     if ( picture_rate == 24 ) return "24";
     if ( picture_rate == 25 ) return "25";
@@ -306,7 +315,7 @@ public:
 		break;
 
 	      case 'C':
-		TEST_EXTRA_ARG(i, 'U');
+		TEST_EXTRA_ARG(i, 'C');
 		if ( ! channel_assignment.DecodeHex(argv[i]) )
 		  {
 		    fprintf(stderr, "Error decoding UL value: %s\n", argv[i]);
@@ -364,6 +373,15 @@ public:
 
 	      case 'L': use_smpte_labels = true; break;
 	      case 'M': write_hmac = false; break;
+
+	      case 'P':
+		TEST_EXTRA_ARG(i, 'P');
+		if ( ! picture_coding.DecodeHex(argv[i]) )
+		  {
+		    fprintf(stderr, "Error decoding UL value: %s\n", argv[i]);
+		    return;
+		  }
+		break;
 
 	      case 'p':
 		TEST_EXTRA_ARG(i, 'p');
@@ -536,6 +554,35 @@ write_MPEG2_file(CommandOptions& Options)
 
 
 //------------------------------------------------------------------------------------------
+
+// return false if an error is discovered
+bool
+check_phfr_params(CommandOptions& Options, JP2K::PictureDescriptor& PDesc)
+{
+  Rational rate = Options.PictureRate();
+  if ( rate != EditRate_96 && rate != EditRate_100 && rate != EditRate_120 )
+    return true;
+
+  if ( PDesc.StoredWidth > 2048 )
+    {
+      fprintf(stderr, "P-HFR files currently limited to 2K.\n");
+      return false;
+    }
+
+  if ( ! Options.use_smpte_labels )
+    {
+      fprintf(stderr, "P-HFR files must be written using SMPTE labels. Use option '-L'.\n");
+      return false;
+    }
+
+  // do not set the label if the user has already done so
+  if ( ! Options.picture_coding.HasValue() )
+    Options.picture_coding = UL(P_HFR_UL_2K);
+  
+  return true;
+}
+
+//------------------------------------------------------------------------------------------
 // JPEG 2000 essence
 
 // Write one or more plaintext JPEG 2000 stereoscopic codestream pairs to a plaintext ASDCP file
@@ -582,6 +629,9 @@ write_JP2K_S_file(CommandOptions& Options)
 	}
     }
 
+  if ( ! check_phfr_params(Options, PDesc) )
+    return RESULT_FAIL;
+
   if ( ASDCP_SUCCESS(result) && ! Options.no_write_flag )
     {
       WriterInfo Info = s_MyInfo;  // fill in your favorite identifiers here
@@ -623,6 +673,14 @@ write_JP2K_S_file(CommandOptions& Options)
 
       if ( ASDCP_SUCCESS(result) )
 	result = Writer.OpenWrite(Options.out_file.c_str(), Info, PDesc);
+      
+      if ( ASDCP_SUCCESS(result) && Options.picture_coding.HasValue() )
+	{
+	  MXF::RGBAEssenceDescriptor *descriptor = 0;
+	  Writer.OPAtomHeader().GetMDObjectByType(DefaultSMPTEDict().ul(MDD_RGBAEssenceDescriptor),
+						  reinterpret_cast<MXF::InterchangeObject**>(&descriptor));
+	  descriptor->PictureEssenceCoding = Options.picture_coding;
+	}
     }
 
   if ( ASDCP_SUCCESS(result) )
@@ -706,6 +764,9 @@ write_JP2K_file(CommandOptions& Options)
 	}
     }
 
+  if ( ! check_phfr_params(Options, PDesc) )
+    return RESULT_FAIL;
+
   if ( ASDCP_SUCCESS(result) && ! Options.no_write_flag )
     {
       WriterInfo Info = s_MyInfo;  // fill in your favorite identifiers here
@@ -747,6 +808,14 @@ write_JP2K_file(CommandOptions& Options)
 
       if ( ASDCP_SUCCESS(result) )
 	result = Writer.OpenWrite(Options.out_file.c_str(), Info, PDesc);
+
+      if ( ASDCP_SUCCESS(result) && Options.picture_coding.HasValue() )
+	{
+	  MXF::RGBAEssenceDescriptor *descriptor = 0;
+	  Writer.OPAtomHeader().GetMDObjectByType(DefaultSMPTEDict().ul(MDD_RGBAEssenceDescriptor),
+						  reinterpret_cast<MXF::InterchangeObject**>(&descriptor));
+	  descriptor->PictureEssenceCoding = Options.picture_coding;
+	}
     }
 
   if ( ASDCP_SUCCESS(result) )

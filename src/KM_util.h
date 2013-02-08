@@ -534,6 +534,14 @@ namespace Kumu
     hexdump(buf.RoData(), buf.Length());
   }
 
+  // Locates the first occurrence of the null-terminated string s2 in the string s1, where not more
+  // than n characters are searched.  Characters that appear after a `\0' character are not searched.
+  // Reproduced here from BSD for portability.
+  const char *km_strnstr(const char *s1, const char *s2, size_t n);
+
+  // Split the input string into tokens using the given separator. If the separator is not found the
+  // entire string will be returned as a single-item list.
+  std::list<std::string> km_token_split(const std::string& str, const std::string& separator);
 
 } // namespace Kumu
 

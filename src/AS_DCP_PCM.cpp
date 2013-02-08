@@ -196,7 +196,7 @@ calc_CBR_frame_size(ASDCP::WriterInfo& Info, const ASDCP::PCM::AudioDescriptor& 
 //------------------------------------------------------------------------------------------
 
 
-class ASDCP::PCM::MXFReader::h__Reader : public ASDCP::h__Reader
+class ASDCP::PCM::MXFReader::h__Reader : public ASDCP::h__ASDCPReader
 {
   ASDCP_NO_COPY_CONSTRUCT(h__Reader);
   h__Reader();
@@ -204,7 +204,7 @@ class ASDCP::PCM::MXFReader::h__Reader : public ASDCP::h__Reader
 public:
   AudioDescriptor m_ADesc;
 
-  h__Reader(const Dictionary& d) : ASDCP::h__Reader(d) {}
+  h__Reader(const Dictionary& d) : ASDCP::h__ASDCPReader(d) {}
   ~h__Reader() {}
   Result_t    OpenRead(const char*);
   Result_t    ReadFrame(ui32_t, FrameBuffer&, AESDecContext*, HMACContext*);
@@ -239,6 +239,10 @@ ASDCP::PCM::MXFReader::h__Reader::OpenRead(const char* filename)
        && m_ADesc.EditRate != EditRate_96
        && m_ADesc.EditRate != EditRate_100
        && m_ADesc.EditRate != EditRate_120
+       && m_ADesc.EditRate != EditRate_16
+       && m_ADesc.EditRate != EditRate_18
+       && m_ADesc.EditRate != EditRate_20
+       && m_ADesc.EditRate != EditRate_22
        && m_ADesc.EditRate != EditRate_23_98 )
     {
       DefaultLogSink().Error("PCM file EditRate is not a supported value: %d/%d\n", // lu
@@ -488,6 +492,10 @@ ASDCP::PCM::MXFWriter::h__Writer::SetSourceStream(const AudioDescriptor& ADesc)
        && ADesc.EditRate != EditRate_96
        && ADesc.EditRate != EditRate_100
        && ADesc.EditRate != EditRate_120
+       && ADesc.EditRate != EditRate_16
+       && ADesc.EditRate != EditRate_18
+       && ADesc.EditRate != EditRate_20
+       && ADesc.EditRate != EditRate_22
        && ADesc.EditRate != EditRate_23_98 )
     {
       DefaultLogSink().Error("AudioDescriptor.EditRate is not a supported value: %d/%d\n",
@@ -516,7 +524,14 @@ ASDCP::PCM::MXFWriter::h__Writer::SetSourceStream(const AudioDescriptor& ADesc)
 
   if ( ASDCP_SUCCESS(result) )
     {
-      ui32_t TCFrameRate = ( m_ADesc.EditRate == EditRate_23_98  ) ? 24 : m_ADesc.EditRate.Numerator;
+      ui32_t TCFrameRate = m_ADesc.EditRate.Numerator;
+
+      if ( m_ADesc.EditRate == EditRate_23_98  )
+	TCFrameRate = 24;
+      else if ( m_ADesc.EditRate == EditRate_18  )
+	TCFrameRate = 18;
+      else if ( m_ADesc.EditRate == EditRate_22  )
+	TCFrameRate = 22;
       
       result = WriteMXFHeader(PCM_PACKAGE_LABEL, UL(m_Dict->ul(MDD_WAVWrapping)),
 			      SOUND_DEF_LABEL, UL(m_EssenceUL), UL(m_Dict->ul(MDD_SoundDataDef)),
