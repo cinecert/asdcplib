@@ -139,7 +139,7 @@ command-line utilities all respond to -h.
 
 Change History
 
-YYYY-MM-DD - bug fixes, enhancements M.N.RR
+2013-02-20 - bug fixes, enhancements 1.10.48
  o Refactored internals of the AS-DCP file readers.  While no
    changes in behavior are intended, users are cautioned to test
    thouroughly before use in production.
