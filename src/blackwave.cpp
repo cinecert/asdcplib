@@ -187,8 +187,8 @@ make_black_wav_file(CommandOptions& Options)
 
   if ( ASDCP_SUCCESS(result) )
     {
-      Wav::SimpleWaveHeader WavHeader(ADesc);
-      result = WavHeader.WriteToFile(OutFile);
+       RF64::SimpleRF64Header WavHeader(ADesc);
+       result = WavHeader.WriteToFile(OutFile);
     }
 
   if ( ASDCP_SUCCESS(result) )

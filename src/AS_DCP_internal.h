@@ -25,7 +25,7 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 /*! \file    AS_DCP_internal.h
-    \version $Id$       
+    \version $Id$
     \brief   AS-DCP library, non-public common elements
 */
 
@@ -62,7 +62,7 @@ namespace ASDCP
     std::vector<int> result;
     const char* pstr = str;
     const char* r = strchr(pstr, '.');
-    
+
     while ( r != 0 )
       {
 	assert(r >= pstr);
@@ -132,7 +132,7 @@ namespace ASDCP
 			    const ASDCP::WriterInfo& Info, Kumu::fpos_t& LastPosition, ASDCP::FrameBuffer& CtFrameBuf,
 			    ui32_t FrameNum, ui32_t SequenceNum, ASDCP::FrameBuffer& FrameBuf,
 			    const byte_t* EssenceUL, AESDecContext* Ctx, HMACContext* HMAC);
-  
+
   //
  class KLReader : public ASDCP::KLVPacket
     {
@@ -146,7 +146,7 @@ namespace ASDCP
       inline const byte_t* Key() { return m_KeyBuf; }
       inline const ui64_t  Length() { return m_ValueLength; }
       inline const ui64_t  KLLength() { return m_KLLength; }
-      
+
       Result_t ReadKLFromFile(Kumu::FileReader& Reader);
     };
 
@@ -207,7 +207,7 @@ namespace ASDCP
 	  if ( KM_SUCCESS(result) )
 	    {
 	      Result_t cr_result = m_HeaderPart.GetMDObjectByType(OBJ_TYPE_ARGS(CryptographicContext), &Object);
-	      
+
 	      if ( KM_SUCCESS(cr_result) )
 		MD_to_CryptoInfo((CryptographicContext*)Object, m_Info, *m_Dict);
 	    }
@@ -223,7 +223,9 @@ namespace ASDCP
 
 	  if ( KM_SUCCESS(result) )
 	    result = m_HeaderPart.InitFromFile(m_File);
-	  
+      else
+        DefaultLogSink().Error("ASDCP::h__Reader::OpenMXFRead, OpenRead failed\n");
+
 	  return result;
 	}
 
@@ -266,6 +268,28 @@ namespace ASDCP
 				  FrameNum, SequenceNum, FrameBuf, EssenceUL, Ctx, HMAC);
 	}
 
+    // Get the position of a frame from a track file
+    Result_t LocateFrame(const ASDCP::MXF::Partition& CurrentPartition,
+                         ui32_t FrameNum, Kumu::fpos_t& streamOffset,
+                         i8_t& temporalOffset, i8_t& keyFrameOffset)
+    {
+      // look up frame index node
+      IndexTableSegment::IndexEntry TmpEntry;
+
+      if ( KM_FAILURE(m_FooterPart.Lookup(FrameNum, TmpEntry)) )
+      {
+        DefaultLogSink().Error("Frame value out of range: %u\n", FrameNum);
+        return RESULT_RANGE;
+      }
+
+      // get frame position, temporal offset, and key frame ofset
+      streamOffset = CurrentPartition.BodyOffset + TmpEntry.StreamOffset;
+      temporalOffset = TmpEntry.TemporalOffset;
+      keyFrameOffset = TmpEntry.KeyFrameOffset;
+
+      return RESULT_OK;
+    }
+
 	//
 	void     Close() {
 	  m_File.Close();
@@ -291,6 +315,9 @@ namespace ASDCP
       Result_t InitMXFIndex();
       Result_t ReadEKLVFrame(ui32_t FrameNum, ASDCP::FrameBuffer& FrameBuf,
 			     const byte_t* EssenceUL, AESDecContext* Ctx, HMACContext* HMAC);
+      Result_t LocateFrame(ui32_t FrameNum, Kumu::fpos_t& streamOffset,
+                           i8_t& temporalOffset, i8_t& keyFrameOffset);
+
     };
 
 
@@ -392,13 +419,13 @@ namespace ASDCP
     {
     public:
       byte_t Data[klv_intpack_size];
-  
+
       IntegrityPack() {
 	memset(Data, 0, klv_intpack_size);
       }
 
       ~IntegrityPack() {}
-  
+
       Result_t CalcValues(const ASDCP::FrameBuffer&, const byte_t* AssetID, ui32_t sequence, HMACContext* HMAC);
       Result_t TestValues(const ASDCP::FrameBuffer&, const byte_t* AssetID, ui32_t sequence, HMACContext* HMAC);
     };

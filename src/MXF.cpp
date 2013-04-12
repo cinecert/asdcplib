@@ -725,12 +725,20 @@ ASDCP::MXF::OPAtomHeader::InitFromFile(const Kumu::FileReader& Reader)
 	    }
 	}
     }
+  else
+  {
+    DefaultLogSink().Error("OPAtomHeader::InitFromFile, SeekToRIP failed\n");
+  }
 
   if ( ASDCP_SUCCESS(result) )
     result = Reader.Seek(0);
+  else
+    DefaultLogSink().Error("OPAtomHeader::InitFromFile, Seek failed\n");
 
   if ( ASDCP_SUCCESS(result) )
     result = Partition::InitFromFile(Reader); // test UL and OP
+  else
+    DefaultLogSink().Error("OPAtomHeader::InitFromFile, Partition::InitFromFile failed\n");
 
   if ( ASDCP_FAILURE(result) )
     return result;
@@ -774,7 +782,10 @@ ASDCP::MXF::OPAtomHeader::InitFromFile(const Kumu::FileReader& Reader)
       result = Reader.Read(m_Buffer.Data(), m_Buffer.Capacity(), &read_count);
 
       if ( ASDCP_FAILURE(result) )
-	return result;
+        {
+	  DefaultLogSink().Error("OPAtomHeader::InitFromFile, Read failed\n");
+	  return result;
+        }
 
       if ( read_count != m_Buffer.Capacity() )
 	{
@@ -1038,17 +1049,21 @@ ASDCP::MXF::OPAtomIndexFooter::InitFromFile(const Kumu::FileReader& Reader)
 {
   Result_t result = Partition::InitFromFile(Reader); // test UL and OP
 
-  // slurp up the remainder of the footer
-  ui32_t read_count;
+	// slurp up the remainder of the footer
+	ui32_t read_count = 0;
 
-  if ( ASDCP_SUCCESS(result) )
+	if ( ASDCP_SUCCESS(result) )
     {
-      assert (IndexByteCount <= 0xFFFFFFFFL);
-      result = m_Buffer.Capacity((ui32_t) IndexByteCount);
+		assert (IndexByteCount <= 0xFFFFFFFFL);
+		// At this point, m_Buffer may not have been initialized
+		// so it's capacity is zero and data pointer is NULL
+		// However, if IndexByteCount is zero then the capacity
+		// doesn't change and the data pointer is not set.
+		result = m_Buffer.Capacity((ui32_t) IndexByteCount);
     }
 
-  if ( ASDCP_SUCCESS(result) )
-    result = Reader.Read(m_Buffer.Data(), m_Buffer.Capacity(), &read_count);
+	if ( ASDCP_SUCCESS(result) && m_Buffer.Data() )
+		result = Reader.Read(m_Buffer.Data(), m_Buffer.Capacity(), &read_count);
 
   if ( ASDCP_SUCCESS(result) && read_count != m_Buffer.Capacity() )
     {
@@ -1056,6 +1071,12 @@ ASDCP::MXF::OPAtomIndexFooter::InitFromFile(const Kumu::FileReader& Reader)
 			     read_count, m_Buffer.Capacity());
       return RESULT_FAIL;
     }
+	else if( ASDCP_SUCCESS(result) && !m_Buffer.Data() )
+	{
+		DefaultLogSink().Error( "Buffer for footer partition not created: IndexByteCount = %u\n",
+								IndexByteCount );
+		return RESULT_FAIL;
+	}
 
   if ( ASDCP_SUCCESS(result) )
     result = InitFromBuffer(m_Buffer.RoData(), m_Buffer.Capacity());

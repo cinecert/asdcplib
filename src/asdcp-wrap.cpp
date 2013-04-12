@@ -25,7 +25,7 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 /*! \file    asdcp-wrap.cpp
-    \version $Id$       
+    \version $Id$
     \brief   AS-DCP file manipulation utility
 
   This program wraps d-cinema essence (picture, sound or text) into an AS-DCP
@@ -48,6 +48,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <KM_fileio.h>
 #include <KM_prng.h>
+#include <AtmosSyncChannel_Mixer.h>
 #include <AS_DCP.h>
 #include <PCMParserList.h>
 #include <Metadata.h>
@@ -76,7 +77,7 @@ public:
       static byte_t default_ProductUUID_Data[UUIDlen] =
       { 0x7d, 0x83, 0x6e, 0x16, 0x37, 0xc7, 0x4c, 0x22,
 	0xb2, 0xe0, 0x46, 0xa7, 0x17, 0xe8, 0x4f, 0x42 };
-      
+
       memcpy(ProductUUID, default_ProductUUID_Data, UUIDlen);
       CompanyName = "WidgetCo";
       ProductName = "asdcp-wrap";
@@ -117,7 +118,7 @@ USAGE: %s [-h|-help] [-V]\n\
 \n\
        %s [-3] [-a <uuid>] [-b <buffer-size>] [-C <UL>] [-d <duration>]\n\
           [-e|-E] [-f <start-frame>] [-j <key-id-string>] [-k <key-string>]\n\
-          [-l <label>] [-L] [-M] [-p <frame-rate>] [-s <num>] [-v] [-W]\n\
+          [-l <label>] [-L] [-M] [-p <frame-rate>] [-s] [-v] [-W]\n\
           [-z|-Z] <input-file>+ <output-file>\n\n",
 	  PROGRAM_NAME, PROGRAM_NAME);
 
@@ -147,6 +148,10 @@ Options:\n\
   -P <UL>           - Set PictureEssenceCoding UL value in a JP2K file\n\
   -p <rate>         - fps of picture when wrapping PCM or JP2K:\n\
                       Use one of [23|24|25|30|48|50|60], 24 is default\n\
+  -s                - Insert a Dolby Atmos synchronization channel when\n\
+                      wrapping PCM. This implies a -L option(SMPTE ULs) and \n\
+                      will overide -C and -l options with Configuration 4 \n\
+                      Channel Assigment and no format label respectively. \n\
   -v                - Verbose, prints informative messages to stderr\n\
   -W                - Read input file only, do not write source file\n\
   -z                - Fail if j2c inputs have unequal parameters (default)\n\
@@ -168,7 +173,7 @@ decode_channel_fmt(const std::string& label_name)
 
   else if ( label_name == "6.1" )
     return PCM::CF_CFG_2;
-  
+
   else if ( label_name == "7.1" )
     return PCM::CF_CFG_3;
 
@@ -217,6 +222,11 @@ public:
   Kumu::PathList_t filenames;  // list of filenames to be processed
   UL channel_assignment;
   UL picture_coding;
+  bool dolby_atmos_sync_flag;  // if true, insert a Dolby Atmos Synchronization channel.
+  ui32_t ffoa;  /// first frame of action for atmos wrapping
+  ui32_t max_channel_count; /// max channel count for atmos wrapping
+  ui32_t max_object_count; /// max object count for atmos wrapping
+
 
   //
   Rational PictureRate()
@@ -268,6 +278,8 @@ public:
     duration(0xffffffff), use_smpte_labels(false), j2c_pedantic(true),
     fb_size(FRAME_BUFFER_SIZE),
     channel_fmt(PCM::CF_NONE),
+    ffoa(0), max_channel_count(10), max_object_count(118), // hard-coded sample atmos properties
+    dolby_atmos_sync_flag(false),
     show_ul_values(false)
   {
     memset(key_value, 0, KeyLen);
@@ -281,7 +293,7 @@ public:
 	    help_flag = true;
 	    continue;
 	  }
-         
+
 	if ( argv[i][0] == '-'
 	     && ( isalpha(argv[i][1]) || isdigit(argv[i][1]) )
 	     && argv[i][2] == 0 )
@@ -387,7 +399,7 @@ public:
 		TEST_EXTRA_ARG(i, 'p');
 		picture_rate = abs(atoi(argv[i]));
 		break;
-
+          case 's': dolby_atmos_sync_flag = true; break;
 	      case 'V': version_flag = true; break;
 	      case 'v': verbose_flag = true; break;
 	      case 'W': no_write_flag = true; break;
@@ -416,7 +428,7 @@ public:
 
     if ( help_flag || version_flag )
       return;
-    
+
     if ( filenames.size() < 2 )
       {
 	fputs("Option requires at least two filename arguments: <input-file> <output-file>\n", stderr);
@@ -515,19 +527,16 @@ write_MPEG2_file(CommandOptions& Options)
 
       while ( ASDCP_SUCCESS(result) && duration++ < Options.duration )
 	{
-	  if ( duration == 1 )
-	    {
 	      result = Parser.ReadFrame(FrameBuffer);
 
 	      if ( ASDCP_SUCCESS(result) )
 		{
 		  if ( Options.verbose_flag )
 		    FrameBuffer.Dump(stderr, Options.fb_dump_size);
-		  
+
 		  if ( Options.encrypt_header_flag )
 		    FrameBuffer.PlaintextOffset(0);
 		}
-	    }
 
 	  if ( ASDCP_SUCCESS(result) && ! Options.no_write_flag )
 	    {
@@ -578,7 +587,7 @@ check_phfr_params(CommandOptions& Options, JP2K::PictureDescriptor& PDesc)
   // do not set the label if the user has already done so
   if ( ! Options.picture_coding.HasValue() )
     Options.picture_coding = UL(P_HFR_UL_2K);
-  
+
   return true;
 }
 
@@ -673,7 +682,7 @@ write_JP2K_S_file(CommandOptions& Options)
 
       if ( ASDCP_SUCCESS(result) )
 	result = Writer.OpenWrite(Options.out_file.c_str(), Info, PDesc);
-      
+
       if ( ASDCP_SUCCESS(result) && Options.picture_coding.HasValue() )
 	{
 	  MXF::RGBAEssenceDescriptor *descriptor = 0;
@@ -697,7 +706,7 @@ write_JP2K_S_file(CommandOptions& Options)
 	    {
 	      if ( Options.verbose_flag )
 		FrameBuffer.Dump(stderr, Options.fb_dump_size);
-		  
+
 	      if ( Options.encrypt_header_flag )
 		FrameBuffer.PlaintextOffset(0);
 	    }
@@ -712,7 +721,7 @@ write_JP2K_S_file(CommandOptions& Options)
 	    {
 	      if ( Options.verbose_flag )
 		FrameBuffer.Dump(stderr, Options.fb_dump_size);
-		  
+
 	      if ( Options.encrypt_header_flag )
 		FrameBuffer.PlaintextOffset(0);
 	    }
@@ -825,19 +834,16 @@ write_JP2K_file(CommandOptions& Options)
 
       while ( ASDCP_SUCCESS(result) && duration++ < Options.duration )
 	{
-	  if ( duration == 1 )
-	    {
 	      result = Parser.ReadFrame(FrameBuffer);
 
 	      if ( ASDCP_SUCCESS(result) )
 		{
 		  if ( Options.verbose_flag )
 		    FrameBuffer.Dump(stderr, Options.fb_dump_size);
-		  
+
 		  if ( Options.encrypt_header_flag )
 		    FrameBuffer.PlaintextOffset(0);
 		}
-	    }
 
 	  if ( ASDCP_SUCCESS(result) && ! Options.no_write_flag )
 	    {
@@ -1007,6 +1013,131 @@ write_PCM_file(CommandOptions& Options)
   return result;
 }
 
+// Mix one or more plaintext PCM audio streams with a Dolby Atmos Synchronization channel and write them to a plaintext ASDCP file
+// Mix one or more plaintext PCM audio streams with a Dolby Atmos Synchronization channel and write them to a ciphertext ASDCP file
+//
+Result_t
+write_PCM_with_ATMOS_sync_file(CommandOptions& Options)
+{
+  AESEncContext*        Context = 0;
+  HMACContext*          HMAC = 0;
+  PCM::MXFWriter        Writer;
+  PCM::FrameBuffer      FrameBuffer;
+  PCM::AudioDescriptor  ADesc;
+  Rational              PictureRate = Options.PictureRate();
+  byte_t                IV_buf[CBC_BLOCK_SIZE];
+  Kumu::FortunaRNG      RNG;
+
+  WriterInfo Info = s_MyInfo;  // fill in your favorite identifiers here
+  if ( Options.asset_id_flag )
+	memcpy(Info.AssetUUID, Options.asset_id_value, UUIDlen);
+  else
+	Kumu::GenRandomUUID(Info.AssetUUID);
+  AtmosSyncChannelMixer Mixer(Info.AssetUUID);
+
+  // set up essence parser
+  Result_t result = Mixer.OpenRead(Options.filenames, PictureRate);
+
+  // set up MXF writer
+  if ( ASDCP_SUCCESS(result) )
+  {
+    Mixer.FillAudioDescriptor(ADesc);
+
+    ADesc.EditRate = PictureRate;
+    FrameBuffer.Capacity(PCM::CalcFrameBufferSize(ADesc));
+    ADesc.ChannelFormat = PCM::CF_CFG_4;
+
+    if ( Options.verbose_flag )
+	{
+	  fprintf(stderr, "%.1fkHz PCM Audio, %s fps (%u spf)\n",
+              ADesc.AudioSamplingRate.Quotient() / 1000.0,
+              Options.szPictureRate(),
+              PCM::CalcSamplesPerFrame(ADesc));
+	  fputs("AudioDescriptor:\n", stderr);
+	  PCM::AudioDescriptorDump(ADesc);
+	}
+  }
+
+  if ( ASDCP_SUCCESS(result) && ! Options.no_write_flag )
+  {
+    Info.LabelSetType = LS_MXF_SMPTE;
+    fprintf(stderr, "ATTENTION! Writing SMPTE Universal Labels\n");
+
+    // configure encryption
+    if( Options.key_flag )
+	{
+	  Kumu::GenRandomUUID(Info.ContextID);
+	  Info.EncryptedEssence = true;
+
+	  if ( Options.key_id_flag )
+	    memcpy(Info.CryptographicKeyID, Options.key_id_value, UUIDlen);
+	  else
+	    RNG.FillRandom(Info.CryptographicKeyID, UUIDlen);
+
+	  Context = new AESEncContext;
+	  result = Context->InitKey(Options.key_value);
+
+	  if ( ASDCP_SUCCESS(result) )
+	    result = Context->SetIVec(RNG.FillRandom(IV_buf, CBC_BLOCK_SIZE));
+
+	  if ( ASDCP_SUCCESS(result) && Options.write_hmac )
+      {
+        Info.UsesHMAC = true;
+        HMAC = new HMACContext;
+        result = HMAC->InitKey(Options.key_value, Info.LabelSetType);
+      }
+	}
+
+    if ( ASDCP_SUCCESS(result) )
+      result = Writer.OpenWrite(Options.out_file.c_str(), Info, ADesc);
+  }
+
+  if ( ASDCP_SUCCESS(result) )
+  {
+    result = Mixer.Reset();
+    ui32_t duration = 0;
+
+    while ( ASDCP_SUCCESS(result) && duration++ < Options.duration )
+	{
+	  result = Mixer.ReadFrame(FrameBuffer);
+
+	  if ( ASDCP_SUCCESS(result) )
+      {
+        if ( FrameBuffer.Size() != FrameBuffer.Capacity() )
+		{
+		  fprintf(stderr, "WARNING: Last frame read was short, PCM input is possibly not frame aligned.\n");
+		  fprintf(stderr, "Expecting %u bytes, got %u.\n", FrameBuffer.Capacity(), FrameBuffer.Size());
+		  result = RESULT_ENDOFFILE;
+		  continue;
+		}
+
+        if ( Options.verbose_flag )
+          FrameBuffer.Dump(stderr, Options.fb_dump_size);
+
+        if ( ! Options.no_write_flag )
+		{
+		  result = Writer.WriteFrame(FrameBuffer, Context, HMAC);
+
+		  // The Writer class will forward the last block of ciphertext
+		  // to the encryption context for use as the IV for the next
+		  // frame. If you want to use non-sequitur IV values, un-comment
+		  // the following  line of code.
+		  // if ( ASDCP_SUCCESS(result) && Options.key_flag )
+		  //   Context->SetIVec(RNG.FillRandom(IV_buf, CBC_BLOCK_SIZE));
+		}
+      }
+	}
+
+    if ( result == RESULT_ENDOFFILE )
+      result = RESULT_OK;
+  }
+
+  if ( ASDCP_SUCCESS(result) && ! Options.no_write_flag )
+    result = Writer.Finalize();
+
+  return result;
+}
+
 
 //------------------------------------------------------------------------------------------
 // TimedText essence
@@ -1109,7 +1240,7 @@ write_timed_text_file(CommandOptions& Options)
 	  if ( ! Options.no_write_flag )
 	    {
 	      result = Writer.WriteAncillaryResource(FrameBuffer, Context, HMAC);
-	      
+
 	      // The Writer class will forward the last block of ciphertext
 	      // to the encryption context for use as the IV for the next
 	      // frame. If you want to use non-sequitur IV values, un-comment
@@ -1122,6 +1253,124 @@ write_timed_text_file(CommandOptions& Options)
       if ( result == RESULT_ENDOFFILE )
 	result = RESULT_OK;
     }
+
+  if ( ASDCP_SUCCESS(result) && ! Options.no_write_flag )
+    result = Writer.Finalize();
+
+  return result;
+}
+
+// Write one or more plaintext Dolby ATMOS bytestreams to a plaintext ASDCP file
+// Write one or more plaintext Dolby ATMOS bytestreams to a ciphertext ASDCP file
+//
+Result_t
+write_dolby_atmos_file(CommandOptions& Options)
+{
+  AESEncContext*          Context = 0;
+  HMACContext*            HMAC = 0;
+  ATMOS::MXFWriter         Writer;
+  DCData::FrameBuffer       FrameBuffer(Options.fb_size);
+  ATMOS::AtmosDescriptor ADesc;
+  DCData::SequenceParser    Parser;
+  byte_t                  IV_buf[CBC_BLOCK_SIZE];
+  Kumu::FortunaRNG        RNG;
+
+  // set up essence parser
+  Result_t result = Parser.OpenRead(Options.filenames.front().c_str());
+
+  // set up MXF writer
+  if ( ASDCP_SUCCESS(result) )
+  {
+    Parser.FillDCDataDescriptor(ADesc);
+    ADesc.EditRate = Options.PictureRate();
+    // TODO: fill AtmosDescriptor
+    ADesc.FirstFrame = Options.ffoa;
+    ADesc.MaxChannelCount = Options.max_channel_count;
+    ADesc.MaxObjectCount = Options.max_object_count;
+    Kumu::GenRandomUUID(ADesc.AtmosID);
+    ADesc.AtmosVersion = 1;
+    if ( Options.verbose_flag )
+	{
+	  fprintf(stderr, "Dolby ATMOS Data\n");
+	  fputs("AtmosDescriptor:\n", stderr);
+      fprintf(stderr, "Frame Buffer size: %u\n", Options.fb_size);
+      ATMOS::AtmosDescriptorDump(ADesc);
+	}
+  }
+
+  if ( ASDCP_SUCCESS(result) && ! Options.no_write_flag )
+  {
+    WriterInfo Info = s_MyInfo;  // fill in your favorite identifiers here
+    if ( Options.asset_id_flag )
+      memcpy(Info.AssetUUID, Options.asset_id_value, UUIDlen);
+    else
+      Kumu::GenRandomUUID(Info.AssetUUID);
+
+    Info.LabelSetType = LS_MXF_SMPTE;
+
+      // configure encryption
+    if( Options.key_flag )
+	{
+	  Kumu::GenRandomUUID(Info.ContextID);
+	  Info.EncryptedEssence = true;
+
+	  if ( Options.key_id_flag )
+	    memcpy(Info.CryptographicKeyID, Options.key_id_value, UUIDlen);
+	  else
+	    RNG.FillRandom(Info.CryptographicKeyID, UUIDlen);
+
+	  Context = new AESEncContext;
+	  result = Context->InitKey(Options.key_value);
+
+	  if ( ASDCP_SUCCESS(result) )
+	    result = Context->SetIVec(RNG.FillRandom(IV_buf, CBC_BLOCK_SIZE));
+
+	  if ( ASDCP_SUCCESS(result) && Options.write_hmac )
+      {
+        Info.UsesHMAC = true;
+        HMAC = new HMACContext;
+        result = HMAC->InitKey(Options.key_value, Info.LabelSetType);
+      }
+	}
+
+    if ( ASDCP_SUCCESS(result) )
+      result = Writer.OpenWrite(Options.out_file.c_str(), Info, ADesc);
+  }
+
+  if ( ASDCP_SUCCESS(result) )
+  {
+    ui32_t duration = 0;
+    result = Parser.Reset();
+
+    while ( ASDCP_SUCCESS(result) && duration++ < Options.duration )
+	{
+      result = Parser.ReadFrame(FrameBuffer);
+
+      if ( ASDCP_SUCCESS(result) )
+      {
+        if ( Options.verbose_flag )
+          FrameBuffer.Dump(stderr, Options.fb_dump_size);
+
+        if ( Options.encrypt_header_flag )
+          FrameBuffer.PlaintextOffset(0);
+      }
+
+      if ( ASDCP_SUCCESS(result) && ! Options.no_write_flag )
+      {
+        result = Writer.WriteFrame(FrameBuffer, Context, HMAC);
+
+        // The Writer class will forward the last block of ciphertext
+        // to the encryption context for use as the IV for the next
+        // frame. If you want to use non-sequitur IV values, un-comment
+        // the following  line of code.
+        // if ( ASDCP_SUCCESS(result) && Options.key_flag )
+        //   Context->SetIVec(RNG.FillRandom(IV_buf, CBC_BLOCK_SIZE));
+      }
+	}
+
+    if ( result == RESULT_ENDOFFILE )
+      result = RESULT_OK;
+  }
 
   if ( ASDCP_SUCCESS(result) && ! Options.no_write_flag )
     result = Writer.Finalize();
@@ -1184,11 +1433,22 @@ main(int argc, const char** argv)
 
 	case ESS_PCM_24b_48k:
 	case ESS_PCM_24b_96k:
-	  result = write_PCM_file(Options);
+      if ( Options.dolby_atmos_sync_flag )
+      {
+        result = write_PCM_with_ATMOS_sync_file(Options);
+      }
+      else
+      {
+        result = write_PCM_file(Options);
+      }
 	  break;
 
 	case ESS_TIMED_TEXT:
 	  result = write_timed_text_file(Options);
+	  break;
+
+	case ESS_DCDATA_DOLBY_ATMOS:
+	  result = write_dolby_atmos_file(Options);
 	  break;
 
 	default:

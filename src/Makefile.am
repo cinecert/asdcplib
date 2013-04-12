@@ -61,7 +61,8 @@ include_HEADERS += \
 	MXFTypes.h \
 	MXF.h \
 	Wav.h \
-	PCMParserList.h
+	PCMParserList.h \
+	AtmosSyncChannel_Generator.h
 nodist_include_HEADERS = TimedText_Transform.h
 endif
 
@@ -89,7 +90,16 @@ libasdcp_la_SOURCES = MPEG2_Parser.cpp MPEG.cpp JP2K_Codestream_Parser.cpp \
 		AS_DCP_PCM.cpp AS_DCP_TimedText.cpp PCMParserList.cpp \
 		Wav.h WavFileWriter.h MXF.h Metadata.h \
 		JP2K.h AS_DCP.h AS_DCP_internal.h KLV.h MPEG.h MXFTypes.h MDD.h \
-		PCMParserList.h S12MTimecode.h MDD.cpp
+		PCMParserList.h S12MTimecode.h MDD.cpp \
+		AS_DCP_ATMOS.cpp  AS_DCP_DCData.cpp AS_DCP_DCData_internal.h \
+		DCData_ByteStream_Parser.cpp DCData_Sequence_Parser.cpp \
+		AtmosSyncChannel_Generator.cpp AtmosSyncChannel_Generator.h \
+		AtmosSyncChannel_Mixer.cpp AtmosSyncChannel_Mixer.h \
+		PCMDataProviders.cpp PCMDataProviders.h \
+		SyncEncoder.c SyncEncoder.h SyncCommon.h CRC16.c CRC16.h \
+		UUIDInformation.c UUIDInformation.h
+
+
 if DEV_HEADERS
 nodist_libasdcp_la_SOURCES += TimedText_Transform.h TimedText_Transform.cpp
 endif

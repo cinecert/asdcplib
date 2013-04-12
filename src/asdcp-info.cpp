@@ -25,7 +25,7 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 /*! \file    asdcp-info.cpp
-    \version $Id$       
+    \version $Id$
     \brief   AS-DCP file metadata utility
 
   This program provides metadata information about an AS-DCP file.
@@ -125,7 +125,7 @@ public:
   bool   stereo_image_flag; // if true, expect stereoscopic JP2K input (left eye first)
   bool   showid_flag;          // if true, show file identity info (the WriterInfo struct)
   bool   showdescriptor_flag;  // if true, show the essence descriptor
-  bool   showcoding_flag;      // if true, show the coding UL 
+  bool   showcoding_flag;      // if true, show the coding UL
   bool   showrate_flag;        // if true and is image file, show bit rate
   bool   max_bitrate_flag;     // true if -t option given
   double max_bitrate;          // if true and is image file, max bit rate for rate test
@@ -145,7 +145,7 @@ public:
 	    help_flag = true;
 	    continue;
 	  }
-         
+
 	if ( argv[i][0] == '-'
 	     && ( isalpha(argv[i][1]) || isdigit(argv[i][1]) )
 	     && argv[i][2] == 0 )
@@ -191,7 +191,7 @@ public:
 
     if ( help_flag || version_flag )
       return;
-    
+
     if ( filenames.empty() )
       {
 	fputs("At least one filename argument is required.\n", stderr);
@@ -270,6 +270,30 @@ class MyTextDescriptor : public TimedText::TimedTextDescriptor
   }
 };
 
+class MyDCDataDescriptor : public DCData::DCDataDescriptor
+{
+ public:
+  void FillDescriptor(DCData::MXFReader& Reader) {
+    Reader.FillDCDataDescriptor(*this);
+  }
+
+  void Dump(FILE* stream) {
+      DCData::DCDataDescriptorDump(*this, stream);
+  }
+};
+
+class MyAtmosDescriptor : public ATMOS::AtmosDescriptor
+{
+ public:
+  void FillDescriptor(ATMOS::MXFReader& Reader) {
+    Reader.FillAtmosDescriptor(*this);
+  }
+
+  void Dump(FILE* stream) {
+      ATMOS::AtmosDescriptorDump(*this, stream);
+  }
+};
+
 //
 //
 template<class ReaderT, class DescriptorT>
@@ -333,7 +357,7 @@ public:
 
     Result_t result = m_Reader.OPAtomHeader().GetMDObjectByType(DefaultCompositeDict().ul(MDD_RGBAEssenceDescriptor),
 								reinterpret_cast<MXF::InterchangeObject**>(&descriptor));
-    
+
     if ( KM_SUCCESS(result) )
       m_PictureEssenceCoding = descriptor->PictureEssenceCoding;
   }
@@ -489,7 +513,7 @@ public:
 
     Result_t result = m_Reader.OPAtomHeader().GetMDObjectByType(DefaultCompositeDict().ul(MDD_WaveAudioDescriptor),
 								reinterpret_cast<MXF::InterchangeObject**>(&descriptor));
-    
+
     if ( KM_SUCCESS(result) )
       {
 	char buf[64];
@@ -572,7 +596,7 @@ show_file_info(CommandOptions& Options)
     {
       FileInfoWrapper<ASDCP::JP2K::MXFSReader, MyStereoPictureDescriptor>wrapper;
       result = wrapper.file_info(Options, "JPEG 2000 stereoscopic pictures");
-      
+
       if ( KM_SUCCESS(result) )
 	{
 	  wrapper.get_PictureEssenceCoding();
@@ -591,6 +615,16 @@ show_file_info(CommandOptions& Options)
     {
       FileInfoWrapper<ASDCP::TimedText::MXFReader, MyTextDescriptor>wrapper;
       result = wrapper.file_info(Options, "Timed Text");
+    }
+  else if ( EssenceType == ESS_DCDATA_UNKNOWN )
+    {
+      FileInfoWrapper<ASDCP::DCData::MXFReader, MyDCDataDescriptor> wrapper;
+      result = wrapper.file_info(Options, "D-Cinema Generic Data");
+    }
+  else if ( EssenceType == ESS_DCDATA_DOLBY_ATMOS )
+    {
+      FileInfoWrapper<ASDCP::ATMOS::MXFReader, MyAtmosDescriptor> wrapper;
+      result = wrapper.file_info(Options, "Dolby ATMOS");
     }
   else
     {

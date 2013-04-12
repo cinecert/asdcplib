@@ -191,6 +191,13 @@ ASDCP::EssenceType(const char* filename, EssenceType_t& type)
 	type = ESS_MPEG2_VES;
       else if ( ASDCP_SUCCESS(TestHeader.GetMDObjectByType(OBJ_TYPE_ARGS(TimedTextDescriptor))) )
 	type = ESS_TIMED_TEXT;
+      else if ( ASDCP_SUCCESS(TestHeader.GetMDObjectByType(OBJ_TYPE_ARGS(DCDataDescriptor))) )
+      {
+        if ( ASDCP_SUCCESS(TestHeader.GetMDObjectByType(OBJ_TYPE_ARGS(DolbyAtmosSubDescriptor))) )
+          type = ESS_DCDATA_DOLBY_ATMOS;
+        else
+          type = ESS_DCDATA_UNKNOWN;
+      }
     }
 
   return result;
@@ -205,6 +212,7 @@ ASDCP::RawEssenceType(const char* filename, EssenceType_t& type)
   ASDCP::FrameBuffer FB;
   Kumu::FileReader Reader;
   ASDCP::Wav::SimpleWaveHeader WavHeader;
+  ASDCP::RF64::SimpleRF64Header RF64Header;
   ASDCP::AIFF::SimpleAIFFHeader AIFFHeader;
   Kumu::XMLElement TmpElement("Tmp");
 
@@ -248,6 +256,16 @@ ASDCP::RawEssenceType(const char* filename, EssenceType_t& type)
 		  return RESULT_FORMAT;
 		}
 	    }
+	  else if ( ASDCP_SUCCESS(RF64Header.ReadFromBuffer(FB.RoData(), read_count, &data_offset)) )
+	    {
+	      switch ( RF64Header.samplespersec )
+		{
+		case 48000: type = ESS_PCM_24b_48k; break;
+		case 96000: type = ESS_PCM_24b_96k; break;
+		default:
+		  return RESULT_FORMAT;
+		}
+	    }
 	  else if ( ASDCP_SUCCESS(AIFFHeader.ReadFromBuffer(FB.RoData(), read_count, &data_offset)) )
 	    {
 	      type = ESS_PCM_24b_48k;
@@ -256,6 +274,10 @@ ASDCP::RawEssenceType(const char* filename, EssenceType_t& type)
 	    {
 	      type = ESS_TIMED_TEXT;
 	    }
+      else if ( ASDCP::ATMOS::IsDolbyAtmos(filename) )
+      {
+        type = ESS_DCDATA_DOLBY_ATMOS;
+      }
 	}
     }
   else if ( Kumu::PathIsDirectory(filename) )
@@ -298,6 +320,21 @@ ASDCP::RawEssenceType(const char* filename, EssenceType_t& type)
 			  return RESULT_FORMAT;
 			}
 		    }
+	      else if ( ASDCP_SUCCESS(RF64Header.ReadFromBuffer(FB.RoData(), read_count, &data_offset)) )
+            {
+              switch ( RF64Header.samplespersec )
+            {
+            case 48000: type = ESS_PCM_24b_48k; break;
+            case 96000: type = ESS_PCM_24b_96k; break;
+            default:
+              return RESULT_FORMAT;
+            }
+		}
+          else if ( ASDCP::ATMOS::IsDolbyAtmos(Str.c_str()) )
+          {
+            type = ESS_DCDATA_DOLBY_ATMOS;
+          }
+
 		}
 
 	      break;

@@ -333,6 +333,8 @@ ASDCP::MPEG2::MXFReader::MXFReader()
 
 ASDCP::MPEG2::MXFReader::~MXFReader()
 {
+  if ( m_Reader && m_Reader->m_File.IsOpen() )
+    m_Reader->Close();
 }
 
 // Warning: direct manipulation of MXF structures can interfere
@@ -384,6 +386,13 @@ ASDCP::MPEG2::MXFReader::ReadFrame(ui32_t FrameNum, FrameBuffer& FrameBuf,
   return RESULT_INIT;
 }
 
+
+//
+ASDCP::Result_t
+ASDCP::MPEG2::MXFReader::LocateFrame(ui32_t FrameNum, Kumu::fpos_t& streamOffset, i8_t& temporalOffset, i8_t& keyFrameOffset) const
+{
+    return m_Reader->LocateFrame(FrameNum, streamOffset, temporalOffset, keyFrameOffset);
+}
 
 //
 ASDCP::Result_t

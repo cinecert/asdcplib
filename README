@@ -139,6 +139,18 @@ command-line utilities all respond to -h.
 
 Change History
 
+2013-04-12 - Dolby Atmos support and more audio labels 1.11.49
+  o Significant code contribution from Dolby Laboratories to add
+    support for generic data track files as proposed in ST 21DC
+    and also Dolby Atmos track file support as a specialization.
+  o Added Dolby-contributed code to support generating the external
+    sync signal for d-cinema as proposed in ST 21DC.
+  o Added Dolby-contributed code to support RF64 WAVE files.
+  o Fixed UL error in ST 429-5 DM encoding (contributed by Dolby).
+  o Added ULs for ST 428-12 and Amd. 429-2 2013.  Please check!
+
+
+
 2013-02-20 - bug fixes, enhancements 1.10.48
  o Refactored internals of the AS-DCP file readers.  While no
    changes in behavior are intended, users are cautioned to test

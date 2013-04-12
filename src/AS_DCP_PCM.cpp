@@ -134,6 +134,35 @@ ASDCP::PCM::operator << (std::ostream& strm, const AudioDescriptor& ADesc)
   strm << "            AvgBps: " << (unsigned) ADesc.AvgBps << std::endl;
   strm << "     LinkedTrackID: " << (unsigned) ADesc.LinkedTrackID << std::endl;
   strm << " ContainerDuration: " << (unsigned) ADesc.ContainerDuration << std::endl;
+  strm << "     ChannelFormat: ";
+  switch (ADesc.ChannelFormat)
+  {
+    case CF_NONE:
+    default:
+      strm << "No Channel Format";
+      break;
+
+    case CF_CFG_1:
+      strm << "Config 1 (5.1 with optional HI/VI)";
+      break;
+
+    case CF_CFG_2:
+      strm << "Config 2 (5.1 + center surround with optional HI/VI)";
+      break;
+
+    case CF_CFG_3:
+      strm << "Config 3 (7.1 with optional HI/VI)";
+      break;
+
+    case CF_CFG_4:
+      strm << "Config 4";
+      break;
+
+    case CF_CFG_5:
+      strm << "Config 5 (7.1 DS with optional HI/VI)";
+      break;
+  }
+  strm << std::endl;
 
   return strm;
 }
@@ -154,7 +183,8 @@ ASDCP::PCM::AudioDescriptorDump(const AudioDescriptor& ADesc, FILE* stream)
         BlockAlign: %u\n\
             AvgBps: %u\n\
      LinkedTrackID: %u\n\
- ContainerDuration: %u\n",
+ ContainerDuration: %u\n\
+     ChannelFormat: %u\n",
 	  ADesc.EditRate.Numerator, ADesc.EditRate.Denominator,
 	  ADesc.AudioSamplingRate.Numerator, ADesc.AudioSamplingRate.Denominator,
 	  ADesc.Locked,
@@ -163,7 +193,8 @@ ASDCP::PCM::AudioDescriptorDump(const AudioDescriptor& ADesc, FILE* stream)
 	  ADesc.BlockAlign,
 	  ADesc.AvgBps,
 	  ADesc.LinkedTrackID,
-	  ADesc.ContainerDuration
+	  ADesc.ContainerDuration,
+          ADesc.ChannelFormat
 	  );
 }
 
@@ -256,6 +287,7 @@ ASDCP::PCM::MXFReader::h__Reader::OpenRead(const char* filename)
 	}
       else
 	{
+      DefaultLogSink().Error("PCM EditRate not in expected value range.\n");
 	  // or we just drop the hammer
 	  return RESULT_FORMAT;
 	}
@@ -369,6 +401,12 @@ ASDCP::PCM::MXFReader::ReadFrame(ui32_t FrameNum, FrameBuffer& FrameBuf,
   return RESULT_INIT;
 }
 
+
+ASDCP::Result_t
+ASDCP::PCM::MXFReader::LocateFrame(ui32_t FrameNum, Kumu::fpos_t& streamOffset, i8_t& temporalOffset, i8_t& keyFrameOffset) const
+{
+    return m_Reader->LocateFrame(FrameNum, streamOffset, temporalOffset, keyFrameOffset);
+}
 
 // Fill the struct with the values from the file's header.
 // Returns RESULT_INIT if the file is not open.

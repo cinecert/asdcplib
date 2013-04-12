@@ -280,6 +280,22 @@ lh__Reader::MD_to_JP2K_PDesc(JP2K::PictureDescriptor& PDesc)
   return RESULT_OK;
 }
 
+// Compares the actual floating point value of the rates.
+// This allows, for example, {300000,1001} and {2997,100) to be considered equivalent.
+// to 29.97.
+bool 
+epsilon_compare(const ASDCP::Rational& left, const ASDCP::Rational& right, double epsilon = 0.001)
+{
+  bool result = false;
+  double difference = left.Quotient() - right.Quotient();
+
+  if (fabs(difference) < epsilon)
+    result = true;
+
+  return result;
+}
+// end DOLBY
+
 //
 //
 ASDCP::Result_t
@@ -459,6 +475,8 @@ ASDCP::JP2K::MXFReader::MXFReader()
 
 ASDCP::JP2K::MXFReader::~MXFReader()
 {
+  if ( m_Reader && m_Reader->m_File.IsOpen() )
+    m_Reader->Close();
 }
 
 // Warning: direct manipulation of MXF structures can interfere
@@ -508,6 +526,12 @@ ASDCP::JP2K::MXFReader::ReadFrame(ui32_t FrameNum, FrameBuffer& FrameBuf,
     return m_Reader->ReadFrame(FrameNum, FrameBuf, Ctx, HMAC);
 
   return RESULT_INIT;
+}
+
+ASDCP::Result_t
+ASDCP::JP2K::MXFReader::LocateFrame(ui32_t FrameNum, Kumu::fpos_t& streamOffset, i8_t& temporalOffset, i8_t& keyFrameOffset) const
+{
+    return m_Reader->LocateFrame(FrameNum, streamOffset, temporalOffset, keyFrameOffset);
 }
 
 
@@ -663,6 +687,8 @@ ASDCP::JP2K::MXFSReader::MXFSReader()
 
 ASDCP::JP2K::MXFSReader::~MXFSReader()
 {
+  if ( m_Reader && m_Reader->m_File.IsOpen() )
+    m_Reader->Close();
 }
 
 // Warning: direct manipulation of MXF structures can interfere
@@ -729,6 +755,12 @@ ASDCP::JP2K::MXFSReader::ReadFrame(ui32_t FrameNum, StereoscopicPhase_t phase, F
     return m_Reader->ReadFrame(FrameNum, phase, FrameBuf, Ctx, HMAC);
 
   return RESULT_INIT;
+}
+
+ASDCP::Result_t
+ASDCP::JP2K::MXFSReader::LocateFrame(ui32_t FrameNum, Kumu::fpos_t& streamOffset, i8_t& temporalOffset, i8_t& keyFrameOffset) const
+{
+    return m_Reader->LocateFrame(FrameNum, streamOffset, temporalOffset, keyFrameOffset);
 }
 
 // Fill the struct with the values from the file's header.

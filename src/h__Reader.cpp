@@ -75,19 +75,26 @@ ASDCP::h__ASDCPReader::OpenMXFRead(const char* filename)
 
   if ( KM_SUCCESS(result) )
     {
-      // if this is a three partition file, go to the body
-      // partition and read the partition pack
-      if ( m_HeaderPart.m_RIP.PairArray.size() > 2 )
-	{
-	  Array<RIP::Pair>::iterator r_i = m_HeaderPart.m_RIP.PairArray.begin();
-	  r_i++;
-	  m_File.Seek((*r_i).ByteOffset);
-	  result = m_BodyPart.InitFromFile(m_File);
-	}
+        // if this is a three partition file, go to the body
+        // partition and read the partition pack
+        if ( m_HeaderPart.m_RIP.PairArray.size() > 2 )
+        {
+            Array<RIP::Pair>::iterator r_i = m_HeaderPart.m_RIP.PairArray.begin();
+            r_i++;
+            m_File.Seek((*r_i).ByteOffset);
+            result = m_BodyPart.InitFromFile(m_File);
+            if( !ASDCP_SUCCESS(result) )
+            {
+                DefaultLogSink().Error("ASDCP::h__Reader::OpenMXFRead, m_BodyPart.InitFromFile failed\n");
+            }
+        }
     }
+    else
+      DefaultLogSink().Error("ASDCP::h__Reader::OpenMXFRead, TrackFileReader::OpenMXFRead failed\n");
+
 
   if ( KM_SUCCESS(result) )
-    m_HeaderPart.BodyOffset = m_File.Tell();
+      m_HeaderPart.BodyOffset = m_File.Tell();
 
   return result;
 }
@@ -146,6 +153,14 @@ ASDCP::h__ASDCPReader::ReadEKLVFrame(ui32_t FrameNum, ASDCP::FrameBuffer& FrameB
 {
   return ASDCP::MXF::TrackFileReader<OPAtomHeader, OPAtomIndexFooter>::ReadEKLVFrame(m_HeaderPart, FrameNum, FrameBuf,
 										     EssenceUL, Ctx, HMAC);
+}
+
+Result_t
+ASDCP::h__ASDCPReader::LocateFrame(ui32_t FrameNum, Kumu::fpos_t& streamOffset,
+                           i8_t& temporalOffset, i8_t& keyFrameOffset)
+{
+  return ASDCP::MXF::TrackFileReader<OPAtomHeader, OPAtomIndexFooter>::LocateFrame(m_HeaderPart, FrameNum,
+                                                                                   streamOffset, temporalOffset, keyFrameOffset);
 }
 
 

@@ -92,7 +92,7 @@ ASDCP::TimedText::DescriptorDump(ASDCP::TimedText::TimedTextDescriptor const& TD
   fprintf(stream, "ContainerDuration: %u\n",    TDesc.ContainerDuration);
   fprintf(stream, "          AssetID: %s\n",    TmpID.EncodeHex(buf, 64));
   fprintf(stream, "    NamespaceName: %s\n",    TDesc.NamespaceName.c_str());
-  fprintf(stream, "    ResourceCount: %d\n",   TDesc.ResourceList.size());
+  fprintf(stream, "    ResourceCount: %zu\n",   TDesc.ResourceList.size());
 
   TimedText::ResourceList_t::const_iterator ri;
   for ( ri = TDesc.ResourceList.begin() ; ri != TDesc.ResourceList.end(); ri++ )
@@ -567,7 +567,7 @@ ASDCP::TimedText::MXFWriter::h__Writer::SetSourceStream(ASDCP::TimedText::TimedT
     {
       InitHeader();
       AddDMSegment(m_TDesc.EditRate, 24, TIMED_TEXT_DEF_LABEL,
-		   UL(m_Dict->ul(MDD_PictureDataDef)), TIMED_TEXT_PACKAGE_LABEL);
+		   UL(m_Dict->ul(MDD_DataDataDef)), TIMED_TEXT_PACKAGE_LABEL);
 
       AddEssenceDescriptor(UL(m_Dict->ul(MDD_TimedTextWrapping)));
 
