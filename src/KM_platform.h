@@ -166,7 +166,7 @@ namespace Kumu
       ~mem_ptr() { delete m_p; }
 
       inline T&   operator*()  const { return *m_p; }
-      inline T*   operator->() const { return m_p; }
+      inline T*   operator->() const { assert(m_p!=0); return m_p; }
       inline      operator T*()const { return m_p; }
       inline const mem_ptr<T>& operator=(T* p) { this->set(p); return *this; }
       inline T*   set(T* p)          { delete m_p; m_p = p; return m_p; }

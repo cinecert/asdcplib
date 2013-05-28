@@ -127,7 +127,7 @@ namespace ASDCP
 
       static const ui32_t MAX_RIFF_LEN = 0xFFFFFFFF;
       static const ui32_t DS64_HEADER_LEN = 28;
-      static const ui32_t SIMPLE_RF64_HEADER_LEN = 80;
+      static const ui32_t SIMPLE_RF64_HEADER_LEN = 82;
       //
       class SimpleRF64Header
 	{
@@ -138,11 +138,12 @@ namespace ASDCP
 	  ui32_t	avgbps;
 	  ui16_t	blockalign;
 	  ui16_t	bitspersample;
+	  ui16_t	cbsize;
 	  ui64_t	data_len;
 
 	  SimpleRF64Header() :
 	    format(0), nchannels(0), samplespersec(0), avgbps(0),
-	    blockalign(0), bitspersample(0), data_len(0) {}
+	    blockalign(0), bitspersample(0), cbsize(0), data_len(0) {}
 
 	  SimpleRF64Header(ASDCP::PCM::AudioDescriptor& ADesc);
 
