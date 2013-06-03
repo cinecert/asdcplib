@@ -1,6 +1,6 @@
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
-# Copyright (c) 2007-2012 John Hurst. All rights reserved.
+# Copyright (c) 2007-2013 John Hurst. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -37,7 +37,7 @@ AC_PREREQ([2.59])
 # For example, if asdcplib version 1.0.0 were modified to accomodate changes
 # in file format, and if no changes were made to AS_DCP.h, the new version would be
 # 1.0.1. If changes were also required in AS_DCP.h, the new version would be 1.1.1.
-AC_INIT([asdcplib], [1.11.49], [asdcplib@cinecert.com])
+AC_INIT([asdcplib], [1.12.50a], [asdcplib@cinecert.com])
 
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_SRCDIR([src/KM_error.h])
@@ -87,13 +87,21 @@ AC_ARG_ENABLE([dev-headers],
      esac],[dev_headers=false])
      AM_CONDITIONAL([DEV_HEADERS], [test x$dev_headers = xtrue])
 AC_ARG_ENABLE([random-case-UUID],
-     [  --enable-random-case-UUID    allow randomly cased UUID headers when the environment variable KM_USE_RANDOM_UUID is set],
+     [  --enable-random-case-UUID    encode randomly-cased UUID values when the environment variable KM_USE_RANDOM_UUID is set],
      [case "${enableval}" in
        yes) random_case_UUID=true ;;
        no)  random_case_UUID=false ;;
        *) AC_MSG_ERROR([bad value ${enableval} for --enable-random-case-UUID]) ;;
      esac],[random_case_UUID=false])
      AM_CONDITIONAL([ENABLE_RANDOM_UUID], [test x$random_case_UUID = xtrue])
+AC_ARG_ENABLE([as-02],
+     [  --enable-as-02    enable supprt for SMPTE ST 2067-5 MXF files, A.K.A. AS-02],
+     [case "${enableval}" in
+       yes) as_02_use=true ;;
+       no)  as_02_use=false ;;
+       *) AC_MSG_ERROR([bad value ${enableval} for --enable-as-02]) ;;
+     esac],[as_02_use=false])
+     AM_CONDITIONAL([AS_02_USE], [test x$as_02_use = xtrue])
 
 # Checks for libraries.
 AC_CHECK_LIB([pthread], [pthread_create])
