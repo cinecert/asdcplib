@@ -355,8 +355,8 @@ public:
     const Dictionary& Dict = DefaultCompositeDict();
     MXF::RGBAEssenceDescriptor *descriptor = 0;
 
-    Result_t result = m_Reader.OPAtomHeader().GetMDObjectByType(DefaultCompositeDict().ul(MDD_RGBAEssenceDescriptor),
-								reinterpret_cast<MXF::InterchangeObject**>(&descriptor));
+    Result_t result = m_Reader.OP1aHeader().GetMDObjectByType(DefaultCompositeDict().ul(MDD_RGBAEssenceDescriptor),
+							      reinterpret_cast<MXF::InterchangeObject**>(&descriptor));
 
     if ( KM_SUCCESS(result) )
       m_PictureEssenceCoding = descriptor->PictureEssenceCoding;
@@ -511,8 +511,8 @@ public:
     const Dictionary& Dict = DefaultCompositeDict();
     MXF::WaveAudioDescriptor *descriptor = 0;
 
-    Result_t result = m_Reader.OPAtomHeader().GetMDObjectByType(DefaultCompositeDict().ul(MDD_WaveAudioDescriptor),
-								reinterpret_cast<MXF::InterchangeObject**>(&descriptor));
+    Result_t result = m_Reader.OP1aHeader().GetMDObjectByType(DefaultCompositeDict().ul(MDD_WaveAudioDescriptor),
+							      reinterpret_cast<MXF::InterchangeObject**>(&descriptor));
 
     if ( KM_SUCCESS(result) )
       {
@@ -631,7 +631,7 @@ show_file_info(CommandOptions& Options)
       fprintf(stderr, "File is not AS-DCP: %s\n", Options.filenames.front().c_str());
       Kumu::FileReader   Reader;
       const Dictionary* Dict = &DefaultCompositeDict();
-      MXF::OPAtomHeader TestHeader(Dict);
+      MXF::OP1aHeader TestHeader(Dict);
 
       result = Reader.OpenRead(Options.filenames.front().c_str());
 

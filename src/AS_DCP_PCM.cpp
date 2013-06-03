@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2004-2012, John Hurst
+Copyright (c) 2004-2013, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -236,7 +236,7 @@ public:
   AudioDescriptor m_ADesc;
 
   h__Reader(const Dictionary& d) : ASDCP::h__ASDCPReader(d) {}
-  ~h__Reader() {}
+  virtual ~h__Reader() {}
   Result_t    OpenRead(const char*);
   Result_t    ReadFrame(ui32_t, FrameBuffer&, AESDecContext*, HMACContext*);
 };
@@ -293,12 +293,6 @@ ASDCP::PCM::MXFReader::h__Reader::OpenRead(const char* filename)
 	}
     }
 
-  if( ASDCP_SUCCESS(result) )
-    result = InitMXFIndex();
-
-  if( ASDCP_SUCCESS(result) )
-    result = InitInfo();
-
   // TODO: test file for sane CBR index BytesPerEditUnit
 
   return result;
@@ -352,13 +346,13 @@ ASDCP::PCM::MXFReader::~MXFReader()
 // Warning: direct manipulation of MXF structures can interfere
 // with the normal operation of the wrapper.  Caveat emptor!
 //
-ASDCP::MXF::OPAtomHeader&
-ASDCP::PCM::MXFReader::OPAtomHeader()
+ASDCP::MXF::OP1aHeader&
+ASDCP::PCM::MXFReader::OP1aHeader()
 {
   if ( m_Reader.empty() )
     {
-      assert(g_OPAtomHeader);
-      return *g_OPAtomHeader;
+      assert(g_OP1aHeader);
+      return *g_OP1aHeader;
     }
 
   return m_Reader->m_HeaderPart;
@@ -376,7 +370,22 @@ ASDCP::PCM::MXFReader::OPAtomIndexFooter()
       return *g_OPAtomIndexFooter;
     }
 
-  return m_Reader->m_FooterPart;
+  return m_Reader->m_IndexAccess;
+}
+
+// Warning: direct manipulation of MXF structures can interfere
+// with the normal operation of the wrapper.  Caveat emptor!
+//
+ASDCP::MXF::RIP&
+ASDCP::PCM::MXFReader::RIP()
+{
+  if ( m_Reader.empty() )
+    {
+      assert(g_RIP);
+      return *g_RIP;
+    }
+
+  return m_Reader->m_RIP;
 }
 
 // Open the file for reading. The file must exist. Returns error if the
@@ -450,7 +459,7 @@ void
 ASDCP::PCM::MXFReader::DumpIndex(FILE* stream) const
 {
   if ( m_Reader->m_File.IsOpen() )
-    m_Reader->m_FooterPart.Dump(stream);
+    m_Reader->m_IndexAccess.Dump(stream);
 }
 
 //
@@ -470,7 +479,7 @@ ASDCP::PCM::MXFReader::Close() const
 //------------------------------------------------------------------------------------------
 
 //
-class ASDCP::PCM::MXFWriter::h__Writer : public ASDCP::h__Writer
+class ASDCP::PCM::MXFWriter::h__Writer : public ASDCP::h__ASDCPWriter
 {
   ASDCP_NO_COPY_CONSTRUCT(h__Writer);
   h__Writer();
@@ -479,11 +488,11 @@ public:
   AudioDescriptor m_ADesc;
   byte_t          m_EssenceUL[SMPTE_UL_LENGTH];
   
-  h__Writer(const Dictionary& d) : ASDCP::h__Writer(d) {
+  h__Writer(const Dictionary& d) : ASDCP::h__ASDCPWriter(d) {
     memset(m_EssenceUL, 0, SMPTE_UL_LENGTH);
   }
 
-  ~h__Writer(){}
+  virtual ~h__Writer(){}
 
   Result_t OpenWrite(const char*, ui32_t HeaderSize);
   Result_t SetSourceStream(const AudioDescriptor&);
@@ -571,9 +580,9 @@ ASDCP::PCM::MXFWriter::h__Writer::SetSourceStream(const AudioDescriptor& ADesc)
       else if ( m_ADesc.EditRate == EditRate_22  )
 	TCFrameRate = 22;
       
-      result = WriteMXFHeader(PCM_PACKAGE_LABEL, UL(m_Dict->ul(MDD_WAVWrapping)),
-			      SOUND_DEF_LABEL, UL(m_EssenceUL), UL(m_Dict->ul(MDD_SoundDataDef)),
-			      m_ADesc.EditRate, TCFrameRate, calc_CBR_frame_size(m_Info, m_ADesc));
+      result = WriteASDCPHeader(PCM_PACKAGE_LABEL, UL(m_Dict->ul(MDD_WAVWrapping)),
+				SOUND_DEF_LABEL, UL(m_EssenceUL), UL(m_Dict->ul(MDD_SoundDataDef)),
+				m_ADesc.EditRate, TCFrameRate, calc_CBR_frame_size(m_Info, m_ADesc));
     }
 
   return result;
@@ -610,7 +619,7 @@ ASDCP::PCM::MXFWriter::h__Writer::Finalize()
 
   m_State.Goto_FINAL();
 
-  return WriteMXFFooter();
+  return WriteASDCPFooter();
 }
 
 
@@ -630,13 +639,13 @@ ASDCP::PCM::MXFWriter::~MXFWriter()
 // Warning: direct manipulation of MXF structures can interfere
 // with the normal operation of the wrapper.  Caveat emptor!
 //
-ASDCP::MXF::OPAtomHeader&
-ASDCP::PCM::MXFWriter::OPAtomHeader()
+ASDCP::MXF::OP1aHeader&
+ASDCP::PCM::MXFWriter::OP1aHeader()
 {
   if ( m_Writer.empty() )
     {
-      assert(g_OPAtomHeader);
-      return *g_OPAtomHeader;
+      assert(g_OP1aHeader);
+      return *g_OP1aHeader;
     }
 
   return m_Writer->m_HeaderPart;
@@ -655,6 +664,21 @@ ASDCP::PCM::MXFWriter::OPAtomIndexFooter()
     }
 
   return m_Writer->m_FooterPart;
+}
+
+// Warning: direct manipulation of MXF structures can interfere
+// with the normal operation of the wrapper.  Caveat emptor!
+//
+ASDCP::MXF::RIP&
+ASDCP::PCM::MXFWriter::RIP()
+{
+  if ( m_Writer.empty() )
+    {
+      assert(g_RIP);
+      return *g_RIP;
+    }
+
+  return m_Writer->m_RIP;
 }
 
 // Open the file for writing. The file must not exist. Returns error if

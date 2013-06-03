@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2004-2012, John Hurst
+Copyright (c) 2004-2013, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -38,16 +38,23 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "Metadata.h"
 
 using Kumu::DefaultLogSink;
-// using namespace std;
 using namespace ASDCP;
 using namespace ASDCP::MXF;
 
+// a magic number identifying asdcplib
+#ifndef ASDCP_BUILD_NUMBER
+#define ASDCP_BUILD_NUMBER 0x6A68
+#endif
+
+
 #ifdef DEFAULT_MD_DECL
-ASDCP::MXF::OPAtomHeader *g_OPAtomHeader;
+ASDCP::MXF::OP1aHeader *g_OP1aHeader;
 ASDCP::MXF::OPAtomIndexFooter *g_OPAtomIndexFooter;
+ASDCP::MXF::RIP *g_RIP;
 #else
-extern MXF::OPAtomHeader *g_OPAtomHeader;
+extern MXF::OP1aHeader *g_OP1aHeader;
 extern MXF::OPAtomIndexFooter *g_OPAtomIndexFooter;
+extern MXF::RIP *g_RIP;
 #endif
 
 
@@ -128,10 +135,15 @@ namespace ASDCP
   void     AddDMScrypt(Partition& HeaderPart, SourcePackage& Package,
 		       WriterInfo& Descr, const UL& WrappingUL, const Dictionary*& Dict);
 
-  Result_t Read_EKLV_Packet(Kumu::FileReader& File, const ASDCP::Dictionary& Dict, const MXF::OPAtomHeader& HeaderPart,
+  Result_t Read_EKLV_Packet(Kumu::FileReader& File, const ASDCP::Dictionary& Dict, const MXF::OP1aHeader& HeaderPart,
 			    const ASDCP::WriterInfo& Info, Kumu::fpos_t& LastPosition, ASDCP::FrameBuffer& CtFrameBuf,
 			    ui32_t FrameNum, ui32_t SequenceNum, ASDCP::FrameBuffer& FrameBuf,
 			    const byte_t* EssenceUL, AESDecContext* Ctx, HMACContext* HMAC);
+
+  Result_t Write_EKLV_Packet(Kumu::FileWriter& File, const ASDCP::Dictionary& Dict, const MXF::OP1aHeader& HeaderPart,
+			     const ASDCP::WriterInfo& Info, ASDCP::FrameBuffer& CtFrameBuf, ui32_t& FramesWritten,
+			     ui64_t & StreamOffset, const ASDCP::FrameBuffer& FrameBuf, const byte_t* EssenceUL,
+			     AESEncContext* Ctx, HMACContext* HMAC);
 
   //
  class KLReader : public ASDCP::KLVPacket
@@ -157,7 +169,7 @@ namespace ASDCP
 
     ///      void default_md_object_init();
 
-      template <class HeaderType, class FooterType>
+      template <class HeaderType, class IndexAccessType>
       class TrackFileReader
       {
 	KM_NO_COPY_CONSTRUCT(TrackFileReader);
@@ -167,13 +179,14 @@ namespace ASDCP
 	const Dictionary*  m_Dict;
 	Kumu::FileReader   m_File;
 	HeaderType         m_HeaderPart;
-	FooterType         m_FooterPart;
+	IndexAccessType    m_IndexAccess;
+	RIP                m_RIP;
 	WriterInfo         m_Info;
 	ASDCP::FrameBuffer m_CtFrameBuf;
 	Kumu::fpos_t       m_LastPosition;
 
       TrackFileReader(const Dictionary& d) :
-	m_HeaderPart(m_Dict), m_FooterPart(m_Dict), m_Dict(&d)
+	m_HeaderPart(m_Dict), m_IndexAccess(m_Dict), m_RIP(m_Dict), m_Dict(&d)
 	  {
 	    default_md_object_init();
 	  }
@@ -182,6 +195,48 @@ namespace ASDCP
 	  Close();
 	}
 
+	const MXF::RIP& GetRIP() const { return m_RIP; }
+
+	//
+	Result_t OpenMXFRead(const char* filename)
+	{
+	  m_LastPosition = 0;
+	  Result_t result = m_File.OpenRead(filename);
+
+	  if ( ASDCP_SUCCESS(result) )
+	    result = SeekToRIP(m_File);
+
+	  if ( ASDCP_SUCCESS(result) )
+	    {
+	      result = m_RIP.InitFromFile(m_File);
+	      ui32_t test_s = m_RIP.PairArray.size();
+
+	      if ( ASDCP_FAILURE(result) )
+		{
+		  DefaultLogSink().Error("File contains no RIP\n");
+		}
+	      else if ( m_RIP.PairArray.empty() )
+		{
+		  DefaultLogSink().Error("RIP contains no Pairs.\n");
+		}
+	    }
+	  else
+	    {
+	      DefaultLogSink().Error("TrackFileReader::OpenMXFRead, SeekToRIP failed\n");
+	    }
+
+	  m_File.Seek(0);
+	  result = m_HeaderPart.InitFromFile(m_File);
+
+	  if ( KM_FAILURE(result) )
+	    {
+	      DefaultLogSink().Error("TrackFileReader::OpenMXFRead, header init failed\n");
+	    }
+
+	  return result;
+	}
+
+	//
 	Result_t InitInfo()
 	{
 	  assert(m_Dict);
@@ -215,20 +270,6 @@ namespace ASDCP
 	  return result;
 	}
 
-	//
-	Result_t OpenMXFRead(const char* filename)
-	{
-	  m_LastPosition = 0;
-	  Result_t result = m_File.OpenRead(filename);
-
-	  if ( KM_SUCCESS(result) )
-	    result = m_HeaderPart.InitFromFile(m_File);
-      else
-        DefaultLogSink().Error("ASDCP::h__Reader::OpenMXFRead, OpenRead failed\n");
-
-	  return result;
-	}
-
 	// positions file before reading
 	Result_t ReadEKLVFrame(const ASDCP::MXF::Partition& CurrentPartition,
 			       ui32_t FrameNum, ASDCP::FrameBuffer& FrameBuf,
@@ -237,7 +278,7 @@ namespace ASDCP
 	  // look up frame index node
 	  IndexTableSegment::IndexEntry TmpEntry;
 
-	  if ( KM_FAILURE(m_FooterPart.Lookup(FrameNum, TmpEntry)) )
+	  if ( KM_FAILURE(m_IndexAccess.Lookup(FrameNum, TmpEntry)) )
 	    {
 	      DefaultLogSink().Error("Frame value out of range: %u\n", FrameNum);
 	      return RESULT_RANGE;
@@ -268,38 +309,440 @@ namespace ASDCP
 				  FrameNum, SequenceNum, FrameBuf, EssenceUL, Ctx, HMAC);
 	}
 
-    // Get the position of a frame from a track file
-    Result_t LocateFrame(const ASDCP::MXF::Partition& CurrentPartition,
-                         ui32_t FrameNum, Kumu::fpos_t& streamOffset,
-                         i8_t& temporalOffset, i8_t& keyFrameOffset)
-    {
-      // look up frame index node
-      IndexTableSegment::IndexEntry TmpEntry;
+	// Get the position of a frame from a track file
+	Result_t LocateFrame(const ASDCP::MXF::Partition& CurrentPartition,
+			     ui32_t FrameNum, Kumu::fpos_t& streamOffset,
+			     i8_t& temporalOffset, i8_t& keyFrameOffset)
+	{
+	  // look up frame index node
+	  IndexTableSegment::IndexEntry TmpEntry;
 
-      if ( KM_FAILURE(m_FooterPart.Lookup(FrameNum, TmpEntry)) )
-      {
-        DefaultLogSink().Error("Frame value out of range: %u\n", FrameNum);
-        return RESULT_RANGE;
-      }
+	  if ( KM_FAILURE(m_IndexAccess.Lookup(FrameNum, TmpEntry)) )
+	    {
+	      DefaultLogSink().Error("Frame value out of range: %u\n", FrameNum);
+	      return RESULT_RANGE;
+	    }
 
-      // get frame position, temporal offset, and key frame ofset
-      streamOffset = CurrentPartition.BodyOffset + TmpEntry.StreamOffset;
-      temporalOffset = TmpEntry.TemporalOffset;
-      keyFrameOffset = TmpEntry.KeyFrameOffset;
-
-      return RESULT_OK;
-    }
+	  // get frame position, temporal offset, and key frame ofset
+	  streamOffset = CurrentPartition.BodyOffset + TmpEntry.StreamOffset;
+	  temporalOffset = TmpEntry.TemporalOffset;
+	  keyFrameOffset = TmpEntry.KeyFrameOffset;
+	  
+	  return RESULT_OK;
+	}
 
 	//
-	void     Close() {
+	void Close()
+	{
 	  m_File.Close();
 	}
       };
+      
 
+      //
+      //
+      template <class ClipT>
+	struct TrackSet
+	{
+	  MXF::Track*    Track;
+	  MXF::Sequence* Sequence;
+	  ClipT*         Clip;
+
+	TrackSet() : Track(0), Sequence(0), Clip(0) {}
+	};
+
+      //
+      template <class PackageT, class ClipT>
+	TrackSet<ClipT>
+	CreateTrackAndSequence(OP1aHeader& Header, PackageT& Package, const std::string TrackName,
+			       const MXF::Rational& EditRate, const UL& Definition, ui32_t TrackID, const Dictionary*& Dict)
+	{
+	  TrackSet<ClipT> NewTrack;
+
+	  NewTrack.Track = new Track(Dict);
+	  Header.AddChildObject(NewTrack.Track);
+	  NewTrack.Track->EditRate = EditRate;
+	  Package.Tracks.push_back(NewTrack.Track->InstanceUID);
+	  NewTrack.Track->TrackID = TrackID;
+	  NewTrack.Track->TrackName = TrackName.c_str();
+
+	  NewTrack.Sequence = new Sequence(Dict);
+	  Header.AddChildObject(NewTrack.Sequence);
+	  NewTrack.Track->Sequence = NewTrack.Sequence->InstanceUID;
+	  NewTrack.Sequence->DataDefinition = Definition;
+
+	  return NewTrack;
+	}
+
+      //
+      template <class PackageT>
+	TrackSet<TimecodeComponent>
+	CreateTimecodeTrack(OP1aHeader& Header, PackageT& Package,
+			    const MXF::Rational& EditRate, ui32_t TCFrameRate, ui64_t TCStart, const Dictionary*& Dict)
+	{
+	  assert(Dict);
+	  UL TCUL(Dict->ul(MDD_TimecodeDataDef));
+
+	  TrackSet<TimecodeComponent> NewTrack = CreateTrackAndSequence<PackageT, TimecodeComponent>(Header, Package, "Timecode Track", EditRate, TCUL, 1, Dict);
+
+	  NewTrack.Clip = new TimecodeComponent(Dict);
+	  Header.AddChildObject(NewTrack.Clip);
+	  NewTrack.Sequence->StructuralComponents.push_back(NewTrack.Clip->InstanceUID);
+	  NewTrack.Clip->RoundedTimecodeBase = TCFrameRate;
+	  NewTrack.Clip->StartTimecode = TCStart;
+	  NewTrack.Clip->DataDefinition = TCUL;
+
+	  return NewTrack;
+	}
+
+
+      // state machine for mxf writer
+      enum WriterState_t {
+	ST_BEGIN,   // waiting for Open()
+	ST_INIT,    // waiting for SetSourceStream()
+	ST_READY,   // ready to write frames
+	ST_RUNNING, // one or more frames written
+	ST_FINAL,   // index written, file closed
+      };
+
+      // implementation of h__WriterState class Goto_* methods
+#define Goto_body(s1,s2)			\
+      if ( m_State != (s1) ) {			\
+	return RESULT_STATE;			\
+      }						\
+      m_State = (s2);				\
+      return RESULT_OK
+      //
+      class h__WriterState
+      {
+	ASDCP_NO_COPY_CONSTRUCT(h__WriterState);
+
+      public:
+	WriterState_t m_State;
+      h__WriterState() : m_State(ST_BEGIN) {}
+	~h__WriterState() {}
+
+	inline bool     Test_BEGIN()   { return m_State == ST_BEGIN; }
+	inline bool     Test_INIT()    { return m_State == ST_INIT; }
+	inline bool     Test_READY()   { return m_State == ST_READY;}
+	inline bool     Test_RUNNING() { return m_State == ST_RUNNING; }
+	inline bool     Test_FINAL()   { return m_State == ST_FINAL; }
+	inline Result_t Goto_INIT()    { Goto_body(ST_BEGIN,   ST_INIT); }
+	inline Result_t Goto_READY()   { Goto_body(ST_INIT,    ST_READY); }
+	inline Result_t Goto_RUNNING() { Goto_body(ST_READY,   ST_RUNNING); }
+	inline Result_t Goto_FINAL()   { Goto_body(ST_RUNNING, ST_FINAL); }
+      };
+
+      //
+      //
+      template <class HeaderType>
+	class TrackFileWriter
+      {
+	KM_NO_COPY_CONSTRUCT(TrackFileWriter);
+	TrackFileWriter();
+
+      public:
+	const Dictionary*  m_Dict;
+	Kumu::FileWriter   m_File;
+	ui32_t             m_HeaderSize;
+	HeaderType         m_HeaderPart;
+	RIP                m_RIP;
+	ui64_t             m_EssenceStart;
+
+	MaterialPackage*   m_MaterialPackage;
+	SourcePackage*     m_FilePackage;
+
+	FileDescriptor*    m_EssenceDescriptor;
+	std::list<InterchangeObject*> m_EssenceSubDescriptorList;
+
+	ui32_t             m_FramesWritten;
+	ui64_t             m_StreamOffset;
+	ASDCP::FrameBuffer m_CtFrameBuf;
+	h__WriterState     m_State;
+	WriterInfo         m_Info;
+
+	typedef std::list<ui64_t*> DurationElementList_t;
+	DurationElementList_t m_DurationUpdateList;
+
+      TrackFileWriter(const Dictionary& d) :
+	m_Dict(&d), m_HeaderPart(m_Dict), m_RIP(m_Dict),
+	  m_HeaderSize(0), m_EssenceStart(0), m_EssenceDescriptor(0),
+	  m_FramesWritten(0), m_StreamOffset(0)
+	  {
+	    default_md_object_init();
+	  }
+
+	virtual ~TrackFileWriter() {}
+
+	const MXF::RIP& GetRIP() const { return m_RIP; }
+
+	void InitHeader()
+	{
+	  assert(m_Dict);
+	  assert(m_EssenceDescriptor);
+
+	  m_HeaderPart.m_Primer.ClearTagList();
+	  m_HeaderPart.m_Preface = new Preface(m_Dict);
+	  m_HeaderPart.AddChildObject(m_HeaderPart.m_Preface);
+
+	  // Set the Operational Pattern label -- we're just starting and have no RIP or index,
+	  // so we tell the world by using OP1a
+	  m_HeaderPart.m_Preface->OperationalPattern = UL(m_Dict->ul(MDD_OP1a));
+	  m_HeaderPart.OperationalPattern = m_HeaderPart.m_Preface->OperationalPattern;
+
+	  // Identification
+	  Identification* Ident = new Identification(m_Dict);
+	  m_HeaderPart.AddChildObject(Ident);
+	  m_HeaderPart.m_Preface->Identifications.push_back(Ident->InstanceUID);
+
+	  Kumu::GenRandomValue(Ident->ThisGenerationUID);
+	  Ident->CompanyName = m_Info.CompanyName.c_str();
+	  Ident->ProductName = m_Info.ProductName.c_str();
+	  Ident->VersionString = m_Info.ProductVersion.c_str();
+	  Ident->ProductUID.Set(m_Info.ProductUUID);
+	  Ident->Platform = ASDCP_PLATFORM;
+
+	  std::vector<int> version = version_split(Version());
+
+	  Ident->ToolkitVersion.Major = version[0];
+	  Ident->ToolkitVersion.Minor = version[1];
+	  Ident->ToolkitVersion.Patch = version[2];
+	  Ident->ToolkitVersion.Build = ASDCP_BUILD_NUMBER;
+	  Ident->ToolkitVersion.Release = VersionType::RL_RELEASE;
+	}
+
+	//
+	void AddSourceClip(const MXF::Rational& EditRate, ui32_t TCFrameRate,
+			   const std::string& TrackName, const UL& EssenceUL,
+			   const UL& DataDefinition, const std::string& PackageLabel)
+	{
+	  //
+	  ContentStorage* Storage = new ContentStorage(m_Dict);
+	  m_HeaderPart.AddChildObject(Storage);
+	  m_HeaderPart.m_Preface->ContentStorage = Storage->InstanceUID;
+
+	  EssenceContainerData* ECD = new EssenceContainerData(m_Dict);
+	  m_HeaderPart.AddChildObject(ECD);
+	  Storage->EssenceContainerData.push_back(ECD->InstanceUID);
+	  ECD->IndexSID = 129;
+	  ECD->BodySID = 1;
+
+	  UUID assetUUID(m_Info.AssetUUID);
+	  UMID SourcePackageUMID, MaterialPackageUMID;
+	  SourcePackageUMID.MakeUMID(0x0f, assetUUID);
+	  MaterialPackageUMID.MakeUMID(0x0f); // unidentified essence
+
+	  //
+	  // Material Package
+	  //
+	  m_MaterialPackage = new MaterialPackage(m_Dict);
+	  m_MaterialPackage->Name = "AS-DCP Material Package";
+	  m_MaterialPackage->PackageUID = MaterialPackageUMID;
+	  m_HeaderPart.AddChildObject(m_MaterialPackage);
+	  Storage->Packages.push_back(m_MaterialPackage->InstanceUID);
+
+	  TrackSet<TimecodeComponent> MPTCTrack =
+	    CreateTimecodeTrack<MaterialPackage>(m_HeaderPart, *m_MaterialPackage,
+						 EditRate, TCFrameRate, 0, m_Dict);
+	  m_DurationUpdateList.push_back(&(MPTCTrack.Sequence->Duration));
+	  m_DurationUpdateList.push_back(&(MPTCTrack.Clip->Duration));
+
+	  TrackSet<SourceClip> MPTrack =
+	    CreateTrackAndSequence<MaterialPackage, SourceClip>(m_HeaderPart, *m_MaterialPackage,
+								TrackName, EditRate, DataDefinition,
+								2, m_Dict);
+	  m_DurationUpdateList.push_back(&(MPTrack.Sequence->Duration));
+
+	  MPTrack.Clip = new SourceClip(m_Dict);
+	  m_HeaderPart.AddChildObject(MPTrack.Clip);
+	  MPTrack.Sequence->StructuralComponents.push_back(MPTrack.Clip->InstanceUID);
+	  MPTrack.Clip->DataDefinition = DataDefinition;
+	  MPTrack.Clip->SourcePackageID = SourcePackageUMID;
+	  MPTrack.Clip->SourceTrackID = 2;
+	  m_DurationUpdateList.push_back(&(MPTrack.Clip->Duration));
+
+  
+	  //
+	  // File (Source) Package
+	  //
+	  m_FilePackage = new SourcePackage(m_Dict);
+	  m_FilePackage->Name = PackageLabel.c_str();
+	  m_FilePackage->PackageUID = SourcePackageUMID;
+	  ECD->LinkedPackageUID = SourcePackageUMID;
+
+	  m_HeaderPart.AddChildObject(m_FilePackage);
+	  Storage->Packages.push_back(m_FilePackage->InstanceUID);
+
+	  TrackSet<TimecodeComponent> FPTCTrack =
+	    CreateTimecodeTrack<SourcePackage>(m_HeaderPart, *m_FilePackage,
+					       EditRate, TCFrameRate,
+					       ui64_C(3600) * TCFrameRate, m_Dict);
+	  m_DurationUpdateList.push_back(&(FPTCTrack.Sequence->Duration));
+	  m_DurationUpdateList.push_back(&(FPTCTrack.Clip->Duration));
+	  TrackSet<SourceClip> FPTrack =
+	    CreateTrackAndSequence<SourcePackage, SourceClip>(m_HeaderPart, *m_FilePackage,
+							      TrackName, EditRate, DataDefinition,
+							      2, m_Dict);
+	  m_DurationUpdateList.push_back(&(FPTrack.Sequence->Duration));
+
+	  // Consult ST 379:2004 Sec. 6.3, "Element to track relationship" to see where "12" comes from.
+	  FPTrack.Track->TrackNumber = KM_i32_BE(Kumu::cp2i<ui32_t>((EssenceUL.Value() + 12)));
+
+	  FPTrack.Clip = new SourceClip(m_Dict);
+	  m_HeaderPart.AddChildObject(FPTrack.Clip);
+	  FPTrack.Sequence->StructuralComponents.push_back(FPTrack.Clip->InstanceUID);
+	  FPTrack.Clip->DataDefinition = DataDefinition;
+
+	  // for now we do not allow setting this value, so all files will be 'original'
+	  FPTrack.Clip->SourceTrackID = 0;
+	  FPTrack.Clip->SourcePackageID = NilUMID;
+	  m_DurationUpdateList.push_back(&(FPTrack.Clip->Duration));
+
+	  m_EssenceDescriptor->LinkedTrackID = FPTrack.Track->TrackID;
+	}
+
+	//
+	void AddDMSegment(const MXF::Rational& EditRate, ui32_t TCFrameRate,
+			  const std::string& TrackName, const UL& DataDefinition,
+			  const std::string& PackageLabel)
+	{
+	  //
+	  ContentStorage* Storage = new ContentStorage(m_Dict);
+	  m_HeaderPart.AddChildObject(Storage);
+	  m_HeaderPart.m_Preface->ContentStorage = Storage->InstanceUID;
+
+	  EssenceContainerData* ECD = new EssenceContainerData(m_Dict);
+	  m_HeaderPart.AddChildObject(ECD);
+	  Storage->EssenceContainerData.push_back(ECD->InstanceUID);
+	  ECD->IndexSID = 129;
+	  ECD->BodySID = 1;
+
+	  UUID assetUUID(m_Info.AssetUUID);
+	  UMID SourcePackageUMID, MaterialPackageUMID;
+	  SourcePackageUMID.MakeUMID(0x0f, assetUUID);
+	  MaterialPackageUMID.MakeUMID(0x0f); // unidentified essence
+
+	  //
+	  // Material Package
+	  //
+	  m_MaterialPackage = new MaterialPackage(m_Dict);
+	  m_MaterialPackage->Name = "AS-DCP Material Package";
+	  m_MaterialPackage->PackageUID = MaterialPackageUMID;
+	  m_HeaderPart.AddChildObject(m_MaterialPackage);
+	  Storage->Packages.push_back(m_MaterialPackage->InstanceUID);
+
+	  TrackSet<TimecodeComponent> MPTCTrack =
+	    CreateTimecodeTrack<MaterialPackage>(m_HeaderPart, *m_MaterialPackage,
+						 EditRate, TCFrameRate, 0, m_Dict);
+	  m_DurationUpdateList.push_back(&(MPTCTrack.Sequence->Duration));
+	  m_DurationUpdateList.push_back(&(MPTCTrack.Clip->Duration));
+
+	  TrackSet<DMSegment> MPTrack =
+	    CreateTrackAndSequence<MaterialPackage, DMSegment>(m_HeaderPart, *m_MaterialPackage,
+							       TrackName, EditRate, DataDefinition,
+							       2, m_Dict);
+	  m_DurationUpdateList.push_back(&(MPTrack.Sequence->Duration));
+
+	  MPTrack.Clip = new DMSegment(m_Dict);
+	  m_HeaderPart.AddChildObject(MPTrack.Clip);
+	  MPTrack.Sequence->StructuralComponents.push_back(MPTrack.Clip->InstanceUID);
+	  MPTrack.Clip->DataDefinition = DataDefinition;
+	  //  MPTrack.Clip->SourcePackageID = SourcePackageUMID;
+	  //  MPTrack.Clip->SourceTrackID = 2;
+	  m_DurationUpdateList.push_back(&(MPTrack.Clip->Duration));
+
+  
+	  //
+	  // File (Source) Package
+	  //
+	  m_FilePackage = new SourcePackage(m_Dict);
+	  m_FilePackage->Name = PackageLabel.c_str();
+	  m_FilePackage->PackageUID = SourcePackageUMID;
+	  ECD->LinkedPackageUID = SourcePackageUMID;
+
+	  m_HeaderPart.AddChildObject(m_FilePackage);
+	  Storage->Packages.push_back(m_FilePackage->InstanceUID);
+
+	  TrackSet<TimecodeComponent> FPTCTrack =
+	    CreateTimecodeTrack<SourcePackage>(m_HeaderPart, *m_FilePackage,
+					       EditRate, TCFrameRate,
+					       ui64_C(3600) * TCFrameRate, m_Dict);
+	  m_DurationUpdateList.push_back(&(FPTCTrack.Sequence->Duration));
+	  m_DurationUpdateList.push_back(&(FPTCTrack.Clip->Duration));
+
+	  TrackSet<DMSegment> FPTrack =
+	    CreateTrackAndSequence<SourcePackage, DMSegment>(m_HeaderPart, *m_FilePackage,
+							     TrackName, EditRate, DataDefinition,
+							     2, m_Dict);
+	  m_DurationUpdateList.push_back(&(FPTrack.Sequence->Duration));
+
+	  FPTrack.Clip = new DMSegment(m_Dict);
+	  m_HeaderPart.AddChildObject(FPTrack.Clip);
+	  FPTrack.Sequence->StructuralComponents.push_back(FPTrack.Clip->InstanceUID);
+	  FPTrack.Clip->DataDefinition = DataDefinition;
+	  FPTrack.Clip->EventComment = "D-Cinema Timed Text";
+
+	  m_DurationUpdateList.push_back(&(FPTrack.Clip->Duration));
+	  m_EssenceDescriptor->LinkedTrackID = FPTrack.Track->TrackID;
+	}
+
+	//
+	void AddEssenceDescriptor(const UL& WrappingUL)
+	{
+	  //
+	  // Essence Descriptor
+	  //
+	  m_EssenceDescriptor->EssenceContainer = WrappingUL;
+	  m_HeaderPart.m_Preface->PrimaryPackage = m_FilePackage->InstanceUID;
+
+	  //
+	  // Essence Descriptors
+	  //
+	  assert(m_Dict);
+	  UL GenericContainerUL(m_Dict->ul(MDD_GCMulti));
+	  m_HeaderPart.EssenceContainers.push_back(GenericContainerUL);
+
+	  if ( m_Info.EncryptedEssence )
+	    {
+	      UL CryptEssenceUL(m_Dict->ul(MDD_EncryptedContainerLabel));
+	      m_HeaderPart.EssenceContainers.push_back(CryptEssenceUL);
+	      m_HeaderPart.m_Preface->DMSchemes.push_back(UL(m_Dict->ul(MDD_CryptographicFrameworkLabel)));
+	      AddDMScrypt(m_HeaderPart, *m_FilePackage, m_Info, WrappingUL, m_Dict);
+	    }
+	  else
+	    {
+	      m_HeaderPart.EssenceContainers.push_back(WrappingUL);
+	    }
+
+	  m_HeaderPart.m_Preface->EssenceContainers = m_HeaderPart.EssenceContainers;
+	  m_HeaderPart.AddChildObject(m_EssenceDescriptor);
+
+	  std::list<InterchangeObject*>::iterator sdli = m_EssenceSubDescriptorList.begin();
+	  for ( ; sdli != m_EssenceSubDescriptorList.end(); sdli++ )
+	    m_HeaderPart.AddChildObject(*sdli);
+
+	  m_FilePackage->Descriptor = m_EssenceDescriptor->InstanceUID;
+	}
+
+	//	
+	Result_t WriteEKLVPacket(const ASDCP::FrameBuffer& FrameBuf,const byte_t* EssenceUL, AESEncContext* Ctx, HMACContext* HMAC)
+	{
+	  return Write_EKLV_Packet(m_File, *m_Dict, m_HeaderPart, m_Info, m_CtFrameBuf, m_FramesWritten,
+				   m_StreamOffset, FrameBuf, EssenceUL, Ctx, HMAC);
+	}
+
+	//
+	void Close()
+	{
+	  m_File.Close();
+	}
+
+      };
+      
   }/// namespace MXF
 
   //
-  class h__ASDCPReader : public MXF::TrackFileReader<OPAtomHeader, OPAtomIndexFooter>
+  class h__ASDCPReader : public MXF::TrackFileReader<OP1aHeader, OPAtomIndexFooter>
     {
       ASDCP_NO_COPY_CONSTRUCT(h__ASDCPReader);
       h__ASDCPReader();
@@ -311,106 +754,35 @@ namespace ASDCP
       virtual ~h__ASDCPReader();
 
       Result_t OpenMXFRead(const char* filename);
-      Result_t InitInfo();
-      Result_t InitMXFIndex();
       Result_t ReadEKLVFrame(ui32_t FrameNum, ASDCP::FrameBuffer& FrameBuf,
 			     const byte_t* EssenceUL, AESDecContext* Ctx, HMACContext* HMAC);
       Result_t LocateFrame(ui32_t FrameNum, Kumu::fpos_t& streamOffset,
                            i8_t& temporalOffset, i8_t& keyFrameOffset);
-
     };
 
-
-  // state machine for mxf writer
-  enum WriterState_t {
-    ST_BEGIN,   // waiting for Open()
-    ST_INIT,    // waiting for SetSourceStream()
-    ST_READY,   // ready to write frames
-    ST_RUNNING, // one or more frames written
-    ST_FINAL,   // index written, file closed
-  };
-
-  // implementation of h__WriterState class Goto_* methods
-#define Goto_body(s1,s2) if ( m_State != (s1) ) \
-                           return RESULT_STATE; \
-                         m_State = (s2); \
-                         return RESULT_OK
   //
-  class h__WriterState
+  class h__ASDCPWriter : public MXF::TrackFileWriter<OP1aHeader>
     {
-      ASDCP_NO_COPY_CONSTRUCT(h__WriterState);
+      ASDCP_NO_COPY_CONSTRUCT(h__ASDCPWriter);
+      h__ASDCPWriter();
 
     public:
-      WriterState_t m_State;
-      h__WriterState() : m_State(ST_BEGIN) {}
-      ~h__WriterState() {}
-
-      inline bool     Test_BEGIN()   { return m_State == ST_BEGIN; }
-      inline bool     Test_INIT()    { return m_State == ST_INIT; }
-      inline bool     Test_READY()   { return m_State == ST_READY;}
-      inline bool     Test_RUNNING() { return m_State == ST_RUNNING; }
-      inline bool     Test_FINAL()   { return m_State == ST_FINAL; }
-      inline Result_t Goto_INIT()    { Goto_body(ST_BEGIN,   ST_INIT); }
-      inline Result_t Goto_READY()   { Goto_body(ST_INIT,    ST_READY); }
-      inline Result_t Goto_RUNNING() { Goto_body(ST_READY,   ST_RUNNING); }
-      inline Result_t Goto_FINAL()   { Goto_body(ST_RUNNING, ST_FINAL); }
-    };
-
-  typedef std::list<ui64_t*> DurationElementList_t;
-
-  //
-  class h__Writer
-    {
-      ASDCP_NO_COPY_CONSTRUCT(h__Writer);
-      h__Writer();
-
-    public:
-      const Dictionary*  m_Dict;
-      Kumu::FileWriter   m_File;
-      ui32_t             m_HeaderSize;
-      OPAtomHeader       m_HeaderPart;
       Partition          m_BodyPart;
       OPAtomIndexFooter  m_FooterPart;
-      ui64_t             m_EssenceStart;
 
-      MaterialPackage*   m_MaterialPackage;
-      SourcePackage*     m_FilePackage;
+      h__ASDCPWriter(const Dictionary&);
+      virtual ~h__ASDCPWriter();
 
-      FileDescriptor*    m_EssenceDescriptor;
-      std::list<InterchangeObject*> m_EssenceSubDescriptorList;
-
-      ui32_t             m_FramesWritten;
-      ui64_t             m_StreamOffset;
-      ASDCP::FrameBuffer m_CtFrameBuf;
-      h__WriterState     m_State;
-      WriterInfo         m_Info;
-      DurationElementList_t m_DurationUpdateList;
-
-      h__Writer(const Dictionary&);
-      virtual ~h__Writer();
-
-      void InitHeader();
-      void AddSourceClip(const MXF::Rational& EditRate, ui32_t TCFrameRate,
-			 const std::string& TrackName, const UL& EssenceUL,
-			 const UL& DataDefinition, const std::string& PackageLabel);
-      void AddDMSegment(const MXF::Rational& EditRate, ui32_t TCFrameRate,
-			const std::string& TrackName, const UL& DataDefinition,
-			const std::string& PackageLabel);
-      void AddEssenceDescriptor(const UL& WrappingUL);
       Result_t CreateBodyPart(const MXF::Rational& EditRate, ui32_t BytesPerEditUnit = 0);
 
       // all the above for a single source clip
-      Result_t WriteMXFHeader(const std::string& PackageLabel, const UL& WrappingUL,
-			      const std::string& TrackName, const UL& EssenceUL,
-			      const UL& DataDefinition, const MXF::Rational& EditRate,
-			      ui32_t TCFrameRate, ui32_t BytesPerEditUnit = 0);
+      Result_t WriteASDCPHeader(const std::string& PackageLabel, const UL& WrappingUL,
+				const std::string& TrackName, const UL& EssenceUL,
+				const UL& DataDefinition, const MXF::Rational& EditRate,
+				ui32_t TCFrameRate, ui32_t BytesPerEditUnit = 0);
 
-      Result_t WriteEKLVPacket(const ASDCP::FrameBuffer& FrameBuf,
-			       const byte_t* EssenceUL, AESEncContext* Ctx, HMACContext* HMAC);
-
-      Result_t WriteMXFFooter();
-
-   };
+      Result_t WriteASDCPFooter();
+    };
 
 
   // helper class for calculating Integrity Packs, used by WriteEKLVPacket() below.

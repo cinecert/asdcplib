@@ -686,8 +686,8 @@ write_JP2K_S_file(CommandOptions& Options)
       if ( ASDCP_SUCCESS(result) && Options.picture_coding.HasValue() )
 	{
 	  MXF::RGBAEssenceDescriptor *descriptor = 0;
-	  Writer.OPAtomHeader().GetMDObjectByType(DefaultSMPTEDict().ul(MDD_RGBAEssenceDescriptor),
-						  reinterpret_cast<MXF::InterchangeObject**>(&descriptor));
+	  Writer.OP1aHeader().GetMDObjectByType(DefaultSMPTEDict().ul(MDD_RGBAEssenceDescriptor),
+						reinterpret_cast<MXF::InterchangeObject**>(&descriptor));
 	  descriptor->PictureEssenceCoding = Options.picture_coding;
 	}
     }
@@ -821,8 +821,8 @@ write_JP2K_file(CommandOptions& Options)
       if ( ASDCP_SUCCESS(result) && Options.picture_coding.HasValue() )
 	{
 	  MXF::RGBAEssenceDescriptor *descriptor = 0;
-	  Writer.OPAtomHeader().GetMDObjectByType(DefaultSMPTEDict().ul(MDD_RGBAEssenceDescriptor),
-						  reinterpret_cast<MXF::InterchangeObject**>(&descriptor));
+	  Writer.OP1aHeader().GetMDObjectByType(DefaultSMPTEDict().ul(MDD_RGBAEssenceDescriptor),
+						reinterpret_cast<MXF::InterchangeObject**>(&descriptor));
 	  descriptor->PictureEssenceCoding = Options.picture_coding;
 	}
     }
@@ -961,8 +961,8 @@ write_PCM_file(CommandOptions& Options)
       if ( ASDCP_SUCCESS(result) && Options.channel_assignment.HasValue() )
 	{
 	  MXF::WaveAudioDescriptor *descriptor = 0;
-	  Writer.OPAtomHeader().GetMDObjectByType(DefaultSMPTEDict().ul(MDD_WaveAudioDescriptor),
-						  reinterpret_cast<MXF::InterchangeObject**>(&descriptor));
+	  Writer.OP1aHeader().GetMDObjectByType(DefaultSMPTEDict().ul(MDD_WaveAudioDescriptor),
+						reinterpret_cast<MXF::InterchangeObject**>(&descriptor));
 	  descriptor->ChannelAssignment = Options.channel_assignment;
 	}
     }

@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2004-2012, John Hurst
+Copyright (c) 2004-2013, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -169,7 +169,7 @@ public:
   VideoDescriptor m_VDesc;        // video parameter list
 
   h__Reader(const Dictionary& d) : ASDCP::h__ASDCPReader(d) {}
-  ~h__Reader() {}
+  virtual ~h__Reader() {}
   Result_t    OpenRead(const char*);
   Result_t    ReadFrame(ui32_t, FrameBuffer&, AESDecContext*, HMACContext*);
   Result_t    ReadFrameGOPStart(ui32_t, FrameBuffer&, AESDecContext*, HMACContext*);
@@ -194,12 +194,6 @@ ASDCP::MPEG2::MXFReader::h__Reader::OpenRead(const char* filename)
 	  result = MD_to_MPEG2_VDesc((MXF::MPEG2VideoDescriptor*)Object, m_VDesc);
 	}
     }
-
-  if( ASDCP_SUCCESS(result) )
-    result = InitMXFIndex();
-
-  if( ASDCP_SUCCESS(result) )
-    result = InitInfo();
 
   return result;
 }
@@ -235,7 +229,7 @@ ASDCP::MPEG2::MXFReader::h__Reader::FindFrameGOPStart(ui32_t FrameNum, ui32_t& K
   // look up frame index node
   IndexTableSegment::IndexEntry TmpEntry;
 
-  if ( ASDCP_FAILURE(m_FooterPart.Lookup(FrameNum, TmpEntry)) )
+  if ( ASDCP_FAILURE(m_IndexAccess.Lookup(FrameNum, TmpEntry)) )
     {
       DefaultLogSink().Error("Frame value out of range: %u\n", FrameNum);
       return RESULT_RANGE;
@@ -256,7 +250,7 @@ ASDCP::MPEG2::MXFReader::h__Reader::FrameType(ui32_t FrameNum, FrameType_t& type
   // look up frame index node
   IndexTableSegment::IndexEntry TmpEntry;
 
-  if ( ASDCP_FAILURE(m_FooterPart.Lookup(FrameNum, TmpEntry)) )
+  if ( ASDCP_FAILURE(m_IndexAccess.Lookup(FrameNum, TmpEntry)) )
     {
       DefaultLogSink().Error("Frame value out of range: %u\n", FrameNum);
       return RESULT_RANGE;
@@ -283,7 +277,7 @@ ASDCP::MPEG2::MXFReader::h__Reader::ReadFrame(ui32_t FrameNum, FrameBuffer& Fram
     return result;
 
   IndexTableSegment::IndexEntry TmpEntry;
-  m_FooterPart.Lookup(FrameNum, TmpEntry);
+  m_IndexAccess.Lookup(FrameNum, TmpEntry);
 
   switch ( ( TmpEntry.Flags >> 4 ) & 0x03 )
     {
@@ -340,13 +334,13 @@ ASDCP::MPEG2::MXFReader::~MXFReader()
 // Warning: direct manipulation of MXF structures can interfere
 // with the normal operation of the wrapper.  Caveat emptor!
 //
-ASDCP::MXF::OPAtomHeader&
-ASDCP::MPEG2::MXFReader::OPAtomHeader()
+ASDCP::MXF::OP1aHeader&
+ASDCP::MPEG2::MXFReader::OP1aHeader()
 {
   if ( m_Reader.empty() )
     {
-      assert(g_OPAtomHeader);
-      return *g_OPAtomHeader;
+      assert(g_OP1aHeader);
+      return *g_OP1aHeader;
     }
 
   return m_Reader->m_HeaderPart;
@@ -364,7 +358,22 @@ ASDCP::MPEG2::MXFReader::OPAtomIndexFooter()
       return *g_OPAtomIndexFooter;
     }
 
-  return m_Reader->m_FooterPart;
+  return m_Reader->m_IndexAccess;
+}
+
+// Warning: direct manipulation of MXF structures can interfere
+// with the normal operation of the wrapper.  Caveat emptor!
+//
+ASDCP::MXF::RIP&
+ASDCP::MPEG2::MXFReader::RIP()
+{
+  if ( m_Reader.empty() )
+    {
+      assert(g_RIP);
+      return *g_RIP;
+    }
+
+  return m_Reader->m_RIP;
 }
 
 // Open the file for reading. The file must exist. Returns error if the
@@ -460,7 +469,7 @@ void
 ASDCP::MPEG2::MXFReader::DumpIndex(FILE* stream) const
 {
   if ( m_Reader->m_File.IsOpen() )
-    m_Reader->m_FooterPart.Dump(stream);
+    m_Reader->m_IndexAccess.Dump(stream);
 }
 
 //
@@ -490,7 +499,7 @@ ASDCP::MPEG2::MXFReader::FrameType(ui32_t FrameNum, FrameType_t& type) const
 //------------------------------------------------------------------------------------------
 
 //
-class ASDCP::MPEG2::MXFWriter::h__Writer : public ASDCP::h__Writer
+class ASDCP::MPEG2::MXFWriter::h__Writer : public ASDCP::h__ASDCPWriter
 {
   ASDCP_NO_COPY_CONSTRUCT(h__Writer);
   h__Writer();
@@ -500,11 +509,11 @@ public:
   ui32_t          m_GOPOffset;
   byte_t          m_EssenceUL[SMPTE_UL_LENGTH];
 
-  h__Writer(const Dictionary& d) : ASDCP::h__Writer(d), m_GOPOffset(0) {
+  h__Writer(const Dictionary& d) : ASDCP::h__ASDCPWriter(d), m_GOPOffset(0) {
     memset(m_EssenceUL, 0, SMPTE_UL_LENGTH);
   }
 
-  ~h__Writer(){}
+  virtual ~h__Writer(){}
 
   Result_t OpenWrite(const char*, ui32_t HeaderSize);
   Result_t SetSourceStream(const VideoDescriptor&);
@@ -555,9 +564,9 @@ ASDCP::MPEG2::MXFWriter::h__Writer::SetSourceStream(const VideoDescriptor& VDesc
     {
       ui32_t TCFrameRate = ( m_VDesc.EditRate == EditRate_23_98  ) ? 24 : m_VDesc.EditRate.Numerator;
 
-      result = WriteMXFHeader(MPEG_PACKAGE_LABEL, UL(m_Dict->ul(MDD_MPEG2_VESWrapping)), 
-			      PICT_DEF_LABEL, UL(m_EssenceUL), UL(m_Dict->ul(MDD_PictureDataDef)),
-			      m_VDesc.EditRate, TCFrameRate);
+      result = WriteASDCPHeader(MPEG_PACKAGE_LABEL, UL(m_Dict->ul(MDD_MPEG2_VESWrapping)), 
+				PICT_DEF_LABEL, UL(m_EssenceUL), UL(m_Dict->ul(MDD_PictureDataDef)),
+				m_VDesc.EditRate, TCFrameRate);
     }
 
   return result;
@@ -634,7 +643,7 @@ ASDCP::MPEG2::MXFWriter::h__Writer::Finalize()
 
   m_State.Goto_FINAL();
 
-  return WriteMXFFooter();
+  return WriteASDCPFooter();
 }
 
 
@@ -653,13 +662,13 @@ ASDCP::MPEG2::MXFWriter::~MXFWriter()
 // Warning: direct manipulation of MXF structures can interfere
 // with the normal operation of the wrapper.  Caveat emptor!
 //
-ASDCP::MXF::OPAtomHeader&
-ASDCP::MPEG2::MXFWriter::OPAtomHeader()
+ASDCP::MXF::OP1aHeader&
+ASDCP::MPEG2::MXFWriter::OP1aHeader()
 {
   if ( m_Writer.empty() )
     {
-      assert(g_OPAtomHeader);
-      return *g_OPAtomHeader;
+      assert(g_OP1aHeader);
+      return *g_OP1aHeader;
     }
 
   return m_Writer->m_HeaderPart;
@@ -678,6 +687,21 @@ ASDCP::MPEG2::MXFWriter::OPAtomIndexFooter()
     }
 
   return m_Writer->m_FooterPart;
+}
+
+// Warning: direct manipulation of MXF structures can interfere
+// with the normal operation of the wrapper.  Caveat emptor!
+//
+ASDCP::MXF::RIP&
+ASDCP::MPEG2::MXFWriter::RIP()
+{
+  if ( m_Writer.empty() )
+    {
+      assert(g_RIP);
+      return *g_RIP;
+    }
+
+  return m_Writer->m_RIP;
 }
 
 // Open the file for writing. The file must not exist. Returns error if

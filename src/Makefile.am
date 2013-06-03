@@ -1,7 +1,8 @@
 ## Makefile.am -- Process this file with automake to produce Makefile.in
 #
 # $Id$
-# Copyright (c) 2007-2011 John Hurst. All rights reserved.
+#
+# Copyright (c) 2007-2013 John Hurst. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -24,6 +25,8 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 # THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+ACLOCAL_AMFLAGS = -I m4
 
 # Allow for configure's changes to this makefile
 AM_CPPFLAGS =
@@ -63,11 +66,21 @@ include_HEADERS += \
 	Wav.h \
 	PCMParserList.h \
 	AtmosSyncChannel_Generator.h
+
 nodist_include_HEADERS = TimedText_Transform.h
 endif
 
+if AS_02_USE
+include_HEADERS		+= AS_02.h
+endif
+
 # list of the libraries to build and install
+
 lib_LTLIBRARIES = libkumu.la libasdcp.la
+
+if AS_02_USE
+lib_LTLIBRARIES		+= libas02.la
+endif
 
 # sources for kumu library
 libkumu_la_SOURCES = KM_error.h KM_fileio.cpp KM_fileio.h KM_log.cpp KM_log.h \
@@ -99,7 +112,6 @@ libasdcp_la_SOURCES = MPEG2_Parser.cpp MPEG.cpp JP2K_Codestream_Parser.cpp \
 		SyncEncoder.c SyncEncoder.h SyncCommon.h CRC16.c CRC16.h \
 		UUIDInformation.c UUIDInformation.h
 
-
 if DEV_HEADERS
 nodist_libasdcp_la_SOURCES += TimedText_Transform.h TimedText_Transform.cpp
 endif
@@ -108,6 +120,22 @@ libasdcp_la_LDFLAGS = -release @VERSION@
 # additional libraries to link against for a library
 libasdcp_la_LIBADD = libkumu.la
 libasdcp_la_CPPFLAGS = -DASDCP_PLATFORM=\"@host@\"
+
+if AS_02_USE
+# sources for as-02 library
+libas02_la_SOURCES	= \
+	AS_02.h \
+	AS_02_MXF.cpp \
+	AS_02_JP2K.cpp \
+	AS_02_PCM.cpp \
+	h__02_Reader.cpp \
+	h__02_Writer.cpp \
+	AS_02_internal.h
+
+libas02_la_LDFLAGS = -release @VERSION@
+libas02_la_LIBADD = libasdcp.la libkumu.la
+libas02_la_CPPFLAGS = -DASDCP_PLATFORM=\"@host@\"
+endif
 
 # Python extension
 if PYTHON_USE
@@ -154,6 +182,13 @@ bin_PROGRAMS = \
 	j2c-test blackwave klvwalk wavesplit \
 	kmfilegen kmrandgen kmuuidgen
 
+if AS_02_USE
+bin_PROGRAMS += \
+	as-02-wrap \
+	as-02-unwrap
+endif
+
+
 # sources and linkage for CLI utilities
 asdcp_test_SOURCES = asdcp-test.cpp
 asdcp_test_LDADD = libasdcp.la
@@ -190,6 +225,14 @@ wavesplit_LDADD = libasdcp.la
 
 j2c_test_SOURCES = j2c-test.cpp
 j2c_test_LDADD = libasdcp.la
+
+if AS_02_USE
+as_02_wrap_SOURCES = as-02-wrap.cpp
+as_02_wrap_LDADD = libas02.la
+
+as_02_unwrap_SOURCES = as-02-unwrap.cpp
+as_02_unwrap_LDADD = libas02.la
+endif
 
 # list of programs that need to be compiled for use in test suite
 check_PROGRAMS = asdcp-mem-test path-test \

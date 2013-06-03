@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2005-2012, John Hurst
+Copyright (c) 2005-2013, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -681,92 +681,29 @@ ASDCP::MXF::Preface::Dump(FILE* stream)
 //------------------------------------------------------------------------------------------
 //
 
-ASDCP::MXF::OPAtomHeader::OPAtomHeader(const Dictionary*& d) : Partition(d), m_Dict(d), m_RIP(d), m_Primer(d), m_Preface(0), m_HasRIP(false) {}
-ASDCP::MXF::OPAtomHeader::~OPAtomHeader() {}
+ASDCP::MXF::OP1aHeader::OP1aHeader(const Dictionary*& d) : Partition(d), m_Dict(d), m_Primer(d), m_Preface(0) {}
+ASDCP::MXF::OP1aHeader::~OP1aHeader() {}
 
 //
 ASDCP::Result_t
-ASDCP::MXF::OPAtomHeader::InitFromFile(const Kumu::FileReader& Reader)
+ASDCP::MXF::OP1aHeader::InitFromFile(const Kumu::FileReader& Reader)
 {
-  m_HasRIP = false;
-  Result_t result = SeekToRIP(Reader);
-
-  if ( ASDCP_SUCCESS(result) )
-    {
-      result = m_RIP.InitFromFile(Reader);
-      ui32_t test_s = m_RIP.PairArray.size();
-
-      if ( ASDCP_FAILURE(result) )
-	{
-	  DefaultLogSink().Error("File contains no RIP\n");
-	  result = RESULT_OK;
-	}
-      else if ( test_s == 0 )
-	{
-	  DefaultLogSink().Error("RIP contains no Pairs.\n");
-	  result = RESULT_FORMAT;
-	}
-      else
-	{
-	  if ( test_s < 2 )
-	    {
-	      // OP-Atom states that there will be either two or three partitions:
-	      // one closed header and one closed footer with an optional body
-	      // SMPTE 429-5 files may have many partitions, see SMPTE 410M
-	      DefaultLogSink().Warn("RIP count is less than 2: %u\n", test_s);
-	    }
-
-	  m_HasRIP = true;
-      
-	  if ( m_RIP.PairArray.front().ByteOffset !=  0 )
-	    {
-	      DefaultLogSink().Error("First Partition in RIP is not at offset 0.\n");
-	      result = RESULT_FORMAT;
-	    }
-	}
-    }
-  else
-  {
-    DefaultLogSink().Error("OPAtomHeader::InitFromFile, SeekToRIP failed\n");
-  }
-
-  if ( ASDCP_SUCCESS(result) )
-    result = Reader.Seek(0);
-  else
-    DefaultLogSink().Error("OPAtomHeader::InitFromFile, Seek failed\n");
-
-  if ( ASDCP_SUCCESS(result) )
-    result = Partition::InitFromFile(Reader); // test UL and OP
-  else
-    DefaultLogSink().Error("OPAtomHeader::InitFromFile, Partition::InitFromFile failed\n");
+  Result_t result = result = Partition::InitFromFile(Reader);
 
   if ( ASDCP_FAILURE(result) )
     return result;
 
-  // is it really OP-Atom?
-  assert(m_Dict);
-  UL OPAtomUL(SMPTE_390_OPAtom_Entry().ul);
-  UL InteropOPAtomUL(MXFInterop_OPAtom_Entry().ul);
-
-  if ( OperationalPattern.ExactMatch(OPAtomUL) ) // SMPTE
+  if ( m_Dict == &DefaultCompositeDict() )
     {
-      if ( m_Dict == &DefaultCompositeDict() )
-	m_Dict = &DefaultSMPTEDict();
-    }
-  else if ( OperationalPattern.ExactMatch(InteropOPAtomUL) ) // Interop
-    {
-      if ( m_Dict == &DefaultCompositeDict() )
-	m_Dict = &DefaultInteropDict();
-    }
-  else
-    {
-      char strbuf[IdentBufferLen];
-      const MDDEntry* Entry = m_Dict->FindUL(OperationalPattern.Value());
-      if ( Entry == 0 )
-	DefaultLogSink().Warn("Operational pattern is not OP-Atom: %s\n",
-			      OperationalPattern.EncodeString(strbuf, IdentBufferLen));
-      else
-	DefaultLogSink().Warn("Operational pattern is not OP-Atom: %s\n", Entry->name);
+      // select more explicit dictionary if one is available
+      if ( OperationalPattern.ExactMatch(MXFInterop_OPAtom_Entry().ul) )
+	{
+	  m_Dict = &DefaultInteropDict();
+	}
+      else if ( OperationalPattern.ExactMatch(SMPTE_390_OPAtom_Entry().ul) )
+	{
+	  m_Dict = &DefaultSMPTEDict();
+	}
     }
 
   // slurp up the remainder of the header
@@ -774,36 +711,36 @@ ASDCP::MXF::OPAtomHeader::InitFromFile(const Kumu::FileReader& Reader)
     DefaultLogSink().Warn("Improbably small HeaderByteCount value: %u\n", HeaderByteCount);
 
   assert (HeaderByteCount <= 0xFFFFFFFFL);
-  result = m_Buffer.Capacity((ui32_t) HeaderByteCount);
+  result = m_HeaderData.Capacity((ui32_t)HeaderByteCount);
 
   if ( ASDCP_SUCCESS(result) )
     {
       ui32_t read_count;
-      result = Reader.Read(m_Buffer.Data(), m_Buffer.Capacity(), &read_count);
+      result = Reader.Read(m_HeaderData.Data(), m_HeaderData.Capacity(), &read_count);
 
       if ( ASDCP_FAILURE(result) )
         {
-	  DefaultLogSink().Error("OPAtomHeader::InitFromFile, Read failed\n");
+	  DefaultLogSink().Error("OP1aHeader::InitFromFile, Read failed\n");
 	  return result;
         }
 
-      if ( read_count != m_Buffer.Capacity() )
+      if ( read_count != m_HeaderData.Capacity() )
 	{
 	  DefaultLogSink().Error("Short read of OP-Atom header metadata; wanted %u, got %u\n",
-				 m_Buffer.Capacity(), read_count);
+				 m_HeaderData.Capacity(), read_count);
 	  return RESULT_KLV_CODING;
 	}
     }
 
   if ( ASDCP_SUCCESS(result) )
-    result = InitFromBuffer(m_Buffer.RoData(), m_Buffer.Capacity());
+    result = InitFromBuffer(m_HeaderData.RoData(), m_HeaderData.Capacity());
 
   return result;
 }
 
 //
 ASDCP::Result_t
-ASDCP::MXF::OPAtomHeader::InitFromPartitionBuffer(const byte_t* p, ui32_t l)
+ASDCP::MXF::OP1aHeader::InitFromPartitionBuffer(const byte_t* p, ui32_t l)
 {
   Result_t result = KLVPacket::InitFromBuffer(p, l);
 
@@ -821,7 +758,7 @@ ASDCP::MXF::OPAtomHeader::InitFromPartitionBuffer(const byte_t* p, ui32_t l)
 
 //
 ASDCP::Result_t
-ASDCP::MXF::OPAtomHeader::InitFromBuffer(const byte_t* p, ui32_t l)
+ASDCP::MXF::OP1aHeader::InitFromBuffer(const byte_t* p, ui32_t l)
 {
   assert(m_Dict);
   Result_t result = RESULT_OK;
@@ -869,14 +806,14 @@ ASDCP::MXF::OPAtomHeader::InitFromBuffer(const byte_t* p, ui32_t l)
 }
 
 ASDCP::Result_t
-ASDCP::MXF::OPAtomHeader::GetMDObjectByID(const UUID& ObjectID, InterchangeObject** Object)
+ASDCP::MXF::OP1aHeader::GetMDObjectByID(const UUID& ObjectID, InterchangeObject** Object)
 {
   return m_PacketList->GetMDObjectByID(ObjectID, Object);
 }
 
 //
 ASDCP::Result_t
-ASDCP::MXF::OPAtomHeader::GetMDObjectByType(const byte_t* ObjectID, InterchangeObject** Object)
+ASDCP::MXF::OP1aHeader::GetMDObjectByType(const byte_t* ObjectID, InterchangeObject** Object)
 {
   InterchangeObject* TmpObject;
 
@@ -888,14 +825,14 @@ ASDCP::MXF::OPAtomHeader::GetMDObjectByType(const byte_t* ObjectID, InterchangeO
 
 //
 ASDCP::Result_t
-ASDCP::MXF::OPAtomHeader::GetMDObjectsByType(const byte_t* ObjectID, std::list<InterchangeObject*>& ObjectList)
+ASDCP::MXF::OP1aHeader::GetMDObjectsByType(const byte_t* ObjectID, std::list<InterchangeObject*>& ObjectList)
 {
   return m_PacketList->GetMDObjectsByType(ObjectID, ObjectList);
 }
 
 //
 ASDCP::MXF::Identification*
-ASDCP::MXF::OPAtomHeader::GetIdentification()
+ASDCP::MXF::OP1aHeader::GetIdentification()
 {
   InterchangeObject* Object;
 
@@ -907,7 +844,7 @@ ASDCP::MXF::OPAtomHeader::GetIdentification()
 
 //
 ASDCP::MXF::SourcePackage*
-ASDCP::MXF::OPAtomHeader::GetSourcePackage()
+ASDCP::MXF::OP1aHeader::GetSourcePackage()
 {
   InterchangeObject* Object;
 
@@ -918,12 +855,8 @@ ASDCP::MXF::OPAtomHeader::GetSourcePackage()
 }
 
 //
-ASDCP::MXF::RIP&
-ASDCP::MXF::OPAtomHeader::GetRIP() { return m_RIP; }
-
-//
 ASDCP::Result_t
-ASDCP::MXF::OPAtomHeader::WriteToFile(Kumu::FileWriter& Writer, ui32_t HeaderSize)
+ASDCP::MXF::OP1aHeader::WriteToFile(Kumu::FileWriter& Writer, ui32_t HeaderSize)
 {
   assert(m_Dict);
   if ( m_Preface == 0 )
@@ -1013,7 +946,7 @@ ASDCP::MXF::OPAtomHeader::WriteToFile(Kumu::FileWriter& Writer, ui32_t HeaderSiz
 
 //
 void
-ASDCP::MXF::OPAtomHeader::Dump(FILE* stream)
+ASDCP::MXF::OP1aHeader::Dump(FILE* stream)
 {
   if ( stream == 0 )
     stream = stderr;
@@ -1049,38 +982,38 @@ ASDCP::MXF::OPAtomIndexFooter::InitFromFile(const Kumu::FileReader& Reader)
 {
   Result_t result = Partition::InitFromFile(Reader); // test UL and OP
 
-	// slurp up the remainder of the footer
-	ui32_t read_count = 0;
-
-	if ( ASDCP_SUCCESS(result) )
-    {
-		assert (IndexByteCount <= 0xFFFFFFFFL);
-		// At this point, m_Buffer may not have been initialized
-		// so it's capacity is zero and data pointer is NULL
-		// However, if IndexByteCount is zero then the capacity
-		// doesn't change and the data pointer is not set.
-		result = m_Buffer.Capacity((ui32_t) IndexByteCount);
-    }
-
-	if ( ASDCP_SUCCESS(result) && m_Buffer.Data() )
-		result = Reader.Read(m_Buffer.Data(), m_Buffer.Capacity(), &read_count);
-
-  if ( ASDCP_SUCCESS(result) && read_count != m_Buffer.Capacity() )
-    {
-      DefaultLogSink().Error("Short read of footer partition: got %u, expecting %u\n",
-			     read_count, m_Buffer.Capacity());
-      return RESULT_FAIL;
-    }
-	else if( ASDCP_SUCCESS(result) && !m_Buffer.Data() )
-	{
-		DefaultLogSink().Error( "Buffer for footer partition not created: IndexByteCount = %u\n",
-								IndexByteCount );
-		return RESULT_FAIL;
-	}
+  // slurp up the remainder of the footer
+  ui32_t read_count = 0;
 
   if ( ASDCP_SUCCESS(result) )
-    result = InitFromBuffer(m_Buffer.RoData(), m_Buffer.Capacity());
+    {
+      assert (IndexByteCount <= 0xFFFFFFFFL);
+      // At this point, m_FooterData may not have been initialized
+      // so it's capacity is zero and data pointer is NULL
+      // However, if IndexByteCount is zero then the capacity
+      // doesn't change and the data pointer is not set.
+      result = m_FooterData.Capacity((ui32_t) IndexByteCount);
+    }
 
+  if ( ASDCP_SUCCESS(result) && m_FooterData.Data() )
+    result = Reader.Read(m_FooterData.Data(), m_FooterData.Capacity(), &read_count);
+
+  if ( ASDCP_SUCCESS(result) && read_count != m_FooterData.Capacity() )
+    {
+      DefaultLogSink().Error("Short read of footer partition: got %u, expecting %u\n",
+			     read_count, m_FooterData.Capacity());
+      return RESULT_FAIL;
+    }
+  else if( ASDCP_SUCCESS(result) && !m_FooterData.Data() )
+    {
+      DefaultLogSink().Error( "Buffer for footer partition not created: IndexByteCount = %u\n",
+			      IndexByteCount );
+      return RESULT_FAIL;
+    }
+
+  if ( ASDCP_SUCCESS(result) )
+    result = InitFromBuffer(m_FooterData.RoData(), m_FooterData.Capacity());
+  
   return result;
 }
 

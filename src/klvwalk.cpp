@@ -194,21 +194,47 @@ main(int argc, const char** argv)
 	{
 	  Kumu::FileReader        Reader;
 	  const Dictionary* Dict = &DefaultCompositeDict();
-	  ASDCP::MXF::OPAtomHeader Header(Dict);
+	  ASDCP::MXF::OP1aHeader Header(Dict);
+	  ASDCP::MXF::RIP RIP(Dict);
 	  
 	  result = Reader.OpenRead((*fi).c_str());
 	  
+	  if ( ASDCP_SUCCESS(result) )
+	    result = MXF::SeekToRIP(Reader);
+
+	  if ( ASDCP_SUCCESS(result) )
+	    {
+	      result = RIP.InitFromFile(Reader);
+	      ui32_t test_s = RIP.PairArray.size();
+
+	      if ( ASDCP_FAILURE(result) )
+		{
+		  DefaultLogSink().Error("File contains no RIP\n");
+		  result = RESULT_OK;
+		}
+	      else if ( RIP.PairArray.empty() )
+		{
+		  DefaultLogSink().Error("RIP contains no Pairs.\n");
+		}
+
+	      Reader.Seek(0);
+	    }
+	  else
+	    {
+	      DefaultLogSink().Error("ASDCP::h__Reader::OpenMXFRead, SeekToRIP failed\n");
+	    }
+
 	  if ( ASDCP_SUCCESS(result) )
 	    result = Header.InitFromFile(Reader);
 	  
 	  if ( ASDCP_SUCCESS(result) )
 	    Header.Dump(stdout);
 	  
-	  if ( ASDCP_SUCCESS(result) && Header.m_RIP.PairArray.size() > 2 )
+	  if ( ASDCP_SUCCESS(result) && RIP.PairArray.size() > 2 )
 	    {
-	      MXF::Array<MXF::RIP::Pair>::const_iterator pi = Header.m_RIP.PairArray.begin();
+	      MXF::Array<MXF::RIP::Pair>::const_iterator pi = RIP.PairArray.begin();
 
-	      for ( pi++; pi != Header.m_RIP.PairArray.end() && ASDCP_SUCCESS(result); pi++ )
+	      for ( pi++; pi != RIP.PairArray.end() && ASDCP_SUCCESS(result); pi++ )
 		{
 		  result = Reader.Seek((*pi).ByteOffset);
 
@@ -239,7 +265,7 @@ main(int argc, const char** argv)
 	    }
 
 	  if ( ASDCP_SUCCESS(result) )
-	    Header.m_RIP.Dump(stdout);
+	    RIP.Dump(stdout);
 	}
       else // dump klv
 	{

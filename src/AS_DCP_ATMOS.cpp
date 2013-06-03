@@ -40,7 +40,7 @@ namespace ASDCP
 {
 namespace ATMOS
 {
-  static std::string ATMOS_PACKAGE_LABEL = "File Package: SMPTE 382M frame wrapping of Dolby ATMOS data";
+  static std::string ATMOS_PACKAGE_LABEL = "File Package: SMPTE-GC frame wrapping of Dolby ATMOS data";
   static std::string ATMOS_DEF_LABEL = "Dolby ATMOS Data Track";
   static byte_t ATMOS_ESSENCE_CODING[SMPTE_UL_LENGTH] = { 0x06, 0x0e, 0x2b, 0x34, 0x04, 0x01, 0x01, 0x05,
                                                           0x0e, 0x09, 0x06, 0x04, 0x00, 0x00, 0x00, 0x00 };
@@ -117,7 +117,7 @@ class ASDCP::ATMOS::MXFReader::h__Reader : public ASDCP::DCData::h__Reader
 
   h__Reader(const Dictionary& d) : DCData::h__Reader(d),  m_EssenceSubDescriptor(NULL),
                                    m_ADesc() {}
-  ~h__Reader() {}
+  virtual ~h__Reader() {}
   Result_t    OpenRead(const char*);
   Result_t    MD_to_Atmos_ADesc(ATMOS::AtmosDescriptor& ADesc);
 };
@@ -183,13 +183,13 @@ ASDCP::ATMOS::MXFReader::~MXFReader()
 // Warning: direct manipulation of MXF structures can interfere
 // with the normal operation of the wrapper.  Caveat emptor!
 //
-ASDCP::MXF::OPAtomHeader&
-ASDCP::ATMOS::MXFReader::OPAtomHeader()
+ASDCP::MXF::OP1aHeader&
+ASDCP::ATMOS::MXFReader::OP1aHeader()
 {
   if ( m_Reader.empty() )
   {
-    assert(g_OPAtomHeader);
-    return *g_OPAtomHeader;
+    assert(g_OP1aHeader);
+    return *g_OP1aHeader;
   }
 
   return m_Reader->m_HeaderPart;
@@ -207,7 +207,22 @@ ASDCP::ATMOS::MXFReader::OPAtomIndexFooter()
     return *g_OPAtomIndexFooter;
   }
 
-  return m_Reader->m_FooterPart;
+  return m_Reader->m_IndexAccess;
+}
+
+// Warning: direct manipulation of MXF structures can interfere
+// with the normal operation of the wrapper.  Caveat emptor!
+//
+ASDCP::MXF::RIP&
+ASDCP::ATMOS::MXFReader::RIP()
+{
+  if ( m_Reader.empty() )
+    {
+      assert(g_RIP);
+      return *g_RIP;
+    }
+
+  return m_Reader->m_RIP;
 }
 
 // Open the file for reading. The file must exist. Returns error if the
@@ -278,7 +293,7 @@ void
 ASDCP::ATMOS::MXFReader::DumpIndex(FILE* stream) const
 {
   if ( m_Reader->m_File.IsOpen() )
-    m_Reader->m_FooterPart.Dump(stream);
+    m_Reader->m_IndexAccess.Dump(stream);
 }
 
 //
@@ -311,7 +326,7 @@ class ASDCP::ATMOS::MXFWriter::h__Writer : public DCData::h__Writer
   h__Writer(const Dictionary& d) : DCData::h__Writer(d),
       m_EssenceSubDescriptor(NULL), m_ADesc() {}
 
-  ~h__Writer(){}
+  virtual ~h__Writer(){}
 
   Result_t OpenWrite(const char*, ui32_t HeaderSize, const AtmosDescriptor& ADesc);
   Result_t Atmos_ADesc_to_MD(const AtmosDescriptor& ADesc);
@@ -370,13 +385,13 @@ ASDCP::ATMOS::MXFWriter::~MXFWriter()
 // Warning: direct manipulation of MXF structures can interfere
 // with the normal operation of the wrapper.  Caveat emptor!
 //
-ASDCP::MXF::OPAtomHeader&
-ASDCP::ATMOS::MXFWriter::OPAtomHeader()
+ASDCP::MXF::OP1aHeader&
+ASDCP::ATMOS::MXFWriter::OP1aHeader()
 {
   if ( m_Writer.empty() )
   {
-    assert(g_OPAtomHeader);
-    return *g_OPAtomHeader;
+    assert(g_OP1aHeader);
+    return *g_OP1aHeader;
     }
 
   return m_Writer->m_HeaderPart;
@@ -395,6 +410,21 @@ ASDCP::ATMOS::MXFWriter::OPAtomIndexFooter()
   }
 
   return m_Writer->m_FooterPart;
+}
+
+// Warning: direct manipulation of MXF structures can interfere
+// with the normal operation of the wrapper.  Caveat emptor!
+//
+ASDCP::MXF::RIP&
+ASDCP::ATMOS::MXFWriter::RIP()
+{
+  if ( m_Writer.empty() )
+    {
+      assert(g_RIP);
+      return *g_RIP;
+    }
+
+  return m_Writer->m_RIP;
 }
 
 // Open the file for writing. The file must not exist. Returns error if

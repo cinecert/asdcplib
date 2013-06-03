@@ -570,8 +570,9 @@ namespace ASDCP {
 
   namespace MXF {
     // #include<Metadata.h> to use these
-    class OPAtomHeader;
+    class OP1aHeader;
     class OPAtomIndexFooter;
+    class RIP;
   };
 
   //---------------------------------------------------------------------------------
@@ -731,8 +732,9 @@ namespace ASDCP {
 
 	  // Warning: direct manipulation of MXF structures can interfere
 	  // with the normal operation of the wrapper.  Caveat emptor!
-	  virtual MXF::OPAtomHeader& OPAtomHeader();
+	  virtual MXF::OP1aHeader& OP1aHeader();
 	  virtual MXF::OPAtomIndexFooter& OPAtomIndexFooter();
+	  virtual MXF::RIP& RIP();
 
 	  // Open the file for writing. The file must not exist. Returns error if
 	  // the operation cannot be completed or if nonsensical data is discovered
@@ -763,8 +765,9 @@ namespace ASDCP {
 
 	  // Warning: direct manipulation of MXF structures can interfere
 	  // with the normal operation of the wrapper.  Caveat emptor!
-	  virtual MXF::OPAtomHeader& OPAtomHeader();
+	  virtual MXF::OP1aHeader& OP1aHeader();
 	  virtual MXF::OPAtomIndexFooter& OPAtomIndexFooter();
+	  virtual MXF::RIP& RIP();
 
 	  // Open the file for reading. The file must exist. Returns error if the
 	  // operation cannot be completed.
@@ -936,8 +939,9 @@ namespace ASDCP {
 
 	  // Warning: direct manipulation of MXF structures can interfere
 	  // with the normal operation of the wrapper.  Caveat emptor!
-	  virtual MXF::OPAtomHeader& OPAtomHeader();
+	  virtual MXF::OP1aHeader& OP1aHeader();
 	  virtual MXF::OPAtomIndexFooter& OPAtomIndexFooter();
+	  virtual MXF::RIP& RIP();
 
 	  // Open the file for writing. The file must not exist. Returns error if
 	  // the operation cannot be completed or if nonsensical data is discovered
@@ -968,8 +972,9 @@ namespace ASDCP {
 
 	  // Warning: direct manipulation of MXF structures can interfere
 	  // with the normal operation of the wrapper.  Caveat emptor!
-	  virtual MXF::OPAtomHeader& OPAtomHeader();
+	  virtual MXF::OP1aHeader& OP1aHeader();
 	  virtual MXF::OPAtomIndexFooter& OPAtomIndexFooter();
+	  virtual MXF::RIP& RIP();
 
 	  // Open the file for reading. The file must exist. Returns error if the
 	  // operation cannot be completed.
@@ -1183,8 +1188,9 @@ namespace ASDCP {
 
 	  // Warning: direct manipulation of MXF structures can interfere
 	  // with the normal operation of the wrapper.  Caveat emptor!
-	  virtual MXF::OPAtomHeader& OPAtomHeader();
+	  virtual MXF::OP1aHeader& OP1aHeader();
 	  virtual MXF::OPAtomIndexFooter& OPAtomIndexFooter();
+	  virtual MXF::RIP& RIP();
 
 	  // Open the file for writing. The file must not exist. Returns error if
 	  // the operation cannot be completed or if nonsensical data is discovered
@@ -1215,8 +1221,9 @@ namespace ASDCP {
 
 	  // Warning: direct manipulation of MXF structures can interfere
 	  // with the normal operation of the wrapper.  Caveat emptor!
-	  virtual MXF::OPAtomHeader& OPAtomHeader();
+	  virtual MXF::OP1aHeader& OP1aHeader();
 	  virtual MXF::OPAtomIndexFooter& OPAtomIndexFooter();
+	  virtual MXF::RIP& RIP();
 
 	  // Open the file for reading. The file must exist. Returns error if the
 	  // operation cannot be completed.
@@ -1286,8 +1293,9 @@ namespace ASDCP {
 
 	  // Warning: direct manipulation of MXF structures can interfere
 	  // with the normal operation of the wrapper.  Caveat emptor!
-	  virtual MXF::OPAtomHeader& OPAtomHeader();
+	  virtual MXF::OP1aHeader& OP1aHeader();
 	  virtual MXF::OPAtomIndexFooter& OPAtomIndexFooter();
+	  virtual MXF::RIP& RIP();
 
 	  // Open the file for writing. The file must not exist. Returns error if
 	  // the operation cannot be completed or if nonsensical data is discovered
@@ -1328,8 +1336,9 @@ namespace ASDCP {
 
 	  // Warning: direct manipulation of MXF structures can interfere
 	  // with the normal operation of the wrapper.  Caveat emptor!
-	  virtual MXF::OPAtomHeader& OPAtomHeader();
+	  virtual MXF::OP1aHeader& OP1aHeader();
 	  virtual MXF::OPAtomIndexFooter& OPAtomIndexFooter();
+	  virtual MXF::RIP& RIP();
 
 	  // Open the file for reading. The file must exist. Returns error if the
 	  // operation cannot be completed.
@@ -1492,8 +1501,9 @@ namespace ASDCP {
 
 	  // Warning: direct manipulation of MXF structures can interfere
 	  // with the normal operation of the wrapper.  Caveat emptor!
-	  virtual MXF::OPAtomHeader& OPAtomHeader();
+	  virtual MXF::OP1aHeader& OP1aHeader();
 	  virtual MXF::OPAtomIndexFooter& OPAtomIndexFooter();
+	  virtual MXF::RIP& RIP();
 
 	  // Open the file for writing. The file must not exist. Returns error if
 	  // the operation cannot be completed or if nonsensical data is discovered
@@ -1534,8 +1544,9 @@ namespace ASDCP {
 
 	  // Warning: direct manipulation of MXF structures can interfere
 	  // with the normal operation of the wrapper.  Caveat emptor!
-	  virtual MXF::OPAtomHeader& OPAtomHeader();
+	  virtual MXF::OP1aHeader& OP1aHeader();
 	  virtual MXF::OPAtomIndexFooter& OPAtomIndexFooter();
+	  virtual MXF::RIP& RIP();
 
 	  // Open the file for reading. The file must exist. Returns error if the
 	  // operation cannot be completed.
@@ -1686,8 +1697,9 @@ namespace ASDCP {
 
 	  // Warning: direct manipulation of MXF structures can interfere
 	  // with the normal operation of the wrapper.  Caveat emptor!
-	  virtual MXF::OPAtomHeader& OPAtomHeader();
+	  virtual MXF::OP1aHeader& OP1aHeader();
 	  virtual MXF::OPAtomIndexFooter& OPAtomIndexFooter();
+	  virtual MXF::RIP& RIP();
 
 	  // Open the file for writing. The file must not exist. Returns error if
 	  // the operation cannot be completed or if nonsensical data is discovered
@@ -1718,8 +1730,9 @@ namespace ASDCP {
 
 	  // Warning: direct manipulation of MXF structures can interfere
 	  // with the normal operation of the wrapper.  Caveat emptor!
-	  virtual MXF::OPAtomHeader& OPAtomHeader();
+	  virtual MXF::OP1aHeader& OP1aHeader();
 	  virtual MXF::OPAtomIndexFooter& OPAtomIndexFooter();
+	  virtual MXF::RIP& RIP();
 
 	  // Open the file for reading. The file must exist. Returns error if the
 	  // operation cannot be completed.
@@ -1792,8 +1805,9 @@ namespace ASDCP {
 
 	  // Warning: direct manipulation of MXF structures can interfere
 	  // with the normal operation of the wrapper.  Caveat emptor!
-	  virtual MXF::OPAtomHeader& OPAtomHeader();
+	  virtual MXF::OP1aHeader& OP1aHeader();
 	  virtual MXF::OPAtomIndexFooter& OPAtomIndexFooter();
+	  virtual MXF::RIP& RIP();
 
 	  // Open the file for writing. The file must not exist. Returns error if
 	  // the operation cannot be completed or if nonsensical data is discovered
@@ -1824,8 +1838,9 @@ namespace ASDCP {
 
 	  // Warning: direct manipulation of MXF structures can interfere
 	  // with the normal operation of the wrapper.  Caveat emptor!
-	  virtual MXF::OPAtomHeader& OPAtomHeader();
+	  virtual MXF::OP1aHeader& OP1aHeader();
 	  virtual MXF::OPAtomIndexFooter& OPAtomIndexFooter();
+	  virtual MXF::RIP& RIP();
 
 	  // Open the file for reading. The file must exist. Returns error if the
 	  // operation cannot be completed.

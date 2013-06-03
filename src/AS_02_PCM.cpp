@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 2011-2012, Robert Scheler, Heiko Sparenberg Fraunhofer IIS, John Hurst
+  Copyright (c) 2011-2013, Robert Scheler, Heiko Sparenberg Fraunhofer IIS, John Hurst
   All rights reserved.
 
   Redistribution and use in source and binary forms, with or without
@@ -40,15 +40,6 @@
 static std::string PCM_PACKAGE_LABEL = "File Package: SMPTE 382M clip wrapping of wave audio";
 static std::string SOUND_DEF_LABEL = "Sound Track";
 
-static byte_t SNDFMT_CFG_1_UL[16] = { 0x06, 0x0e, 0x2b, 0x34, 0x04, 0x01, 0x01, 0x0b,
-				      0x04, 0x02, 0x02, 0x10, 0x03, 0x01, 0x01, 0x00 };
-
-static byte_t SNDFMT_CFG_2_UL[16] = { 0x06, 0x0e, 0x2b, 0x34, 0x04, 0x01, 0x01, 0x0b,
-				      0x04, 0x02, 0x02, 0x10, 0x03, 0x01, 0x02, 0x00 };
-
-static byte_t SNDFMT_CFG_3_UL[16] = { 0x06, 0x0e, 0x2b, 0x34, 0x04, 0x01, 0x01, 0x0b,
-				      0x04, 0x02, 0x02, 0x10, 0x03, 0x01, 0x03, 0x00 };
-
 //this must be changed because the CBR_frame_size is only   
 //
 static ui32_t
@@ -78,7 +69,7 @@ calc_CBR_frame_size(ASDCP::WriterInfo& Info, const ASDCP::PCM::AudioDescriptor& 
 //------------------------------------------------------------------------------------------
 
 
-class AS_02::PCM::MXFReader::h__Reader : public AS_02::h__Reader
+class AS_02::PCM::MXFReader::h__Reader : public AS_02::h__AS02Reader
 {
   ASDCP_NO_COPY_CONSTRUCT(h__Reader);
   h__Reader();
@@ -86,8 +77,9 @@ class AS_02::PCM::MXFReader::h__Reader : public AS_02::h__Reader
 public:
   ASDCP::PCM::AudioDescriptor m_ADesc;
 
-  h__Reader(const Dictionary& d) : AS_02::h__Reader(d) {}
-  ~h__Reader() {}
+  h__Reader(const Dictionary& d) : AS_02::h__AS02Reader(d) {}
+  virtual ~h__Reader() {}
+
   ASDCP::Result_t    OpenRead(const char*);
   ASDCP::Result_t    ReadFrame(ui32_t, ASDCP::PCM::FrameBuffer&, ASDCP::AESDecContext*, ASDCP::HMACContext*);
 
@@ -148,12 +140,6 @@ AS_02::PCM::MXFReader::h__Reader::OpenRead(const char* filename)
 	}
     }
 
-  if( ASDCP_SUCCESS(result) )
-    result = InitMXFIndex();
-
-  if( ASDCP_SUCCESS(result) )
-    result = InitInfo();
-
   // TODO: test file for sane CBR index BytesPerEditUnit
 
   return result;
@@ -189,13 +175,13 @@ AS_02::PCM::MXFReader::~MXFReader()
 // Warning: direct manipulation of MXF structures can interfere
 // with the normal operation of the wrapper.  Caveat emptor!
 //
-ASDCP::MXF::OPAtomHeader&
-AS_02::PCM::MXFReader::OPAtomHeader()
+ASDCP::MXF::OP1aHeader&
+AS_02::PCM::MXFReader::OP1aHeader()
 {
   if ( m_Reader.empty() )
     {
-      assert(g_OPAtomHeader);
-      return *g_OPAtomHeader;
+      assert(g_OP1aHeader);
+      return *g_OP1aHeader;
     }
 
   return m_Reader->m_HeaderPart;
@@ -204,19 +190,32 @@ AS_02::PCM::MXFReader::OPAtomHeader()
 // Warning: direct manipulation of MXF structures can interfere
 // with the normal operation of the wrapper.  Caveat emptor!
 //
-/*
-ASDCP::MXF::OPAtomIndexFooter&
-AS_02::PCM::MXFReader::OPAtomIndexFooter()
+AS_02::MXF::AS02IndexReader&
+AS_02::PCM::MXFReader::AS02IndexReader()
 {
   if ( m_Reader.empty() )
     {
-      assert(g_OPAtomIndexFooter);
-      return *g_OPAtomIndexFooter;
+      assert(g_AS02IndexReader);
+      return *g_AS02IndexReader;
     }
 
-  return m_Reader->m_FooterPart;
+  return m_Reader->m_IndexAccess;
 }
-*/
+
+// Warning: direct manipulation of MXF structures can interfere
+// with the normal operation of the wrapper.  Caveat emptor!
+//
+ASDCP::MXF::RIP&
+AS_02::PCM::MXFReader::RIP()
+{
+  if ( m_Reader.empty() )
+    {
+      assert(g_RIP);
+      return *g_RIP;
+    }
+
+  return m_Reader->m_RIP;
+}
 
 // Open the file for reading. The file must exist. Returns error if the
 // operation cannot be completed.
@@ -283,14 +282,14 @@ void
 AS_02::PCM::MXFReader::DumpIndex(FILE* stream) const
 {
   if ( m_Reader->m_File.IsOpen() )
-    m_Reader->m_FooterPart.Dump(stream);
+    m_Reader->m_IndexAccess.Dump(stream);
 }
 
 
 //------------------------------------------------------------------------------------------
 
 //
-class AS_02::PCM::MXFWriter::h__Writer : public AS_02::h__Writer
+class AS_02::PCM::MXFWriter::h__Writer : public AS_02::h__AS02Writer
 {
   ASDCP_NO_COPY_CONSTRUCT(h__Writer);
   h__Writer();
@@ -300,12 +299,12 @@ public:
   byte_t          m_EssenceUL[SMPTE_UL_LENGTH];
   ui64_t			m_KLV_start;
 
-  h__Writer(const Dictionary& d) : AS_02::h__Writer(d), m_KLV_start(0){
+  h__Writer(const Dictionary& d) : AS_02::h__AS02Writer(d), m_KLV_start(0){
     memset(m_EssenceUL, 0, SMPTE_UL_LENGTH);
 
   }
 
-  ~h__Writer(){}
+  virtual ~h__Writer(){}
 
   Result_t OpenWrite(const char*, ui32_t HeaderSize);
   Result_t SetSourceStream(const ASDCP::PCM::AudioDescriptor&);
@@ -330,7 +329,7 @@ public:
   // reimplement these functions in AS_02_PCM to support modifications for AS-02
   Result_t WriteEKLVPacket(const ASDCP::FrameBuffer& FrameBuf,
 			   const byte_t* EssenceUL, AESEncContext* Ctx, HMACContext* HMAC);
-  Result_t WriteMXFFooter();
+  Result_t WriteAS02Footer();
 
 };
 
@@ -400,9 +399,9 @@ AS_02::PCM::MXFWriter::h__Writer::SetSourceStream(const ASDCP::PCM::AudioDescrip
     {
       ui32_t TCFrameRate = ( m_ADesc.EditRate == EditRate_23_98  ) ? 24 : m_ADesc.EditRate.Numerator;
 
-      result = WriteMXFHeader(PCM_PACKAGE_LABEL, UL(m_Dict->ul(MDD_WAVWrapping)),
-			      SOUND_DEF_LABEL, UL(m_EssenceUL), UL(m_Dict->ul(MDD_SoundDataDef)),
-			      m_ADesc.EditRate, TCFrameRate, calc_CBR_frame_size(m_Info, m_ADesc));
+      result = WriteAS02Header(PCM_PACKAGE_LABEL, UL(m_Dict->ul(MDD_WAVWrapping)),
+			       SOUND_DEF_LABEL, UL(m_EssenceUL), UL(m_Dict->ul(MDD_SoundDataDef)),
+			       m_ADesc.EditRate, TCFrameRate, calc_CBR_frame_size(m_Info, m_ADesc));
     }
 
   return result;
@@ -439,7 +438,7 @@ AS_02::PCM::MXFWriter::h__Writer::Finalize()
 
   m_State.Goto_FINAL();
 
-  return WriteMXFFooter();
+  return WriteAS02Footer();
 }
 
 
@@ -459,13 +458,13 @@ AS_02::PCM::MXFWriter::~MXFWriter()
 // Warning: direct manipulation of MXF structures can interfere
 // with the normal operation of the wrapper.  Caveat emptor!
 //
-ASDCP::MXF::OPAtomHeader&
-AS_02::PCM::MXFWriter::OPAtomHeader()
+ASDCP::MXF::OP1aHeader&
+AS_02::PCM::MXFWriter::OP1aHeader()
 {
   if ( m_Writer.empty() )
     {
-      assert(g_OPAtomHeader);
-      return *g_OPAtomHeader;
+      assert(g_OP1aHeader);
+      return *g_OP1aHeader;
     }
 
   return m_Writer->m_HeaderPart;
@@ -474,19 +473,18 @@ AS_02::PCM::MXFWriter::OPAtomHeader()
 // Warning: direct manipulation of MXF structures can interfere
 // with the normal operation of the wrapper.  Caveat emptor!
 //
-/*
-ASDCP::MXF::OPAtomIndexFooter&
-AS_02::PCM::MXFWriter::OPAtomIndexFooter()
+ASDCP::MXF::RIP&
+AS_02::PCM::MXFWriter::RIP()
 {
   if ( m_Writer.empty() )
     {
-      assert(g_OPAtomIndexFooter);
-      return *g_OPAtomIndexFooter;
+      assert(g_RIP);
+      return *g_RIP;
     }
 
-  return m_Writer->m_FooterPart;
+  return m_Writer->m_RIP;
 }
-*/
+
 
 // Open the file for writing. The file must not exist. Returns error if
 // the operation cannot be completed.
@@ -531,563 +529,7 @@ AS_02::PCM::MXFWriter::Finalize()
   return m_Writer->Finalize();
 }
 
-// standard method of opening an MXF file for read
-Result_t
-AS_02::PCM::MXFReader::h__Reader::OpenMXFRead(const char* filename)
-{
-  m_LastPosition = 0;
-  AS_02::MXF::OP1aIndexBodyPartion* pCurrentBodyPartIndex = NULL;
-  Partition* pPart = NULL;
-  ui64_t EssenceStart = 0;
-  Result_t result = m_File.OpenRead(filename);
 
-  if ( ASDCP_SUCCESS(result) )
-    result = m_HeaderPart.InitFromFile(m_File);
-
-  if ( ASDCP_SUCCESS(result) )
-    {
-      ui32_t partition_size = m_HeaderPart.m_RIP.PairArray.size();
-
-      if ( partition_size > 3 )
-	{
-	  //for all entry except the first and the last(header&footer)
-	  Array<RIP::Pair>::iterator r_i = m_HeaderPart.m_RIP.PairArray.begin();
-	  r_i++;
-	  ui32_t i=2;
-
-	  while ( r_i != m_HeaderPart.m_RIP.PairArray.end() && i < partition_size )
-	    {
-	      m_File.Seek((*r_i).ByteOffset);
-	      pPart = new Partition(this->m_Dict);
-	      result = pPart->InitFromFile(m_File);
-
-	      // TODO:: expect Index partition
-	      delete pPart;
-	      m_File.Seek((*r_i).ByteOffset);
-	      pCurrentBodyPartIndex = new AS_02::MXF::OP1aIndexBodyPartion(this->m_Dict);
-	      pCurrentBodyPartIndex->m_Lookup = &m_HeaderPart.m_Primer;
-	      result = pCurrentBodyPartIndex->InitFromFile(m_File);
-	      
-	      if ( ASDCP_FAILURE(result) )
-		{
-		  break;
-		}
-
-	      r_i++; i++;
-
-	      m_File.Seek((*r_i).ByteOffset);
-	      pPart = new Partition(this->m_Dict);
-	      result = pPart->InitFromFile(m_File);
-	      EssenceStart = m_File.Tell();
-
-	      if ( ASDCP_FAILURE(result) )
-		{
-		  break;
-		}
-
-	      if(i==3)
-		{
-		  m_EssenceStart = EssenceStart;
-		  m_pCurrentBodyPartition = pPart;
-		  m_pCurrentIndexPartition = pCurrentBodyPartIndex;
-		}
-	  
-	      m_BodyPartList.push_back(pCurrentBodyPartIndex);
-	      m_BodyPartList.push_back(pPart);
-	      r_i++; i++;
-	    }
-	}
-    }
-
-  return result;
-}
-
-// standard method of reading a plaintext or encrypted frame
-Result_t
-AS_02::PCM::MXFReader::h__Reader::ReadEKLVFrame(ui32_t FrameNum, ASDCP::FrameBuffer& FrameBuf,
-						const byte_t* EssenceUL, AESDecContext* Ctx, HMACContext* HMAC)
-{
-  Result_t result = RESULT_OK;
-  // look up frame index node
-  IndexTableSegment::IndexEntry TmpEntry;
-  ui32_t i = 0;
-
-  if(m_pCurrentIndexPartition == NULL)
-    {
-      m_pCurrentIndexPartition = dynamic_cast<AS_02::MXF::OP1aIndexBodyPartion*> (m_BodyPartList.at(i));
-      m_pCurrentBodyPartition = m_BodyPartList.at(i+1);
-    }		
-  else
-    {
-      return RESULT_FORMAT; //return error
-    }
-				
-  if(m_pCurrentIndexPartition == NULL)
-    {
-      return RESULT_FORMAT; //return error
-    }
-
-  m_pCurrentIndexPartition->PCMIndexLookup(FrameNum,TmpEntry);
-  // get frame position and go read the frame's key and length
-  Kumu::fpos_t FilePosition = this->m_EssenceStart + TmpEntry.StreamOffset;
-
-  if ( FilePosition != m_LastPosition )
-    {
-      m_LastPosition = FilePosition;
-      result = m_File.Seek(FilePosition);
-    }
-
-  if( ASDCP_SUCCESS(result) )
-    result = ReadEKLVPacket(FrameNum, FrameNum + 1, FrameBuf, EssenceUL, Ctx, HMAC);
-
-  return result;
-}
-
-Result_t
-AS_02::PCM::MXFReader::h__Reader::ReadEKLVPacket(ui32_t FrameNum, ui32_t SequenceNum, ASDCP::FrameBuffer& FrameBuf,
-						 const byte_t* EssenceUL, AESDecContext* Ctx, HMACContext* HMAC)
-{
-  KLReader Reader;
-
-  //save position to read KLV packet
-  Kumu::fpos_t SaveFilePosition = m_File.Tell();
-  //Seek backward to KLV start
-  m_File.Seek(this->m_EssenceStart);
-  Result_t result = Reader.ReadKLFromFile(m_File);
-  //set old position
-  m_File.Seek(SaveFilePosition);
-
-  if ( ASDCP_FAILURE(result) )
-    return result;
-
-  UL Key(Reader.Key());
-  ui64_t PacketLength = Reader.Length();
-  m_LastPosition = m_LastPosition + PacketLength;
-  if(FrameNum = 0){
-    m_LastPosition+= Reader.KLLength();
-  }
-  assert(m_Dict);
-
-  //TODO: for AS_02 PCM - not in the dictionary
-
-  static const byte_t WaveClipEssenceUL_Data[SMPTE_UL_LENGTH] =
-    { 0x06, 0x0e, 0x2b, 0x34, 0x01, 0x02, 0x01, 0x01,
-      0x0d, 0x01, 0x03, 0x01, 0x16, 0x01, 0x02, 0x01 };
-
-  
-    if( memcmp(Key.Value(), WaveClipEssenceUL_Data, SMPTE_UL_LENGTH) == 0 ){
-      byte_t WaveFrameEssenceUL_Data[SMPTE_UL_LENGTH] =
-	{ 0x06, 0x0e, 0x2b, 0x34, 0x01, 0x02, 0x01, 0x01,
-	  0x0d, 0x01, 0x03, 0x01, 0x16, 0x01, 0x01, 0x01 };
-
-      Key.Set(WaveFrameEssenceUL_Data);
-    }
-
-
-    if ( memcmp(Key.Value(), m_Dict->ul(MDD_CryptEssence), Key.Size() - 1) == 0 )  // ignore the stream numbers
-      {
-	if ( ! m_Info.EncryptedEssence )
-	  {
-	    DefaultLogSink().Error("EKLV packet found, no Cryptographic Context in header.\n");
-	    return RESULT_FORMAT;
-	  }
-
-	// read encrypted triplet value into internal buffer
-	assert(PacketLength <= 0xFFFFFFFFL);
-	m_CtFrameBuf.Capacity((ui32_t) PacketLength);
-	ui32_t read_count;
-	result = m_File.Read(m_CtFrameBuf.Data(), (ui32_t) PacketLength,
-			     &read_count);
-
-	if ( ASDCP_FAILURE(result) )
-	  return result;
-
-	if ( read_count != PacketLength )
-	  {
-	    DefaultLogSink().Error("read length is smaller than EKLV packet length.\n");
-	    return RESULT_FORMAT;
-	  }
-
-	m_CtFrameBuf.Size((ui32_t) PacketLength);
-
-	// should be const but mxflib::ReadBER is not
-	byte_t* ess_p = m_CtFrameBuf.Data();
-
-	// read context ID length
-	if ( ! Kumu::read_test_BER(&ess_p, UUIDlen) )
-	  return RESULT_FORMAT;
-
-	// test the context ID
-	if ( memcmp(ess_p, m_Info.ContextID, UUIDlen) != 0 )
-	  {
-	    DefaultLogSink().Error("Packet's Cryptographic Context ID does not match the header.\n");
-	    return RESULT_FORMAT;
-	  }
-	ess_p += UUIDlen;
-
-	// read PlaintextOffset length
-	if ( ! Kumu::read_test_BER(&ess_p, sizeof(ui64_t)) )
-	  return RESULT_FORMAT;
-
-	ui32_t PlaintextOffset = (ui32_t)KM_i64_BE(Kumu::cp2i<ui64_t>(ess_p));
-	ess_p += sizeof(ui64_t);
-
-	// read essence UL length
-	if ( ! Kumu::read_test_BER(&ess_p, SMPTE_UL_LENGTH) )
-	  return RESULT_FORMAT;
-
-	// test essence UL
-	if ( memcmp(ess_p, EssenceUL, SMPTE_UL_LENGTH - 1) != 0 ) // ignore the stream number
-	  {
-	    char strbuf[IntBufferLen];
-	    const MDDEntry* Entry = m_Dict->FindUL(Key.Value());
-	    if ( Entry == 0 )
-	      DefaultLogSink().Warn("Unexpected Essence UL found: %s.\n", Key.EncodeString(strbuf, IntBufferLen));
-	    else
-	      DefaultLogSink().Warn("Unexpected Essence UL found: %s.\n", Entry->name);
-	    return RESULT_FORMAT;
-	  }
-	ess_p += SMPTE_UL_LENGTH;
-
-	// read SourceLength length
-	if ( ! Kumu::read_test_BER(&ess_p, sizeof(ui64_t)) )
-	  return RESULT_FORMAT;
-
-	ui32_t SourceLength = (ui32_t)KM_i64_BE(Kumu::cp2i<ui64_t>(ess_p));
-	ess_p += sizeof(ui64_t);
-	assert(SourceLength);
-
-	if ( FrameBuf.Capacity() < SourceLength )
-	  {
-	    DefaultLogSink().Error("FrameBuf.Capacity: %u SourceLength: %u\n", FrameBuf.Capacity(), SourceLength);
-	    return RESULT_SMALLBUF;
-	  }
-
-	ui32_t esv_length = calc_esv_length(SourceLength, PlaintextOffset);
-
-	// read ESV length
-	if ( ! Kumu::read_test_BER(&ess_p, esv_length) )
-	  {
-	    DefaultLogSink().Error("read_test_BER did not return %u\n", esv_length);
-	    return RESULT_FORMAT;
-	  }
-
-	ui32_t tmp_len = esv_length + (m_Info.UsesHMAC ? klv_intpack_size : 0);
-
-	if ( PacketLength < tmp_len )
-	  {
-	    DefaultLogSink().Error("Frame length is larger than EKLV packet length.\n");
-	    return RESULT_FORMAT;
-	  }
-
-	if ( Ctx )
-	  {
-	    // wrap the pointer and length as a FrameBuffer for use by
-	    // DecryptFrameBuffer() and TestValues()
-	    FrameBuffer TmpWrapper;
-	    TmpWrapper.SetData(ess_p, tmp_len);
-	    TmpWrapper.Size(tmp_len);
-	    TmpWrapper.SourceLength(SourceLength);
-	    TmpWrapper.PlaintextOffset(PlaintextOffset);
-
-	    result = DecryptFrameBuffer(TmpWrapper, FrameBuf, Ctx);
-	    FrameBuf.FrameNumber(FrameNum);
-
-	    // detect and test integrity pack
-	    if ( ASDCP_SUCCESS(result) && m_Info.UsesHMAC && HMAC )
-	      {
-		IntegrityPack IntPack;
-		result = IntPack.TestValues(TmpWrapper, m_Info.AssetUUID, SequenceNum, HMAC);
-	      }
-	  }
-	else // return ciphertext to caller
-	  {
-	    if ( FrameBuf.Capacity() < tmp_len )
-	      {
-		char intbuf[IntBufferLen];
-		DefaultLogSink().Error("FrameBuf.Capacity: %u FrameLength: %s\n",
-				       FrameBuf.Capacity(), ui64sz(PacketLength, intbuf));
-		return RESULT_SMALLBUF;
-	      }
-
-	    memcpy(FrameBuf.Data(), ess_p, tmp_len);
-	    FrameBuf.Size(tmp_len);
-	    FrameBuf.FrameNumber(FrameNum);
-	    FrameBuf.SourceLength(SourceLength);
-	    FrameBuf.PlaintextOffset(PlaintextOffset);
-	  }
-      }
-    else if ( memcmp(Key.Value(), EssenceUL, Key.Size() - 1) == 0 ) // ignore the stream number
-      { // read plaintext frame
-	if ( FrameBuf.Capacity() < PacketLength )
-	  {
-	    char intbuf[IntBufferLen];
-	    DefaultLogSink().Error("FrameBuf.Capacity: %u FrameLength: %s\n",
-				   FrameBuf.Capacity(), ui64sz(PacketLength, intbuf));
-	    return RESULT_SMALLBUF;
-	  }
-
-	// read the data into the supplied buffer
-	ui32_t read_count;
-	assert(PacketLength <= 0xFFFFFFFFL);
-	result = m_File.Read(FrameBuf.Data(), (ui32_t) PacketLength, &read_count);
-
-	if ( ASDCP_FAILURE(result) )
-	  return result;
-
-	if ( read_count != PacketLength )
-	  {
-	    char intbuf1[IntBufferLen];
-	    char intbuf2[IntBufferLen];
-	    DefaultLogSink().Error("read_count: %s != FrameLength: %s\n",
-				   ui64sz(read_count, intbuf1),
-				   ui64sz(PacketLength, intbuf2) );
-
-	    return RESULT_READFAIL;
-	  }
-
-	FrameBuf.FrameNumber(FrameNum);
-	FrameBuf.Size(read_count);
-      }
-    else
-      {
-	char strbuf[IntBufferLen];
-	const MDDEntry* Entry = m_Dict->FindUL(Key.Value());
-	if ( Entry == 0 )
-	  DefaultLogSink().Warn("Unexpected Essence UL found: %s.\n", Key.EncodeString(strbuf, IntBufferLen));
-	else
-	  DefaultLogSink().Warn("Unexpected Essence UL found: %s.\n", Entry->name);
-	return RESULT_FORMAT;
-      }
-
-    return result;
-}
-
-// standard method of writing the header and footer of a completed MXF file
-//
-Result_t
-AS_02::PCM::MXFWriter::h__Writer::WriteMXFFooter()
-{
-  // Set top-level file package correctly for OP-Atom
-
-  //  m_MPTCSequence->Duration = m_MPTimecode->Duration = m_MPClSequence->Duration = m_MPClip->Duration = 
-  //    m_FPTCSequence->Duration = m_FPTimecode->Duration = m_FPClSequence->Duration = m_FPClip->Duration = 
-
-  //
-  m_CurrentIndexBodyPartition->m_FramesWritten = m_FramesWritten;
-  m_CurrentIndexBodyPartition->PCMSetIndexParamsCBR(m_CurrentIndexBodyPartition->m_BytesPerEditUnit+24,m_CurrentIndexBodyPartition->m_BytesPerEditUnit);
-  CompleteIndexBodyPart();
-
-  DurationElementList_t::iterator dli = m_DurationUpdateList.begin();
-
-  for (; dli != m_DurationUpdateList.end(); dli++ )
-    **dli = m_FramesWritten;
-
-  m_EssenceDescriptor->ContainerDuration = m_FramesWritten;
-  m_FooterPart.PreviousPartition = m_HeaderPart.m_RIP.PairArray.back().ByteOffset;
-
-  Kumu::fpos_t here = m_File.Tell();
-  m_HeaderPart.m_RIP.PairArray.push_back(RIP::Pair(0, here)); // Last RIP Entry
-  m_HeaderPart.FooterPartition = here;
-
-  assert(m_Dict);
-  // re-label the partition
-  UL OP1aUL(m_Dict->ul(MDD_OP1a));
-  m_HeaderPart.OperationalPattern = OP1aUL;
-  m_HeaderPart.m_Preface->OperationalPattern = m_HeaderPart.OperationalPattern;
-
-  m_FooterPart.OperationalPattern = m_HeaderPart.OperationalPattern;
-  m_FooterPart.EssenceContainers = m_HeaderPart.EssenceContainers;
-  m_FooterPart.FooterPartition = here;
-  m_FooterPart.ThisPartition = here;
-
-  Result_t result = m_FooterPart.WriteToFile(m_File, m_FramesWritten);
-
-  if ( ASDCP_SUCCESS(result) )
-    result = m_HeaderPart.m_RIP.WriteToFile(m_File);
-
-  if ( ASDCP_SUCCESS(result) )
-    result = m_File.Seek(0);
-
-  if ( ASDCP_SUCCESS(result) )
-    result = m_HeaderPart.WriteToFile(m_File, m_HeaderSize);
-
-  //update the value of FooterPartition in all Partitions
-  std::vector<Partition*>::iterator bl_i = this->m_BodyPartList.begin();
-  for (; bl_i != m_BodyPartList.end(); bl_i++ ){
-    (*bl_i)->FooterPartition =  m_FooterPart.ThisPartition;
-    if ( ASDCP_SUCCESS(result) )
-      result = m_File.Seek((*bl_i)->ThisPartition);
-    if ( ASDCP_SUCCESS(result) ){
-      UL BodyUL(m_Dict->ul(MDD_ClosedCompleteBodyPartition));
-      result = (*bl_i)->WriteToFile(m_File, BodyUL);
-    }
-  } 
-
-  m_File.Close();
-  return result;
-}
-
-// standard method of writing a plaintext or encrypted frame
-Result_t
-AS_02::PCM::MXFWriter::h__Writer::WriteEKLVPacket(const ASDCP::FrameBuffer& FrameBuf, const byte_t* EssenceUL,
-						  AESEncContext* Ctx, HMACContext* HMAC)
-{
-  Result_t result = RESULT_OK;
-  IntegrityPack IntPack;
-	
-  const ui32_t AS_02_PCM_MXF_BER_LENGTH = 8;
-  //TODO: AS_02_PCM_MXF_BER_LENGTH - customize for EncryptedEssence 
-
-  byte_t overhead[128];
-  Kumu::MemIOWriter Overhead(overhead, 128);
-  assert(m_Dict);
-
-  if ( FrameBuf.Size() == 0 )
-    {
-      DefaultLogSink().Error("Cannot write empty frame buffer\n");
-      return RESULT_EMPTY_FB;
-    }
-
-  if ( m_Info.EncryptedEssence )
-    {
-      if ( ! Ctx )
-	return RESULT_CRYPT_CTX;
-
-      if ( m_Info.UsesHMAC && ! HMAC )
-	return RESULT_HMAC_CTX;
-
-      if ( FrameBuf.PlaintextOffset() > FrameBuf.Size() )
-	return RESULT_LARGE_PTO;
-
-      // encrypt the essence data (create encrypted source value)
-      result = EncryptFrameBuffer(FrameBuf, m_CtFrameBuf, Ctx);
-
-      // create HMAC
-      if ( ASDCP_SUCCESS(result) && m_Info.UsesHMAC )
-	result = IntPack.CalcValues(m_CtFrameBuf, m_Info.AssetUUID, m_FramesWritten + 1, HMAC);
-
-      if ( ASDCP_SUCCESS(result) )
-	{ // write UL
-	  Overhead.WriteRaw(m_Dict->ul(MDD_CryptEssence), SMPTE_UL_LENGTH);
-
-	  // construct encrypted triplet header
-	  ui32_t ETLength = klv_cryptinfo_size + m_CtFrameBuf.Size();
-	  ui32_t BER_length = MXF_BER_LENGTH;
-
-	  if ( m_Info.UsesHMAC )
-	    ETLength += klv_intpack_size;
-	  else
-	    ETLength += (MXF_BER_LENGTH * 3); // for empty intpack
-
-	  if ( ETLength > 0x00ffffff ) // Need BER integer longer than MXF_BER_LENGTH bytes
-	    {
-	      BER_length = Kumu::get_BER_length_for_value(ETLength);
-
-	      // the packet is longer by the difference in expected vs. actual BER length
-	      ETLength += BER_length - MXF_BER_LENGTH;
-
-	      if ( BER_length == 0 )
-		result = RESULT_KLV_CODING;
-	    }
-
-	  if ( ASDCP_SUCCESS(result) )
-	    {
-	      if ( ! ( Overhead.WriteBER(ETLength, BER_length)                      // write encrypted triplet length
-		       && Overhead.WriteBER(UUIDlen, MXF_BER_LENGTH)                // write ContextID length
-		       && Overhead.WriteRaw(m_Info.ContextID, UUIDlen)              // write ContextID
-		       && Overhead.WriteBER(sizeof(ui64_t), MXF_BER_LENGTH)         // write PlaintextOffset length
-		       && Overhead.WriteUi64BE(FrameBuf.PlaintextOffset())          // write PlaintextOffset
-		       && Overhead.WriteBER(SMPTE_UL_LENGTH, MXF_BER_LENGTH)        // write essence UL length
-		       && Overhead.WriteRaw((byte_t*)EssenceUL, SMPTE_UL_LENGTH)    // write the essence UL
-		       && Overhead.WriteBER(sizeof(ui64_t), MXF_BER_LENGTH)         // write SourceLength length
-		       && Overhead.WriteUi64BE(FrameBuf.Size())                     // write SourceLength
-		       && Overhead.WriteBER(m_CtFrameBuf.Size(), BER_length) ) )    // write ESV length
-		{
-		  result = RESULT_KLV_CODING;
-		}
-	    }
-
-	  if ( ASDCP_SUCCESS(result) )
-	    result = m_File.Writev(Overhead.Data(), Overhead.Length());
-	}
-
-      if ( ASDCP_SUCCESS(result) )
-	{
-	  m_StreamOffset += Overhead.Length();
-	  // write encrypted source value
-	  result = m_File.Writev((byte_t*)m_CtFrameBuf.RoData(), m_CtFrameBuf.Size());
-	}
-
-      if ( ASDCP_SUCCESS(result) )
-	{
-	  m_StreamOffset += m_CtFrameBuf.Size();
-
-	  byte_t hmoverhead[512];
-	  Kumu::MemIOWriter HMACOverhead(hmoverhead, 512);
-
-	  // write the HMAC
-	  if ( m_Info.UsesHMAC )
-	    {
-	      HMACOverhead.WriteRaw(IntPack.Data, klv_intpack_size);
-	    }
-	  else
-	    { // we still need the var-pack length values if the intpack is empty
-	      for ( ui32_t i = 0; i < 3 ; i++ )
-		HMACOverhead.WriteBER(0, MXF_BER_LENGTH);
-	    }
-
-	  // write HMAC
-	  result = m_File.Writev(HMACOverhead.Data(), HMACOverhead.Length());
-	  m_StreamOffset += HMACOverhead.Length();
-	}
-    }
-  else
-    {
-      if(m_FramesWritten == 0){
-	ui32_t BER_length = AS_02_PCM_MXF_BER_LENGTH; //MXF_BER_LENGTH;
-
-	if ( FrameBuf.Size() > 0x00ffffff ) // Need BER integer longer than MXF_BER_LENGTH bytes
-	  {
-	    BER_length = Kumu::get_BER_length_for_value(FrameBuf.Size());
-
-	    if ( BER_length == 0 )
-	      result = RESULT_KLV_CODING;
-	  }
-
-	Overhead.WriteRaw((byte_t*)EssenceUL, SMPTE_UL_LENGTH);
-	Overhead.WriteBER(FrameBuf.Size(), BER_length);
-
-	//position of the KLV start
-	m_KLV_start = m_File.Tell();
-
-	if ( ASDCP_SUCCESS(result) )
-	  result = m_File.Writev(Overhead.Data(), Overhead.Length());
-
-	if ( ASDCP_SUCCESS(result) )
-	  result = m_File.Writev((byte_t*)FrameBuf.RoData(), FrameBuf.Size());
-
-	if ( ASDCP_SUCCESS(result) )
-	  m_StreamOffset += Overhead.Length() + FrameBuf.Size();
-      }
-      else{
-	//update the KLV - length; new value plus old value from length field
-	//necessary to know position of length field -> bodyPartition + 8
-	//update every time when writing new essence or at the end of writing
-
-	if ( ASDCP_SUCCESS(result) )
-	  result = m_File.Writev((byte_t*)FrameBuf.RoData(), FrameBuf.Size());
-
-	if ( ASDCP_SUCCESS(result) )
-	  m_StreamOffset += FrameBuf.Size();
-      }
-    }
-
-  if ( ASDCP_SUCCESS(result) )
-    result = m_File.Writev();
-
-  return result;
-}
 
 //
 // end AS_02_PCM.cpp

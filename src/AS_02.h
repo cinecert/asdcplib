@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2011-2012, Robert Scheler, Heiko Sparenberg Fraunhofer IIS, John Hurst
+Copyright (c) 2011-2013, Robert Scheler, Heiko Sparenberg Fraunhofer IIS, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -68,7 +68,7 @@ namespace AS_02
   using Kumu::Result_t;
 
   namespace MXF {
-
+#if 1
     //
     class OP1aIndexBodyPartion : public ASDCP::MXF::Partition
     {
@@ -118,6 +118,7 @@ namespace AS_02
       ASDCP::MXF::Rational m_EditRate;
       ui32_t              m_BodySID;
       ASDCP_NO_COPY_CONSTRUCT(OP1aIndexFooter);
+      OP1aIndexFooter();
 
     public:
       const ASDCP::Dictionary*&   m_Dict;
@@ -138,8 +139,39 @@ namespace AS_02
       virtual void     SetIndexParamsVBR(ASDCP::IPrimerLookup* lookup, const ASDCP::MXF::Rational& Rate, Kumu::fpos_t offset);
     };
 
-  } // namespace MXF
+#endif
 
+    //
+    class AS02IndexReader
+    {
+      ASDCP::MXF::IndexTableSegment*  m_CurrentSegment;
+      ASDCP::FrameBuffer  m_Buffer;
+      ui32_t              m_BytesPerEditUnit;
+      ASDCP::Rational     m_EditRate;
+      ui32_t              m_BodySID;
+
+      ASDCP_NO_COPY_CONSTRUCT(AS02IndexReader);
+      AS02IndexReader();
+	  
+    public:
+      const ASDCP::Dictionary*&   m_Dict;
+      Kumu::fpos_t        m_ECOffset;
+      ASDCP::IPrimerLookup *m_Lookup;
+    
+      AS02IndexReader(const ASDCP::Dictionary*&);
+      virtual ~AS02IndexReader();
+    
+      virtual Result_t InitFromFile(const Kumu::FileReader& Reader);
+      virtual void     Dump(FILE* = 0);
+    
+      virtual Result_t GetMDObjectByID(const Kumu::UUID&, ASDCP::MXF::InterchangeObject** = 0);
+      virtual Result_t GetMDObjectByType(const byte_t*, ASDCP::MXF::InterchangeObject** = 0);
+      virtual Result_t GetMDObjectsByType(const byte_t* ObjectID, std::list<ASDCP::MXF::InterchangeObject*>& ObjectList);
+    
+      virtual Result_t Lookup(ui32_t frame_num, ASDCP::MXF::IndexTableSegment::IndexEntry&) const;
+    };
+
+  } // namespace MXF
 
   //---------------------------------------------------------------------------------
   // Accessors in the MXFReader and MXFWriter classes below return these types to
@@ -168,7 +200,8 @@ namespace AS_02
 
       // Warning: direct manipulation of MXF structures can interfere
       // with the normal operation of the wrapper.  Caveat emptor!
-      virtual ASDCP::MXF::OPAtomHeader& OPAtomHeader();
+      virtual ASDCP::MXF::OP1aHeader& OP1aHeader();
+      virtual ASDCP::MXF::RIP& RIP();
 
       // Open the file for writing. The file must not exist. Returns error if
       // the operation cannot be completed or if nonsensical data is discovered
@@ -202,7 +235,9 @@ namespace AS_02
 
       // Warning: direct manipulation of MXF structures can interfere
       // with the normal operation of the wrapper.  Caveat emptor!
-      virtual ASDCP::MXF::OPAtomHeader& OPAtomHeader();
+      virtual ASDCP::MXF::OP1aHeader& OP1aHeader();
+      virtual AS_02::MXF::AS02IndexReader& AS02IndexReader();
+      virtual ASDCP::MXF::RIP& RIP();
 
       // Open the file for reading. The file must exist. Returns error if the
       // operation cannot be completed.
@@ -255,7 +290,8 @@ namespace AS_02
 
       // Warning: direct manipulation of MXF structures can interfere
       // with the normal operation of the wrapper.  Caveat emptor!
-      virtual ASDCP::MXF::OPAtomHeader& OPAtomHeader();
+      virtual ASDCP::MXF::OP1aHeader& OP1aHeader();
+      virtual ASDCP::MXF::RIP& RIP();
 
       // Open the file for writing. The file must not exist. Returns error if
       // the operation cannot be completed or if nonsensical data is discovered
@@ -286,7 +322,9 @@ namespace AS_02
 
       // Warning: direct manipulation of MXF structures can interfere
       // with the normal operation of the wrapper.  Caveat emptor!
-      virtual ASDCP::MXF::OPAtomHeader& OPAtomHeader();
+      virtual ASDCP::MXF::OP1aHeader& OP1aHeader();
+      virtual AS_02::MXF::AS02IndexReader& AS02IndexReader();
+      virtual ASDCP::MXF::RIP& RIP();
 
       // Open the file for reading. The file must exist. Returns error if the
       // operation cannot be completed.

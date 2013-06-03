@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 2011-2012, Robert Scheler, Heiko Sparenberg Fraunhofer IIS, John Hurst
+  Copyright (c) 2011-2013, Robert Scheler, Heiko Sparenberg Fraunhofer IIS, John Hurst
   All rights reserved.
 
   Redistribution and use in source and binary forms, with or without
@@ -34,15 +34,45 @@
 using namespace ASDCP;
 using namespace ASDCP::MXF;
 
+
+static Kumu::Mutex sg_DefaultMDInitLock;
+static bool        sg_DefaultMDTypesInit = false;
+static const ASDCP::Dictionary *sg_dict;
+
 //
-AS_02::h__Reader::h__Reader(const Dictionary& d) :
-  m_HeaderPart(m_Dict), m_FooterPart(m_Dict), m_Dict(&d), m_EssenceStart(0)
+void
+AS_02::default_md_object_init()
+{
+  if ( ! sg_DefaultMDTypesInit )
+    {
+      Kumu::AutoMutex BlockLock(sg_DefaultMDInitLock);
+
+      if ( ! sg_DefaultMDTypesInit )
+	{
+	  sg_dict = &DefaultSMPTEDict();
+	  g_AS02IndexReader = new AS_02::MXF::AS02IndexReader(sg_dict);
+	  sg_DefaultMDTypesInit = true;
+	}
+    }
+}
+
+
+
+
+AS_02::h__AS02Reader::h__AS02Reader(const ASDCP::Dictionary& d) : ASDCP::MXF::TrackFileReader<ASDCP::MXF::OP1aHeader, AS_02::MXF::AS02IndexReader>(d) {}
+AS_02::h__AS02Reader::~h__AS02Reader() {}
+
+
+#if 0
+//
+AS_02::h__AS02Reader::h__Reader(const Dictionary& d) :
+  m_HeaderPart(m_Dict), m_IndexAccess(m_Dict), m_Dict(&d), m_EssenceStart(0)
 {
   m_pCurrentIndexPartition = 0;
   ////	start_pos = 0;
 }
 
-AS_02::h__Reader::~h__Reader()
+AS_02::h__AS02Reader::~h__Reader()
 {
   std::vector<Partition*>::iterator bli = m_BodyPartList.begin();
   for ( ; bli != m_BodyPartList.end(); bli++ ){
@@ -51,77 +81,10 @@ AS_02::h__Reader::~h__Reader()
   }
   Close();
 }
-
-void
-AS_02::h__Reader::Close()
-{
-  m_File.Close();
-}
+#endif
 
 //------------------------------------------------------------------------------------------
 //
-
-//
-Result_t
-AS_02::h__Reader::InitInfo()
-{
-  assert(m_Dict);
-  InterchangeObject* Object;
-
-  UL OPAtomUL(SMPTE_390_OPAtom_Entry().ul);
-  UL Interop_OPAtomUL(MXFInterop_OPAtom_Entry().ul);
-  m_Info.LabelSetType = LS_MXF_SMPTE;
-
-  // Identification
-  Result_t result = m_HeaderPart.GetMDObjectByType(OBJ_TYPE_ARGS(Identification), &Object);
-
-  if( ASDCP_SUCCESS(result) )
-    MD_to_WriterInfo((Identification*)Object, m_Info);
-
-  // SourcePackage
-  if( ASDCP_SUCCESS(result) )
-    result = m_HeaderPart.GetMDObjectByType(OBJ_TYPE_ARGS(SourcePackage), &Object);
-
-  if( ASDCP_SUCCESS(result) )
-    {
-      SourcePackage* SP = (SourcePackage*)Object;
-      memcpy(m_Info.AssetUUID, SP->PackageUID.Value() + 16, UUIDlen);
-    }
-
-  // optional CryptographicContext
-  if( ASDCP_SUCCESS(result) )
-    {
-      Result_t cr_result = m_HeaderPart.GetMDObjectByType(OBJ_TYPE_ARGS(CryptographicContext), &Object);
-
-      if( ASDCP_SUCCESS(cr_result) )
-	MD_to_CryptoInfo((CryptographicContext*)Object, m_Info, *m_Dict);
-    }
-
-  return result;
-}
-
-// standard method of populating the in-memory index
-Result_t
-AS_02::h__Reader::InitMXFIndex()
-{
-  if ( ! m_File.IsOpen() )
-    return RESULT_INIT;
-
-  Result_t result = m_File.Seek(m_HeaderPart.FooterPartition);
-
-  if ( ASDCP_SUCCESS(result) )
-    {
-      m_FooterPart.m_Lookup = &m_HeaderPart.m_Primer;
-      //Footer don't need to be initialized because there is no index table in the footer
-      //result = m_FooterPart.InitFromFile(m_File);
-    }
-
-  if ( ASDCP_SUCCESS(result) )
-    m_File.Seek(m_EssenceStart);
-
-  return result;
-}
-
 
 //
 // end h__02_Reader.cpp

@@ -407,18 +407,15 @@ write_JP2K_file(CommandOptions& Options)
 
       while ( ASDCP_SUCCESS(result) && duration++ < Options.duration )
 	{
-	  if ( duration == 1 )
+	  result = Parser.ReadFrame(FrameBuffer);
+	  
+	  if ( ASDCP_SUCCESS(result) )
 	    {
-	      result = Parser.ReadFrame(FrameBuffer);
-
-	      if ( ASDCP_SUCCESS(result) )
-		{
-		  if ( Options.verbose_flag )
-		    FrameBuffer.Dump(stderr, Options.fb_dump_size);
-		  
-		  if ( Options.encrypt_header_flag )
-		    FrameBuffer.PlaintextOffset(0);
-		}
+	      if ( Options.verbose_flag )
+		FrameBuffer.Dump(stderr, Options.fb_dump_size);
+	      
+	      if ( Options.encrypt_header_flag )
+		FrameBuffer.PlaintextOffset(0);
 	    }
 
 	  if ( ASDCP_SUCCESS(result) && ! Options.no_write_flag )
@@ -527,8 +524,8 @@ write_PCM_file(CommandOptions& Options)
       if ( ASDCP_SUCCESS(result) && Options.channel_assignment.HasValue() )
 	{
 	  MXF::WaveAudioDescriptor *descriptor = 0;
-	  Writer.OPAtomHeader().GetMDObjectByType(DefaultSMPTEDict().ul(MDD_WaveAudioDescriptor),
-						  reinterpret_cast<MXF::InterchangeObject**>(&descriptor));
+	  Writer.OP1aHeader().GetMDObjectByType(DefaultSMPTEDict().ul(MDD_WaveAudioDescriptor),
+						reinterpret_cast<MXF::InterchangeObject**>(&descriptor));
 	  descriptor->ChannelAssignment = Options.channel_assignment;
 	}
     }

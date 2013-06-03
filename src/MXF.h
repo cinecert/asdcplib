@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2005-2012, John Hurst
+Copyright (c) 2005-2013, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -350,21 +350,19 @@ namespace ASDCP
       class SourcePackage;
 
       //
-      class OPAtomHeader : public Partition
+      class OP1aHeader : public Partition
 	{
-	  ASDCP_NO_COPY_CONSTRUCT(OPAtomHeader);
-	  OPAtomHeader();
+	  Kumu::ByteString m_HeaderData;
+	  ASDCP_NO_COPY_CONSTRUCT(OP1aHeader);
+	  OP1aHeader();
 
 	public:
-	  const Dictionary*&   m_Dict;
-	  ASDCP::MXF::RIP     m_RIP;
+	  const Dictionary*&  m_Dict;
 	  ASDCP::MXF::Primer  m_Primer;
 	  Preface*            m_Preface;
-	  ASDCP::FrameBuffer  m_Buffer;
-	  bool                m_HasRIP;
 
-	  OPAtomHeader(const Dictionary*&);
-	  virtual ~OPAtomHeader();
+	  OP1aHeader(const Dictionary*&);
+	  virtual ~OP1aHeader();
 	  virtual Result_t InitFromFile(const Kumu::FileReader& Reader);
 	  virtual Result_t InitFromPartitionBuffer(const byte_t* p, ui32_t l);
 	  virtual Result_t InitFromBuffer(const byte_t* p, ui32_t l);
@@ -373,7 +371,6 @@ namespace ASDCP
 	  virtual Result_t GetMDObjectByID(const UUID&, InterchangeObject** = 0);
 	  virtual Result_t GetMDObjectByType(const byte_t*, InterchangeObject** = 0);
 	  virtual Result_t GetMDObjectsByType(const byte_t* ObjectID, std::list<InterchangeObject*>& ObjectList);
-	  virtual ASDCP::MXF::RIP& GetRIP();
 	  Identification*  GetIdentification();
 	  SourcePackage*   GetSourcePackage();
 	};
@@ -381,8 +378,8 @@ namespace ASDCP
       //
       class OPAtomIndexFooter : public Partition
 	{
+	  Kumu::ByteString    m_FooterData;
 	  IndexTableSegment*  m_CurrentSegment;
-	  ASDCP::FrameBuffer  m_Buffer;
 	  ui32_t              m_BytesPerEditUnit;
 	  Rational            m_EditRate;
 	  ui32_t              m_BodySID;
@@ -412,6 +409,7 @@ namespace ASDCP
 	  virtual void     SetIndexParamsCBR(IPrimerLookup* lookup, ui32_t size, const Rational& Rate);
 	  virtual void     SetIndexParamsVBR(IPrimerLookup* lookup, const Rational& Rate, Kumu::fpos_t offset);
 	};
+
 
     } // namespace MXF
 } // namespace ASDCP

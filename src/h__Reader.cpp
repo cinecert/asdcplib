@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2004-2012, John Hurst
+Copyright (c) 2004-2013, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -51,8 +51,9 @@ ASDCP::default_md_object_init()
       if ( ! sg_DefaultMDTypesInit )
 	{
 	  sg_dict = &DefaultSMPTEDict();
-	  g_OPAtomHeader = new ASDCP::MXF::OPAtomHeader(sg_dict);
+	  g_OP1aHeader = new ASDCP::MXF::OP1aHeader(sg_dict);
 	  g_OPAtomIndexFooter = new ASDCP::MXF::OPAtomIndexFooter(sg_dict);
+	  g_RIP = new ASDCP::MXF::RIP(sg_dict);
 	  sg_DefaultMDTypesInit = true;
 	}
     }
@@ -63,7 +64,7 @@ ASDCP::default_md_object_init()
 //
 
 //
-ASDCP::h__ASDCPReader::h__ASDCPReader(const Dictionary& d) : MXF::TrackFileReader<OPAtomHeader, OPAtomIndexFooter>(d), m_BodyPart(m_Dict) {}
+ASDCP::h__ASDCPReader::h__ASDCPReader(const Dictionary& d) : MXF::TrackFileReader<OP1aHeader, OPAtomIndexFooter>(d), m_BodyPart(m_Dict) {}
 ASDCP::h__ASDCPReader::~h__ASDCPReader() {}
 
 
@@ -71,87 +72,94 @@ ASDCP::h__ASDCPReader::~h__ASDCPReader() {}
 Result_t
 ASDCP::h__ASDCPReader::OpenMXFRead(const char* filename)
 {
-  Result_t result = ASDCP::MXF::TrackFileReader<OPAtomHeader, OPAtomIndexFooter>::OpenMXFRead(filename);
+  Result_t result = ASDCP::MXF::TrackFileReader<OP1aHeader, OPAtomIndexFooter>::OpenMXFRead(filename);
 
   if ( KM_SUCCESS(result) )
-    {
-        // if this is a three partition file, go to the body
-        // partition and read the partition pack
-        if ( m_HeaderPart.m_RIP.PairArray.size() > 2 )
-        {
-            Array<RIP::Pair>::iterator r_i = m_HeaderPart.m_RIP.PairArray.begin();
-            r_i++;
-            m_File.Seek((*r_i).ByteOffset);
-            result = m_BodyPart.InitFromFile(m_File);
-            if( !ASDCP_SUCCESS(result) )
-            {
-                DefaultLogSink().Error("ASDCP::h__Reader::OpenMXFRead, m_BodyPart.InitFromFile failed\n");
-            }
-        }
-    }
-    else
-      DefaultLogSink().Error("ASDCP::h__Reader::OpenMXFRead, TrackFileReader::OpenMXFRead failed\n");
-
-
-  if ( KM_SUCCESS(result) )
-      m_HeaderPart.BodyOffset = m_File.Tell();
-
-  return result;
-}
-
-//
-Result_t
-ASDCP::h__ASDCPReader::InitInfo()
-{
-  Result_t result = ASDCP::MXF::TrackFileReader<OPAtomHeader, OPAtomIndexFooter>::InitInfo();
+    result = ASDCP::MXF::TrackFileReader<OP1aHeader, OPAtomIndexFooter>::InitInfo();
 
   if( KM_SUCCESS(result) )
     {
+      //
       InterchangeObject* Object;
 
       m_Info.LabelSetType = LS_MXF_UNKNOWN;
 
       if ( m_HeaderPart.OperationalPattern.ExactMatch(MXFInterop_OPAtom_Entry().ul) )
 	{
-	m_Info.LabelSetType = LS_MXF_INTEROP;
+	  m_Info.LabelSetType = LS_MXF_INTEROP;
 	}
       else if ( m_HeaderPart.OperationalPattern.ExactMatch(SMPTE_390_OPAtom_Entry().ul) )
 	{
 	  m_Info.LabelSetType = LS_MXF_SMPTE;
 	}
+      else
+	{
+	  char strbuf[IdentBufferLen];
+	  const MDDEntry* Entry = m_Dict->FindUL(m_HeaderPart.OperationalPattern.Value());
+
+	  if ( Entry == 0 )
+	    {
+	      DefaultLogSink().Warn("Operational pattern is not OP-Atom: %s\n",
+				    m_HeaderPart.OperationalPattern.EncodeString(strbuf, IdentBufferLen));
+	    }
+	  else
+	    {
+	      DefaultLogSink().Warn("Operational pattern is not OP-Atom: %s\n", Entry->name);
+	    }
+	}
+
+      //
+      if ( m_RIP.PairArray.size() < 2 )
+	{
+	  // OP-Atom states that there will be either two or three partitions:
+	  // one closed header and one closed footer with an optional body
+	  // SMPTE 429-5 files may have many partitions, see SMPTE ST 410.
+	  DefaultLogSink().Warn("RIP entry count is less than 2: %u\n", m_RIP.PairArray.size());
+	}
+      else if ( m_RIP.PairArray.size() > 2 )
+        {
+	  // if this is a three partition file, go to the body
+	  // partition and read the partition pack
+	  Array<RIP::Pair>::iterator r_i = m_RIP.PairArray.begin();
+	  r_i++;
+	  m_File.Seek((*r_i).ByteOffset);
+	  result = m_BodyPart.InitFromFile(m_File);
+
+	  if( ASDCP_FAILURE(result) )
+            {
+	      DefaultLogSink().Error("ASDCP::h__ASDCPReader::OpenMXFRead, m_BodyPart.InitFromFile failed\n");
+            }
+        }
+      else if ( m_RIP.PairArray.front().ByteOffset != 0 )
+	{
+	  DefaultLogSink().Error("First Partition in RIP is not at offset 0.\n");
+	  result = RESULT_FORMAT;
+	}
     }
 
-  return result;
-}
-
-// AS-DCP method of populating the in-memory index
-Result_t
-ASDCP::h__ASDCPReader::InitMXFIndex()
-{
-  if ( ! m_File.IsOpen() )
-    return RESULT_INIT;
-
-  Result_t result = m_File.Seek(m_HeaderPart.FooterPartition);
-
-  if ( ASDCP_SUCCESS(result) )
+  if ( KM_SUCCESS(result) )
     {
-      m_FooterPart.m_Lookup = &m_HeaderPart.m_Primer;
-      result = m_FooterPart.InitFromFile(m_File);
+      m_HeaderPart.BodyOffset = m_File.Tell();
+
+      result = m_File.Seek(m_HeaderPart.FooterPartition);
+
+      if ( ASDCP_SUCCESS(result) )
+	{
+	  m_IndexAccess.m_Lookup = &m_HeaderPart.m_Primer;
+	  result = m_IndexAccess.InitFromFile(m_File);
+	}
     }
 
-  if ( ASDCP_SUCCESS(result) )
-    m_File.Seek(m_HeaderPart.BodyOffset);
-
+  m_File.Seek(m_HeaderPart.BodyOffset);
   return result;
 }
-
 
 // AS-DCP method of reading a plaintext or encrypted frame
 Result_t
 ASDCP::h__ASDCPReader::ReadEKLVFrame(ui32_t FrameNum, ASDCP::FrameBuffer& FrameBuf,
 				     const byte_t* EssenceUL, AESDecContext* Ctx, HMACContext* HMAC)
 {
-  return ASDCP::MXF::TrackFileReader<OPAtomHeader, OPAtomIndexFooter>::ReadEKLVFrame(m_HeaderPart, FrameNum, FrameBuf,
+  return ASDCP::MXF::TrackFileReader<OP1aHeader, OPAtomIndexFooter>::ReadEKLVFrame(m_HeaderPart, FrameNum, FrameBuf,
 										     EssenceUL, Ctx, HMAC);
 }
 
@@ -159,7 +167,7 @@ Result_t
 ASDCP::h__ASDCPReader::LocateFrame(ui32_t FrameNum, Kumu::fpos_t& streamOffset,
                            i8_t& temporalOffset, i8_t& keyFrameOffset)
 {
-  return ASDCP::MXF::TrackFileReader<OPAtomHeader, OPAtomIndexFooter>::LocateFrame(m_HeaderPart, FrameNum,
+  return ASDCP::MXF::TrackFileReader<OP1aHeader, OPAtomIndexFooter>::LocateFrame(m_HeaderPart, FrameNum,
                                                                                    streamOffset, temporalOffset, keyFrameOffset);
 }
 
@@ -225,7 +233,7 @@ ASDCP::KLReader::ReadKLFromFile(Kumu::FileReader& Reader)
 
 // base subroutine for reading a KLV packet, assumes file position is at the first byte of the packet
 Result_t
-ASDCP::Read_EKLV_Packet(Kumu::FileReader& File, const ASDCP::Dictionary& Dict, const MXF::OPAtomHeader& HeaderPart,
+ASDCP::Read_EKLV_Packet(Kumu::FileReader& File, const ASDCP::Dictionary& Dict, const MXF::OP1aHeader& HeaderPart,
 			const ASDCP::WriterInfo& Info, Kumu::fpos_t& LastPosition, ASDCP::FrameBuffer& CtFrameBuf,
 			ui32_t FrameNum, ui32_t SequenceNum, ASDCP::FrameBuffer& FrameBuf,
 			const byte_t* EssenceUL, AESDecContext* Ctx, HMACContext* HMAC)
@@ -296,12 +304,19 @@ ASDCP::Read_EKLV_Packet(Kumu::FileReader& File, const ASDCP::Dictionary& Dict, c
 	{
 	  char strbuf[IntBufferLen];
 	  const MDDEntry* Entry = Dict.FindUL(Key.Value());
+
 	  if ( Entry == 0 )
-	    DefaultLogSink().Warn("Unexpected Essence UL found: %s.\n", Key.EncodeString(strbuf, IntBufferLen));
+	    {
+	      DefaultLogSink().Warn("Unexpected Essence UL found: %s.\n", Key.EncodeString(strbuf, IntBufferLen));
+	    }
 	  else
-	    DefaultLogSink().Warn("Unexpected Essence UL found: %s.\n", Entry->name);
+	    {
+	      DefaultLogSink().Warn("Unexpected Essence UL found: %s.\n", Entry->name);
+	    }
+
 	  return RESULT_FORMAT;
 	}
+
       ess_p += SMPTE_UL_LENGTH;
 
       // read SourceLength length
@@ -408,10 +423,15 @@ ASDCP::Read_EKLV_Packet(Kumu::FileReader& File, const ASDCP::Dictionary& Dict, c
     {
       char strbuf[IntBufferLen];
       const MDDEntry* Entry = Dict.FindUL(Key.Value());
+
       if ( Entry == 0 )
-        DefaultLogSink().Warn("Unexpected Essence UL found: %s.\n", Key.EncodeString(strbuf, IntBufferLen));
+	{
+	  DefaultLogSink().Warn("Unexpected Essence UL found: %s.\n", Key.EncodeString(strbuf, IntBufferLen));
+	}
       else
-        DefaultLogSink().Warn("Unexpected Essence UL found: %s.\n", Entry->name);
+	{
+	  DefaultLogSink().Warn("Unexpected Essence UL found: %s.\n", Entry->name);
+	}
 
       return RESULT_FORMAT;
     }

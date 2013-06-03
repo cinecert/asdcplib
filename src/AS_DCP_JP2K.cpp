@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2004-2012, John Hurst
+Copyright (c) 2004-2013, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -220,6 +220,9 @@ public:
 
   lh__Reader(const Dictionary& d) :
     ASDCP::h__ASDCPReader(d), m_EssenceDescriptor(0), m_EssenceSubDescriptor(0), m_Format(ESS_UNKNOWN) {}
+
+  virtual ~lh__Reader() {}
+
   Result_t    OpenRead(const char*, EssenceType_t);
   Result_t    ReadFrame(ui32_t, JP2K::FrameBuffer&, AESDecContext*, HMACContext*);
   Result_t    MD_to_JP2K_PDesc(JP2K::PictureDescriptor& PDesc);
@@ -411,12 +414,6 @@ lh__Reader::OpenRead(const char* filename, EssenceType_t type)
       result = MD_to_JP2K_PDesc(m_PDesc);
     }
 
-  if( ASDCP_SUCCESS(result) )
-    result = InitMXFIndex();
-
-  if( ASDCP_SUCCESS(result) )
-    result = InitInfo();
-
   return result;
 }
 
@@ -482,13 +479,13 @@ ASDCP::JP2K::MXFReader::~MXFReader()
 // Warning: direct manipulation of MXF structures can interfere
 // with the normal operation of the wrapper.  Caveat emptor!
 //
-ASDCP::MXF::OPAtomHeader&
-ASDCP::JP2K::MXFReader::OPAtomHeader()
+ASDCP::MXF::OP1aHeader&
+ASDCP::JP2K::MXFReader::OP1aHeader()
 {
   if ( m_Reader.empty() )
     {
-      assert(g_OPAtomHeader);
-      return *g_OPAtomHeader;
+      assert(g_OP1aHeader);
+      return *g_OP1aHeader;
     }
 
   return m_Reader->m_HeaderPart;
@@ -506,7 +503,22 @@ ASDCP::JP2K::MXFReader::OPAtomIndexFooter()
       return *g_OPAtomIndexFooter;
     }
 
-  return m_Reader->m_FooterPart;
+  return m_Reader->m_IndexAccess;
+}
+
+// Warning: direct manipulation of MXF structures can interfere
+// with the normal operation of the wrapper.  Caveat emptor!
+//
+ASDCP::MXF::RIP&
+ASDCP::JP2K::MXFReader::RIP()
+{
+  if ( m_Reader.empty() )
+    {
+      assert(g_RIP);
+      return *g_RIP;
+    }
+
+  return m_Reader->m_RIP;
 }
 
 // Open the file for reading. The file must exist. Returns error if the
@@ -578,7 +590,7 @@ void
 ASDCP::JP2K::MXFReader::DumpIndex(FILE* stream) const
 {
   if ( m_Reader->m_File.IsOpen() )
-    m_Reader->m_FooterPart.Dump(stream);
+    m_Reader->m_IndexAccess.Dump(stream);
 }
 
 //
@@ -612,7 +624,7 @@ public:
     // look up frame index node
     IndexTableSegment::IndexEntry TmpEntry;
 
-    if ( ASDCP_FAILURE(m_FooterPart.Lookup(FrameNum, TmpEntry)) )
+    if ( ASDCP_FAILURE(m_IndexAccess.Lookup(FrameNum, TmpEntry)) )
       {
 	DefaultLogSink().Error("Frame value out of range: %u\n", FrameNum);
 	return RESULT_RANGE;
@@ -694,13 +706,13 @@ ASDCP::JP2K::MXFSReader::~MXFSReader()
 // Warning: direct manipulation of MXF structures can interfere
 // with the normal operation of the wrapper.  Caveat emptor!
 //
-ASDCP::MXF::OPAtomHeader&
-ASDCP::JP2K::MXFSReader::OPAtomHeader()
+ASDCP::MXF::OP1aHeader&
+ASDCP::JP2K::MXFSReader::OP1aHeader()
 {
   if ( m_Reader.empty() )
     {
-      assert(g_OPAtomHeader);
-      return *g_OPAtomHeader;
+      assert(g_OP1aHeader);
+      return *g_OP1aHeader;
     }
 
   return m_Reader->m_HeaderPart;
@@ -718,7 +730,22 @@ ASDCP::JP2K::MXFSReader::OPAtomIndexFooter()
       return *g_OPAtomIndexFooter;
     }
 
-  return m_Reader->m_FooterPart;
+  return m_Reader->m_IndexAccess;
+}
+
+// Warning: direct manipulation of MXF structures can interfere
+// with the normal operation of the wrapper.  Caveat emptor!
+//
+ASDCP::MXF::RIP&
+ASDCP::JP2K::MXFSReader::RIP()
+{
+  if ( m_Reader.empty() )
+    {
+      assert(g_RIP);
+      return *g_RIP;
+    }
+
+  return m_Reader->m_RIP;
 }
 
 // Open the file for reading. The file must exist. Returns error if the
@@ -806,7 +833,7 @@ void
 ASDCP::JP2K::MXFSReader::DumpIndex(FILE* stream) const
 {
   if ( m_Reader->m_File.IsOpen() )
-    m_Reader->m_FooterPart.Dump(stream);
+    m_Reader->m_IndexAccess.Dump(stream);
 }
 
 //
@@ -827,7 +854,7 @@ ASDCP::JP2K::MXFSReader::Close() const
 
 
 //
-class lh__Writer : public ASDCP::h__Writer
+class lh__Writer : public ASDCP::h__ASDCPWriter
 {
   ASDCP_NO_COPY_CONSTRUCT(lh__Writer);
   lh__Writer();
@@ -838,11 +865,11 @@ public:
   PictureDescriptor m_PDesc;
   byte_t            m_EssenceUL[SMPTE_UL_LENGTH];
 
-  lh__Writer(const Dictionary& d) : ASDCP::h__Writer(d), m_EssenceSubDescriptor(0) {
+  lh__Writer(const Dictionary& d) : ASDCP::h__ASDCPWriter(d), m_EssenceSubDescriptor(0) {
     memset(m_EssenceUL, 0, SMPTE_UL_LENGTH);
   }
 
-  ~lh__Writer(){}
+  virtual ~lh__Writer(){}
 
   Result_t OpenWrite(const char*, EssenceType_t type, ui32_t HeaderSize);
   Result_t SetSourceStream(const PictureDescriptor&, const std::string& label,
@@ -993,9 +1020,9 @@ lh__Writer::SetSourceStream(const PictureDescriptor& PDesc, const std::string& l
     {
       ui32_t TCFrameRate = ( m_PDesc.EditRate == EditRate_23_98  ) ? 24 : m_PDesc.EditRate.Numerator;
 
-      result = WriteMXFHeader(label, UL(m_Dict->ul(MDD_JPEG_2000Wrapping)),
-			      PICT_DEF_LABEL, UL(m_EssenceUL), UL(m_Dict->ul(MDD_PictureDataDef)),
-			      LocalEditRate, TCFrameRate);
+      result = WriteASDCPHeader(label, UL(m_Dict->ul(MDD_JPEG_2000Wrapping)),
+				PICT_DEF_LABEL, UL(m_EssenceUL), UL(m_Dict->ul(MDD_PictureDataDef)),
+				LocalEditRate, TCFrameRate);
     }
 
   return result;
@@ -1042,7 +1069,7 @@ lh__Writer::Finalize()
 
   m_State.Goto_FINAL();
 
-  return WriteMXFFooter();
+  return WriteASDCPFooter();
 }
 
 
@@ -1072,13 +1099,13 @@ ASDCP::JP2K::MXFWriter::~MXFWriter()
 // Warning: direct manipulation of MXF structures can interfere
 // with the normal operation of the wrapper.  Caveat emptor!
 //
-ASDCP::MXF::OPAtomHeader&
-ASDCP::JP2K::MXFWriter::OPAtomHeader()
+ASDCP::MXF::OP1aHeader&
+ASDCP::JP2K::MXFWriter::OP1aHeader()
 {
   if ( m_Writer.empty() )
     {
-      assert(g_OPAtomHeader);
-      return *g_OPAtomHeader;
+      assert(g_OP1aHeader);
+      return *g_OP1aHeader;
     }
 
   return m_Writer->m_HeaderPart;
@@ -1097,6 +1124,21 @@ ASDCP::JP2K::MXFWriter::OPAtomIndexFooter()
     }
 
   return m_Writer->m_FooterPart;
+}
+
+// Warning: direct manipulation of MXF structures can interfere
+// with the normal operation of the wrapper.  Caveat emptor!
+//
+ASDCP::MXF::RIP&
+ASDCP::JP2K::MXFWriter::RIP()
+{
+  if ( m_Writer.empty() )
+    {
+      assert(g_RIP);
+      return *g_RIP;
+    }
+
+  return m_Writer->m_RIP;
 }
 
 // Open the file for writing. The file must not exist. Returns error if
@@ -1203,13 +1245,13 @@ ASDCP::JP2K::MXFSWriter::~MXFSWriter()
 // Warning: direct manipulation of MXF structures can interfere
 // with the normal operation of the wrapper.  Caveat emptor!
 //
-ASDCP::MXF::OPAtomHeader&
-ASDCP::JP2K::MXFSWriter::OPAtomHeader()
+ASDCP::MXF::OP1aHeader&
+ASDCP::JP2K::MXFSWriter::OP1aHeader()
 {
   if ( m_Writer.empty() )
     {
-      assert(g_OPAtomHeader);
-      return *g_OPAtomHeader;
+      assert(g_OP1aHeader);
+      return *g_OP1aHeader;
     }
 
   return m_Writer->m_HeaderPart;
@@ -1228,6 +1270,21 @@ ASDCP::JP2K::MXFSWriter::OPAtomIndexFooter()
     }
 
   return m_Writer->m_FooterPart;
+}
+
+// Warning: direct manipulation of MXF structures can interfere
+// with the normal operation of the wrapper.  Caveat emptor!
+//
+ASDCP::MXF::RIP&
+ASDCP::JP2K::MXFSWriter::RIP()
+{
+  if ( m_Writer.empty() )
+    {
+      assert(g_RIP);
+      return *g_RIP;
+    }
+
+  return m_Writer->m_RIP;
 }
 
 // Open the file for writing. The file must not exist. Returns error if

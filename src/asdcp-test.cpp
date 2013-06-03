@@ -1802,13 +1802,13 @@ show_file_info(CommandOptions& Options)
 	{
 	  const Dictionary* Dict = &DefaultCompositeDict();
 	  PCM::MXFReader Reader;
-	  MXF::OPAtomHeader OPAtomHeader(Dict);
+	  MXF::OP1aHeader Header(Dict);
 	  MXF::WaveAudioDescriptor *descriptor = 0;
 
 	  result = Reader.OpenRead(Options.filenames[0]);
 
 	  if ( ASDCP_SUCCESS(result) )
-	    result = Reader.OPAtomHeader().GetMDObjectByType(Dict->ul(MDD_WaveAudioDescriptor), reinterpret_cast<MXF::InterchangeObject**>(&descriptor));
+	    result = Reader.OP1aHeader().GetMDObjectByType(Dict->ul(MDD_WaveAudioDescriptor), reinterpret_cast<MXF::InterchangeObject**>(&descriptor));
 
 	  if ( ASDCP_SUCCESS(result) )
 	    {
@@ -1844,7 +1844,7 @@ show_file_info(CommandOptions& Options)
       fprintf(stderr, "File is not AS-DCP: %s\n", Options.filenames[0]);
       Kumu::FileReader   Reader;
       const Dictionary* Dict = &DefaultCompositeDict();
-      MXF::OPAtomHeader TestHeader(Dict);
+      MXF::OP1aHeader TestHeader(Dict);
 
       result = Reader.OpenRead(Options.filenames[0]);
 
