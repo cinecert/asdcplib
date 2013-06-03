@@ -40,7 +40,7 @@ using Kumu::GenRandomValue;
 
 //------------------------------------------------------------------------------------------
 
-static std::string JP2K_PACKAGE_LABEL = "File Package: SMPTE ST 422 frame wrapping of JPEG 2000 codestreams";
+static std::string JP2K_PACKAGE_LABEL = "File Package: SMPTE ST 422 / ST 2067-5 frame wrapping of JPEG 2000 codestreams";
 static std::string PICT_DEF_LABEL = "Image Track";
 
 //------------------------------------------------------------------------------------------
@@ -68,77 +68,10 @@ public:
 
   Result_t    OpenRead(const char*, EssenceType_t);
   Result_t    ReadFrame(ui32_t, ASDCP::JP2K::FrameBuffer&, AESDecContext*, HMACContext*);
-  Result_t    MD_to_JP2K_PDesc(ASDCP::JP2K::PictureDescriptor& PDesc);
-
-  Result_t OpenMXFRead(const char* filename);
-  // positions file before reading
-  Result_t ReadEKLVFrame(ui32_t FrameNum, ASDCP::FrameBuffer& FrameBuf,
-			 const byte_t* EssenceUL, AESDecContext* Ctx, HMACContext* HMAC);
-
-  // reads from current position
-  Result_t ReadEKLVPacket(ui32_t FrameNum, ui32_t SequenceNum, ASDCP::FrameBuffer& FrameBuf,
-			  const byte_t* EssenceUL, AESDecContext* Ctx, HMACContext* HMAC);
-
 };
 
 //
-ASDCP::Result_t
-AS_02::JP2K::MXFReader::h__Reader::MD_to_JP2K_PDesc(ASDCP::JP2K::PictureDescriptor& PDesc)
-{
-  memset(&PDesc, 0, sizeof(PDesc));
-  ASDCP::MXF::RGBAEssenceDescriptor* PDescObj = (ASDCP::MXF::RGBAEssenceDescriptor*)m_EssenceDescriptor;
-
-  PDesc.EditRate           = m_EditRate;
-  PDesc.SampleRate         = m_SampleRate;
-  assert(PDescObj->ContainerDuration <= 0xFFFFFFFFL);
-  PDesc.ContainerDuration  = (ui32_t) PDescObj->ContainerDuration;
-  PDesc.StoredWidth        = PDescObj->StoredWidth;
-  PDesc.StoredHeight       = PDescObj->StoredHeight;
-  PDesc.AspectRatio        = PDescObj->AspectRatio;
-
-  if ( m_EssenceSubDescriptor != 0 )
-    {
-      PDesc.Rsize   = m_EssenceSubDescriptor->Rsize;
-      PDesc.Xsize   = m_EssenceSubDescriptor->Xsize;
-      PDesc.Ysize   = m_EssenceSubDescriptor->Ysize;
-      PDesc.XOsize  = m_EssenceSubDescriptor->XOsize;
-      PDesc.YOsize  = m_EssenceSubDescriptor->YOsize;
-      PDesc.XTsize  = m_EssenceSubDescriptor->XTsize;
-      PDesc.YTsize  = m_EssenceSubDescriptor->YTsize;
-      PDesc.XTOsize = m_EssenceSubDescriptor->XTOsize;
-      PDesc.YTOsize = m_EssenceSubDescriptor->YTOsize;
-      PDesc.Csize   = m_EssenceSubDescriptor->Csize;
-
-      // PictureComponentSizing
-      ui32_t tmp_size = m_EssenceSubDescriptor->PictureComponentSizing.Length();
-
-      if ( tmp_size == 17 ) // ( 2 * sizeof(ui32_t) ) + 3 components * 3 byte each
-	memcpy(&PDesc.ImageComponents, m_EssenceSubDescriptor->PictureComponentSizing.RoData() + 8, tmp_size - 8);
-
-      else
-	DefaultLogSink().Error("Unexpected PictureComponentSizing size: %u, should be 17\n", tmp_size);
-
-      // CodingStyleDefault
-      memset(&PDesc.CodingStyleDefault, 0, sizeof(CodingStyleDefault_t));
-      memcpy(&PDesc.CodingStyleDefault,
-	     m_EssenceSubDescriptor->CodingStyleDefault.RoData(),
-	     m_EssenceSubDescriptor->CodingStyleDefault.Length());
-
-      // QuantizationDefault
-      memset(&PDesc.QuantizationDefault, 0, sizeof(QuantizationDefault_t));
-      memcpy(&PDesc.QuantizationDefault,
-	     m_EssenceSubDescriptor->QuantizationDefault.RoData(),
-	     m_EssenceSubDescriptor->QuantizationDefault.Length());
-
-      PDesc.QuantizationDefault.SPqcdLength = m_EssenceSubDescriptor->QuantizationDefault.Length() - 1;
-    }
-
-  return RESULT_OK;
-}
-
-//
-//
-ASDCP::Result_t
+Result_t
 AS_02::JP2K::MXFReader::h__Reader::OpenRead(const char* filename, ASDCP::EssenceType_t type)
 {
   Result_t result = OpenMXFRead(filename);
@@ -186,7 +119,9 @@ AS_02::JP2K::MXFReader::h__Reader::OpenRead(const char* filename, ASDCP::Essence
 	  return RESULT_STATE;
 	}
 
-      result = MD_to_JP2K_PDesc(m_PDesc);
+      assert(m_EssenceDescriptor);
+      assert(m_EssenceSubDescriptor);
+      result = MD_to_JP2K_PDesc(*m_EssenceDescriptor, *m_EssenceSubDescriptor, m_EditRate, m_SampleRate, m_PDesc);
     }
 
   return result;
@@ -194,7 +129,7 @@ AS_02::JP2K::MXFReader::h__Reader::OpenRead(const char* filename, ASDCP::Essence
 
 //
 //
-ASDCP::Result_t
+Result_t
 AS_02::JP2K::MXFReader::h__Reader::ReadFrame(ui32_t FrameNum, ASDCP::JP2K::FrameBuffer& FrameBuf,
 		      ASDCP::AESDecContext* Ctx, ASDCP::HMACContext* HMAC)
 {
@@ -285,7 +220,8 @@ AS_02::JP2K::MXFReader::ReadFrame(ui32_t FrameNum, ASDCP::JP2K::FrameBuffer& Fra
 
 // Fill the struct with the values from the file's header.
 // Returns RESULT_INIT if the file is not open.
-ASDCP::Result_t AS_02::JP2K::MXFReader::FillPictureDescriptor(PictureDescriptor& PDesc) const
+Result_t
+AS_02::JP2K::MXFReader::FillPictureDescriptor(PictureDescriptor& PDesc) const
 {
   if ( m_Reader && m_Reader->m_File.IsOpen() )
     {
@@ -299,7 +235,8 @@ ASDCP::Result_t AS_02::JP2K::MXFReader::FillPictureDescriptor(PictureDescriptor&
 
 // Fill the struct with the values from the file's header.
 // Returns RESULT_INIT if the file is not open.
-ASDCP::Result_t AS_02::JP2K::MXFReader::FillWriterInfo(WriterInfo& Info) const
+Result_t
+AS_02::JP2K::MXFReader::FillWriterInfo(WriterInfo& Info) const
 {
   if ( m_Reader && m_Reader->m_File.IsOpen() )
     {
@@ -325,11 +262,7 @@ public:
   PictureDescriptor m_PDesc;
   byte_t            m_EssenceUL[SMPTE_UL_LENGTH];
 
-  //new attributes for AS-02 support 
-  AS_02::IndexStrategy_t m_IndexStrategy; //Shim parameter index_strategy_frame/clip
-  ui32_t m_PartitionSpace; //Shim parameter partition_spacing
-
-  h__Writer(const Dictionary& d) : h__AS02Writer(d), m_EssenceSubDescriptor(0), m_IndexStrategy(AS_02::IS_FOLLOW), m_PartitionSpace(60) {
+  h__Writer(const Dictionary& d) : h__AS02Writer(d), m_EssenceSubDescriptor(0) {
     memset(m_EssenceUL, 0, SMPTE_UL_LENGTH);
   }
 
@@ -339,139 +272,35 @@ public:
 		     const ui32_t& PartitionSpace, const ui32_t& HeaderSize);
   Result_t SetSourceStream(const PictureDescriptor&, const std::string& label,
 			   ASDCP::Rational LocalEditRate = ASDCP::Rational(0,0));
-  Result_t WriteFrame(const ASDCP::JP2K::FrameBuffer&, bool add_index, ASDCP::AESEncContext*, ASDCP::HMACContext*);
+  Result_t WriteFrame(const ASDCP::JP2K::FrameBuffer&, ASDCP::AESEncContext*, ASDCP::HMACContext*);
   Result_t Finalize();
-  Result_t JP2K_PDesc_to_MD(ASDCP::JP2K::PictureDescriptor& PDesc);
-
-  //void AddSourceClip(const MXF::Rational& EditRate, ui32_t TCFrameRate,
-  // const std::string& TrackName, const UL& EssenceUL,
-  // const UL& DataDefinition, const std::string& PackageLabel);
-  //void AddDMSegment(const MXF::Rational& EditRate, ui32_t TCFrameRate,
-  // const std::string& TrackName, const UL& DataDefinition,
-  // const std::string& PackageLabel);
-  //void AddEssenceDescriptor(const UL& WrappingUL);
-  //Result_t CreateBodyPart(const MXF::Rational& EditRate, ui32_t BytesPerEditUnit = 0);
-
-  ////new method to create BodyPartition for essence and index
-  //Result_t CreateBodyPartPair();
-  ////new method to finalize BodyPartion(index)
-  //Result_t CompleteIndexBodyPart();
-
-  // reimplement these functions in AS_02_PCM to support modifications for AS-02
-  //Result_t WriteEKLVPacket(const ASDCP::FrameBuffer& FrameBuf,
-  //	const byte_t* EssenceUL, AESEncContext* Ctx, HMACContext* HMAC);
-  Result_t WriteMXFFooter();
-
-
 };
-
-const int VideoLineMapSize = 16; // See SMPTE 377M D.2.1
-const int PixelLayoutSize = 8*2; // See SMPTE 377M D.2.3
-static const byte_t s_PixelLayoutXYZ[PixelLayoutSize] = { 0xd8, 0x0c, 0xd9, 0x0c, 0xda, 0x0c, 0x00 };
-
-//
-ASDCP::Result_t
-AS_02::JP2K::MXFWriter::h__Writer::JP2K_PDesc_to_MD(ASDCP::JP2K::PictureDescriptor& PDesc)
-{
-  assert(m_EssenceDescriptor);
-  assert(m_EssenceSubDescriptor);
-  ASDCP::MXF::RGBAEssenceDescriptor* PDescObj = (ASDCP::MXF::RGBAEssenceDescriptor*)m_EssenceDescriptor;
-
-  PDescObj->ContainerDuration = PDesc.ContainerDuration;
-  PDescObj->SampleRate = PDesc.EditRate;
-  PDescObj->FrameLayout = 0;
-  PDescObj->StoredWidth = PDesc.StoredWidth;
-  PDescObj->StoredHeight = PDesc.StoredHeight;
-  PDescObj->AspectRatio = PDesc.AspectRatio;
-
-  //  if ( m_Info.LabelSetType == LS_MXF_SMPTE )
-  //    {
-  // PictureEssenceCoding UL = 
-  // Video Line Map       ui32_t[VideoLineMapSize] = { 2, 4, 0, 0 }
-  // CaptureGamma         UL = 
-  // ComponentMaxRef      ui32_t = 4095
-  // ComponentMinRef      ui32_t = 0
-  // PixelLayout          byte_t[PixelLayoutSize] = s_PixelLayoutXYZ
-  //    }
-
-  assert(m_Dict);
-  if ( PDesc.StoredWidth < 2049 )
-    {
-      PDescObj->PictureEssenceCoding.Set(m_Dict->ul(MDD_JP2KEssenceCompression_2K));
-      m_EssenceSubDescriptor->Rsize = 3;
-    }
-  else
-    {
-      PDescObj->PictureEssenceCoding.Set(m_Dict->ul(MDD_JP2KEssenceCompression_4K));
-      m_EssenceSubDescriptor->Rsize = 4;
-    }
-
-  m_EssenceSubDescriptor->Xsize = PDesc.Xsize;
-  m_EssenceSubDescriptor->Ysize = PDesc.Ysize;
-  m_EssenceSubDescriptor->XOsize = PDesc.XOsize;
-  m_EssenceSubDescriptor->YOsize = PDesc.YOsize;
-  m_EssenceSubDescriptor->XTsize = PDesc.XTsize;
-  m_EssenceSubDescriptor->YTsize = PDesc.YTsize;
-  m_EssenceSubDescriptor->XTOsize = PDesc.XTOsize;
-  m_EssenceSubDescriptor->YTOsize = PDesc.YTOsize;
-  m_EssenceSubDescriptor->Csize = PDesc.Csize;
-
-  const ui32_t tmp_buffer_len = 1024;
-  byte_t tmp_buffer[tmp_buffer_len];
-
-  // slh: this has to be done dynamically since the number of components is not always 3
-  *(ui32_t*)tmp_buffer = KM_i32_BE(m_EssenceSubDescriptor->Csize);
-  *(ui32_t*)(tmp_buffer+4) = KM_i32_BE(sizeof(ASDCP::JP2K::ImageComponent_t));
-  memcpy(tmp_buffer + 8, &PDesc.ImageComponents, sizeof(ASDCP::JP2K::ImageComponent_t) * m_EssenceSubDescriptor->Csize);
-  const ui32_t pcomp_size = (sizeof(int) * 2) + (sizeof(ASDCP::JP2K::ImageComponent_t) * m_EssenceSubDescriptor->Csize);
-
-  /*
-   *(ui32_t*)tmp_buffer = KM_i32_BE(MaxComponents); // three components
-   *(ui32_t*)(tmp_buffer+4) = KM_i32_BE(sizeof(ASDCP::JP2K::ImageComponent_t));	
-   memcpy(tmp_buffer + 8, &PDesc.ImageComponents, sizeof(ASDCP::JP2K::ImageComponent_t) * MaxComponents);
-   const ui32_t pcomp_size = (sizeof(int) * 2) + (sizeof(ASDCP::JP2K::ImageComponent_t) * MaxComponents);
-  */
-
-  memcpy(m_EssenceSubDescriptor->PictureComponentSizing.Data(), tmp_buffer, pcomp_size);
-  m_EssenceSubDescriptor->PictureComponentSizing.Length(pcomp_size);
-
-  ui32_t precinct_set_size = 0, i;
-  for ( i = 0; PDesc.CodingStyleDefault.SPcod.PrecinctSize[i] != 0 && i < MaxPrecincts; i++ )
-    precinct_set_size++;
-
-  ui32_t csd_size = sizeof(CodingStyleDefault_t) - MaxPrecincts + precinct_set_size;
-  memcpy(m_EssenceSubDescriptor->CodingStyleDefault.Data(), &PDesc.CodingStyleDefault, csd_size);
-  m_EssenceSubDescriptor->CodingStyleDefault.Length(csd_size);
-
-  ui32_t qdflt_size = PDesc.QuantizationDefault.SPqcdLength + 1;
-  memcpy(m_EssenceSubDescriptor->QuantizationDefault.Data(), &PDesc.QuantizationDefault, qdflt_size);
-  m_EssenceSubDescriptor->QuantizationDefault.Length(qdflt_size);
-
-  return RESULT_OK;
-}
 
 
 // Open the file for writing. The file must not exist. Returns error if
 // the operation cannot be completed.
-ASDCP::Result_t
+Result_t
 AS_02::JP2K::MXFWriter::h__Writer::OpenWrite(const char* filename, EssenceType_t type, const AS_02::IndexStrategy_t& IndexStrategy,
-		      const ui32_t& PartitionSpace, const ui32_t& HeaderSize)
+					     const ui32_t& PartitionSpace_sec, const ui32_t& HeaderSize)
 {
   if ( ! m_State.Test_BEGIN() )
     return RESULT_STATE;
 
-  ASDCP::Result_t result = m_File.OpenWrite(filename);
+  if ( m_IndexStrategy != AS_02::IS_FOLLOW )
+    {
+      DefaultLogSink().Error("Only strategy IS_FOLLOW is supported at this time.\n");
+      return Kumu::RESULT_NOTIMPL;
+    }
+
+  Result_t result = m_File.OpenWrite(filename);
 
   if ( ASDCP_SUCCESS(result) )
     {
       m_IndexStrategy = IndexStrategy;
-      m_PartitionSpace = PartitionSpace;
+      m_PartitionSpace = PartitionSpace_sec; // later converted to edit units by SetSourceStream()
       m_HeaderSize = HeaderSize;
-      RGBAEssenceDescriptor* tmp_rgba = new RGBAEssenceDescriptor(m_Dict);
-      tmp_rgba->ComponentMaxRef = 4095;
-      tmp_rgba->ComponentMinRef = 0;
 
-      m_EssenceDescriptor = tmp_rgba;
+      m_EssenceDescriptor = new RGBAEssenceDescriptor(m_Dict);
       m_EssenceSubDescriptor = new JPEG2000PictureSubDescriptor(m_Dict);
       m_EssenceSubDescriptorList.push_back((InterchangeObject*)m_EssenceSubDescriptor);
 
@@ -484,7 +313,7 @@ AS_02::JP2K::MXFWriter::h__Writer::OpenWrite(const char* filename, EssenceType_t
 }
 
 // Automatically sets the MXF file's metadata from the first jpeg codestream stream.
-ASDCP::Result_t
+Result_t
 AS_02::JP2K::MXFWriter::h__Writer::SetSourceStream(const PictureDescriptor& PDesc, const std::string& label, ASDCP::Rational LocalEditRate)
 {
   assert(m_Dict);
@@ -495,7 +324,13 @@ AS_02::JP2K::MXFWriter::h__Writer::SetSourceStream(const PictureDescriptor& PDes
     LocalEditRate = PDesc.EditRate;
 
   m_PDesc = PDesc;
-  Result_t result = JP2K_PDesc_to_MD(m_PDesc);
+  assert(m_Dict);
+  Result_t result = JP2K_PDesc_to_MD(m_PDesc, *m_Dict,
+				     static_cast<ASDCP::MXF::RGBAEssenceDescriptor*>(m_EssenceDescriptor),
+				     m_EssenceSubDescriptor);
+
+  static_cast<ASDCP::MXF::RGBAEssenceDescriptor*>(m_EssenceDescriptor)->ComponentMaxRef = 4095; /// TODO: set with magic or some such thing
+  static_cast<ASDCP::MXF::RGBAEssenceDescriptor*>(m_EssenceDescriptor)->ComponentMinRef = 0;
 
   if ( ASDCP_SUCCESS(result) )
     {
@@ -521,9 +356,32 @@ AS_02::JP2K::MXFWriter::h__Writer::SetSourceStream(const PictureDescriptor& PDes
 // Fails if the file is not open, is finalized, or an operating system
 // error occurs.
 //
-ASDCP::Result_t
-AS_02::JP2K::MXFWriter::h__Writer::WriteFrame(const ASDCP::JP2K::FrameBuffer& FrameBuf, bool add_index,
+Result_t
+AS_02::JP2K::MXFWriter::h__Writer::WriteFrame(const ASDCP::JP2K::FrameBuffer& FrameBuf,
 		       AESEncContext* Ctx, HMACContext* HMAC)
+#if 1
+{
+  Result_t result = RESULT_OK;
+
+  if ( m_State.Test_READY() )
+    result = m_State.Goto_RUNNING(); // first time through
+ 
+  ui64_t StreamOffset = m_StreamOffset;
+
+  if ( ASDCP_SUCCESS(result) )
+    result = WriteEKLVPacket(FrameBuf, m_EssenceUL, Ctx, HMAC);
+
+  if ( ASDCP_SUCCESS(result) )
+    {  
+      IndexTableSegment::IndexEntry Entry;
+      Entry.StreamOffset = StreamOffset;
+      m_IndexWriter.PushIndexEntry(Entry);
+    }
+
+  m_FramesWritten++;
+  return result;
+}
+#else
 {
   Result_t result = RESULT_OK;
 
@@ -562,28 +420,24 @@ AS_02::JP2K::MXFWriter::h__Writer::WriteFrame(const ASDCP::JP2K::FrameBuffer& Fr
   m_FramesWritten++;
   return result;
 }
-
+#endif
 
 // Closes the MXF file, writing the index and other closing information.
 //
-ASDCP::Result_t
+Result_t
 AS_02::JP2K::MXFWriter::h__Writer::Finalize()
 {
-  Result_t result = RESULT_OK;
-
   if ( ! m_State.Test_RUNNING() )
     return RESULT_STATE;
 
-  m_State.Goto_FINAL();
+  Result_t result = m_State.Goto_FINAL();
 
-  //the last Frame was written, complete the BodyPartion(Index), after that write the MXF-Footer
-  result = CompleteIndexBodyPart();
+  if ( ASDCP_SUCCESS(result) )
+    result = WriteAS02Footer();
 
-  if ( ASDCP_FAILURE(result) ){
-    return result;
-  }
-  return WriteMXFFooter();
+  return result;
 }
+
 
 //------------------------------------------------------------------------------------------
 
@@ -629,7 +483,7 @@ AS_02::JP2K::MXFWriter::RIP()
 
 // Open the file for writing. The file must not exist. Returns error if
 // the operation cannot be completed.
-ASDCP::Result_t
+Result_t
 AS_02::JP2K::MXFWriter::OpenWrite(const char* filename, const ASDCP::WriterInfo& Info,
 				  const ASDCP::JP2K::PictureDescriptor& PDesc,
 				  const IndexStrategy_t& Strategy,
@@ -639,7 +493,7 @@ AS_02::JP2K::MXFWriter::OpenWrite(const char* filename, const ASDCP::WriterInfo&
   m_Writer = new AS_02::JP2K::MXFWriter::h__Writer(DefaultSMPTEDict());
   m_Writer->m_Info = Info;
 
-  ASDCP::Result_t result = m_Writer->OpenWrite(filename, ASDCP::ESS_JPEG_2000, Strategy, PartitionSpace, HeaderSize);
+  Result_t result = m_Writer->OpenWrite(filename, ASDCP::ESS_JPEG_2000, Strategy, PartitionSpace, HeaderSize);
 
   if ( ASDCP_SUCCESS(result) )
     result = m_Writer->SetSourceStream(PDesc, JP2K_PACKAGE_LABEL);
@@ -650,22 +504,21 @@ AS_02::JP2K::MXFWriter::OpenWrite(const char* filename, const ASDCP::WriterInfo&
   return result;
 }
 
-
 // Writes a frame of essence to the MXF file. If the optional AESEncContext
 // argument is present, the essence is encrypted prior to writing.
 // Fails if the file is not open, is finalized, or an operating system
 // error occurs.
-ASDCP::Result_t 
+Result_t 
 AS_02::JP2K::MXFWriter::WriteFrame(const ASDCP::JP2K::FrameBuffer& FrameBuf, AESEncContext* Ctx, HMACContext* HMAC)
 {
   if ( m_Writer.empty() )
     return RESULT_INIT;
 
-  return m_Writer->WriteFrame(FrameBuf, true, Ctx, HMAC);
+  return m_Writer->WriteFrame(FrameBuf, Ctx, HMAC);
 }
 
 // Closes the MXF file, writing the index and other closing information.
-ASDCP::Result_t
+Result_t
 AS_02::JP2K::MXFWriter::Finalize()
 {
   if ( m_Writer.empty() )

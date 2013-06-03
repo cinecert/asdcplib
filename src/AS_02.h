@@ -68,7 +68,7 @@ namespace AS_02
   using Kumu::Result_t;
 
   namespace MXF {
-#if 1
+#if 0
     //
     class OP1aIndexBodyPartion : public ASDCP::MXF::Partition
     {

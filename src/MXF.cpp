@@ -985,7 +985,7 @@ ASDCP::MXF::OPAtomIndexFooter::InitFromFile(const Kumu::FileReader& Reader)
   // slurp up the remainder of the footer
   ui32_t read_count = 0;
 
-  if ( ASDCP_SUCCESS(result) )
+  if ( ASDCP_SUCCESS(result) && IndexByteCount > 0 )
     {
       assert (IndexByteCount <= 0xFFFFFFFFL);
       // At this point, m_FooterData may not have been initialized
@@ -993,27 +993,27 @@ ASDCP::MXF::OPAtomIndexFooter::InitFromFile(const Kumu::FileReader& Reader)
       // However, if IndexByteCount is zero then the capacity
       // doesn't change and the data pointer is not set.
       result = m_FooterData.Capacity((ui32_t) IndexByteCount);
+
+      if ( ASDCP_SUCCESS(result) )
+	result = Reader.Read(m_FooterData.Data(), m_FooterData.Capacity(), &read_count);
+
+      if ( ASDCP_SUCCESS(result) && read_count != m_FooterData.Capacity() )
+	{
+	  DefaultLogSink().Error("Short read of footer partition: got %u, expecting %u\n",
+				 read_count, m_FooterData.Capacity());
+	  return RESULT_FAIL;
+	}
+      else if( ASDCP_SUCCESS(result) && !m_FooterData.Data() )
+	{
+	  DefaultLogSink().Error( "Buffer for footer partition not created: IndexByteCount = %u\n",
+				  IndexByteCount );
+	  return RESULT_FAIL;
+	}
+
+      if ( ASDCP_SUCCESS(result) )
+	result = InitFromBuffer(m_FooterData.RoData(), m_FooterData.Capacity());
     }
 
-  if ( ASDCP_SUCCESS(result) && m_FooterData.Data() )
-    result = Reader.Read(m_FooterData.Data(), m_FooterData.Capacity(), &read_count);
-
-  if ( ASDCP_SUCCESS(result) && read_count != m_FooterData.Capacity() )
-    {
-      DefaultLogSink().Error("Short read of footer partition: got %u, expecting %u\n",
-			     read_count, m_FooterData.Capacity());
-      return RESULT_FAIL;
-    }
-  else if( ASDCP_SUCCESS(result) && !m_FooterData.Data() )
-    {
-      DefaultLogSink().Error( "Buffer for footer partition not created: IndexByteCount = %u\n",
-			      IndexByteCount );
-      return RESULT_FAIL;
-    }
-
-  if ( ASDCP_SUCCESS(result) )
-    result = InitFromBuffer(m_FooterData.RoData(), m_FooterData.Capacity());
-  
   return result;
 }
 

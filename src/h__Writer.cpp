@@ -157,7 +157,14 @@ ASDCP::h__ASDCPWriter::WriteASDCPHeader(const std::string& PackageLabel, const U
   return result;
 }
 
-
+//
+Result_t
+ASDCP::h__ASDCPWriter::WriteEKLVPacket(const ASDCP::FrameBuffer& FrameBuf,const byte_t* EssenceUL,
+				       AESEncContext* Ctx, HMACContext* HMAC)
+{
+  return Write_EKLV_Packet(m_File, *m_Dict, m_HeaderPart, m_Info, m_CtFrameBuf, m_FramesWritten,
+			   m_StreamOffset, FrameBuf, EssenceUL, Ctx, HMAC);
+}
 
 // standard method of writing the header and footer of a completed MXF file
 //

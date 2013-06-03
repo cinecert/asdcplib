@@ -44,6 +44,8 @@ AC_CONFIG_SRCDIR([src/KM_error.h])
 #AC_CONFIG_HEADER([src/config.h])
 AM_INIT_AUTOMAKE([1.9 foreign])
 
+AC_CONFIG_MACRO_DIR([m4])
+
 # Checks for programs.
 AC_CANONICAL_BUILD
 AC_CANONICAL_HOST
@@ -73,7 +75,8 @@ AM_CONDITIONAL([HAVE_PYTHON], [test "$PYTHON" != :])
 AC_ARG_ENABLE([freedist],
      [  --enable-freedist    ensure source distribution is of BSD-licensed code],
      [case "${enableval}" in
-       yes) freedist=true ;;
+       yes) freedist=true
+       AC_MSG_WARN([BSD licensed ASDCPlib creation ENABLED.]) ;;
        no)  freedist=false ;;
        *) AC_MSG_ERROR([bad value ${enableval} for --enable-freedist]) ;;
      esac],[freedist=false])
@@ -95,13 +98,13 @@ AC_ARG_ENABLE([random-case-UUID],
      esac],[random_case_UUID=false])
      AM_CONDITIONAL([ENABLE_RANDOM_UUID], [test x$random_case_UUID = xtrue])
 AC_ARG_ENABLE([as-02],
-     [  --enable-as-02    enable supprt for SMPTE ST 2067-5 MXF files, A.K.A. AS-02],
+     [  --enable-as-02    enable support for SMPTE ST 2067-5 MXF files, A.K.A. AS-02],
      [case "${enableval}" in
        yes) as_02_use=true ;;
        no)  as_02_use=false ;;
        *) AC_MSG_ERROR([bad value ${enableval} for --enable-as-02]) ;;
      esac],[as_02_use=false])
-     AM_CONDITIONAL([AS_02_USE], [test x$as_02_use = xtrue])
+     AM_CONDITIONAL([USE_AS_02], [test x$as_02_use = xtrue])
 
 # Checks for libraries.
 AC_CHECK_LIB([pthread], [pthread_create])

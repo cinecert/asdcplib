@@ -108,7 +108,7 @@ USAGE: %s [-h|-help] [-V]\n\
 \n\
        %s [-a <uuid>] [-b <buffer-size>] [-C <UL>] [-d <duration>]\n\
           [-e|-E] [-f <start-frame>] [-j <key-id-string>] [-k <key-string>]\n\
-            [-M] [-p <n>/<d>]  [-v] [-W]\n\
+            [-M] [-p <n>/<d>] [-s <seconds>] [-v] [-W]\n\
           [-z|-Z] <input-file>+ <output-file>\n\n",
 	  PROGRAM_NAME, PROGRAM_NAME);
 
@@ -128,6 +128,7 @@ Options:\n\
   -d <duration>     - Number of frames to process, default all\n\
   -f <start-frame>  - Starting frame number, default 0\n\
   -p <n>/<d>        - Edit Rate of the output file.  24/1 is the default\n\
+  -s <seconds>      - Duration of a frame-wrapped partition (default 60)\n\
   -v                - Verbose, prints informative messages to stderr\n\
   -W                - Read input file only, do not write source file\n\
   -z                - Fail if j2c inputs have unequal parameters (default)\n\
@@ -177,7 +178,7 @@ public:
     error_flag(true), key_flag(false), key_id_flag(false), asset_id_flag(false),
     encrypt_header_flag(true), write_hmac(true), verbose_flag(false), fb_dump_size(0),
     no_write_flag(false), version_flag(false), help_flag(false), start_frame(0),
-    duration(0xffffffff), j2c_pedantic(true), fb_size(FRAME_BUFFER_SIZE),
+    duration(0xffffffff), j2c_pedantic(true), edit_rate(30,1), fb_size(FRAME_BUFFER_SIZE),
     show_ul_values(false), index_strategy(AS_02::IS_FOLLOW), partition_space(60)
   {
     memset(key_value, 0, KeyLen);
@@ -281,6 +282,11 @@ public:
 		/// TODO: VERY BROKEN, WANT RATIONAL
 		edit_rate.Numerator = abs(atoi(argv[i]));
 		edit_rate.Denominator = 1;
+		break;
+
+	      case 's':
+		TEST_EXTRA_ARG(i, 's');
+		partition_space = abs(atoi(argv[i]));
 		break;
 
 	      case 'V': version_flag = true; break;

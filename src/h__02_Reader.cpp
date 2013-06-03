@@ -29,6 +29,7 @@
   \brief   MXF file reader base class
 */
 
+#define DEFAULT_MD_DECL
 #include "AS_02_internal.h"
 
 using namespace ASDCP;
@@ -63,28 +64,80 @@ AS_02::h__AS02Reader::h__AS02Reader(const ASDCP::Dictionary& d) : ASDCP::MXF::Tr
 AS_02::h__AS02Reader::~h__AS02Reader() {}
 
 
-#if 0
-//
-AS_02::h__AS02Reader::h__Reader(const Dictionary& d) :
-  m_HeaderPart(m_Dict), m_IndexAccess(m_Dict), m_Dict(&d), m_EssenceStart(0)
+
+// AS-DCP method of opening an MXF file for read
+Result_t
+AS_02::h__AS02Reader::OpenMXFRead(const char* filename)
 {
-  m_pCurrentIndexPartition = 0;
-  ////	start_pos = 0;
+  Result_t result = ASDCP::MXF::TrackFileReader<OP1aHeader, AS_02::MXF::AS02IndexReader>::OpenMXFRead(filename);
+
+  if ( KM_SUCCESS(result) )
+    result = ASDCP::MXF::TrackFileReader<OP1aHeader, AS_02::MXF::AS02IndexReader>::InitInfo();
+
+  if( KM_SUCCESS(result) )
+    {
+      //
+      InterchangeObject* Object;
+      m_Info.LabelSetType = LS_MXF_SMPTE;
+
+      if ( ! m_HeaderPart.OperationalPattern.ExactMatch(SMPTE_390_OPAtom_Entry().ul) )
+	{
+	  char strbuf[IdentBufferLen];
+	  const MDDEntry* Entry = m_Dict->FindUL(m_HeaderPart.OperationalPattern.Value());
+
+	  if ( Entry == 0 )
+	    {
+	      DefaultLogSink().Warn("Operational pattern is not OP-1a: %s\n",
+				    m_HeaderPart.OperationalPattern.EncodeString(strbuf, IdentBufferLen));
+	    }
+	  else
+	    {
+	      DefaultLogSink().Warn("Operational pattern is not OP-1a: %s\n", Entry->name);
+	    }
+	}
+
+      //
+      if ( m_RIP.PairArray.front().ByteOffset != 0 )
+	{
+	  DefaultLogSink().Error("First Partition in RIP is not at offset 0.\n");
+	  result = RESULT_FORMAT;
+	}
+    }
+
+  if ( KM_SUCCESS(result) )
+    {
+      m_HeaderPart.BodyOffset = m_File.Tell();
+
+      result = m_File.Seek(m_HeaderPart.FooterPartition);
+
+      if ( ASDCP_SUCCESS(result) )
+	{
+	  m_IndexAccess.m_Lookup = &m_HeaderPart.m_Primer;
+	  result = m_IndexAccess.InitFromFile(m_File);
+	}
+    }
+
+  m_File.Seek(m_HeaderPart.BodyOffset);
+  return result;
 }
 
-AS_02::h__AS02Reader::~h__Reader()
+// AS-DCP method of reading a plaintext or encrypted frame
+Result_t
+AS_02::h__AS02Reader::ReadEKLVFrame(ui32_t FrameNum, ASDCP::FrameBuffer& FrameBuf,
+				     const byte_t* EssenceUL, AESDecContext* Ctx, HMACContext* HMAC)
 {
-  std::vector<Partition*>::iterator bli = m_BodyPartList.begin();
-  for ( ; bli != m_BodyPartList.end(); bli++ ){
-    delete(*bli);
-    *bli = 0;
-  }
-  Close();
+  return ASDCP::MXF::TrackFileReader<OP1aHeader, AS_02::MXF::AS02IndexReader>::ReadEKLVFrame(m_HeaderPart, FrameNum, FrameBuf,
+										     EssenceUL, Ctx, HMAC);
 }
-#endif
 
-//------------------------------------------------------------------------------------------
-//
+Result_t
+AS_02::h__AS02Reader::LocateFrame(ui32_t FrameNum, Kumu::fpos_t& streamOffset,
+                           i8_t& temporalOffset, i8_t& keyFrameOffset)
+{
+  return ASDCP::MXF::TrackFileReader<OP1aHeader, AS_02::MXF::AS02IndexReader>::LocateFrame(m_HeaderPart, FrameNum,
+                                                                                   streamOffset, temporalOffset, keyFrameOffset);
+}
+
 
 //
 // end h__02_Reader.cpp

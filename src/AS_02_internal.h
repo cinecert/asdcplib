@@ -72,29 +72,56 @@ namespace AS_02
   }
 
   //
+  class AS02IndexWriter : public ASDCP::MXF::Partition
+    {
+      ASDCP::MXF::IndexTableSegment*  m_CurrentSegment;
+      ui32_t  m_BytesPerEditUnit;
+      ASDCP::MXF::Rational m_EditRate;
+
+      KM_NO_COPY_CONSTRUCT(AS02IndexWriter);
+      AS02IndexWriter();
+
+    public:
+      const ASDCP::Dictionary*&  m_Dict;
+      Kumu::fpos_t        m_ECOffset;
+      ASDCP::IPrimerLookup*      m_Lookup;
+      
+      AS02IndexWriter(const ASDCP::Dictionary*&);
+      virtual ~AS02IndexWriter();
+
+      Result_t WriteToFile(Kumu::FileWriter& Writer);
+      void     ResetCBR(Kumu::fpos_t offset);
+      void     Dump(FILE* = 0);
+
+      ui32_t GetDuration() const;
+      void PushIndexEntry(const ASDCP::MXF::IndexTableSegment::IndexEntry&);
+      void SetIndexParamsCBR(ASDCP::IPrimerLookup* lookup, ui32_t size, const ASDCP::Rational& Rate);
+      void SetIndexParamsVBR(ASDCP::IPrimerLookup* lookup, const ASDCP::Rational& Rate, Kumu::fpos_t offset);
+    };
+
+  //
   class h__AS02Reader : public ASDCP::MXF::TrackFileReader<ASDCP::MXF::OP1aHeader, AS_02::MXF::AS02IndexReader>
     {
       ASDCP_NO_COPY_CONSTRUCT(h__AS02Reader);
       h__AS02Reader();
 
     public:
-      Partition *m_pCurrentBodyPartition;
-      AS_02::MXF::OP1aIndexBodyPartion* m_pCurrentIndexPartition;
-      ui64_t     m_EssenceStart;
-      std::vector<Partition*> m_BodyPartList;
-      ui32_t     m_start_pos;
-      ui32_t     m_PartitionSpace;
-      IndexStrategy_t    m_IndexStrategy; //Shim parameter index_strategy_frame/clip
+      //      Partition *m_pCurrentBodyPartition;
+      //      ui64_t     m_EssenceStart;
+      //      std::vector<Partition*> m_BodyPartList;
+      //      ui32_t     m_start_pos;
+      //      ui32_t     m_PartitionSpace;
+      //      IndexStrategy_t    m_IndexStrategy; //Shim parameter index_strategy_frame/clip
 
       h__AS02Reader(const ASDCP::Dictionary&);
       virtual ~h__AS02Reader();
 
       Result_t OpenMXFRead(const char* filename);
+
       Result_t ReadEKLVFrame(ui32_t FrameNum, ASDCP::FrameBuffer& FrameBuf,
 			     const byte_t* EssenceUL, ASDCP::AESDecContext* Ctx, ASDCP::HMACContext* HMAC);
-      Result_t LocateFrame(ui32_t FrameNum, Kumu::fpos_t& streamOffset,
-			   i8_t& temporalOffset, i8_t& keyFrameOffset);
 
+      Result_t LocateFrame(ui32_t FrameNum, Kumu::fpos_t& streamOffset, i8_t& temporalOffset, i8_t& keyFrameOffset);
     };
 
   //
@@ -104,11 +131,9 @@ namespace AS_02
       h__AS02Writer();
 
     public:
-      AS_02::MXF::OP1aIndexBodyPartion*  m_CurrentIndexBodyPartition;
-      ui64_t     m_BodyOffset;
-      ui32_t     m_PartitionSpace;
+      AS02IndexWriter m_IndexWriter;
+      ui32_t     m_PartitionSpace;  // edit units per partition
       IndexStrategy_t    m_IndexStrategy; //Shim parameter index_strategy_frame/clip
-      std::vector<Partition*> m_BodyPartList;
 
       h__AS02Writer(const Dictionary&);
       virtual ~h__AS02Writer();
@@ -119,9 +144,8 @@ namespace AS_02
 			       const ASDCP::UL& DataDefinition, const ASDCP::Rational& EditRate,
 			       ui32_t TCFrameRate, ui32_t BytesPerEditUnit = 0);
 
-      Result_t CreateBodyPart(const ASDCP::MXF::Rational& EditRate, ui32_t BytesPerEditUnit);
-      Result_t CreateBodyPartPair();
-      Result_t CompleteIndexBodyPart();
+      Result_t WriteEKLVPacket(const ASDCP::FrameBuffer& FrameBuf,const byte_t* EssenceUL,
+			       AESEncContext* Ctx, HMACContext* HMAC);
 
       Result_t WriteAS02Footer();
     };

@@ -128,10 +128,23 @@ namespace ASDCP
 
   Result_t MD_to_WriterInfo(MXF::Identification*, WriterInfo&);
   Result_t MD_to_CryptoInfo(MXF::CryptographicContext*, WriterInfo&, const Dictionary&);
+
   Result_t EncryptFrameBuffer(const ASDCP::FrameBuffer&, ASDCP::FrameBuffer&, AESEncContext*);
   Result_t DecryptFrameBuffer(const ASDCP::FrameBuffer&, ASDCP::FrameBuffer&, AESDecContext*);
+
+  Result_t MD_to_JP2K_PDesc(const ASDCP::MXF::RGBAEssenceDescriptor&  EssenceDescriptor,
+			    const ASDCP::MXF::JPEG2000PictureSubDescriptor& EssenceSubDescriptor,
+			    const ASDCP::Rational& EditRate, const ASDCP::Rational& SampleRate,
+			    ASDCP::JP2K::PictureDescriptor& PDesc);
+
+  Result_t JP2K_PDesc_to_MD(const JP2K::PictureDescriptor& PDesc,
+			    const ASDCP::Dictionary& dict,
+			    ASDCP::MXF::RGBAEssenceDescriptor *EssenceDescriptor,
+			    ASDCP::MXF::JPEG2000PictureSubDescriptor *EssenceSubDescriptor);
+
   Result_t PCM_ADesc_to_MD(PCM::AudioDescriptor& ADesc, ASDCP::MXF::WaveAudioDescriptor* ADescObj);
   Result_t MD_to_PCM_ADesc(ASDCP::MXF::WaveAudioDescriptor* ADescObj, PCM::AudioDescriptor& ADesc);
+
   void     AddDMScrypt(Partition& HeaderPart, SourcePackage& Package,
 		       WriterInfo& Descr, const UL& WrappingUL, const Dictionary*& Dict);
 
@@ -144,6 +157,7 @@ namespace ASDCP
 			     const ASDCP::WriterInfo& Info, ASDCP::FrameBuffer& CtFrameBuf, ui32_t& FramesWritten,
 			     ui64_t & StreamOffset, const ASDCP::FrameBuffer& FrameBuf, const byte_t* EssenceUL,
 			     AESEncContext* Ctx, HMACContext* HMAC);
+
 
   //
  class KLReader : public ASDCP::KLVPacket
@@ -338,8 +352,9 @@ namespace ASDCP
 	}
       };
       
-
+      //------------------------------------------------------------------------------------------
       //
+
       //
       template <class ClipT>
 	struct TrackSet
@@ -433,7 +448,9 @@ namespace ASDCP
 	inline Result_t Goto_FINAL()   { Goto_body(ST_RUNNING, ST_FINAL); }
       };
 
+      //------------------------------------------------------------------------------------------
       //
+
       //
       template <class HeaderType>
 	class TrackFileWriter
@@ -472,7 +489,9 @@ namespace ASDCP
 	    default_md_object_init();
 	  }
 
-	virtual ~TrackFileWriter() {}
+	virtual ~TrackFileWriter() {
+	  Close();
+	}
 
 	const MXF::RIP& GetRIP() const { return m_RIP; }
 
@@ -724,13 +743,6 @@ namespace ASDCP
 	  m_FilePackage->Descriptor = m_EssenceDescriptor->InstanceUID;
 	}
 
-	//	
-	Result_t WriteEKLVPacket(const ASDCP::FrameBuffer& FrameBuf,const byte_t* EssenceUL, AESEncContext* Ctx, HMACContext* HMAC)
-	{
-	  return Write_EKLV_Packet(m_File, *m_Dict, m_HeaderPart, m_Info, m_CtFrameBuf, m_FramesWritten,
-				   m_StreamOffset, FrameBuf, EssenceUL, Ctx, HMAC);
-	}
-
 	//
 	void Close()
 	{
@@ -740,6 +752,9 @@ namespace ASDCP
       };
       
   }/// namespace MXF
+
+  //------------------------------------------------------------------------------------------
+  //
 
   //
   class h__ASDCPReader : public MXF::TrackFileReader<OP1aHeader, OPAtomIndexFooter>
@@ -773,14 +788,15 @@ namespace ASDCP
       h__ASDCPWriter(const Dictionary&);
       virtual ~h__ASDCPWriter();
 
-      Result_t CreateBodyPart(const MXF::Rational& EditRate, ui32_t BytesPerEditUnit = 0);
-
       // all the above for a single source clip
       Result_t WriteASDCPHeader(const std::string& PackageLabel, const UL& WrappingUL,
 				const std::string& TrackName, const UL& EssenceUL,
 				const UL& DataDefinition, const MXF::Rational& EditRate,
 				ui32_t TCFrameRate, ui32_t BytesPerEditUnit = 0);
 
+      Result_t CreateBodyPart(const MXF::Rational& EditRate, ui32_t BytesPerEditUnit = 0);
+      Result_t WriteEKLVPacket(const ASDCP::FrameBuffer& FrameBuf,const byte_t* EssenceUL,
+			       AESEncContext* Ctx, HMACContext* HMAC);
       Result_t WriteASDCPFooter();
     };
 

@@ -26,8 +26,6 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 # THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-ACLOCAL_AMFLAGS = -I m4
-
 # Allow for configure's changes to this makefile
 AM_CPPFLAGS =
 AM_LDFLAGS =
@@ -70,7 +68,7 @@ include_HEADERS += \
 nodist_include_HEADERS = TimedText_Transform.h
 endif
 
-if AS_02_USE
+if USE_AS_02
 include_HEADERS		+= AS_02.h
 endif
 
@@ -78,7 +76,7 @@ endif
 
 lib_LTLIBRARIES = libkumu.la libasdcp.la
 
-if AS_02_USE
+if USE_AS_02
 lib_LTLIBRARIES		+= libas02.la
 endif
 
@@ -121,16 +119,15 @@ libasdcp_la_LDFLAGS = -release @VERSION@
 libasdcp_la_LIBADD = libkumu.la
 libasdcp_la_CPPFLAGS = -DASDCP_PLATFORM=\"@host@\"
 
-if AS_02_USE
+if USE_AS_02
 # sources for as-02 library
 libas02_la_SOURCES	= \
 	AS_02.h \
-	AS_02_MXF.cpp \
-	AS_02_JP2K.cpp \
-	AS_02_PCM.cpp \
+	AS_02_internal.h \
 	h__02_Reader.cpp \
 	h__02_Writer.cpp \
-	AS_02_internal.h
+	AS_02_JP2K.cpp \
+	AS_02_PCM.cpp
 
 libas02_la_LDFLAGS = -release @VERSION@
 libas02_la_LIBADD = libasdcp.la libkumu.la
@@ -182,7 +179,7 @@ bin_PROGRAMS = \
 	j2c-test blackwave klvwalk wavesplit \
 	kmfilegen kmrandgen kmuuidgen
 
-if AS_02_USE
+if USE_AS_02
 bin_PROGRAMS += \
 	as-02-wrap \
 	as-02-unwrap
@@ -226,7 +223,7 @@ wavesplit_LDADD = libasdcp.la
 j2c_test_SOURCES = j2c-test.cpp
 j2c_test_LDADD = libasdcp.la
 
-if AS_02_USE
+if USE_AS_02
 as_02_wrap_SOURCES = as-02-wrap.cpp
 as_02_wrap_LDADD = libas02.la
 
