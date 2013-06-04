@@ -84,10 +84,10 @@ public:
   ASDCP::Result_t    ReadFrame(ui32_t, ASDCP::PCM::FrameBuffer&, ASDCP::AESDecContext*, ASDCP::HMACContext*);
 
   
-  Result_t OpenMXFRead(const char* filename);
+  ///  Result_t OpenMXFRead(const char* filename);
   // positions file before reading
-  Result_t ReadEKLVFrame(ui32_t FrameNum, ASDCP::FrameBuffer& FrameBuf,
-			 const byte_t* EssenceUL, AESDecContext* Ctx, HMACContext* HMAC);
+  ///  Result_t ReadEKLVFrame(ui32_t FrameNum, ASDCP::FrameBuffer& FrameBuf,
+  ///			 const byte_t* EssenceUL, AESDecContext* Ctx, HMACContext* HMAC);
 
   // reads from current position
   Result_t ReadEKLVPacket(ui32_t FrameNum, ui32_t SequenceNum, ASDCP::FrameBuffer& FrameBuf,
@@ -332,9 +332,9 @@ public:
   //Result_t CompleteIndexBodyPart();
 
   // reimplement these functions in AS_02_PCM to support modifications for AS-02
-  Result_t WriteEKLVPacket(const ASDCP::FrameBuffer& FrameBuf,
-			   const byte_t* EssenceUL, AESEncContext* Ctx, HMACContext* HMAC);
-  Result_t WriteAS02Footer();
+  //  Result_t WriteEKLVPacket(const ASDCP::FrameBuffer& FrameBuf,
+  //			   const byte_t* EssenceUL, AESEncContext* Ctx, HMACContext* HMAC);
+  //  Result_t WriteAS02Footer();
 
 };
 
