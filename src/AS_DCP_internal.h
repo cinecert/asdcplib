@@ -142,6 +142,16 @@ namespace ASDCP
 			    ASDCP::MXF::RGBAEssenceDescriptor *EssenceDescriptor,
 			    ASDCP::MXF::JPEG2000PictureSubDescriptor *EssenceSubDescriptor);
 
+  Result_t MD_to_JP2K_PDesc(const ASDCP::MXF::CDCIEssenceDescriptor&  EssenceDescriptor,
+			    const ASDCP::MXF::JPEG2000PictureSubDescriptor& EssenceSubDescriptor,
+			    const ASDCP::Rational& EditRate, const ASDCP::Rational& SampleRate,
+			    ASDCP::JP2K::PictureDescriptor& PDesc);
+
+  Result_t JP2K_PDesc_to_MD(const JP2K::PictureDescriptor& PDesc,
+			    const ASDCP::Dictionary& dict,
+			    ASDCP::MXF::CDCIEssenceDescriptor *EssenceDescriptor,
+			    ASDCP::MXF::JPEG2000PictureSubDescriptor *EssenceSubDescriptor);
+
   Result_t PCM_ADesc_to_MD(PCM::AudioDescriptor& ADesc, ASDCP::MXF::WaveAudioDescriptor* ADescObj);
   Result_t MD_to_PCM_ADesc(ASDCP::MXF::WaveAudioDescriptor* ADescObj, PCM::AudioDescriptor& ADesc);
 
@@ -308,7 +318,7 @@ namespace ASDCP
 	      result = m_File.Seek(FilePosition);
 	    }
 
-	  if( KM_SUCCESS(result) )
+	  if ( KM_SUCCESS(result) )
 	    result = ReadEKLVPacket(FrameNum, FrameNum + 1, FrameBuf, EssenceUL, Ctx, HMAC);
 
 	  return result;
@@ -464,7 +474,6 @@ namespace ASDCP
 	ui32_t             m_HeaderSize;
 	HeaderType         m_HeaderPart;
 	RIP                m_RIP;
-	ui64_t             m_EssenceStart;
 
 	MaterialPackage*   m_MaterialPackage;
 	SourcePackage*     m_FilePackage;
@@ -483,7 +492,7 @@ namespace ASDCP
 
       TrackFileWriter(const Dictionary& d) :
 	m_Dict(&d), m_HeaderPart(m_Dict), m_RIP(m_Dict),
-	  m_HeaderSize(0), m_EssenceStart(0), m_EssenceDescriptor(0),
+	  m_HeaderSize(0), m_EssenceDescriptor(0),
 	  m_FramesWritten(0), m_StreamOffset(0)
 	  {
 	    default_md_object_init();

@@ -68,107 +68,34 @@ namespace AS_02
   using Kumu::Result_t;
 
   namespace MXF {
-#if 0
     //
-    class OP1aIndexBodyPartion : public ASDCP::MXF::Partition
+    class AS02IndexReader : public ASDCP::MXF::Partition
     {
-      ASDCP::MXF::IndexTableSegment*  m_CurrentSegment;
-      ASDCP::FrameBuffer  m_Buffer;
-      ASDCP::MXF::Rational m_EditRate;
-      ui32_t				klv_fill_size;
+      Kumu::ByteString m_IndexSegmentData;
+      ui32_t m_Duration;
 
-      ASDCP_NO_COPY_CONSTRUCT(OP1aIndexBodyPartion);
+      //      ui32_t              m_BytesPerEditUnit;
 
-    public:
-      const ASDCP::Dictionary*&  m_Dict;
-      Kumu::fpos_t        m_ECOffset;
-      ASDCP::IPrimerLookup*      m_Lookup;
-
-      ui32_t             m_BytesPerEditUnit;
-      ui32_t             m_FramesWritten;
-      
-      OP1aIndexBodyPartion(const ASDCP::Dictionary*&);
-      virtual ~OP1aIndexBodyPartion();
-      virtual Result_t InitFromFile(const Kumu::FileReader& Reader);
-      virtual Result_t InitFromBuffer(const byte_t* p, ui32_t l);
-      virtual Result_t WriteToFile(Kumu::FileWriter& Writer, ASDCP::UL& PartitionLabel);
-      virtual void     Dump(FILE* = 0);
-
-      virtual bool Lookup(ui32_t frame_num, ASDCP::MXF::IndexTableSegment::IndexEntry&,ui32_t&) const;
-      virtual void PushIndexEntry(const ASDCP::MXF::IndexTableSegment::IndexEntry&);
-      virtual void SetIndexParamsCBR(ASDCP::IPrimerLookup* lookup, ui32_t size, const ASDCP::MXF::Rational& Rate);
-      virtual void SetIndexParamsVBR(ASDCP::IPrimerLookup* lookup, const ASDCP::MXF::Rational& Rate, Kumu::fpos_t offset);
-
-      //new
-      virtual ui64_t Duration();
-      virtual Result_t FillWriteToFile(Kumu::FileWriter& Writer, ui32_t numberOfIndexEntries);
-
-      //new for PCM
-      virtual void PCMSetIndexParamsCBR(ui32_t sizeFirst, ui32_t sizeOthers);
-      virtual void PCMIndexLookup(ui32_t frame_num, ASDCP::MXF::IndexTableSegment::IndexEntry& Entry) const;
-      
-    };
-
-    //
-    class OP1aIndexFooter : public ASDCP::MXF::Partition
-    {
-      ASDCP::MXF::IndexTableSegment*  m_CurrentSegment;
-      ASDCP::FrameBuffer  m_Buffer;
-      ui32_t              m_BytesPerEditUnit;
-      ASDCP::MXF::Rational m_EditRate;
-      ui32_t              m_BodySID;
-      ASDCP_NO_COPY_CONSTRUCT(OP1aIndexFooter);
-      OP1aIndexFooter();
-
-    public:
-      const ASDCP::Dictionary*&   m_Dict;
-      Kumu::fpos_t        m_ECOffset;
-      ASDCP::IPrimerLookup*      m_Lookup;
-
-      OP1aIndexFooter(const ASDCP::Dictionary*&);
-      virtual ~OP1aIndexFooter();
-      virtual Result_t InitFromFile(const Kumu::FileReader& Reader);
-      virtual Result_t InitFromPartitionBuffer(const byte_t* p, ui32_t l);
-      virtual Result_t InitFromBuffer(const byte_t* p, ui32_t l);
-      virtual Result_t WriteToFile(Kumu::FileWriter& Writer, ui64_t duration);
-      virtual void     Dump(FILE* = 0);
-
-      virtual Result_t Lookup(ui32_t frame_num, ASDCP::MXF::IndexTableSegment::IndexEntry&) const;
-      virtual void     PushIndexEntry(const ASDCP::MXF::IndexTableSegment::IndexEntry&);
-      virtual void     SetIndexParamsCBR(ASDCP::IPrimerLookup* lookup, ui32_t size, const ASDCP::MXF::Rational& Rate);
-      virtual void     SetIndexParamsVBR(ASDCP::IPrimerLookup* lookup, const ASDCP::MXF::Rational& Rate, Kumu::fpos_t offset);
-    };
-
-#endif
-
-    //
-    class AS02IndexReader
-    {
-      ASDCP::MXF::IndexTableSegment*  m_CurrentSegment;
-      ASDCP::FrameBuffer  m_Buffer;
-      ui32_t              m_BytesPerEditUnit;
-      ASDCP::Rational     m_EditRate;
-      ui32_t              m_BodySID;
+      Result_t InitFromBuffer(const byte_t* p, ui32_t l);
 
       ASDCP_NO_COPY_CONSTRUCT(AS02IndexReader);
       AS02IndexReader();
 	  
     public:
       const ASDCP::Dictionary*&   m_Dict;
-      Kumu::fpos_t        m_ECOffset;
+      Kumu::fpos_t  m_ECOffset;
       ASDCP::IPrimerLookup *m_Lookup;
     
       AS02IndexReader(const ASDCP::Dictionary*&);
       virtual ~AS02IndexReader();
     
-      virtual Result_t InitFromFile(const Kumu::FileReader& Reader);
-      virtual void     Dump(FILE* = 0);
-    
-      virtual Result_t GetMDObjectByID(const Kumu::UUID&, ASDCP::MXF::InterchangeObject** = 0);
-      virtual Result_t GetMDObjectByType(const byte_t*, ASDCP::MXF::InterchangeObject** = 0);
-      virtual Result_t GetMDObjectsByType(const byte_t* ObjectID, std::list<ASDCP::MXF::InterchangeObject*>& ObjectList);
-    
-      virtual Result_t Lookup(ui32_t frame_num, ASDCP::MXF::IndexTableSegment::IndexEntry&) const;
+      Result_t InitFromFile(const Kumu::FileReader& reader, const ASDCP::MXF::RIP& rip);
+      ui32_t GetDuration() const;
+      void     Dump(FILE* = 0);
+      Result_t GetMDObjectByID(const Kumu::UUID&, ASDCP::MXF::InterchangeObject** = 0);
+      Result_t GetMDObjectByType(const byte_t*, ASDCP::MXF::InterchangeObject** = 0);
+      Result_t GetMDObjectsByType(const byte_t* ObjectID, std::list<ASDCP::MXF::InterchangeObject*>& ObjectList);
+      Result_t Lookup(ui32_t frame_num, ASDCP::MXF::IndexTableSegment::IndexEntry&) const;
     };
 
   } // namespace MXF

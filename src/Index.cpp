@@ -136,7 +136,7 @@ ASDCP::MXF::IndexTableSegment::Dump(FILE* stream)
 
   fprintf(stream, "  DeltaEntryArray:\n");  DeltaEntryArray.Dump(stream);
 
-  if ( IndexEntryArray.size() < 100 )
+  if ( IndexEntryArray.size() < 1000 )
     {
       fprintf(stream, "  IndexEntryArray:\n");
       IndexEntryArray.Dump(stream);

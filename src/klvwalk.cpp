@@ -225,7 +225,7 @@ main(int argc, const char** argv)
 	    }
 	  else
 	    {
-	      DefaultLogSink().Error("ASDCP::h__Reader::OpenMXFRead, SeekToRIP failed\n");
+	      DefaultLogSink().Error("read_mxf SeekToRIP failed: %s\n", result.Label());
 	    }
 
 	  if ( ASDCP_SUCCESS(result) )
@@ -302,11 +302,13 @@ main(int argc, const char** argv)
 	    }
 	  else
 	    {
-	      DefaultLogSink().Error("ASDCP::h__Reader::OpenMXFRead, SeekToRIP failed\n");
+	      DefaultLogSink().Error("walk_parts SeekToRIP failed: %s\n", result.Label());
 	    }
 
 	  if ( ASDCP_SUCCESS(result) )
 	    {
+	      RIP.Dump();
+
 	      MXF::Array<MXF::RIP::Pair>::const_iterator i;
 	      for ( i = RIP.PairArray.begin(); i != RIP.PairArray.end(); ++i )
 		{

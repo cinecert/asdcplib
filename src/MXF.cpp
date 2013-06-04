@@ -58,7 +58,7 @@ ASDCP::MXF::SeekToRIP(const Kumu::FileReader& Reader)
   if ( ASDCP_SUCCESS(result)
        && end_pos < (SMPTE_UL_LENGTH+MXF_BER_LENGTH) )
     {
-      DefaultLogSink().Error("File is smaller than an KLV empty packet.\n");
+      DefaultLogSink().Error("File is smaller than an empty KLV packet.\n");
       result = RESULT_FAIL;
     }
 

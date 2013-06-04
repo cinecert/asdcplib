@@ -147,20 +147,26 @@ ASDCP::ATMOS::MXFReader::h__Reader::OpenRead(const char* filename)
   Result_t result = DCData::h__Reader::OpenRead(filename);
 
   if( ASDCP_SUCCESS(result) )
-  {
-
-    if (NULL == m_EssenceSubDescriptor)
     {
-      InterchangeObject* iObj = NULL;
-      result = m_HeaderPart.GetMDObjectByType(OBJ_TYPE_ARGS(DolbyAtmosSubDescriptor), &iObj);
-      m_EssenceSubDescriptor = static_cast<MXF::DolbyAtmosSubDescriptor*>(iObj);
-    }
+      
+      if (NULL == m_EssenceSubDescriptor)
+	{
+	  InterchangeObject* iObj = NULL;
+	  result = m_HeaderPart.GetMDObjectByType(OBJ_TYPE_ARGS(DolbyAtmosSubDescriptor), &iObj);
+	  m_EssenceSubDescriptor = static_cast<MXF::DolbyAtmosSubDescriptor*>(iObj);
+	  
+	  if ( iObj == 0 )
+	    {
+	      DefaultLogSink().Error("DolbyAtmosSubDescriptor object not found.\n");
+	      return RESULT_FORMAT;
+	    }
+	}
 
-    if ( ASDCP_SUCCESS(result) )
-    {
-      result = MD_to_Atmos_ADesc(m_ADesc);
+      if ( ASDCP_SUCCESS(result) )
+	{
+	  result = MD_to_Atmos_ADesc(m_ADesc);
+	}
     }
-  }
 
   return result;
 }

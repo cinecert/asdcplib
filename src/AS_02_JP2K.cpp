@@ -50,7 +50,8 @@ static std::string PICT_DEF_LABEL = "Image Track";
 
 class AS_02::JP2K::MXFReader::h__Reader : public AS_02::h__AS02Reader
 {
-  RGBAEssenceDescriptor*        m_EssenceDescriptor;
+  RGBAEssenceDescriptor*        m_RGBAEssenceDescriptor;
+  CDCIEssenceDescriptor*        m_CDCIEssenceDescriptor;
   JPEG2000PictureSubDescriptor* m_EssenceSubDescriptor;
   ASDCP::Rational               m_EditRate;
   ASDCP::Rational               m_SampleRate;
@@ -62,28 +63,48 @@ public:
   PictureDescriptor m_PDesc;        // codestream parameter list
 
   h__Reader(const Dictionary& d) :
-    AS_02::h__AS02Reader(d), m_EssenceDescriptor(0), m_EssenceSubDescriptor(0), m_Format(ESS_UNKNOWN) {}
+    AS_02::h__AS02Reader(d), m_RGBAEssenceDescriptor(0), m_CDCIEssenceDescriptor(0),
+    m_EssenceSubDescriptor(0), m_Format(ESS_UNKNOWN) {}
 
   virtual ~h__Reader() {}
 
-  Result_t    OpenRead(const char*, EssenceType_t);
+  Result_t    OpenRead(const char*);
   Result_t    ReadFrame(ui32_t, ASDCP::JP2K::FrameBuffer&, AESDecContext*, HMACContext*);
 };
 
 //
 Result_t
-AS_02::JP2K::MXFReader::h__Reader::OpenRead(const char* filename, ASDCP::EssenceType_t type)
+AS_02::JP2K::MXFReader::h__Reader::OpenRead(const char* filename)
 {
   Result_t result = OpenMXFRead(filename);
 
   if( ASDCP_SUCCESS(result) )
     {
       InterchangeObject* tmp_iobj = 0;
-      m_HeaderPart.GetMDObjectByType(OBJ_TYPE_ARGS(RGBAEssenceDescriptor), &tmp_iobj);
-      m_EssenceDescriptor = static_cast<RGBAEssenceDescriptor*>(tmp_iobj);
+
+      m_HeaderPart.GetMDObjectByType(OBJ_TYPE_ARGS(CDCIEssenceDescriptor), &tmp_iobj);
+      m_CDCIEssenceDescriptor = static_cast<CDCIEssenceDescriptor*>(tmp_iobj);
+
+      if ( m_CDCIEssenceDescriptor == 0 )
+	{
+	  m_HeaderPart.GetMDObjectByType(OBJ_TYPE_ARGS(RGBAEssenceDescriptor), &tmp_iobj);
+	  m_RGBAEssenceDescriptor = static_cast<RGBAEssenceDescriptor*>(tmp_iobj);
+	}
+
+      if ( m_CDCIEssenceDescriptor == 0 && m_RGBAEssenceDescriptor == 0 )
+	{
+	  DefaultLogSink().Error("RGBAEssenceDescriptor nor CDCIEssenceDescriptor found.\n");
+	  return RESULT_FORMAT;
+	}
 
       m_HeaderPart.GetMDObjectByType(OBJ_TYPE_ARGS(JPEG2000PictureSubDescriptor), &tmp_iobj);
       m_EssenceSubDescriptor = static_cast<JPEG2000PictureSubDescriptor*>(tmp_iobj);
+
+      if ( m_EssenceSubDescriptor == 0 )
+	{
+	  DefaultLogSink().Error("JPEG2000PictureSubDescriptor not found.\n");
+	  return RESULT_FORMAT;
+	}
 
       std::list<InterchangeObject*> ObjectList;
       m_HeaderPart.GetMDObjectsByType(OBJ_TYPE_ARGS(Track), ObjectList);
@@ -94,34 +115,23 @@ AS_02::JP2K::MXFReader::h__Reader::OpenRead(const char* filename, ASDCP::Essence
 	  return RESULT_FORMAT;
 	}
 
-      m_EditRate = ((Track*)ObjectList.front())->EditRate;
-      m_SampleRate = m_EssenceDescriptor->SampleRate;
-
-      if ( type == ASDCP::ESS_JPEG_2000 )
+      if ( m_CDCIEssenceDescriptor != 0 )
 	{
-	  if ( m_EditRate != m_SampleRate )
-	    {
-	      DefaultLogSink().Warn("EditRate and SampleRate do not match (%.03f, %.03f).\n",
-				    m_EditRate.Quotient(), m_SampleRate.Quotient());
-
-	      if ( m_EditRate == EditRate_24 && m_SampleRate == EditRate_48 )
-		{
-		  DefaultLogSink().Debug("File may contain JPEG Interop stereoscopic images.\n");
-		  return RESULT_SFORMAT;
-		}
-
-	      return RESULT_FORMAT;
-	    }
+	  m_EditRate = ((Track*)ObjectList.front())->EditRate;
+	  m_SampleRate = m_CDCIEssenceDescriptor->SampleRate;
+	  result = MD_to_JP2K_PDesc(*m_CDCIEssenceDescriptor, *m_EssenceSubDescriptor, m_EditRate, m_SampleRate, m_PDesc);
 	}
-      else
+      else if ( m_RGBAEssenceDescriptor != 0 )
 	{
-	  DefaultLogSink().Error("'type' argument unexpected: %x\n", type);
-	  return RESULT_STATE;
+	  m_EditRate = ((Track*)ObjectList.front())->EditRate;
+	  m_SampleRate = m_RGBAEssenceDescriptor->SampleRate;
+	  result = MD_to_JP2K_PDesc(*m_RGBAEssenceDescriptor, *m_EssenceSubDescriptor, m_EditRate, m_SampleRate, m_PDesc);
 	}
 
-      assert(m_EssenceDescriptor);
-      assert(m_EssenceSubDescriptor);
-      result = MD_to_JP2K_PDesc(*m_EssenceDescriptor, *m_EssenceSubDescriptor, m_EditRate, m_SampleRate, m_PDesc);
+      if ( m_PDesc.ContainerDuration == 0 )
+	{
+	  m_PDesc.ContainerDuration = m_IndexAccess.GetDuration();
+	}
     }
 
   return result;
@@ -203,7 +213,7 @@ AS_02::JP2K::MXFReader::RIP()
 Result_t
 AS_02::JP2K::MXFReader::OpenRead(const char* filename) const
 {
-  return m_Reader->OpenRead(filename, ASDCP::ESS_JPEG_2000);
+  return m_Reader->OpenRead(filename);
 }
 
 //
@@ -359,14 +369,13 @@ AS_02::JP2K::MXFWriter::h__Writer::SetSourceStream(const PictureDescriptor& PDes
 Result_t
 AS_02::JP2K::MXFWriter::h__Writer::WriteFrame(const ASDCP::JP2K::FrameBuffer& FrameBuf,
 		       AESEncContext* Ctx, HMACContext* HMAC)
-#if 1
 {
   Result_t result = RESULT_OK;
 
   if ( m_State.Test_READY() )
     result = m_State.Goto_RUNNING(); // first time through
  
-  ui64_t StreamOffset = m_StreamOffset;
+  ui64_t StreamOffset = m_StreamOffset; // m_StreamOffset will be changed by the call to WriteEKLVPacket
 
   if ( ASDCP_SUCCESS(result) )
     result = WriteEKLVPacket(FrameBuf, m_EssenceUL, Ctx, HMAC);
@@ -381,46 +390,6 @@ AS_02::JP2K::MXFWriter::h__Writer::WriteFrame(const ASDCP::JP2K::FrameBuffer& Fr
   m_FramesWritten++;
   return result;
 }
-#else
-{
-  Result_t result = RESULT_OK;
-
-  if ( m_State.Test_READY() ){
-    result = m_State.Goto_RUNNING(); // first time through
-  }
-  ui64_t StreamOffset = m_StreamOffset;
-
-  if ( ASDCP_SUCCESS(result) )
-    result = WriteEKLVPacket(FrameBuf, m_EssenceUL, Ctx, HMAC);
-
-  if ( ASDCP_SUCCESS(result) && add_index )
-    {
-      //create new Index and add it to the IndexTableSegment in the IndexPartition
-      IndexTableSegment::IndexEntry Entry;
-      Entry.StreamOffset = StreamOffset;
-      m_CurrentIndexBodyPartition->m_FramesWritten = m_FramesWritten;
-      m_CurrentIndexBodyPartition->PushIndexEntry(Entry);
-
-      //here we must check if the number of frames per partition are reached 
-      if(m_FramesWritten!=0 &&((m_FramesWritten+1) % m_PartitionSpace) == 0){
-	this->m_BodyOffset += m_StreamOffset;
-	//StreamOffset - Offset in bytes from the start of the Essence
-	//Container of first Essence Element in this Edit Unit of
-	//stored Essence within the Essence Container Stream
-	//this->m_StreamOffset = 0; ???
-
-	//Complete the Index-BodyPartion
-	result = CompleteIndexBodyPart();
-	  //Create new BodyPartions for Essence and Index
-	  result = CreateBodyPartPair();		 
-      }
-      //else do nothing, we must only insert the current frame
-      //else{}
-    }
-  m_FramesWritten++;
-  return result;
-}
-#endif
 
 // Closes the MXF file, writing the index and other closing information.
 //

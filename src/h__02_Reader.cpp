@@ -58,11 +58,194 @@ AS_02::default_md_object_init()
 }
 
 
+//---------------------------------------------------------------------------------
+//
+
+    
+AS_02::MXF::AS02IndexReader::AS02IndexReader(const ASDCP::Dictionary*& d) : m_Duration(0), ASDCP::MXF::Partition(m_Dict), m_Dict(d) {}
+AS_02::MXF::AS02IndexReader::~AS02IndexReader() {}
+
+//    
+Result_t
+AS_02::MXF::AS02IndexReader::InitFromFile(const Kumu::FileReader& reader, const ASDCP::MXF::RIP& rip)
+{
+  ASDCP::MXF::Array<ASDCP::MXF::RIP::Pair>::const_iterator i;
+
+  Result_t result = m_IndexSegmentData.Capacity(128*Kumu::Kilobyte);
+
+  for ( i = rip.PairArray.begin(); KM_SUCCESS(result) && i != rip.PairArray.end(); ++i )
+    {
+      reader.Seek(i->ByteOffset);
+      ASDCP::MXF::Partition plain_part(m_Dict);
+      result = plain_part.InitFromFile(reader);
+
+      if ( KM_SUCCESS(result) && plain_part.IndexByteCount > 0 )
+	{
+	  // slurp up the remainder of the footer
+	  ui32_t read_count = 0;
+
+	  assert (plain_part.IndexByteCount <= 0xFFFFFFFFL);
+	  ui32_t bytes_this_partition = (ui32_t)plain_part.IndexByteCount;
+
+	  result = m_IndexSegmentData.Capacity(m_IndexSegmentData.Length() + bytes_this_partition);
+
+	  if ( ASDCP_SUCCESS(result) )
+	    result = reader.Read(m_IndexSegmentData.Data() + m_IndexSegmentData.Length(),
+				 bytes_this_partition, &read_count);
+
+	  if ( ASDCP_SUCCESS(result) && read_count != bytes_this_partition )
+	    {
+	      DefaultLogSink().Error("Short read of footer partition: got %u, expecting %u\n",
+				     read_count, bytes_this_partition);
+	      return RESULT_FAIL;
+	    }
+
+	  if ( ASDCP_SUCCESS(result) )
+	    {
+	      result = InitFromBuffer(m_IndexSegmentData.RoData() + m_IndexSegmentData.Length(), bytes_this_partition);
+	      m_IndexSegmentData.Length(m_IndexSegmentData.Length() + bytes_this_partition);
+	    }
+	}
+    }
+
+  return result;
+}
+
+//
+ASDCP::Result_t
+AS_02::MXF::AS02IndexReader::InitFromBuffer(const byte_t* p, ui32_t l)
+{
+  Result_t result = RESULT_OK;
+  const byte_t* end_p = p + l;
+
+  while ( ASDCP_SUCCESS(result) && p < end_p )
+    {
+      // parse the packets and index them by uid, discard KLVFill items
+      InterchangeObject* object = CreateObject(m_Dict, p);
+      assert(object);
+
+      object->m_Lookup = m_Lookup;
+      result = object->InitFromBuffer(p, end_p - p);
+      p += object->PacketLength();
+
+      if ( ASDCP_SUCCESS(result) )
+	{
+	  m_PacketList->AddPacket(object); // takes ownership
+	}
+      else
+	{
+	  DefaultLogSink().Error("Error initializing packet\n");
+	  delete object;
+	}
+    }
+
+  if ( ASDCP_FAILURE(result) )
+    DefaultLogSink().Error("Failed to initialize AS02IndexReader\n");
+
+  std::list<InterchangeObject*>::const_iterator i;
+  
+  for ( i = m_PacketList->m_List.begin(); i != m_PacketList->m_List.end(); ++i )
+    {
+      if ( (*i)->IsA(OBJ_TYPE_ARGS(IndexTableSegment)) )
+	{
+	  m_Duration += static_cast<IndexTableSegment*>(*i)->IndexDuration;
+	}
+    }
+
+  return result;
+}
+
+//
+void
+AS_02::MXF::AS02IndexReader::Dump(FILE* stream)
+{
+  if ( stream == 0 )
+    stream = stderr;
+
+  std::list<InterchangeObject*>::iterator i = m_PacketList->m_List.begin();
+  for ( ; i != m_PacketList->m_List.end(); ++i )
+    (*i)->Dump(stream);
+}
+
+//
+Result_t
+AS_02::MXF::AS02IndexReader::GetMDObjectByID(const UUID& object_id, InterchangeObject** Object)
+{
+  return m_PacketList->GetMDObjectByID(object_id, Object);
+}
+
+//
+Result_t
+AS_02::MXF::AS02IndexReader::GetMDObjectByType(const byte_t* type_id, InterchangeObject** Object)
+{
+  InterchangeObject* TmpObject;
+
+  if ( Object == 0 )
+    Object = &TmpObject;
+
+  return m_PacketList->GetMDObjectByType(type_id, Object);
+}
+
+//
+Result_t
+AS_02::MXF::AS02IndexReader::GetMDObjectsByType(const byte_t* ObjectID, std::list<ASDCP::MXF::InterchangeObject*>& ObjectList)
+{
+  return m_PacketList->GetMDObjectsByType(ObjectID, ObjectList);
+}
+
+
+//
+ui32_t
+AS_02::MXF::AS02IndexReader::GetDuration() const
+{
+  return m_Duration;
+}
+   
+
+//
+Result_t
+AS_02::MXF::AS02IndexReader::Lookup(ui32_t frame_num, ASDCP::MXF::IndexTableSegment::IndexEntry& Entry) const
+{
+  std::list<InterchangeObject*>::iterator li;
+  for ( li = m_PacketList->m_List.begin(); li != m_PacketList->m_List.end(); li++ )
+    {
+      if ( (*li)->IsA(OBJ_TYPE_ARGS(IndexTableSegment)) )
+	{
+	  IndexTableSegment* Segment = (IndexTableSegment*)(*li);
+	  ui64_t start_pos = Segment->IndexStartPosition;
+
+	  if ( Segment->EditUnitByteCount > 0 )
+	    {
+	      if ( m_PacketList->m_List.size() > 1 )
+		DefaultLogSink().Error("Unexpected multiple IndexTableSegment in CBR file\n");
+
+	      if ( ! Segment->IndexEntryArray.empty() )
+		DefaultLogSink().Error("Unexpected IndexEntryArray contents in CBR file\n");
+
+	      Entry.StreamOffset = (ui64_t)frame_num * Segment->EditUnitByteCount;
+	      return RESULT_OK;
+	    }
+	  else if ( (ui64_t)frame_num >= start_pos
+		    && (ui64_t)frame_num < (start_pos + Segment->IndexDuration) )
+	    {
+	      ui64_t tmp = frame_num - start_pos;
+	      assert(tmp <= 0xFFFFFFFFL);
+	      Entry = Segment->IndexEntryArray[(ui32_t) tmp];
+	      return RESULT_OK;
+	    }
+	}
+    }
+
+  return RESULT_FAIL;
+}
+
+
+//---------------------------------------------------------------------------------
+//
 
 
 AS_02::h__AS02Reader::h__AS02Reader(const ASDCP::Dictionary& d) : ASDCP::MXF::TrackFileReader<ASDCP::MXF::OP1aHeader, AS_02::MXF::AS02IndexReader>(d) {}
 AS_02::h__AS02Reader::~h__AS02Reader() {}
-
 
 
 // AS-DCP method of opening an MXF file for read
@@ -77,10 +260,11 @@ AS_02::h__AS02Reader::OpenMXFRead(const char* filename)
   if( KM_SUCCESS(result) )
     {
       //
+      UL OP1a_ul(m_Dict->ul(MDD_OP1a));
       InterchangeObject* Object;
       m_Info.LabelSetType = LS_MXF_SMPTE;
 
-      if ( ! m_HeaderPart.OperationalPattern.ExactMatch(SMPTE_390_OPAtom_Entry().ul) )
+      if ( m_HeaderPart.OperationalPattern != OP1a_ul )
 	{
 	  char strbuf[IdentBufferLen];
 	  const MDDEntry* Entry = m_Dict->FindUL(m_HeaderPart.OperationalPattern.Value());
@@ -107,14 +291,8 @@ AS_02::h__AS02Reader::OpenMXFRead(const char* filename)
   if ( KM_SUCCESS(result) )
     {
       m_HeaderPart.BodyOffset = m_File.Tell();
-
-      result = m_File.Seek(m_HeaderPart.FooterPartition);
-
-      if ( ASDCP_SUCCESS(result) )
-	{
-	  m_IndexAccess.m_Lookup = &m_HeaderPart.m_Primer;
-	  result = m_IndexAccess.InitFromFile(m_File);
-	}
+      m_IndexAccess.m_Lookup = &m_HeaderPart.m_Primer;
+      result = m_IndexAccess.InitFromFile(m_File, m_RIP);
     }
 
   m_File.Seek(m_HeaderPart.BodyOffset);

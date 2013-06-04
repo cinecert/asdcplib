@@ -251,6 +251,7 @@ AS_02::h__AS02Writer::WriteAS02Header(const std::string& PackageLabel, const ASD
   AddEssenceDescriptor(WrappingUL);
   m_RIP.PairArray.push_back(RIP::Pair(0, 0)); // Header partition RIP entry
   m_IndexWriter.OperationalPattern = m_HeaderPart.OperationalPattern;
+  m_IndexWriter.EssenceContainers = m_HeaderPart.EssenceContainers;
 
   Result_t result = m_HeaderPart.WriteToFile(m_File, m_HeaderSize);
 
@@ -273,10 +274,10 @@ AS_02::h__AS02Writer::WriteAS02Header(const std::string& PackageLabel, const ASD
       Partition body_part(m_Dict);
       body_part.BodySID = 1;
       body_part.OperationalPattern = m_HeaderPart.OperationalPattern;
+      body_part.EssenceContainers = m_HeaderPart.EssenceContainers;
       body_part.ThisPartition = m_File.Tell();
       result = body_part.WriteToFile(m_File, body_ul);
       m_RIP.PairArray.push_back(RIP::Pair(1, body_part.ThisPartition)); // Second RIP Entry
-
     }
 
   return result;
@@ -293,12 +294,13 @@ AS_02::h__AS02Writer::WriteEKLVPacket(const ASDCP::FrameBuffer& FrameBuf,const b
     {
       m_IndexWriter.ThisPartition = m_File.Tell();
       m_IndexWriter.WriteToFile(m_File);
-      m_RIP.PairArray.push_back(RIP::Pair(129, m_IndexWriter.ThisPartition));
+      m_RIP.PairArray.push_back(RIP::Pair(0, m_IndexWriter.ThisPartition));
 
       UL body_ul(m_Dict->ul(MDD_ClosedCompleteBodyPartition));
       Partition body_part(m_Dict);
       body_part.BodySID = 1;
       body_part.OperationalPattern = m_HeaderPart.OperationalPattern;
+      body_part.EssenceContainers = m_HeaderPart.EssenceContainers;
       body_part.ThisPartition = m_File.Tell();
       result = body_part.WriteToFile(m_File, body_ul);
       m_RIP.PairArray.push_back(RIP::Pair(1, body_part.ThisPartition));
@@ -318,7 +320,7 @@ AS_02::h__AS02Writer::WriteAS02Footer()
     {
       m_IndexWriter.ThisPartition = m_File.Tell();
       m_IndexWriter.WriteToFile(m_File);
-      m_RIP.PairArray.push_back(RIP::Pair(129, m_IndexWriter.ThisPartition));
+      m_RIP.PairArray.push_back(RIP::Pair(0, m_IndexWriter.ThisPartition));
     }
 
   // update all Duration properties
@@ -363,15 +365,15 @@ AS_02::h__AS02Writer::WriteAS02Footer()
 
       for ( i = m_RIP.PairArray.begin(); ASDCP_SUCCESS(result) && i != m_RIP.PairArray.end(); ++i )
 	{
-	  if ( i->BodySID == 0 )
-	    continue;
-
+	  ASDCP::MXF::Partition plain_part(m_Dict);
 	  result = m_File.Seek(i->ByteOffset);
 
 	  if ( ASDCP_SUCCESS(result) )
+	    result = plain_part.InitFromFile(m_File);
+      
+	  if ( KM_SUCCESS(result)
+	       && ( plain_part.IndexSID > 0 || plain_part.BodySID > 0 ) )
 	    {
-	      ASDCP::MXF::Partition plain_part(m_Dict);
-	      plain_part.InitFromFile(m_File);
 	      plain_part.PreviousPartition = previous_partition;
 	      plain_part.FooterPartition = footer_part.ThisPartition;
 	      previous_partition = plain_part.ThisPartition;

@@ -251,10 +251,16 @@ ASDCP::PCM::MXFReader::h__Reader::OpenRead(const char* filename)
 
   if( ASDCP_SUCCESS(result) )
     {
-      InterchangeObject* Object;
+      InterchangeObject* Object = 0
+;
       if ( ASDCP_SUCCESS(m_HeaderPart.GetMDObjectByType(OBJ_TYPE_ARGS(WaveAudioDescriptor), &Object)) )
 	{
-	  assert(Object);
+	  if ( Object == 0 )
+	    {
+	      DefaultLogSink().Error("WaveAudioDescriptor object not found.\n");
+	      return RESULT_FORMAT;
+	    }
+
 	  result = MD_to_PCM_ADesc((MXF::WaveAudioDescriptor*)Object, m_ADesc);
 	}
     }

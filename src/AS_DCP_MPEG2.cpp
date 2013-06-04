@@ -187,10 +187,16 @@ ASDCP::MPEG2::MXFReader::h__Reader::OpenRead(const char* filename)
 
   if( ASDCP_SUCCESS(result) )
     {
-      InterchangeObject* Object;
+      InterchangeObject* Object = 0;
+
       if ( ASDCP_SUCCESS(m_HeaderPart.GetMDObjectByType(OBJ_TYPE_ARGS(MPEG2VideoDescriptor), &Object)) )
 	{
-	  assert(Object);
+	  if ( Object == 0 )
+	    {
+	      DefaultLogSink().Error("MPEG2VideoDescriptor object not found.\n");
+	      return RESULT_FORMAT;
+	    }
+
 	  result = MD_to_MPEG2_VDesc((MXF::MPEG2VideoDescriptor*)Object, m_VDesc);
 	}
     }

@@ -96,19 +96,25 @@ ASDCP::DCData::h__Reader::OpenRead(const char* filename)
   Result_t result = OpenMXFRead(filename);
 
   if( ASDCP_SUCCESS(result) )
-  {
-    if (NULL == m_EssenceDescriptor)
     {
-      InterchangeObject* iObj = NULL;
-      result = m_HeaderPart.GetMDObjectByType(OBJ_TYPE_ARGS(DCDataDescriptor), &iObj);
-      m_EssenceDescriptor = static_cast<MXF::DCDataDescriptor*>(iObj);
-    }
+      if (NULL == m_EssenceDescriptor)
+	{
+	  InterchangeObject* iObj = NULL;
+	  result = m_HeaderPart.GetMDObjectByType(OBJ_TYPE_ARGS(DCDataDescriptor), &iObj);
+	  m_EssenceDescriptor = static_cast<MXF::DCDataDescriptor*>(iObj);
 
-    if ( ASDCP_SUCCESS(result) )
-    {
-      result = MD_to_DCData_DDesc(m_DDesc);
+	  if ( m_EssenceDescriptor == 0 )
+	    {
+	      DefaultLogSink().Error("DCDataDescriptor object not found.\n");
+	      return RESULT_FORMAT;
+	    }
+	}
+
+      if ( ASDCP_SUCCESS(result) )
+	{
+	  result = MD_to_DCData_DDesc(m_DDesc);
+	}
     }
-  }
 
   // check for sample/frame rate sanity
   if ( ASDCP_SUCCESS(result)

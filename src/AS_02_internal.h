@@ -50,26 +50,6 @@ namespace AS_02
 
   void default_md_object_init();
 
-  static void CalculateIndexPartitionSize(ui32_t& size,ui32_t numberOfIndexEntries)
-  {
-    if(numberOfIndexEntries){
-      //Partition::ArchiveSize(); HeaderSize = 124 bytes
-      //KLV-Item = 20 bytes
-      //ItemSize IndexEntry = 11 bytes
-      //number of IndexEntries - parameter
-      //IndexEntryArray = 12 bytes
-      //size for other Elements(PosTableCount etc.) = 108 bytes
-      //see Index.cpp ASDCP::MXF::IndexTableSegment::WriteToTLVSet(TLVWriter& TLVSet) how this is computed 
-      size = 124 + 20 + 11 * numberOfIndexEntries + 12 +108;
-      size += 20;//because maybe we must fill the last partition, minimum required space for KLV-Item
-    }
-    else{
-      //Partition HeaderSize = 124 bytes
-      //KLV-Item = 20 bytes
-      //244 for 2 IndexTableSegments
-      size = 124 + 20 + 244;
-    }
-  }
 
   //
   class AS02IndexWriter : public ASDCP::MXF::Partition
@@ -110,8 +90,6 @@ namespace AS_02
       //      ui64_t     m_EssenceStart;
       //      std::vector<Partition*> m_BodyPartList;
       //      ui32_t     m_start_pos;
-      //      ui32_t     m_PartitionSpace;
-      //      IndexStrategy_t    m_IndexStrategy; //Shim parameter index_strategy_frame/clip
 
       h__AS02Reader(const ASDCP::Dictionary&);
       virtual ~h__AS02Reader();

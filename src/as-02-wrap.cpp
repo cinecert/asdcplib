@@ -460,7 +460,7 @@ write_PCM_file(CommandOptions& Options)
   AESEncContext*    Context = 0;
   HMACContext*      HMAC = 0;
   PCMParserList     Parser;
-  PCM::MXFWriter    Writer;
+  AS_02::PCM::MXFWriter    Writer;
   PCM::FrameBuffer  FrameBuffer;
   PCM::AudioDescriptor ADesc;
   byte_t            IV_buf[CBC_BLOCK_SIZE];

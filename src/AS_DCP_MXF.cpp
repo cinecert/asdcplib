@@ -164,6 +164,8 @@ ASDCP::Result_t
 ASDCP::EssenceType(const char* filename, EssenceType_t& type)
 {
   const Dictionary* m_Dict = &DefaultCompositeDict();
+  InterchangeObject* md_object = 0;
+
   assert(m_Dict);
 
   ASDCP_TEST_NULL_STR(filename);
@@ -178,26 +180,48 @@ ASDCP::EssenceType(const char* filename, EssenceType_t& type)
   if ( ASDCP_SUCCESS(result) )
     {
       type = ESS_UNKNOWN;
-      if ( ASDCP_SUCCESS(TestHeader.GetMDObjectByType(OBJ_TYPE_ARGS(RGBAEssenceDescriptor))) )
+      if ( ASDCP_SUCCESS(TestHeader.GetMDObjectByType(OBJ_TYPE_ARGS(JPEG2000PictureSubDescriptor))) )
 	{
 	  if ( ASDCP_SUCCESS(TestHeader.GetMDObjectByType(OBJ_TYPE_ARGS(StereoscopicPictureSubDescriptor))) )
-	    type = ESS_JPEG_2000_S;
+	    {
+	      type = ESS_JPEG_2000_S;
+	    }
 	  else
-	    type = ESS_JPEG_2000;
+	    {
+	      type = ESS_JPEG_2000;
+	    }
 	}
-      else if ( ASDCP_SUCCESS(TestHeader.GetMDObjectByType(OBJ_TYPE_ARGS(WaveAudioDescriptor))) )
-	type = ESS_PCM_24b_48k;
+      else if ( ASDCP_SUCCESS(TestHeader.GetMDObjectByType(OBJ_TYPE_ARGS(WaveAudioDescriptor), &md_object)) )
+	{
+	  assert(md_object);
+	  if ( static_cast<ASDCP::MXF::WaveAudioDescriptor*>(md_object)->AudioSamplingRate == SampleRate_96k )
+	    {
+	      type = ESS_PCM_24b_96k;
+	    }
+	  else
+	    {
+	      type = ESS_PCM_24b_48k;
+	    }
+	}
       else if ( ASDCP_SUCCESS(TestHeader.GetMDObjectByType(OBJ_TYPE_ARGS(MPEG2VideoDescriptor))) )
+	{
 	type = ESS_MPEG2_VES;
+	}
       else if ( ASDCP_SUCCESS(TestHeader.GetMDObjectByType(OBJ_TYPE_ARGS(TimedTextDescriptor))) )
+	{
 	type = ESS_TIMED_TEXT;
+	}
       else if ( ASDCP_SUCCESS(TestHeader.GetMDObjectByType(OBJ_TYPE_ARGS(DCDataDescriptor))) )
-      {
-        if ( ASDCP_SUCCESS(TestHeader.GetMDObjectByType(OBJ_TYPE_ARGS(DolbyAtmosSubDescriptor))) )
-          type = ESS_DCDATA_DOLBY_ATMOS;
-        else
-          type = ESS_DCDATA_UNKNOWN;
-      }
+	{
+	  if ( ASDCP_SUCCESS(TestHeader.GetMDObjectByType(OBJ_TYPE_ARGS(DolbyAtmosSubDescriptor))) )
+	    {
+	      type = ESS_DCDATA_DOLBY_ATMOS;
+	    }
+	  else
+	    {
+	      type = ESS_DCDATA_UNKNOWN;
+	    }
+	}
     }
 
   return result;

@@ -273,7 +273,7 @@ read_JP2K_file(CommandOptions& Options)
 {
   AESDecContext*     Context = 0;
   HMACContext*       HMAC = 0;
-  JP2K::MXFReader    Reader;
+  AS_02::JP2K::MXFReader    Reader;
   JP2K::FrameBuffer  FrameBuffer(Options.fb_size);
   ui32_t             frame_count = 0;
 
@@ -357,7 +357,7 @@ read_PCM_file(CommandOptions& Options)
 {
   AESDecContext*     Context = 0;
   HMACContext*       HMAC = 0;
-  PCM::MXFReader     Reader;
+  AS_02::PCM::MXFReader     Reader;
   PCM::FrameBuffer   FrameBuffer;
   WavFileWriter      OutWave;
   PCM::AudioDescriptor ADesc;

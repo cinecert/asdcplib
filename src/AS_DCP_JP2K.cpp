@@ -279,36 +279,140 @@ ASDCP::JP2K_PDesc_to_MD(const JP2K::PictureDescriptor& PDesc,
 }
 
 
-//------------------------------------------------------------------------------------------
-//
-// hidden, internal implementation of JPEG 2000 reader
-
-
-class lh__Reader : public ASDCP::h__ASDCPReader
-{
-  RGBAEssenceDescriptor*        m_EssenceDescriptor;
-  JPEG2000PictureSubDescriptor* m_EssenceSubDescriptor;
-  ASDCP::Rational               m_EditRate;
-  ASDCP::Rational               m_SampleRate;
-  EssenceType_t                 m_Format;
-
-  ASDCP_NO_COPY_CONSTRUCT(lh__Reader);
-
-public:
-  PictureDescriptor m_PDesc;        // codestream parameter list
-
-  lh__Reader(const Dictionary& d) :
-    ASDCP::h__ASDCPReader(d), m_EssenceDescriptor(0), m_EssenceSubDescriptor(0), m_Format(ESS_UNKNOWN) {}
-
-  virtual ~lh__Reader() {}
-
-  Result_t    OpenRead(const char*, EssenceType_t);
-  Result_t    ReadFrame(ui32_t, JP2K::FrameBuffer&, AESDecContext*, HMACContext*);
-};
-
 //
 ASDCP::Result_t
 ASDCP::MD_to_JP2K_PDesc(const ASDCP::MXF::RGBAEssenceDescriptor&  EssenceDescriptor,
+			const ASDCP::MXF::JPEG2000PictureSubDescriptor& EssenceSubDescriptor,
+			const ASDCP::Rational& EditRate, const ASDCP::Rational& SampleRate,
+			ASDCP::JP2K::PictureDescriptor& PDesc)
+{
+  memset(&PDesc, 0, sizeof(PDesc));
+
+  PDesc.EditRate           = EditRate;
+  PDesc.SampleRate         = SampleRate;
+  assert(EssenceDescriptor.ContainerDuration <= 0xFFFFFFFFL);
+  PDesc.ContainerDuration  = (ui32_t) EssenceDescriptor.ContainerDuration;
+  PDesc.StoredWidth        = EssenceDescriptor.StoredWidth;
+  PDesc.StoredHeight       = EssenceDescriptor.StoredHeight;
+  PDesc.AspectRatio        = EssenceDescriptor.AspectRatio;
+
+  PDesc.Rsize   = EssenceSubDescriptor.Rsize;
+  PDesc.Xsize   = EssenceSubDescriptor.Xsize;
+  PDesc.Ysize   = EssenceSubDescriptor.Ysize;
+  PDesc.XOsize  = EssenceSubDescriptor.XOsize;
+  PDesc.YOsize  = EssenceSubDescriptor.YOsize;
+  PDesc.XTsize  = EssenceSubDescriptor.XTsize;
+  PDesc.YTsize  = EssenceSubDescriptor.YTsize;
+  PDesc.XTOsize = EssenceSubDescriptor.XTOsize;
+  PDesc.YTOsize = EssenceSubDescriptor.YTOsize;
+  PDesc.Csize   = EssenceSubDescriptor.Csize;
+
+  // PictureComponentSizing
+  ui32_t tmp_size = EssenceSubDescriptor.PictureComponentSizing.Length();
+
+  if ( tmp_size == 17 ) // ( 2 * sizeof(ui32_t) ) + 3 components * 3 byte each
+    {
+      memcpy(&PDesc.ImageComponents, EssenceSubDescriptor.PictureComponentSizing.RoData() + 8, tmp_size - 8);
+    }
+  else
+    {
+      DefaultLogSink().Error("Unexpected PictureComponentSizing size: %u, should be 17\n", tmp_size);
+    }
+
+  // CodingStyleDefault
+  memset(&PDesc.CodingStyleDefault, 0, sizeof(CodingStyleDefault_t));
+  memcpy(&PDesc.CodingStyleDefault,
+	 EssenceSubDescriptor.CodingStyleDefault.RoData(),
+	 EssenceSubDescriptor.CodingStyleDefault.Length());
+
+  // QuantizationDefault
+  memset(&PDesc.QuantizationDefault, 0, sizeof(QuantizationDefault_t));
+  memcpy(&PDesc.QuantizationDefault,
+	 EssenceSubDescriptor.QuantizationDefault.RoData(),
+	 EssenceSubDescriptor.QuantizationDefault.Length());
+  
+  PDesc.QuantizationDefault.SPqcdLength = EssenceSubDescriptor.QuantizationDefault.Length() - 1;
+  return RESULT_OK;
+}
+
+//
+ASDCP::Result_t
+ASDCP::JP2K_PDesc_to_MD(const JP2K::PictureDescriptor& PDesc,
+			const ASDCP::Dictionary& dict,
+			ASDCP::MXF::CDCIEssenceDescriptor *EssenceDescriptor,
+			ASDCP::MXF::JPEG2000PictureSubDescriptor *EssenceSubDescriptor)
+{
+  if ( EssenceDescriptor == 0 || EssenceSubDescriptor == 0 )
+    return RESULT_PTR;
+
+  EssenceDescriptor->ContainerDuration = PDesc.ContainerDuration;
+  EssenceDescriptor->SampleRate = PDesc.EditRate;
+  EssenceDescriptor->FrameLayout = 0;
+  EssenceDescriptor->StoredWidth = PDesc.StoredWidth;
+  EssenceDescriptor->StoredHeight = PDesc.StoredHeight;
+  EssenceDescriptor->AspectRatio = PDesc.AspectRatio;
+
+  //  if ( m_Info.LabelSetType == LS_MXF_SMPTE )
+  //    {
+  // PictureEssenceCoding UL = 
+  // Video Line Map       ui32_t[VideoLineMapSize] = { 2, 4, 0, 0 }
+  // CaptureGamma         UL = 
+  // ComponentMaxRef      ui32_t = 4095
+  // ComponentMinRef      ui32_t = 0
+  // PixelLayout          byte_t[PixelLayoutSize] = s_PixelLayoutXYZ
+  //    }
+
+  if ( PDesc.StoredWidth < 2049 )
+    {
+      EssenceDescriptor->PictureEssenceCoding.Set(dict.ul(MDD_JP2KEssenceCompression_2K));
+      EssenceSubDescriptor->Rsize = 3;
+    }
+  else
+    {
+      EssenceDescriptor->PictureEssenceCoding.Set(dict.ul(MDD_JP2KEssenceCompression_4K));
+      EssenceSubDescriptor->Rsize = 4;
+    }
+
+  EssenceSubDescriptor->Xsize = PDesc.Xsize;
+  EssenceSubDescriptor->Ysize = PDesc.Ysize;
+  EssenceSubDescriptor->XOsize = PDesc.XOsize;
+  EssenceSubDescriptor->YOsize = PDesc.YOsize;
+  EssenceSubDescriptor->XTsize = PDesc.XTsize;
+  EssenceSubDescriptor->YTsize = PDesc.YTsize;
+  EssenceSubDescriptor->XTOsize = PDesc.XTOsize;
+  EssenceSubDescriptor->YTOsize = PDesc.YTOsize;
+  EssenceSubDescriptor->Csize = PDesc.Csize;
+
+  const ui32_t tmp_buffer_len = 1024;
+  byte_t tmp_buffer[tmp_buffer_len];
+
+  *(ui32_t*)tmp_buffer = KM_i32_BE(MaxComponents); // three components
+  *(ui32_t*)(tmp_buffer+4) = KM_i32_BE(sizeof(ASDCP::JP2K::ImageComponent_t));
+  memcpy(tmp_buffer + 8, &PDesc.ImageComponents, sizeof(ASDCP::JP2K::ImageComponent_t) * MaxComponents);
+
+  const ui32_t pcomp_size = (sizeof(int) * 2) + (sizeof(ASDCP::JP2K::ImageComponent_t) * MaxComponents);
+  memcpy(EssenceSubDescriptor->PictureComponentSizing.Data(), tmp_buffer, pcomp_size);
+  EssenceSubDescriptor->PictureComponentSizing.Length(pcomp_size);
+
+  ui32_t precinct_set_size = 0, i;
+  for ( i = 0; PDesc.CodingStyleDefault.SPcod.PrecinctSize[i] != 0 && i < MaxPrecincts; i++ )
+    precinct_set_size++;
+
+  ui32_t csd_size = sizeof(CodingStyleDefault_t) - MaxPrecincts + precinct_set_size;
+  memcpy(EssenceSubDescriptor->CodingStyleDefault.Data(), &PDesc.CodingStyleDefault, csd_size);
+  EssenceSubDescriptor->CodingStyleDefault.Length(csd_size);
+
+  ui32_t qdflt_size = PDesc.QuantizationDefault.SPqcdLength + 1;
+  memcpy(EssenceSubDescriptor->QuantizationDefault.Data(), &PDesc.QuantizationDefault, qdflt_size);
+  EssenceSubDescriptor->QuantizationDefault.Length(qdflt_size);
+
+  return RESULT_OK;
+}
+
+
+//
+ASDCP::Result_t
+ASDCP::MD_to_JP2K_PDesc(const ASDCP::MXF::CDCIEssenceDescriptor&  EssenceDescriptor,
 			const ASDCP::MXF::JPEG2000PictureSubDescriptor& EssenceSubDescriptor,
 			const ASDCP::Rational& EditRate, const ASDCP::Rational& SampleRate,
 			ASDCP::JP2K::PictureDescriptor& PDesc)
@@ -378,6 +482,35 @@ epsilon_compare(const ASDCP::Rational& left, const ASDCP::Rational& right, doubl
 }
 // end DOLBY
 
+
+//------------------------------------------------------------------------------------------
+//
+// hidden, internal implementation of JPEG 2000 reader
+
+
+class lh__Reader : public ASDCP::h__ASDCPReader
+{
+  RGBAEssenceDescriptor*        m_EssenceDescriptor;
+  JPEG2000PictureSubDescriptor* m_EssenceSubDescriptor;
+  ASDCP::Rational               m_EditRate;
+  ASDCP::Rational               m_SampleRate;
+  EssenceType_t                 m_Format;
+
+  ASDCP_NO_COPY_CONSTRUCT(lh__Reader);
+
+public:
+  PictureDescriptor m_PDesc;        // codestream parameter list
+
+  lh__Reader(const Dictionary& d) :
+    ASDCP::h__ASDCPReader(d), m_EssenceDescriptor(0), m_EssenceSubDescriptor(0), m_Format(ESS_UNKNOWN) {}
+
+  virtual ~lh__Reader() {}
+
+  Result_t    OpenRead(const char*, EssenceType_t);
+  Result_t    ReadFrame(ui32_t, JP2K::FrameBuffer&, AESDecContext*, HMACContext*);
+};
+
+
 //
 //
 ASDCP::Result_t
@@ -391,8 +524,21 @@ lh__Reader::OpenRead(const char* filename, EssenceType_t type)
       m_HeaderPart.GetMDObjectByType(OBJ_TYPE_ARGS(RGBAEssenceDescriptor), &tmp_iobj);
       m_EssenceDescriptor = static_cast<RGBAEssenceDescriptor*>(tmp_iobj);
 
+      if ( m_EssenceDescriptor == 0 )
+	{
+	  DefaultLogSink().Error("RGBAEssenceDescriptor object not found.\n");
+	  return RESULT_FORMAT;
+	}
+
       m_HeaderPart.GetMDObjectByType(OBJ_TYPE_ARGS(JPEG2000PictureSubDescriptor), &tmp_iobj);
       m_EssenceSubDescriptor = static_cast<JPEG2000PictureSubDescriptor*>(tmp_iobj);
+
+      if ( m_EssenceSubDescriptor == 0 )
+	{
+	  m_EssenceDescriptor = 0;
+	  DefaultLogSink().Error("JPEG2000PictureSubDescriptor object not found.\n");
+	  return RESULT_FORMAT;
+	}
 
       std::list<InterchangeObject*> ObjectList;
       m_HeaderPart.GetMDObjectsByType(OBJ_TYPE_ARGS(Track), ObjectList);
@@ -490,8 +636,6 @@ lh__Reader::OpenRead(const char* filename, EssenceType_t type)
 	  return RESULT_STATE;
 	}
 
-      assert(m_EssenceDescriptor);
-      assert(m_EssenceSubDescriptor);
       result = MD_to_JP2K_PDesc(*m_EssenceDescriptor, *m_EssenceSubDescriptor, m_EditRate, m_SampleRate, m_PDesc);
     }
 
