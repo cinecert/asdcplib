@@ -234,10 +234,9 @@ inline const char* ui64sz(ui64_t i, char* buf)
     {
       ASDCP_NO_COPY_CONSTRUCT(KLVFilePacket);
 
-    protected:
+    public:
       ASDCP::FrameBuffer m_Buffer;
 
-    public:
       KLVFilePacket() {}
       virtual ~KLVFilePacket() {}
 

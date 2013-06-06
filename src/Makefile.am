@@ -176,7 +176,7 @@ endif
 # list of programs to be built and installed
 bin_PROGRAMS = \
 	asdcp-wrap asdcp-unwrap asdcp-util asdcp-info asdcp-test \
-	j2c-test blackwave klvwalk wavesplit \
+	j2c-test blackwave klvwalk wavesplit klvsplit \
 	kmfilegen kmrandgen kmuuidgen
 
 if USE_AS_02
@@ -222,6 +222,9 @@ wavesplit_LDADD = libasdcp.la
 
 j2c_test_SOURCES = j2c-test.cpp
 j2c_test_LDADD = libasdcp.la
+
+klvsplit_SOURCES = klvsplit.cpp
+klvsplit_LDADD = libasdcp.la
 
 if USE_AS_02
 as_02_wrap_SOURCES = as-02-wrap.cpp
