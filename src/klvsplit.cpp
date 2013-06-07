@@ -29,15 +29,9 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     \brief   KLV+MXF test
 */
 
-#include "AS_DCP.h"
 #include "MXF.h"
 #include <KM_log.h>
-#include <stdlib.h>
-#include <string.h>
-#include <ctype.h>
-#include <assert.h>
-#include <sys/types.h>
-#include <sys/stat.h>
+
 
 using namespace ASDCP;
 using Kumu::DefaultLogSink;
@@ -47,7 +41,7 @@ using Kumu::DefaultLogSink;
 //
 // command line option parser class
 
-static const char* PROGRAM_NAME = "essence-scraper";    // program name for messages
+static const char* PROGRAM_NAME = "klvsplit";    // program name for messages
 typedef std::list<std::string> FileList_t;
 
 // Increment the iterator, test for an additional non-option command line argument.
@@ -78,24 +72,33 @@ void
 usage(FILE* stream = stdout)
 {
   fprintf(stream, "\
-USAGE: %s [-l <limit>] [-p <prefix>] [-s <suffix>] [-v] (JPEG2000Essence|\n\
-            MPEG2Essence|WAVEssence|CryptEssence|-u <ul-value>)\n\
+USAGE: %s [-l <limit>] [-p <prefix>] [-s <suffix>] [-u] [-v] \n\
+           (<type-name>|<type-ul>) <mxf-filename>+\n\
+\n\
+       %s -d\n\
 \n\
        %s [-h|-help] [-V]\n\
 \n\
+  -d           - List the valid packet type names\n\
   -h | -help   - Show help\n\
   -l <limit>   - Stop processing after <limit> matching packets\n\
   -p <prefix>  - Use <prefix> to start output filenames (default\n\
                    uses the input filename minus any extension\n\
   -s <suffix>  - Append <suffix> to output filenames\n\
-  -u           - Use the given UL to select essence packets\n\
+  -u           - Unwrap the packet value (i.e., do not output KL)\n\
   -v           - Verbose. Prints informative messages to stderr\n\
   -V           - Show version information\n\
 \n\
   NOTES: o There is no option grouping, all options must be distinct arguments.\n\
          o All option arguments must be separated from the option by whitespace.\n\
-\n", PROGRAM_NAME, PROGRAM_NAME);
+\n", PROGRAM_NAME, PROGRAM_NAME, PROGRAM_NAME);
 }
+
+enum MajorMode_t {
+  MMT_NONE,
+  MMT_LIST,
+  MMT_EXTRACT
+};
 
 //
 //
@@ -108,6 +111,8 @@ USAGE: %s [-l <limit>] [-p <prefix>] [-s <suffix>] [-v] (JPEG2000Essence|\n\
    bool   version_flag;             // true if the version display option was selected
    bool   help_flag;                // true if the help display option was selected
    bool   verbose_flag;             // true if the informative messages option was selected
+   bool   unwrap_mode;              // true if we are to strip the K and L before writing
+   MajorMode_t   mode;
    ASDCP::UL target_ul;             // a UL value identifying the packets to be extracted
    ui64_t  extract_limit;           // limit extraction to the given number of packets
    std::string prefix;              // output filename prefix
@@ -116,7 +121,7 @@ USAGE: %s [-l <limit>] [-p <prefix>] [-s <suffix>] [-v] (JPEG2000Essence|\n\
 
    CommandOptions(int argc, const char** argv, const ASDCP::Dictionary& dict) :
      error_flag(true), version_flag(false), help_flag(false),
-     verbose_flag(false), extract_limit(ui64_C(-1))
+     verbose_flag(false), unwrap_mode(false), mode(MMT_EXTRACT), extract_limit(ui64_C(-1))
    {
      for ( int i = 1; i < argc; ++i )
        {
@@ -131,6 +136,7 @@ USAGE: %s [-l <limit>] [-p <prefix>] [-s <suffix>] [-v] (JPEG2000Essence|\n\
 	   {
 	     switch ( argv[i][1] )
 	       {
+	       case 'd': mode = MMT_LIST; break;
 	       case 'h': help_flag = true; break;
 
 	       case 'l':
@@ -148,17 +154,7 @@ USAGE: %s [-l <limit>] [-p <prefix>] [-s <suffix>] [-v] (JPEG2000Essence|\n\
 		 suffix = argv[i];
 		 break;
 
-	       case 'u':
-		 TEST_EXTRA_ARG(i, 'u');
-
-		 if ( ! target_ul.DecodeHex(argv[i]) )
-		   {
-		     fprintf(stderr, "Error decoding UL: %s\n", argv[i]);
-		     return;
-		   }
-
-		 break;
-
+	       case 'u': unwrap_mode = true; break;
 	       case 'V': version_flag = true; break;
 	       case 'v': verbose_flag = true; break;
 
@@ -171,21 +167,18 @@ USAGE: %s [-l <limit>] [-p <prefix>] [-s <suffix>] [-v] (JPEG2000Essence|\n\
 	   {
 	     if ( ! target_ul.HasValue() )
 	       {
-		 if ( strncmp(argv[i], "JPEG2000Essence", 15) == 0 )
+		 if ( ! target_ul.DecodeHex(argv[i]) )
 		   {
-		     target_ul = dict.ul(MDD_JPEG2000Essence);
+		     const ASDCP::MDDEntry *e = dict.FindSymbol(argv[i]);
+
+		     if ( e != 0 )
+		       target_ul = e->ul;
 		   }
-		 else if ( strncmp(argv[i], "MPEG2Essence", 12) == 0 )
+
+		 if ( ! target_ul.HasValue() )
 		   {
-		     target_ul = dict.ul(MDD_MPEG2Essence);
-		   }
-		 else if ( strncmp(argv[i], "WAVEssence", 10) == 0 )
-		   {
-		     target_ul = dict.ul(MDD_WAVEssence);
-		   }
-		 else
-		   {
-		     inFileList.push_back(argv[i]);
+		     fprintf(stderr, "Value is not a UL or valid object name: %s\n", argv[i]);
+		     return;
 		   }
 	       }
 	     else
@@ -203,16 +196,19 @@ USAGE: %s [-l <limit>] [-p <prefix>] [-s <suffix>] [-v] (JPEG2000Essence|\n\
      if ( help_flag || version_flag )
        return;
      
-     if ( inFileList.empty() )
+     if ( mode == MMT_EXTRACT )
        {
-	 fputs("Input filename(s) required.\n", stderr);
-	 return;
-       }
+	 if ( inFileList.empty() )
+	   {
+	     fputs("Input filename(s) required.\n", stderr);
+	     return;
+	   }
      
-     if ( ! target_ul.HasValue() )
-       {
-	 fputs("Packet UL not set.  Use %s -u <ul> or keyword.\n", stderr);
-	 return;
+	 if ( ! target_ul.HasValue() )
+	   {
+	     fputs("Packet UL not set.  Use %s -u <ul> or keyword.\n", stderr);
+	     return;
+	   }
        }
 
      error_flag = false;
@@ -243,6 +239,35 @@ main(int argc, const char** argv)
     {
       fprintf(stderr, "There was a problem. Type %s -h for help.\n", PROGRAM_NAME);
       return 3;
+    }
+
+  if ( Options.mode == MMT_LIST )
+    {
+      DefaultLogSink().UnsetFilterFlag(Kumu::LOG_ALLOW_WARN);
+      char buf[64];
+
+      MDD_t di = (MDD_t)0;
+      while ( di < MDD_Max )
+	{
+	  const MDDEntry& e = dict->Type(di);
+
+	  if ( e.name != 0  && ( e.ul[4] == 1 || e.ul[4] == 2 ) )
+	    {
+	      if ( Options.verbose_flag )
+		{
+		  UL tmp_ul(e.ul);
+		  printf("%s %s\n", tmp_ul.EncodeString(buf, 64), e.name);
+		}
+	      else
+		{
+		  printf("%s\n", e.name);
+		}
+	    }
+
+	  di = (MDD_t)(di + 1);
+	}
+
+      return 0;
     }
 
   Result_t result = RESULT_OK;
@@ -279,7 +304,15 @@ main(int argc, const char** argv)
 
 	      if ( KM_SUCCESS(result) )
 		{
-		  result = writer.Write(packet.m_Buffer.RoData() + packet.KLLength(), packet.ValueLength());
+		  if ( Options.unwrap_mode )
+		    {
+		      result = writer.Write(packet.m_Buffer.RoData() + packet.KLLength(), packet.ValueLength());
+		    }
+		  else
+		    {
+		      result = writer.Write(packet.m_Buffer.RoData(), packet.m_Buffer.Size());
+		    }
+
 		  ++item_counter;
 		}
 	    }
