@@ -139,6 +139,28 @@ command-line utilities all respond to -h.
 
 Change History
 
+YYYY-MM-DD - IMF/AS-02 support, bug fixes
+  o Fixed missing return statement in ArchivableString::ArchiveLength
+    (thanks to both Kristof Provost and Franck Chopin) 
+  o Fixed broken sample alignment in RF64Writer (thanks to Dolby)
+  o Fixed win32 build (thanks to Dolby)
+  o Massive refactoring of internals to allow easier implementation
+    of AS-02.  Some API changes were made as well (note that
+    OPAtomHeader is now OP1aHeader and RIP is no longer part of the
+    OP1aHeader.)  If you are using this project as a library (and
+    especially if you are keeping patches against it) PLEASE TAKE
+    TIME TO EVALUATE THIS RELEASE THOUROUGHLY BEFORE ADDING IT TO
+    YOUR RELEASE PATH.
+  o Final integration of Fraunhoffer IIS code contribution.  AS-02
+    files are now fully supported with some TODOs and one major
+    exception: LEAD indexes are not supported by the MXF writers
+    and interlace images are not yet supported.
+  o Added support for MCA labels (ST 428-12) to asdcp-wrap.  Note
+    that this project is still in the early stages of interop testing
+    so errors are likely present and don't expect any server to
+    understand this feature.
+
+
 2013-04-12 - Dolby Atmos support and more audio labels 1.11.49
   o Significant code contribution from Dolby Laboratories to add
     support for generic data track files as proposed in ST 21DC
@@ -148,7 +170,6 @@ Change History
   o Added Dolby-contributed code to support RF64 WAVE files.
   o Fixed UL error in ST 429-5 DM encoding (contributed by Dolby).
   o Added ULs for ST 428-12 and Amd. 429-2 2013.  Please check!
-
 
 
 2013-02-20 - bug fixes, enhancements 1.10.48
@@ -186,6 +207,7 @@ Change History
 	   MCAEpisode
 	   MCAAudioContentKind
 	   MCAAudioElementKind
+
 
 2012-08-07 - bug fix, 1.10.46
  o Added missing zero-initializers to time values when parsing a

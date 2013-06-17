@@ -1,5 +1,7 @@
 /*
-Copyright (c) 2011-2012, Robert Scheler, Heiko Sparenberg Fraunhofer IIS, John Hurst
+Copyright (c) 2011-2013, Robert Scheler, Heiko Sparenberg Fraunhofer IIS,
+John Hurst
+
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -43,6 +45,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 using namespace ASDCP;
 
 const ui32_t FRAME_BUFFER_SIZE = 4 * Kumu::Megabyte;
+const ASDCP::Dictionary *g_dict = 0;
 
 
 const char*
@@ -51,6 +54,8 @@ RationalToString(const ASDCP::Rational& r, char* buf, const ui32_t& len)
   snprintf(buf, len, "%d/%d", r.Numerator, r.Denominator);
   return buf;
 }
+
+
 
 //------------------------------------------------------------------------------------------
 //
@@ -92,7 +97,7 @@ banner(FILE* stream = stdout)
 {
   fprintf(stream, "\n\
 %s (asdcplib %s)\n\n\
-Copyright (c) 2011-2012, Robert Scheler, Heiko Sparenberg Fraunhofer IIS, John Hurst\n\n\
+Copyright (c) 2011-2013, Robert Scheler, Heiko Sparenberg Fraunhofer IIS, John Hurst\n\n\
 asdcplib may be copied only under the terms of the license found at\n\
 the top of every file in the asdcplib distribution kit.\n\n\
 Specify the -h (help) option for further information about %s\n\n",
@@ -108,7 +113,7 @@ USAGE: %s [-h|-help] [-V]\n\
 \n\
        %s [-a <uuid>] [-b <buffer-size>] [-C <UL>] [-d <duration>]\n\
           [-e|-E] [-f <start-frame>] [-j <key-id-string>] [-k <key-string>]\n\
-            [-M] [-p <n>/<d>] [-s <seconds>] [-v] [-W]\n\
+            [-M] [-m <expr>] [-r <n>/<d>] [-s <seconds>] [-v] [-W]\n\
           [-z|-Z] <input-file>+ <output-file>\n\n",
 	  PROGRAM_NAME, PROGRAM_NAME);
 
@@ -122,12 +127,14 @@ Options:\n\
   -j <key-id-str>   - Write key ID instead of creating a random value\n\
   -k <key-string>   - Use key for ciphertext operations\n\
   -M                - Do not create HMAC values when writing\n\
+  -m <expr>         - Write MCA labels using <expr>.  Example:\n\
+                        51(L,R,C,LFE,Ls,Rs,),HI,VIN\n\
   -a <UUID>         - Specify the Asset ID of the file\n\
   -b <buffer-size>  - Specify size in bytes of picture frame buffer\n\
                       Defaults to 4,194,304 (4MB)\n\
   -d <duration>     - Number of frames to process, default all\n\
   -f <start-frame>  - Starting frame number, default 0\n\
-  -p <n>/<d>        - Edit Rate of the output file.  24/1 is the default\n\
+  -r <n>/<d>        - Edit Rate of the output file.  24/1 is the default\n\
   -s <seconds>      - Duration of a frame-wrapped partition (default 60)\n\
   -v                - Verbose, prints informative messages to stderr\n\
   -W                - Read input file only, do not write source file\n\
@@ -138,6 +145,20 @@ Options:\n\
          o All option arguments must be separated from the option by whitespace.\n\n");
 }
 
+//
+static ASDCP::Rational
+decode_rational(const char* str_rat)
+{
+  assert(str_rat);
+  ui32_t Num = atoi(str_rat);
+  ui32_t Den = 0;
+
+  const char* den_str = strrchr(str_rat, ' ');
+  if ( den_str != 0 )
+    Den = atoi(den_str+1);
+
+  return ASDCP::Rational(Num, Den);
+}
 //
 //
 class CommandOptions
@@ -165,9 +186,10 @@ public:
   byte_t key_id_value[UUIDlen];// value of given key ID (when key_id_flag is true)
   byte_t asset_id_value[UUIDlen];// value of asset ID (when asset_id_flag is true)
   std::string out_file; //
-  bool show_ul_values;    /// if true, dump the UL table before going tp work.
+  bool show_ul_values_flag;    /// if true, dump the UL table before going tp work.
   Kumu::PathList_t filenames;  // list of filenames to be processed
   UL channel_assignment;
+  ASDCP::MXF::MCAConfigParser mca_config;
 
   //new attributes for AS-02 support 
   AS_02::IndexStrategy_t index_strategy; //Shim parameter index_strategy_frame/clip
@@ -178,8 +200,9 @@ public:
     error_flag(true), key_flag(false), key_id_flag(false), asset_id_flag(false),
     encrypt_header_flag(true), write_hmac(true), verbose_flag(false), fb_dump_size(0),
     no_write_flag(false), version_flag(false), help_flag(false), start_frame(0),
-    duration(0xffffffff), j2c_pedantic(true), edit_rate(30,1), fb_size(FRAME_BUFFER_SIZE),
-    show_ul_values(false), index_strategy(AS_02::IS_FOLLOW), partition_space(60)
+    duration(0xffffffff), j2c_pedantic(true), edit_rate(24,1), fb_size(FRAME_BUFFER_SIZE),
+    show_ul_values_flag(false), index_strategy(AS_02::IS_FOLLOW), partition_space(60),
+    mca_config(g_dict)
   {
     memset(key_value, 0, KeyLen);
     memset(key_id_value, 0, UUIDlen);
@@ -277,11 +300,17 @@ public:
 
 	      case 'M': write_hmac = false; break;
 
-	      case 'p':
-		TEST_EXTRA_ARG(i, 'p');
-		/// TODO: VERY BROKEN, WANT RATIONAL
-		edit_rate.Numerator = abs(atoi(argv[i]));
-		edit_rate.Denominator = 1;
+	      case 'm':
+		TEST_EXTRA_ARG(i, 'm');
+		if ( ! mca_config.DecodeString(argv[i]) )
+		  {
+		    return;
+		  }
+		break;
+
+	      case 'r':
+		TEST_EXTRA_ARG(i, 'r');
+		edit_rate = decode_rational(argv[i]);
 		break;
 
 	      case 's':
@@ -289,6 +318,7 @@ public:
 		partition_space = abs(atoi(argv[i]));
 		break;
 
+	      case 'u': show_ul_values_flag = true; break;
 	      case 'V': version_flag = true; break;
 	      case 'v': verbose_flag = true; break;
 	      case 'W': no_write_flag = true; break;
@@ -334,6 +364,15 @@ public:
 //------------------------------------------------------------------------------------------
 // JPEG 2000 essence
 
+namespace ASDCP {
+  Result_t JP2K_PDesc_to_MD(const ASDCP::JP2K::PictureDescriptor& PDesc,
+			    const ASDCP::Dictionary& dict,
+			    ASDCP::MXF::RGBAEssenceDescriptor *EssenceDescriptor,
+			    ASDCP::MXF::JPEG2000PictureSubDescriptor *EssenceSubDescriptor);
+
+  Result_t PCM_ADesc_to_MD(ASDCP::PCM::AudioDescriptor& ADesc, ASDCP::MXF::WaveAudioDescriptor* ADescObj);
+}
+
 // Write one or more plaintext JPEG 2000 codestreams to a plaintext AS-02 file
 // Write one or more plaintext JPEG 2000 codestreams to a ciphertext AS-02 file
 //
@@ -344,10 +383,11 @@ write_JP2K_file(CommandOptions& Options)
   HMACContext*            HMAC = 0;
   AS_02::JP2K::MXFWriter  Writer;
   JP2K::FrameBuffer       FrameBuffer(Options.fb_size);
-  JP2K::PictureDescriptor PDesc;
   JP2K::SequenceParser    Parser;
   byte_t                  IV_buf[CBC_BLOCK_SIZE];
   Kumu::FortunaRNG        RNG;
+  ASDCP::MXF::RGBAEssenceDescriptor *essence_descriptor = 0;
+  ASDCP::MXF::InterchangeObject_list_t essence_sub_descriptors;
 
   // set up essence parser
   Result_t result = Parser.OpenRead(Options.filenames.front().c_str(), Options.j2c_pedantic);
@@ -355,6 +395,7 @@ write_JP2K_file(CommandOptions& Options)
   // set up MXF writer
   if ( ASDCP_SUCCESS(result) )
     {
+      ASDCP::JP2K::PictureDescriptor PDesc;
       Parser.FillPictureDescriptor(PDesc);
       PDesc.EditRate = Options.edit_rate;
 
@@ -365,6 +406,17 @@ write_JP2K_file(CommandOptions& Options)
           fprintf(stderr, "Frame Buffer size: %u\n", Options.fb_size);
 	  JP2K::PictureDescriptorDump(PDesc);
 	}
+
+      // TODO: optionally set up CDCIEssenceDescriptor
+      essence_descriptor = new ASDCP::MXF::RGBAEssenceDescriptor(g_dict);
+      essence_sub_descriptors.push_back(new ASDCP::MXF::JPEG2000PictureSubDescriptor(g_dict));
+
+      result = ASDCP::JP2K_PDesc_to_MD(PDesc, *g_dict, essence_descriptor,
+				       reinterpret_cast<ASDCP::MXF::JPEG2000PictureSubDescriptor*>(essence_sub_descriptors.back()));
+
+      /// TODO: set with magic or some such thing
+      essence_descriptor->ComponentMaxRef = 4095;
+      essence_descriptor->ComponentMinRef = 0;
     }
 
   if ( ASDCP_SUCCESS(result) && ! Options.no_write_flag )
@@ -403,7 +455,13 @@ write_JP2K_file(CommandOptions& Options)
 	}
 
       if ( ASDCP_SUCCESS(result) )
-	result = Writer.OpenWrite(Options.out_file.c_str(), Info, PDesc, Options.index_strategy, Options.partition_space);
+	{
+	  result = Writer.OpenWrite(Options.out_file, Info,
+				    static_cast<ASDCP::MXF::FileDescriptor*>(essence_descriptor),
+				    essence_sub_descriptors,
+				    Options.edit_rate, 16384, Options.index_strategy, Options.partition_space);
+	  // TODO: make 16384 part of CommandOptions
+	}
     }
 
   if ( ASDCP_SUCCESS(result) )
@@ -462,16 +520,17 @@ write_PCM_file(CommandOptions& Options)
   PCMParserList     Parser;
   AS_02::PCM::MXFWriter    Writer;
   PCM::FrameBuffer  FrameBuffer;
-  PCM::AudioDescriptor ADesc;
   byte_t            IV_buf[CBC_BLOCK_SIZE];
   Kumu::FortunaRNG  RNG;
+  ASDCP::MXF::WaveAudioDescriptor *essence_descriptor = 0;
 
   // set up essence parser
-  Result_t result = Parser.OpenRead(Options.filenames, Rational(1, 1));
+  Result_t result = Parser.OpenRead(Options.filenames, Options.edit_rate);
 
   // set up MXF writer
   if ( ASDCP_SUCCESS(result) )
     {
+      ASDCP::PCM::AudioDescriptor ADesc;
       Parser.FillAudioDescriptor(ADesc);
 
       ADesc.EditRate = Options.edit_rate;
@@ -486,6 +545,27 @@ write_PCM_file(CommandOptions& Options)
 		  PCM::CalcSamplesPerFrame(ADesc));
 	  fputs("AudioDescriptor:\n", stderr);
 	  PCM::AudioDescriptorDump(ADesc);
+	}
+
+      essence_descriptor = new ASDCP::MXF::WaveAudioDescriptor(g_dict);
+
+      result = ASDCP::PCM_ADesc_to_MD(ADesc, essence_descriptor);
+
+      if ( Options.mca_config.empty() )
+	{
+	  essence_descriptor->ChannelAssignment = Options.channel_assignment;
+	}
+      else
+	{
+	  if ( Options.mca_config.ChannelCount() != essence_descriptor->ChannelCount )
+	    {
+	      fprintf(stderr, "MCA label count (%d) differs from essence stream channel count (%d).\n",
+		      Options.mca_config.ChannelCount(), essence_descriptor->ChannelCount);
+	      return RESULT_FAIL;
+	    }
+
+	  // this is the d-cinema MCA label, what is the one for IMF?
+	  essence_descriptor->ChannelAssignment = g_dict->ul(MDD_DCAudioChannelCfg_MCA);
 	}
     }
 
@@ -525,14 +605,9 @@ write_PCM_file(CommandOptions& Options)
 	}
 
       if ( ASDCP_SUCCESS(result) )
-	result = Writer.OpenWrite(Options.out_file.c_str(), Info, ADesc);
-
-      if ( ASDCP_SUCCESS(result) && Options.channel_assignment.HasValue() )
 	{
-	  MXF::WaveAudioDescriptor *descriptor = 0;
-	  Writer.OP1aHeader().GetMDObjectByType(DefaultSMPTEDict().ul(MDD_WaveAudioDescriptor),
-						reinterpret_cast<MXF::InterchangeObject**>(&descriptor));
-	  descriptor->ChannelAssignment = Options.channel_assignment;
+	  result = Writer.OpenWrite(Options.out_file.c_str(), Info, essence_descriptor,
+				    Options.mca_config, Options.edit_rate);
 	}
     }
 
@@ -589,6 +664,8 @@ main(int argc, const char** argv)
 {
   Result_t result = RESULT_OK;
   char     str_buf[64];
+  g_dict = &ASDCP::DefaultSMPTEDict();
+
   CommandOptions Options(argc, argv);
 
   if ( Options.version_flag )
@@ -597,18 +674,18 @@ main(int argc, const char** argv)
   if ( Options.help_flag )
     usage();
 
-  if ( Options.version_flag || Options.help_flag )
+  if ( Options.show_ul_values_flag )
+    {
+      g_dict->Dump(stdout);
+    }
+
+  if ( Options.version_flag || Options.help_flag || Options.show_ul_values_flag )
     return 0;
 
   if ( Options.error_flag )
     {
       fprintf(stderr, "There was a problem. Type %s -h for help.\n", PROGRAM_NAME);
       return 3;
-    }
-
-  if ( Options.show_ul_values )
-    {
-      DefaultSMPTEDict().Dump(stdout);
     }
 
   EssenceType_t EssenceType;

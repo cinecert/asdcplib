@@ -98,7 +98,8 @@ class WavFileWriter
   enum SplitType_t {
     ST_NONE,   // write all channels to a single WAV file
     ST_MONO,   // write each channel a separate WAV file
-    ST_STEREO  // write channel pairs to separate WAV files
+    ST_STEREO, // write channel pairs to separate WAV files
+    ST_MAX
   };
 
   ASDCP::Result_t

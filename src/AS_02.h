@@ -1,5 +1,7 @@
 /*
-Copyright (c) 2011-2013, Robert Scheler, Heiko Sparenberg Fraunhofer IIS, John Hurst
+Copyright (c) 2011-2013, Robert Scheler, Heiko Sparenberg Fraunhofer IIS,
+John Hurst
+
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -34,7 +36,7 @@ by the SMPTE Media and Packaging Technology Committee 35PM. The file
 format, labeled IMF Essence Component (AKA "AS-02" for historical
 reasons), is described in the following document:
 
- o SMPTE 2067-5:201X (draft at this time) IMF Essence Component
+ o SMPTE 2067-5:2013 IMF Essence Component
 
 The following use cases are supported by the module:
 
@@ -47,49 +49,46 @@ The following use cases are supported by the module:
      PCM audio streams
 
  o Read header metadata from an AS-02 file
+
+NOTE: ciphertext support for clip-wrapped PCM is not yet complete.
 */
 
 #ifndef _AS_02_H_
 #define _AS_02_H_
 
-#include "AS_DCP.h"
-#include "MXF.h"
+#include "Metadata.h"
 
-
-namespace ASDCP {
-  namespace MXF {
-    // #include<Metadata.h> to use this
-    class OPAtomHeader;
-  };
-};
 
 namespace AS_02
 {
   using Kumu::Result_t;
 
+  KM_DECLARE_RESULT(AS02_FORMAT,        -116, "The file format is not proper OP-1a/AS-02.");
+
   namespace MXF {
     //
+    // reads distributed index tables and provides a uniform lookup with
+    // translated StreamOffest values (that is, StreamOffest is adjusted
+    // to the actual file position
     class AS02IndexReader : public ASDCP::MXF::Partition
     {
       Kumu::ByteString m_IndexSegmentData;
       ui32_t m_Duration;
+      ui32_t m_BytesPerEditUnit;
 
-      //      ui32_t              m_BytesPerEditUnit;
-
-      Result_t InitFromBuffer(const byte_t* p, ui32_t l);
+      Result_t InitFromBuffer(const byte_t* p, ui32_t l, const ui64_t& body_offset, const ui64_t& essence_container_offset);
 
       ASDCP_NO_COPY_CONSTRUCT(AS02IndexReader);
       AS02IndexReader();
 	  
     public:
       const ASDCP::Dictionary*&   m_Dict;
-      Kumu::fpos_t  m_ECOffset;
       ASDCP::IPrimerLookup *m_Lookup;
     
       AS02IndexReader(const ASDCP::Dictionary*&);
       virtual ~AS02IndexReader();
     
-      Result_t InitFromFile(const Kumu::FileReader& reader, const ASDCP::MXF::RIP& rip);
+      Result_t InitFromFile(const Kumu::FileReader& reader, const ASDCP::MXF::RIP& rip, const bool has_header_essence);
       ui32_t GetDuration() const;
       void     Dump(FILE* = 0);
       Result_t GetMDObjectByID(const Kumu::UUID&, ASDCP::MXF::InterchangeObject** = 0);
@@ -97,6 +96,27 @@ namespace AS_02
       Result_t GetMDObjectsByType(const byte_t* ObjectID, std::list<ASDCP::MXF::InterchangeObject*>& ObjectList);
       Result_t Lookup(ui32_t frame_num, ASDCP::MXF::IndexTableSegment::IndexEntry&) const;
     };
+
+
+    
+    // Returns size in bytes of a single sample of data described by ADesc
+    inline ui32_t CalcSampleSize(const ASDCP::MXF::WaveAudioDescriptor& d)
+    {
+      return (d.QuantizationBits / 8) * d.ChannelCount;
+    }
+
+      // Returns number of samples per frame of data described by ADesc
+    inline ui32_t CalcSamplesPerFrame(const ASDCP::MXF::WaveAudioDescriptor& d, const ASDCP::Rational& edit_rate)
+    {
+      double tmpd = d.AudioSamplingRate.Quotient() / edit_rate.Quotient();
+      return (ui32_t)ceil(tmpd);
+    }
+
+    // Returns the size in bytes of a frame of data described by ADesc
+    inline ui32_t CalcFrameBufferSize(const ASDCP::MXF::WaveAudioDescriptor& d, const ASDCP::Rational& edit_rate)
+    {
+      return CalcSampleSize(d) * CalcSamplesPerFrame(d, edit_rate);
+    }
 
   } // namespace MXF
 
@@ -110,6 +130,7 @@ namespace AS_02
     IS_LEAD,
     IS_FOLLOW,
     IS_FILE_SPECIFIC,
+    IS_MAX
   };
  
   namespace JP2K
@@ -133,11 +154,11 @@ namespace AS_02
       // Open the file for writing. The file must not exist. Returns error if
       // the operation cannot be completed or if nonsensical data is discovered
       // in the essence descriptor.
-      Result_t OpenWrite(const char* filename, const ASDCP::WriterInfo&,
-			 const ASDCP::JP2K::PictureDescriptor&,
-			 const IndexStrategy_t& Strategy = IS_FOLLOW,
-			 const ui32_t& PartitionSpace = 60, /* seconds per partition */
-			 const ui32_t& HeaderSize = 16384);
+      Result_t OpenWrite(const std::string& filename, const ASDCP::WriterInfo&,
+			 ASDCP::MXF::FileDescriptor* essence_descriptor,
+			 ASDCP::MXF::InterchangeObject_list_t& essence_sub_descriptor_list,
+			 const ASDCP::Rational& edit_rate, const ui32_t& header_size = 16384,
+			 const IndexStrategy_t& strategy = IS_FOLLOW, const ui32_t& partition_space = 10);
       
       // Writes a frame of essence to the MXF file. If the optional AESEncContext
       // argument is present, the essence is encrypted prior to writing.
@@ -168,14 +189,10 @@ namespace AS_02
 
       // Open the file for reading. The file must exist. Returns error if the
       // operation cannot be completed.
-      Result_t OpenRead(const char* filename) const;
+      Result_t OpenRead(const std::string& filename) const;
 
       // Returns RESULT_INIT if the file is not open.
       Result_t Close() const;
-
-      // Fill an AudioDescriptor struct with the values from the file's header.
-      // Returns RESULT_INIT if the file is not open.
-      Result_t FillPictureDescriptor(ASDCP::JP2K::PictureDescriptor&) const;
 
       // Fill a WriterInfo struct with the values from the file's header.
       // Returns RESULT_INIT if the file is not open.
@@ -204,6 +221,14 @@ namespace AS_02
   {
     // see AS_DCP.h for related data types
 
+    // An AS-02 PCM file is clip-wrapped, but the interface defined below mimics that used
+    // for frame-wrapped essence elsewhere in this library.  The concept of frame rate
+    // therefore is only relevant to these classes and is not reflected in or affected by
+    // the contents of the MXF file.  The frame rate that is set on the writer is only
+    // for compatibility with the existing parsers, samples are packed contiguously into
+    // the same clip-wrapped packet.  Similarly, the edit rate must be set when initializing
+    // the reader to signal the number of samples to be read by each call to ReadFrame();
+
     //
     class MXFWriter
     {
@@ -223,8 +248,10 @@ namespace AS_02
       // Open the file for writing. The file must not exist. Returns error if
       // the operation cannot be completed or if nonsensical data is discovered
       // in the essence descriptor.
-      Result_t OpenWrite(const char* filename, const ASDCP::WriterInfo&,
-				const ASDCP::PCM::AudioDescriptor&, ui32_t HeaderSize = 16384);
+      Result_t OpenWrite(const std::string& filename, const ASDCP::WriterInfo&,
+			 ASDCP::MXF::FileDescriptor* essence_descriptor,
+			 ASDCP::MXF::InterchangeObject_list_t& essence_sub_descriptor_list,
+			 const ASDCP::Rational& edit_rate, ui32_t HeaderSize = 16384);
 
       // Writes a frame of essence to the MXF file. If the optional AESEncContext
       // argument is present, the essence is encrypted prior to writing.
@@ -255,14 +282,10 @@ namespace AS_02
 
       // Open the file for reading. The file must exist. Returns error if the
       // operation cannot be completed.
-      Result_t OpenRead(const char* filename) const;
+      Result_t OpenRead(const std::string& filename, const ASDCP::Rational& EditRate);
 
       // Returns RESULT_INIT if the file is not open.
       Result_t Close() const;
-
-      // Fill an AudioDescriptor struct with the values from the file's header.
-      // Returns RESULT_INIT if the file is not open.
-      Result_t FillAudioDescriptor(ASDCP::PCM::AudioDescriptor&) const;
 
       // Fill a WriterInfo struct with the values from the file's header.
       // Returns RESULT_INIT if the file is not open.

@@ -126,6 +126,8 @@ namespace ASDCP
   //------------------------------------------------------------------------------------------
   //
 
+  ui32_t derive_timecode_rate_from_edit_rate(const ASDCP::Rational& edit_rate);
+
   Result_t MD_to_WriterInfo(MXF::Identification*, WriterInfo&);
   Result_t MD_to_CryptoInfo(MXF::CryptographicContext*, WriterInfo&, const Dictionary&);
 
@@ -158,7 +160,7 @@ namespace ASDCP
   void     AddDMScrypt(Partition& HeaderPart, SourcePackage& Package,
 		       WriterInfo& Descr, const UL& WrappingUL, const Dictionary*& Dict);
 
-  Result_t Read_EKLV_Packet(Kumu::FileReader& File, const ASDCP::Dictionary& Dict, const MXF::OP1aHeader& HeaderPart,
+  Result_t Read_EKLV_Packet(Kumu::FileReader& File, const ASDCP::Dictionary& Dict,
 			    const ASDCP::WriterInfo& Info, Kumu::fpos_t& LastPosition, ASDCP::FrameBuffer& CtFrameBuf,
 			    ui32_t FrameNum, ui32_t SequenceNum, ASDCP::FrameBuffer& FrameBuf,
 			    const byte_t* EssenceUL, AESDecContext* Ctx, HMACContext* HMAC);
@@ -167,7 +169,6 @@ namespace ASDCP
 			     const ASDCP::WriterInfo& Info, ASDCP::FrameBuffer& CtFrameBuf, ui32_t& FramesWritten,
 			     ui64_t & StreamOffset, const ASDCP::FrameBuffer& FrameBuf, const byte_t* EssenceUL,
 			     AESEncContext* Ctx, HMACContext* HMAC);
-
 
   //
  class KLReader : public ASDCP::KLVPacket
@@ -295,7 +296,8 @@ namespace ASDCP
 	}
 
 	// positions file before reading
-	Result_t ReadEKLVFrame(const ASDCP::MXF::Partition& CurrentPartition,
+	// allows external control of index offset
+	Result_t ReadEKLVFrame(const ui64_t& body_offset,
 			       ui32_t FrameNum, ASDCP::FrameBuffer& FrameBuf,
 			       const byte_t* EssenceUL, AESDecContext* Ctx, HMACContext* HMAC)
 	{
@@ -308,8 +310,8 @@ namespace ASDCP
 	      return RESULT_RANGE;
 	    }
 
-	  // get frame position and go read the frame's key and length
-	  Kumu::fpos_t FilePosition = CurrentPartition.BodyOffset + TmpEntry.StreamOffset;
+	  // get relative frame position, apply offset and go read the frame's key and length
+	  Kumu::fpos_t FilePosition = body_offset + TmpEntry.StreamOffset;
 	  Result_t result = RESULT_OK;
 
 	  if ( FilePosition != m_LastPosition )
@@ -324,17 +326,46 @@ namespace ASDCP
 	  return result;
 	}
 
+	// positions file before reading
+	// assumes "processed" index entries have absolute positions
+	Result_t ReadEKLVFrame(ui32_t FrameNum, ASDCP::FrameBuffer& FrameBuf,
+			       const byte_t* EssenceUL, AESDecContext* Ctx, HMACContext* HMAC)
+	{
+	  // look up frame index node
+	  IndexTableSegment::IndexEntry TmpEntry;
+
+	  if ( KM_FAILURE(m_IndexAccess.Lookup(FrameNum, TmpEntry)) )
+	    {
+	      DefaultLogSink().Error("Frame value out of range: %u\n", FrameNum);
+	      return RESULT_RANGE;
+	    }
+
+	  // get absolute frame position and go read the frame's key and length
+	  Result_t result = RESULT_OK;
+
+	  if ( TmpEntry.StreamOffset != m_LastPosition )
+	    {
+	      m_LastPosition = TmpEntry.StreamOffset;
+	      result = m_File.Seek(TmpEntry.StreamOffset);
+	    }
+
+	  if ( KM_SUCCESS(result) )
+	    result = ReadEKLVPacket(FrameNum, FrameNum + 1, FrameBuf, EssenceUL, Ctx, HMAC);
+
+	  return result;
+	}
+
 	// reads from current position
 	Result_t ReadEKLVPacket(ui32_t FrameNum, ui32_t SequenceNum, ASDCP::FrameBuffer& FrameBuf,
 				const byte_t* EssenceUL, AESDecContext* Ctx, HMACContext* HMAC)
 	{
 	  assert(m_Dict);
-	  return Read_EKLV_Packet(m_File, *m_Dict, m_HeaderPart, m_Info, m_LastPosition, m_CtFrameBuf,
+	  return Read_EKLV_Packet(m_File, *m_Dict, m_Info, m_LastPosition, m_CtFrameBuf,
 				  FrameNum, SequenceNum, FrameBuf, EssenceUL, Ctx, HMAC);
 	}
 
 	// Get the position of a frame from a track file
-	Result_t LocateFrame(const ASDCP::MXF::Partition& CurrentPartition,
+	Result_t LocateFrame(const ui64_t& body_offset,
 			     ui32_t FrameNum, Kumu::fpos_t& streamOffset,
 			     i8_t& temporalOffset, i8_t& keyFrameOffset)
 	{
@@ -348,7 +379,7 @@ namespace ASDCP
 	    }
 
 	  // get frame position, temporal offset, and key frame ofset
-	  streamOffset = CurrentPartition.BodyOffset + TmpEntry.StreamOffset;
+	  streamOffset = body_offset + TmpEntry.StreamOffset;
 	  temporalOffset = TmpEntry.TemporalOffset;
 	  keyFrameOffset = TmpEntry.KeyFrameOffset;
 	  
@@ -380,13 +411,13 @@ namespace ASDCP
       template <class PackageT, class ClipT>
 	TrackSet<ClipT>
 	CreateTrackAndSequence(OP1aHeader& Header, PackageT& Package, const std::string TrackName,
-			       const MXF::Rational& EditRate, const UL& Definition, ui32_t TrackID, const Dictionary*& Dict)
+			       const MXF::Rational& clip_edit_rate, const UL& Definition, ui32_t TrackID, const Dictionary*& Dict)
 	{
 	  TrackSet<ClipT> NewTrack;
 
 	  NewTrack.Track = new Track(Dict);
 	  Header.AddChildObject(NewTrack.Track);
-	  NewTrack.Track->EditRate = EditRate;
+	  NewTrack.Track->EditRate = clip_edit_rate;
 	  Package.Tracks.push_back(NewTrack.Track->InstanceUID);
 	  NewTrack.Track->TrackID = TrackID;
 	  NewTrack.Track->TrackName = TrackName.c_str();
@@ -403,17 +434,19 @@ namespace ASDCP
       template <class PackageT>
 	TrackSet<TimecodeComponent>
 	CreateTimecodeTrack(OP1aHeader& Header, PackageT& Package,
-			    const MXF::Rational& EditRate, ui32_t TCFrameRate, ui64_t TCStart, const Dictionary*& Dict)
+			    const MXF::Rational& tc_edit_rate, ui32_t tc_frame_rate, ui64_t TCStart, const Dictionary*& Dict)
 	{
 	  assert(Dict);
 	  UL TCUL(Dict->ul(MDD_TimecodeDataDef));
 
-	  TrackSet<TimecodeComponent> NewTrack = CreateTrackAndSequence<PackageT, TimecodeComponent>(Header, Package, "Timecode Track", EditRate, TCUL, 1, Dict);
+	  TrackSet<TimecodeComponent> NewTrack =
+	    CreateTrackAndSequence<PackageT, TimecodeComponent>(Header, Package, "Timecode Track",
+								tc_edit_rate, TCUL, 1, Dict);
 
 	  NewTrack.Clip = new TimecodeComponent(Dict);
 	  Header.AddChildObject(NewTrack.Clip);
 	  NewTrack.Sequence->StructuralComponents.push_back(NewTrack.Clip->InstanceUID);
-	  NewTrack.Clip->RoundedTimecodeBase = TCFrameRate;
+	  NewTrack.Clip->RoundedTimecodeBase = tc_frame_rate;
 	  NewTrack.Clip->StartTimecode = TCStart;
 	  NewTrack.Clip->DataDefinition = TCUL;
 
@@ -428,6 +461,7 @@ namespace ASDCP
 	ST_READY,   // ready to write frames
 	ST_RUNNING, // one or more frames written
 	ST_FINAL,   // index written, file closed
+	ST_MAX
       };
 
       // implementation of h__WriterState class Goto_* methods
@@ -540,7 +574,8 @@ namespace ASDCP
 	}
 
 	//
-	void AddSourceClip(const MXF::Rational& EditRate, ui32_t TCFrameRate,
+	void AddSourceClip(const MXF::Rational& clip_edit_rate,
+			   const MXF::Rational& tc_edit_rate, ui32_t TCFrameRate,
 			   const std::string& TrackName, const UL& EssenceUL,
 			   const UL& DataDefinition, const std::string& PackageLabel)
 	{
@@ -571,13 +606,13 @@ namespace ASDCP
 
 	  TrackSet<TimecodeComponent> MPTCTrack =
 	    CreateTimecodeTrack<MaterialPackage>(m_HeaderPart, *m_MaterialPackage,
-						 EditRate, TCFrameRate, 0, m_Dict);
+						 tc_edit_rate, TCFrameRate, 0, m_Dict);
 	  m_DurationUpdateList.push_back(&(MPTCTrack.Sequence->Duration));
 	  m_DurationUpdateList.push_back(&(MPTCTrack.Clip->Duration));
 
 	  TrackSet<SourceClip> MPTrack =
 	    CreateTrackAndSequence<MaterialPackage, SourceClip>(m_HeaderPart, *m_MaterialPackage,
-								TrackName, EditRate, DataDefinition,
+								TrackName, clip_edit_rate, DataDefinition,
 								2, m_Dict);
 	  m_DurationUpdateList.push_back(&(MPTrack.Sequence->Duration));
 
@@ -603,13 +638,13 @@ namespace ASDCP
 
 	  TrackSet<TimecodeComponent> FPTCTrack =
 	    CreateTimecodeTrack<SourcePackage>(m_HeaderPart, *m_FilePackage,
-					       EditRate, TCFrameRate,
+					       tc_edit_rate, TCFrameRate,
 					       ui64_C(3600) * TCFrameRate, m_Dict);
 	  m_DurationUpdateList.push_back(&(FPTCTrack.Sequence->Duration));
 	  m_DurationUpdateList.push_back(&(FPTCTrack.Clip->Duration));
 	  TrackSet<SourceClip> FPTrack =
 	    CreateTrackAndSequence<SourcePackage, SourceClip>(m_HeaderPart, *m_FilePackage,
-							      TrackName, EditRate, DataDefinition,
+							      TrackName, clip_edit_rate, DataDefinition,
 							      2, m_Dict);
 	  m_DurationUpdateList.push_back(&(FPTrack.Sequence->Duration));
 
@@ -630,7 +665,8 @@ namespace ASDCP
 	}
 
 	//
-	void AddDMSegment(const MXF::Rational& EditRate, ui32_t TCFrameRate,
+	void AddDMSegment(const MXF::Rational& clip_edit_rate,
+			  const MXF::Rational& tc_edit_rate, ui32_t tc_frame_rate,
 			  const std::string& TrackName, const UL& DataDefinition,
 			  const std::string& PackageLabel)
 	{
@@ -661,13 +697,13 @@ namespace ASDCP
 
 	  TrackSet<TimecodeComponent> MPTCTrack =
 	    CreateTimecodeTrack<MaterialPackage>(m_HeaderPart, *m_MaterialPackage,
-						 EditRate, TCFrameRate, 0, m_Dict);
+						 tc_edit_rate, tc_frame_rate, 0, m_Dict);
 	  m_DurationUpdateList.push_back(&(MPTCTrack.Sequence->Duration));
 	  m_DurationUpdateList.push_back(&(MPTCTrack.Clip->Duration));
 
 	  TrackSet<DMSegment> MPTrack =
 	    CreateTrackAndSequence<MaterialPackage, DMSegment>(m_HeaderPart, *m_MaterialPackage,
-							       TrackName, EditRate, DataDefinition,
+							       TrackName, clip_edit_rate, DataDefinition,
 							       2, m_Dict);
 	  m_DurationUpdateList.push_back(&(MPTrack.Sequence->Duration));
 
@@ -693,14 +729,14 @@ namespace ASDCP
 
 	  TrackSet<TimecodeComponent> FPTCTrack =
 	    CreateTimecodeTrack<SourcePackage>(m_HeaderPart, *m_FilePackage,
-					       EditRate, TCFrameRate,
-					       ui64_C(3600) * TCFrameRate, m_Dict);
+					       clip_edit_rate, tc_frame_rate,
+					       ui64_C(3600) * tc_frame_rate, m_Dict);
 	  m_DurationUpdateList.push_back(&(FPTCTrack.Sequence->Duration));
 	  m_DurationUpdateList.push_back(&(FPTCTrack.Clip->Duration));
 
 	  TrackSet<DMSegment> FPTrack =
 	    CreateTrackAndSequence<SourcePackage, DMSegment>(m_HeaderPart, *m_FilePackage,
-							     TrackName, EditRate, DataDefinition,
+							     TrackName, clip_edit_rate, DataDefinition,
 							     2, m_Dict);
 	  m_DurationUpdateList.push_back(&(FPTrack.Sequence->Duration));
 
@@ -708,7 +744,7 @@ namespace ASDCP
 	  m_HeaderPart.AddChildObject(FPTrack.Clip);
 	  FPTrack.Sequence->StructuralComponents.push_back(FPTrack.Clip->InstanceUID);
 	  FPTrack.Clip->DataDefinition = DataDefinition;
-	  FPTrack.Clip->EventComment = "D-Cinema Timed Text";
+	  FPTrack.Clip->EventComment = "ST 429-5 Timed Text";
 
 	  m_DurationUpdateList.push_back(&(FPTrack.Clip->Duration));
 	  m_EssenceDescriptor->LinkedTrackID = FPTrack.Track->TrackID;

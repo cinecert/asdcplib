@@ -1,5 +1,7 @@
 /*
-Copyright (c) 2011-2012, Robert Scheler, Heiko Sparenberg Fraunhofer IIS, John Hurst
+Copyright (c) 2011-2012, Robert Scheler, Heiko Sparenberg Fraunhofer IIS,
+John Hurst
+
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -38,6 +40,10 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <AS_02.h>
 #include <WavFileWriter.h>
 
+namespace ASDCP {
+  Result_t MD_to_PCM_ADesc(ASDCP::MXF::WaveAudioDescriptor* ADescObj, ASDCP::PCM::AudioDescriptor& ADesc);
+}
+
 using namespace ASDCP;
 
 const ui32_t FRAME_BUFFER_SIZE = 4 * Kumu::Megabyte;
@@ -63,7 +69,7 @@ banner(FILE* stream = stdout)
 {
   fprintf(stream, "\n\
 %s (asdcplib %s)\n\n\
-Copyright (c) 2011-2012, Robert Scheler, Heiko Sparenberg Fraunhofer IIS, John Hurst\n\n\
+Copyright (c) 2011-2013, Robert Scheler, Heiko Sparenberg Fraunhofer IIS, John Hurst\n\n\
 asdcplib may be copied only under the terms of the license found at\n\
 the top of every file in the asdcplib distribution kit.\n\n\
 Specify the -h (help) option for further information about %s\n\n",
@@ -132,6 +138,7 @@ public:
   bool   j2c_pedantic;   // passed to JP2K::SequenceParser::OpenRead
   ui32_t picture_rate;   // fps of picture when wrapping PCM
   ui32_t fb_size;        // size of picture frame buffer
+  Rational edit_rate;    // frame buffer size for reading clip-wrapped PCM
   const char* file_prefix; // filename pre for files written by the extract mode
   byte_t key_value[KeyLen];  // value of given encryption key (when key_flag is true)
   byte_t key_id_value[UUIDlen];// value of given key ID (when key_id_flag is true)
@@ -281,15 +288,58 @@ read_JP2K_file(CommandOptions& Options)
 
   if ( ASDCP_SUCCESS(result) )
     {
-      JP2K::PictureDescriptor PDesc;
-      Reader.FillPictureDescriptor(PDesc);
-
-      frame_count = PDesc.ContainerDuration;
-
       if ( Options.verbose_flag )
 	{
 	  fprintf(stderr, "Frame Buffer size: %u\n", Options.fb_size);
-	  JP2K::PictureDescriptorDump(PDesc);
+	}
+
+      ASDCP::MXF::RGBAEssenceDescriptor *rgba_descriptor = 0;
+      ASDCP::MXF::CDCIEssenceDescriptor *cdci_descriptor = 0;
+
+      result = Reader.OP1aHeader().GetMDObjectByType(DefaultCompositeDict().ul(MDD_RGBAEssenceDescriptor),
+						     reinterpret_cast<MXF::InterchangeObject**>(&rgba_descriptor));
+
+      if ( KM_SUCCESS(result) )
+	{
+	  assert(rgba_descriptor);
+	  frame_count = rgba_descriptor->ContainerDuration;
+
+	  if ( Options.verbose_flag )
+	    {
+	      rgba_descriptor->Dump();
+	    }
+	}
+      else
+	{
+	  result = Reader.OP1aHeader().GetMDObjectByType(DefaultCompositeDict().ul(MDD_CDCIEssenceDescriptor),
+							 reinterpret_cast<MXF::InterchangeObject**>(&cdci_descriptor));
+
+	  if ( KM_SUCCESS(result) )
+	    {
+	      assert(cdci_descriptor);
+	      frame_count = cdci_descriptor->ContainerDuration;
+
+	      if ( Options.verbose_flag )
+		{
+		  cdci_descriptor->Dump();
+		}
+	    }
+	  else
+	    {
+	      fprintf(stderr, "File does not contain an essence descriptor.\n");
+	      frame_count = Reader.AS02IndexReader().GetDuration();
+	    }
+	}
+
+      if ( frame_count == 0 )
+	{
+	  frame_count = Reader.AS02IndexReader().GetDuration();
+	}
+
+      if ( frame_count == 0 )
+	{
+	  fprintf(stderr, "Unable to determine file duration.\n");
+	  return RESULT_FAIL;
 	}
     }
 
@@ -360,43 +410,87 @@ read_PCM_file(CommandOptions& Options)
   AS_02::PCM::MXFReader     Reader;
   PCM::FrameBuffer   FrameBuffer;
   WavFileWriter      OutWave;
-  PCM::AudioDescriptor ADesc;
   ui32_t last_frame = 0;
+  ASDCP::MXF::WaveAudioDescriptor *wave_descriptor = 0;
 
-  Result_t result = Reader.OpenRead(Options.input_filename);
+  if ( Options.edit_rate == Rational(0,0) ) // todo, make this available to the CLI
+    {
+      Options.edit_rate = EditRate_24;
+    }
+
+  Result_t result = Reader.OpenRead(Options.input_filename, Options.edit_rate);
 
   if ( ASDCP_SUCCESS(result) )
     {
-      Reader.FillAudioDescriptor(ADesc);
-      ADesc.EditRate = Rational(1, 1);
-      FrameBuffer.Capacity(PCM::CalcFrameBufferSize(ADesc));
+      if ( Options.verbose_flag )
+	{
+	  fprintf(stderr, "Frame Buffer size: %u\n", Options.fb_size);
+	}
+
+      result = Reader.OP1aHeader().GetMDObjectByType(DefaultCompositeDict().ul(MDD_WaveAudioDescriptor),
+						     reinterpret_cast<MXF::InterchangeObject**>(&wave_descriptor));
+
+      if ( KM_SUCCESS(result) )
+	{
+	  assert(wave_descriptor);
+	  last_frame = wave_descriptor->ContainerDuration;
+
+	  if ( Options.verbose_flag )
+	    {
+	      wave_descriptor->Dump();
+	    }
+	}
+      else
+	{
+	  fprintf(stderr, "File does not contain an essence descriptor.\n");
+	  last_frame = Reader.AS02IndexReader().GetDuration();
+	}
+
+      if ( last_frame == 0 )
+	{
+	  fprintf(stderr, "Unable to determine file duration.\n");
+	  return RESULT_FAIL;
+	}
+
+      FrameBuffer.Capacity(AS_02::MXF::CalcFrameBufferSize(*wave_descriptor, Options.edit_rate));
 
       if ( Options.verbose_flag )
-	PCM::AudioDescriptorDump(ADesc);
+	{
+	  wave_descriptor->Dump();
+	}
     }
 
   if ( ASDCP_SUCCESS(result) )
     {
-      last_frame = ADesc.ContainerDuration;
-
       if ( Options.duration > 0 && Options.duration < last_frame )
 	last_frame = Options.duration;
 
       if ( Options.start_frame > 0 )
 	{
-	  if ( Options.start_frame > ADesc.ContainerDuration )
+	  if ( Options.start_frame > last_frame )
 	    {
 	      fprintf(stderr, "Start value greater than file duration.\n");
 	      return RESULT_FAIL;
 	    }
 
-	  last_frame = Kumu::xmin(Options.start_frame + last_frame, ADesc.ContainerDuration);
+	  last_frame = Kumu::xmin(Options.start_frame + last_frame, last_frame);
 	}
 
-      ADesc.ContainerDuration = last_frame - Options.start_frame;
-      OutWave.OpenWrite(ADesc, Options.file_prefix,
-			( Options.split_wav ? WavFileWriter::ST_STEREO : 
-			  ( Options.mono_wav ? WavFileWriter::ST_MONO : WavFileWriter::ST_NONE ) ));
+      last_frame = last_frame - Options.start_frame;
+
+      PCM::AudioDescriptor ADesc;
+
+      result = MD_to_PCM_ADesc(wave_descriptor, ADesc);
+
+      if ( ASDCP_SUCCESS(result) )
+	{
+	  ADesc.ContainerDuration = last_frame;
+	  ADesc.EditRate = Options.edit_rate;
+
+	  result = OutWave.OpenWrite(ADesc, Options.file_prefix,
+				     ( Options.split_wav ? WavFileWriter::ST_STEREO : 
+				       ( Options.mono_wav ? WavFileWriter::ST_MONO : WavFileWriter::ST_NONE ) ));
+	}
     }
 
   if ( ASDCP_SUCCESS(result) && Options.key_flag )

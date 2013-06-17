@@ -325,7 +325,7 @@ namespace ASDCP
       class VersionType : public Kumu::IArchive
 	{
 	public:
-	  enum Release_t { RL_UNKNOWN, RL_RELEASE, RL_DEVELOPMENT, RL_PATCHED, RL_BETA, RL_PRIVATE };
+	  enum Release_t { RL_UNKNOWN, RL_RELEASE, RL_DEVELOPMENT, RL_PATCHED, RL_BETA, RL_PRIVATE, RL_MAX };
 	  ui16_t Major;
 	  ui16_t Minor;
 	  ui16_t Patch;

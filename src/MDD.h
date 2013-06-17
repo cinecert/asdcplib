@@ -355,6 +355,12 @@ namespace ASDCP {
 	MDD_DCAudioChannel_Cs, // 317
 	MDD_DCAudioChannel_HI, // 318
 	MDD_DCAudioChannel_VIN, // 319
+	MDD_DCAudioSoundfield_51, // 320
+	MDD_DCAudioSoundfield_71, // 321
+	MDD_DCAudioSoundfield_SDS, // 322
+	MDD_DCAudioSoundfield_61, // 323
+	MDD_DCAudioSoundfield_M, // 324
+	MDD_WAVEssenceClip, // 325
         MDD_Max
 
     }; // enum MDD_t

@@ -36,6 +36,19 @@ using namespace ASDCP;
 using namespace ASDCP::MXF;
 
 //
+ui32_t
+ASDCP::derive_timecode_rate_from_edit_rate(const ASDCP::Rational& edit_rate)
+{
+  double edit_rate_real = edit_rate.Quotient();
+  if ( ceil(edit_rate_real) == floor(edit_rate_real) )
+    {
+      return ceil(edit_rate_real);
+    }
+
+  return ( edit_rate_real - floor(edit_rate_real) < 0.5 ) ? floor(edit_rate_real) : ceil(edit_rate_real);
+}
+
+//
 // add DMS CryptographicFramework entry to source package
 void
 ASDCP::AddDMScrypt(Partition& HeaderPart, SourcePackage& Package,
@@ -146,7 +159,8 @@ ASDCP::h__ASDCPWriter::WriteASDCPHeader(const std::string& PackageLabel, const U
       m_RIP.PairArray.push_back(RIP::Pair(1, 0)); // 2-part, essence in header
     }
 
-  AddSourceClip(EditRate, TCFrameRate, TrackName, EssenceUL, DataDefinition, PackageLabel);
+  // timecode rate and essence rate are the same
+  AddSourceClip(EditRate, EditRate, TCFrameRate, TrackName, EssenceUL, DataDefinition, PackageLabel);
   AddEssenceDescriptor(WrappingUL);
 
   Result_t result = m_HeaderPart.WriteToFile(m_File, m_HeaderSize);

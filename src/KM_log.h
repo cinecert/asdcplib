@@ -88,6 +88,7 @@ namespace Kumu
     LOG_NOTICE,   // application user info
     LOG_ALERT,    // application non-fatal or near-miss error
     LOG_CRIT,     // application fatal error
+    LOG_MAX
   };
 
 

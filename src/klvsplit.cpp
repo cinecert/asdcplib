@@ -72,7 +72,7 @@ void
 usage(FILE* stream = stdout)
 {
   fprintf(stream, "\
-USAGE: %s [-l <limit>] [-p <prefix>] [-s <suffix>] [-u] [-v] \n\
+USAGE: %s [-l <limit>] [-p <prefix>] [-s <suffix>] [-u|-U] [-v] \n\
            (<type-name>|<type-ul>) <mxf-filename>+\n\
 \n\
        %s -d\n\
@@ -86,6 +86,7 @@ USAGE: %s [-l <limit>] [-p <prefix>] [-s <suffix>] [-u] [-v] \n\
                    uses the input filename minus any extension\n\
   -s <suffix>  - Append <suffix> to output filenames\n\
   -u           - Unwrap the packet value (i.e., do not output KL)\n\
+  -U           - Do not unwrap (default)\n\
   -v           - Verbose. Prints informative messages to stderr\n\
   -V           - Show version information\n\
 \n\
@@ -93,12 +94,6 @@ USAGE: %s [-l <limit>] [-p <prefix>] [-s <suffix>] [-u] [-v] \n\
          o All option arguments must be separated from the option by whitespace.\n\
 \n", PROGRAM_NAME, PROGRAM_NAME, PROGRAM_NAME);
 }
-
-enum MajorMode_t {
-  MMT_NONE,
-  MMT_LIST,
-  MMT_EXTRACT
-};
 
 //
 //
@@ -112,7 +107,7 @@ enum MajorMode_t {
    bool   help_flag;                // true if the help display option was selected
    bool   verbose_flag;             // true if the informative messages option was selected
    bool   unwrap_mode;              // true if we are to strip the K and L before writing
-   MajorMode_t   mode;
+   bool   list_mode;
    ASDCP::UL target_ul;             // a UL value identifying the packets to be extracted
    ui64_t  extract_limit;           // limit extraction to the given number of packets
    std::string prefix;              // output filename prefix
@@ -121,7 +116,7 @@ enum MajorMode_t {
 
    CommandOptions(int argc, const char** argv, const ASDCP::Dictionary& dict) :
      error_flag(true), version_flag(false), help_flag(false),
-     verbose_flag(false), unwrap_mode(false), mode(MMT_EXTRACT), extract_limit(ui64_C(-1))
+     verbose_flag(false), unwrap_mode(false), list_mode(false), extract_limit(ui64_C(-1))
    {
      for ( int i = 1; i < argc; ++i )
        {
@@ -136,7 +131,7 @@ enum MajorMode_t {
 	   {
 	     switch ( argv[i][1] )
 	       {
-	       case 'd': mode = MMT_LIST; break;
+	       case 'd': list_mode = true; break;
 	       case 'h': help_flag = true; break;
 
 	       case 'l':
@@ -155,6 +150,7 @@ enum MajorMode_t {
 		 break;
 
 	       case 'u': unwrap_mode = true; break;
+	       case 'U': unwrap_mode = false; break;
 	       case 'V': version_flag = true; break;
 	       case 'v': verbose_flag = true; break;
 
@@ -196,7 +192,7 @@ enum MajorMode_t {
      if ( help_flag || version_flag )
        return;
      
-     if ( mode == MMT_EXTRACT )
+     if ( ! list_mode )
        {
 	 if ( inFileList.empty() )
 	   {
@@ -223,7 +219,6 @@ int
 main(int argc, const char** argv)
 {
   const Dictionary *dict = &DefaultCompositeDict();
-
   CommandOptions Options(argc, argv, *dict);
 
   if ( Options.version_flag )
@@ -241,7 +236,7 @@ main(int argc, const char** argv)
       return 3;
     }
 
-  if ( Options.mode == MMT_LIST )
+  if ( Options.list_mode )
     {
       DefaultLogSink().UnsetFilterFlag(Kumu::LOG_ALLOW_WARN);
       char buf[64];
@@ -273,7 +268,7 @@ main(int argc, const char** argv)
   Result_t result = RESULT_OK;
   FileList_t::iterator fi;
 
-  for ( fi = Options.inFileList.begin(); ASDCP_SUCCESS(result) && fi != Options.inFileList.end(); ++fi )
+  for ( fi = Options.inFileList.begin(); KM_SUCCESS(result) && fi != Options.inFileList.end(); ++fi )
     {
       if ( Options.verbose_flag )
 	fprintf(stderr, "Opening file %s\n", (fi->c_str()));
@@ -281,7 +276,7 @@ main(int argc, const char** argv)
       std::string this_prefix =  Options.prefix.empty() ? Kumu::PathSetExtension(*fi, "") + "_" : Options.prefix;
       Kumu::FileReader reader;
       KLVFilePacket packet;
-      char filename_buf[1024], buf1[64], buf2[64];
+      char filename_buf[1024];
       ui64_t item_counter = 0;
 
       result = reader.OpenRead(fi->c_str());
@@ -325,7 +320,7 @@ main(int argc, const char** argv)
 	result = RESULT_OK;
     }
 
-  if ( ASDCP_FAILURE(result) )
+  if ( KM_FAILURE(result) )
     {
       fputs("Program stopped on error.\n", stderr);
       

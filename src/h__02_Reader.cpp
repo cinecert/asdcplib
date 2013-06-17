@@ -1,28 +1,30 @@
 /*
-  Copyright (c) 2011-2013, Robert Scheler, Heiko Sparenberg Fraunhofer IIS, John Hurst
-  All rights reserved.
+Copyright (c) 2011-2013, Robert Scheler, Heiko Sparenberg Fraunhofer IIS,
+John Hurst
 
-  Redistribution and use in source and binary forms, with or without
-  modification, are permitted provided that the following conditions
-  are met:
-  1. Redistributions of source code must retain the above copyright
-  notice, this list of conditions and the following disclaimer.
-  2. Redistributions in binary form must reproduce the above copyright
-  notice, this list of conditions and the following disclaimer in the
-  documentation and/or other materials provided with the distribution.
-  3. The name of the author may not be used to endorse or promote products
-  derived from this software without specific prior written permission.
+All rights reserved.
 
-  THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
-  IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
-  OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
-  IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
-  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
-  NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-  THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
-  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions
+are met:
+1. Redistributions of source code must retain the above copyright
+   notice, this list of conditions and the following disclaimer.
+2. Redistributions in binary form must reproduce the above copyright
+   notice, this list of conditions and the following disclaimer in the
+   documentation and/or other materials provided with the distribution.
+3. The name of the author may not be used to endorse or promote products
+   derived from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
+IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
+INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */ 
 /*! \file    h__02_Reader.cpp
   \version $Id$
@@ -34,7 +36,6 @@
 
 using namespace ASDCP;
 using namespace ASDCP::MXF;
-
 
 static Kumu::Mutex sg_DefaultMDInitLock;
 static bool        sg_DefaultMDTypesInit = false;
@@ -62,16 +63,68 @@ AS_02::default_md_object_init()
 //
 
     
-AS_02::MXF::AS02IndexReader::AS02IndexReader(const ASDCP::Dictionary*& d) : m_Duration(0), ASDCP::MXF::Partition(m_Dict), m_Dict(d) {}
+AS_02::MXF::AS02IndexReader::AS02IndexReader(const ASDCP::Dictionary*& d) :
+  m_Duration(0), m_BytesPerEditUnit(0),
+  ASDCP::MXF::Partition(m_Dict), m_Dict(d) {}
+
 AS_02::MXF::AS02IndexReader::~AS02IndexReader() {}
 
 //    
 Result_t
-AS_02::MXF::AS02IndexReader::InitFromFile(const Kumu::FileReader& reader, const ASDCP::MXF::RIP& rip)
+AS_02::MXF::AS02IndexReader::InitFromFile(const Kumu::FileReader& reader, const ASDCP::MXF::RIP& rip, const bool has_header_essence)
 {
-  ASDCP::MXF::Array<ASDCP::MXF::RIP::Pair>::const_iterator i;
+  typedef std::list<Kumu::mem_ptr<ASDCP::MXF::Partition> > body_part_array_t;
+  body_part_array_t body_part_array;
+  body_part_array_t::const_iterator body_part_iter;
 
-  Result_t result = m_IndexSegmentData.Capacity(128*Kumu::Kilobyte);
+  ASDCP::MXF::Array<ASDCP::MXF::RIP::Pair>::const_iterator i;
+  Result_t result = m_IndexSegmentData.Capacity(128*Kumu::Kilobyte); // will be grown if needed
+  ui32_t first_body_sid = 0;
+
+  // create a list of body parts and index parts
+  for ( i = rip.PairArray.begin(); KM_SUCCESS(result) && i != rip.PairArray.end(); ++i )
+    {
+      if ( i->BodySID == 0 )
+	continue;
+
+      if ( first_body_sid == 0 )
+	{
+	  first_body_sid = i->BodySID;
+	}
+      else if ( i->BodySID != first_body_sid )
+	{
+	  DefaultLogSink().Error("RIP contains multipls BodySID identities.\n");
+	}
+
+      reader.Seek(i->ByteOffset);
+      ASDCP::MXF::Partition *this_partition = new ASDCP::MXF::Partition(m_Dict);
+      assert(this_partition);
+
+      result = this_partition->InitFromFile(reader);
+
+      if ( KM_FAILURE(result) )
+	{
+	  delete this_partition;
+	  return result;
+	}
+
+      if ( this_partition->BodySID != i->BodySID )
+	{
+	  DefaultLogSink().Error("Partition BodySID %d does not match RIP BodySID %d.\n",
+				 this_partition->BodySID, i->BodySID);
+	}
+
+      body_part_array.push_back(0);
+      body_part_array.back().set(this_partition);
+    }
+
+  if ( body_part_array.empty() )
+    {
+      DefaultLogSink().Error("File has no partitions with essence data.\n");
+      return RESULT_AS02_FORMAT;
+    }
+
+  body_part_iter = body_part_array.begin();
 
   for ( i = rip.PairArray.begin(); KM_SUCCESS(result) && i != rip.PairArray.end(); ++i )
     {
@@ -79,9 +132,23 @@ AS_02::MXF::AS02IndexReader::InitFromFile(const Kumu::FileReader& reader, const 
       ASDCP::MXF::Partition plain_part(m_Dict);
       result = plain_part.InitFromFile(reader);
 
-      if ( KM_SUCCESS(result) && plain_part.IndexByteCount > 0 )
+      if ( KM_FAILURE(result) )
+	return result;
+
+      if ( plain_part.IndexByteCount > 0 )
 	{
-	  // slurp up the remainder of the footer
+	  if ( body_part_iter == body_part_array.end() )
+	    {
+	      DefaultLogSink().Error("Index and Body partitions do not match.\n");
+	      break;
+	    }
+
+	  if ( plain_part.ThisPartition == plain_part.FooterPartition )
+	    {
+	      DefaultLogSink().Warn("File footer partition contains index data.\n");
+	    }
+
+	  // slurp up the remainder of the partition
 	  ui32_t read_count = 0;
 
 	  assert (plain_part.IndexByteCount <= 0xFFFFFFFFL);
@@ -89,36 +156,102 @@ AS_02::MXF::AS02IndexReader::InitFromFile(const Kumu::FileReader& reader, const 
 
 	  result = m_IndexSegmentData.Capacity(m_IndexSegmentData.Length() + bytes_this_partition);
 
-	  if ( ASDCP_SUCCESS(result) )
+	  if ( KM_SUCCESS(result) )
 	    result = reader.Read(m_IndexSegmentData.Data() + m_IndexSegmentData.Length(),
 				 bytes_this_partition, &read_count);
 
-	  if ( ASDCP_SUCCESS(result) && read_count != bytes_this_partition )
+	  if ( KM_SUCCESS(result) && read_count != bytes_this_partition )
 	    {
-	      DefaultLogSink().Error("Short read of footer partition: got %u, expecting %u\n",
+	      DefaultLogSink().Error("Short read of index partition: got %u, expecting %u\n",
 				     read_count, bytes_this_partition);
-	      return RESULT_FAIL;
+	      return RESULT_AS02_FORMAT;
 	    }
 
-	  if ( ASDCP_SUCCESS(result) )
+	  if ( KM_SUCCESS(result) )
 	    {
-	      result = InitFromBuffer(m_IndexSegmentData.RoData() + m_IndexSegmentData.Length(), bytes_this_partition);
+	      ui64_t current_body_offset = 0;
+	      ui64_t current_ec_offset = 0;
+	      assert(body_part_iter != body_part_array.end());
+
+	      assert(!body_part_iter->empty());
+	      ASDCP::MXF::Partition *tmp_partition = body_part_iter->get();
+
+	      if ( has_header_essence && tmp_partition->ThisPartition == 0 )
+		{
+		  current_body_offset = 0;
+		  current_ec_offset = tmp_partition->HeaderByteCount + tmp_partition->ArchiveSize();
+		}
+	      else
+		{
+		  current_body_offset = tmp_partition->BodyOffset;
+		  current_ec_offset += tmp_partition->ThisPartition + tmp_partition->ArchiveSize();
+		}
+
+	      result = InitFromBuffer(m_IndexSegmentData.RoData() + m_IndexSegmentData.Length(), bytes_this_partition, current_body_offset, current_ec_offset);
 	      m_IndexSegmentData.Length(m_IndexSegmentData.Length() + bytes_this_partition);
+	      ++body_part_iter;
 	    }
 	}
     }
+
+  if ( KM_SUCCESS(result) )
+    {
+      std::list<InterchangeObject*>::const_iterator ii;
+  
+      for ( ii = m_PacketList->m_List.begin(); ii != m_PacketList->m_List.end(); ++ii )
+	{
+	  if ( (*ii)->IsA(OBJ_TYPE_ARGS(IndexTableSegment)) )
+	    {
+	      m_Duration += static_cast<IndexTableSegment*>(*ii)->IndexDuration;
+	    }
+	}
+    }
+
+#if 0
+  char identbuf[IdentBufferLen];
+  std::list<InterchangeObject*>::iterator j;
+  std::vector<ASDCP::MXF::IndexTableSegment::IndexEntry>::iterator k;
+  ui32_t entry_count = 0;
+
+  for ( j = m_PacketList->m_List.begin(); j != m_PacketList->m_List.end(); ++j )
+    {
+      assert(*j);
+      ASDCP::MXF::IndexTableSegment* segment = static_cast<ASDCP::MXF::IndexTableSegment*>(*j);
+
+      fprintf(stderr, "  --------------------------------------\n");
+      fprintf(stderr, "  IndexEditRate      = %d/%d\n",  segment->IndexEditRate.Numerator, segment->IndexEditRate.Denominator);
+      fprintf(stderr, "  IndexStartPosition = %s\n",  i64sz(segment->IndexStartPosition, identbuf));
+      fprintf(stderr, "  IndexDuration      = %s\n",  i64sz(segment->IndexDuration, identbuf));
+      fprintf(stderr, "  EditUnitByteCount  = %u\n",  segment->EditUnitByteCount);
+      fprintf(stderr, "  IndexSID           = %u\n",  segment->IndexSID);
+      fprintf(stderr, "  BodySID            = %u\n",  segment->BodySID);
+      fprintf(stderr, "  SliceCount         = %hu\n", segment->SliceCount);
+      fprintf(stderr, "  PosTableCount      = %hu\n", segment->PosTableCount);
+      fprintf(stderr, "  RtFileOffset       = %s\n",  i64sz(segment->RtFileOffset, identbuf));
+      fprintf(stderr, "  RtEntryOffset      = %s\n",  i64sz(segment->RtEntryOffset, identbuf));
+      fprintf(stderr, "  IndexEntryArray:\n");
+
+      for ( k = segment->IndexEntryArray.begin(); k != segment->IndexEntryArray.end(); ++k )
+	{
+	  fprintf(stderr, "  0x%010qx\n", k->StreamOffset);
+	  ++entry_count;
+	}
+    }
+
+  fprintf(stderr, "Actual entries: %d\n", entry_count);
+#endif
 
   return result;
 }
 
 //
 ASDCP::Result_t
-AS_02::MXF::AS02IndexReader::InitFromBuffer(const byte_t* p, ui32_t l)
+AS_02::MXF::AS02IndexReader::InitFromBuffer(const byte_t* p, ui32_t l, const ui64_t& body_offset, const ui64_t& essence_container_offset)
 {
   Result_t result = RESULT_OK;
   const byte_t* end_p = p + l;
 
-  while ( ASDCP_SUCCESS(result) && p < end_p )
+  while ( KM_SUCCESS(result) && p < end_p )
     {
       // parse the packets and index them by uid, discard KLVFill items
       InterchangeObject* object = CreateObject(m_Dict, p);
@@ -128,9 +261,18 @@ AS_02::MXF::AS02IndexReader::InitFromBuffer(const byte_t* p, ui32_t l)
       result = object->InitFromBuffer(p, end_p - p);
       p += object->PacketLength();
 
-      if ( ASDCP_SUCCESS(result) )
+      if ( KM_SUCCESS(result) )
 	{
-	  m_PacketList->AddPacket(object); // takes ownership
+	  if ( object->IsA(OBJ_TYPE_ARGS(IndexTableSegment)) )
+	    {
+	      static_cast<IndexTableSegment*>(object)->RtFileOffset = essence_container_offset;
+	      static_cast<IndexTableSegment*>(object)->RtEntryOffset = body_offset;
+	      m_PacketList->AddPacket(object); // takes ownership
+	    }
+	  else
+	    {
+	      delete object;
+	    }
 	}
       else
 	{
@@ -139,18 +281,8 @@ AS_02::MXF::AS02IndexReader::InitFromBuffer(const byte_t* p, ui32_t l)
 	}
     }
 
-  if ( ASDCP_FAILURE(result) )
+  if ( KM_FAILURE(result) )
     DefaultLogSink().Error("Failed to initialize AS02IndexReader\n");
-
-  std::list<InterchangeObject*>::const_iterator i;
-  
-  for ( i = m_PacketList->m_List.begin(); i != m_PacketList->m_List.end(); ++i )
-    {
-      if ( (*i)->IsA(OBJ_TYPE_ARGS(IndexTableSegment)) )
-	{
-	  m_Duration += static_cast<IndexTableSegment*>(*i)->IndexDuration;
-	}
-    }
 
   return result;
 }
@@ -200,7 +332,6 @@ AS_02::MXF::AS02IndexReader::GetDuration() const
 {
   return m_Duration;
 }
-   
 
 //
 Result_t
@@ -211,7 +342,7 @@ AS_02::MXF::AS02IndexReader::Lookup(ui32_t frame_num, ASDCP::MXF::IndexTableSegm
     {
       if ( (*li)->IsA(OBJ_TYPE_ARGS(IndexTableSegment)) )
 	{
-	  IndexTableSegment* Segment = (IndexTableSegment*)(*li);
+	  IndexTableSegment* Segment = static_cast<IndexTableSegment*>(*li);
 	  ui64_t start_pos = Segment->IndexStartPosition;
 
 	  if ( Segment->EditUnitByteCount > 0 )
@@ -222,7 +353,7 @@ AS_02::MXF::AS02IndexReader::Lookup(ui32_t frame_num, ASDCP::MXF::IndexTableSegm
 	      if ( ! Segment->IndexEntryArray.empty() )
 		DefaultLogSink().Error("Unexpected IndexEntryArray contents in CBR file\n");
 
-	      Entry.StreamOffset = (ui64_t)frame_num * Segment->EditUnitByteCount;
+	      Entry.StreamOffset = ((ui64_t)frame_num * Segment->EditUnitByteCount) + Segment->RtFileOffset;
 	      return RESULT_OK;
 	    }
 	  else if ( (ui64_t)frame_num >= start_pos
@@ -231,6 +362,7 @@ AS_02::MXF::AS02IndexReader::Lookup(ui32_t frame_num, ASDCP::MXF::IndexTableSegm
 	      ui64_t tmp = frame_num - start_pos;
 	      assert(tmp <= 0xFFFFFFFFL);
 	      Entry = Segment->IndexEntryArray[(ui32_t) tmp];
+	      Entry.StreamOffset = Entry.StreamOffset - Segment->RtEntryOffset + Segment->RtFileOffset;
 	      return RESULT_OK;
 	    }
 	}
@@ -252,6 +384,7 @@ AS_02::h__AS02Reader::~h__AS02Reader() {}
 Result_t
 AS_02::h__AS02Reader::OpenMXFRead(const char* filename)
 {
+  bool has_header_essence = false;
   Result_t result = ASDCP::MXF::TrackFileReader<OP1aHeader, AS_02::MXF::AS02IndexReader>::OpenMXFRead(filename);
 
   if ( KM_SUCCESS(result) )
@@ -284,18 +417,48 @@ AS_02::h__AS02Reader::OpenMXFRead(const char* filename)
       if ( m_RIP.PairArray.front().ByteOffset != 0 )
 	{
 	  DefaultLogSink().Error("First Partition in RIP is not at offset 0.\n");
-	  result = RESULT_FORMAT;
+	  return RESULT_AS02_FORMAT;
+	}
+
+      Kumu::fpos_t first_partition_after_header = 0;
+      bool has_body_sid = false;
+      Array<RIP::Pair>::iterator r_i;
+
+      for ( r_i = m_RIP.PairArray.begin(); r_i != m_RIP.PairArray.end(); ++r_i )
+	{
+	  if ( r_i->BodySID != 0 )
+	    {
+	      has_body_sid = true;
+	    }
+
+	  if ( first_partition_after_header == 0 && r_i->ByteOffset != 0 )
+	    {
+	      first_partition_after_header = r_i->ByteOffset;
+	    }
+	}
+
+      // essence in header partition?
+      Kumu::fpos_t header_end = m_HeaderPart.HeaderByteCount + m_HeaderPart.ArchiveSize();
+      has_header_essence = header_end < first_partition_after_header;
+
+      if ( has_header_essence )
+	{
+	  DefaultLogSink().Warn("File header partition contains essence data.\n");
+	}
+
+      if ( ! has_body_sid )
+	{
+	  DefaultLogSink().Error("File contains no essence.\n");
+	  return RESULT_AS02_FORMAT;
 	}
     }
 
   if ( KM_SUCCESS(result) )
     {
-      m_HeaderPart.BodyOffset = m_File.Tell();
       m_IndexAccess.m_Lookup = &m_HeaderPart.m_Primer;
-      result = m_IndexAccess.InitFromFile(m_File, m_RIP);
+      result = m_IndexAccess.InitFromFile(m_File, m_RIP, has_header_essence);
     }
 
-  m_File.Seek(m_HeaderPart.BodyOffset);
   return result;
 }
 
@@ -304,18 +467,8 @@ Result_t
 AS_02::h__AS02Reader::ReadEKLVFrame(ui32_t FrameNum, ASDCP::FrameBuffer& FrameBuf,
 				     const byte_t* EssenceUL, AESDecContext* Ctx, HMACContext* HMAC)
 {
-  return ASDCP::MXF::TrackFileReader<OP1aHeader, AS_02::MXF::AS02IndexReader>::ReadEKLVFrame(m_HeaderPart, FrameNum, FrameBuf,
-										     EssenceUL, Ctx, HMAC);
+  return ASDCP::MXF::TrackFileReader<OP1aHeader, AS_02::MXF::AS02IndexReader>::ReadEKLVFrame(FrameNum, FrameBuf, EssenceUL, Ctx, HMAC);
 }
-
-Result_t
-AS_02::h__AS02Reader::LocateFrame(ui32_t FrameNum, Kumu::fpos_t& streamOffset,
-                           i8_t& temporalOffset, i8_t& keyFrameOffset)
-{
-  return ASDCP::MXF::TrackFileReader<OP1aHeader, AS_02::MXF::AS02IndexReader>::LocateFrame(m_HeaderPart, FrameNum,
-                                                                                   streamOffset, temporalOffset, keyFrameOffset);
-}
-
 
 //
 // end h__02_Reader.cpp

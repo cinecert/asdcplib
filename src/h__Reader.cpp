@@ -108,6 +108,12 @@ ASDCP::h__ASDCPReader::OpenMXFRead(const char* filename)
 	    }
 	}
 
+      if ( m_RIP.PairArray.front().ByteOffset != 0 )
+	{
+	  DefaultLogSink().Error("First Partition in RIP is not at offset 0.\n");
+	  result = RESULT_FORMAT;
+	}
+
       //
       if ( m_RIP.PairArray.size() < 2 )
 	{
@@ -130,15 +136,13 @@ ASDCP::h__ASDCPReader::OpenMXFRead(const char* filename)
 	      DefaultLogSink().Error("ASDCP::h__ASDCPReader::OpenMXFRead, m_BodyPart.InitFromFile failed\n");
             }
         }
-      else if ( m_RIP.PairArray.front().ByteOffset != 0 )
-	{
-	  DefaultLogSink().Error("First Partition in RIP is not at offset 0.\n");
-	  result = RESULT_FORMAT;
-	}
     }
 
   if ( KM_SUCCESS(result) )
     {
+      // this position will be at either
+      //     a) the spot in the header partition where essence units appear, or
+      //     b) right after the body partition header (where essence units appear)
       m_HeaderPart.BodyOffset = m_File.Tell();
 
       result = m_File.Seek(m_HeaderPart.FooterPartition);
@@ -159,7 +163,7 @@ Result_t
 ASDCP::h__ASDCPReader::ReadEKLVFrame(ui32_t FrameNum, ASDCP::FrameBuffer& FrameBuf,
 				     const byte_t* EssenceUL, AESDecContext* Ctx, HMACContext* HMAC)
 {
-  return ASDCP::MXF::TrackFileReader<OP1aHeader, OPAtomIndexFooter>::ReadEKLVFrame(m_HeaderPart, FrameNum, FrameBuf,
+  return ASDCP::MXF::TrackFileReader<OP1aHeader, OPAtomIndexFooter>::ReadEKLVFrame(m_HeaderPart.BodyOffset, FrameNum, FrameBuf,
 										     EssenceUL, Ctx, HMAC);
 }
 
@@ -167,7 +171,7 @@ Result_t
 ASDCP::h__ASDCPReader::LocateFrame(ui32_t FrameNum, Kumu::fpos_t& streamOffset,
                            i8_t& temporalOffset, i8_t& keyFrameOffset)
 {
-  return ASDCP::MXF::TrackFileReader<OP1aHeader, OPAtomIndexFooter>::LocateFrame(m_HeaderPart, FrameNum,
+  return ASDCP::MXF::TrackFileReader<OP1aHeader, OPAtomIndexFooter>::LocateFrame(m_HeaderPart.BodyOffset, FrameNum,
                                                                                    streamOffset, temporalOffset, keyFrameOffset);
 }
 
@@ -208,7 +212,7 @@ ASDCP::KLReader::ReadKLFromFile(Kumu::FileReader& Reader)
 
   if ( ber_size < MXF_BER_LENGTH )
     {
-      DefaultLogSink().Error("BER size %d shorter than AS-DCP minimum %d.\n",
+      DefaultLogSink().Error("BER size %d shorter than AS-DCP/AS-02 minimum %d.\n",
 			     ber_size, MXF_BER_LENGTH);
       return RESULT_FORMAT;
     }
@@ -231,9 +235,14 @@ ASDCP::KLReader::ReadKLFromFile(Kumu::FileReader& Reader)
   return InitFromBuffer(m_KeyBuf, header_length);
 }
 
+
+//------------------------------------------------------------------------------------------
+//
+
+
 // base subroutine for reading a KLV packet, assumes file position is at the first byte of the packet
 Result_t
-ASDCP::Read_EKLV_Packet(Kumu::FileReader& File, const ASDCP::Dictionary& Dict, const MXF::OP1aHeader& HeaderPart,
+ASDCP::Read_EKLV_Packet(Kumu::FileReader& File, const ASDCP::Dictionary& Dict,
 			const ASDCP::WriterInfo& Info, Kumu::fpos_t& LastPosition, ASDCP::FrameBuffer& CtFrameBuf,
 			ui32_t FrameNum, ui32_t SequenceNum, ASDCP::FrameBuffer& FrameBuf,
 			const byte_t* EssenceUL, AESDecContext* Ctx, HMACContext* HMAC)

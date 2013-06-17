@@ -577,18 +577,10 @@ ASDCP::PCM::MXFWriter::h__Writer::SetSourceStream(const AudioDescriptor& ADesc)
 
   if ( ASDCP_SUCCESS(result) )
     {
-      ui32_t TCFrameRate = m_ADesc.EditRate.Numerator;
-
-      if ( m_ADesc.EditRate == EditRate_23_98  )
-	TCFrameRate = 24;
-      else if ( m_ADesc.EditRate == EditRate_18  )
-	TCFrameRate = 18;
-      else if ( m_ADesc.EditRate == EditRate_22  )
-	TCFrameRate = 22;
-      
       result = WriteASDCPHeader(PCM_PACKAGE_LABEL, UL(m_Dict->ul(MDD_WAVWrapping)),
 				SOUND_DEF_LABEL, UL(m_EssenceUL), UL(m_Dict->ul(MDD_SoundDataDef)),
-				m_ADesc.EditRate, TCFrameRate, calc_CBR_frame_size(m_Info, m_ADesc));
+				m_ADesc.EditRate, derive_timecode_rate_from_edit_rate(m_ADesc.EditRate),
+				calc_CBR_frame_size(m_Info, m_ADesc));
     }
 
   return result;

@@ -35,7 +35,7 @@ const ui32_t kl_length = ASDCP::SMPTE_UL_LENGTH + ASDCP::MXF_BER_LENGTH;
 
 //
 ASDCP::MXF::IndexTableSegment::IndexTableSegment(const Dictionary*& d) :
-  InterchangeObject(d), m_Dict(d),
+  InterchangeObject(d), m_Dict(d), RtFileOffset(0), RtEntryOffset(0),
   IndexStartPosition(0), IndexDuration(0), EditUnitByteCount(0),
   IndexSID(129), BodySID(1), SliceCount(0), PosTableCount(0)
 {

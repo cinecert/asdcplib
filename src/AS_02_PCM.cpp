@@ -1,29 +1,30 @@
 /*
-  Copyright (c) 2011-2013, Robert Scheler, Heiko Sparenberg Fraunhofer IIS, John Hurst
-  All rights reserved.
+Copyright (c) 2011-2013, Robert Scheler, Heiko Sparenberg Fraunhofer IIS,
+John Hurst
 
-  Redistribution and use in source and binary forms, with or without
-  modification, are permitted provided that the following conditions
-  are met:
-  1. Redistributions of source code must retain the above copyright
-  notice, this list of conditions and the following disclaimer.
-  2. Redistributions in binary form must reproduce the above copyright
-  notice, this list of conditions and the following disclaimer in the
-  documentation and/or other materials provided with the distribution.
-  3. The name of the author may not be used to endorse or promote products
-  derived from this software without specific prior written permission.
+All rights reserved.
 
-  THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
-  IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
-  OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
-  IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
-  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
-  NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-  THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
-  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-*/ 
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions
+are met:
+1. Redistributions of source code must retain the above copyright
+   notice, this list of conditions and the following disclaimer.
+2. Redistributions in binary form must reproduce the above copyright
+   notice, this list of conditions and the following disclaimer in the
+   documentation and/or other materials provided with the distribution.
+3. The name of the author may not be used to endorse or promote products
+   derived from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
+IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
+INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 /*! \file    AS_02_PCM.cpp
   \version $Id$       
   \brief   AS-02 library, PCM essence reader and writer implementation
@@ -40,129 +41,143 @@
 static std::string PCM_PACKAGE_LABEL = "File Package: SMPTE 382M clip wrapping of wave audio";
 static std::string SOUND_DEF_LABEL = "Sound Track";
 
-//this must be changed because the CBR_frame_size is only   
-//
-static ui32_t
-calc_CBR_frame_size(ASDCP::WriterInfo& Info, const ASDCP::PCM::AudioDescriptor& ADesc)
-{
-  ui32_t CBR_frame_size = 0;
-
-  if ( Info.EncryptedEssence )
-    {
-      CBR_frame_size =
-	//TODO: correct?
-	/*SMPTE_UL_LENGTH  
-	  + MXF_BER_LENGTH
-	  + */klv_cryptinfo_size
-	+ calc_esv_length(ASDCP::PCM::CalcFrameBufferSize(ADesc), 0)
-	+ ( Info.UsesHMAC ? klv_intpack_size : (MXF_BER_LENGTH * 3) );
-    }
-  else
-    {
-      CBR_frame_size = ASDCP::PCM::CalcFrameBufferSize(ADesc);
-    }
-
-  return CBR_frame_size;
-}
-
 
 //------------------------------------------------------------------------------------------
 
 
 class AS_02::PCM::MXFReader::h__Reader : public AS_02::h__AS02Reader
 {
+  ui64_t m_ClipEssenceBegin;
+  ui64_t m_SamplesPerFrame;
+  ui32_t m_ContainerDuration;
+
   ASDCP_NO_COPY_CONSTRUCT(h__Reader);
   h__Reader();
 
 public:
-  ASDCP::PCM::AudioDescriptor m_ADesc;
-
-  h__Reader(const Dictionary& d) : AS_02::h__AS02Reader(d) {}
+  h__Reader(const Dictionary& d) : AS_02::h__AS02Reader(d), m_ClipEssenceBegin(0),
+				   m_SamplesPerFrame(0), m_ContainerDuration(0) {}
   virtual ~h__Reader() {}
 
-  ASDCP::Result_t    OpenRead(const char*);
+  ASDCP::Result_t    OpenRead(const std::string&, const ASDCP::Rational& edit_rate);
   ASDCP::Result_t    ReadFrame(ui32_t, ASDCP::PCM::FrameBuffer&, ASDCP::AESDecContext*, ASDCP::HMACContext*);
-
-  
-  ///  Result_t OpenMXFRead(const char* filename);
-  // positions file before reading
-  ///  Result_t ReadEKLVFrame(ui32_t FrameNum, ASDCP::FrameBuffer& FrameBuf,
-  ///			 const byte_t* EssenceUL, AESDecContext* Ctx, HMACContext* HMAC);
-
-  // reads from current position
-  Result_t ReadEKLVPacket(ui32_t FrameNum, ui32_t SequenceNum, ASDCP::FrameBuffer& FrameBuf,
-			  const byte_t* EssenceUL, AESDecContext* Ctx, HMACContext* HMAC);
-
-
 };
 
-
+// TODO: This will ignore any body partitions past the first
 //
 //
 ASDCP::Result_t
-AS_02::PCM::MXFReader::h__Reader::OpenRead(const char* filename)
+AS_02::PCM::MXFReader::h__Reader::OpenRead(const std::string& filename, const ASDCP::Rational& edit_rate)
 {
-  Result_t result = OpenMXFRead(filename);
+  ASDCP::MXF::WaveAudioDescriptor* wave_descriptor = 0;
+  IndexTableSegment::IndexEntry tmp_entry;
+  Result_t result = OpenMXFRead(filename.c_str());
 
-  if( ASDCP_SUCCESS(result) )
+  if( KM_SUCCESS(result) )
     {
-      InterchangeObject* Object = 0;
-      if ( ASDCP_SUCCESS(m_HeaderPart.GetMDObjectByType(OBJ_TYPE_ARGS(WaveAudioDescriptor), &Object)) )
+      if ( KM_SUCCESS(m_HeaderPart.GetMDObjectByType(OBJ_TYPE_ARGS(WaveAudioDescriptor),
+						     reinterpret_cast<InterchangeObject**>(&wave_descriptor))) )
 	{
-	  if ( Object == 0 )
+	  if ( wave_descriptor == 0 )
 	    {
 	      DefaultLogSink().Error("WaveAudioDescriptor object not found.\n");
-	      return RESULT_FORMAT;
+	      return RESULT_AS02_FORMAT;
+	    }
+	}
+    }
+
+  if ( KM_SUCCESS(result) )
+    result = m_IndexAccess.Lookup(0, tmp_entry);
+
+  if ( KM_SUCCESS(result) )
+    result = m_File.Seek(tmp_entry.StreamOffset);
+
+  if ( KM_SUCCESS(result) )
+    {
+      assert(wave_descriptor);
+      KLReader reader;
+      result = reader.ReadKLFromFile(m_File);
+
+      if ( KM_SUCCESS(result) )
+	{
+	  if ( ! UL(reader.Key()).MatchIgnoreStream(m_Dict->ul(MDD_WAVEssenceClip)) )
+	    {
+	      const MDDEntry *entry = m_Dict->FindUL(reader.Key());
+
+	      if ( entry == 0 )
+		{
+		  char buf[64];
+		  DefaultLogSink().Error("Essence wrapper key is not WAVEssenceClip: %s\n", UL(reader.Key()).EncodeString(buf, 64));
+		}
+	      else
+		{
+		  DefaultLogSink().Error("Essence wrapper key is not WAVEssenceClip: %s\n", entry->name);
+		}
+	      
+	      return RESULT_AS02_FORMAT;
 	    }
 
-	  result = MD_to_PCM_ADesc((ASDCP::MXF::WaveAudioDescriptor*)Object, m_ADesc);
+	  if ( wave_descriptor->BlockAlign == 0 )
+	    {
+	      DefaultLogSink().Error("EssenceDescriptor has corrupt BlockAlign value, unable to continue.\n");
+	      return RESULT_AS02_FORMAT;
+	    }
+
+	  if ( reader.Length() % wave_descriptor->BlockAlign != 0 )
+	    {
+	      DefaultLogSink().Error("Clip length is not an even multiple of BlockAlign, unable to continue.\n");
+	      return RESULT_AS02_FORMAT;
+	    }
+
+	  m_ClipEssenceBegin = m_File.Tell();
+	  m_SamplesPerFrame = AS_02::MXF::CalcSamplesPerFrame(*wave_descriptor, edit_rate);
+	  m_ContainerDuration = reader.Length() / m_SamplesPerFrame;
 	}
     }
-
-  // check for sample/frame rate sanity
-  if ( ASDCP_SUCCESS(result)
-       && m_ADesc.EditRate != EditRate_24
-       && m_ADesc.EditRate != EditRate_25
-       && m_ADesc.EditRate != EditRate_30
-       && m_ADesc.EditRate != EditRate_48
-       && m_ADesc.EditRate != EditRate_50
-       && m_ADesc.EditRate != EditRate_60
-       && m_ADesc.EditRate != EditRate_23_98 )
-    {
-      DefaultLogSink().Error("PCM file EditRate is not a supported value: %d/%d\n", // lu
-			     m_ADesc.EditRate.Numerator, m_ADesc.EditRate.Denominator);
-
-      // oh, they gave us the audio sampling rate instead, assume 24/1
-      if ( m_ADesc.EditRate == SampleRate_48k )
-	{
-	  DefaultLogSink().Warn("adjusting EditRate to 24/1\n"); 
-	  m_ADesc.EditRate = EditRate_24;
-	}
-      else
-	{
-	  // or we just drop the hammer
-	  return RESULT_FORMAT;
-	}
-    }
-
-  // TODO: test file for sane CBR index BytesPerEditUnit
 
   return result;
 }
 
-
-//
 //
 ASDCP::Result_t
 AS_02::PCM::MXFReader::h__Reader::ReadFrame(ui32_t FrameNum, ASDCP::PCM::FrameBuffer& FrameBuf,
 					    ASDCP::AESDecContext* Ctx, ASDCP::HMACContext* HMAC)
 {
   if ( ! m_File.IsOpen() )
-    return RESULT_INIT;
+    {
+      return RESULT_INIT;
+    }
 
-  assert(m_Dict);
-  return ReadEKLVFrame(FrameNum, FrameBuf, m_Dict->ul(MDD_WAVEssence), Ctx, HMAC);
+  if ( FrameNum > m_ContainerDuration )
+    {
+      return RESULT_RANGE;
+    }
+
+  assert(m_ClipEssenceBegin);
+  Result_t result = RESULT_OK;
+  ui64_t position = m_ClipEssenceBegin + ( FrameNum * m_SamplesPerFrame );
+
+  if ( m_File.Tell() != position )
+    {
+      result = m_File.Seek(position);
+    }
+
+  if ( KM_SUCCESS(result) )
+    {
+      result = m_File.Read(FrameBuf.Data(), m_SamplesPerFrame);
+    }
+
+  if ( KM_SUCCESS(result) )
+    {
+      FrameBuf.Size(m_SamplesPerFrame);
+    }
+
+  return result;
 }
+
+
+//------------------------------------------------------------------------------------------
+//
 
 
 AS_02::PCM::MXFReader::MXFReader()
@@ -170,11 +185,8 @@ AS_02::PCM::MXFReader::MXFReader()
   m_Reader = new h__Reader(DefaultCompositeDict());
 }
 
-
 AS_02::PCM::MXFReader::~MXFReader()
 {
-  if ( m_Reader && m_Reader->m_File.IsOpen() )
-    m_Reader->Close();
 }
 
 // Warning: direct manipulation of MXF structures can interfere
@@ -225,9 +237,22 @@ AS_02::PCM::MXFReader::RIP()
 // Open the file for reading. The file must exist. Returns error if the
 // operation cannot be completed.
 ASDCP::Result_t
-AS_02::PCM::MXFReader::OpenRead(const char* filename) const
+AS_02::PCM::MXFReader::OpenRead(const std::string& filename, const ASDCP::Rational& edit_rate)
 {
-  return m_Reader->OpenRead(filename);
+  return m_Reader->OpenRead(filename, edit_rate);
+}
+
+//
+Result_t
+AS_02::PCM::MXFReader::Close() const
+{
+  if ( m_Reader && m_Reader->m_File.IsOpen() )
+    {
+      m_Reader->Close();
+      return RESULT_OK;
+    }
+
+  return RESULT_INIT;
 }
 
 // Reads a frame of essence from the MXF file. If the optional AESEncContext
@@ -244,20 +269,6 @@ AS_02::PCM::MXFReader::ReadFrame(ui32_t FrameNum, ASDCP::PCM::FrameBuffer& Frame
   return RESULT_INIT;
 }
 
-
-// Fill the struct with the values from the file's header.
-// Returns RESULT_INIT if the file is not open.
-ASDCP::Result_t
-AS_02::PCM::MXFReader::FillAudioDescriptor(ASDCP::PCM::AudioDescriptor& ADesc) const
-{
-  if ( m_Reader && m_Reader->m_File.IsOpen() )
-    {
-      ADesc = m_Reader->m_ADesc;
-      return RESULT_OK;
-    }
-
-  return RESULT_INIT;
-}
 
 // Fill the struct with the values from the file's header.
 // Returns RESULT_INIT if the file is not open.
@@ -300,58 +311,72 @@ class AS_02::PCM::MXFWriter::h__Writer : public AS_02::h__AS02Writer
   h__Writer();
 
 public:
-  ASDCP::PCM::AudioDescriptor m_ADesc;
-  byte_t          m_EssenceUL[SMPTE_UL_LENGTH];
-  ui64_t			m_KLV_start;
+  ASDCP::MXF::WaveAudioDescriptor *m_WaveAudioDescriptor;
+  byte_t m_EssenceUL[SMPTE_UL_LENGTH];
+  ui32_t m_BytesPerFrame;
+  ui32_t m_SamplesPerFrame;
 
-  h__Writer(const Dictionary& d) : AS_02::h__AS02Writer(d), m_KLV_start(0){
+  h__Writer(const Dictionary& d) : AS_02::h__AS02Writer(d), m_WaveAudioDescriptor(0), m_BytesPerFrame(0), m_SamplesPerFrame(0)
+  {
     memset(m_EssenceUL, 0, SMPTE_UL_LENGTH);
-
   }
 
   virtual ~h__Writer(){}
 
-  Result_t OpenWrite(const char*, ui32_t HeaderSize);
-  Result_t SetSourceStream(const ASDCP::PCM::AudioDescriptor&);
+  Result_t OpenWrite(const std::string&, ASDCP::MXF::FileDescriptor* essence_descriptor,
+		     ASDCP::MXF::InterchangeObject_list_t& essence_sub_descriptor_list, const ui32_t& header_size);
+  Result_t SetSourceStream(const ASDCP::Rational&);
   Result_t WriteFrame(const FrameBuffer&, ASDCP::AESEncContext* = 0, ASDCP::HMACContext* = 0);
-
   Result_t Finalize();
-
-  //void AddSourceClip(const MXF::Rational& EditRate, ui32_t TCFrameRate,
-  // const std::string& TrackName, const UL& EssenceUL,
-  // const UL& DataDefinition, const std::string& PackageLabel);
-  //void AddDMSegment(const MXF::Rational& EditRate, ui32_t TCFrameRate,
-  // const std::string& TrackName, const UL& DataDefinition,
-  // const std::string& PackageLabel);
-  //void AddEssenceDescriptor(const UL& WrappingUL);
-  //Result_t CreateBodyPart(const MXF::Rational& EditRate, ui32_t BytesPerEditUnit = 0);
-
-  ////new method to create BodyPartition for essence and index
-  //Result_t CreateBodyPartPair();
-  ////new method to finalize BodyPartion(index)
-  //Result_t CompleteIndexBodyPart();
-
-  // reimplement these functions in AS_02_PCM to support modifications for AS-02
-  //  Result_t WriteEKLVPacket(const ASDCP::FrameBuffer& FrameBuf,
-  //			   const byte_t* EssenceUL, AESEncContext* Ctx, HMACContext* HMAC);
-  //  Result_t WriteAS02Footer();
-
 };
 
 // Open the file for writing. The file must not exist. Returns error if
 // the operation cannot be completed.
 ASDCP::Result_t
-AS_02::PCM::MXFWriter::h__Writer::OpenWrite(const char* filename, ui32_t HeaderSize)
+AS_02::PCM::MXFWriter::h__Writer::OpenWrite(const std::string& filename, ASDCP::MXF::FileDescriptor* essence_descriptor,
+					    ASDCP::MXF::InterchangeObject_list_t& essence_sub_descriptor_list, const ui32_t& header_size)
 {
-  if ( ! m_State.Test_BEGIN() )
-    return RESULT_STATE;
+  assert(essence_descriptor);
 
-  Result_t result = m_File.OpenWrite(filename);
-
-  if ( ASDCP_SUCCESS(result) )
+  if ( essence_descriptor->GetUL() != UL(m_Dict->ul(MDD_WaveAudioDescriptor)) )
     {
-      m_HeaderSize = HeaderSize;
-      m_EssenceDescriptor = new WaveAudioDescriptor(m_Dict);
+      DefaultLogSink().Error("Essence descriptor is not a WaveAudioDescriptor.\n");
+      essence_descriptor->Dump();
+      return RESULT_AS02_FORMAT;
+    }
+
+  m_WaveAudioDescriptor = reinterpret_cast<ASDCP::MXF::WaveAudioDescriptor*>(essence_descriptor);
+
+  if ( ! m_State.Test_BEGIN() )
+    {
+      return RESULT_STATE;
+    }
+
+  Result_t result = m_File.OpenWrite(filename.c_str());
+
+  if ( KM_SUCCESS(result) )
+    {
+      m_HeaderSize = header_size;
+      m_EssenceDescriptor = essence_descriptor;
+      m_WaveAudioDescriptor->SampleRate = m_WaveAudioDescriptor->AudioSamplingRate;
+
+      ASDCP::MXF::InterchangeObject_list_t::iterator i;
+      for ( i = essence_sub_descriptor_list.begin(); i != essence_sub_descriptor_list.end(); ++i )
+	{
+	  if ( (*i)->GetUL() != UL(m_Dict->ul(MDD_AudioChannelLabelSubDescriptor))
+	       && (*i)->GetUL() != UL(m_Dict->ul(MDD_SoundfieldGroupLabelSubDescriptor))
+	       && (*i)->GetUL() != UL(m_Dict->ul(MDD_GroupOfSoundfieldGroupsLabelSubDescriptor)) )
+	    {
+	      DefaultLogSink().Error("Essence sub-descriptor is not an MCALabelSubDescriptor.\n");
+	      (*i)->Dump();
+	    }
+
+	  m_EssenceSubDescriptorList.push_back(*i);
+	  GenRandomValue((*i)->InstanceUID);
+	  m_EssenceDescriptor->SubDescriptors.push_back((*i)->InstanceUID);
+	  *i = 0; // parent will only free the ones we don't keep
+	}
+
       result = m_State.Goto_INIT();
     }
 
@@ -361,52 +386,31 @@ AS_02::PCM::MXFWriter::h__Writer::OpenWrite(const char* filename, ui32_t HeaderS
 
 // Automatically sets the MXF file's metadata from the WAV parser info.
 ASDCP::Result_t
-AS_02::PCM::MXFWriter::h__Writer::SetSourceStream(const ASDCP::PCM::AudioDescriptor& ADesc)
+AS_02::PCM::MXFWriter::h__Writer::SetSourceStream(const ASDCP::Rational& edit_rate)
 {
   if ( ! m_State.Test_INIT() )
-    return RESULT_STATE;
-
-  if ( ADesc.EditRate != EditRate_24
-       && ADesc.EditRate != EditRate_25
-       && ADesc.EditRate != EditRate_30
-       && ADesc.EditRate != EditRate_48
-       && ADesc.EditRate != EditRate_50
-       && ADesc.EditRate != EditRate_60
-       && ADesc.EditRate != EditRate_23_98 )
     {
-      DefaultLogSink().Error("AudioDescriptor.EditRate is not a supported value: %d/%d\n",
-			     ADesc.EditRate.Numerator, ADesc.EditRate.Denominator);
-      return RESULT_RAW_FORMAT;
+      return RESULT_STATE;
     }
 
-  if ( ADesc.AudioSamplingRate != SampleRate_48k && ADesc.AudioSamplingRate != SampleRate_96k )
+  fprintf(stderr, "edit_rate=%d/%d\n", edit_rate.Numerator, edit_rate.Denominator);
+
+  memcpy(m_EssenceUL, m_Dict->ul(MDD_WAVEssenceClip), SMPTE_UL_LENGTH);
+  m_EssenceUL[15] = 1; // set the stream identifier
+  Result_t result = m_State.Goto_READY();
+
+  if ( KM_SUCCESS(result) )
     {
-      DefaultLogSink().Error("AudioDescriptor.AudioSamplingRate is not 48000/1 or 96000/1: %d/%d\n",
-			     ADesc.AudioSamplingRate.Numerator, ADesc.AudioSamplingRate.Denominator);
-      return RESULT_RAW_FORMAT;
-    }
+      assert(m_WaveAudioDescriptor);
+      m_BytesPerFrame = AS_02::MXF::CalcFrameBufferSize(*m_WaveAudioDescriptor, edit_rate);
+      m_SamplesPerFrame = AS_02::MXF::CalcSamplesPerFrame(*m_WaveAudioDescriptor, edit_rate);
+      m_WaveAudioDescriptor->ContainerDuration = 0;
 
-  assert(m_Dict);
-  m_ADesc = ADesc;
-
-  Result_t result = PCM_ADesc_to_MD(m_ADesc, (WaveAudioDescriptor*)m_EssenceDescriptor);
-
-  if ( ASDCP_SUCCESS(result) )
-    {
-      memcpy(m_EssenceUL, m_Dict->ul(MDD_WAVEssence), SMPTE_UL_LENGTH);
-      //SMPTE 382M-2007: ByteNo. 15 - 02h - Wave Clip-Wrapped Element
-      m_EssenceUL[SMPTE_UL_LENGTH-2] = 2; // 02h - Wave Clip-Wrapped Element
-      m_EssenceUL[SMPTE_UL_LENGTH-1] = 1; // first (and only) essence container
-      result = m_State.Goto_READY();
-    }
-
-  if ( ASDCP_SUCCESS(result) )
-    {
-      ui32_t TCFrameRate = ( m_ADesc.EditRate == EditRate_23_98  ) ? 24 : m_ADesc.EditRate.Numerator;
+      fprintf(stderr, "m_BytesPerFrame=%d, m_SamplesPerFrame=%d\n", m_BytesPerFrame, m_SamplesPerFrame);
 
       result = WriteAS02Header(PCM_PACKAGE_LABEL, UL(m_Dict->ul(MDD_WAVWrapping)),
 			       SOUND_DEF_LABEL, UL(m_EssenceUL), UL(m_Dict->ul(MDD_SoundDataDef)),
-			       m_ADesc.EditRate, TCFrameRate, calc_CBR_frame_size(m_Info, m_ADesc));
+			       m_EssenceDescriptor->SampleRate, derive_timecode_rate_from_edit_rate(edit_rate), m_BytesPerFrame);
     }
 
   return result;
@@ -416,19 +420,42 @@ AS_02::PCM::MXFWriter::h__Writer::SetSourceStream(const ASDCP::PCM::AudioDescrip
 //
 //
 ASDCP::Result_t
-AS_02::PCM::MXFWriter::h__Writer::WriteFrame(const FrameBuffer& FrameBuf, AESEncContext* Ctx,
+AS_02::PCM::MXFWriter::h__Writer::WriteFrame(const FrameBuffer& frame_buf, AESEncContext* Ctx,
 					     HMACContext* HMAC)
 {
+  if ( frame_buf.Size() == 0 )
+    {
+      DefaultLogSink().Error("The frame buffer size is zero.\n");
+      return RESULT_PARAM;
+    }
+
+  if ( frame_buf.Size() % m_BytesPerFrame != 0 )
+    {
+      DefaultLogSink().Error("The frame buffer does not contain an integral number of sample sets.\n");
+      return RESULT_AS02_FORMAT;
+    }
+
   Result_t result = RESULT_OK;
 
   if ( m_State.Test_READY() )
-    result = m_State.Goto_RUNNING(); // first time through
+    {
+      result = m_State.Goto_RUNNING(); // first time through
+    }
 
-  if ( ASDCP_SUCCESS(result) )
-    result = WriteEKLVPacket(FrameBuf, m_EssenceUL, Ctx, HMAC);
+  if ( KM_SUCCESS(result) && ! HasOpenClip() )
+    {
+      result = StartClip(m_EssenceUL, Ctx, HMAC);
+    }
 
-  if ( ASDCP_SUCCESS(result) )
-    m_FramesWritten++;
+  if ( KM_SUCCESS(result) )
+    {
+      result = WriteClipBlock(frame_buf);
+    }
+
+  if ( KM_SUCCESS(result) )
+    {
+      m_FramesWritten++;
+    }
 
   return result;
 }
@@ -443,7 +470,16 @@ AS_02::PCM::MXFWriter::h__Writer::Finalize()
 
   m_State.Goto_FINAL();
 
-  return WriteAS02Footer();
+  Result_t result = FinalizeClip(m_BytesPerFrame);
+
+  if ( KM_SUCCESS(result) )
+    {
+      fprintf(stderr, "m_FramesWritten=%d, m_SamplesPerFrame=%d\n", m_FramesWritten, m_SamplesPerFrame);
+      m_FramesWritten = m_FramesWritten * m_SamplesPerFrame;
+      WriteAS02Footer();
+    }
+
+  return result;
 }
 
 
@@ -494,16 +530,30 @@ AS_02::PCM::MXFWriter::RIP()
 // Open the file for writing. The file must not exist. Returns error if
 // the operation cannot be completed.
 ASDCP::Result_t
-AS_02::PCM::MXFWriter::OpenWrite(const char* filename, const WriterInfo& Info,
-				 const ASDCP::PCM::AudioDescriptor& ADesc, ui32_t HeaderSize)
+AS_02::PCM::MXFWriter::OpenWrite(const std::string& filename, const WriterInfo& Info,
+				 ASDCP::MXF::FileDescriptor* essence_descriptor,
+				 ASDCP::MXF::InterchangeObject_list_t& essence_sub_descriptor_list,
+				 const ASDCP::Rational& edit_rate, ui32_t header_size)
 {
+  if ( essence_descriptor == 0 )
+    {
+      DefaultLogSink().Error("Essence descriptor object required.\n");
+      return RESULT_PARAM;
+    }
+
+  if ( Info.EncryptedEssence )
+    {
+      DefaultLogSink().Error("Encryption not supported for ST 382 clip-wrap.\n");
+      return Kumu::RESULT_NOTIMPL;
+    }
+
   m_Writer = new h__Writer(DefaultSMPTEDict());
   m_Writer->m_Info = Info;
 
-  Result_t result = m_Writer->OpenWrite(filename, HeaderSize);
+  Result_t result = m_Writer->OpenWrite(filename, essence_descriptor, essence_sub_descriptor_list, header_size);
 
-  if ( ASDCP_SUCCESS(result) )
-    result = m_Writer->SetSourceStream(ADesc);
+  if ( KM_SUCCESS(result) )
+    result = m_Writer->SetSourceStream(edit_rate);
 
   if ( ASDCP_FAILURE(result) )
     m_Writer.release();

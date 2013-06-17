@@ -243,6 +243,9 @@ namespace ASDCP
 	};
 
       //
+      typedef std::list<InterchangeObject*> InterchangeObject_list_t;
+
+      //
       class Preface : public InterchangeObject
 	{
 	  ASDCP_NO_COPY_CONSTRUCT(Preface);
@@ -321,6 +324,8 @@ namespace ASDCP
 	    };
 
 	  const Dictionary*& m_Dict;
+	  ui64_t  RtFileOffset; // not part of the MXF structure: used to manage runtime index access 
+	  ui64_t  RtEntryOffset;
 
 	  Rational    IndexEditRate;
 	  ui64_t      IndexStartPosition;
@@ -410,6 +415,42 @@ namespace ASDCP
 	  virtual void     SetIndexParamsVBR(IPrimerLookup* lookup, const Rational& Rate, Kumu::fpos_t offset);
 	};
 
+      //---------------------------------------------------------------------------------
+      //
+
+      //
+      inline std::string to_lower(std::string str) {
+	std::transform(str.begin(), str.end(), str.begin(), ::tolower);
+	return str;
+      }
+
+      // ignore case when searching for audio labels
+      struct ci_comp
+      {
+	inline bool operator()(const std::string& a, const std::string& b) const {
+	  return to_lower(a) < to_lower(b);
+	}
+      };
+
+      //
+      class MCAConfigParser : public InterchangeObject_list_t
+	{
+	  typedef std::map<const std::string, const UL, ci_comp> label_map_t;
+	  label_map_t label_map;
+	  ui32_t m_ChannelCount;
+
+	  const Dictionary*& m_Dict;
+
+	  KM_NO_COPY_CONSTRUCT(MCAConfigParser);
+	  MCAConfigParser();
+	  
+	public:
+	  MCAConfigParser(const Dictionary*&);
+	  bool DecodeString(const std::string& s, const std::string& language = "en");
+
+	  // Valid only after a successful call to DecodeString
+	  ui32_t ChannelCount() const;
+	};
 
     } // namespace MXF
 } // namespace ASDCP

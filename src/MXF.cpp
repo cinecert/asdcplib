@@ -781,6 +781,11 @@ ASDCP::MXF::OP1aHeader::InitFromBuffer(const byte_t* p, ui32_t l)
 	  if ( object->IsA(m_Dict->ul(MDD_KLVFill)) )
 	    {
 	      delete object;
+
+	      if ( p > end_p )
+		{
+		  DefaultLogSink().Error("Fill item short read: %d.\n", p - end_p);
+		}
 	    }
 	  else if ( object->IsA(m_Dict->ul(MDD_Primer)) ) // TODO: only one primer should be found
 	    {
@@ -1439,6 +1444,207 @@ ASDCP::MXF::CreateObject(const Dictionary*& Dict, const UL& label)
     return new InterchangeObject(Dict);
 
   return i->second(Dict);
+}
+
+
+//------------------------------------------------------------------------------------------
+
+
+ASDCP::MXF::MCAConfigParser::MCAConfigParser(const Dictionary*& d) : m_Dict(d), m_ChannelCount(0)
+{
+  label_map.insert(label_map_t::value_type("L", m_Dict->ul(MDD_DCAudioChannel_L)));
+  label_map.insert(label_map_t::value_type("R", m_Dict->ul(MDD_DCAudioChannel_R)));
+  label_map.insert(label_map_t::value_type("C", m_Dict->ul(MDD_DCAudioChannel_C)));
+  label_map.insert(label_map_t::value_type("LFE", m_Dict->ul(MDD_DCAudioChannel_LFE)));
+  label_map.insert(label_map_t::value_type("Ls", m_Dict->ul(MDD_DCAudioChannel_Ls)));
+  label_map.insert(label_map_t::value_type("Rs", m_Dict->ul(MDD_DCAudioChannel_Rs)));
+  label_map.insert(label_map_t::value_type("Lss", m_Dict->ul(MDD_DCAudioChannel_Lss)));
+  label_map.insert(label_map_t::value_type("Rss", m_Dict->ul(MDD_DCAudioChannel_Rss)));
+  label_map.insert(label_map_t::value_type("Lrs", m_Dict->ul(MDD_DCAudioChannel_Lrs)));
+  label_map.insert(label_map_t::value_type("Rrs", m_Dict->ul(MDD_DCAudioChannel_Rrs)));
+  label_map.insert(label_map_t::value_type("Lc", m_Dict->ul(MDD_DCAudioChannel_Lc)));
+  label_map.insert(label_map_t::value_type("Rc", m_Dict->ul(MDD_DCAudioChannel_Rc)));
+  label_map.insert(label_map_t::value_type("Cs", m_Dict->ul(MDD_DCAudioChannel_Cs)));
+  label_map.insert(label_map_t::value_type("HI", m_Dict->ul(MDD_DCAudioChannel_HI)));
+  label_map.insert(label_map_t::value_type("VIN", m_Dict->ul(MDD_DCAudioChannel_VIN)));
+  label_map.insert(label_map_t::value_type("51", m_Dict->ul(MDD_DCAudioSoundfield_51)));
+  label_map.insert(label_map_t::value_type("71", m_Dict->ul(MDD_DCAudioSoundfield_71)));
+  label_map.insert(label_map_t::value_type("SDS", m_Dict->ul(MDD_DCAudioSoundfield_SDS)));
+  label_map.insert(label_map_t::value_type("61", m_Dict->ul(MDD_DCAudioSoundfield_61)));
+  label_map.insert(label_map_t::value_type("M", m_Dict->ul(MDD_DCAudioSoundfield_M)));
+}
+
+//
+ui32_t
+ASDCP::MXF::MCAConfigParser::ChannelCount() const
+{
+  return m_ChannelCount;
+}
+
+// 51(L,R,C,LFE,Ls,Rs),HI,VIN
+bool
+ASDCP::MXF::MCAConfigParser::DecodeString(const std::string& s, const std::string& language)
+{
+  std::string symbol_buf;
+  m_ChannelCount = 0;
+  ASDCP::MXF::SoundfieldGroupLabelSubDescriptor *current_soundfield = 0;
+  std::string::const_iterator i;
+
+  for ( i = s.begin(); i != s.end(); ++i )
+    {
+      if ( *i == '(' )
+	{
+	  if ( current_soundfield != 0 )
+	    {
+	      fprintf(stderr, "Encountered '(', already processing a soundfield group.\n");
+	      return false;
+	    }
+
+	  if ( symbol_buf.empty() )
+	    {
+	      fprintf(stderr, "Encountered '(', without leading soundfield group symbol.\n");
+	      return false;
+	    }
+
+	  label_map_t::const_iterator i = label_map.find(symbol_buf);
+      
+	  if ( i == label_map.end() )
+	    {
+	      fprintf(stderr, "Unknown symbol: '%s'\n", symbol_buf.c_str());
+	      return false;
+	    }
+      
+	  if ( i->second.Value()[10] != 2 ) // magic depends on UL "Essence Facet" byte (see ST 428-12)
+	    {
+	      fprintf(stderr, "Not a soundfield group symbol: '%s'\n", symbol_buf.c_str());
+	      return false;
+	    }
+
+	  current_soundfield = new ASDCP::MXF::SoundfieldGroupLabelSubDescriptor(m_Dict);
+
+	  GenRandomValue(current_soundfield->InstanceUID);
+	  GenRandomValue(current_soundfield->MCALinkID);
+	  current_soundfield->MCATagSymbol = "sg" + i->first;
+	  current_soundfield->MCATagName = i->first;
+	  current_soundfield->RFC5646SpokenLanguage = language;
+	  current_soundfield->MCALabelDictionaryID = i->second;
+	  push_back(reinterpret_cast<ASDCP::MXF::InterchangeObject*>(current_soundfield));
+	  symbol_buf.clear();
+	}
+      else if ( *i == ')' )
+	{
+	  if ( current_soundfield == 0 )
+	    {
+	      fprintf(stderr, "Encountered ')', not currently processing a soundfield group.\n");
+	      return false;
+	    }
+
+	  if ( symbol_buf.empty() )
+	    {
+	      fprintf(stderr, "Soundfield group description contains no channels.\n");
+	      return false;
+	    }
+
+	  label_map_t::const_iterator i = label_map.find(symbol_buf);
+      
+	  if ( i == label_map.end() )
+	    {
+	      fprintf(stderr, "Unknown symbol: '%s'\n", symbol_buf.c_str());
+	      return false;
+	    }
+
+	  ASDCP::MXF::AudioChannelLabelSubDescriptor *channel_descr =
+	    new ASDCP::MXF::AudioChannelLabelSubDescriptor(m_Dict);
+
+	  GenRandomValue(channel_descr->InstanceUID);
+	  assert(current_soundfield);
+	  channel_descr->MCALinkID = current_soundfield->MCALinkID;
+	  channel_descr->MCAChannelID = m_ChannelCount++;
+	  channel_descr->MCATagSymbol = "ch" + i->first;
+	  channel_descr->MCATagName = i->first;
+	  channel_descr->RFC5646SpokenLanguage = language;
+	  channel_descr->MCALabelDictionaryID = i->second;
+	  push_back(reinterpret_cast<ASDCP::MXF::InterchangeObject*>(channel_descr));
+	  symbol_buf.clear();
+	  current_soundfield = 0;
+	}
+      else if ( *i == ',' )
+	{
+	  if ( ! symbol_buf.empty() )
+	    {
+	      label_map_t::const_iterator i = label_map.find(symbol_buf);
+
+	      if ( i == label_map.end() )
+		{
+		  fprintf(stderr, "Unknown symbol: '%s'\n", symbol_buf.c_str());
+		  return false;
+		}
+
+	      if ( i->second.Value()[10] != 1 ) // magic depends on UL "Essence Facet" byte (see ST 428-12)
+		{
+		  fprintf(stderr, "Not a channel symbol: '%s'\n", symbol_buf.c_str());
+		  return false;
+		}
+
+	      ASDCP::MXF::AudioChannelLabelSubDescriptor *channel_descr =
+		new ASDCP::MXF::AudioChannelLabelSubDescriptor(m_Dict);
+
+	      GenRandomValue(channel_descr->InstanceUID);
+
+	      if ( current_soundfield != 0 )
+		{
+		  channel_descr->MCALinkID = current_soundfield->MCALinkID;
+		}
+
+	      channel_descr->MCAChannelID = m_ChannelCount++;
+	      channel_descr->MCATagSymbol = "ch" + i->first;
+	      channel_descr->MCATagName = i->first;
+	      channel_descr->RFC5646SpokenLanguage = language;
+	      channel_descr->MCALabelDictionaryID = i->second;
+	      push_back(reinterpret_cast<ASDCP::MXF::InterchangeObject*>(channel_descr));
+	      symbol_buf.clear();
+	    }
+	}
+      else if ( isalnum(*i) )
+	{
+	  symbol_buf += *i;
+	}
+      else if ( ! isspace(*i) )
+	{
+	  fprintf(stderr, "Unexpected character '%c'.\n", *i);
+	  return false;
+	}
+    }
+
+  if ( ! symbol_buf.empty() )
+    {
+      label_map_t::const_iterator i = label_map.find(symbol_buf);
+      
+      if ( i == label_map.end() )
+	{
+	  fprintf(stderr, "Unknown symbol: '%s'\n", symbol_buf.c_str());
+	  return false;
+	}
+
+      ASDCP::MXF::AudioChannelLabelSubDescriptor *channel_descr =
+	new ASDCP::MXF::AudioChannelLabelSubDescriptor(m_Dict);
+
+      GenRandomValue(channel_descr->InstanceUID);
+
+      if ( current_soundfield != 0 )
+	{
+	  channel_descr->MCALinkID = current_soundfield->MCALinkID;
+	}
+
+      channel_descr->MCAChannelID = m_ChannelCount++;
+      channel_descr->MCATagSymbol = "ch" + i->first;
+      channel_descr->MCATagName = i->first;
+      channel_descr->RFC5646SpokenLanguage = language;
+      channel_descr->MCALabelDictionaryID = i->second;
+      push_back(reinterpret_cast<ASDCP::MXF::InterchangeObject*>(channel_descr));
+    }
+
+  return true;
 }
 
 

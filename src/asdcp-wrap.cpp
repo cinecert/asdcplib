@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2003-2012, John Hurst
+Copyright (c) 2003-2013, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -62,6 +62,8 @@ const byte_t P_HFR_UL_2K[16] = {
   0x0e, 0x16, 0x02, 0x02, 0x03, 0x01, 0x01, 0x03
 };
 
+const ASDCP::Dictionary *g_dict = 0;
+
 //------------------------------------------------------------------------------------------
 //
 // command line option parser class
@@ -118,8 +120,8 @@ USAGE: %s [-h|-help] [-V]\n\
 \n\
        %s [-3] [-a <uuid>] [-b <buffer-size>] [-C <UL>] [-d <duration>]\n\
           [-e|-E] [-f <start-frame>] [-j <key-id-string>] [-k <key-string>]\n\
-          [-l <label>] [-L] [-M] [-p <frame-rate>] [-s] [-v] [-W]\n\
-          [-z|-Z] <input-file>+ <output-file>\n\n",
+          [-l <label>] [-L] [-M] [-m <expr>] [-p <frame-rate>] [-s] [-v]\n\
+          [-W] [-z|-Z] <input-file>+ <output-file>\n\n",
 	  PROGRAM_NAME, PROGRAM_NAME);
 
   fprintf(stream, "\
@@ -135,6 +137,8 @@ Options:\n\
   -j <key-id-str>   - Write key ID instead of creating a random value\n\
   -k <key-string>   - Use key for ciphertext operations\n\
   -M                - Do not create HMAC values when writing\n\
+  -m <expr>         - Write MCA labels using <expr>.  Example:\n\
+                        51(L,R,C,LFE,Ls,Rs,),HI,VIN\n\
   -a <UUID>         - Specify the Asset ID of the file\n\
   -b <buffer-size>  - Specify size in bytes of picture frame buffer\n\
                       Defaults to 4,194,304 (4MB)\n\
@@ -218,7 +222,7 @@ public:
   byte_t asset_id_value[UUIDlen];// value of asset ID (when asset_id_flag is true)
   PCM::ChannelFormat_t channel_fmt; // audio channel arrangement
   std::string out_file; //
-  bool show_ul_values;    /// if true, dump the UL table before going tp work.
+  bool show_ul_values_flag;    /// if true, dump the UL table before going tp work.
   Kumu::PathList_t filenames;  // list of filenames to be processed
   UL channel_assignment;
   UL picture_coding;
@@ -226,7 +230,7 @@ public:
   ui32_t ffoa;  /// first frame of action for atmos wrapping
   ui32_t max_channel_count; /// max channel count for atmos wrapping
   ui32_t max_object_count; /// max object count for atmos wrapping
-
+  ASDCP::MXF::MCAConfigParser mca_config;
 
   //
   Rational PictureRate()
@@ -280,7 +284,8 @@ public:
     channel_fmt(PCM::CF_NONE),
     ffoa(0), max_channel_count(10), max_object_count(118), // hard-coded sample atmos properties
     dolby_atmos_sync_flag(false),
-    show_ul_values(false)
+    show_ul_values_flag(false),
+    mca_config(g_dict)
   {
     memset(key_value, 0, KeyLen);
     memset(key_id_value, 0, UUIDlen);
@@ -386,6 +391,14 @@ public:
 	      case 'L': use_smpte_labels = true; break;
 	      case 'M': write_hmac = false; break;
 
+	      case 'm':
+		TEST_EXTRA_ARG(i, 'm');
+		if ( ! mca_config.DecodeString(argv[i]) )
+		  {
+		    return;
+		  }
+		break;
+
 	      case 'P':
 		TEST_EXTRA_ARG(i, 'P');
 		if ( ! picture_coding.DecodeHex(argv[i]) )
@@ -399,7 +412,9 @@ public:
 		TEST_EXTRA_ARG(i, 'p');
 		picture_rate = abs(atoi(argv[i]));
 		break;
-          case 's': dolby_atmos_sync_flag = true; break;
+
+	      case 's': dolby_atmos_sync_flag = true; break;
+	      case 'u': show_ul_values_flag = true; break;
 	      case 'V': version_flag = true; break;
 	      case 'v': verbose_flag = true; break;
 	      case 'W': no_write_flag = true; break;
@@ -686,7 +701,7 @@ write_JP2K_S_file(CommandOptions& Options)
       if ( ASDCP_SUCCESS(result) && Options.picture_coding.HasValue() )
 	{
 	  MXF::RGBAEssenceDescriptor *descriptor = 0;
-	  Writer.OP1aHeader().GetMDObjectByType(DefaultSMPTEDict().ul(MDD_RGBAEssenceDescriptor),
+	  Writer.OP1aHeader().GetMDObjectByType(g_dict->ul(MDD_RGBAEssenceDescriptor),
 						reinterpret_cast<MXF::InterchangeObject**>(&descriptor));
 	  descriptor->PictureEssenceCoding = Options.picture_coding;
 	}
@@ -821,7 +836,7 @@ write_JP2K_file(CommandOptions& Options)
       if ( ASDCP_SUCCESS(result) && Options.picture_coding.HasValue() )
 	{
 	  MXF::RGBAEssenceDescriptor *descriptor = 0;
-	  Writer.OP1aHeader().GetMDObjectByType(DefaultSMPTEDict().ul(MDD_RGBAEssenceDescriptor),
+	  Writer.OP1aHeader().GetMDObjectByType(g_dict->ul(MDD_RGBAEssenceDescriptor),
 						reinterpret_cast<MXF::InterchangeObject**>(&descriptor));
 	  descriptor->PictureEssenceCoding = Options.picture_coding;
 	}
@@ -958,12 +973,47 @@ write_PCM_file(CommandOptions& Options)
       if ( ASDCP_SUCCESS(result) )
 	result = Writer.OpenWrite(Options.out_file.c_str(), Info, ADesc);
 
-      if ( ASDCP_SUCCESS(result) && Options.channel_assignment.HasValue() )
+      if ( ASDCP_SUCCESS(result)
+	   && ( Options.channel_assignment.HasValue()
+		|| ! Options.mca_config.empty() ) )
 	{
-	  MXF::WaveAudioDescriptor *descriptor = 0;
-	  Writer.OP1aHeader().GetMDObjectByType(DefaultSMPTEDict().ul(MDD_WaveAudioDescriptor),
-						reinterpret_cast<MXF::InterchangeObject**>(&descriptor));
-	  descriptor->ChannelAssignment = Options.channel_assignment;
+	  MXF::WaveAudioDescriptor *essence_descriptor = 0;
+	  Writer.OP1aHeader().GetMDObjectByType(g_dict->ul(MDD_WaveAudioDescriptor),
+						reinterpret_cast<MXF::InterchangeObject**>(&essence_descriptor));
+	  assert(essence_descriptor);
+
+	  if ( Options.mca_config.empty() )
+	    {
+	      essence_descriptor->ChannelAssignment = Options.channel_assignment;
+	    }
+	  else
+	    {
+	      if ( Options.mca_config.ChannelCount() != essence_descriptor->ChannelCount )
+		{
+		  fprintf(stderr, "MCA label count (%d) differs from essence stream channel count (%d).\n",
+			  Options.mca_config.ChannelCount(), essence_descriptor->ChannelCount);
+		  return RESULT_FAIL;
+		}
+
+	      essence_descriptor->ChannelAssignment = g_dict->ul(MDD_DCAudioChannelCfg_MCA);
+
+	      // add descriptors to the essence_descriptor and header
+	      ASDCP::MXF::InterchangeObject_list_t::iterator i;
+	      for ( i = Options.mca_config.begin(); i != Options.mca_config.end(); ++i )
+		{
+		  if ( (*i)->GetUL() != UL(g_dict->ul(MDD_AudioChannelLabelSubDescriptor))
+		       && (*i)->GetUL() != UL(g_dict->ul(MDD_SoundfieldGroupLabelSubDescriptor))
+		       && (*i)->GetUL() != UL(g_dict->ul(MDD_GroupOfSoundfieldGroupsLabelSubDescriptor)) )
+		    {
+		      fprintf(stderr, "Essence sub-descriptor is not an MCALabelSubDescriptor.\n");
+		      (*i)->Dump();
+		    }
+
+		  Writer.OP1aHeader().AddChildObject(*i);
+		  essence_descriptor->SubDescriptors.push_back((*i)->InstanceUID);
+		  *i = 0; // parent will only free the ones we don't keep
+		}
+	    }
 	}
     }
 
@@ -1384,6 +1434,8 @@ main(int argc, const char** argv)
 {
   Result_t result = RESULT_OK;
   char     str_buf[64];
+  g_dict = &ASDCP::DefaultSMPTEDict();
+
   CommandOptions Options(argc, argv);
 
   if ( Options.version_flag )
@@ -1392,21 +1444,21 @@ main(int argc, const char** argv)
   if ( Options.help_flag )
     usage();
 
-  if ( Options.version_flag || Options.help_flag )
+  if ( Options.show_ul_values_flag )
+    {
+      if ( Options.use_smpte_labels )
+	DefaultSMPTEDict().Dump(stdout);
+      else
+	DefaultInteropDict().Dump(stdout);
+    }
+
+  if ( Options.version_flag || Options.help_flag || Options.show_ul_values_flag )
     return 0;
 
   if ( Options.error_flag )
     {
       fprintf(stderr, "There was a problem. Type %s -h for help.\n", PROGRAM_NAME);
       return 3;
-    }
-
-  if ( Options.show_ul_values )
-    {
-      if ( Options.use_smpte_labels )
-	DefaultSMPTEDict().Dump(stdout);
-      else
-	DefaultInteropDict().Dump(stdout);
     }
 
   EssenceType_t EssenceType;
