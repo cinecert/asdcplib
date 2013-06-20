@@ -33,6 +33,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define _MXF_H_
 
 #include "MXFTypes.h"
+#include <algorithm>
 
 namespace ASDCP
 {
