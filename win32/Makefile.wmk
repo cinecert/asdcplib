@@ -83,9 +83,16 @@ ASDCP_OBJS = MPEG2_Parser.obj MPEG.obj JP2K_Codestream_Parser.obj \
 	Index.obj Metadata.obj AS_DCP.obj AS_DCP_MXF.obj AS_DCP_AES.obj \
 	h__Reader.obj h__Writer.obj AS_DCP_MPEG2.obj AS_DCP_JP2K.obj \
 	AS_DCP_PCM.obj AS_DCP_TimedText.obj PCMParserList.obj \
-	MDD.obj
+	MDD.obj AS_DCP_ATMOS.obj AS_DCP_DCData.obj \
+	DCData_ByteStream_Parser.obj DCData_Sequence_Parser.obj \
+	AtmosSyncChannel_Generator.obj AtmosSyncChannel_Mixer.obj \
+	PCMDataProviders.obj SyncEncoder.obj CRC16.obj \
+	UUIDInformation.obj
 
 {$(SRCDIR)\}.cpp{}.obj:
+	$(CXX) $(CXXFLAGS) -Fd$(OBJDIR)\ /c $<
+
+{$(SRCDIR)\}.c{}.obj:
 	$(CXX) $(CXXFLAGS) -Fd$(OBJDIR)\ /c $<
 
 all: kmfilegen.exe kmrandgen.exe kmuuidgen.exe asdcp-test.exe \
