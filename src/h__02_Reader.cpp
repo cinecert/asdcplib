@@ -31,7 +31,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   \brief   MXF file reader base class
 */
 
-#define DEFAULT_MD_DECL
+#define DEFAULT_02_MD_DECL
 #include "AS_02_internal.h"
 
 using namespace ASDCP;

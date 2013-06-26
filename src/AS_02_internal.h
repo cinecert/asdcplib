@@ -40,7 +40,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 using Kumu::DefaultLogSink;
 
-#ifdef DEFAULT_MD_DECL
+#ifdef DEFAULT_02_MD_DECL
 AS_02::MXF::AS02IndexReader *g_AS02IndexReader;
 #else
 extern AS_02::MXF::AS02IndexReader *g_AS02IndexReader;
