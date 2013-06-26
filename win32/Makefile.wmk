@@ -88,6 +88,8 @@ ASDCP_OBJS = MPEG2_Parser.obj MPEG.obj JP2K_Codestream_Parser.obj \
 	AtmosSyncChannel_Generator.obj AtmosSyncChannel_Mixer.obj \
 	PCMDataProviders.obj SyncEncoder.obj CRC16.obj \
 	UUIDInformation.obj
+AS02_OBJS = h__02_Reader.obj h__02_Writer.obj AS_02_JP2K.obj \
+	AS_02_PCM.obj
 
 {$(SRCDIR)\}.cpp{}.obj:
 	$(CXX) $(CXXFLAGS) -Fd$(OBJDIR)\ /c $<
@@ -98,6 +100,9 @@ ASDCP_OBJS = MPEG2_Parser.obj MPEG.obj JP2K_Codestream_Parser.obj \
 all: kmfilegen.exe kmrandgen.exe kmuuidgen.exe asdcp-test.exe \
      asdcp-wrap.exe asdcp-unwrap.exe asdcp-info.exe \
      blackwave.exe klvwalk.exe j2c-test.exe wavesplit.exe 
+!IFDEF USE_AS_02
+       as-02-wrap.exe as-02-unwrap.exe \
+!ENDIF
 
 clean:
 	erase *.exe *.lib *.obj *.ilk *.pdb *.idb
@@ -117,6 +122,11 @@ libkumu.lib : $(KUMU_OBJS)
 
 libasdcp.lib: libkumu.lib $(ASDCP_OBJS)
 	$(LIB_EXE) $(LIBFLAGS) /OUT:libasdcp.lib $**
+
+!IFDEF USE_AS_02
+libas02.lib: libasdcp.lib libkumu.lib $(AS02_OBJS)
+	$(LIB_EXE) $(LIBFLAGS) /OUT:libas02.lib $**
+!ENDIF
 
 blackwave.exe: libasdcp.lib blackwave.obj
 	$(LINK) $(LINKFLAGS) /OUT:blackwave.exe $** Advapi32.lib
@@ -153,6 +163,14 @@ asdcp-util.exe: libasdcp.lib asdcp-util.obj
 
 j2c-test.exe: libasdcp.lib j2c-test.obj
 	$(LINK) $(LINKFLAGS) /OUT:j2c-test.exe $** Advapi32.lib
+
+!IFDEF USE_AS_02
+as-02-wrap.exe: libas02.lib as-02-wrap.obj
+	$(LINK) $(LINKFLAGS) /OUT:as-02-wrap.exe $** Advapi32.lib
+
+as-02-unwrap.exe: libas02.lib as-02-unwrap.obj
+	$(LINK) $(LINKFLAGS) /OUT:as-02-unwrap.exe $** Advapi32.lib
+!ENDIF
 
 
 # END Makefile

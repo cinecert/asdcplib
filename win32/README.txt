@@ -49,6 +49,10 @@ Without XML parsing:
 C:\Program Files\asdcplib\win32>nmake WITH_OPENSSL="c:\Program Files\openssl-0.9.8j"
 	/f Makefile.mak
 
+Without XML parsing but with the AS-02 library and executables:
+C:\Program Files\asdcplib\win32>nmake WITH_OPENSSL="c:\Program Files\openssl-0.9.8j"
+	USE_AS_02=1 /f Makefile.mak
+
 Want a 64-bit build? Change the following line in Makefile.mak:
     LINKFLAGS1 = /NOLOGO /SUBSYSTEM:console /MACHINE:I386 /LIBPATH:. /DEBUG
 to
