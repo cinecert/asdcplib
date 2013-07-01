@@ -189,7 +189,7 @@ public:
   bool show_ul_values_flag;    /// if true, dump the UL table before going tp work.
   Kumu::PathList_t filenames;  // list of filenames to be processed
   UL channel_assignment;
-  ASDCP::MXF::MCAConfigParser mca_config;
+  ASDCP::MXF::AS02_MCAConfigParser mca_config;
 
   //new attributes for AS-02 support 
   AS_02::IndexStrategy_t index_strategy; //Shim parameter index_strategy_frame/clip

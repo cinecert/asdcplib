@@ -361,6 +361,30 @@ namespace ASDCP {
 	MDD_DCAudioSoundfield_61, // 323
 	MDD_DCAudioSoundfield_M, // 324
 	MDD_WAVEssenceClip, // 325
+	MDD_IMFAudioChannelCfg_MCA, // 326
+	MDD_IMFAudioChannel_M1, // 327
+	MDD_IMFAudioChannel_M2, // 328
+	MDD_IMFAudioChannel_Lt, // 329
+	MDD_IMFAudioChannel_Rt, // 330
+	MDD_IMFAudioChannel_Lst, // 331
+	MDD_IMFAudioChannel_Rst, // 332
+	MDD_IMFAudioChannel_S, // 333
+	MDD_IMFNumberedSourceChannel, // 334
+	MDD_IMFAudioSoundfield_ST, // 335
+	MDD_IMFAudioSoundfield_DM, // 336
+	MDD_IMFAudioSoundfield_DNS, // 337
+	MDD_IMFAudioSoundfield_30, // 338
+	MDD_IMFAudioSoundfield_40, // 339
+	MDD_IMFAudioSoundfield_50, // 340
+	MDD_IMFAudioSoundfield_60, // 341
+	MDD_IMFAudioSoundfield_70, // 342
+	MDD_IMFAudioSoundfield_LtRt, // 343
+	MDD_IMFAudioSoundfield_51Ex, // 344
+	MDD_IMFAudioSoundfield_HI, // 345
+	MDD_IMFAudioSoundfield_VIN, // 346
+	MDD_IMFAudioGroup_MPg, // 347
+	MDD_IMFAudioGroup_DVS, // 348
+	MDD_IMFAudioGroup_Dcm, // 349
         MDD_Max
 
     }; // enum MDD_t

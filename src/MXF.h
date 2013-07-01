@@ -433,24 +433,37 @@ namespace ASDCP
 	}
       };
 
-      //
-      class MCAConfigParser : public InterchangeObject_list_t
-	{
-	  typedef std::map<const std::string, const UL, ci_comp> label_map_t;
-	  label_map_t label_map;
-	  ui32_t m_ChannelCount;
+      typedef std::map<const std::string, const UL, ci_comp> mca_label_map_t;
+      bool decode_mca_string(const std::string& s, const mca_label_map_t& labels, const Dictionary& dict, const std::string& language, InterchangeObject_list_t&, ui32_t&);
 
+      //
+      class ASDCP_MCAConfigParser : public InterchangeObject_list_t
+	{
+	  KM_NO_COPY_CONSTRUCT(ASDCP_MCAConfigParser);
+	  ASDCP_MCAConfigParser();
+
+	protected:
+	  mca_label_map_t m_LabelMap;
+	  ui32_t m_ChannelCount;
 	  const Dictionary*& m_Dict;
 
-	  KM_NO_COPY_CONSTRUCT(MCAConfigParser);
-	  MCAConfigParser();
 	  
 	public:
-	  MCAConfigParser(const Dictionary*&);
+	  ASDCP_MCAConfigParser(const Dictionary*&);
 	  bool DecodeString(const std::string& s, const std::string& language = "en");
 
 	  // Valid only after a successful call to DecodeString
 	  ui32_t ChannelCount() const;
+	};
+
+      //
+      class AS02_MCAConfigParser : public ASDCP_MCAConfigParser
+	{
+	  KM_NO_COPY_CONSTRUCT(AS02_MCAConfigParser);
+	  AS02_MCAConfigParser();
+	  
+	public:
+	  AS02_MCAConfigParser(const Dictionary*&);
 	};
 
     } // namespace MXF

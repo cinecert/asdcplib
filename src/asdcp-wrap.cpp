@@ -230,7 +230,7 @@ public:
   ui32_t ffoa;  /// first frame of action for atmos wrapping
   ui32_t max_channel_count; /// max channel count for atmos wrapping
   ui32_t max_object_count; /// max object count for atmos wrapping
-  ASDCP::MXF::MCAConfigParser mca_config;
+  ASDCP::MXF::ASDCP_MCAConfigParser mca_config;
 
   //
   Rational PictureRate()

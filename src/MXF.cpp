@@ -1449,44 +1449,14 @@ ASDCP::MXF::CreateObject(const Dictionary*& Dict, const UL& label)
 
 //------------------------------------------------------------------------------------------
 
-
-ASDCP::MXF::MCAConfigParser::MCAConfigParser(const Dictionary*& d) : m_Dict(d), m_ChannelCount(0)
-{
-  label_map.insert(label_map_t::value_type("L", m_Dict->ul(MDD_DCAudioChannel_L)));
-  label_map.insert(label_map_t::value_type("R", m_Dict->ul(MDD_DCAudioChannel_R)));
-  label_map.insert(label_map_t::value_type("C", m_Dict->ul(MDD_DCAudioChannel_C)));
-  label_map.insert(label_map_t::value_type("LFE", m_Dict->ul(MDD_DCAudioChannel_LFE)));
-  label_map.insert(label_map_t::value_type("Ls", m_Dict->ul(MDD_DCAudioChannel_Ls)));
-  label_map.insert(label_map_t::value_type("Rs", m_Dict->ul(MDD_DCAudioChannel_Rs)));
-  label_map.insert(label_map_t::value_type("Lss", m_Dict->ul(MDD_DCAudioChannel_Lss)));
-  label_map.insert(label_map_t::value_type("Rss", m_Dict->ul(MDD_DCAudioChannel_Rss)));
-  label_map.insert(label_map_t::value_type("Lrs", m_Dict->ul(MDD_DCAudioChannel_Lrs)));
-  label_map.insert(label_map_t::value_type("Rrs", m_Dict->ul(MDD_DCAudioChannel_Rrs)));
-  label_map.insert(label_map_t::value_type("Lc", m_Dict->ul(MDD_DCAudioChannel_Lc)));
-  label_map.insert(label_map_t::value_type("Rc", m_Dict->ul(MDD_DCAudioChannel_Rc)));
-  label_map.insert(label_map_t::value_type("Cs", m_Dict->ul(MDD_DCAudioChannel_Cs)));
-  label_map.insert(label_map_t::value_type("HI", m_Dict->ul(MDD_DCAudioChannel_HI)));
-  label_map.insert(label_map_t::value_type("VIN", m_Dict->ul(MDD_DCAudioChannel_VIN)));
-  label_map.insert(label_map_t::value_type("51", m_Dict->ul(MDD_DCAudioSoundfield_51)));
-  label_map.insert(label_map_t::value_type("71", m_Dict->ul(MDD_DCAudioSoundfield_71)));
-  label_map.insert(label_map_t::value_type("SDS", m_Dict->ul(MDD_DCAudioSoundfield_SDS)));
-  label_map.insert(label_map_t::value_type("61", m_Dict->ul(MDD_DCAudioSoundfield_61)));
-  label_map.insert(label_map_t::value_type("M", m_Dict->ul(MDD_DCAudioSoundfield_M)));
-}
-
 //
-ui32_t
-ASDCP::MXF::MCAConfigParser::ChannelCount() const
-{
-  return m_ChannelCount;
-}
-
-// 51(L,R,C,LFE,Ls,Rs),HI,VIN
 bool
-ASDCP::MXF::MCAConfigParser::DecodeString(const std::string& s, const std::string& language)
+ASDCP::MXF::decode_mca_string(const std::string& s, const mca_label_map_t& labels, const Dictionary& dict, const std::string& language,
+			      InterchangeObject_list_t& descriptor_list, ui32_t& channel_count)
 {
+  const Dictionary *dictp = &dict;
   std::string symbol_buf;
-  m_ChannelCount = 0;
+  channel_count = 0;
   ASDCP::MXF::SoundfieldGroupLabelSubDescriptor *current_soundfield = 0;
   std::string::const_iterator i;
 
@@ -1506,9 +1476,9 @@ ASDCP::MXF::MCAConfigParser::DecodeString(const std::string& s, const std::strin
 	      return false;
 	    }
 
-	  label_map_t::const_iterator i = label_map.find(symbol_buf);
+	  mca_label_map_t::const_iterator i = labels.find(symbol_buf);
       
-	  if ( i == label_map.end() )
+	  if ( i == labels.end() )
 	    {
 	      fprintf(stderr, "Unknown symbol: '%s'\n", symbol_buf.c_str());
 	      return false;
@@ -1520,7 +1490,7 @@ ASDCP::MXF::MCAConfigParser::DecodeString(const std::string& s, const std::strin
 	      return false;
 	    }
 
-	  current_soundfield = new ASDCP::MXF::SoundfieldGroupLabelSubDescriptor(m_Dict);
+	  current_soundfield = new ASDCP::MXF::SoundfieldGroupLabelSubDescriptor(dictp);
 
 	  GenRandomValue(current_soundfield->InstanceUID);
 	  GenRandomValue(current_soundfield->MCALinkID);
@@ -1528,7 +1498,7 @@ ASDCP::MXF::MCAConfigParser::DecodeString(const std::string& s, const std::strin
 	  current_soundfield->MCATagName = i->first;
 	  current_soundfield->RFC5646SpokenLanguage = language;
 	  current_soundfield->MCALabelDictionaryID = i->second;
-	  push_back(reinterpret_cast<ASDCP::MXF::InterchangeObject*>(current_soundfield));
+	  descriptor_list.push_back(reinterpret_cast<ASDCP::MXF::InterchangeObject*>(current_soundfield));
 	  symbol_buf.clear();
 	}
       else if ( *i == ')' )
@@ -1545,26 +1515,26 @@ ASDCP::MXF::MCAConfigParser::DecodeString(const std::string& s, const std::strin
 	      return false;
 	    }
 
-	  label_map_t::const_iterator i = label_map.find(symbol_buf);
+	  mca_label_map_t::const_iterator i = labels.find(symbol_buf);
       
-	  if ( i == label_map.end() )
+	  if ( i == labels.end() )
 	    {
 	      fprintf(stderr, "Unknown symbol: '%s'\n", symbol_buf.c_str());
 	      return false;
 	    }
 
 	  ASDCP::MXF::AudioChannelLabelSubDescriptor *channel_descr =
-	    new ASDCP::MXF::AudioChannelLabelSubDescriptor(m_Dict);
+	    new ASDCP::MXF::AudioChannelLabelSubDescriptor(dictp);
 
 	  GenRandomValue(channel_descr->InstanceUID);
 	  assert(current_soundfield);
 	  channel_descr->MCALinkID = current_soundfield->MCALinkID;
-	  channel_descr->MCAChannelID = m_ChannelCount++;
+	  channel_descr->MCAChannelID = channel_count++;
 	  channel_descr->MCATagSymbol = "ch" + i->first;
 	  channel_descr->MCATagName = i->first;
 	  channel_descr->RFC5646SpokenLanguage = language;
 	  channel_descr->MCALabelDictionaryID = i->second;
-	  push_back(reinterpret_cast<ASDCP::MXF::InterchangeObject*>(channel_descr));
+	  descriptor_list.push_back(reinterpret_cast<ASDCP::MXF::InterchangeObject*>(channel_descr));
 	  symbol_buf.clear();
 	  current_soundfield = 0;
 	}
@@ -1572,9 +1542,9 @@ ASDCP::MXF::MCAConfigParser::DecodeString(const std::string& s, const std::strin
 	{
 	  if ( ! symbol_buf.empty() )
 	    {
-	      label_map_t::const_iterator i = label_map.find(symbol_buf);
+	      mca_label_map_t::const_iterator i = labels.find(symbol_buf);
 
-	      if ( i == label_map.end() )
+	      if ( i == labels.end() )
 		{
 		  fprintf(stderr, "Unknown symbol: '%s'\n", symbol_buf.c_str());
 		  return false;
@@ -1587,7 +1557,7 @@ ASDCP::MXF::MCAConfigParser::DecodeString(const std::string& s, const std::strin
 		}
 
 	      ASDCP::MXF::AudioChannelLabelSubDescriptor *channel_descr =
-		new ASDCP::MXF::AudioChannelLabelSubDescriptor(m_Dict);
+		new ASDCP::MXF::AudioChannelLabelSubDescriptor(dictp);
 
 	      GenRandomValue(channel_descr->InstanceUID);
 
@@ -1596,12 +1566,12 @@ ASDCP::MXF::MCAConfigParser::DecodeString(const std::string& s, const std::strin
 		  channel_descr->MCALinkID = current_soundfield->MCALinkID;
 		}
 
-	      channel_descr->MCAChannelID = m_ChannelCount++;
+	      channel_descr->MCAChannelID = channel_count++;
 	      channel_descr->MCATagSymbol = "ch" + i->first;
 	      channel_descr->MCATagName = i->first;
 	      channel_descr->RFC5646SpokenLanguage = language;
 	      channel_descr->MCALabelDictionaryID = i->second;
-	      push_back(reinterpret_cast<ASDCP::MXF::InterchangeObject*>(channel_descr));
+	      descriptor_list.push_back(reinterpret_cast<ASDCP::MXF::InterchangeObject*>(channel_descr));
 	      symbol_buf.clear();
 	    }
 	}
@@ -1618,16 +1588,16 @@ ASDCP::MXF::MCAConfigParser::DecodeString(const std::string& s, const std::strin
 
   if ( ! symbol_buf.empty() )
     {
-      label_map_t::const_iterator i = label_map.find(symbol_buf);
+      mca_label_map_t::const_iterator i = labels.find(symbol_buf);
       
-      if ( i == label_map.end() )
+      if ( i == labels.end() )
 	{
 	  fprintf(stderr, "Unknown symbol: '%s'\n", symbol_buf.c_str());
 	  return false;
 	}
 
       ASDCP::MXF::AudioChannelLabelSubDescriptor *channel_descr =
-	new ASDCP::MXF::AudioChannelLabelSubDescriptor(m_Dict);
+	new ASDCP::MXF::AudioChannelLabelSubDescriptor(dictp);
 
       GenRandomValue(channel_descr->InstanceUID);
 
@@ -1636,17 +1606,80 @@ ASDCP::MXF::MCAConfigParser::DecodeString(const std::string& s, const std::strin
 	  channel_descr->MCALinkID = current_soundfield->MCALinkID;
 	}
 
-      channel_descr->MCAChannelID = m_ChannelCount++;
+      channel_descr->MCAChannelID = channel_count++;
       channel_descr->MCATagSymbol = "ch" + i->first;
       channel_descr->MCATagName = i->first;
       channel_descr->RFC5646SpokenLanguage = language;
       channel_descr->MCALabelDictionaryID = i->second;
-      push_back(reinterpret_cast<ASDCP::MXF::InterchangeObject*>(channel_descr));
+      descriptor_list.push_back(reinterpret_cast<ASDCP::MXF::InterchangeObject*>(channel_descr));
     }
 
   return true;
 }
 
+
+ASDCP::MXF::ASDCP_MCAConfigParser::ASDCP_MCAConfigParser(const Dictionary*& d) : m_Dict(d), m_ChannelCount(0)
+{
+  m_LabelMap.insert(mca_label_map_t::value_type("L", m_Dict->ul(MDD_DCAudioChannel_L)));
+  m_LabelMap.insert(mca_label_map_t::value_type("R", m_Dict->ul(MDD_DCAudioChannel_R)));
+  m_LabelMap.insert(mca_label_map_t::value_type("C", m_Dict->ul(MDD_DCAudioChannel_C)));
+  m_LabelMap.insert(mca_label_map_t::value_type("LFE", m_Dict->ul(MDD_DCAudioChannel_LFE)));
+  m_LabelMap.insert(mca_label_map_t::value_type("Ls", m_Dict->ul(MDD_DCAudioChannel_Ls)));
+  m_LabelMap.insert(mca_label_map_t::value_type("Rs", m_Dict->ul(MDD_DCAudioChannel_Rs)));
+  m_LabelMap.insert(mca_label_map_t::value_type("Lss", m_Dict->ul(MDD_DCAudioChannel_Lss)));
+  m_LabelMap.insert(mca_label_map_t::value_type("Rss", m_Dict->ul(MDD_DCAudioChannel_Rss)));
+  m_LabelMap.insert(mca_label_map_t::value_type("Lrs", m_Dict->ul(MDD_DCAudioChannel_Lrs)));
+  m_LabelMap.insert(mca_label_map_t::value_type("Rrs", m_Dict->ul(MDD_DCAudioChannel_Rrs)));
+  m_LabelMap.insert(mca_label_map_t::value_type("Lc", m_Dict->ul(MDD_DCAudioChannel_Lc)));
+  m_LabelMap.insert(mca_label_map_t::value_type("Rc", m_Dict->ul(MDD_DCAudioChannel_Rc)));
+  m_LabelMap.insert(mca_label_map_t::value_type("Cs", m_Dict->ul(MDD_DCAudioChannel_Cs)));
+  m_LabelMap.insert(mca_label_map_t::value_type("HI", m_Dict->ul(MDD_DCAudioChannel_HI)));
+  m_LabelMap.insert(mca_label_map_t::value_type("VIN", m_Dict->ul(MDD_DCAudioChannel_VIN)));
+  m_LabelMap.insert(mca_label_map_t::value_type("51", m_Dict->ul(MDD_DCAudioSoundfield_51)));
+  m_LabelMap.insert(mca_label_map_t::value_type("71", m_Dict->ul(MDD_DCAudioSoundfield_71)));
+  m_LabelMap.insert(mca_label_map_t::value_type("SDS", m_Dict->ul(MDD_DCAudioSoundfield_SDS)));
+  m_LabelMap.insert(mca_label_map_t::value_type("61", m_Dict->ul(MDD_DCAudioSoundfield_61)));
+  m_LabelMap.insert(mca_label_map_t::value_type("M", m_Dict->ul(MDD_DCAudioSoundfield_M)));
+}
+
+//
+ui32_t
+ASDCP::MXF::ASDCP_MCAConfigParser::ChannelCount() const
+{
+  return m_ChannelCount;
+}
+
+// 51(L,R,C,LFE,Ls,Rs),HI,VIN
+bool
+ASDCP::MXF::ASDCP_MCAConfigParser::DecodeString(const std::string& s, const std::string& language)
+{
+  return decode_mca_string(s, m_LabelMap, *m_Dict, language, *this, m_ChannelCount);
+}
+
+
+
+ASDCP::MXF::AS02_MCAConfigParser::AS02_MCAConfigParser(const Dictionary*& d) : ASDCP::MXF::ASDCP_MCAConfigParser(d)
+{
+  m_LabelMap.insert(mca_label_map_t::value_type("M1", m_Dict->ul(MDD_IMFAudioChannel_M1)));
+  m_LabelMap.insert(mca_label_map_t::value_type("M2", m_Dict->ul(MDD_IMFAudioChannel_M2)));
+  m_LabelMap.insert(mca_label_map_t::value_type("Lt", m_Dict->ul(MDD_IMFAudioChannel_Lt)));
+  m_LabelMap.insert(mca_label_map_t::value_type("Rt", m_Dict->ul(MDD_IMFAudioChannel_Rt)));
+  m_LabelMap.insert(mca_label_map_t::value_type("Lst", m_Dict->ul(MDD_IMFAudioChannel_Lst)));
+  m_LabelMap.insert(mca_label_map_t::value_type("Rst", m_Dict->ul(MDD_IMFAudioChannel_Rst)));
+  m_LabelMap.insert(mca_label_map_t::value_type("S", m_Dict->ul(MDD_IMFAudioChannel_S)));
+  m_LabelMap.insert(mca_label_map_t::value_type("ST", m_Dict->ul(MDD_IMFAudioSoundfield_ST)));
+  m_LabelMap.insert(mca_label_map_t::value_type("DM", m_Dict->ul(MDD_IMFAudioSoundfield_DM)));
+  m_LabelMap.insert(mca_label_map_t::value_type("DNS", m_Dict->ul(MDD_IMFAudioSoundfield_DNS)));
+  m_LabelMap.insert(mca_label_map_t::value_type("30", m_Dict->ul(MDD_IMFAudioSoundfield_30)));
+  m_LabelMap.insert(mca_label_map_t::value_type("40", m_Dict->ul(MDD_IMFAudioSoundfield_40)));
+  m_LabelMap.insert(mca_label_map_t::value_type("50", m_Dict->ul(MDD_IMFAudioSoundfield_50)));
+  m_LabelMap.insert(mca_label_map_t::value_type("60", m_Dict->ul(MDD_IMFAudioSoundfield_60)));
+  m_LabelMap.insert(mca_label_map_t::value_type("70", m_Dict->ul(MDD_IMFAudioSoundfield_70)));
+  m_LabelMap.insert(mca_label_map_t::value_type("LtRt", m_Dict->ul(MDD_IMFAudioSoundfield_LtRt)));
+  m_LabelMap.insert(mca_label_map_t::value_type("51Ex", m_Dict->ul(MDD_IMFAudioSoundfield_51Ex)));
+  m_LabelMap.insert(mca_label_map_t::value_type("HI", m_Dict->ul(MDD_IMFAudioSoundfield_HI)));
+  m_LabelMap.insert(mca_label_map_t::value_type("VIN", m_Dict->ul(MDD_IMFAudioSoundfield_VIN)));
+}
 
 //
 // end MXF.cpp
