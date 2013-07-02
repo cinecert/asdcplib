@@ -228,6 +228,20 @@ ASDCP::UMID::EncodeString(char* str_buf, ui32_t buf_len) const
 //
 
 //
+ASDCP::MXF::UTF16String::UTF16String(const char* sz)
+{
+  if ( sz != 0 && *sz != 0 )
+    {
+      this->assign(sz);
+    }
+}
+
+ASDCP::MXF::UTF16String::UTF16String(const std::string& str)
+{
+  this->assign(str);
+}
+
+//
 const ASDCP::MXF::UTF16String&
 ASDCP::MXF::UTF16String::operator=(const char* sz)
 {
@@ -331,6 +345,21 @@ ASDCP::MXF::UTF16String::Archive(Kumu::MemIOWriter* Writer) const
 
 //------------------------------------------------------------------------------------------
 //
+
+//
+ASDCP::MXF::ISO8String::ISO8String(const char* sz)
+{
+  if ( sz != 0 && *sz != 0 )
+    {
+      this->assign(sz);
+    }
+}
+
+ASDCP::MXF::ISO8String::ISO8String(const std::string& str)
+{
+  this->assign(str);
+}
+
 
 //
 const ASDCP::MXF::ISO8String&

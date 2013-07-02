@@ -209,7 +209,7 @@ namespace ASDCP {
         MDD_GenericPictureEssenceDescriptor_ActiveFormatDescriptor,  // 171
         MDD_GenericPictureEssenceDescriptor_VideoLineMap,  // 172
         MDD_GenericPictureEssenceDescriptor_AlphaTransparency,  // 173
-        MDD_GenericPictureEssenceDescriptor_Gamma,  // 174
+        MDD_GenericPictureEssenceDescriptor_TransferCharacteristic,  // 174
         MDD_GenericPictureEssenceDescriptor_ImageAlignmentOffset,  // 175
         MDD_GenericPictureEssenceDescriptor_ImageStartOffset,  // 176
         MDD_GenericPictureEssenceDescriptor_ImageEndOffset,  // 177
@@ -243,7 +243,7 @@ namespace ASDCP {
         MDD_GenericSoundEssenceDescriptor_ChannelCount,  // 205
         MDD_GenericSoundEssenceDescriptor_QuantizationBits,  // 206
         MDD_GenericSoundEssenceDescriptor_DialNorm,  // 207
-        MDD_GenericSoundEssenceDescriptor_SoundEssenceCompression,  // 208
+        MDD_GenericSoundEssenceDescriptor_SoundEssenceCoding,  // 208
         MDD_GenericDataEssenceDescriptor,  // 209
         MDD_GenericDataEssenceDescriptor_DataEssenceCoding,  // 210
         MDD_MultipleDescriptor,  // 211
@@ -385,6 +385,9 @@ namespace ASDCP {
 	MDD_IMFAudioGroup_MPg, // 347
 	MDD_IMFAudioGroup_DVS, // 348
 	MDD_IMFAudioGroup_Dcm, // 349
+	MDD_MaterialPackage_PackageMarker, // 350
+	MDD_GenericPictureEssenceDescriptor_CodingEquations, // 351
+	MDD_GenericPictureEssenceDescriptor_ColorPrimaries, // 352
         MDD_Max
 
     }; // enum MDD_t

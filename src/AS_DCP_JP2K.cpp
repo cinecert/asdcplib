@@ -290,8 +290,8 @@ ASDCP::MD_to_JP2K_PDesc(const ASDCP::MXF::RGBAEssenceDescriptor&  EssenceDescrip
 
   PDesc.EditRate           = EditRate;
   PDesc.SampleRate         = SampleRate;
-  assert(EssenceDescriptor.ContainerDuration <= 0xFFFFFFFFL);
-  PDesc.ContainerDuration  = (ui32_t) EssenceDescriptor.ContainerDuration;
+  assert(EssenceDescriptor.ContainerDuration.cget() <= 0xFFFFFFFFL);
+  PDesc.ContainerDuration  = static_cast<ui32_t>(EssenceDescriptor.ContainerDuration.cget());
   PDesc.StoredWidth        = EssenceDescriptor.StoredWidth;
   PDesc.StoredHeight       = EssenceDescriptor.StoredHeight;
   PDesc.AspectRatio        = EssenceDescriptor.AspectRatio;
@@ -421,8 +421,8 @@ ASDCP::MD_to_JP2K_PDesc(const ASDCP::MXF::CDCIEssenceDescriptor&  EssenceDescrip
 
   PDesc.EditRate           = EditRate;
   PDesc.SampleRate         = SampleRate;
-  assert(EssenceDescriptor.ContainerDuration <= 0xFFFFFFFFL);
-  PDesc.ContainerDuration  = (ui32_t) EssenceDescriptor.ContainerDuration;
+  assert(EssenceDescriptor.ContainerDuration.cget() <= 0xFFFFFFFFL);
+  PDesc.ContainerDuration  = static_cast<ui32_t>(EssenceDescriptor.ContainerDuration.cget());
   PDesc.StoredWidth        = EssenceDescriptor.StoredWidth;
   PDesc.StoredHeight       = EssenceDescriptor.StoredHeight;
   PDesc.AspectRatio        = EssenceDescriptor.AspectRatio;

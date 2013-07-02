@@ -229,12 +229,15 @@ namespace ASDCP
 	optional_property() : m_has_value(false) {}
 	optional_property(const PropertyType& value) : m_property(value), m_has_value(false) {}
 	  const optional_property<PropertyType>& operator=(const PropertyType& rhs) { this->m_property = rhs; this->m_has_value = true; return *this; }
+	  bool operator==(const PropertyType& rhs) const { return this->m_property == rhs; }
+	  bool operator==(const optional_property<PropertyType>& rhs) const { return this->m_property == rhs.m_property; }
 	  operator PropertyType&() { return this->m_property; }
 	  void set(const PropertyType& rhs) { this->m_property = rhs; this->m_has_value = true; }
 	  void set_has_value(bool has_value = true) { this->m_has_value = has_value; }
 	  void reset(const PropertyType& rhs) { this->m_has_value = false; }
 	  bool empty() const { return ! m_has_value; }
 	  PropertyType& get() { return m_property; }
+	  const PropertyType& cget() const { return m_property; }
 	};
 
       // base class of all metadata objects

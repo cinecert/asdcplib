@@ -62,7 +62,7 @@ MD_to_MPEG2_VDesc(MXF::MPEG2VideoDescriptor* VDescObj, MPEG2::VideoDescriptor& V
   VDesc.ColorSiting            = VDescObj->ColorSiting;
   VDesc.CodedContentType       = VDescObj->CodedContentType;
 
-  VDesc.LowDelay               = VDescObj->LowDelay == 0 ? false : true;
+  VDesc.LowDelay               = VDescObj->LowDelay.get() == 0 ? false : true;
   VDesc.BitRate                = VDescObj->BitRate;
   VDesc.ProfileAndLevel        = VDescObj->ProfileAndLevel;
   return RESULT_OK;

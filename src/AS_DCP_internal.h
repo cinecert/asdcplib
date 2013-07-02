@@ -607,14 +607,14 @@ namespace ASDCP
 	  TrackSet<TimecodeComponent> MPTCTrack =
 	    CreateTimecodeTrack<MaterialPackage>(m_HeaderPart, *m_MaterialPackage,
 						 tc_edit_rate, TCFrameRate, 0, m_Dict);
-	  m_DurationUpdateList.push_back(&(MPTCTrack.Sequence->Duration));
-	  m_DurationUpdateList.push_back(&(MPTCTrack.Clip->Duration));
+	  m_DurationUpdateList.push_back(&(MPTCTrack.Sequence->Duration.get()));
+	  m_DurationUpdateList.push_back(&(MPTCTrack.Clip->Duration.get()));
 
 	  TrackSet<SourceClip> MPTrack =
 	    CreateTrackAndSequence<MaterialPackage, SourceClip>(m_HeaderPart, *m_MaterialPackage,
 								TrackName, clip_edit_rate, DataDefinition,
 								2, m_Dict);
-	  m_DurationUpdateList.push_back(&(MPTrack.Sequence->Duration));
+	  m_DurationUpdateList.push_back(&(MPTrack.Sequence->Duration.get()));
 
 	  MPTrack.Clip = new SourceClip(m_Dict);
 	  m_HeaderPart.AddChildObject(MPTrack.Clip);
@@ -622,7 +622,7 @@ namespace ASDCP
 	  MPTrack.Clip->DataDefinition = DataDefinition;
 	  MPTrack.Clip->SourcePackageID = SourcePackageUMID;
 	  MPTrack.Clip->SourceTrackID = 2;
-	  m_DurationUpdateList.push_back(&(MPTrack.Clip->Duration));
+	  m_DurationUpdateList.push_back(&(MPTrack.Clip->Duration.get()));
 
   
 	  //
@@ -640,13 +640,13 @@ namespace ASDCP
 	    CreateTimecodeTrack<SourcePackage>(m_HeaderPart, *m_FilePackage,
 					       tc_edit_rate, TCFrameRate,
 					       ui64_C(3600) * TCFrameRate, m_Dict);
-	  m_DurationUpdateList.push_back(&(FPTCTrack.Sequence->Duration));
-	  m_DurationUpdateList.push_back(&(FPTCTrack.Clip->Duration));
+	  m_DurationUpdateList.push_back(&(FPTCTrack.Sequence->Duration.get()));
+	  m_DurationUpdateList.push_back(&(FPTCTrack.Clip->Duration.get()));
 	  TrackSet<SourceClip> FPTrack =
 	    CreateTrackAndSequence<SourcePackage, SourceClip>(m_HeaderPart, *m_FilePackage,
 							      TrackName, clip_edit_rate, DataDefinition,
 							      2, m_Dict);
-	  m_DurationUpdateList.push_back(&(FPTrack.Sequence->Duration));
+	  m_DurationUpdateList.push_back(&(FPTrack.Sequence->Duration.get()));
 
 	  // Consult ST 379:2004 Sec. 6.3, "Element to track relationship" to see where "12" comes from.
 	  FPTrack.Track->TrackNumber = KM_i32_BE(Kumu::cp2i<ui32_t>((EssenceUL.Value() + 12)));
@@ -659,7 +659,7 @@ namespace ASDCP
 	  // for now we do not allow setting this value, so all files will be 'original'
 	  FPTrack.Clip->SourceTrackID = 0;
 	  FPTrack.Clip->SourcePackageID = NilUMID;
-	  m_DurationUpdateList.push_back(&(FPTrack.Clip->Duration));
+	  m_DurationUpdateList.push_back(&(FPTrack.Clip->Duration.get()));
 
 	  m_EssenceDescriptor->LinkedTrackID = FPTrack.Track->TrackID;
 	}
@@ -698,14 +698,14 @@ namespace ASDCP
 	  TrackSet<TimecodeComponent> MPTCTrack =
 	    CreateTimecodeTrack<MaterialPackage>(m_HeaderPart, *m_MaterialPackage,
 						 tc_edit_rate, tc_frame_rate, 0, m_Dict);
-	  m_DurationUpdateList.push_back(&(MPTCTrack.Sequence->Duration));
-	  m_DurationUpdateList.push_back(&(MPTCTrack.Clip->Duration));
+	  m_DurationUpdateList.push_back(&(MPTCTrack.Sequence->Duration.get()));
+	  m_DurationUpdateList.push_back(&(MPTCTrack.Clip->Duration.get()));
 
 	  TrackSet<DMSegment> MPTrack =
 	    CreateTrackAndSequence<MaterialPackage, DMSegment>(m_HeaderPart, *m_MaterialPackage,
 							       TrackName, clip_edit_rate, DataDefinition,
 							       2, m_Dict);
-	  m_DurationUpdateList.push_back(&(MPTrack.Sequence->Duration));
+	  m_DurationUpdateList.push_back(&(MPTrack.Sequence->Duration.get()));
 
 	  MPTrack.Clip = new DMSegment(m_Dict);
 	  m_HeaderPart.AddChildObject(MPTrack.Clip);
@@ -731,14 +731,14 @@ namespace ASDCP
 	    CreateTimecodeTrack<SourcePackage>(m_HeaderPart, *m_FilePackage,
 					       clip_edit_rate, tc_frame_rate,
 					       ui64_C(3600) * tc_frame_rate, m_Dict);
-	  m_DurationUpdateList.push_back(&(FPTCTrack.Sequence->Duration));
-	  m_DurationUpdateList.push_back(&(FPTCTrack.Clip->Duration));
+	  m_DurationUpdateList.push_back(&(FPTCTrack.Sequence->Duration.get()));
+	  m_DurationUpdateList.push_back(&(FPTCTrack.Clip->Duration.get()));
 
 	  TrackSet<DMSegment> FPTrack =
 	    CreateTrackAndSequence<SourcePackage, DMSegment>(m_HeaderPart, *m_FilePackage,
 							     TrackName, clip_edit_rate, DataDefinition,
 							     2, m_Dict);
-	  m_DurationUpdateList.push_back(&(FPTrack.Sequence->Duration));
+	  m_DurationUpdateList.push_back(&(FPTrack.Sequence->Duration.get()));
 
 	  FPTrack.Clip = new DMSegment(m_Dict);
 	  m_HeaderPart.AddChildObject(FPTrack.Clip);

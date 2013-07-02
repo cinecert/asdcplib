@@ -54,7 +54,7 @@ ASDCP::PCM_ADesc_to_MD(PCM::AudioDescriptor& ADesc, MXF::WaveAudioDescriptor* AD
   ADescObj->LinkedTrackID = ADesc.LinkedTrackID;
   ADescObj->ContainerDuration = ADesc.ContainerDuration;
 
-  ADescObj->ChannelAssignment.Reset();
+  ADescObj->ChannelAssignment.get().Reset();
 
   switch ( ADesc.ChannelFormat )
     {
@@ -100,7 +100,7 @@ ASDCP::MD_to_PCM_ADesc(MXF::WaveAudioDescriptor* ADescObj, PCM::AudioDescriptor&
 
   ADesc.ChannelFormat = PCM::CF_NONE;
 
-  if ( ADescObj->ChannelAssignment.HasValue() )
+  if ( ! ADescObj->ChannelAssignment.empty() )
     {
       if ( ADescObj->ChannelAssignment == DefaultSMPTEDict().Type(MDD_DCAudioChannelCfg_1_5p1).ul )
 	ADesc.ChannelFormat = PCM::CF_CFG_1;

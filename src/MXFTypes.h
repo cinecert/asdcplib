@@ -243,6 +243,8 @@ namespace ASDCP
 	{
 	public:
 	  ISO8String() {}
+	  ISO8String(const char*);
+	  ISO8String(const std::string&);
 	  ~ISO8String() {}
 
 	  const ISO8String& operator=(const char*);
@@ -260,6 +262,8 @@ namespace ASDCP
 	{
 	public:
 	  UTF16String() {}
+	  UTF16String(const char*);
+	  UTF16String(const std::string&);
 	  ~UTF16String() {}
 
 	  const UTF16String& operator=(const char*);
