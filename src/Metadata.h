@@ -554,9 +554,9 @@ namespace ASDCP
           ui32_t XTOsize;
           ui32_t YTOsize;
           ui16_t Csize;
-          Raw PictureComponentSizing;
-          Raw CodingStyleDefault;
-          Raw QuantizationDefault;
+          optional_property<Raw> PictureComponentSizing;
+          optional_property<Raw> CodingStyleDefault;
+          optional_property<Raw> QuantizationDefault;
 
       JPEG2000PictureSubDescriptor(const Dictionary*& d);
       JPEG2000PictureSubDescriptor(const JPEG2000PictureSubDescriptor& rhs);
@@ -579,7 +579,7 @@ namespace ASDCP
 
 	public:
 	  const Dictionary*& m_Dict;
-          optional_property<ui32_t> ComponentDepth;
+          ui32_t ComponentDepth;
           ui32_t HorizontalSubsampling;
           optional_property<ui32_t> VerticalSubsampling;
           optional_property<ui8_t> ColorSiting;
@@ -611,8 +611,14 @@ namespace ASDCP
 
 	public:
 	  const Dictionary*& m_Dict;
-          ui8_t CodedContentType;
+          optional_property<ui8_t> SingleSequence;
+          optional_property<ui8_t> ConstantBFrames;
+          optional_property<ui8_t> CodedContentType;
           optional_property<ui8_t> LowDelay;
+          optional_property<ui8_t> ClosedGOP;
+          optional_property<ui8_t> IdenticalGOP;
+          optional_property<ui8_t> MaxGOP;
+          optional_property<ui8_t> BPictureCount;
           optional_property<ui32_t> BitRate;
           optional_property<ui8_t> ProfileAndLevel;
 

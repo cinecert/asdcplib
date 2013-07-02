@@ -1973,9 +1973,18 @@ JPEG2000PictureSubDescriptor::InitFromTLVSet(TLVReader& TLVSet)
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadUi32(OBJ_READ_ARGS(JPEG2000PictureSubDescriptor, XTOsize));
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadUi32(OBJ_READ_ARGS(JPEG2000PictureSubDescriptor, YTOsize));
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadUi16(OBJ_READ_ARGS(JPEG2000PictureSubDescriptor, Csize));
-  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(JPEG2000PictureSubDescriptor, PictureComponentSizing));
-  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(JPEG2000PictureSubDescriptor, CodingStyleDefault));
-  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(JPEG2000PictureSubDescriptor, QuantizationDefault));
+  if ( ASDCP_SUCCESS(result) ) {
+    result = TLVSet.ReadObject(OBJ_READ_ARGS_OPT(JPEG2000PictureSubDescriptor, PictureComponentSizing));
+    PictureComponentSizing.set_has_value( result == RESULT_OK );
+  }
+  if ( ASDCP_SUCCESS(result) ) {
+    result = TLVSet.ReadObject(OBJ_READ_ARGS_OPT(JPEG2000PictureSubDescriptor, CodingStyleDefault));
+    CodingStyleDefault.set_has_value( result == RESULT_OK );
+  }
+  if ( ASDCP_SUCCESS(result) ) {
+    result = TLVSet.ReadObject(OBJ_READ_ARGS_OPT(JPEG2000PictureSubDescriptor, QuantizationDefault));
+    QuantizationDefault.set_has_value( result == RESULT_OK );
+  }
   return result;
 }
 
@@ -1995,9 +2004,9 @@ JPEG2000PictureSubDescriptor::WriteToTLVSet(TLVWriter& TLVSet)
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi32(OBJ_WRITE_ARGS(JPEG2000PictureSubDescriptor, XTOsize));
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi32(OBJ_WRITE_ARGS(JPEG2000PictureSubDescriptor, YTOsize));
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi16(OBJ_WRITE_ARGS(JPEG2000PictureSubDescriptor, Csize));
-  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(JPEG2000PictureSubDescriptor, PictureComponentSizing));
-  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(JPEG2000PictureSubDescriptor, CodingStyleDefault));
-  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(JPEG2000PictureSubDescriptor, QuantizationDefault));
+  if ( ASDCP_SUCCESS(result)  && ! PictureComponentSizing.empty() ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS_OPT(JPEG2000PictureSubDescriptor, PictureComponentSizing));
+  if ( ASDCP_SUCCESS(result)  && ! CodingStyleDefault.empty() ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS_OPT(JPEG2000PictureSubDescriptor, CodingStyleDefault));
+  if ( ASDCP_SUCCESS(result)  && ! QuantizationDefault.empty() ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS_OPT(JPEG2000PictureSubDescriptor, QuantizationDefault));
   return result;
 }
 
@@ -2042,9 +2051,15 @@ JPEG2000PictureSubDescriptor::Dump(FILE* stream)
   fprintf(stream, "  %22s = %d\n",  "XTOsize", XTOsize);
   fprintf(stream, "  %22s = %d\n",  "YTOsize", YTOsize);
   fprintf(stream, "  %22s = %d\n",  "Csize", Csize);
-  fprintf(stream, "  %22s = %s\n",  "PictureComponentSizing", PictureComponentSizing.EncodeString(identbuf, IdentBufferLen));
-  fprintf(stream, "  %22s = %s\n",  "CodingStyleDefault", CodingStyleDefault.EncodeString(identbuf, IdentBufferLen));
-  fprintf(stream, "  %22s = %s\n",  "QuantizationDefault", QuantizationDefault.EncodeString(identbuf, IdentBufferLen));
+  if ( ! PictureComponentSizing.empty() ) {
+    fprintf(stream, "  %22s = %s\n",  "PictureComponentSizing", PictureComponentSizing.get().EncodeString(identbuf, IdentBufferLen));
+  }
+  if ( ! CodingStyleDefault.empty() ) {
+    fprintf(stream, "  %22s = %s\n",  "CodingStyleDefault", CodingStyleDefault.get().EncodeString(identbuf, IdentBufferLen));
+  }
+  if ( ! QuantizationDefault.empty() ) {
+    fprintf(stream, "  %22s = %s\n",  "QuantizationDefault", QuantizationDefault.get().EncodeString(identbuf, IdentBufferLen));
+  }
 }
 
 //
@@ -2066,7 +2081,7 @@ JPEG2000PictureSubDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 
 //
 
-CDCIEssenceDescriptor::CDCIEssenceDescriptor(const Dictionary*& d) : GenericPictureEssenceDescriptor(d), m_Dict(d), ComponentDepth(0), ColorSiting(0), PaddingBits(0), BlackRefLevel(0), ColorRange(0)
+CDCIEssenceDescriptor::CDCIEssenceDescriptor(const Dictionary*& d) : GenericPictureEssenceDescriptor(d), m_Dict(d), ComponentDepth(0), HorizontalSubsampling(0), VerticalSubsampling(0), ReversedByteOrder(0), AlphaSampleDepth(0), WhiteReflevel(0)
 {
   assert(m_Dict);
   m_UL = m_Dict->ul(MDD_CDCIEssenceDescriptor);
@@ -2086,10 +2101,7 @@ CDCIEssenceDescriptor::InitFromTLVSet(TLVReader& TLVSet)
 {
   assert(m_Dict);
   Result_t result = GenericPictureEssenceDescriptor::InitFromTLVSet(TLVSet);
-  if ( ASDCP_SUCCESS(result) ) { 
-    result = TLVSet.ReadUi32(OBJ_READ_ARGS_OPT(CDCIEssenceDescriptor, ComponentDepth));
-    ComponentDepth.set_has_value( result == RESULT_OK );
-  }
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadUi32(OBJ_READ_ARGS(CDCIEssenceDescriptor, ComponentDepth));
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadUi32(OBJ_READ_ARGS(CDCIEssenceDescriptor, HorizontalSubsampling));
   if ( ASDCP_SUCCESS(result) ) { 
     result = TLVSet.ReadUi32(OBJ_READ_ARGS_OPT(CDCIEssenceDescriptor, VerticalSubsampling));
@@ -2132,7 +2144,7 @@ CDCIEssenceDescriptor::WriteToTLVSet(TLVWriter& TLVSet)
 {
   assert(m_Dict);
   Result_t result = GenericPictureEssenceDescriptor::WriteToTLVSet(TLVSet);
-  if ( ASDCP_SUCCESS(result)  && ! ComponentDepth.empty() ) result = TLVSet.WriteUi32(OBJ_WRITE_ARGS_OPT(CDCIEssenceDescriptor, ComponentDepth));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi32(OBJ_WRITE_ARGS(CDCIEssenceDescriptor, ComponentDepth));
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi32(OBJ_WRITE_ARGS(CDCIEssenceDescriptor, HorizontalSubsampling));
   if ( ASDCP_SUCCESS(result)  && ! VerticalSubsampling.empty() ) result = TLVSet.WriteUi32(OBJ_WRITE_ARGS_OPT(CDCIEssenceDescriptor, VerticalSubsampling));
   if ( ASDCP_SUCCESS(result)  && ! ColorSiting.empty() ) result = TLVSet.WriteUi8(OBJ_WRITE_ARGS_OPT(CDCIEssenceDescriptor, ColorSiting));
@@ -2173,9 +2185,7 @@ CDCIEssenceDescriptor::Dump(FILE* stream)
     stream = stderr;
 
   GenericPictureEssenceDescriptor::Dump(stream);
-  if ( ! ComponentDepth.empty() ) {
-    fprintf(stream, "  %22s = %d\n",  "ComponentDepth", ComponentDepth.get());
-  }
+  fprintf(stream, "  %22s = %d\n",  "ComponentDepth", ComponentDepth);
   fprintf(stream, "  %22s = %d\n",  "HorizontalSubsampling", HorizontalSubsampling);
   if ( ! VerticalSubsampling.empty() ) {
     fprintf(stream, "  %22s = %d\n",  "VerticalSubsampling", VerticalSubsampling.get());
@@ -2222,7 +2232,7 @@ CDCIEssenceDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 
 //
 
-MPEG2VideoDescriptor::MPEG2VideoDescriptor(const Dictionary*& d) : CDCIEssenceDescriptor(d), m_Dict(d), CodedContentType(0), LowDelay(0), ProfileAndLevel(0)
+MPEG2VideoDescriptor::MPEG2VideoDescriptor(const Dictionary*& d) : CDCIEssenceDescriptor(d), m_Dict(d), SingleSequence(0), CodedContentType(0), ClosedGOP(0), MaxGOP(0), BitRate(0)
 {
   assert(m_Dict);
   m_UL = m_Dict->ul(MDD_MPEG2VideoDescriptor);
@@ -2242,10 +2252,37 @@ MPEG2VideoDescriptor::InitFromTLVSet(TLVReader& TLVSet)
 {
   assert(m_Dict);
   Result_t result = CDCIEssenceDescriptor::InitFromTLVSet(TLVSet);
-  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadUi8(OBJ_READ_ARGS(MPEG2VideoDescriptor, CodedContentType));
+  if ( ASDCP_SUCCESS(result) ) { 
+    result = TLVSet.ReadUi8(OBJ_READ_ARGS_OPT(MPEG2VideoDescriptor, SingleSequence));
+    SingleSequence.set_has_value( result == RESULT_OK );
+  }
+  if ( ASDCP_SUCCESS(result) ) { 
+    result = TLVSet.ReadUi8(OBJ_READ_ARGS_OPT(MPEG2VideoDescriptor, ConstantBFrames));
+    ConstantBFrames.set_has_value( result == RESULT_OK );
+  }
+  if ( ASDCP_SUCCESS(result) ) { 
+    result = TLVSet.ReadUi8(OBJ_READ_ARGS_OPT(MPEG2VideoDescriptor, CodedContentType));
+    CodedContentType.set_has_value( result == RESULT_OK );
+  }
   if ( ASDCP_SUCCESS(result) ) { 
     result = TLVSet.ReadUi8(OBJ_READ_ARGS_OPT(MPEG2VideoDescriptor, LowDelay));
     LowDelay.set_has_value( result == RESULT_OK );
+  }
+  if ( ASDCP_SUCCESS(result) ) { 
+    result = TLVSet.ReadUi8(OBJ_READ_ARGS_OPT(MPEG2VideoDescriptor, ClosedGOP));
+    ClosedGOP.set_has_value( result == RESULT_OK );
+  }
+  if ( ASDCP_SUCCESS(result) ) { 
+    result = TLVSet.ReadUi8(OBJ_READ_ARGS_OPT(MPEG2VideoDescriptor, IdenticalGOP));
+    IdenticalGOP.set_has_value( result == RESULT_OK );
+  }
+  if ( ASDCP_SUCCESS(result) ) { 
+    result = TLVSet.ReadUi8(OBJ_READ_ARGS_OPT(MPEG2VideoDescriptor, MaxGOP));
+    MaxGOP.set_has_value( result == RESULT_OK );
+  }
+  if ( ASDCP_SUCCESS(result) ) { 
+    result = TLVSet.ReadUi8(OBJ_READ_ARGS_OPT(MPEG2VideoDescriptor, BPictureCount));
+    BPictureCount.set_has_value( result == RESULT_OK );
   }
   if ( ASDCP_SUCCESS(result) ) { 
     result = TLVSet.ReadUi32(OBJ_READ_ARGS_OPT(MPEG2VideoDescriptor, BitRate));
@@ -2264,8 +2301,14 @@ MPEG2VideoDescriptor::WriteToTLVSet(TLVWriter& TLVSet)
 {
   assert(m_Dict);
   Result_t result = CDCIEssenceDescriptor::WriteToTLVSet(TLVSet);
-  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi8(OBJ_WRITE_ARGS(MPEG2VideoDescriptor, CodedContentType));
+  if ( ASDCP_SUCCESS(result)  && ! SingleSequence.empty() ) result = TLVSet.WriteUi8(OBJ_WRITE_ARGS_OPT(MPEG2VideoDescriptor, SingleSequence));
+  if ( ASDCP_SUCCESS(result)  && ! ConstantBFrames.empty() ) result = TLVSet.WriteUi8(OBJ_WRITE_ARGS_OPT(MPEG2VideoDescriptor, ConstantBFrames));
+  if ( ASDCP_SUCCESS(result)  && ! CodedContentType.empty() ) result = TLVSet.WriteUi8(OBJ_WRITE_ARGS_OPT(MPEG2VideoDescriptor, CodedContentType));
   if ( ASDCP_SUCCESS(result)  && ! LowDelay.empty() ) result = TLVSet.WriteUi8(OBJ_WRITE_ARGS_OPT(MPEG2VideoDescriptor, LowDelay));
+  if ( ASDCP_SUCCESS(result)  && ! ClosedGOP.empty() ) result = TLVSet.WriteUi8(OBJ_WRITE_ARGS_OPT(MPEG2VideoDescriptor, ClosedGOP));
+  if ( ASDCP_SUCCESS(result)  && ! IdenticalGOP.empty() ) result = TLVSet.WriteUi8(OBJ_WRITE_ARGS_OPT(MPEG2VideoDescriptor, IdenticalGOP));
+  if ( ASDCP_SUCCESS(result)  && ! MaxGOP.empty() ) result = TLVSet.WriteUi8(OBJ_WRITE_ARGS_OPT(MPEG2VideoDescriptor, MaxGOP));
+  if ( ASDCP_SUCCESS(result)  && ! BPictureCount.empty() ) result = TLVSet.WriteUi8(OBJ_WRITE_ARGS_OPT(MPEG2VideoDescriptor, BPictureCount));
   if ( ASDCP_SUCCESS(result)  && ! BitRate.empty() ) result = TLVSet.WriteUi32(OBJ_WRITE_ARGS_OPT(MPEG2VideoDescriptor, BitRate));
   if ( ASDCP_SUCCESS(result)  && ! ProfileAndLevel.empty() ) result = TLVSet.WriteUi8(OBJ_WRITE_ARGS_OPT(MPEG2VideoDescriptor, ProfileAndLevel));
   return result;
@@ -2276,8 +2319,14 @@ void
 MPEG2VideoDescriptor::Copy(const MPEG2VideoDescriptor& rhs)
 {
   CDCIEssenceDescriptor::Copy(rhs);
+  SingleSequence = rhs.SingleSequence;
+  ConstantBFrames = rhs.ConstantBFrames;
   CodedContentType = rhs.CodedContentType;
   LowDelay = rhs.LowDelay;
+  ClosedGOP = rhs.ClosedGOP;
+  IdenticalGOP = rhs.IdenticalGOP;
+  MaxGOP = rhs.MaxGOP;
+  BPictureCount = rhs.BPictureCount;
   BitRate = rhs.BitRate;
   ProfileAndLevel = rhs.ProfileAndLevel;
 }
@@ -2293,9 +2342,29 @@ MPEG2VideoDescriptor::Dump(FILE* stream)
     stream = stderr;
 
   CDCIEssenceDescriptor::Dump(stream);
-  fprintf(stream, "  %22s = %d\n",  "CodedContentType", CodedContentType);
+  if ( ! SingleSequence.empty() ) {
+    fprintf(stream, "  %22s = %d\n",  "SingleSequence", SingleSequence.get());
+  }
+  if ( ! ConstantBFrames.empty() ) {
+    fprintf(stream, "  %22s = %d\n",  "ConstantBFrames", ConstantBFrames.get());
+  }
+  if ( ! CodedContentType.empty() ) {
+    fprintf(stream, "  %22s = %d\n",  "CodedContentType", CodedContentType.get());
+  }
   if ( ! LowDelay.empty() ) {
     fprintf(stream, "  %22s = %d\n",  "LowDelay", LowDelay.get());
+  }
+  if ( ! ClosedGOP.empty() ) {
+    fprintf(stream, "  %22s = %d\n",  "ClosedGOP", ClosedGOP.get());
+  }
+  if ( ! IdenticalGOP.empty() ) {
+    fprintf(stream, "  %22s = %d\n",  "IdenticalGOP", IdenticalGOP.get());
+  }
+  if ( ! MaxGOP.empty() ) {
+    fprintf(stream, "  %22s = %d\n",  "MaxGOP", MaxGOP.get());
+  }
+  if ( ! BPictureCount.empty() ) {
+    fprintf(stream, "  %22s = %d\n",  "BPictureCount", BPictureCount.get());
   }
   if ( ! BitRate.empty() ) {
     fprintf(stream, "  %22s = %d\n",  "BitRate", BitRate.get());

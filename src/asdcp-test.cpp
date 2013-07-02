@@ -1813,7 +1813,7 @@ show_file_info(CommandOptions& Options)
 	  if ( ASDCP_SUCCESS(result) )
 	    {
 	      char buf[64];
-	      fprintf(stdout, " ChannelAssignment: %s\n", descriptor->ChannelAssignment.EncodeString(buf, 64));
+	      fprintf(stdout, " ChannelAssignment: %s\n", descriptor->ChannelAssignment.const_get().EncodeString(buf, 64));
 	    }
 	}
     }

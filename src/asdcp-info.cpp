@@ -517,7 +517,7 @@ public:
     if ( KM_SUCCESS(result) )
       {
 	char buf[64];
-	fprintf(stream, "ChannelAssignment: %s\n", descriptor->ChannelAssignment.EncodeString(buf, 64));
+	fprintf(stream, "ChannelAssignment: %s\n", descriptor->ChannelAssignment.const_get().EncodeString(buf, 64));
       }
   }
 

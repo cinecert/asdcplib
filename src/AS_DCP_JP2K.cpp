@@ -260,20 +260,20 @@ ASDCP::JP2K_PDesc_to_MD(const JP2K::PictureDescriptor& PDesc,
   memcpy(tmp_buffer + 8, &PDesc.ImageComponents, sizeof(ASDCP::JP2K::ImageComponent_t) * MaxComponents);
 
   const ui32_t pcomp_size = (sizeof(int) * 2) + (sizeof(ASDCP::JP2K::ImageComponent_t) * MaxComponents);
-  memcpy(EssenceSubDescriptor->PictureComponentSizing.Data(), tmp_buffer, pcomp_size);
-  EssenceSubDescriptor->PictureComponentSizing.Length(pcomp_size);
+  memcpy(EssenceSubDescriptor->PictureComponentSizing.get().Data(), tmp_buffer, pcomp_size);
+  EssenceSubDescriptor->PictureComponentSizing.get().Length(pcomp_size);
 
   ui32_t precinct_set_size = 0, i;
   for ( i = 0; PDesc.CodingStyleDefault.SPcod.PrecinctSize[i] != 0 && i < MaxPrecincts; i++ )
     precinct_set_size++;
 
   ui32_t csd_size = sizeof(CodingStyleDefault_t) - MaxPrecincts + precinct_set_size;
-  memcpy(EssenceSubDescriptor->CodingStyleDefault.Data(), &PDesc.CodingStyleDefault, csd_size);
-  EssenceSubDescriptor->CodingStyleDefault.Length(csd_size);
+  memcpy(EssenceSubDescriptor->CodingStyleDefault.get().Data(), &PDesc.CodingStyleDefault, csd_size);
+  EssenceSubDescriptor->CodingStyleDefault.get().Length(csd_size);
 
   ui32_t qdflt_size = PDesc.QuantizationDefault.SPqcdLength + 1;
-  memcpy(EssenceSubDescriptor->QuantizationDefault.Data(), &PDesc.QuantizationDefault, qdflt_size);
-  EssenceSubDescriptor->QuantizationDefault.Length(qdflt_size);
+  memcpy(EssenceSubDescriptor->QuantizationDefault.get().Data(), &PDesc.QuantizationDefault, qdflt_size);
+  EssenceSubDescriptor->QuantizationDefault.get().Length(qdflt_size);
 
   return RESULT_OK;
 }
@@ -290,8 +290,8 @@ ASDCP::MD_to_JP2K_PDesc(const ASDCP::MXF::RGBAEssenceDescriptor&  EssenceDescrip
 
   PDesc.EditRate           = EditRate;
   PDesc.SampleRate         = SampleRate;
-  assert(EssenceDescriptor.ContainerDuration.cget() <= 0xFFFFFFFFL);
-  PDesc.ContainerDuration  = static_cast<ui32_t>(EssenceDescriptor.ContainerDuration.cget());
+  assert(EssenceDescriptor.ContainerDuration.const_get() <= 0xFFFFFFFFL);
+  PDesc.ContainerDuration  = static_cast<ui32_t>(EssenceDescriptor.ContainerDuration.const_get());
   PDesc.StoredWidth        = EssenceDescriptor.StoredWidth;
   PDesc.StoredHeight       = EssenceDescriptor.StoredHeight;
   PDesc.AspectRatio        = EssenceDescriptor.AspectRatio;
@@ -308,11 +308,11 @@ ASDCP::MD_to_JP2K_PDesc(const ASDCP::MXF::RGBAEssenceDescriptor&  EssenceDescrip
   PDesc.Csize   = EssenceSubDescriptor.Csize;
 
   // PictureComponentSizing
-  ui32_t tmp_size = EssenceSubDescriptor.PictureComponentSizing.Length();
+  ui32_t tmp_size = EssenceSubDescriptor.PictureComponentSizing.const_get().Length();
 
   if ( tmp_size == 17 ) // ( 2 * sizeof(ui32_t) ) + 3 components * 3 byte each
     {
-      memcpy(&PDesc.ImageComponents, EssenceSubDescriptor.PictureComponentSizing.RoData() + 8, tmp_size - 8);
+      memcpy(&PDesc.ImageComponents, EssenceSubDescriptor.PictureComponentSizing.const_get().RoData() + 8, tmp_size - 8);
     }
   else
     {
@@ -322,16 +322,16 @@ ASDCP::MD_to_JP2K_PDesc(const ASDCP::MXF::RGBAEssenceDescriptor&  EssenceDescrip
   // CodingStyleDefault
   memset(&PDesc.CodingStyleDefault, 0, sizeof(CodingStyleDefault_t));
   memcpy(&PDesc.CodingStyleDefault,
-	 EssenceSubDescriptor.CodingStyleDefault.RoData(),
-	 EssenceSubDescriptor.CodingStyleDefault.Length());
+	 EssenceSubDescriptor.CodingStyleDefault.const_get().RoData(),
+	 EssenceSubDescriptor.CodingStyleDefault.const_get().Length());
 
   // QuantizationDefault
   memset(&PDesc.QuantizationDefault, 0, sizeof(QuantizationDefault_t));
   memcpy(&PDesc.QuantizationDefault,
-	 EssenceSubDescriptor.QuantizationDefault.RoData(),
-	 EssenceSubDescriptor.QuantizationDefault.Length());
+	 EssenceSubDescriptor.QuantizationDefault.const_get().RoData(),
+	 EssenceSubDescriptor.QuantizationDefault.const_get().Length());
   
-  PDesc.QuantizationDefault.SPqcdLength = EssenceSubDescriptor.QuantizationDefault.Length() - 1;
+  PDesc.QuantizationDefault.SPqcdLength = EssenceSubDescriptor.QuantizationDefault.const_get().Length() - 1;
   return RESULT_OK;
 }
 
@@ -391,20 +391,20 @@ ASDCP::JP2K_PDesc_to_MD(const JP2K::PictureDescriptor& PDesc,
   memcpy(tmp_buffer + 8, &PDesc.ImageComponents, sizeof(ASDCP::JP2K::ImageComponent_t) * MaxComponents);
 
   const ui32_t pcomp_size = (sizeof(int) * 2) + (sizeof(ASDCP::JP2K::ImageComponent_t) * MaxComponents);
-  memcpy(EssenceSubDescriptor->PictureComponentSizing.Data(), tmp_buffer, pcomp_size);
-  EssenceSubDescriptor->PictureComponentSizing.Length(pcomp_size);
+  memcpy(EssenceSubDescriptor->PictureComponentSizing.get().Data(), tmp_buffer, pcomp_size);
+  EssenceSubDescriptor->PictureComponentSizing.get().Length(pcomp_size);
 
   ui32_t precinct_set_size = 0, i;
   for ( i = 0; PDesc.CodingStyleDefault.SPcod.PrecinctSize[i] != 0 && i < MaxPrecincts; i++ )
     precinct_set_size++;
 
   ui32_t csd_size = sizeof(CodingStyleDefault_t) - MaxPrecincts + precinct_set_size;
-  memcpy(EssenceSubDescriptor->CodingStyleDefault.Data(), &PDesc.CodingStyleDefault, csd_size);
-  EssenceSubDescriptor->CodingStyleDefault.Length(csd_size);
+  memcpy(EssenceSubDescriptor->CodingStyleDefault.get().Data(), &PDesc.CodingStyleDefault, csd_size);
+  EssenceSubDescriptor->CodingStyleDefault.get().Length(csd_size);
 
   ui32_t qdflt_size = PDesc.QuantizationDefault.SPqcdLength + 1;
-  memcpy(EssenceSubDescriptor->QuantizationDefault.Data(), &PDesc.QuantizationDefault, qdflt_size);
-  EssenceSubDescriptor->QuantizationDefault.Length(qdflt_size);
+  memcpy(EssenceSubDescriptor->QuantizationDefault.get().Data(), &PDesc.QuantizationDefault, qdflt_size);
+  EssenceSubDescriptor->QuantizationDefault.get().Length(qdflt_size);
 
   return RESULT_OK;
 }
@@ -421,8 +421,8 @@ ASDCP::MD_to_JP2K_PDesc(const ASDCP::MXF::CDCIEssenceDescriptor&  EssenceDescrip
 
   PDesc.EditRate           = EditRate;
   PDesc.SampleRate         = SampleRate;
-  assert(EssenceDescriptor.ContainerDuration.cget() <= 0xFFFFFFFFL);
-  PDesc.ContainerDuration  = static_cast<ui32_t>(EssenceDescriptor.ContainerDuration.cget());
+  assert(EssenceDescriptor.ContainerDuration.const_get() <= 0xFFFFFFFFL);
+  PDesc.ContainerDuration  = static_cast<ui32_t>(EssenceDescriptor.ContainerDuration.const_get());
   PDesc.StoredWidth        = EssenceDescriptor.StoredWidth;
   PDesc.StoredHeight       = EssenceDescriptor.StoredHeight;
   PDesc.AspectRatio        = EssenceDescriptor.AspectRatio;
@@ -439,11 +439,11 @@ ASDCP::MD_to_JP2K_PDesc(const ASDCP::MXF::CDCIEssenceDescriptor&  EssenceDescrip
   PDesc.Csize   = EssenceSubDescriptor.Csize;
 
   // PictureComponentSizing
-  ui32_t tmp_size = EssenceSubDescriptor.PictureComponentSizing.Length();
+  ui32_t tmp_size = EssenceSubDescriptor.PictureComponentSizing.const_get().Length();
 
   if ( tmp_size == 17 ) // ( 2 * sizeof(ui32_t) ) + 3 components * 3 byte each
     {
-      memcpy(&PDesc.ImageComponents, EssenceSubDescriptor.PictureComponentSizing.RoData() + 8, tmp_size - 8);
+      memcpy(&PDesc.ImageComponents, EssenceSubDescriptor.PictureComponentSizing.const_get().RoData() + 8, tmp_size - 8);
     }
   else
     {
@@ -453,16 +453,16 @@ ASDCP::MD_to_JP2K_PDesc(const ASDCP::MXF::CDCIEssenceDescriptor&  EssenceDescrip
   // CodingStyleDefault
   memset(&PDesc.CodingStyleDefault, 0, sizeof(CodingStyleDefault_t));
   memcpy(&PDesc.CodingStyleDefault,
-	 EssenceSubDescriptor.CodingStyleDefault.RoData(),
-	 EssenceSubDescriptor.CodingStyleDefault.Length());
+	 EssenceSubDescriptor.CodingStyleDefault.const_get().RoData(),
+	 EssenceSubDescriptor.CodingStyleDefault.const_get().Length());
 
   // QuantizationDefault
   memset(&PDesc.QuantizationDefault, 0, sizeof(QuantizationDefault_t));
   memcpy(&PDesc.QuantizationDefault,
-	 EssenceSubDescriptor.QuantizationDefault.RoData(),
-	 EssenceSubDescriptor.QuantizationDefault.Length());
+	 EssenceSubDescriptor.QuantizationDefault.const_get().RoData(),
+	 EssenceSubDescriptor.QuantizationDefault.const_get().Length());
   
-  PDesc.QuantizationDefault.SPqcdLength = EssenceSubDescriptor.QuantizationDefault.Length() - 1;
+  PDesc.QuantizationDefault.SPqcdLength = EssenceSubDescriptor.QuantizationDefault.const_get().Length() - 1;
   return RESULT_OK;
 }
 
