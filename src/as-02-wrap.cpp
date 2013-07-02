@@ -415,6 +415,7 @@ write_JP2K_file(CommandOptions& Options)
 				       reinterpret_cast<ASDCP::MXF::JPEG2000PictureSubDescriptor*>(essence_sub_descriptors.back()));
 
       /// TODO: set with magic or some such thing
+      essence_descriptor->PictureEssenceCoding = UL(g_dict->ul(MDD_JP2KEssenceCompression_BroadcastProfile_1));
       essence_descriptor->ComponentMaxRef = 4095;
       essence_descriptor->ComponentMinRef = 0;
     }

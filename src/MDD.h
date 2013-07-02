@@ -388,8 +388,24 @@ namespace ASDCP {
 	MDD_MaterialPackage_PackageMarker, // 350
 	MDD_GenericPictureEssenceDescriptor_CodingEquations, // 351
 	MDD_GenericPictureEssenceDescriptor_ColorPrimaries, // 352
+	MDD_JP2KEssenceCompression_BroadcastProfile_1, // 353
+	MDD_JP2KEssenceCompression_BroadcastProfile_2, // 354
+	MDD_JP2KEssenceCompression_BroadcastProfile_3, // 355
+	MDD_JP2KEssenceCompression_BroadcastProfile_4, // 356
+	MDD_JP2KEssenceCompression_BroadcastProfile_5, // 357
+	MDD_JP2KEssenceCompression_BroadcastProfile_6, // 358
+	MDD_JP2KEssenceCompression_BroadcastProfile_7, // 359
+	MDD_WaveAudioDescriptor_ReferenceImageEditRate, // 360
+	MDD_WaveAudioDescriptor_ReferenceAudioAlignmentLevel, // 361
+	MDD_GenericPictureEssenceDescriptor_AlternativeCenterCuts, // 362
+	MDD_GenericPictureEssenceDescriptor_ActiveHeight, // 363
+	MDD_GenericPictureEssenceDescriptor_ActiveWidth, // 364
+	MDD_GenericPictureEssenceDescriptor_ActiveXOffset, // 365
+	MDD_GenericPictureEssenceDescriptor_ActiveYOffset, // 366
+	MDD_TimedTextDescriptor_RFC5646LanguageTagList, // 367
+	MDD_AlternativeCenterCuts_4x3, // 368
+	MDD_AlternativeCenterCuts_14x9, // 369
         MDD_Max
-
     }; // enum MDD_t
 
     //

@@ -1489,6 +1489,14 @@ WaveAudioDescriptor::InitFromTLVSet(TLVReader& TLVSet)
     result = TLVSet.ReadObject(OBJ_READ_ARGS_OPT(WaveAudioDescriptor, ChannelAssignment));
     ChannelAssignment.set_has_value( result == RESULT_OK );
   }
+  if ( ASDCP_SUCCESS(result) ) {
+    result = TLVSet.ReadObject(OBJ_READ_ARGS_OPT(WaveAudioDescriptor, ReferenceImageEditRate));
+    ReferenceImageEditRate.set_has_value( result == RESULT_OK );
+  }
+  if ( ASDCP_SUCCESS(result) ) { 
+    result = TLVSet.ReadUi8(OBJ_READ_ARGS_OPT(WaveAudioDescriptor, ReferenceAudioAlignmentLevel));
+    ReferenceAudioAlignmentLevel.set_has_value( result == RESULT_OK );
+  }
   return result;
 }
 
@@ -1502,6 +1510,8 @@ WaveAudioDescriptor::WriteToTLVSet(TLVWriter& TLVSet)
   if ( ASDCP_SUCCESS(result)  && ! SequenceOffset.empty() ) result = TLVSet.WriteUi8(OBJ_WRITE_ARGS_OPT(WaveAudioDescriptor, SequenceOffset));
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi32(OBJ_WRITE_ARGS(WaveAudioDescriptor, AvgBps));
   if ( ASDCP_SUCCESS(result)  && ! ChannelAssignment.empty() ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS_OPT(WaveAudioDescriptor, ChannelAssignment));
+  if ( ASDCP_SUCCESS(result)  && ! ReferenceImageEditRate.empty() ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS_OPT(WaveAudioDescriptor, ReferenceImageEditRate));
+  if ( ASDCP_SUCCESS(result)  && ! ReferenceAudioAlignmentLevel.empty() ) result = TLVSet.WriteUi8(OBJ_WRITE_ARGS_OPT(WaveAudioDescriptor, ReferenceAudioAlignmentLevel));
   return result;
 }
 
@@ -1514,6 +1524,8 @@ WaveAudioDescriptor::Copy(const WaveAudioDescriptor& rhs)
   SequenceOffset = rhs.SequenceOffset;
   AvgBps = rhs.AvgBps;
   ChannelAssignment = rhs.ChannelAssignment;
+  ReferenceImageEditRate = rhs.ReferenceImageEditRate;
+  ReferenceAudioAlignmentLevel = rhs.ReferenceAudioAlignmentLevel;
 }
 
 //
@@ -1534,6 +1546,12 @@ WaveAudioDescriptor::Dump(FILE* stream)
   fprintf(stream, "  %22s = %d\n",  "AvgBps", AvgBps);
   if ( ! ChannelAssignment.empty() ) {
     fprintf(stream, "  %22s = %s\n",  "ChannelAssignment", ChannelAssignment.get().EncodeString(identbuf, IdentBufferLen));
+  }
+  if ( ! ReferenceImageEditRate.empty() ) {
+    fprintf(stream, "  %22s = %s\n",  "ReferenceImageEditRate", ReferenceImageEditRate.get().EncodeString(identbuf, IdentBufferLen));
+  }
+  if ( ! ReferenceAudioAlignmentLevel.empty() ) {
+    fprintf(stream, "  %22s = %d\n",  "ReferenceAudioAlignmentLevel", ReferenceAudioAlignmentLevel.get());
   }
 }
 
@@ -1556,7 +1574,7 @@ WaveAudioDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 
 //
 
-GenericPictureEssenceDescriptor::GenericPictureEssenceDescriptor(const Dictionary*& d) : FileDescriptor(d), m_Dict(d), SignalStandard(0), SampledWidth(0), SampledXOffset(0), DisplayHeight(0), DisplayXOffset(0), DisplayF2Offset(0), AlphaTransparency(0), ImageAlignmentOffset(0), ImageEndOffset(0)
+GenericPictureEssenceDescriptor::GenericPictureEssenceDescriptor(const Dictionary*& d) : FileDescriptor(d), m_Dict(d), SignalStandard(0), SampledWidth(0), SampledXOffset(0), DisplayHeight(0), DisplayXOffset(0), DisplayF2Offset(0), AlphaTransparency(0), ImageAlignmentOffset(0), ImageEndOffset(0), ActiveWidth(0), ActiveXOffset(0)
 {
   assert(m_Dict);
   m_UL = m_Dict->ul(MDD_GenericPictureEssenceDescriptor);
@@ -1661,6 +1679,23 @@ GenericPictureEssenceDescriptor::InitFromTLVSet(TLVReader& TLVSet)
     result = TLVSet.ReadObject(OBJ_READ_ARGS_OPT(GenericPictureEssenceDescriptor, ColorPrimaries));
     ColorPrimaries.set_has_value( result == RESULT_OK );
   }
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(GenericPictureEssenceDescriptor, AlternativeCenterCuts));
+  if ( ASDCP_SUCCESS(result) ) { 
+    result = TLVSet.ReadUi32(OBJ_READ_ARGS_OPT(GenericPictureEssenceDescriptor, ActiveWidth));
+    ActiveWidth.set_has_value( result == RESULT_OK );
+  }
+  if ( ASDCP_SUCCESS(result) ) { 
+    result = TLVSet.ReadUi32(OBJ_READ_ARGS_OPT(GenericPictureEssenceDescriptor, ActiveHeight));
+    ActiveHeight.set_has_value( result == RESULT_OK );
+  }
+  if ( ASDCP_SUCCESS(result) ) { 
+    result = TLVSet.ReadUi32(OBJ_READ_ARGS_OPT(GenericPictureEssenceDescriptor, ActiveXOffset));
+    ActiveXOffset.set_has_value( result == RESULT_OK );
+  }
+  if ( ASDCP_SUCCESS(result) ) { 
+    result = TLVSet.ReadUi32(OBJ_READ_ARGS_OPT(GenericPictureEssenceDescriptor, ActiveYOffset));
+    ActiveYOffset.set_has_value( result == RESULT_OK );
+  }
   return result;
 }
 
@@ -1695,6 +1730,11 @@ GenericPictureEssenceDescriptor::WriteToTLVSet(TLVWriter& TLVSet)
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(GenericPictureEssenceDescriptor, PictureEssenceCoding));
   if ( ASDCP_SUCCESS(result)  && ! CodingEquations.empty() ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS_OPT(GenericPictureEssenceDescriptor, CodingEquations));
   if ( ASDCP_SUCCESS(result)  && ! ColorPrimaries.empty() ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS_OPT(GenericPictureEssenceDescriptor, ColorPrimaries));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(GenericPictureEssenceDescriptor, AlternativeCenterCuts));
+  if ( ASDCP_SUCCESS(result)  && ! ActiveWidth.empty() ) result = TLVSet.WriteUi32(OBJ_WRITE_ARGS_OPT(GenericPictureEssenceDescriptor, ActiveWidth));
+  if ( ASDCP_SUCCESS(result)  && ! ActiveHeight.empty() ) result = TLVSet.WriteUi32(OBJ_WRITE_ARGS_OPT(GenericPictureEssenceDescriptor, ActiveHeight));
+  if ( ASDCP_SUCCESS(result)  && ! ActiveXOffset.empty() ) result = TLVSet.WriteUi32(OBJ_WRITE_ARGS_OPT(GenericPictureEssenceDescriptor, ActiveXOffset));
+  if ( ASDCP_SUCCESS(result)  && ! ActiveYOffset.empty() ) result = TLVSet.WriteUi32(OBJ_WRITE_ARGS_OPT(GenericPictureEssenceDescriptor, ActiveYOffset));
   return result;
 }
 
@@ -1728,6 +1768,11 @@ GenericPictureEssenceDescriptor::Copy(const GenericPictureEssenceDescriptor& rhs
   PictureEssenceCoding = rhs.PictureEssenceCoding;
   CodingEquations = rhs.CodingEquations;
   ColorPrimaries = rhs.ColorPrimaries;
+  AlternativeCenterCuts = rhs.AlternativeCenterCuts;
+  ActiveWidth = rhs.ActiveWidth;
+  ActiveHeight = rhs.ActiveHeight;
+  ActiveXOffset = rhs.ActiveXOffset;
+  ActiveYOffset = rhs.ActiveYOffset;
 }
 
 //
@@ -1805,6 +1850,20 @@ GenericPictureEssenceDescriptor::Dump(FILE* stream)
   }
   if ( ! ColorPrimaries.empty() ) {
     fprintf(stream, "  %22s = %s\n",  "ColorPrimaries", ColorPrimaries.get().EncodeString(identbuf, IdentBufferLen));
+  }
+  fprintf(stream, "  %22s:\n",  "AlternativeCenterCuts");
+  AlternativeCenterCuts.Dump(stream);
+  if ( ! ActiveWidth.empty() ) {
+    fprintf(stream, "  %22s = %d\n",  "ActiveWidth", ActiveWidth.get());
+  }
+  if ( ! ActiveHeight.empty() ) {
+    fprintf(stream, "  %22s = %d\n",  "ActiveHeight", ActiveHeight.get());
+  }
+  if ( ! ActiveXOffset.empty() ) {
+    fprintf(stream, "  %22s = %d\n",  "ActiveXOffset", ActiveXOffset.get());
+  }
+  if ( ! ActiveYOffset.empty() ) {
+    fprintf(stream, "  %22s = %d\n",  "ActiveYOffset", ActiveYOffset.get());
   }
 }
 
@@ -2748,6 +2807,10 @@ TimedTextDescriptor::InitFromTLVSet(TLVReader& TLVSet)
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(TimedTextDescriptor, ResourceID));
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(TimedTextDescriptor, UCSEncoding));
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(TimedTextDescriptor, NamespaceURI));
+  if ( ASDCP_SUCCESS(result) ) {
+    result = TLVSet.ReadObject(OBJ_READ_ARGS_OPT(TimedTextDescriptor, RFC5646LanguageTagList));
+    RFC5646LanguageTagList.set_has_value( result == RESULT_OK );
+  }
   return result;
 }
 
@@ -2760,6 +2823,7 @@ TimedTextDescriptor::WriteToTLVSet(TLVWriter& TLVSet)
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(TimedTextDescriptor, ResourceID));
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(TimedTextDescriptor, UCSEncoding));
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(TimedTextDescriptor, NamespaceURI));
+  if ( ASDCP_SUCCESS(result)  && ! RFC5646LanguageTagList.empty() ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS_OPT(TimedTextDescriptor, RFC5646LanguageTagList));
   return result;
 }
 
@@ -2771,6 +2835,7 @@ TimedTextDescriptor::Copy(const TimedTextDescriptor& rhs)
   ResourceID = rhs.ResourceID;
   UCSEncoding = rhs.UCSEncoding;
   NamespaceURI = rhs.NamespaceURI;
+  RFC5646LanguageTagList = rhs.RFC5646LanguageTagList;
 }
 
 //
@@ -2787,6 +2852,9 @@ TimedTextDescriptor::Dump(FILE* stream)
   fprintf(stream, "  %22s = %s\n",  "ResourceID", ResourceID.EncodeString(identbuf, IdentBufferLen));
   fprintf(stream, "  %22s = %s\n",  "UCSEncoding", UCSEncoding.EncodeString(identbuf, IdentBufferLen));
   fprintf(stream, "  %22s = %s\n",  "NamespaceURI", NamespaceURI.EncodeString(identbuf, IdentBufferLen));
+  if ( ! RFC5646LanguageTagList.empty() ) {
+    fprintf(stream, "  %22s = %s\n",  "RFC5646LanguageTagList", RFC5646LanguageTagList.get().EncodeString(identbuf, IdentBufferLen));
+  }
 }
 
 //

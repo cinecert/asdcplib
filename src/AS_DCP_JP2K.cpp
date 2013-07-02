@@ -221,16 +221,6 @@ ASDCP::JP2K_PDesc_to_MD(const JP2K::PictureDescriptor& PDesc,
   EssenceDescriptor->StoredHeight = PDesc.StoredHeight;
   EssenceDescriptor->AspectRatio = PDesc.AspectRatio;
 
-  //  if ( m_Info.LabelSetType == LS_MXF_SMPTE )
-  //    {
-  // PictureEssenceCoding UL = 
-  // Video Line Map       ui32_t[VideoLineMapSize] = { 2, 4, 0, 0 }
-  // CaptureGamma         UL = 
-  // ComponentMaxRef      ui32_t = 4095
-  // ComponentMinRef      ui32_t = 0
-  // PixelLayout          byte_t[PixelLayoutSize] = s_PixelLayoutXYZ
-  //    }
-
   if ( PDesc.StoredWidth < 2049 )
     {
       EssenceDescriptor->PictureEssenceCoding.Set(dict.ul(MDD_JP2KEssenceCompression_2K));
@@ -351,16 +341,6 @@ ASDCP::JP2K_PDesc_to_MD(const JP2K::PictureDescriptor& PDesc,
   EssenceDescriptor->StoredWidth = PDesc.StoredWidth;
   EssenceDescriptor->StoredHeight = PDesc.StoredHeight;
   EssenceDescriptor->AspectRatio = PDesc.AspectRatio;
-
-  //  if ( m_Info.LabelSetType == LS_MXF_SMPTE )
-  //    {
-  // PictureEssenceCoding UL = 
-  // Video Line Map       ui32_t[VideoLineMapSize] = { 2, 4, 0, 0 }
-  // CaptureGamma         UL = 
-  // ComponentMaxRef      ui32_t = 4095
-  // ComponentMinRef      ui32_t = 0
-  // PixelLayout          byte_t[PixelLayoutSize] = s_PixelLayoutXYZ
-  //    }
 
   if ( PDesc.StoredWidth < 2049 )
     {

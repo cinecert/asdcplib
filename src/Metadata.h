@@ -448,6 +448,8 @@ namespace ASDCP
           optional_property<ui8_t> SequenceOffset;
           ui32_t AvgBps;
           optional_property<UL> ChannelAssignment;
+          optional_property<Rational> ReferenceImageEditRate;
+          optional_property<ui8_t> ReferenceAudioAlignmentLevel;
 
       WaveAudioDescriptor(const Dictionary*& d);
       WaveAudioDescriptor(const WaveAudioDescriptor& rhs);
@@ -495,6 +497,11 @@ namespace ASDCP
           UL PictureEssenceCoding;
           optional_property<UL> CodingEquations;
           optional_property<UL> ColorPrimaries;
+          Batch<UL> AlternativeCenterCuts;
+          optional_property<ui32_t> ActiveWidth;
+          optional_property<ui32_t> ActiveHeight;
+          optional_property<ui32_t> ActiveXOffset;
+          optional_property<ui32_t> ActiveYOffset;
 
       GenericPictureEssenceDescriptor(const Dictionary*& d);
       GenericPictureEssenceDescriptor(const GenericPictureEssenceDescriptor& rhs);
@@ -746,6 +753,7 @@ namespace ASDCP
           UUID ResourceID;
           UTF16String UCSEncoding;
           UTF16String NamespaceURI;
+          optional_property<UTF16String> RFC5646LanguageTagList;
 
       TimedTextDescriptor(const Dictionary*& d);
       TimedTextDescriptor(const TimedTextDescriptor& rhs);
