@@ -1469,7 +1469,7 @@ WaveAudioDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 
 //
 
-GenericPictureEssenceDescriptor::GenericPictureEssenceDescriptor(const Dictionary*& d) : FileDescriptor(d), m_Dict(d), FrameLayout(0), StoredWidth(0), StoredHeight(0)
+GenericPictureEssenceDescriptor::GenericPictureEssenceDescriptor(const Dictionary*& d) : FileDescriptor(d), m_Dict(d), FrameLayout(0), StoredWidth(0), StoredHeight(0), DisplayWidth(0)
 {
   assert(m_Dict);
   m_UL = m_Dict->ul(MDD_GenericPictureEssenceDescriptor);
@@ -1494,6 +1494,22 @@ GenericPictureEssenceDescriptor::InitFromTLVSet(TLVReader& TLVSet)
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadUi32(OBJ_READ_ARGS(GenericPictureEssenceDescriptor, StoredHeight));
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(GenericPictureEssenceDescriptor, AspectRatio));
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(GenericPictureEssenceDescriptor, PictureEssenceCoding));
+  if ( ASDCP_SUCCESS(result) ) { 
+    result = TLVSet.ReadUi32(OBJ_READ_ARGS_OPT(GenericPictureEssenceDescriptor, DisplayWidth));
+    DisplayWidth.set_has_value( result == RESULT_OK );
+  }
+  if ( ASDCP_SUCCESS(result) ) { 
+    result = TLVSet.ReadUi32(OBJ_READ_ARGS_OPT(GenericPictureEssenceDescriptor, DisplayHeight));
+    DisplayHeight.set_has_value( result == RESULT_OK );
+  }
+  if ( ASDCP_SUCCESS(result) ) {
+    result = TLVSet.ReadObject(OBJ_READ_ARGS_OPT(GenericPictureEssenceDescriptor, Gamma));
+    Gamma.set_has_value( result == RESULT_OK );
+  }
+  if ( ASDCP_SUCCESS(result) ) { 
+    result = TLVSet.ReadUi8(OBJ_READ_ARGS_OPT(GenericPictureEssenceDescriptor, FieldDominance));
+    FieldDominance.set_has_value( result == RESULT_OK );
+  }
   return result;
 }
 
@@ -1508,6 +1524,10 @@ GenericPictureEssenceDescriptor::WriteToTLVSet(TLVWriter& TLVSet)
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi32(OBJ_WRITE_ARGS(GenericPictureEssenceDescriptor, StoredHeight));
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(GenericPictureEssenceDescriptor, AspectRatio));
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(GenericPictureEssenceDescriptor, PictureEssenceCoding));
+  if ( ASDCP_SUCCESS(result)  && ! DisplayWidth.empty() ) result = TLVSet.WriteUi32(OBJ_WRITE_ARGS_OPT(GenericPictureEssenceDescriptor, DisplayWidth));
+  if ( ASDCP_SUCCESS(result)  && ! DisplayHeight.empty() ) result = TLVSet.WriteUi32(OBJ_WRITE_ARGS_OPT(GenericPictureEssenceDescriptor, DisplayHeight));
+  if ( ASDCP_SUCCESS(result)  && ! Gamma.empty() ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS_OPT(GenericPictureEssenceDescriptor, Gamma));
+  if ( ASDCP_SUCCESS(result)  && ! FieldDominance.empty() ) result = TLVSet.WriteUi8(OBJ_WRITE_ARGS_OPT(GenericPictureEssenceDescriptor, FieldDominance));
   return result;
 }
 
@@ -1521,6 +1541,10 @@ GenericPictureEssenceDescriptor::Copy(const GenericPictureEssenceDescriptor& rhs
   StoredHeight = rhs.StoredHeight;
   AspectRatio = rhs.AspectRatio;
   PictureEssenceCoding = rhs.PictureEssenceCoding;
+  DisplayWidth = rhs.DisplayWidth;
+  DisplayHeight = rhs.DisplayHeight;
+  Gamma = rhs.Gamma;
+  FieldDominance = rhs.FieldDominance;
 }
 
 //
@@ -1539,6 +1563,18 @@ GenericPictureEssenceDescriptor::Dump(FILE* stream)
   fprintf(stream, "  %22s = %d\n",  "StoredHeight", StoredHeight);
   fprintf(stream, "  %22s = %s\n",  "AspectRatio", AspectRatio.EncodeString(identbuf, IdentBufferLen));
   fprintf(stream, "  %22s = %s\n",  "PictureEssenceCoding", PictureEssenceCoding.EncodeString(identbuf, IdentBufferLen));
+  if ( ! DisplayWidth.empty() ) {
+    fprintf(stream, "  %22s = %d\n",  "DisplayWidth", DisplayWidth.get());
+  }
+  if ( ! DisplayHeight.empty() ) {
+    fprintf(stream, "  %22s = %d\n",  "DisplayHeight", DisplayHeight.get());
+  }
+  if ( ! Gamma.empty() ) {
+    fprintf(stream, "  %22s = %s\n",  "Gamma", Gamma.get().EncodeString(identbuf, IdentBufferLen));
+  }
+  if ( ! FieldDominance.empty() ) {
+    fprintf(stream, "  %22s = %d\n",  "FieldDominance", FieldDominance.get());
+  }
 }
 
 //
@@ -2910,21 +2946,20 @@ DCDataDescriptor::DCDataDescriptor(const DCDataDescriptor& rhs) : GenericDataEss
   Copy(rhs);
 }
 
+
 //
 ASDCP::Result_t
 DCDataDescriptor::InitFromTLVSet(TLVReader& TLVSet)
 {
-    // NOTE (this function can be removed if no attributes are defined for this descriptor)
-    assert(m_Dict);
-    Result_t result = GenericDataEssenceDescriptor::InitFromTLVSet(TLVSet);
-    return result;
+  assert(m_Dict);
+  Result_t result = GenericDataEssenceDescriptor::InitFromTLVSet(TLVSet);
+  return result;
 }
 
 //
 ASDCP::Result_t
 DCDataDescriptor::WriteToTLVSet(TLVWriter& TLVSet)
 {
-  // NOTE (this function can be removed if no attributes are defined for this descriptor)
   assert(m_Dict);
   Result_t result = GenericDataEssenceDescriptor::WriteToTLVSet(TLVSet);
   return result;
@@ -3054,7 +3089,6 @@ DolbyAtmosSubDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 {
   return InterchangeObject::WriteToBuffer(Buffer);
 }
-
 
 //
 // end Metadata.cpp

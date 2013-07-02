@@ -43,6 +43,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // these are used below to manufacture arguments
 #define OBJ_READ_ARGS(s,l) m_Dict->Type(MDD_##s##_##l), &l
 #define OBJ_WRITE_ARGS(s,l) m_Dict->Type(MDD_##s##_##l), &l
+#define OBJ_READ_ARGS_OPT(s,l) m_Dict->Type(MDD_##s##_##l), &l.get()
+#define OBJ_WRITE_ARGS_OPT(s,l) m_Dict->Type(MDD_##s##_##l), &l.get()
 #define OBJ_TYPE_ARGS(t) m_Dict->Type(MDD_##t).ul
 
 

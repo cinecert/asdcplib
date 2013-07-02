@@ -218,7 +218,26 @@ namespace ASDCP
 	  virtual void     Dump(FILE* = 0);
 	};
 
+      // wrapper object manages optional properties
+      template <class PropertyType>
+	class optional_property
+	{
+	  PropertyType m_property;
+	  bool m_has_value;
 
+	public:
+	optional_property() : m_has_value(false) {}
+	optional_property(const PropertyType& value) : m_property(value), m_has_value(false) {}
+	  const optional_property<PropertyType>& operator=(const PropertyType& rhs) { this->m_property = rhs; this->m_has_value = true; return *this; }
+	  operator PropertyType&() { return this->m_property; }
+	  void set(const PropertyType& rhs) { this->m_property = rhs; this->m_has_value = true; }
+	  void set_has_value(bool has_value = true) { this->m_has_value = has_value; }
+	  void reset(const PropertyType& rhs) { this->m_has_value = false; }
+	  bool empty() const { return ! m_has_value; }
+	  PropertyType& get() { return m_property; }
+	};
+
+      // base class of all metadata objects
       //
       class InterchangeObject : public ASDCP::KLVPacket
 	{
@@ -228,7 +247,7 @@ namespace ASDCP
 	  const Dictionary*& m_Dict;
 	  IPrimerLookup* m_Lookup;
 	  UUID           InstanceUID;
-	  UUID           GenerationUID;
+	  optional_property<UUID>  GenerationUID;
 
 	InterchangeObject(const Dictionary*& d) : m_Dict(d), m_Lookup(0) {}
 	  virtual ~InterchangeObject() {}
@@ -256,13 +275,14 @@ namespace ASDCP
 	  const Dictionary*& m_Dict;
 	  Kumu::Timestamp    LastModifiedDate;
 	  ui16_t       Version;
-	  ui32_t       ObjectModelVersion;
-	  UUID         PrimaryPackage;
+	  optional_property<ui32_t> ObjectModelVersion;
+	  optional_property<UUID> PrimaryPackage;
 	  Batch<UUID>  Identifications;
 	  UUID         ContentStorage;
 	  UL           OperationalPattern;
 	  Batch<UL>    EssenceContainers;
 	  Batch<UL>    DMSchemes;
+	  optional_property<Batch<UL> > ApplicationSchemes;
 
 	  Preface(const Dictionary*& d);
 	  virtual ~Preface() {}

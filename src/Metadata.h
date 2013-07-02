@@ -472,6 +472,10 @@ namespace ASDCP
           ui32_t StoredHeight;
           Rational AspectRatio;
           UL PictureEssenceCoding;
+          optional_property<ui32_t> DisplayWidth;
+          optional_property<ui32_t> DisplayHeight;
+          optional_property<UL> Gamma;
+          optional_property<ui8_t> FieldDominance;
 
       GenericPictureEssenceDescriptor(const Dictionary*& d);
       GenericPictureEssenceDescriptor(const GenericPictureEssenceDescriptor& rhs);
@@ -890,7 +894,7 @@ namespace ASDCP
 	};
 
       //
-     class DCDataDescriptor : public GenericDataEssenceDescriptor
+      class DCDataDescriptor : public GenericDataEssenceDescriptor
 	{
 	  DCDataDescriptor();
 
@@ -918,11 +922,11 @@ namespace ASDCP
 
 	public:
 	  const Dictionary*& m_Dict;
-        UUID AtmosID;
-        ui32_t FirstFrame;
-        ui16_t MaxChannelCount;
-        ui16_t MaxObjectCount;
-        ui8_t AtmosVersion;
+          UUID AtmosID;
+          ui32_t FirstFrame;
+          ui16_t MaxChannelCount;
+          ui16_t MaxObjectCount;
+          ui8_t AtmosVersion;
 
       DolbyAtmosSubDescriptor(const Dictionary*& d);
       DolbyAtmosSubDescriptor(const DolbyAtmosSubDescriptor& rhs);

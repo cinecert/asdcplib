@@ -586,10 +586,11 @@ ASDCP::MXF::Primer::Dump(FILE* stream)
 
 //
 ASDCP::MXF::Preface::Preface(const Dictionary*& d) :
-  InterchangeObject(d), m_Dict(d), Version(258), ObjectModelVersion(0)
+  InterchangeObject(d), m_Dict(d), Version(258)
 {
   assert(m_Dict);
   m_UL = m_Dict->Type(MDD_Preface).ul;
+  ObjectModelVersion = 0;
 }
 
 //
@@ -616,8 +617,8 @@ ASDCP::MXF::Preface::InitFromTLVSet(TLVReader& TLVSet)
   Result_t result = InterchangeObject::InitFromTLVSet(TLVSet);
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(Preface, LastModifiedDate));
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadUi16(OBJ_READ_ARGS(Preface, Version));
-  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadUi32(OBJ_READ_ARGS(Preface, ObjectModelVersion));
-  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(Preface, PrimaryPackage));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadUi32(OBJ_READ_ARGS_OPT(Preface, ObjectModelVersion));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS_OPT(Preface, PrimaryPackage));
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(Preface, Identifications));
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(Preface, ContentStorage));
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(Preface, OperationalPattern));
@@ -633,8 +634,8 @@ ASDCP::MXF::Preface::WriteToTLVSet(TLVWriter& TLVSet)
   Result_t result = InterchangeObject::WriteToTLVSet(TLVSet);
   if ( ASDCP_SUCCESS(result) )  result = TLVSet.WriteObject(OBJ_WRITE_ARGS(Preface, LastModifiedDate));
   if ( ASDCP_SUCCESS(result) )  result = TLVSet.WriteUi16(OBJ_WRITE_ARGS(Preface, Version));
-  if ( ASDCP_SUCCESS(result) )  result = TLVSet.WriteUi32(OBJ_WRITE_ARGS(Preface, ObjectModelVersion));
-  if ( ASDCP_SUCCESS(result) )  result = TLVSet.WriteObject(OBJ_WRITE_ARGS(Preface, PrimaryPackage));
+  if ( ASDCP_SUCCESS(result) )  result = TLVSet.WriteUi32(OBJ_WRITE_ARGS_OPT(Preface, ObjectModelVersion));
+  if ( ASDCP_SUCCESS(result) )  result = TLVSet.WriteObject(OBJ_WRITE_ARGS_OPT(Preface, PrimaryPackage));
   if ( ASDCP_SUCCESS(result) )  result = TLVSet.WriteObject(OBJ_WRITE_ARGS(Preface, Identifications));
   if ( ASDCP_SUCCESS(result) )  result = TLVSet.WriteObject(OBJ_WRITE_ARGS(Preface, ContentStorage));
   if ( ASDCP_SUCCESS(result) )  result = TLVSet.WriteObject(OBJ_WRITE_ARGS(Preface, OperationalPattern));
@@ -669,8 +670,13 @@ ASDCP::MXF::Preface::Dump(FILE* stream)
   InterchangeObject::Dump(stream);
   fprintf(stream, "  %22s = %s\n",  "LastModifiedDate", LastModifiedDate.EncodeString(identbuf, IdentBufferLen));
   fprintf(stream, "  %22s = %hu\n", "Version", Version);
-  fprintf(stream, "  %22s = %u\n",  "ObjectModelVersion", ObjectModelVersion);
-  fprintf(stream, "  %22s = %s\n",  "PrimaryPackage", PrimaryPackage.EncodeHex(identbuf, IdentBufferLen));
+
+  if ( ! ObjectModelVersion.empty() )
+    fprintf(stream, "  %22s = %u\n",  "ObjectModelVersion", ObjectModelVersion.get());
+
+  if ( ! PrimaryPackage.empty() )
+    fprintf(stream, "  %22s = %s\n",  "PrimaryPackage", PrimaryPackage.get().EncodeHex(identbuf, IdentBufferLen));
+
   fprintf(stream, "  %22s:\n", "Identifications");  Identifications.Dump(stream);
   fprintf(stream, "  %22s = %s\n",  "ContentStorage", ContentStorage.EncodeHex(identbuf, IdentBufferLen));
   fprintf(stream, "  %22s = %s\n",  "OperationalPattern", OperationalPattern.EncodeString(identbuf, IdentBufferLen));
@@ -1290,7 +1296,7 @@ ASDCP::MXF::InterchangeObject::InitFromTLVSet(TLVReader& TLVSet)
 {
   Result_t result = TLVSet.ReadObject(OBJ_READ_ARGS(InterchangeObject, InstanceUID));
   if ( ASDCP_SUCCESS(result) )
-    result = TLVSet.ReadObject(OBJ_READ_ARGS(GenerationInterchangeObject, GenerationUID));
+    result = TLVSet.ReadObject(OBJ_READ_ARGS_OPT(GenerationInterchangeObject, GenerationUID));
   return result;
 }
 
@@ -1300,7 +1306,7 @@ ASDCP::MXF::InterchangeObject::WriteToTLVSet(TLVWriter& TLVSet)
 {
   Result_t result = TLVSet.WriteObject(OBJ_WRITE_ARGS(InterchangeObject, InstanceUID));
   if ( ASDCP_SUCCESS(result) )
-    result = TLVSet.WriteObject(OBJ_WRITE_ARGS(GenerationInterchangeObject, GenerationUID));
+    result = TLVSet.WriteObject(OBJ_WRITE_ARGS_OPT(GenerationInterchangeObject, GenerationUID));
   return result;
 }
 
@@ -1360,7 +1366,9 @@ ASDCP::MXF::InterchangeObject::Dump(FILE* stream)
   fputc('\n', stream);
   KLVPacket::Dump(stream, *m_Dict, false);
   fprintf(stream, "             InstanceUID = %s\n",  InstanceUID.EncodeHex(identbuf, IdentBufferLen));
-  fprintf(stream, "           GenerationUID = %s\n",  GenerationUID.EncodeHex(identbuf, IdentBufferLen));
+
+  if ( ! GenerationUID.empty() )
+    fprintf(stream, "           GenerationUID = %s\n",  GenerationUID.get().EncodeHex(identbuf, IdentBufferLen));
 }
 
 //
