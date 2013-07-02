@@ -93,27 +93,23 @@ libkumu_la_LDFLAGS = -release @VERSION@
 nodist_libasdcp_la_SOURCES = Metadata_h.tt2 Metadata_cpp.tt2 \
 		mxfgen.pl MXF_def.pl ullist.pl ULList.xml dict.xml DMS_Crypto.xml
 # sources for asdcp library
-libasdcp_la_SOURCES = \
-	Dict.cpp \
-	MDD.cpp \
-	KLV.cpp \
-	MXFTypes.cpp \
-	MXF.cpp \
-	Metadata.cpp \
-	Index.cpp \
-	MPEG2_Parser.cpp MPEG.cpp JP2K_Codestream_Parser.cpp \
-		JP2K_Sequence_Parser.cpp JP2K.cpp PCM_Parser.cpp Wav.cpp \
-		TimedText_Parser.cpp \
-		AS_DCP.cpp AS_DCP_MXF.cpp AS_DCP_AES.cpp \
-		h__Reader.cpp h__Writer.cpp AS_DCP_MPEG2.cpp AS_DCP_JP2K.cpp \
-		AS_DCP_PCM.cpp AS_DCP_TimedText.cpp PCMParserList.cpp \
-		AS_DCP_ATMOS.cpp  AS_DCP_DCData.cpp \
-		DCData_ByteStream_Parser.cpp DCData_Sequence_Parser.cpp \
-		AtmosSyncChannel_Generator.cpp \
-		AtmosSyncChannel_Mixer.cpp \
-		PCMDataProviders.cpp \
-		SyncEncoder.c CRC16.c CRC16.h \
-		UUIDInformation.c
+libasdcp_la_SOURCES = MPEG2_Parser.cpp MPEG.cpp JP2K_Codestream_Parser.cpp \
+	JP2K_Sequence_Parser.cpp JP2K.cpp PCM_Parser.cpp Wav.cpp \
+	TimedText_Parser.cpp KLV.cpp Dict.cpp MXFTypes.cpp MXF.cpp \
+	Index.cpp Metadata.cpp AS_DCP.cpp AS_DCP_MXF.cpp AS_DCP_AES.cpp \
+	h__Reader.cpp h__Writer.cpp AS_DCP_MPEG2.cpp AS_DCP_JP2K.cpp \
+	AS_DCP_PCM.cpp AS_DCP_TimedText.cpp PCMParserList.cpp \
+	Wav.h WavFileWriter.h MXF.h Metadata.h \
+	JP2K.h AS_DCP.h AS_DCP_internal.h KLV.h MPEG.h MXFTypes.h MDD.h \
+	PCMParserList.h S12MTimecode.h MDD.cpp \
+	AS_DCP_ATMOS.cpp  AS_DCP_DCData.cpp AS_DCP_DCData_internal.h \
+	DCData_ByteStream_Parser.cpp DCData_Sequence_Parser.cpp \
+	AtmosSyncChannel_Generator.cpp AtmosSyncChannel_Generator.h \
+	AtmosSyncChannel_Mixer.cpp AtmosSyncChannel_Mixer.h \
+	PCMDataProviders.cpp PCMDataProviders.h \
+	SyncEncoder.c SyncEncoder.h SyncCommon.h CRC16.c CRC16.h \
+	UUIDInformation.c UUIDInformation.h
+
 
 if DEV_HEADERS
 nodist_libasdcp_la_SOURCES += TimedText_Transform.h TimedText_Transform.cpp
