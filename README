@@ -139,11 +139,7 @@ command-line utilities all respond to -h.
 
 Change History
 
-YYYY-MM-DD - IMF/AS-02 support, bug fixes
-  o Fixed missing return statement in ArchivableString::ArchiveLength
-    (thanks to both Kristof Provost and Franck Chopin) 
-  o Fixed broken sample alignment in RF64Writer (thanks to Dolby)
-  o Fixed win32 build (thanks to Dolby)
+2013-07-02 - IMF/AS-02 support, bug fixes 2.0.0
   o Massive refactoring of internals to allow easier implementation
     of AS-02.  Some API changes were made as well (note that
     OPAtomHeader is now OP1aHeader and RIP is no longer part of the
@@ -159,6 +155,12 @@ YYYY-MM-DD - IMF/AS-02 support, bug fixes
     that this project is still in the early stages of interop testing
     so errors are likely present and don't expect any server to
     understand this feature.
+
+2013-07-01 - Bug fixes, enhancements 1.12.50
+  o Fixed missing return statement in ArchivableString::ArchiveLength
+    (thanks to both Kristof Provost and Franck Chopin) 
+  o Fixed broken sample alignment in RF64Writer (thanks to Dolby)
+  o Fixed win32 build (thanks to Dolby)
 
 
 2013-04-12 - Dolby Atmos support and more audio labels 1.11.49
