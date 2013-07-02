@@ -33,11 +33,11 @@ OBJDIR = .
 
 !ifdef ENABLE_RANDOM_UUID
 CXXFLAGS1 = /nologo /W3 /GR /EHsc /DWIN32 /DKM_WIN32 /D_CONSOLE /I. /I$(SRCDIR) /DASDCP_PLATFORM=\"win32\" \
-	/D_CRT_SECURE_NO_WARNINGS /D_CRT_NONSTDC_NO_WARNINGS /DPACKAGE_VERSION=\"1.11.49\" \
+	/D_CRT_SECURE_NO_WARNINGS /D_CRT_NONSTDC_NO_WARNINGS /DPACKAGE_VERSION=\"2.0.0\" \
 	/I"$(WITH_OPENSSL)"\inc32 /DCONFIG_RANDOM_UUID=1
 !else
 CXXFLAGS1 = /nologo /W3 /GR /EHsc /DWIN32 /DKM_WIN32 /D_CONSOLE /I. /I$(SRCDIR) /DASDCP_PLATFORM=\"win32\" \
-	/D_CRT_SECURE_NO_WARNINGS /D_CRT_NONSTDC_NO_WARNINGS /DPACKAGE_VERSION=\"1.11.49\" \
+	/D_CRT_SECURE_NO_WARNINGS /D_CRT_NONSTDC_NO_WARNINGS /DPACKAGE_VERSION=\"2.0.0\" \
 	/I"$(WITH_OPENSSL)"\inc32
 !endif
 LIB_EXE = lib.exe
@@ -99,7 +99,7 @@ AS02_OBJS = h__02_Reader.obj h__02_Writer.obj AS_02_JP2K.obj \
 
 all: kmfilegen.exe kmrandgen.exe kmuuidgen.exe asdcp-test.exe \
      asdcp-wrap.exe asdcp-unwrap.exe asdcp-info.exe \
-     blackwave.exe klvwalk.exe j2c-test.exe wavesplit.exe \
+     blackwave.exe klvwalk.exe j2c-test.exe wavesplit.exe 
 !IFDEF USE_AS_02
        as-02-wrap.exe as-02-unwrap.exe \
 !ENDIF

@@ -90,7 +90,8 @@ http://expat.sourceforge.net/ for source and build instructions.
 
 To configure and build, type './configure' followed by 'make'. There
 are several test targets on the POSIX side, but you need to assemble
-a set of test files to use them.  
+a set of test files to use them.  AS-02 support can be enabled with 
+ --enable-as-02.  
 
 I have tested this build on win32, Linux, OpenBSD, and Darwin
 platforms. Others may work as well.
