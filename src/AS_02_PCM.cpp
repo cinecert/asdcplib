@@ -131,7 +131,8 @@ AS_02::PCM::MXFReader::h__Reader::OpenRead(const std::string& filename, const AS
 
 	  m_ClipEssenceBegin = m_File.Tell();
 	  m_SamplesPerFrame = AS_02::MXF::CalcSamplesPerFrame(*wave_descriptor, edit_rate);
-	  m_ContainerDuration = reader.Length() / m_SamplesPerFrame;
+	  m_ContainerDuration = static_cast<ui32_t>(8ULL * reader.Length() /
+						    (m_SamplesPerFrame * wave_descriptor->ChannelCount * wave_descriptor->QuantizationBits));
 	}
     }
 
