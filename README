@@ -140,6 +140,10 @@ command-line utilities all respond to -h.
 
 Change History
 
+2013-xx-xx - enhancements, bug fixes 2.0.x
+  o fixed a bug that caused blackwave to only produce 96kHz WAV files.
+    (thanks to Stephane W)
+
 2013-07-02 - IMF/AS-02 support, bug fixes 2.0.0
   o Massive refactoring of internals to allow easier implementation
     of AS-02.  Some API changes were made as well (note that

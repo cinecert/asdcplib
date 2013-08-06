@@ -100,7 +100,7 @@ public:
   const char* filename;  // filename prefix for files written by the extract mode
 
   CommandOptions(int argc, const char** argv) :
-    error_flag(true), verbose_flag(false), version_flag(false), help_flag(false),
+    error_flag(true), verbose_flag(false), version_flag(false), help_flag(false), s96_flag(false),
     duration(1440), filename(0)
   {
     for ( int i = 1; i < argc; i++ )
