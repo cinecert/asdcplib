@@ -269,6 +269,7 @@ ASDCP::TimedText::DCSubtitleParser::h__SubtitleParser::OpenRead()
   // list of images
   ElementList ImageList;
   m_Root.GetChildrenWithName("Image", ImageList);
+  std::set<Kumu::UUID> visited_items;
 
   for ( Elem_i i = ImageList.begin(); i != ImageList.end(); i++ )
     {
@@ -279,11 +280,15 @@ ASDCP::TimedText::DCSubtitleParser::h__SubtitleParser::OpenRead()
 	  return RESULT_FORMAT;
 	}
 
-      TimedTextResourceDescriptor TmpResource;
-      memcpy(TmpResource.ResourceID, AssetID.Value(), UUIDlen);
-      TmpResource.Type = MT_PNG;
-      m_TDesc.ResourceList.push_back(TmpResource);
-      m_ResourceTypes.insert(ResourceTypeMap_t::value_type(UUID(TmpResource.ResourceID), MT_PNG));
+      if ( visited_items.find(AssetID) == visited_items.end() )
+	{
+	  TimedTextResourceDescriptor TmpResource;
+	  memcpy(TmpResource.ResourceID, AssetID.Value(), UUIDlen);
+	  TmpResource.Type = MT_PNG;
+	  m_TDesc.ResourceList.push_back(TmpResource);
+	  m_ResourceTypes.insert(ResourceTypeMap_t::value_type(UUID(TmpResource.ResourceID), MT_PNG));
+	  visited_items.insert(AssetID);
+	}
     }
 
   // Calculate the timeline duration.
