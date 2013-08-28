@@ -144,6 +144,8 @@ ASDCP::Result_t
 AS_02::PCM::MXFReader::h__Reader::ReadFrame(ui32_t FrameNum, ASDCP::PCM::FrameBuffer& FrameBuf,
 					    ASDCP::AESDecContext* Ctx, ASDCP::HMACContext* HMAC)
 {
+  ASDCP::MXF::WaveAudioDescriptor* wave_descriptor = 0;
+
   if ( ! m_File.IsOpen() )
     {
       return RESULT_INIT;
@@ -156,7 +158,21 @@ AS_02::PCM::MXFReader::h__Reader::ReadFrame(ui32_t FrameNum, ASDCP::PCM::FrameBu
 
   assert(m_ClipEssenceBegin);
   Result_t result = RESULT_OK;
-  ui64_t position = m_ClipEssenceBegin + ( FrameNum * m_SamplesPerFrame );
+
+  if( KM_SUCCESS(result) )
+    {
+      if ( KM_SUCCESS(m_HeaderPart.GetMDObjectByType(OBJ_TYPE_ARGS(WaveAudioDescriptor),
+						     reinterpret_cast<InterchangeObject**>(&wave_descriptor))) )
+	{
+	  if ( wave_descriptor == 0 )
+	    {
+	      DefaultLogSink().Error("WaveAudioDescriptor object not found.\n");
+	      return RESULT_AS02_FORMAT;
+	    }
+	}
+    }
+
+  ui64_t position = m_ClipEssenceBegin + ( FrameNum * m_SamplesPerFrame * wave_descriptor->ChannelCount * wave_descriptor->BlockAlign );
 
   if ( m_File.Tell() != position )
     {
@@ -165,12 +181,12 @@ AS_02::PCM::MXFReader::h__Reader::ReadFrame(ui32_t FrameNum, ASDCP::PCM::FrameBu
 
   if ( KM_SUCCESS(result) )
     {
-      result = m_File.Read(FrameBuf.Data(), m_SamplesPerFrame);
+      result = m_File.Read(FrameBuf.Data(), m_SamplesPerFrame * wave_descriptor->ChannelCount * wave_descriptor->BlockAlign);
     }
 
   if ( KM_SUCCESS(result) )
     {
-      FrameBuf.Size(m_SamplesPerFrame);
+      FrameBuf.Size(m_SamplesPerFrame * wave_descriptor->ChannelCount * wave_descriptor->BlockAlign);
     }
 
   return result;
@@ -394,8 +410,6 @@ AS_02::PCM::MXFWriter::h__Writer::SetSourceStream(const ASDCP::Rational& edit_ra
       return RESULT_STATE;
     }
 
-  fprintf(stderr, "edit_rate=%d/%d\n", edit_rate.Numerator, edit_rate.Denominator);
-
   memcpy(m_EssenceUL, m_Dict->ul(MDD_WAVEssenceClip), SMPTE_UL_LENGTH);
   m_EssenceUL[15] = 1; // set the stream identifier
   Result_t result = m_State.Goto_READY();
@@ -406,8 +420,6 @@ AS_02::PCM::MXFWriter::h__Writer::SetSourceStream(const ASDCP::Rational& edit_ra
       m_BytesPerFrame = AS_02::MXF::CalcFrameBufferSize(*m_WaveAudioDescriptor, edit_rate);
       m_SamplesPerFrame = AS_02::MXF::CalcSamplesPerFrame(*m_WaveAudioDescriptor, edit_rate);
       m_WaveAudioDescriptor->ContainerDuration = 0;
-
-      fprintf(stderr, "m_BytesPerFrame=%d, m_SamplesPerFrame=%d\n", m_BytesPerFrame, m_SamplesPerFrame);
 
       result = WriteAS02Header(PCM_PACKAGE_LABEL, UL(m_Dict->ul(MDD_WAVWrapping)),
 			       SOUND_DEF_LABEL, UL(m_EssenceUL), UL(m_Dict->ul(MDD_SoundDataDef)),
@@ -475,7 +487,6 @@ AS_02::PCM::MXFWriter::h__Writer::Finalize()
 
   if ( KM_SUCCESS(result) )
     {
-      fprintf(stderr, "m_FramesWritten=%d, m_SamplesPerFrame=%d\n", m_FramesWritten, m_SamplesPerFrame);
       m_FramesWritten = m_FramesWritten * m_SamplesPerFrame;
       WriteAS02Footer();
     }

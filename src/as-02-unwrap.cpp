@@ -453,6 +453,7 @@ read_PCM_file(CommandOptions& Options)
 	}
 
       FrameBuffer.Capacity(AS_02::MXF::CalcFrameBufferSize(*wave_descriptor, Options.edit_rate));
+      last_frame = AS_02::MXF::CalcFramesFromDurationInSamples(last_frame, *wave_descriptor, Options.edit_rate);
 
       if ( Options.verbose_flag )
 	{
@@ -522,7 +523,10 @@ read_PCM_file(CommandOptions& Options)
       if ( ASDCP_SUCCESS(result) )
 	{
 	  if ( Options.verbose_flag )
-	    FrameBuffer.Dump(stderr, Options.fb_dump_size);
+	    {
+	      FrameBuffer.FrameNumber(i);
+	      FrameBuffer.Dump(stderr, Options.fb_dump_size);
+	    }
 
 	  result = OutWave.WriteFrame(FrameBuffer);
 	}

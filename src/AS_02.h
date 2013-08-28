@@ -118,6 +118,14 @@ namespace AS_02
       return CalcSampleSize(d) * CalcSamplesPerFrame(d, edit_rate);
     }
 
+    // Returns number of frames for data described by ADesc, given a duration in samples and an edit rate
+    inline ui32_t CalcFramesFromDurationInSamples(const ui32_t durationInSamples, const ASDCP::MXF::WaveAudioDescriptor& d, const ASDCP::Rational& edit_rate)
+    {
+      return static_cast<ui32_t>(static_cast<ui64_t>(durationInSamples) *
+				 static_cast<ui64_t>(d.AudioSamplingRate.Denominator * edit_rate.Numerator) /
+				 static_cast<ui64_t>(d.AudioSamplingRate.Numerator * edit_rate.Denominator));
+    }
+
   } // namespace MXF
 
   //---------------------------------------------------------------------------------
