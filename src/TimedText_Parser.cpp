@@ -45,15 +45,15 @@ const char* c_dcst_namespace_name = "http://www.smpte-ra.org/schemas/428-7/2007/
 
 
 
-class FilenameResolver : public ASDCP::TimedText::IResourceResolver
+class LocalFilenameResolver : public ASDCP::TimedText::IResourceResolver
 {
   std::string m_Dirname;
 
-  FilenameResolver();
-  bool operator==(const FilenameResolver&);
+  LocalFilenameResolver();
+  bool operator==(const LocalFilenameResolver&);
 
 public:
-  FilenameResolver(const std::string& dirname)
+  LocalFilenameResolver(const std::string& dirname)
   {
     if ( PathIsDirectory(dirname) )
       {
@@ -109,7 +109,7 @@ public:
   std::string m_Filename;
   std::string m_XMLDoc;
   TimedTextDescriptor  m_TDesc;
-  mem_ptr<FilenameResolver> m_DefaultResolver;
+  mem_ptr<LocalFilenameResolver> m_DefaultResolver;
 
   h__SubtitleParser() : m_Root("**ParserRoot**")
   {
@@ -121,7 +121,7 @@ public:
   TimedText::IResourceResolver* GetDefaultResolver()
   {
     if ( m_DefaultResolver.empty() )
-      m_DefaultResolver = new FilenameResolver(PathDirname(m_Filename));
+      m_DefaultResolver = new LocalFilenameResolver(PathDirname(m_Filename));
     
     return m_DefaultResolver;
   }

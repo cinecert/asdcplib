@@ -577,6 +577,18 @@ ASDCP::TimedText::MXFWriter::h__Writer::SetSourceStream(ASDCP::TimedText::TimedT
   if ( ASDCP_SUCCESS(result) )
     {
       InitHeader();
+
+      // First RIP Entry
+      if ( m_Info.LabelSetType == LS_MXF_SMPTE )  // ERK
+	{
+	  m_RIP.PairArray.push_back(RIP::Pair(0, 0)); // 3-part, no essence in header
+	}
+      else
+	{
+	  DefaultLogSink().Error("Unable to write Interop timed-text MXF file.  Use SMOTE DCP options instead.\n");
+	  return RESULT_FORMAT;
+	}
+
       // timecode rate and essence rate are the same
       AddDMSegment(m_TDesc.EditRate, m_TDesc.EditRate, derive_timecode_rate_from_edit_rate(m_TDesc.EditRate), TIMED_TEXT_DEF_LABEL,
 		   UL(m_Dict->ul(MDD_DataDataDef)), TIMED_TEXT_PACKAGE_LABEL);
