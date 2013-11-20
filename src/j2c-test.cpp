@@ -189,25 +189,24 @@ main(int argc, const char** argv)
 		    hexdump(MyMarker.m_Data - 2, MyMarker.m_DataSize + 2, stdout);
 		}
 
-	      switch ( MyMarker.m_Type )
+	      if ( MyMarker.m_Type == MRK_SOD )
 		{
-		case MRK_SOD:
 		  p = end_p;
-		  break;
-
-		case MRK_SIZ:
-		  {
-		    Accessor::SIZ SIZ_(MyMarker);
-		    SIZ_.Dump(stdout);
-		  }
-		  break;
-
-		case MRK_COM:
-		  {
-		    Accessor::COM COM_(MyMarker);
-		    COM_.Dump(stdout);
-		  }
-		  break;
+		}
+	      else if ( MyMarker.m_Type == MRK_SIZ )
+		{
+		  Accessor::SIZ SIZ_(MyMarker);
+		  SIZ_.Dump(stdout);
+		}
+	      else if ( MyMarker.m_Type == MRK_COD )
+		{
+		  Accessor::COD COD_(MyMarker);
+		  COD_.Dump(stdout);
+		}
+	      else if ( MyMarker.m_Type == MRK_COM )
+		{
+		  Accessor::COM COM_(MyMarker);
+		  COM_.Dump(stdout);
 		}
 	    }
 	}

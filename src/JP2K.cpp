@@ -146,6 +146,41 @@ ASDCP::JP2K::Accessor::SIZ::Dump(FILE* stream)
 
 //
 void
+ASDCP::JP2K::Accessor::COD::Dump(FILE* stream)
+{
+  if ( stream == 0 )
+    stream = stderr;
+
+  fprintf(stream, "COD: \n");
+  const char* prog_order_str = "RESERVED";
+  const char* transformations_str = prog_order_str;
+
+  switch ( ProgOrder() )
+    {
+    case 0: prog_order_str = "LRCP"; break;
+    case 1: prog_order_str = "RLCP"; break;
+    case 2: prog_order_str = "RPCL"; break;
+    case 3: prog_order_str = "PCRL"; break;
+    case 4: prog_order_str = "CPRL"; break;
+    }
+
+  switch ( Transformation() )
+    {
+    case 0: transformations_str = "9/7"; break;
+    case 1: transformations_str = "5/3"; break;
+    }
+
+  fprintf(stream, "      ProgOrder: %s\n", prog_order_str);
+  fprintf(stream, "         Layers: %hu\n", Layers());
+  fprintf(stream, "   DecompLevels: %hu\n", DecompLevels());
+  fprintf(stream, " CodeBlockWidth: %d\n", 1 << CodeBlockWidth());
+  fprintf(stream, "CodeBlockHeight: %d\n", 1 << CodeBlockHeight());
+  fprintf(stream, " CodeBlockStyle: %d\n", CodeBlockStyle());
+  fprintf(stream, " Transformation: %s\n", transformations_str);
+}
+
+//
+void
 ASDCP::JP2K::Accessor::COM::Dump(FILE* stream)
 {
   if ( stream == 0 )

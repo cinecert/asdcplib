@@ -127,6 +127,37 @@ namespace JP2K
 	  void Dump(FILE* stream = 0);
 	};
 
+      const int SGcodOFST = 1;
+      const int SPcodOFST = 5;
+
+      // coding style
+      class COD
+	{
+	  const byte_t* m_MarkerData;
+
+	  KM_NO_COPY_CONSTRUCT(COD);
+	  COD();
+
+	public:
+	  COD(const Marker& M)
+	    {
+	      assert(M.m_Type == MRK_COD);
+	      m_MarkerData = M.m_Data;
+	    }
+
+	  ~COD() {}
+	  
+	  inline ui8_t  ProgOrder()        { return *(m_MarkerData + SGcodOFST ); }
+	  inline ui16_t Layers()           { return KM_i16_BE(*(ui16_t*)(m_MarkerData + SGcodOFST + 1));}
+	  inline ui8_t  DecompLevels()     { return *(m_MarkerData + SPcodOFST); }
+	  inline ui8_t  CodeBlockWidth()   { return *(m_MarkerData + SPcodOFST + 1) + 2; }
+	  inline ui8_t  CodeBlockHeight()  { return *(m_MarkerData + SPcodOFST + 2) + 2; }
+	  inline ui8_t  CodeBlockStyle()   { return *(m_MarkerData + SPcodOFST + 3); }
+	  inline ui8_t  Transformation()   { return *(m_MarkerData + SPcodOFST + 4); }
+
+	  void Dump(FILE* stream = 0);
+	};
+
       // a comment
       class COM
 	{
