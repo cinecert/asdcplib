@@ -112,8 +112,9 @@ namespace Kumu
       XMLElement* AddChildWithContent(const char* name, const std::string& value);
       XMLElement* AddChildWithPrefixedContent(const char* name, const char* prefix, const char* value);
       void        AddComment(const char* value);
-      void        Render(std::string&) const;
-      void        RenderElement(std::string& outbuf, ui32_t depth) const;
+      void        Render(std::string& str) const { Render(str, true); }
+      void        Render(std::string&, const bool& pretty) const;
+      void        RenderElement(std::string& outbuf, const ui32_t& depth, const bool& pretty) const;
 
       // querying
       inline const std::string&   GetBody() const { return m_Body; }
