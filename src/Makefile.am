@@ -59,6 +59,7 @@ include_HEADERS += \
 	MDD.h \
 	Metadata.h \
 	KLV.h \
+	JP2K.h \
 	MXFTypes.h \
 	MXF.h \
 	Wav.h \
