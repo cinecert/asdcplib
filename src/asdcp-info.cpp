@@ -93,7 +93,7 @@ USAGE:%s [-h|-help] [-V]\n\
 \n\
 Options:\n\
   -3          - Force stereoscopic interpretation of a JP2K file\n\
-  -C          - Do not show essence coding UL\n\
+  -c          - Show essence coding UL\n\
   -d          - Show essence descriptor info\n\
   -h | -help  - Show help\n\
   -H          - Show MXF header metadata\n\
@@ -326,7 +326,8 @@ public:
 	m_Desc.FillDescriptor(m_Reader);
 	m_Reader.FillWriterInfo(m_WriterInfo);
 
-	fprintf(stdout, "File essence type is %s, (%d edit unit%s).\n",
+	fprintf(stdout, "%s file essence type is %s, (%d edit unit%s).\n",
+		( m_WriterInfo.LabelSetType == LS_MXF_SMPTE ? "SMPTE 429" : LS_MXF_INTEROP ? "Interop" : "Unknown" ),
 		type_string, m_Desc.ContainerDuration, (m_Desc.ContainerDuration==1?"":"s"));
 
 	if ( Options.showheader_flag )
@@ -488,7 +489,7 @@ public:
       }
 
     // scale bytes to megabits
-    static const double mega_const = 1 / ( 1024.0 * 1024.0 / 8.0 );
+    static const double mega_const = 1.0 / ( 1000000 / 8.0 );
 
     // we did not accumulate the first or last frame, so duration -= 2
     double avg_bytes_frame = total_frame_bytes / ( m_Desc.ContainerDuration - 2 );

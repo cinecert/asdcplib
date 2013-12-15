@@ -1099,17 +1099,17 @@ ASDCP::MXF::OPAtomIndexFooter::WriteToFile(Kumu::FileWriter& Writer, ui64_t dura
   std::list<InterchangeObject*>::iterator pl_i = m_PacketList->m_List.begin();
   for ( ; pl_i != m_PacketList->m_List.end() && ASDCP_SUCCESS(result); pl_i++ )
     {
-      if ( (*pl_i)->IsA(OBJ_TYPE_ARGS(IndexTableSegment)) )
+      IndexTableSegment *segment = dynamic_cast<IndexTableSegment*>(*pl_i);
+
+      if ( segment != 0 )
 	{
 	  iseg_count++;
-	  IndexTableSegment* Segment = (IndexTableSegment*)(*pl_i);
-
 	  if ( m_BytesPerEditUnit != 0 )
 	    {
 	      if ( iseg_count != 1 )
 		return RESULT_STATE;
 
-	      Segment->IndexDuration = duration;
+	      segment->IndexDuration = duration;
 	    }
 	}
 
@@ -1186,28 +1186,29 @@ ASDCP::MXF::OPAtomIndexFooter::Lookup(ui32_t frame_num, IndexTableSegment::Index
   std::list<InterchangeObject*>::iterator li;
   for ( li = m_PacketList->m_List.begin(); li != m_PacketList->m_List.end(); li++ )
     {
-      if ( (*li)->IsA(OBJ_TYPE_ARGS(IndexTableSegment)) )
-	{
-	  IndexTableSegment* Segment = (IndexTableSegment*)(*li);
-	  ui64_t start_pos = Segment->IndexStartPosition;
+      IndexTableSegment *segment = dynamic_cast<IndexTableSegment*>(*li);
 
-	  if ( Segment->EditUnitByteCount > 0 )
+      if ( segment != 0 )
+	{
+	  ui64_t start_pos = segment->IndexStartPosition;
+
+	  if ( segment->EditUnitByteCount > 0 )
 	    {
 	      if ( m_PacketList->m_List.size() > 1 )
 		DefaultLogSink().Error("Unexpected multiple IndexTableSegment in CBR file\n");
 
-	      if ( ! Segment->IndexEntryArray.empty() )
+	      if ( ! segment->IndexEntryArray.empty() )
 		DefaultLogSink().Error("Unexpected IndexEntryArray contents in CBR file\n");
 
-	      Entry.StreamOffset = (ui64_t)frame_num * Segment->EditUnitByteCount;
+	      Entry.StreamOffset = (ui64_t)frame_num * segment->EditUnitByteCount;
 	      return RESULT_OK;
 	    }
 	  else if ( (ui64_t)frame_num >= start_pos
-		    && (ui64_t)frame_num < (start_pos + Segment->IndexDuration) )
+		    && (ui64_t)frame_num < (start_pos + segment->IndexDuration) )
 	    {
 	      ui64_t tmp = frame_num - start_pos;
 	      assert(tmp <= 0xFFFFFFFFL);
-	      Entry = Segment->IndexEntryArray[(ui32_t) tmp];
+	      Entry = segment->IndexEntryArray[(ui32_t) tmp];
 	      return RESULT_OK;
 	    }
 	}
@@ -1375,7 +1376,7 @@ ASDCP::MXF::InterchangeObject::Dump(FILE* stream)
 bool
 ASDCP::MXF::InterchangeObject::IsA(const byte_t* label)
 {
-  if ( m_KLLength == 0 )
+  if ( m_KLLength == 0 || m_KeyStart == 0 )
     return false;
 
   return ( memcmp(label, m_KeyStart, SMPTE_UL_LENGTH) == 0 );

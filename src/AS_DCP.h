@@ -1449,6 +1449,8 @@ namespace ASDCP {
 	void Dump(FILE* = 0, ui32_t dump_bytes = 0) const;
       };
 
+      // An abstract base for a lookup service that returns the resource data
+      // identified by the given ancillary resource id.
       //
       class IResourceResolver
       {
@@ -1456,6 +1458,20 @@ namespace ASDCP {
 	virtual ~IResourceResolver() {}
 	virtual Result_t ResolveRID(const byte_t* uuid, FrameBuffer&) const = 0; // return data for RID
       };
+
+      // Resolves resource references by testing the named directory for file names containing
+      // the respective UUID.
+      //
+      class LocalFilenameResolver : public ASDCP::TimedText::IResourceResolver
+	{
+	  std::string m_Dirname;
+	  ASDCP_NO_COPY_CONSTRUCT(LocalFilenameResolver);
+
+	public:
+	  LocalFilenameResolver();
+	  Result_t OpenRead(const std::string& dirname);
+	  Result_t ResolveRID(const byte_t* uuid, FrameBuffer& FrameBuf) const;
+	};
 
       //
       class DCSubtitleParser

@@ -122,23 +122,25 @@ AS_02::MXF::AS02IndexWriter::Dump(FILE* stream)
   Partition::Dump(stream);
 
   std::list<InterchangeObject*>::iterator i = m_PacketList->m_List.begin();
-  for ( ; i != m_PacketList->m_List.end(); i++ )
-    (*i)->Dump(stream);
+  for ( ; i != m_PacketList->m_List.end(); ++i )
+    {
+      (*i)->Dump(stream);
+    }
 }
 
 //
 ui32_t
 AS_02::MXF::AS02IndexWriter::GetDuration() const
 {
-  ui32_t duration;
+  ui32_t duration = 0;
   std::list<InterchangeObject*>::const_iterator i;
 
   for ( i = m_PacketList->m_List.begin(); i != m_PacketList->m_List.end(); ++i )
     {
-      if ( (*i)->IsA(OBJ_TYPE_ARGS(IndexTableSegment)) )
+      IndexTableSegment* segment = dynamic_cast<IndexTableSegment*>(*i);
+      if ( segment != 0 )
 	{
-	  IndexTableSegment& Segment = *(IndexTableSegment*)*i;
-	  duration += Segment.IndexDuration;
+	  duration += segment->IndexEntryArray.size();
 	}
     }
 
@@ -380,7 +382,6 @@ AS_02::h__AS02Writer::FinalizeClip(ui32_t bytes_per_frame)
 Result_t
 AS_02::h__AS02Writer::WriteAS02Footer()
 {
-
   if ( m_IndexWriter.GetDuration() > 0 )
     {
       m_IndexWriter.ThisPartition = m_File.Tell();

@@ -128,6 +128,8 @@ libas02_la_SOURCES	= \
 	AS_02_internal.h \
 	h__02_Reader.cpp \
 	h__02_Writer.cpp \
+	ST2052_TextParser.cpp \
+	AS_02_TimedText.cpp \
 	AS_02_JP2K.cpp \
 	AS_02_PCM.cpp
 

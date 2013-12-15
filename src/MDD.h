@@ -44,9 +44,9 @@ namespace ASDCP {
         MDD_SoundDataDef,  // 6
         MDD_TimecodeDataDef,  // 7
         MDD_DescriptiveMetaDataDef,  // 8
-        MDD_WAVWrapping,  // 9
-        MDD_MPEG2_VESWrapping,  // 10
-        MDD_JPEG_2000Wrapping,  // 11
+        MDD_WAVWrappingFrame,  // 9
+        MDD_MPEG2_VESWrappingFrame,  // 10
+        MDD_JPEG_2000WrappingFrame,  // 11
         MDD_JPEG2000Essence,  // 12
         MDD_MPEG2Essence,  // 13
         MDD_MXFInterop_CryptEssence,  // 14
@@ -290,7 +290,7 @@ namespace ASDCP {
         MDD_CryptographicContext_CipherAlgorithm,  // 252
         MDD_CryptographicContext_MICAlgorithm,  // 253
         MDD_CryptographicContext_CryptographicKeyID,  // 254
-        MDD_TimedTextWrapping, // 255
+        MDD_TimedTextWrappingClip, // 255
         MDD_TimedTextEssence, // 256
         MDD_TimedTextDescriptor, // 257
         MDD_TimedTextDescriptor_ResourceID, // 258
@@ -329,7 +329,7 @@ namespace ASDCP {
         MDD_MCALabelSubDescriptor_RFC5646SpokenLanguage, // 291
         MDD_AudioChannelLabelSubDescriptor_SoundfieldGroupLinkID, // 292
         MDD_SoundfieldGroupLabelSubDescriptor_GroupOfSoundfieldGroupsLinkID, // 293
-        MDD_DCDataWrapping, // 294
+        MDD_DCDataWrappingFrame, // 294
         MDD_DCDataEssence, // 295
         MDD_DCDataDescriptor, // 296
         MDD_DolbyAtmosSubDescriptor, // 297
@@ -405,6 +405,7 @@ namespace ASDCP {
 	MDD_TimedTextDescriptor_RFC5646LanguageTagList, // 367
 	MDD_AlternativeCenterCuts_4x3, // 368
 	MDD_AlternativeCenterCuts_14x9, // 369
+	MDD_WAVWrappingClip, // 370
         MDD_Max
     }; // enum MDD_t
 

@@ -200,9 +200,11 @@ AS_02::MXF::AS02IndexReader::InitFromFile(const Kumu::FileReader& reader, const 
   
       for ( ii = m_PacketList->m_List.begin(); ii != m_PacketList->m_List.end(); ++ii )
 	{
-	  if ( (*ii)->IsA(OBJ_TYPE_ARGS(IndexTableSegment)) )
+	  IndexTableSegment *segment = dynamic_cast<IndexTableSegment*>(*ii);
+
+	  if ( segment != 0 )
 	    {
-	      m_Duration += static_cast<IndexTableSegment*>(*ii)->IndexDuration;
+	      m_Duration += segment->IndexDuration;
 	    }
 	}
     }
@@ -263,10 +265,12 @@ AS_02::MXF::AS02IndexReader::InitFromBuffer(const byte_t* p, ui32_t l, const ui6
 
       if ( KM_SUCCESS(result) )
 	{
-	  if ( object->IsA(OBJ_TYPE_ARGS(IndexTableSegment)) )
+	  IndexTableSegment *segment = dynamic_cast<IndexTableSegment*>(object);
+
+	  if ( segment != 0 )
 	    {
-	      static_cast<IndexTableSegment*>(object)->RtFileOffset = essence_container_offset;
-	      static_cast<IndexTableSegment*>(object)->RtEntryOffset = body_offset;
+	      segment->RtFileOffset = essence_container_offset;
+	      segment->RtEntryOffset = body_offset;
 	      m_PacketList->AddPacket(object); // takes ownership
 	    }
 	  else
@@ -340,29 +344,30 @@ AS_02::MXF::AS02IndexReader::Lookup(ui32_t frame_num, ASDCP::MXF::IndexTableSegm
   std::list<InterchangeObject*>::iterator li;
   for ( li = m_PacketList->m_List.begin(); li != m_PacketList->m_List.end(); li++ )
     {
-      if ( (*li)->IsA(OBJ_TYPE_ARGS(IndexTableSegment)) )
-	{
-	  IndexTableSegment* Segment = static_cast<IndexTableSegment*>(*li);
-	  ui64_t start_pos = Segment->IndexStartPosition;
+      IndexTableSegment *segment = dynamic_cast<IndexTableSegment*>(*li);
 
-	  if ( Segment->EditUnitByteCount > 0 )
+      if ( segment != 0 )
+	{
+	  ui64_t start_pos = segment->IndexStartPosition;
+
+	  if ( segment->EditUnitByteCount > 0 )
 	    {
 	      if ( m_PacketList->m_List.size() > 1 )
 		DefaultLogSink().Error("Unexpected multiple IndexTableSegment in CBR file\n");
 
-	      if ( ! Segment->IndexEntryArray.empty() )
+	      if ( ! segment->IndexEntryArray.empty() )
 		DefaultLogSink().Error("Unexpected IndexEntryArray contents in CBR file\n");
 
-	      Entry.StreamOffset = ((ui64_t)frame_num * Segment->EditUnitByteCount) + Segment->RtFileOffset;
+	      Entry.StreamOffset = ((ui64_t)frame_num * segment->EditUnitByteCount) + segment->RtFileOffset;
 	      return RESULT_OK;
 	    }
 	  else if ( (ui64_t)frame_num >= start_pos
-		    && (ui64_t)frame_num < (start_pos + Segment->IndexDuration) )
+		    && (ui64_t)frame_num < (start_pos + segment->IndexDuration) )
 	    {
 	      ui64_t tmp = frame_num - start_pos;
 	      assert(tmp <= 0xFFFFFFFFL);
-	      Entry = Segment->IndexEntryArray[(ui32_t) tmp];
-	      Entry.StreamOffset = Entry.StreamOffset - Segment->RtEntryOffset + Segment->RtFileOffset;
+	      Entry = segment->IndexEntryArray[(ui32_t) tmp];
+	      Entry.StreamOffset = Entry.StreamOffset - segment->RtEntryOffset + segment->RtFileOffset;
 	      return RESULT_OK;
 	    }
 	}

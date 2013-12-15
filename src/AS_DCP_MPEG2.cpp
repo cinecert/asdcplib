@@ -568,7 +568,7 @@ ASDCP::MPEG2::MXFWriter::h__Writer::SetSourceStream(const VideoDescriptor& VDesc
 
   if ( ASDCP_SUCCESS(result) )
     {
-      result = WriteASDCPHeader(MPEG_PACKAGE_LABEL, UL(m_Dict->ul(MDD_MPEG2_VESWrapping)), 
+      result = WriteASDCPHeader(MPEG_PACKAGE_LABEL, UL(m_Dict->ul(MDD_MPEG2_VESWrappingFrame)), 
 				PICT_DEF_LABEL, UL(m_EssenceUL), UL(m_Dict->ul(MDD_PictureDataDef)),
 				m_VDesc.EditRate, derive_timecode_rate_from_edit_rate(m_VDesc.EditRate));
     }

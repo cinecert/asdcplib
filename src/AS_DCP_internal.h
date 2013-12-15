@@ -134,25 +134,15 @@ namespace ASDCP
   Result_t EncryptFrameBuffer(const ASDCP::FrameBuffer&, ASDCP::FrameBuffer&, AESEncContext*);
   Result_t DecryptFrameBuffer(const ASDCP::FrameBuffer&, ASDCP::FrameBuffer&, AESDecContext*);
 
-  Result_t MD_to_JP2K_PDesc(const ASDCP::MXF::RGBAEssenceDescriptor&  EssenceDescriptor,
+  Result_t MD_to_JP2K_PDesc(const ASDCP::MXF::GenericPictureEssenceDescriptor&  EssenceDescriptor,
 			    const ASDCP::MXF::JPEG2000PictureSubDescriptor& EssenceSubDescriptor,
 			    const ASDCP::Rational& EditRate, const ASDCP::Rational& SampleRate,
 			    ASDCP::JP2K::PictureDescriptor& PDesc);
 
   Result_t JP2K_PDesc_to_MD(const JP2K::PictureDescriptor& PDesc,
 			    const ASDCP::Dictionary& dict,
-			    ASDCP::MXF::RGBAEssenceDescriptor *EssenceDescriptor,
-			    ASDCP::MXF::JPEG2000PictureSubDescriptor *EssenceSubDescriptor);
-
-  Result_t MD_to_JP2K_PDesc(const ASDCP::MXF::CDCIEssenceDescriptor&  EssenceDescriptor,
-			    const ASDCP::MXF::JPEG2000PictureSubDescriptor& EssenceSubDescriptor,
-			    const ASDCP::Rational& EditRate, const ASDCP::Rational& SampleRate,
-			    ASDCP::JP2K::PictureDescriptor& PDesc);
-
-  Result_t JP2K_PDesc_to_MD(const JP2K::PictureDescriptor& PDesc,
-			    const ASDCP::Dictionary& dict,
-			    ASDCP::MXF::CDCIEssenceDescriptor *EssenceDescriptor,
-			    ASDCP::MXF::JPEG2000PictureSubDescriptor *EssenceSubDescriptor);
+			    ASDCP::MXF::GenericPictureEssenceDescriptor& EssenceDescriptor,
+			    ASDCP::MXF::JPEG2000PictureSubDescriptor& EssenceSubDescriptor);
 
   Result_t PCM_ADesc_to_MD(PCM::AudioDescriptor& ADesc, ASDCP::MXF::WaveAudioDescriptor* ADescObj);
   Result_t MD_to_PCM_ADesc(ASDCP::MXF::WaveAudioDescriptor* ADescObj, PCM::AudioDescriptor& ADesc);

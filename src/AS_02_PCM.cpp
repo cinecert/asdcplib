@@ -421,7 +421,7 @@ AS_02::PCM::MXFWriter::h__Writer::SetSourceStream(const ASDCP::Rational& edit_ra
       m_SamplesPerFrame = AS_02::MXF::CalcSamplesPerFrame(*m_WaveAudioDescriptor, edit_rate);
       m_WaveAudioDescriptor->ContainerDuration = 0;
 
-      result = WriteAS02Header(PCM_PACKAGE_LABEL, UL(m_Dict->ul(MDD_WAVWrapping)),
+      result = WriteAS02Header(PCM_PACKAGE_LABEL, UL(m_Dict->ul(MDD_WAVWrappingClip)),
 			       SOUND_DEF_LABEL, UL(m_EssenceUL), UL(m_Dict->ul(MDD_SoundDataDef)),
 			       m_EssenceDescriptor->SampleRate, derive_timecode_rate_from_edit_rate(edit_rate), m_BytesPerFrame);
     }
@@ -488,6 +488,9 @@ AS_02::PCM::MXFWriter::h__Writer::Finalize()
   if ( KM_SUCCESS(result) )
     {
       m_FramesWritten = m_FramesWritten * m_SamplesPerFrame;
+      m_IndexWriter.ThisPartition = m_File.Tell();
+      m_IndexWriter.WriteToFile(m_File);
+      m_RIP.PairArray.push_back(RIP::Pair(0, m_IndexWriter.ThisPartition));
       WriteAS02Footer();
     }
 

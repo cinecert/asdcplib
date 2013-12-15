@@ -331,7 +331,7 @@ AS_02::JP2K::MXFWriter::h__Writer::SetSourceStream(const std::string& label, con
 
   if ( KM_SUCCESS(result) )
     {
-      result = WriteAS02Header(label, UL(m_Dict->ul(MDD_JPEG_2000Wrapping)),
+      result = WriteAS02Header(label, UL(m_Dict->ul(MDD_JPEG_2000WrappingFrame)),
 			       PICT_DEF_LABEL, UL(m_EssenceUL), UL(m_Dict->ul(MDD_PictureDataDef)),
 			       edit_rate, derive_timecode_rate_from_edit_rate(edit_rate));
     }

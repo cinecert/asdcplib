@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2007-2009, John Hurst
+Copyright (c) 2007-2013, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -44,54 +44,61 @@ const char* c_dcst_namespace_name = "http://www.smpte-ra.org/schemas/428-7/2007/
 //------------------------------------------------------------------------------------------
 
 
+ASDCP::TimedText::LocalFilenameResolver::LocalFilenameResolver() {}
 
-class LocalFilenameResolver : public ASDCP::TimedText::IResourceResolver
+//
+Result_t
+ASDCP::TimedText::LocalFilenameResolver::OpenRead(const std::string& dirname)
 {
-  std::string m_Dirname;
+  if ( PathIsDirectory(dirname) )
+    {
+      m_Dirname = dirname;
+      return RESULT_OK;
+    }
 
-  LocalFilenameResolver();
-  bool operator==(const LocalFilenameResolver&);
+  DefaultLogSink().Error("Path '%s' is not a directory, defaulting to '.'\n", dirname.c_str());
+  m_Dirname = ".";
+  return RESULT_FALSE;
+}
 
-public:
-  LocalFilenameResolver(const std::string& dirname)
-  {
-    if ( PathIsDirectory(dirname) )
-      {
-	m_Dirname = dirname;
-	return;
-      }
+//
+Result_t
+ASDCP::TimedText::LocalFilenameResolver::ResolveRID(const byte_t* uuid, TimedText::FrameBuffer& FrameBuf) const
+{
+  Result_t result = RESULT_NOT_FOUND;
+  char buf[64];
+  UUID RID(uuid);
+  PathList_t found_list;
 
-    DefaultLogSink().Error("Path '%s' is not a directory, defaulting to '.'\n", dirname.c_str());
-    m_Dirname = ".";
-  }
+  FindInPath(PathMatchRegex(RID.EncodeHex(buf, 64)), m_Dirname, found_list);
 
-  //
-  Result_t ResolveRID(const byte_t* uuid, TimedText::FrameBuffer& FrameBuf) const
-  {
-    FileReader Reader;
-    char buf[64];
-    UUID RID(uuid);
-    std::string filename = m_Dirname + "/" + RID.EncodeHex(buf, 64);
-    DefaultLogSink().Debug("retrieving resource %s from file %s\n", buf, filename.c_str());
+  if ( found_list.size() == 1 )
+    {
+      FileReader Reader;
+      DefaultLogSink().Debug("retrieving resource %s from file %s\n", buf, found_list.front().c_str());
 
-    Result_t result = Reader.OpenRead(filename.c_str());
+      result = Reader.OpenRead(found_list.front().c_str());
 
-    if ( KM_SUCCESS(result) )
-      {
-	ui32_t read_count, read_size = Reader.Size();
+      if ( KM_SUCCESS(result) )
+	{
+	  ui32_t read_count, read_size = Reader.Size();
+	  result = FrameBuf.Capacity(read_size);
+      
+	  if ( KM_SUCCESS(result) )
+	    result = Reader.Read(FrameBuf.Data(), read_size, &read_count);
 
-	result = FrameBuf.Capacity(read_size);
+	  if ( KM_SUCCESS(result) )
+	    FrameBuf.Size(read_count);
+	}
+    }
+  else if ( ! found_list.empty() )
+    {
+      DefaultLogSink().Error("More than one file in %s matches %s.\n", m_Dirname.c_str(), buf);
+      result = RESULT_RAW_FORMAT;
+    }
 
-	if ( KM_SUCCESS(result) )
-	  result = Reader.Read(FrameBuf.Data(), read_size, &read_count);
-
-	if ( KM_SUCCESS(result) )
-	  FrameBuf.Size(read_count);
-      }
-
-    return result;
-  }
-};
+  return result;
+}
 
 //------------------------------------------------------------------------------------------
 
@@ -121,8 +128,11 @@ public:
   TimedText::IResourceResolver* GetDefaultResolver()
   {
     if ( m_DefaultResolver.empty() )
-      m_DefaultResolver = new LocalFilenameResolver(PathDirname(m_Filename));
-    
+      {
+	m_DefaultResolver = new LocalFilenameResolver();
+	m_DefaultResolver->OpenRead(PathDirname(m_Filename));
+      }
+
     return m_DefaultResolver;
   }
 
@@ -448,5 +458,5 @@ ASDCP::TimedText::DCSubtitleParser::ReadAncillaryResource(const byte_t* uuid, Fr
 
 
 //
-// end AS_DCP_timedText.cpp
+// end AS_DCP_TimedTextParser.cpp
 //

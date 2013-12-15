@@ -222,7 +222,7 @@ public:
   byte_t asset_id_value[UUIDlen];// value of asset ID (when asset_id_flag is true)
   PCM::ChannelFormat_t channel_fmt; // audio channel arrangement
   std::string out_file; //
-  bool show_ul_values_flag;    /// if true, dump the UL table before going tp work.
+  bool show_ul_values_flag;    /// if true, dump the UL table before going to work.
   Kumu::PathList_t filenames;  // list of filenames to be processed
   UL channel_assignment;
   UL picture_coding;
@@ -1232,11 +1232,9 @@ write_timed_text_file(CommandOptions& Options)
       else
 	Kumu::GenRandomUUID(Info.AssetUUID);
 
-      if ( Options.use_smpte_labels )
-	{
-	  Info.LabelSetType = LS_MXF_SMPTE;
-	  fprintf(stderr, "ATTENTION! Writing SMPTE Universal Labels\n");
-	}
+      // 428-7 IN 429-5 always uses SMPTE labels
+      Info.LabelSetType = LS_MXF_SMPTE;
+      fprintf(stderr, "ATTENTION! Writing SMPTE Universal Labels\n");
 
       // configure encryption
       if( Options.key_flag )

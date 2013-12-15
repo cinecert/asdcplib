@@ -577,7 +577,7 @@ ASDCP::PCM::MXFWriter::h__Writer::SetSourceStream(const AudioDescriptor& ADesc)
 
   if ( ASDCP_SUCCESS(result) )
     {
-      result = WriteASDCPHeader(PCM_PACKAGE_LABEL, UL(m_Dict->ul(MDD_WAVWrapping)),
+      result = WriteASDCPHeader(PCM_PACKAGE_LABEL, UL(m_Dict->ul(MDD_WAVWrappingFrame)),
 				SOUND_DEF_LABEL, UL(m_EssenceUL), UL(m_Dict->ul(MDD_SoundDataDef)),
 				m_ADesc.EditRate, derive_timecode_rate_from_edit_rate(m_ADesc.EditRate),
 				calc_CBR_frame_size(m_Info, m_ADesc));

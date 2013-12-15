@@ -414,7 +414,7 @@ ASDCP::DCData::h__Writer::SetSourceStream(DCDataDescriptor const& DDesc,
   {
     ui32_t TCFrameRate = m_DDesc.EditRate.Numerator;
 
-    result = WriteASDCPHeader(packageLabel, UL(m_Dict->ul(MDD_DCDataWrapping)),
+    result = WriteASDCPHeader(packageLabel, UL(m_Dict->ul(MDD_DCDataWrappingFrame)),
 			      defLabel, UL(m_EssenceUL), UL(m_Dict->ul(MDD_DataDataDef)),
 			      m_DDesc.EditRate, TCFrameRate);
   }
