@@ -91,7 +91,7 @@ ASDCP::DCData::h__Reader::MD_to_DCData_DDesc(DCData::DCDataDescriptor& DDesc)
 //
 //
 ASDCP::Result_t
-ASDCP::DCData::h__Reader::OpenRead(const char* filename)
+ASDCP::DCData::h__Reader::OpenRead(const std::string& filename)
 {
   Result_t result = OpenMXFRead(filename);
 
@@ -244,7 +244,7 @@ ASDCP::DCData::MXFReader::RIP()
 // Open the file for reading. The file must exist. Returns error if the
 // operation cannot be completed.
 ASDCP::Result_t
-ASDCP::DCData::MXFReader::OpenRead(const char* filename) const
+ASDCP::DCData::MXFReader::OpenRead(const std::string& filename) const
 {
   return m_Reader->OpenRead(filename);
 }
@@ -346,7 +346,7 @@ ASDCP::DCData::h__Writer::DCData_DDesc_to_MD(DCData::DCDataDescriptor& DDesc)
 
 //
 ASDCP::Result_t
-ASDCP::DCData::h__Writer::OpenWrite(char const* filename, ui32_t HeaderSize,
+ASDCP::DCData::h__Writer::OpenWrite(const std::string& filename, ui32_t HeaderSize,
                                     const SubDescriptorList_t& subDescriptors)
 {
   if ( ! m_State.Test_BEGIN() )
@@ -534,7 +534,7 @@ ASDCP::DCData::MXFWriter::RIP()
 // Open the file for writing. The file must not exist. Returns error if
 // the operation cannot be completed.
 ASDCP::Result_t
-ASDCP::DCData::MXFWriter::OpenWrite(const char* filename, const WriterInfo& Info,
+ASDCP::DCData::MXFWriter::OpenWrite(const std::string& filename, const WriterInfo& Info,
 				       const DCDataDescriptor& DDesc, ui32_t HeaderSize)
 {
   if ( Info.LabelSetType != LS_MXF_SMPTE )

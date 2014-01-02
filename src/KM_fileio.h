@@ -65,7 +65,7 @@ namespace Kumu
       DirScanner(void);
       ~DirScanner() { Close(); }
 
-      Result_t Open(const char*);
+      Result_t Open(const std::string&);
       Result_t Close();
       Result_t GetNext(char*);
     };
@@ -242,10 +242,10 @@ namespace Kumu
   // Instant IO for strings
   //
   // Reads an entire file into a string.
-  Result_t ReadFileIntoString(const char* filename, std::string& outString, ui32_t max_size = 8 * Megabyte);
+  Result_t ReadFileIntoString(const std::string& filename, std::string& outString, ui32_t max_size = 8 * Megabyte);
 
   // Writes a string to a file, overwrites the existing file if present.
-  Result_t WriteStringIntoFile(const char* filename, const std::string& inString);
+  Result_t WriteStringIntoFile(const std::string& filename, const std::string& inString);
 
   // Instant IO for archivable objects
   //
@@ -282,7 +282,7 @@ namespace Kumu
       FileReader() : m_Handle(INVALID_HANDLE_VALUE) {}
       virtual ~FileReader() { Close(); }
 
-      Result_t OpenRead(const char*) const;                          // open the file for reading
+      Result_t OpenRead(const std::string&) const;                          // open the file for reading
       Result_t Close() const;                                        // close the file
       fsize_t  Size() const;                                         // returns the file's current size
       Result_t Seek(Kumu::fpos_t = 0, SeekPos_t = SP_BEGIN) const;   // move the file pointer
@@ -312,8 +312,8 @@ namespace Kumu
       FileWriter();
       virtual ~FileWriter();
 
-      Result_t OpenWrite(const char*);                               // open a new file, overwrites existing
-      Result_t OpenModify(const char*);                              // open a file for read/write
+      Result_t OpenWrite(const std::string&);                               // open a new file, overwrites existing
+      Result_t OpenModify(const std::string&);                              // open a file for read/write
 
       // this part of the interface takes advantage of the iovec structure on
       // platforms that support it. For each call to Writev(const byte_t*, ui32_t, ui32_t*),

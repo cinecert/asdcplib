@@ -170,7 +170,7 @@ public:
 
   h__Reader(const Dictionary& d) : ASDCP::h__ASDCPReader(d) {}
   virtual ~h__Reader() {}
-  Result_t    OpenRead(const char*);
+  Result_t    OpenRead(const std::string&);
   Result_t    ReadFrame(ui32_t, FrameBuffer&, AESDecContext*, HMACContext*);
   Result_t    ReadFrameGOPStart(ui32_t, FrameBuffer&, AESDecContext*, HMACContext*);
   Result_t    FindFrameGOPStart(ui32_t, ui32_t&);
@@ -181,7 +181,7 @@ public:
 //
 //
 ASDCP::Result_t
-ASDCP::MPEG2::MXFReader::h__Reader::OpenRead(const char* filename)
+ASDCP::MPEG2::MXFReader::h__Reader::OpenRead(const std::string& filename)
 {
   Result_t result = OpenMXFRead(filename);
 
@@ -385,7 +385,7 @@ ASDCP::MPEG2::MXFReader::RIP()
 // Open the file for reading. The file must exist. Returns error if the
 // operation cannot be completed.
 ASDCP::Result_t
-ASDCP::MPEG2::MXFReader::OpenRead(const char* filename) const
+ASDCP::MPEG2::MXFReader::OpenRead(const std::string& filename) const
 {
   return m_Reader->OpenRead(filename);
 }
@@ -521,7 +521,7 @@ public:
 
   virtual ~h__Writer(){}
 
-  Result_t OpenWrite(const char*, ui32_t HeaderSize);
+  Result_t OpenWrite(const std::string&, ui32_t HeaderSize);
   Result_t SetSourceStream(const VideoDescriptor&);
   Result_t WriteFrame(const FrameBuffer&, AESEncContext* = 0, HMACContext* = 0);
   Result_t Finalize();
@@ -531,7 +531,7 @@ public:
 // Open the file for writing. The file must not exist. Returns error if
 // the operation cannot be completed.
 ASDCP::Result_t
-ASDCP::MPEG2::MXFWriter::h__Writer::OpenWrite(const char* filename, ui32_t HeaderSize)
+ASDCP::MPEG2::MXFWriter::h__Writer::OpenWrite(const std::string& filename, ui32_t HeaderSize)
 {
   if ( ! m_State.Test_BEGIN() )
     return RESULT_STATE;
@@ -568,6 +568,8 @@ ASDCP::MPEG2::MXFWriter::h__Writer::SetSourceStream(const VideoDescriptor& VDesc
 
   if ( ASDCP_SUCCESS(result) )
     {
+      m_FooterPart.SetDeltaParams(IndexTableSegment::DeltaEntry(-1, 0, 0));
+
       result = WriteASDCPHeader(MPEG_PACKAGE_LABEL, UL(m_Dict->ul(MDD_MPEG2_VESWrappingFrame)), 
 				PICT_DEF_LABEL, UL(m_EssenceUL), UL(m_Dict->ul(MDD_PictureDataDef)),
 				m_VDesc.EditRate, derive_timecode_rate_from_edit_rate(m_VDesc.EditRate));
@@ -711,7 +713,7 @@ ASDCP::MPEG2::MXFWriter::RIP()
 // Open the file for writing. The file must not exist. Returns error if
 // the operation cannot be completed.
 ASDCP::Result_t
-ASDCP::MPEG2::MXFWriter::OpenWrite(const char* filename, const WriterInfo& Info,
+ASDCP::MPEG2::MXFWriter::OpenWrite(const std::string& filename, const WriterInfo& Info,
 				   const VideoDescriptor& VDesc, ui32_t HeaderSize)
 {
   if ( Info.LabelSetType == LS_MXF_SMPTE )

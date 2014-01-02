@@ -47,7 +47,7 @@ namespace ASDCP
       typedef ASDCP::MXF::InterchangeObject* (*MXFObjectFactory_t)(const Dictionary*&);
 
       //
-      void SetObjectFactory(UL label, MXFObjectFactory_t factory);
+      void SetObjectFactory(const UL& label, MXFObjectFactory_t factory);
 
       //
       InterchangeObject* CreateObject(const Dictionary*& Dict, const UL& label);
@@ -303,6 +303,7 @@ namespace ASDCP
       //
       class IndexTableSegment : public InterchangeObject
 	{
+	  IndexTableSegment();
 	  ASDCP_NO_COPY_CONSTRUCT(IndexTableSegment);
 
 	public:
@@ -314,7 +315,7 @@ namespace ASDCP
 	      ui8_t   Slice;
 	      ui32_t  ElementData;
 
-	      DeltaEntry() : PosTableIndex(-1), Slice(0), ElementData(0) {}
+	      DeltaEntry() : PosTableIndex(0), Slice(0), ElementData(0) {}
 	      DeltaEntry(i8_t pos, ui8_t slice, ui32_t data) : PosTableIndex(pos), Slice(slice), ElementData(data) {}
 	      inline bool HasValue() const { return true; }
 	      ui32_t      ArchiveLength() const { return sizeof(ui32_t) + 2; }
@@ -412,6 +413,7 @@ namespace ASDCP
 	  ui32_t              m_BytesPerEditUnit;
 	  Rational            m_EditRate;
 	  ui32_t              m_BodySID;
+	  IndexTableSegment::DeltaEntry m_DefaultDeltaEntry;
 
 	  ASDCP_NO_COPY_CONSTRUCT(OPAtomIndexFooter);
 	  OPAtomIndexFooter();
@@ -435,6 +437,7 @@ namespace ASDCP
 
 	  virtual Result_t Lookup(ui32_t frame_num, IndexTableSegment::IndexEntry&) const;
 	  virtual void     PushIndexEntry(const IndexTableSegment::IndexEntry&);
+	  virtual void     SetDeltaParams(const IndexTableSegment::DeltaEntry&);
 	  virtual void     SetIndexParamsCBR(IPrimerLookup* lookup, ui32_t size, const Rational& Rate);
 	  virtual void     SetIndexParamsVBR(IPrimerLookup* lookup, const Rational& Rate, Kumu::fpos_t offset);
 	};
@@ -457,7 +460,8 @@ namespace ASDCP
       };
 
       typedef std::map<const std::string, const UL, ci_comp> mca_label_map_t;
-      bool decode_mca_string(const std::string& s, const mca_label_map_t& labels, const Dictionary& dict, const std::string& language, InterchangeObject_list_t&, ui32_t&);
+      bool decode_mca_string(const std::string& s, const mca_label_map_t& labels,
+			     const Dictionary*& dict, const std::string& language, InterchangeObject_list_t&, ui32_t&);
 
       //
       class ASDCP_MCAConfigParser : public InterchangeObject_list_t

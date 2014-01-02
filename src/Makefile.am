@@ -129,9 +129,9 @@ libas02_la_SOURCES	= \
 	h__02_Reader.cpp \
 	h__02_Writer.cpp \
 	ST2052_TextParser.cpp \
-	AS_02_TimedText.cpp \
 	AS_02_JP2K.cpp \
-	AS_02_PCM.cpp
+	AS_02_PCM.cpp \
+	AS_02_TimedText.cpp
 
 libas02_la_LDFLAGS = -release @VERSION@
 libas02_la_LIBADD = libasdcp.la libkumu.la
@@ -160,6 +160,10 @@ nodist_libpyasdcp_la_SOURCES = \
 libpyasdcp_la_CPPFLAGS = @PYTHON_CPPFLAGS@
 libpyasdcp_la_LDFLAGS = @PYTHON_LSPEC@  -release @VERSION@
 libpyasdcp_la_LIBADD = libkumu.la libasdcp.la
+
+if USE_AS_02
+libpyasdcp_la_LIBADD	+= libas02.la
+endif
 
 pyexecdir = @PYTHON_EXECDIR@
 pyexec_includedir = $(PYTHON_PREFIX)/include/python$(PYTHON_SHORTVERSION)

@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2004-2012, John Hurst
+Copyright (c) 2004-2013, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -54,7 +54,7 @@ namespace ASDCP
       ParserInstance();
       virtual ~ParserInstance();
 
-      Result_t OpenRead(const char* filename, const Rational& PictureRate);
+      Result_t OpenRead(const std::string& filename, const Rational& PictureRate);
       Result_t PutSample(byte_t* p);
       Result_t ReadFrame();
       inline ui32_t SampleSize()  { return m_SampleSize; }

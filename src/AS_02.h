@@ -97,7 +97,6 @@ namespace AS_02
       Result_t Lookup(ui32_t frame_num, ASDCP::MXF::IndexTableSegment::IndexEntry&) const;
     };
 
-
     
     // Returns size in bytes of a single sample of data described by ADesc
     inline ui32_t CalcSampleSize(const ASDCP::MXF::WaveAudioDescriptor& d)
@@ -119,7 +118,8 @@ namespace AS_02
     }
 
     // Returns number of frames for data described by ADesc, given a duration in samples and an edit rate
-    inline ui32_t CalcFramesFromDurationInSamples(const ui32_t durationInSamples, const ASDCP::MXF::WaveAudioDescriptor& d, const ASDCP::Rational& edit_rate)
+    inline ui32_t CalcFramesFromDurationInSamples(const ui32_t durationInSamples, const ASDCP::MXF::WaveAudioDescriptor& d,
+						  const ASDCP::Rational& edit_rate)
     {
       return static_cast<ui32_t>(static_cast<ui64_t>(durationInSamples) *
 				 static_cast<ui64_t>(d.AudioSamplingRate.Denominator * edit_rate.Numerator) /
@@ -142,7 +142,7 @@ namespace AS_02
   };
  
   namespace JP2K
-  {
+  { 
     //
     class MXFWriter
     {
@@ -167,7 +167,7 @@ namespace AS_02
 			 ASDCP::MXF::InterchangeObject_list_t& essence_sub_descriptor_list,
 			 const ASDCP::Rational& edit_rate, const ui32_t& header_size = 16384,
 			 const IndexStrategy_t& strategy = IS_FOLLOW, const ui32_t& partition_space = 10);
-      
+
       // Writes a frame of essence to the MXF file. If the optional AESEncContext
       // argument is present, the essence is encrypted prior to writing.
       // Fails if the file is not open, is finalized, or an operating system
@@ -238,7 +238,7 @@ namespace AS_02
     // the reader to signal the number of samples to be read by each call to ReadFrame();
 
     //
-    class MXFWriter
+      class MXFWriter
     {
       class h__Writer;
       ASDCP::mem_ptr<h__Writer> m_Writer;

@@ -241,6 +241,9 @@ decode_channel_fmt(const std::string& label_name)
   else if ( label_name == "7.1DS" )
     return PCM::CF_CFG_5;
 
+  else if ( label_name == "MCA" )
+    return PCM::CF_CFG_6;
+
   fprintf(stderr, "Error decoding channel format string: %s\n", label_name.c_str());
   fprintf(stderr, "Expecting '5.1', '6.1', '7.1', '7.1DS' or 'WTF'\n");
   return PCM::CF_NONE;

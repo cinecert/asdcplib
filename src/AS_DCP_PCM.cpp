@@ -77,6 +77,10 @@ ASDCP::PCM_ADesc_to_MD(PCM::AudioDescriptor& ADesc, MXF::WaveAudioDescriptor* AD
       case PCM::CF_CFG_5:
 	ADescObj->ChannelAssignment = DefaultSMPTEDict().Type(MDD_DCAudioChannelCfg_5_7p1_DS).ul;
 	break;
+
+      case PCM::CF_CFG_6:
+	ADescObj->ChannelAssignment = DefaultSMPTEDict().Type(MDD_DCAudioChannelCfg_MCA).ul;
+	break;
     }
 
   return RESULT_OK;
@@ -116,6 +120,9 @@ ASDCP::MD_to_PCM_ADesc(MXF::WaveAudioDescriptor* ADescObj, PCM::AudioDescriptor&
 
       else if ( ADescObj->ChannelAssignment == DefaultSMPTEDict().Type(MDD_DCAudioChannelCfg_5_7p1_DS).ul )
 	ADesc.ChannelFormat = PCM::CF_CFG_5;
+
+      else if ( ADescObj->ChannelAssignment == DefaultSMPTEDict().Type(MDD_DCAudioChannelCfg_MCA).ul )
+	ADesc.ChannelFormat = PCM::CF_CFG_6;
     }
 
   return RESULT_OK;
@@ -160,6 +167,10 @@ ASDCP::PCM::operator << (std::ostream& strm, const AudioDescriptor& ADesc)
 
     case CF_CFG_5:
       strm << "Config 5 (7.1 DS with optional HI/VI)";
+      break;
+
+    case CF_CFG_6:
+      strm << "Config 6 (ST 377-1 MCA)";
       break;
   }
   strm << std::endl;
@@ -237,7 +248,7 @@ public:
 
   h__Reader(const Dictionary& d) : ASDCP::h__ASDCPReader(d) {}
   virtual ~h__Reader() {}
-  Result_t    OpenRead(const char*);
+  Result_t    OpenRead(const std::string&);
   Result_t    ReadFrame(ui32_t, FrameBuffer&, AESDecContext*, HMACContext*);
 };
 
@@ -245,7 +256,7 @@ public:
 //
 //
 ASDCP::Result_t
-ASDCP::PCM::MXFReader::h__Reader::OpenRead(const char* filename)
+ASDCP::PCM::MXFReader::h__Reader::OpenRead(const std::string& filename)
 {
   Result_t result = OpenMXFRead(filename);
 
@@ -397,7 +408,7 @@ ASDCP::PCM::MXFReader::RIP()
 // Open the file for reading. The file must exist. Returns error if the
 // operation cannot be completed.
 ASDCP::Result_t
-ASDCP::PCM::MXFReader::OpenRead(const char* filename) const
+ASDCP::PCM::MXFReader::OpenRead(const std::string& filename) const
 {
   return m_Reader->OpenRead(filename);
 }
@@ -500,7 +511,7 @@ public:
 
   virtual ~h__Writer(){}
 
-  Result_t OpenWrite(const char*, ui32_t HeaderSize);
+  Result_t OpenWrite(const std::string&, ui32_t HeaderSize);
   Result_t SetSourceStream(const AudioDescriptor&);
   Result_t WriteFrame(const FrameBuffer&, AESEncContext* = 0, HMACContext* = 0);
   Result_t Finalize();
@@ -511,7 +522,7 @@ public:
 // Open the file for writing. The file must not exist. Returns error if
 // the operation cannot be completed.
 ASDCP::Result_t
-ASDCP::PCM::MXFWriter::h__Writer::OpenWrite(const char* filename, ui32_t HeaderSize)
+ASDCP::PCM::MXFWriter::h__Writer::OpenWrite(const std::string& filename, ui32_t HeaderSize)
 {
   if ( ! m_State.Test_BEGIN() )
     return RESULT_STATE;
@@ -682,7 +693,7 @@ ASDCP::PCM::MXFWriter::RIP()
 // Open the file for writing. The file must not exist. Returns error if
 // the operation cannot be completed.
 ASDCP::Result_t
-ASDCP::PCM::MXFWriter::OpenWrite(const char* filename, const WriterInfo& Info,
+ASDCP::PCM::MXFWriter::OpenWrite(const std::string& filename, const WriterInfo& Info,
 				 const AudioDescriptor& ADesc, ui32_t HeaderSize)
 {
   if ( Info.LabelSetType == LS_MXF_SMPTE )

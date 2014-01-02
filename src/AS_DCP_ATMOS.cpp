@@ -93,11 +93,11 @@ ASDCP::ATMOS::AtmosDescriptorDump(const AtmosDescriptor& ADesc, FILE* stream)
 
 //
 bool
-ASDCP::ATMOS::IsDolbyAtmos(const char* filename)
+ASDCP::ATMOS::IsDolbyAtmos(const std::string& filename)
 {
     // TODO
     // For now use an atmos extension
-    bool result = (0 == (std::string("atmos").compare(Kumu::PathGetExtension(std::string(filename)))));
+    bool result = ( 0 == (std::string("atmos").compare(Kumu::PathGetExtension(filename))) );
     return result;
 }
 
@@ -118,7 +118,7 @@ class ASDCP::ATMOS::MXFReader::h__Reader : public ASDCP::DCData::h__Reader
   h__Reader(const Dictionary& d) : DCData::h__Reader(d),  m_EssenceSubDescriptor(NULL),
                                    m_ADesc() {}
   virtual ~h__Reader() {}
-  Result_t    OpenRead(const char*);
+  Result_t    OpenRead(const std::string&);
   Result_t    MD_to_Atmos_ADesc(ATMOS::AtmosDescriptor& ADesc);
 };
 
@@ -142,7 +142,7 @@ ASDCP::ATMOS::MXFReader::h__Reader::MD_to_Atmos_ADesc(ATMOS::AtmosDescriptor& AD
 //
 //
 ASDCP::Result_t
-ASDCP::ATMOS::MXFReader::h__Reader::OpenRead(const char* filename)
+ASDCP::ATMOS::MXFReader::h__Reader::OpenRead(const std::string& filename)
 {
   Result_t result = DCData::h__Reader::OpenRead(filename);
 
@@ -234,7 +234,7 @@ ASDCP::ATMOS::MXFReader::RIP()
 // Open the file for reading. The file must exist. Returns error if the
 // operation cannot be completed.
 ASDCP::Result_t
-ASDCP::ATMOS::MXFReader::OpenRead(const char* filename) const
+ASDCP::ATMOS::MXFReader::OpenRead(const std::string& filename) const
 {
   return m_Reader->OpenRead(filename);
 }
@@ -334,7 +334,7 @@ class ASDCP::ATMOS::MXFWriter::h__Writer : public DCData::h__Writer
 
   virtual ~h__Writer(){}
 
-  Result_t OpenWrite(const char*, ui32_t HeaderSize, const AtmosDescriptor& ADesc);
+  Result_t OpenWrite(const std::string&, ui32_t HeaderSize, const AtmosDescriptor& ADesc);
   Result_t Atmos_ADesc_to_MD(const AtmosDescriptor& ADesc);
 };
 
@@ -355,7 +355,7 @@ ASDCP::ATMOS::MXFWriter::h__Writer::Atmos_ADesc_to_MD(const AtmosDescriptor& ADe
 
 //
 ASDCP::Result_t
-ASDCP::ATMOS::MXFWriter::h__Writer::OpenWrite(const char* filename, ui32_t HeaderSize, const AtmosDescriptor& ADesc)
+ASDCP::ATMOS::MXFWriter::h__Writer::OpenWrite(const std::string& filename, ui32_t HeaderSize, const AtmosDescriptor& ADesc)
 {
 
   m_EssenceSubDescriptor = new DolbyAtmosSubDescriptor(m_Dict);
@@ -436,7 +436,7 @@ ASDCP::ATMOS::MXFWriter::RIP()
 // Open the file for writing. The file must not exist. Returns error if
 // the operation cannot be completed.
 ASDCP::Result_t
-ASDCP::ATMOS::MXFWriter::OpenWrite(const char* filename, const WriterInfo& Info,
+ASDCP::ATMOS::MXFWriter::OpenWrite(const std::string& filename, const WriterInfo& Info,
 				       const AtmosDescriptor& ADesc, ui32_t HeaderSize)
 {
   if ( Info.LabelSetType != LS_MXF_SMPTE )

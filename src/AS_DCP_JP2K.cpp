@@ -339,7 +339,7 @@ public:
 
   virtual ~lh__Reader() {}
 
-  Result_t    OpenRead(const char*, EssenceType_t);
+  Result_t    OpenRead(const std::string&, EssenceType_t);
   Result_t    ReadFrame(ui32_t, JP2K::FrameBuffer&, AESDecContext*, HMACContext*);
 };
 
@@ -347,7 +347,7 @@ public:
 //
 //
 ASDCP::Result_t
-lh__Reader::OpenRead(const char* filename, EssenceType_t type)
+lh__Reader::OpenRead(const std::string& filename, EssenceType_t type)
 {
   Result_t result = OpenMXFRead(filename);
 
@@ -582,7 +582,7 @@ ASDCP::JP2K::MXFReader::RIP()
 // Open the file for reading. The file must exist. Returns error if the
 // operation cannot be completed.
 ASDCP::Result_t
-ASDCP::JP2K::MXFReader::OpenRead(const char* filename) const
+ASDCP::JP2K::MXFReader::OpenRead(const std::string& filename) const
 {
   return m_Reader->OpenRead(filename, ASDCP::ESS_JPEG_2000);
 }
@@ -809,7 +809,7 @@ ASDCP::JP2K::MXFSReader::RIP()
 // Open the file for reading. The file must exist. Returns error if the
 // operation cannot be completed.
 ASDCP::Result_t
-ASDCP::JP2K::MXFSReader::OpenRead(const char* filename) const
+ASDCP::JP2K::MXFSReader::OpenRead(const std::string& filename) const
 {
   return m_Reader->OpenRead(filename, ASDCP::ESS_JPEG_2000_S);
 }
@@ -929,7 +929,7 @@ public:
 
   virtual ~lh__Writer(){}
 
-  Result_t OpenWrite(const char*, EssenceType_t type, ui32_t HeaderSize);
+  Result_t OpenWrite(const std::string&, EssenceType_t type, ui32_t HeaderSize);
   Result_t SetSourceStream(const PictureDescriptor&, const std::string& label,
 			   ASDCP::Rational LocalEditRate = ASDCP::Rational(0,0));
   Result_t WriteFrame(const JP2K::FrameBuffer&, bool add_index, AESEncContext*, HMACContext*);
@@ -939,7 +939,7 @@ public:
 // Open the file for writing. The file must not exist. Returns error if
 // the operation cannot be completed.
 ASDCP::Result_t
-lh__Writer::OpenWrite(const char* filename, EssenceType_t type, ui32_t HeaderSize)
+lh__Writer::OpenWrite(const std::string& filename, EssenceType_t type, ui32_t HeaderSize)
 {
   if ( ! m_State.Test_BEGIN() )
     return RESULT_STATE;
@@ -1137,7 +1137,7 @@ ASDCP::JP2K::MXFWriter::RIP()
 // Open the file for writing. The file must not exist. Returns error if
 // the operation cannot be completed.
 ASDCP::Result_t
-ASDCP::JP2K::MXFWriter::OpenWrite(const char* filename, const WriterInfo& Info,
+ASDCP::JP2K::MXFWriter::OpenWrite(const std::string& filename, const WriterInfo& Info,
 				  const PictureDescriptor& PDesc, ui32_t HeaderSize)
 {
   if ( Info.LabelSetType == LS_MXF_SMPTE )
@@ -1283,7 +1283,7 @@ ASDCP::JP2K::MXFSWriter::RIP()
 // Open the file for writing. The file must not exist. Returns error if
 // the operation cannot be completed.
 ASDCP::Result_t
-ASDCP::JP2K::MXFSWriter::OpenWrite(const char* filename, const WriterInfo& Info,
+ASDCP::JP2K::MXFSWriter::OpenWrite(const std::string& filename, const WriterInfo& Info,
 				   const PictureDescriptor& PDesc, ui32_t HeaderSize)
 {
   if ( Info.LabelSetType == LS_MXF_SMPTE )

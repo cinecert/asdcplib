@@ -161,14 +161,12 @@ ASDCP::MD_to_CryptoInfo(CryptographicContext* InfoObj, WriterInfo& Info, const D
 //
 //
 ASDCP::Result_t
-ASDCP::EssenceType(const char* filename, EssenceType_t& type)
+ASDCP::EssenceType(const std::string& filename, EssenceType_t& type)
 {
   const Dictionary* m_Dict = &DefaultCompositeDict();
   InterchangeObject* md_object = 0;
 
   assert(m_Dict);
-
-  ASDCP_TEST_NULL_STR(filename);
   Kumu::FileReader   Reader;
   OP1aHeader TestHeader(m_Dict);
 
@@ -180,47 +178,80 @@ ASDCP::EssenceType(const char* filename, EssenceType_t& type)
   if ( ASDCP_SUCCESS(result) )
     {
       type = ESS_UNKNOWN;
-      if ( ASDCP_SUCCESS(TestHeader.GetMDObjectByType(OBJ_TYPE_ARGS(JPEG2000PictureSubDescriptor))) )
+
+      if ( TestHeader.OperationalPattern == UL(m_Dict->ul(MDD_OPAtom))
+	   || TestHeader.OperationalPattern == UL(m_Dict->ul(MDD_MXFInterop_OPAtom)) )
 	{
-	  if ( ASDCP_SUCCESS(TestHeader.GetMDObjectByType(OBJ_TYPE_ARGS(StereoscopicPictureSubDescriptor))) )
+	  if ( ASDCP_SUCCESS(TestHeader.GetMDObjectByType(OBJ_TYPE_ARGS(JPEG2000PictureSubDescriptor))) )
 	    {
-	      type = ESS_JPEG_2000_S;
+	      if ( ASDCP_SUCCESS(TestHeader.GetMDObjectByType(OBJ_TYPE_ARGS(StereoscopicPictureSubDescriptor))) )
+		{
+		  type = ESS_JPEG_2000_S;
+		}
+	      else
+		{
+		  type = ESS_JPEG_2000;
+		}
 	    }
-	  else
+	  else if ( ASDCP_SUCCESS(TestHeader.GetMDObjectByType(OBJ_TYPE_ARGS(WaveAudioDescriptor), &md_object)) )
 	    {
-	      type = ESS_JPEG_2000;
+	      assert(md_object);
+	      if ( static_cast<ASDCP::MXF::WaveAudioDescriptor*>(md_object)->AudioSamplingRate == SampleRate_96k )
+		{
+		  type = ESS_PCM_24b_96k;
+		}
+	      else
+		{
+		  type = ESS_PCM_24b_48k;
+		}
+	    }
+	  else if ( ASDCP_SUCCESS(TestHeader.GetMDObjectByType(OBJ_TYPE_ARGS(MPEG2VideoDescriptor))) )
+	    {
+	      type = ESS_MPEG2_VES;
+	    }
+	  else if ( ASDCP_SUCCESS(TestHeader.GetMDObjectByType(OBJ_TYPE_ARGS(TimedTextDescriptor))) )
+	    {
+	      type = ESS_TIMED_TEXT;
+	    }
+	  else if ( ASDCP_SUCCESS(TestHeader.GetMDObjectByType(OBJ_TYPE_ARGS(DCDataDescriptor))) )
+	    {
+	      if ( ASDCP_SUCCESS(TestHeader.GetMDObjectByType(OBJ_TYPE_ARGS(DolbyAtmosSubDescriptor))) )
+		{
+		  type = ESS_DCDATA_DOLBY_ATMOS;
+		}
+	      else
+		{
+		  type = ESS_DCDATA_UNKNOWN;
+		}
 	    }
 	}
-      else if ( ASDCP_SUCCESS(TestHeader.GetMDObjectByType(OBJ_TYPE_ARGS(WaveAudioDescriptor), &md_object)) )
+      else if (  TestHeader.OperationalPattern == UL(m_Dict->ul(MDD_OP1a)) )
 	{
-	  assert(md_object);
-	  if ( static_cast<ASDCP::MXF::WaveAudioDescriptor*>(md_object)->AudioSamplingRate == SampleRate_96k )
+	  if ( ASDCP_SUCCESS(TestHeader.GetMDObjectByType(OBJ_TYPE_ARGS(JPEG2000PictureSubDescriptor))) )
 	    {
-	      type = ESS_PCM_24b_96k;
+	      type = ESS_AS02_JPEG_2000;
 	    }
-	  else
+	  else if ( ASDCP_SUCCESS(TestHeader.GetMDObjectByType(OBJ_TYPE_ARGS(WaveAudioDescriptor), &md_object)) )
 	    {
-	      type = ESS_PCM_24b_48k;
+	      assert(md_object);
+	      if ( static_cast<ASDCP::MXF::WaveAudioDescriptor*>(md_object)->AudioSamplingRate == SampleRate_96k )
+		{
+		  type = ESS_AS02_PCM_24b_96k;
+		}
+	      else
+		{
+		  type = ESS_AS02_PCM_24b_48k;
+		}
+	    }
+	  else if ( ASDCP_SUCCESS(TestHeader.GetMDObjectByType(OBJ_TYPE_ARGS(TimedTextDescriptor))) )
+	    {
+	      type = ESS_AS02_TIMED_TEXT;
 	    }
 	}
-      else if ( ASDCP_SUCCESS(TestHeader.GetMDObjectByType(OBJ_TYPE_ARGS(MPEG2VideoDescriptor))) )
+      else
 	{
-	type = ESS_MPEG2_VES;
-	}
-      else if ( ASDCP_SUCCESS(TestHeader.GetMDObjectByType(OBJ_TYPE_ARGS(TimedTextDescriptor))) )
-	{
-	type = ESS_TIMED_TEXT;
-	}
-      else if ( ASDCP_SUCCESS(TestHeader.GetMDObjectByType(OBJ_TYPE_ARGS(DCDataDescriptor))) )
-	{
-	  if ( ASDCP_SUCCESS(TestHeader.GetMDObjectByType(OBJ_TYPE_ARGS(DolbyAtmosSubDescriptor))) )
-	    {
-	      type = ESS_DCDATA_DOLBY_ATMOS;
-	    }
-	  else
-	    {
-	      type = ESS_DCDATA_UNKNOWN;
-	    }
+	  DefaultLogSink().Error("Unsupported MXF Operational Pattern.\n");
+	  return RESULT_FORMAT;
 	}
     }
 
@@ -229,9 +260,8 @@ ASDCP::EssenceType(const char* filename, EssenceType_t& type)
 
 //
 ASDCP::Result_t
-ASDCP::RawEssenceType(const char* filename, EssenceType_t& type)
+ASDCP::RawEssenceType(const std::string& filename, EssenceType_t& type)
 {
-  ASDCP_TEST_NULL_STR(filename);
   type = ESS_UNKNOWN;
   ASDCP::FrameBuffer FB;
   Kumu::FileReader Reader;
@@ -317,10 +347,7 @@ ASDCP::RawEssenceType(const char* filename, EssenceType_t& type)
 	      if ( next_file[0] == '.' ) // no hidden files or internal links
 		continue;
 
-	      std::string Str(filename);
-	      Str += "/";
-	      Str += next_file;
-	      result = Reader.OpenRead(Str.c_str());
+	      result = Reader.OpenRead(Kumu::PathJoin(filename, next_file));
 
 	      if ( ASDCP_SUCCESS(result) )
 		{
@@ -354,7 +381,7 @@ ASDCP::RawEssenceType(const char* filename, EssenceType_t& type)
 			  return RESULT_FORMAT;
 			}
 		    }
-		  else if ( ASDCP::ATMOS::IsDolbyAtmos(Str.c_str()) )
+		  else if ( ASDCP::ATMOS::IsDolbyAtmos(Kumu::PathJoin(filename, next_file)) )
 		    {
 		      type = ESS_DCDATA_DOLBY_ATMOS;
 		    }

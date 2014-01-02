@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2004-2012, John Hurst
+Copyright (c) 2004-2013, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -48,10 +48,8 @@ ASDCP::ParserInstance::~ParserInstance()
 
 // PCM::CalcSampleSize(ADesc);
 Result_t
-ASDCP::ParserInstance::OpenRead(const char* filename, const Rational& PictureRate)
+ASDCP::ParserInstance::OpenRead(const std::string& filename, const Rational& PictureRate)
 {
-  ASDCP_TEST_NULL_STR(filename);
-
   Result_t result = Parser.OpenRead(filename, PictureRate);
 
   if ( ASDCP_SUCCESS(result) )

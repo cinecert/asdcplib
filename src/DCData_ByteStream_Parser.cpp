@@ -52,9 +52,8 @@ public:
 
   ~h__BytestreamParser() {}
 
-  Result_t OpenReadFrame(const char* filename, FrameBuffer& FB)
+  Result_t OpenReadFrame(const std::string& filename, FrameBuffer& FB)
   {
-    ASDCP_TEST_NULL_STR(filename);
     m_File.Close();
     Result_t result = m_File.OpenRead(filename);
 
@@ -95,7 +94,7 @@ ASDCP::DCData::BytestreamParser::~BytestreamParser()
 // Opens the stream for reading, parses enough data to provide a complete
 // set of stream metadata for the MXFWriter below.
 ASDCP::Result_t
-ASDCP::DCData::BytestreamParser::OpenReadFrame(const char* filename, FrameBuffer& FB) const
+ASDCP::DCData::BytestreamParser::OpenReadFrame(const std::string& filename, FrameBuffer& FB) const
 {
   const_cast<ASDCP::DCData::BytestreamParser*>(this)->m_Parser = new h__BytestreamParser;
   return m_Parser->OpenReadFrame(filename, FB);

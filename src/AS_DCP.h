@@ -208,8 +208,12 @@ namespace ASDCP {
   // The file accessors in this library implement a bounded set of essence types.
   // This list will be expanded when support for new types is added to the library.
   enum EssenceType_t {
-    ESS_UNKNOWN,              // the file is not a supported AS-DCP essence container
-    ESS_MPEG2_VES,            // the file contains an MPEG video elementary stream
+    ESS_UNKNOWN,              // the file is not a supported AS-DCP of AS-02 essence container
+
+    // 
+    ESS_MPEG2_VES,            // the file contains an MPEG-2 video elementary stream
+
+    // d-cinema essence types
     ESS_JPEG_2000,            // the file contains one or more JPEG 2000 codestreams
     ESS_PCM_24b_48k,          // the file contains one or more PCM audio pairs
     ESS_PCM_24b_96k,          // the file contains one or more PCM audio pairs
@@ -217,18 +221,25 @@ namespace ASDCP {
     ESS_JPEG_2000_S,          // the file contains one or more JPEG 2000 codestream pairs (stereoscopic)
     ESS_DCDATA_UNKNOWN,       // the file contains one or more D-Cinema Data bytestreams
     ESS_DCDATA_DOLBY_ATMOS,   // the file contains one or more DolbyATMOS bytestreams
+
+    // IMF essence types
+    ESS_AS02_JPEG_2000,       // the file contains one or more JPEG 2000 codestreams
+    ESS_AS02_PCM_24b_48k,     // the file contains one or more PCM audio pairs, clip wrapped
+    ESS_AS02_PCM_24b_96k,     // the file contains one or more PCM audio pairs, clip wrapped
+    ESS_AS02_TIMED_TEXT,      // the file contains a TTML document and zero or more resources
+
     ESS_MAX
   };
 
   // Determine the type of essence contained in the given MXF file. RESULT_OK
   // is returned if the file is successfully opened and contains a valid MXF
   // stream. If there is an error, the result code will indicate the reason.
-  Result_t EssenceType(const char* filename, EssenceType_t& type);
+  Result_t EssenceType(const std::string& filename, EssenceType_t& type);
 
   // Determine the type of essence contained in the given raw file. RESULT_OK
   // is returned if the file is successfully opened and contains a known
   // stream type. If there is an error, the result code will indicate the reason.
-  Result_t RawEssenceType(const char* filename, EssenceType_t& type);
+  Result_t RawEssenceType(const std::string& filename, EssenceType_t& type);
 
 
   //---------------------------------------------------------------------------------
@@ -707,7 +718,7 @@ namespace ASDCP {
 
 	  // Opens the stream for reading, parses enough data to provide a complete
 	  // set of stream metadata for the MXFWriter below.
-	  Result_t OpenRead(const char* filename) const;
+	  Result_t OpenRead(const std::string& filename) const;
 
 	  // Fill a VideoDescriptor struct with the values from the file's header.
 	  // Returns RESULT_INIT if the file is not open.
@@ -745,7 +756,7 @@ namespace ASDCP {
 	  // Open the file for writing. The file must not exist. Returns error if
 	  // the operation cannot be completed or if nonsensical data is discovered
 	  // in the essence descriptor.
-	  Result_t OpenWrite(const char* filename, const WriterInfo&,
+	  Result_t OpenWrite(const std::string& filename, const WriterInfo&,
 			     const VideoDescriptor&, ui32_t HeaderSize = 16384);
 
 	  // Writes a frame of essence to the MXF file. If the optional AESEncContext
@@ -777,7 +788,7 @@ namespace ASDCP {
 
 	  // Open the file for reading. The file must exist. Returns error if the
 	  // operation cannot be completed.
-	  Result_t OpenRead(const char* filename) const;
+	  Result_t OpenRead(const std::string& filename) const;
 
 	  // Returns RESULT_INIT if the file is not open.
 	  Result_t Close() const;
@@ -848,6 +859,7 @@ namespace ASDCP {
 	CF_CFG_3, // 7.1 (SDDS) with optional HI/VI
 	CF_CFG_4, // Wild Track Format
 	CF_CFG_5, // 7.1 DS with optional HI/VI
+	CF_CFG_6, // ST 377-4 (MCA) labels (see also ASDCP::MXF::decode_mca_string)
 	CF_MAXIMUM
       };
 
@@ -918,7 +930,7 @@ namespace ASDCP {
 	  // Opens the stream for reading, parses enough data to provide a complete
 	  // set of stream metadata for the MXFWriter below. PictureRate controls
 	  // ther frame rate for the MXF frame wrapping option.
-	  Result_t OpenRead(const char* filename, const Rational& PictureRate) const;
+	  Result_t OpenRead(const std::string& filename, const Rational& PictureRate) const;
 
 	  // Fill an AudioDescriptor struct with the values from the file's header.
 	  // Returns RESULT_INIT if the file is not open.
@@ -953,7 +965,7 @@ namespace ASDCP {
 	  // Open the file for writing. The file must not exist. Returns error if
 	  // the operation cannot be completed or if nonsensical data is discovered
 	  // in the essence descriptor.
-	  Result_t OpenWrite(const char* filename, const WriterInfo&,
+	  Result_t OpenWrite(const std::string& filename, const WriterInfo&,
 			     const AudioDescriptor&, ui32_t HeaderSize = 16384);
 
 	  // Writes a frame of essence to the MXF file. If the optional AESEncContext
@@ -985,7 +997,7 @@ namespace ASDCP {
 
 	  // Open the file for reading. The file must exist. Returns error if the
 	  // operation cannot be completed.
-	  Result_t OpenRead(const char* filename) const;
+	  Result_t OpenRead(const std::string& filename) const;
 
 	  // Returns RESULT_INIT if the file is not open.
 	  Result_t Close() const;
@@ -1124,7 +1136,7 @@ namespace ASDCP {
 	  // The frame buffer's PlaintextOffset parameter will be set to the first
 	  // byte of the data segment. Set this value to zero if you want
 	  // encrypted headers.
-	  Result_t OpenReadFrame(const char* filename, FrameBuffer&) const;
+	  Result_t OpenReadFrame(const std::string& filename, FrameBuffer&) const;
 
 	  // Fill a PictureDescriptor struct with the values from the file's codestream.
 	  // Returns RESULT_INIT if the file is not open.
@@ -1154,7 +1166,7 @@ namespace ASDCP {
 	  // MXFWriter below.  If the "pedantic" parameter is given and is true, the
 	  // parser will check the metadata for each codestream and fail if a
 	  // mismatch is detected.
-	  Result_t OpenRead(const char* filename, bool pedantic = false) const;
+	  Result_t OpenRead(const std::string& filename, bool pedantic = false) const;
 
 	  // Opens a file sequence for reading.  The sequence is expected to contain one or
 	  // more filenames, each naming a file containing the codestream for exactly one
@@ -1202,7 +1214,7 @@ namespace ASDCP {
 	  // Open the file for writing. The file must not exist. Returns error if
 	  // the operation cannot be completed or if nonsensical data is discovered
 	  // in the essence descriptor.
-	  Result_t OpenWrite(const char* filename, const WriterInfo&,
+	  Result_t OpenWrite(const std::string& filename, const WriterInfo&,
 			     const PictureDescriptor&, ui32_t HeaderSize = 16384);
 
 	  // Writes a frame of essence to the MXF file. If the optional AESEncContext
@@ -1234,7 +1246,7 @@ namespace ASDCP {
 
 	  // Open the file for reading. The file must exist. Returns error if the
 	  // operation cannot be completed.
-	  Result_t OpenRead(const char* filename) const;
+	  Result_t OpenRead(const std::string& filename) const;
 
 	  // Returns RESULT_INIT if the file is not open.
 	  Result_t Close() const;
@@ -1307,7 +1319,7 @@ namespace ASDCP {
 	  // Open the file for writing. The file must not exist. Returns error if
 	  // the operation cannot be completed or if nonsensical data is discovered
 	  // in the essence descriptor.
-	  Result_t OpenWrite(const char* filename, const WriterInfo&,
+	  Result_t OpenWrite(const std::string& filename, const WriterInfo&,
 			     const PictureDescriptor&, ui32_t HeaderSize = 16384);
 
 	  // Writes a pair of frames of essence to the MXF file. If the optional AESEncContext
@@ -1349,7 +1361,7 @@ namespace ASDCP {
 
 	  // Open the file for reading. The file must exist. Returns error if the
 	  // operation cannot be completed.
-	  Result_t OpenRead(const char* filename) const;
+	  Result_t OpenRead(const std::string& filename) const;
 
 	  // Returns RESULT_INIT if the file is not open.
 	  Result_t Close() const;
@@ -1486,12 +1498,12 @@ namespace ASDCP {
 
 	  // Opens an XML file for reading, parses data to provide a complete
 	  // set of stream metadata for the MXFWriter below.
-	  Result_t OpenRead(const char* filename) const;
+	  Result_t OpenRead(const std::string& filename) const;
 
 	  // Parses an XML document to provide a complete set of stream metadata
 	  // for the MXFWriter below. The optional filename argument is used to
 	  // initialize the default resource resolver (see ReadAncillaryResource).
-	  Result_t OpenRead(const std::string& xml_doc, const char* filename = 0) const;
+	  Result_t OpenRead(const std::string& xml_doc, const std::string& filename) const;
 
 	  // Fill a TimedTextDescriptor struct with the values from the file's contents.
 	  // Returns RESULT_INIT if the file is not open.
@@ -1531,7 +1543,7 @@ namespace ASDCP {
 	  // Open the file for writing. The file must not exist. Returns error if
 	  // the operation cannot be completed or if nonsensical data is discovered
 	  // in the essence descriptor.
-	  Result_t OpenWrite(const char* filename, const WriterInfo&,
+	  Result_t OpenWrite(const std::string& filename, const WriterInfo&,
 			     const TimedTextDescriptor&, ui32_t HeaderSize = 16384);
 
 	  // Writes the Timed-Text Resource to the MXF file. The file must be UTF-8
@@ -1573,7 +1585,7 @@ namespace ASDCP {
 
 	  // Open the file for reading. The file must exist. Returns error if the
 	  // operation cannot be completed.
-	  Result_t OpenRead(const char* filename) const;
+	  Result_t OpenRead(const std::string& filename) const;
 
 	  // Returns RESULT_INIT if the file is not open.
 	  Result_t Close() const;
@@ -1662,7 +1674,7 @@ namespace ASDCP {
 	  // The frame buffer's PlaintextOffset parameter will be set to the first
 	  // byte of the data segment. Set this value to zero if you want
 	  // encrypted headers.
-	  Result_t OpenReadFrame(const char* filename, FrameBuffer&) const;
+	  Result_t OpenReadFrame(const std::string& filename, FrameBuffer&) const;
 
 	  // Fill a DCDataDescriptor struct with the values from the file's bytestream.
 	  // Returns RESULT_INIT if the file is not open.
@@ -1684,7 +1696,7 @@ namespace ASDCP {
 	  // more files, each containing the bytestream for exactly one frame. The files
       // must be named such that the frames are in temporal order when sorted
 	  // alphabetically by filename.
-	  Result_t OpenRead(const char* filename) const;
+	  Result_t OpenRead(const std::string& filename) const;
 
 	  // Opens a file sequence for reading.  The sequence is expected to contain one or
 	  // more filenames, each naming a file containing the bytestream for exactly one
@@ -1727,7 +1739,7 @@ namespace ASDCP {
 	  // Open the file for writing. The file must not exist. Returns error if
 	  // the operation cannot be completed or if nonsensical data is discovered
 	  // in the essence descriptor.
-	  Result_t OpenWrite(const char* filename, const WriterInfo&,
+	  Result_t OpenWrite(const std::string& filename, const WriterInfo&,
 			     const DCDataDescriptor&, ui32_t HeaderSize = 16384);
 
 	  // Writes a frame of essence to the MXF file. If the optional AESEncContext
@@ -1759,7 +1771,7 @@ namespace ASDCP {
 
 	  // Open the file for reading. The file must exist. Returns error if the
 	  // operation cannot be completed.
-	  Result_t OpenRead(const char* filename) const;
+	  Result_t OpenRead(const std::string& filename) const;
 
 	  // Returns RESULT_INIT if the file is not open.
 	  Result_t Close() const;
@@ -1812,7 +1824,7 @@ namespace ASDCP {
     // Print debugging information to stream (stderr default)
     void AtmosDescriptorDump(const AtmosDescriptor&, FILE* = 0);
     // Determine if a file is a raw atmos file
-    bool IsDolbyAtmos(const char* filename);
+    bool IsDolbyAtmos(const std::string& filename);
 
     //
     class MXFWriter
@@ -1835,7 +1847,7 @@ namespace ASDCP {
 	  // Open the file for writing. The file must not exist. Returns error if
 	  // the operation cannot be completed or if nonsensical data is discovered
 	  // in the essence descriptor.
-	  Result_t OpenWrite(const char* filename, const WriterInfo&,
+	  Result_t OpenWrite(const std::string& filename, const WriterInfo&,
 			     const AtmosDescriptor&, ui32_t HeaderSize = 16384);
 
 	  // Writes a frame of essence to the MXF file. If the optional AESEncContext
@@ -1867,7 +1879,7 @@ namespace ASDCP {
 
 	  // Open the file for reading. The file must exist. Returns error if the
 	  // operation cannot be completed.
-	  Result_t OpenRead(const char* filename) const;
+	  Result_t OpenRead(const std::string& filename) const;
 
 	  // Returns RESULT_INIT if the file is not open.
 	  Result_t Close() const;

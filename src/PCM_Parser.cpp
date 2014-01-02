@@ -69,7 +69,7 @@ public:
     Close();
    }
 
-  Result_t OpenRead(const char* filename, const Rational& PictureRate);
+  Result_t OpenRead(const std::string& filename, const Rational& PictureRate);
   void     Close();
   void     Reset();
   Result_t ReadFrame(FrameBuffer&);
@@ -94,10 +94,8 @@ ASDCP::PCM::WAVParser::h__WAVParser::Reset()
 
 //
 ASDCP::Result_t
-ASDCP::PCM::WAVParser::h__WAVParser::OpenRead(const char* filename, const Rational& PictureRate)
+ASDCP::PCM::WAVParser::h__WAVParser::OpenRead(const std::string& filename, const Rational& PictureRate)
 {
-  ASDCP_TEST_NULL_STR(filename);
-
   Result_t result = m_FileReader.OpenRead(filename);
 
   if ( ASDCP_SUCCESS(result) )
@@ -203,7 +201,7 @@ ASDCP::PCM::WAVParser::~WAVParser()
 // Opens the stream for reading, parses enough data to provide a complete
 // set of stream metadata for the MXFWriter below.
 ASDCP::Result_t
-ASDCP::PCM::WAVParser::OpenRead(const char* filename, const Rational& PictureRate) const
+ASDCP::PCM::WAVParser::OpenRead(const std::string& filename, const Rational& PictureRate) const
 {
   const_cast<ASDCP::PCM::WAVParser*>(this)->m_Parser = new h__WAVParser;
 

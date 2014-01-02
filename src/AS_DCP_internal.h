@@ -213,7 +213,7 @@ namespace ASDCP
 	const MXF::RIP& GetRIP() const { return m_RIP; }
 
 	//
-	Result_t OpenMXFRead(const char* filename)
+	Result_t OpenMXFRead(const std::string& filename)
 	{
 	  m_LastPosition = 0;
 	  Result_t result = m_File.OpenRead(filename);
@@ -803,7 +803,7 @@ namespace ASDCP
       h__ASDCPReader(const Dictionary&);
       virtual ~h__ASDCPReader();
 
-      Result_t OpenMXFRead(const char* filename);
+      Result_t OpenMXFRead(const std::string& filename);
       Result_t ReadEKLVFrame(ui32_t FrameNum, ASDCP::FrameBuffer& FrameBuf,
 			     const byte_t* EssenceUL, AESDecContext* Ctx, HMACContext* HMAC);
       Result_t LocateFrame(ui32_t FrameNum, Kumu::fpos_t& streamOffset,

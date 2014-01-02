@@ -694,7 +694,7 @@ ASDCP::MXF::OP1aHeader::~OP1aHeader() {}
 ASDCP::Result_t
 ASDCP::MXF::OP1aHeader::InitFromFile(const Kumu::FileReader& Reader)
 {
-  Result_t result = result = Partition::InitFromFile(Reader);
+  Result_t result = Partition::InitFromFile(Reader);
 
   if ( ASDCP_FAILURE(result) )
     return result;
@@ -714,10 +714,15 @@ ASDCP::MXF::OP1aHeader::InitFromFile(const Kumu::FileReader& Reader)
 
   // slurp up the remainder of the header
   if ( HeaderByteCount < 1024 )
-    DefaultLogSink().Warn("Improbably small HeaderByteCount value: %u\n", HeaderByteCount);
-
-  assert (HeaderByteCount <= 0xFFFFFFFFL);
-  result = m_HeaderData.Capacity((ui32_t)HeaderByteCount);
+    {
+      DefaultLogSink().Warn("Improbably small HeaderByteCount value: %qu\n", HeaderByteCount);
+    }
+  else if (HeaderByteCount > ( 4 * Kumu::Megabyte ) )
+    {
+      DefaultLogSink().Warn("Improbably huge HeaderByteCount value: %qu\n", HeaderByteCount);
+    }
+  
+  result = m_HeaderData.Capacity(Kumu::xmin(4*Kumu::Megabyte, static_cast<ui32_t>(HeaderByteCount)));
 
   if ( ASDCP_SUCCESS(result) )
     {
@@ -1219,6 +1224,13 @@ ASDCP::MXF::OPAtomIndexFooter::Lookup(ui32_t frame_num, IndexTableSegment::Index
 
 //
 void
+ASDCP::MXF::OPAtomIndexFooter::SetDeltaParams(const IndexTableSegment::DeltaEntry& delta)
+{
+  m_DefaultDeltaEntry = delta;
+}
+
+//
+void
 ASDCP::MXF::OPAtomIndexFooter::SetIndexParamsCBR(IPrimerLookup* lookup, ui32_t size, const Rational& Rate)
 {
   assert(lookup);
@@ -1259,7 +1271,7 @@ ASDCP::MXF::OPAtomIndexFooter::PushIndexEntry(const IndexTableSegment::IndexEntr
       m_CurrentSegment = new IndexTableSegment(m_Dict);
       assert(m_CurrentSegment);
       AddChildObject(m_CurrentSegment);
-      m_CurrentSegment->DeltaEntryArray.push_back(IndexTableSegment::DeltaEntry());
+      m_CurrentSegment->DeltaEntryArray.push_back(m_DefaultDeltaEntry);
       m_CurrentSegment->IndexEditRate = m_EditRate;
       m_CurrentSegment->IndexStartPosition = 0;
     }
@@ -1271,7 +1283,7 @@ ASDCP::MXF::OPAtomIndexFooter::PushIndexEntry(const IndexTableSegment::IndexEntr
       m_CurrentSegment = new IndexTableSegment(m_Dict);
       assert(m_CurrentSegment);
       AddChildObject(m_CurrentSegment);
-      m_CurrentSegment->DeltaEntryArray.push_back(IndexTableSegment::DeltaEntry());
+      m_CurrentSegment->DeltaEntryArray.push_back(m_DefaultDeltaEntry);
       m_CurrentSegment->IndexEditRate = m_EditRate;
       m_CurrentSegment->IndexStartPosition = StartPosition;
     }
@@ -1427,7 +1439,7 @@ static bool        s_TypesInit = false;
 
 //
 void
-ASDCP::MXF::SetObjectFactory(ASDCP::UL label, ASDCP::MXF::MXFObjectFactory_t factory)
+ASDCP::MXF::SetObjectFactory(const ASDCP::UL& label, ASDCP::MXF::MXFObjectFactory_t factory)
 {
   s_FactoryList.Insert(label, factory);
 }
@@ -1460,10 +1472,9 @@ ASDCP::MXF::CreateObject(const Dictionary*& Dict, const UL& label)
 
 //
 bool
-ASDCP::MXF::decode_mca_string(const std::string& s, const mca_label_map_t& labels, const Dictionary& dict, const std::string& language,
+ASDCP::MXF::decode_mca_string(const std::string& s, const mca_label_map_t& labels, const Dictionary*& dict, const std::string& language,
 			      InterchangeObject_list_t& descriptor_list, ui32_t& channel_count)
 {
-  const Dictionary *dictp = &dict;
   std::string symbol_buf;
   channel_count = 0;
   ASDCP::MXF::SoundfieldGroupLabelSubDescriptor *current_soundfield = 0;
@@ -1475,13 +1486,13 @@ ASDCP::MXF::decode_mca_string(const std::string& s, const mca_label_map_t& label
 	{
 	  if ( current_soundfield != 0 )
 	    {
-	      fprintf(stderr, "Encountered '(', already processing a soundfield group.\n");
+	      DefaultLogSink().Error("Encountered '(', already processing a soundfield group.\n");
 	      return false;
 	    }
 
 	  if ( symbol_buf.empty() )
 	    {
-	      fprintf(stderr, "Encountered '(', without leading soundfield group symbol.\n");
+	      DefaultLogSink().Error("Encountered '(', without leading soundfield group symbol.\n");
 	      return false;
 	    }
 
@@ -1489,17 +1500,17 @@ ASDCP::MXF::decode_mca_string(const std::string& s, const mca_label_map_t& label
       
 	  if ( i == labels.end() )
 	    {
-	      fprintf(stderr, "Unknown symbol: '%s'\n", symbol_buf.c_str());
+	      DefaultLogSink().Error("Unknown symbol: '%s'\n", symbol_buf.c_str());
 	      return false;
 	    }
       
 	  if ( i->second.Value()[10] != 2 ) // magic depends on UL "Essence Facet" byte (see ST 428-12)
 	    {
-	      fprintf(stderr, "Not a soundfield group symbol: '%s'\n", symbol_buf.c_str());
+	      DefaultLogSink().Error("Not a soundfield group symbol: '%s'\n", symbol_buf.c_str());
 	      return false;
 	    }
 
-	  current_soundfield = new ASDCP::MXF::SoundfieldGroupLabelSubDescriptor(dictp);
+	  current_soundfield = new ASDCP::MXF::SoundfieldGroupLabelSubDescriptor(dict);
 
 	  GenRandomValue(current_soundfield->InstanceUID);
 	  GenRandomValue(current_soundfield->MCALinkID);
@@ -1514,13 +1525,13 @@ ASDCP::MXF::decode_mca_string(const std::string& s, const mca_label_map_t& label
 	{
 	  if ( current_soundfield == 0 )
 	    {
-	      fprintf(stderr, "Encountered ')', not currently processing a soundfield group.\n");
+	      DefaultLogSink().Error("Encountered ')', not currently processing a soundfield group.\n");
 	      return false;
 	    }
 
 	  if ( symbol_buf.empty() )
 	    {
-	      fprintf(stderr, "Soundfield group description contains no channels.\n");
+	      DefaultLogSink().Error("Soundfield group description contains no channels.\n");
 	      return false;
 	    }
 
@@ -1528,16 +1539,16 @@ ASDCP::MXF::decode_mca_string(const std::string& s, const mca_label_map_t& label
       
 	  if ( i == labels.end() )
 	    {
-	      fprintf(stderr, "Unknown symbol: '%s'\n", symbol_buf.c_str());
+	      DefaultLogSink().Error("Unknown symbol: '%s'\n", symbol_buf.c_str());
 	      return false;
 	    }
 
 	  ASDCP::MXF::AudioChannelLabelSubDescriptor *channel_descr =
-	    new ASDCP::MXF::AudioChannelLabelSubDescriptor(dictp);
+	    new ASDCP::MXF::AudioChannelLabelSubDescriptor(dict);
 
 	  GenRandomValue(channel_descr->InstanceUID);
 	  assert(current_soundfield);
-	  channel_descr->MCALinkID = current_soundfield->MCALinkID;
+	  channel_descr->SoundfieldGroupLinkID = current_soundfield->MCALinkID;
 	  channel_descr->MCAChannelID = channel_count++;
 	  channel_descr->MCATagSymbol = "ch" + i->first;
 	  channel_descr->MCATagName = i->first;
@@ -1555,24 +1566,24 @@ ASDCP::MXF::decode_mca_string(const std::string& s, const mca_label_map_t& label
 
 	      if ( i == labels.end() )
 		{
-		  fprintf(stderr, "Unknown symbol: '%s'\n", symbol_buf.c_str());
+		  DefaultLogSink().Error("Unknown symbol: '%s'\n", symbol_buf.c_str());
 		  return false;
 		}
 
 	      if ( i->second.Value()[10] != 1 ) // magic depends on UL "Essence Facet" byte (see ST 428-12)
 		{
-		  fprintf(stderr, "Not a channel symbol: '%s'\n", symbol_buf.c_str());
+		  DefaultLogSink().Error("Not a channel symbol: '%s'\n", symbol_buf.c_str());
 		  return false;
 		}
 
 	      ASDCP::MXF::AudioChannelLabelSubDescriptor *channel_descr =
-		new ASDCP::MXF::AudioChannelLabelSubDescriptor(dictp);
+		new ASDCP::MXF::AudioChannelLabelSubDescriptor(dict);
 
 	      GenRandomValue(channel_descr->InstanceUID);
 
 	      if ( current_soundfield != 0 )
 		{
-		  channel_descr->MCALinkID = current_soundfield->MCALinkID;
+		  channel_descr->SoundfieldGroupLinkID = current_soundfield->MCALinkID;
 		}
 
 	      channel_descr->MCAChannelID = channel_count++;
@@ -1590,7 +1601,7 @@ ASDCP::MXF::decode_mca_string(const std::string& s, const mca_label_map_t& label
 	}
       else if ( ! isspace(*i) )
 	{
-	  fprintf(stderr, "Unexpected character '%c'.\n", *i);
+	  DefaultLogSink().Error("Unexpected character '%c'.\n", *i);
 	  return false;
 	}
     }
@@ -1601,18 +1612,18 @@ ASDCP::MXF::decode_mca_string(const std::string& s, const mca_label_map_t& label
       
       if ( i == labels.end() )
 	{
-	  fprintf(stderr, "Unknown symbol: '%s'\n", symbol_buf.c_str());
+	  DefaultLogSink().Error("Unknown symbol: '%s'\n", symbol_buf.c_str());
 	  return false;
 	}
 
       ASDCP::MXF::AudioChannelLabelSubDescriptor *channel_descr =
-	new ASDCP::MXF::AudioChannelLabelSubDescriptor(dictp);
+	new ASDCP::MXF::AudioChannelLabelSubDescriptor(dict);
 
       GenRandomValue(channel_descr->InstanceUID);
 
       if ( current_soundfield != 0 )
 	{
-	  channel_descr->MCALinkID = current_soundfield->MCALinkID;
+	  channel_descr->SoundfieldGroupLinkID = current_soundfield->MCALinkID;
 	}
 
       channel_descr->MCAChannelID = channel_count++;
@@ -1626,7 +1637,7 @@ ASDCP::MXF::decode_mca_string(const std::string& s, const mca_label_map_t& label
   return true;
 }
 
-
+//
 ASDCP::MXF::ASDCP_MCAConfigParser::ASDCP_MCAConfigParser(const Dictionary*& d) : m_Dict(d), m_ChannelCount(0)
 {
   m_LabelMap.insert(mca_label_map_t::value_type("L", m_Dict->ul(MDD_DCAudioChannel_L)));
@@ -1662,7 +1673,7 @@ ASDCP::MXF::ASDCP_MCAConfigParser::ChannelCount() const
 bool
 ASDCP::MXF::ASDCP_MCAConfigParser::DecodeString(const std::string& s, const std::string& language)
 {
-  return decode_mca_string(s, m_LabelMap, *m_Dict, language, *this, m_ChannelCount);
+  return decode_mca_string(s, m_LabelMap, m_Dict, language, *this, m_ChannelCount);
 }
 
 

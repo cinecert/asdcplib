@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2011-2012, Robert Scheler, Heiko Sparenberg Fraunhofer IIS,
+Copyright (c) 2011-2013, Robert Scheler, Heiko Sparenberg Fraunhofer IIS,
 John Hurst
 
 All rights reserved.
@@ -420,44 +420,51 @@ read_PCM_file(CommandOptions& Options)
 
   Result_t result = Reader.OpenRead(Options.input_filename, Options.edit_rate);
 
-  if ( ASDCP_SUCCESS(result) )
+  if ( KM_SUCCESS(result) )
     {
       if ( Options.verbose_flag )
 	{
 	  fprintf(stderr, "Frame Buffer size: %u\n", Options.fb_size);
 	}
+      
+      ASDCP::MXF::InterchangeObject* tmp_obj = 0;
 
-      result = Reader.OP1aHeader().GetMDObjectByType(DefaultCompositeDict().ul(MDD_WaveAudioDescriptor),
-						     reinterpret_cast<MXF::InterchangeObject**>(&wave_descriptor));
+      result = Reader.OP1aHeader().GetMDObjectByType(DefaultCompositeDict().ul(MDD_WaveAudioDescriptor), &tmp_obj);
 
       if ( KM_SUCCESS(result) )
 	{
-	  assert(wave_descriptor);
-	  last_frame = wave_descriptor->ContainerDuration;
+	  wave_descriptor = dynamic_cast<ASDCP::MXF::WaveAudioDescriptor*>(tmp_obj);
 
+	  if ( wave_descriptor == 0 )
+	    {
+	      fprintf(stderr, "File does not contain an essence descriptor.\n");
+	      return RESULT_FAIL;
+	    }
+      
 	  if ( Options.verbose_flag )
 	    {
 	      wave_descriptor->Dump();
 	    }
-	}
-      else
-	{
-	  fprintf(stderr, "File does not contain an essence descriptor.\n");
-	  last_frame = Reader.AS02IndexReader().GetDuration();
-	}
 
-      if ( last_frame == 0 )
-	{
-	  fprintf(stderr, "Unable to determine file duration.\n");
-	  return RESULT_FAIL;
-	}
+	  if ( wave_descriptor->ContainerDuration.get() == 0 )
+	    {
+	      fprintf(stderr, "ContainerDuration not set in file descriptor, attempting to use index duration.\n");
+	      last_frame = Reader.AS02IndexReader().GetDuration();
+	    }
+	  else
+	    {
+	      last_frame = wave_descriptor->ContainerDuration;
+	    }
 
-      FrameBuffer.Capacity(AS_02::MXF::CalcFrameBufferSize(*wave_descriptor, Options.edit_rate));
-      last_frame = AS_02::MXF::CalcFramesFromDurationInSamples(last_frame, *wave_descriptor, Options.edit_rate);
+	  if ( last_frame == 0 )
+	    {
+	      fprintf(stderr, "Unable to determine file duration.\n");
+	      return RESULT_FAIL;
+	    }
 
-      if ( Options.verbose_flag )
-	{
-	  wave_descriptor->Dump();
+	  assert(wave_descriptor);
+	  FrameBuffer.Capacity(AS_02::MXF::CalcFrameBufferSize(*wave_descriptor, Options.edit_rate));
+	  last_frame = AS_02::MXF::CalcFramesFromDurationInSamples(last_frame, *wave_descriptor, Options.edit_rate);
 	}
     }
 
@@ -565,12 +572,12 @@ main(int argc, const char** argv)
     {
       switch ( EssenceType )
 	{
-	case ESS_JPEG_2000:
+	case ESS_AS02_JPEG_2000:
 	  result = read_JP2K_file(Options);
 	  break;
 
-	case ESS_PCM_24b_48k:
-	case ESS_PCM_24b_96k:
+	case ESS_AS02_PCM_24b_48k:
+	case ESS_AS02_PCM_24b_96k:
 	  result = read_PCM_file(Options);
 	  break;
 
@@ -584,11 +591,7 @@ main(int argc, const char** argv)
     {
       fputs("Program stopped on error.\n", stderr);
 
-      if ( result == RESULT_SFORMAT )
-	{
-	  fputs("Use option '-3' to force stereoscopic mode.\n", stderr);
-	}
-      else if ( result != RESULT_FAIL )
+      if ( result != RESULT_FAIL )
 	{
 	  fputs(result, stderr);
 	  fputc('\n', stderr);

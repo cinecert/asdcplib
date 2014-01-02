@@ -139,7 +139,7 @@ public:
 
   virtual ~h__Reader() {}
 
-  Result_t    OpenRead(const char*);
+  Result_t    OpenRead(const std::string&);
   Result_t    MD_to_TimedText_TDesc(TimedText::TimedTextDescriptor& TDesc);
   Result_t    ReadTimedTextResource(FrameBuffer& FrameBuf, AESDecContext* Ctx, HMACContext* HMAC);
   Result_t    ReadAncillaryResource(const byte_t*, FrameBuffer& FrameBuf, AESDecContext* Ctx, HMACContext* HMAC);
@@ -201,7 +201,7 @@ ASDCP::TimedText::MXFReader::h__Reader::MD_to_TimedText_TDesc(TimedText::TimedTe
 
 //
 ASDCP::Result_t
-ASDCP::TimedText::MXFReader::h__Reader::OpenRead(char const* filename)
+ASDCP::TimedText::MXFReader::h__Reader::OpenRead(const std::string& filename)
 {
   Result_t result = OpenMXFRead(filename);
   
@@ -385,7 +385,7 @@ ASDCP::TimedText::MXFReader::RIP()
 // Open the file for reading. The file must exist. Returns error if the
 // operation cannot be completed.
 ASDCP::Result_t
-ASDCP::TimedText::MXFReader::OpenRead(const char* filename) const
+ASDCP::TimedText::MXFReader::OpenRead(const std::string& filename) const
 {
   return m_Reader->OpenRead(filename);
 }
@@ -506,7 +506,7 @@ public:
 
   virtual ~h__Writer() {}
 
-  Result_t OpenWrite(const char*, ui32_t HeaderSize);
+  Result_t OpenWrite(const std::string&, ui32_t HeaderSize);
   Result_t SetSourceStream(const TimedTextDescriptor&);
   Result_t WriteTimedTextResource(const std::string& XMLDoc, AESEncContext* = 0, HMACContext* = 0);
   Result_t WriteAncillaryResource(const FrameBuffer&, AESEncContext* = 0, HMACContext* = 0);
@@ -532,7 +532,7 @@ ASDCP::TimedText::MXFWriter::h__Writer::TimedText_TDesc_to_MD(TimedText::TimedTe
 
 //
 ASDCP::Result_t
-ASDCP::TimedText::MXFWriter::h__Writer::OpenWrite(char const* filename, ui32_t HeaderSize)
+ASDCP::TimedText::MXFWriter::h__Writer::OpenWrite(const std::string& filename, ui32_t HeaderSize)
 {
   if ( ! m_State.Test_BEGIN() )
     return RESULT_STATE;
@@ -749,7 +749,7 @@ ASDCP::TimedText::MXFWriter::RIP()
 // Open the file for writing. The file must not exist. Returns error if
 // the operation cannot be completed.
 ASDCP::Result_t
-ASDCP::TimedText::MXFWriter::OpenWrite(const char* filename, const WriterInfo& Info,
+ASDCP::TimedText::MXFWriter::OpenWrite(const std::string& filename, const WriterInfo& Info,
 				       const TimedTextDescriptor& TDesc, ui32_t HeaderSize)
 {
   if ( Info.LabelSetType != LS_MXF_SMPTE )

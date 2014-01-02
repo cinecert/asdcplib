@@ -70,7 +70,7 @@ ASDCP::h__ASDCPReader::~h__ASDCPReader() {}
 
 // AS-DCP method of opening an MXF file for read
 Result_t
-ASDCP::h__ASDCPReader::OpenMXFRead(const char* filename)
+ASDCP::h__ASDCPReader::OpenMXFRead(const std::string& filename)
 {
   Result_t result = ASDCP::MXF::TrackFileReader<OP1aHeader, OPAtomIndexFooter>::OpenMXFRead(filename);
 

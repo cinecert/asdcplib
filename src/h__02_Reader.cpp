@@ -341,10 +341,10 @@ AS_02::MXF::AS02IndexReader::GetDuration() const
 Result_t
 AS_02::MXF::AS02IndexReader::Lookup(ui32_t frame_num, ASDCP::MXF::IndexTableSegment::IndexEntry& Entry) const
 {
-  std::list<InterchangeObject*>::iterator li;
-  for ( li = m_PacketList->m_List.begin(); li != m_PacketList->m_List.end(); li++ )
+  std::list<InterchangeObject*>::iterator i;
+  for ( i = m_PacketList->m_List.begin(); i != m_PacketList->m_List.end(); ++i )
     {
-      IndexTableSegment *segment = dynamic_cast<IndexTableSegment*>(*li);
+      IndexTableSegment *segment = dynamic_cast<IndexTableSegment*>(*i);
 
       if ( segment != 0 )
 	{
@@ -373,6 +373,7 @@ AS_02::MXF::AS02IndexReader::Lookup(ui32_t frame_num, ASDCP::MXF::IndexTableSegm
 	}
     }
 
+  DefaultLogSink().Error("AS_02::MXF::AS02IndexReader::Lookup FAILED: frame_num=%d\n", frame_num);
   return RESULT_FAIL;
 }
 

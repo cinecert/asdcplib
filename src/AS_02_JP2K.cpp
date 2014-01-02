@@ -55,8 +55,6 @@ class AS_02::JP2K::MXFReader::h__Reader : public AS_02::h__AS02Reader
   ASDCP_NO_COPY_CONSTRUCT(h__Reader);
 
 public:
-  PictureDescriptor m_PDesc;        // codestream parameter list
-
   h__Reader(const Dictionary& d) :
     AS_02::h__AS02Reader(d) {}
 
@@ -229,7 +227,7 @@ AS_02::JP2K::MXFReader::FillWriterInfo(WriterInfo& Info) const
 //------------------------------------------------------------------------------------------
 
 //
-class AS_02::JP2K::MXFWriter::h__Writer : public AS_02::h__AS02Writer
+class AS_02::JP2K::MXFWriter::h__Writer : public AS_02::h__AS02WriterFrame
 {
   ASDCP_NO_COPY_CONSTRUCT(h__Writer);
   h__Writer();
@@ -237,10 +235,9 @@ class AS_02::JP2K::MXFWriter::h__Writer : public AS_02::h__AS02Writer
   JPEG2000PictureSubDescriptor* m_EssenceSubDescriptor;
 
 public:
-  PictureDescriptor m_PDesc;
   byte_t            m_EssenceUL[SMPTE_UL_LENGTH];
 
-  h__Writer(const Dictionary& d) : h__AS02Writer(d), m_EssenceSubDescriptor(0) {
+  h__Writer(const Dictionary& d) : h__AS02WriterFrame(d), m_EssenceSubDescriptor(0) {
     memset(m_EssenceUL, 0, SMPTE_UL_LENGTH);
   }
 
@@ -334,6 +331,11 @@ AS_02::JP2K::MXFWriter::h__Writer::SetSourceStream(const std::string& label, con
       result = WriteAS02Header(label, UL(m_Dict->ul(MDD_JPEG_2000WrappingFrame)),
 			       PICT_DEF_LABEL, UL(m_EssenceUL), UL(m_Dict->ul(MDD_PictureDataDef)),
 			       edit_rate, derive_timecode_rate_from_edit_rate(edit_rate));
+
+      if ( KM_SUCCESS(result) )
+	{
+	  this->m_IndexWriter.SetPrimerLookup(&this->m_HeaderPart.m_Primer);
+	}
     }
 
   return result;

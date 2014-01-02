@@ -60,7 +60,7 @@ namespace DCData
     h__Reader(const Dictionary& d) : ASDCP::h__ASDCPReader(d), m_EssenceDescriptor(0),
                                      m_DDesc() {}
     ~h__Reader() {}
-    Result_t    OpenRead(const char*);
+    Result_t    OpenRead(const std::string&);
     Result_t    ReadFrame(ui32_t, FrameBuffer&, AESDecContext*, HMACContext*);
     Result_t    MD_to_DCData_DDesc(DCData::DCDataDescriptor& DDesc);
   };
@@ -80,7 +80,7 @@ namespace DCData
 
     ~h__Writer(){}
 
-    Result_t OpenWrite(const char*, ui32_t HeaderSize, const SubDescriptorList_t& subDescriptors);
+    Result_t OpenWrite(const std::string&, ui32_t HeaderSize, const SubDescriptorList_t& subDescriptors);
     Result_t SetSourceStream(const DCDataDescriptor&, const byte_t*, const std::string&, const std::string&);
     Result_t WriteFrame(const FrameBuffer&, AESEncContext* = 0, HMACContext* = 0);
     Result_t Finalize();

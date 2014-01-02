@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2004-2009, John Hurst
+Copyright (c) 2004-2013, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -55,9 +55,8 @@ public:
 
   ~h__CodestreamParser() {}
 
-  Result_t OpenReadFrame(const char* filename, FrameBuffer& FB)
+  Result_t OpenReadFrame(const std::string& filename, FrameBuffer& FB)
   {
-    ASDCP_TEST_NULL_STR(filename);
     m_File.Close();
     Result_t result = m_File.OpenRead(filename);
 
@@ -198,7 +197,7 @@ ASDCP::JP2K::CodestreamParser::~CodestreamParser()
 // Opens the stream for reading, parses enough data to provide a complete
 // set of stream metadata for the MXFWriter below.
 ASDCP::Result_t
-ASDCP::JP2K::CodestreamParser::OpenReadFrame(const char* filename, FrameBuffer& FB) const
+ASDCP::JP2K::CodestreamParser::OpenReadFrame(const std::string& filename, FrameBuffer& FB) const
 {
   const_cast<ASDCP::JP2K::CodestreamParser*>(this)->m_Parser = new h__CodestreamParser;
   return m_Parser->OpenReadFrame(filename, FB);

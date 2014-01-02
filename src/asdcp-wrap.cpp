@@ -187,6 +187,9 @@ decode_channel_fmt(const std::string& label_name)
   else if ( label_name == "7.1DS" )
     return PCM::CF_CFG_5;
 
+  else if ( label_name == "MCA" )
+    return PCM::CF_CFG_6;
+
   fprintf(stderr, "Error decoding channel format string: %s\n", label_name.c_str());
   fprintf(stderr, "Expecting '5.1', '6.1', '7.1', '7.1DS' or 'WTF'\n");
   return PCM::CF_NONE;
@@ -475,7 +478,7 @@ write_MPEG2_file(CommandOptions& Options)
   Kumu::FortunaRNG   RNG;
 
   // set up essence parser
-  Result_t result = Parser.OpenRead(Options.filenames.front().c_str());
+  Result_t result = Parser.OpenRead(Options.filenames.front());
 
   // set up MXF writer
   if ( ASDCP_SUCCESS(result) )
@@ -531,7 +534,7 @@ write_MPEG2_file(CommandOptions& Options)
 	}
 
       if ( ASDCP_SUCCESS(result) )
-	result = Writer.OpenWrite(Options.out_file.c_str(), Info, VDesc);
+	result = Writer.OpenWrite(Options.out_file, Info, VDesc);
     }
 
   if ( ASDCP_SUCCESS(result) )
@@ -631,12 +634,12 @@ write_JP2K_S_file(CommandOptions& Options)
     }
 
   // set up essence parser
-  Result_t result = ParserLeft.OpenRead(Options.filenames.front().c_str(), Options.j2c_pedantic);
+  Result_t result = ParserLeft.OpenRead(Options.filenames.front(), Options.j2c_pedantic);
 
   if ( ASDCP_SUCCESS(result) )
     {
       Options.filenames.pop_front();
-      result = ParserRight.OpenRead(Options.filenames.front().c_str(), Options.j2c_pedantic);
+      result = ParserRight.OpenRead(Options.filenames.front(), Options.j2c_pedantic);
     }
 
   // set up MXF writer
@@ -696,7 +699,7 @@ write_JP2K_S_file(CommandOptions& Options)
 	}
 
       if ( ASDCP_SUCCESS(result) )
-	result = Writer.OpenWrite(Options.out_file.c_str(), Info, PDesc);
+	result = Writer.OpenWrite(Options.out_file, Info, PDesc);
 
       if ( ASDCP_SUCCESS(result) && Options.picture_coding.HasValue() )
 	{
@@ -771,7 +774,7 @@ write_JP2K_file(CommandOptions& Options)
   Kumu::FortunaRNG        RNG;
 
   // set up essence parser
-  Result_t result = Parser.OpenRead(Options.filenames.front().c_str(), Options.j2c_pedantic);
+  Result_t result = Parser.OpenRead(Options.filenames.front(), Options.j2c_pedantic);
 
   // set up MXF writer
   if ( ASDCP_SUCCESS(result) )
@@ -831,7 +834,7 @@ write_JP2K_file(CommandOptions& Options)
 	}
 
       if ( ASDCP_SUCCESS(result) )
-	result = Writer.OpenWrite(Options.out_file.c_str(), Info, PDesc);
+	result = Writer.OpenWrite(Options.out_file, Info, PDesc);
 
       if ( ASDCP_SUCCESS(result) && Options.picture_coding.HasValue() )
 	{
@@ -915,9 +918,9 @@ write_PCM_file(CommandOptions& Options)
       FrameBuffer.Capacity(PCM::CalcFrameBufferSize(ADesc));
       ADesc.ChannelFormat = Options.channel_fmt;
 
-      if ( Options.use_smpte_labels && ADesc.ChannelFormat == PCM::CF_NONE)
+      if ( Options.use_smpte_labels && ADesc.ChannelFormat == PCM::CF_NONE && Options.mca_config.empty() )
 	{
-	  fprintf(stderr, "ATTENTION! Writing SMPTE audio without ChannelAssignment property (see option -l)\n");
+	  fprintf(stderr, "ATTENTION! Writing SMPTE audio without ChannelAssignment property (see options -C, -l and -m)\n");
 	}
 
       if ( Options.verbose_flag )
@@ -971,7 +974,7 @@ write_PCM_file(CommandOptions& Options)
 	}
 
       if ( ASDCP_SUCCESS(result) )
-	result = Writer.OpenWrite(Options.out_file.c_str(), Info, ADesc);
+	result = Writer.OpenWrite(Options.out_file, Info, ADesc);
 
       if ( ASDCP_SUCCESS(result)
 	   && ( Options.channel_assignment.HasValue()
@@ -1139,7 +1142,7 @@ write_PCM_with_ATMOS_sync_file(CommandOptions& Options)
 	}
 
     if ( ASDCP_SUCCESS(result) )
-      result = Writer.OpenWrite(Options.out_file.c_str(), Info, ADesc);
+      result = Writer.OpenWrite(Options.out_file, Info, ADesc);
   }
 
   if ( ASDCP_SUCCESS(result) )
@@ -1209,7 +1212,7 @@ write_timed_text_file(CommandOptions& Options)
   Kumu::FortunaRNG  RNG;
 
   // set up essence parser
-  Result_t result = Parser.OpenRead(Options.filenames.front().c_str());
+  Result_t result = Parser.OpenRead(Options.filenames.front());
 
   // set up MXF writer
   if ( ASDCP_SUCCESS(result) )
@@ -1262,7 +1265,7 @@ write_timed_text_file(CommandOptions& Options)
 	}
 
       if ( ASDCP_SUCCESS(result) )
-	result = Writer.OpenWrite(Options.out_file.c_str(), Info, TDesc);
+	result = Writer.OpenWrite(Options.out_file, Info, TDesc);
     }
 
   if ( ASDCP_FAILURE(result) )
@@ -1324,7 +1327,7 @@ write_dolby_atmos_file(CommandOptions& Options)
   Kumu::FortunaRNG        RNG;
 
   // set up essence parser
-  Result_t result = Parser.OpenRead(Options.filenames.front().c_str());
+  Result_t result = Parser.OpenRead(Options.filenames.front());
 
   // set up MXF writer
   if ( ASDCP_SUCCESS(result) )
@@ -1382,7 +1385,7 @@ write_dolby_atmos_file(CommandOptions& Options)
 	}
 
     if ( ASDCP_SUCCESS(result) )
-      result = Writer.OpenWrite(Options.out_file.c_str(), Info, ADesc);
+      result = Writer.OpenWrite(Options.out_file, Info, ADesc);
   }
 
   if ( ASDCP_SUCCESS(result) )
@@ -1460,7 +1463,7 @@ main(int argc, const char** argv)
     }
 
   EssenceType_t EssenceType;
-  result = ASDCP::RawEssenceType(Options.filenames.front().c_str(), EssenceType);
+  result = ASDCP::RawEssenceType(Options.filenames.front(), EssenceType);
 
   if ( ASDCP_SUCCESS(result) )
     {

@@ -136,8 +136,8 @@ public:
     return m_DefaultResolver;
   }
 
-  Result_t OpenRead(const char* filename);
-  Result_t OpenRead(const std::string& xml_doc, const char* filename);
+  Result_t OpenRead(const std::string& filename);
+  Result_t OpenRead(const std::string& xml_doc, const std::string& filename);
   Result_t ReadAncillaryResource(const byte_t* uuid, FrameBuffer& FrameBuf, const IResourceResolver& Resolver) const;
 };
 
@@ -178,7 +178,7 @@ decode_rational(const char* str_rat)
 
 //
 Result_t
-ASDCP::TimedText::DCSubtitleParser::h__SubtitleParser::OpenRead(const char* filename)
+ASDCP::TimedText::DCSubtitleParser::h__SubtitleParser::OpenRead(const std::string& filename)
 {
   Result_t result = ReadFileIntoString(filename, m_XMLDoc);
 
@@ -191,14 +191,18 @@ ASDCP::TimedText::DCSubtitleParser::h__SubtitleParser::OpenRead(const char* file
 
 //
 Result_t
-ASDCP::TimedText::DCSubtitleParser::h__SubtitleParser::OpenRead(const std::string& xml_doc, const char* filename)
+ASDCP::TimedText::DCSubtitleParser::h__SubtitleParser::OpenRead(const std::string& xml_doc, const std::string& filename)
 {
   m_XMLDoc = xml_doc;
 
-  if ( filename != 0 )
-    m_Filename = filename;
+  if ( filename.empty() )
+    {
+      m_Filename = "<string>";
+    }
   else
-    m_Filename = "<string>";
+    {
+      m_Filename = filename;
+    }
 
   return OpenRead();
 }
@@ -394,7 +398,7 @@ ASDCP::TimedText::DCSubtitleParser::~DCSubtitleParser()
 // Opens the stream for reading, parses enough data to provide a complete
 // set of stream metadata for the MXFWriter below.
 ASDCP::Result_t
-ASDCP::TimedText::DCSubtitleParser::OpenRead(const char* filename) const
+ASDCP::TimedText::DCSubtitleParser::OpenRead(const std::string& filename) const
 {
   const_cast<ASDCP::TimedText::DCSubtitleParser*>(this)->m_Parser = new h__SubtitleParser;
 
@@ -408,7 +412,7 @@ ASDCP::TimedText::DCSubtitleParser::OpenRead(const char* filename) const
 
 // Parses an XML document to provide a complete set of stream metadata for the MXFWriter below.
 Result_t
-ASDCP::TimedText::DCSubtitleParser::OpenRead(const std::string& xml_doc, const char* filename) const
+ASDCP::TimedText::DCSubtitleParser::OpenRead(const std::string& xml_doc, const std::string& filename) const
 {
   const_cast<ASDCP::TimedText::DCSubtitleParser*>(this)->m_Parser = new h__SubtitleParser;
 
