@@ -140,11 +140,57 @@ command-line utilities all respond to -h.
 
 Change History
 
-2013-xx-xx - enhancements, bug fixes 2.0.x
+2013-07-02 – Additional IMF/AS-02 support, bug fixes 2.0.1
+  o Added preliminary support for timed-text wrapping for AS-02. This
+    work will require changes in SMPTE ST 429-5 and perhaps other
+    standards work, so files created with this implementation are
+    "speculative".  Publication of the revised ST 429-5 may not occur
+    until early 2015.
+  o Fixed missing-index-partion bugs for AS-02 files.
+  o Moved LocalFilenameResolver into the AS_DCP public API so that it
+    can be used by other modules including AS-02.
+  o Did further refactoring of AS-02 Writer classes to separate CBR
+    and VBR indexing implementations.
+  o Fixed wave wrapping UL in clip-wrapped AS-02 files.  Renamed some
+    UL constants to reflect "clip" or "frame" wrapping.
+  o Re-factored JP2K_PDesc_to_MD() and MD_to_JP2K_PDesc() to work
+    with GenericPictureEssenceDescriptor objects.
+  o Fixed a bug that was suppressing PictureComponentSizing,
+    CodingStyleDefault and QuantizationDefault when writing the
+    essence descriptor in a JP2K file (AS-DCP and AS-02).
+  o Fixed the version byte on the following UL values:
+    	  StereoscopicPictureSubDescriptor
+	  GenericPictureEssenceDescriptor_ColorPrimaries
+	  GenericPictureEssenceDescriptor_ActiveHeight
+	  GenericPictureEssenceDescriptor_ActiveWidth
+	  GenericPictureEssenceDescriptor_ActiveXOffset
+	  GenericPictureEssenceDescriptor_ActiveYOffset
+  o Added some essence descriptor options to as-02-wrap.
+  o Added TTML timed-text wrapping option to as-02-wrap.
+  o Changed bit rate display in asdcp-info from mebi-bits/s to
+    mega-bits/s.
+  o Added "SMPTE" / "Interop" format type display to asdcp-info.
+  o Improved integration of ST 377-4 MCA concepts with ST 429-2 static
+    labels.
+  o Modified asdcp-wrap to assume -L when wrapping timed-text (since
+    there is no MXF text wrapping for Interop.)
+  o Added new EssenceType_t values for IMF/AS-02 track files.
+  o Added detection for AS-02 track files to ASDCP::EssenceType()
+  o Changed lots of "const char*" to "const std::string&" in the
+    APIs defined by KM_fileio.h and AS_DCP.h.
+  o Fixed VBR Delta Segment entries to correctly flag progressive
+    material.
+  o Fixed PCM unwrapping bugs in as-02-unwrap.
+  o Fixed missing return statement in ArchivableString::ArchiveLength
+    (thanks to both Kristof Provost and Franck Chopin) 
+  o Fixed broken sample alignment in RF64Writer (thanks to Wolfgang
+    Woehl and Dolby)
+  o Fixed win32 build (thanks to Dolby)
   o fixed a bug that caused blackwave to only produce 96kHz WAV files.
     (thanks to Stephane W)
 
-2013-07-02 - IMF/AS-02 support, bug fixes 2.0.0
+
+2013-07-02 – IMF/AS-02 support, bug fixes 2.0.0
   o Massive refactoring of internals to allow easier implementation
     of AS-02.  Some API changes were made as well (note that
     OPAtomHeader is now OP1aHeader and RIP is no longer part of the
@@ -153,13 +199,14 @@ Change History
     TIME TO EVALUATE THIS RELEASE THOUROUGHLY BEFORE ADDING IT TO
     YOUR RELEASE PATH.
   o Final integration of Fraunhoffer IIS code contribution.  AS-02
-    files are now fully supported with some TODOs and one major
-    exception: LEAD indexes are not supported by the MXF writers
+    files are now fully supported with some TODOs and two major
+    exceptions: LEAD indexes are not supported by the MXF writers
     and interlace images are not yet supported.
   o Added support for MCA labels (ST 428-12) to asdcp-wrap.  Note
     that this project is still in the early stages of interop testing
     so errors are likely present and don't expect any server to
-    understand this feature.
+    make use of this feature.
+
 
 2013-07-01 - Bug fixes, enhancements 1.12.50
   o Fixed missing return statement in ArchivableString::ArchiveLength
