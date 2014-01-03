@@ -141,11 +141,6 @@ command-line utilities all respond to -h.
 Change History
 
 2013-07-02 – Additional IMF/AS-02 support, bug fixes 2.0.1
-  o Added preliminary support for timed-text wrapping for AS-02. This
-    work will require changes in SMPTE ST 429-5 and perhaps other
-    standards work, so files created with this implementation are
-    "speculative".  Publication of the revised ST 429-5 may not occur
-    until early 2015.
   o Fixed missing-index-partion bugs for AS-02 files.
   o Moved LocalFilenameResolver into the AS_DCP public API so that it
     can be used by other modules including AS-02.
@@ -166,7 +161,6 @@ Change History
 	  GenericPictureEssenceDescriptor_ActiveXOffset
 	  GenericPictureEssenceDescriptor_ActiveYOffset
   o Added some essence descriptor options to as-02-wrap.
-  o Added TTML timed-text wrapping option to as-02-wrap.
   o Changed bit rate display in asdcp-info from mebi-bits/s to
     mega-bits/s.
   o Added "SMPTE" / "Interop" format type display to asdcp-info.

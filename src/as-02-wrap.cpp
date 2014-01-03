@@ -692,6 +692,11 @@ write_PCM_file(CommandOptions& Options)
 }
 
 
+
+#if 0
+// NOT YET, unfinished business with ST 2052-1
+
+
 //------------------------------------------------------------------------------------------
 // TimedText essence
 
@@ -806,6 +811,8 @@ write_timed_text_file(CommandOptions& Options)
 
   return result;
 }
+
+#endif
 
 //
 int
