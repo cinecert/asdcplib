@@ -140,7 +140,7 @@ command-line utilities all respond to -h.
 
 Change History
 
-2013-07-02 – Additional IMF/AS-02 support, bug fixes 2.0.1
+2014-01-06 – Additional IMF/AS-02 support, bug fixes 2.1.1
   o Fixed missing-index-partion bugs for AS-02 files.
   o Moved LocalFilenameResolver into the AS_DCP public API so that it
     can be used by other modules including AS-02.
