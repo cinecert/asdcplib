@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2011-2013, Robert Scheler, Heiko Sparenberg Fraunhofer IIS,
+Copyright (c) 2011-2014, Robert Scheler, Heiko Sparenberg Fraunhofer IIS,
 John Hurst
 
 All rights reserved.
@@ -97,7 +97,7 @@ banner(FILE* stream = stdout)
 {
   fprintf(stream, "\n\
 %s (asdcplib %s)\n\n\
-Copyright (c) 2011-2013, Robert Scheler, Heiko Sparenberg Fraunhofer IIS, John Hurst\n\n\
+Copyright (c) 2011-2014, Robert Scheler, Heiko Sparenberg Fraunhofer IIS, John Hurst\n\n\
 asdcplib may be copied only under the terms of the license found at\n\
 the top of every file in the asdcplib distribution kit.\n\n\
 Specify the -h (help) option for further information about %s\n\n",
@@ -119,25 +119,37 @@ USAGE: %s [-h|-help] [-V]\n\
 
   fprintf(stream, "\
 Options:\n\
-  -C <UL>           - Set ChannelAssignment UL value\n\
   -h | -help        - Show help\n\
   -V                - Show version information\n\
+  -a <UUID>         - Specify the Asset ID of the file\n\
+  -A <w>/<h>        - Set aspect ratio for image (default 4/3)\n\
+  -b <buffer-size>  - Specify size in bytes of picture frame buffer\n\
+                      Defaults to 4,194,304 (4MB)\n\
+  -C <UL>           - Set ChannelAssignment UL value\n\
+  -d <duration>     - Number of frames to process, default all\n\
+  -D <depth>        - Component depth for YCbCr images (default: 10)\n\
   -e                - Encrypt JP2K headers (default)\n\
   -E                - Do not encrypt JP2K headers\n\
+  -f <start-frame>  - Starting frame number, default 0\n\
+  -F (0|1)          - Set field dominance for interlaced image (default: 0)\n\
+  -i                - Indicates input essence is interlaced fields (forces -Y)\n\
   -j <key-id-str>   - Write key ID instead of creating a random value\n\
   -k <key-string>   - Use key for ciphertext operations\n\
   -M                - Do not create HMAC values when writing\n\
   -m <expr>         - Write MCA labels using <expr>.  Example:\n\
                         51(L,R,C,LFE,Ls,Rs,),HI,VIN\n\
-  -a <UUID>         - Specify the Asset ID of the file\n\
-  -b <buffer-size>  - Specify size in bytes of picture frame buffer\n\
-                      Defaults to 4,194,304 (4MB)\n\
-  -d <duration>     - Number of frames to process, default all\n\
-  -f <start-frame>  - Starting frame number, default 0\n\
+  -p <ul>           - Set broadcast profile\n\
   -r <n>/<d>        - Edit Rate of the output file.  24/1 is the default\n\
+  -R                - Indicates RGB image essence (default)\n\
   -s <seconds>      - Duration of a frame-wrapped partition (default 60)\n\
+  -t <min>          - Set RGB component minimum code value (default: 0)\n\
+  -T <max>          - Set RGB component maximum code value (default: 1024)\n\
+  -u                - Print UL catalog to stderr\n\
   -v                - Verbose, prints informative messages to stderr\n\
   -W                - Read input file only, do not write source file\n\
+  -x <int>          - Horizontal subsampling degree (default: 2)\n\
+  -X <int>          - Vertical subsampling degree (default: 2)\n\
+  -Y                - Indicates YCbCr image essence (default: RGB)\n\
   -z                - Fail if j2c inputs have unequal parameters (default)\n\
   -Z                - Ignore unequal parameters in j2c inputs\n\
 \n\
@@ -153,12 +165,13 @@ decode_rational(const char* str_rat)
   ui32_t Num = atoi(str_rat);
   ui32_t Den = 0;
 
-  const char* den_str = strrchr(str_rat, ' ');
+  const char* den_str = strrchr(str_rat, '/');
   if ( den_str != 0 )
     Den = atoi(den_str+1);
 
   return ASDCP::Rational(Num, Den);
 }
+
 //
 //
 class CommandOptions
@@ -189,11 +202,20 @@ public:
   std::string out_file; //
   bool show_ul_values_flag;    /// if true, dump the UL table before going tp work.
   Kumu::PathList_t filenames;  // list of filenames to be processed
+
   UL channel_assignment;
   ASDCP::MXF::AS02_MCAConfigParser mca_config;
-  ui32_t cdci_depth;
+
+  UL picture_coding;
   ui32_t rgba_MaxRef;
   ui32_t rgba_MinRef;
+
+  ui32_t horizontal_subsampling;
+  ui32_t vertical_subsampling;
+  ui32_t component_depth;
+  ui8_t frame_layout;
+  ASDCP::Rational aspect_ratio;
+  ui8_t field_dominance;
   ui32_t mxf_header_size;
 
   //new attributes for AS-02 support 
@@ -207,8 +229,10 @@ public:
     no_write_flag(false), version_flag(false), help_flag(false), start_frame(0),
     duration(0xffffffff), j2c_pedantic(true), use_cdci_descriptor(false), edit_rate(24,1), fb_size(FRAME_BUFFER_SIZE),
     show_ul_values_flag(false), index_strategy(AS_02::IS_FOLLOW), partition_space(60),
-    mca_config(g_dict), cdci_depth(0), rgba_MaxRef(1024), rgba_MinRef(0), mxf_header_size(16384)
-
+    mca_config(g_dict), rgba_MaxRef(1024), rgba_MinRef(0),
+    horizontal_subsampling(2), vertical_subsampling(2), component_depth(10),
+    frame_layout(0), aspect_ratio(ASDCP::Rational(4,3)), field_dominance(0),
+    mxf_header_size(16384)
   {
     memset(key_value, 0, KeyLen);
     memset(key_id_value, 0, UUIDlen);
@@ -228,6 +252,11 @@ public:
 	  {
 	    switch ( argv[i][1] )
 	      {
+	      case 'A':
+		TEST_EXTRA_ARG(i, 'A');
+		edit_rate = decode_rational(argv[i]);
+		break;
+
 	      case 'a':
 		asset_id_flag = true;
 		TEST_EXTRA_ARG(i, 'a');
@@ -253,12 +282,17 @@ public:
 		break;
 
 	      case 'C':
-		TEST_EXTRA_ARG(i, 'U');
+		TEST_EXTRA_ARG(i, 'C');
 		if ( ! channel_assignment.DecodeHex(argv[i]) )
 		  {
-		    fprintf(stderr, "Error decoding UL value: %s\n", argv[i]);
+		    fprintf(stderr, "Error decoding ChannelAssignment UL value: %s\n", argv[i]);
 		    return;
 		  }
+		break;
+
+	      case 'D':
+		TEST_EXTRA_ARG(i, 'D');
+		component_depth = abs(atoi(argv[i]));
 		break;
 
 	      case 'd':
@@ -269,6 +303,16 @@ public:
 	      case 'E': encrypt_header_flag = false; break;
 	      case 'e': encrypt_header_flag = true; break;
 
+	      case 'F':
+		TEST_EXTRA_ARG(i, 'F');
+		field_dominance = abs(atoi(argv[i]));
+		if ( field_dominance > 1 )
+		  {
+		    fprintf(stderr, "Field dominance value must be \"0\" or \"1\"\n");
+		    return;
+		  }
+		break;
+
 	      case 'f':
 		TEST_EXTRA_ARG(i, 'f');
 		start_frame = abs(atoi(argv[i]));
@@ -276,7 +320,13 @@ public:
 
 	      case 'h': help_flag = true; break;
 
-	      case 'j': key_id_flag = true;
+	      case 'i':
+		frame_layout = 1;
+		use_cdci_descriptor = true;
+		break;
+
+	      case 'j':
+		key_id_flag = true;
 		TEST_EXTRA_ARG(i, 'j');
 		{
 		  ui32_t length;
@@ -314,9 +364,22 @@ public:
 		  }
 		break;
 
+	      case 'p':
+		TEST_EXTRA_ARG(i, 'p');
+		if ( ! picture_coding.DecodeHex(argv[i]) )
+		  {
+		    fprintf(stderr, "Error decoding PictureEssenceCoding UL value: %s\n", argv[i]);
+		    return;
+		  }
+		break;
+
 	      case 'r':
 		TEST_EXTRA_ARG(i, 'r');
 		edit_rate = decode_rational(argv[i]);
+		break;
+
+	      case 'R':
+		use_cdci_descriptor = false;
 		break;
 
 	      case 's':
@@ -324,10 +387,35 @@ public:
 		partition_space = abs(atoi(argv[i]));
 		break;
 
+	      case 't':
+		TEST_EXTRA_ARG(i, 't');
+		rgba_MinRef = abs(atoi(argv[i]));
+		break;
+
+	      case 'T':
+		TEST_EXTRA_ARG(i, 'T');
+		rgba_MaxRef = abs(atoi(argv[i]));
+		break;
+
 	      case 'u': show_ul_values_flag = true; break;
 	      case 'V': version_flag = true; break;
 	      case 'v': verbose_flag = true; break;
 	      case 'W': no_write_flag = true; break;
+
+	      case 'x':
+		TEST_EXTRA_ARG(i, 'x');
+		horizontal_subsampling = abs(atoi(argv[i]));
+		break;
+
+	      case 'X':
+		TEST_EXTRA_ARG(i, 'X');
+		vertical_subsampling = abs(atoi(argv[i]));
+		break;
+
+	      case 'Y':
+		use_cdci_descriptor = true;
+		break;
+
 	      case 'Z': j2c_pedantic = false; break;
 	      case 'z': j2c_pedantic = true; break;
 
@@ -362,6 +450,12 @@ public:
 
     out_file = filenames.back();
     filenames.pop_back();
+
+    if ( ! picture_coding.HasValue() )
+      {
+	picture_coding = UL(g_dict->ul(MDD_JP2KEssenceCompression_BroadcastProfile_1));
+      }
+
     error_flag = false;
   }
 };
@@ -424,12 +518,13 @@ write_JP2K_file(CommandOptions& Options)
 
 	  if ( ASDCP_SUCCESS(result) )
 	    {
-	      // TODO, select profile
-	      tmp_dscr->PictureEssenceCoding = UL(g_dict->ul(MDD_JP2KEssenceCompression_BroadcastProfile_1));
-	      tmp_dscr->ComponentDepth = Options.cdci_depth;
-
-	      // more options here
-
+	      tmp_dscr->PictureEssenceCoding = Options.picture_coding;
+	      tmp_dscr->HorizontalSubsampling = Options.horizontal_subsampling;
+	      tmp_dscr->VerticalSubsampling = Options.vertical_subsampling;
+	      tmp_dscr->ComponentDepth = Options.component_depth;
+	      tmp_dscr->FrameLayout = Options.frame_layout;
+	      tmp_dscr->AspectRatio = Options.aspect_ratio;
+	      tmp_dscr->FieldDominance = Options.field_dominance;
 	      essence_descriptor = static_cast<ASDCP::MXF::FileDescriptor*>(tmp_dscr);
 	    }
 	}
@@ -444,13 +539,9 @@ write_JP2K_file(CommandOptions& Options)
 
 	  if ( ASDCP_SUCCESS(result) )
 	    {
-	      // TODO, select profile
 	      tmp_dscr->PictureEssenceCoding = UL(g_dict->ul(MDD_JP2KEssenceCompression_BroadcastProfile_1));
 	      tmp_dscr->ComponentMaxRef = Options.rgba_MaxRef;
 	      tmp_dscr->ComponentMinRef = Options.rgba_MinRef;
-
-	      // more options here
-
 	      essence_descriptor = static_cast<ASDCP::MXF::FileDescriptor*>(tmp_dscr);
 	    }
 	}
