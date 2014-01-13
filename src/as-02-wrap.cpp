@@ -111,26 +111,26 @@ usage(FILE* stream = stdout)
   fprintf(stream, "\
 USAGE: %s [-h|-help] [-V]\n\
 \n\
-       %s [-a <uuid>] [-b <buffer-size>] [-C <UL>] [-d <duration>]\n\
-          [-e|-E] [-f <start-frame>] [-j <key-id-string>] [-k <key-string>]\n\
-            [-M] [-m <expr>] [-r <n>/<d>] [-s <seconds>] [-v] [-W]\n\
-          [-z|-Z] <input-file>+ <output-file>\n\n",
+       %s [-a <uuid>] [-A <w>/<h>] [-b <buffer-size>] [-C <UL>] [-d <duration>]\n\
+            [-D <depth>] [-e|-E] [-i] [-j <key-id-string>] [-k <key-string>]\n\
+            [-M] [-m <expr>] [-p <ul>] [-r <n>/<d>] [-R] [-s <seconds>]\n\
+            [-t <min>] [-T <max>] [-u] [-v] [-W] [-x <int>] [-X <int>] [-Y]\n\
+            [-z|-Z] <input-file>+ <output-file>\n\n",
 	  PROGRAM_NAME, PROGRAM_NAME);
 
   fprintf(stream, "\
 Options:\n\
   -h | -help        - Show help\n\
   -V                - Show version information\n\
-  -a <UUID>         - Specify the Asset ID of the file\n\
+  -a <uuid>         - Specify the Asset ID of the file\n\
   -A <w>/<h>        - Set aspect ratio for image (default 4/3)\n\
   -b <buffer-size>  - Specify size in bytes of picture frame buffer\n\
                       Defaults to 4,194,304 (4MB)\n\
-  -C <UL>           - Set ChannelAssignment UL value\n\
+  -C <ul>           - Set ChannelAssignment UL value\n\
   -d <duration>     - Number of frames to process, default all\n\
   -D <depth>        - Component depth for YCbCr images (default: 10)\n\
   -e                - Encrypt JP2K headers (default)\n\
   -E                - Do not encrypt JP2K headers\n\
-  -f <start-frame>  - Starting frame number, default 0\n\
   -F (0|1)          - Set field dominance for interlaced image (default: 0)\n\
   -i                - Indicates input essence is interlaced fields (forces -Y)\n\
   -j <key-id-str>   - Write key ID instead of creating a random value\n\
@@ -189,7 +189,6 @@ public:
   bool   no_write_flag;  // true if no output files are to be written
   bool   version_flag;   // true if the version display option was selected
   bool   help_flag;      // true if the help display option was selected
-  ui32_t start_frame;    // frame number to begin processing
   ui32_t duration;       // number of frames to be processed
   bool   j2c_pedantic;   // passed to JP2K::SequenceParser::OpenRead
   bool use_cdci_descriptor; // 
@@ -226,7 +225,7 @@ public:
   CommandOptions(int argc, const char** argv) :
     error_flag(true), key_flag(false), key_id_flag(false), asset_id_flag(false),
     encrypt_header_flag(true), write_hmac(true), verbose_flag(false), fb_dump_size(0),
-    no_write_flag(false), version_flag(false), help_flag(false), start_frame(0),
+    no_write_flag(false), version_flag(false), help_flag(false),
     duration(0xffffffff), j2c_pedantic(true), use_cdci_descriptor(false), edit_rate(24,1), fb_size(FRAME_BUFFER_SIZE),
     show_ul_values_flag(false), index_strategy(AS_02::IS_FOLLOW), partition_space(60),
     mca_config(g_dict), rgba_MaxRef(1024), rgba_MinRef(0),
@@ -311,11 +310,6 @@ public:
 		    fprintf(stderr, "Field dominance value must be \"0\" or \"1\"\n");
 		    return;
 		  }
-		break;
-
-	      case 'f':
-		TEST_EXTRA_ARG(i, 'f');
-		start_frame = abs(atoi(argv[i]));
 		break;
 
 	      case 'h': help_flag = true; break;
