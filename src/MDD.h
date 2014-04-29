@@ -406,6 +406,8 @@ namespace ASDCP {
 	MDD_AlternativeCenterCuts_4x3, // 368
 	MDD_AlternativeCenterCuts_14x9, // 369
 	MDD_WAVWrappingClip, // 370
+	MDD_DBOXMotionCodePrimaryStream, // 371
+	MDD_DBOXMotionCodeSecondaryStream, // 372
         MDD_Max
     }; // enum MDD_t
 

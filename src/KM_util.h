@@ -510,7 +510,7 @@ namespace Kumu
 
       inline virtual bool HasValue() const { return m_Length > 0; }
 
-      inline virtual ui32_t ArchiveLength() const { return m_Length; }
+      inline virtual ui32_t ArchiveLength() const { return sizeof(ui32_t) + m_Length; }
 
       inline virtual bool Archive(MemIOWriter* Writer) const {
 	assert(Writer);

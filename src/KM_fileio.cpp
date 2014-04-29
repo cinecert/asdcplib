@@ -1415,6 +1415,110 @@ Kumu::DirScanner::GetNext(char* filename)
 }
 
 
+//
+Kumu::DirScannerEx::DirScannerEx() : m_Handle(0) {}
+
+//
+Result_t
+Kumu::DirScannerEx::Open(const std::string& dirname)
+{
+  Result_t result = RESULT_OK;
+
+  if ( ( m_Handle = opendir(dirname.c_str()) ) == 0 )
+    {
+      switch ( errno )
+	{
+	case ENOENT:
+	case ENOTDIR:
+	  result = RESULT_NOTAFILE;
+	case EACCES:
+	  result = RESULT_NO_PERM;
+	case ELOOP:
+	case ENAMETOOLONG:
+	  result = RESULT_PARAM;
+	case EMFILE:
+	case ENFILE:
+	  result = RESULT_STATE;
+	default:
+	  DefaultLogSink().Error("DirScanner::Open(%s): %s\n", dirname.c_str(), strerror(errno));
+	  result = RESULT_FAIL;
+	}
+    }
+
+  if ( KM_SUCCESS(result) )
+    m_Dirname = dirname;
+
+  KM_RESULT_STATE_TEST_IMPLICIT();
+  return result;
+}
+
+//
+Result_t
+Kumu::DirScannerEx::Close()
+{
+  if ( m_Handle == NULL )
+    return RESULT_FILEOPEN;
+
+  if ( closedir(m_Handle) == -1 )
+    {
+      switch ( errno )
+	{
+	case EBADF:
+	case EINTR:
+	  KM_RESULT_STATE_HERE();
+	  return RESULT_STATE;
+
+	default:
+	  DefaultLogSink().Error("DirScanner::Close(): %s\n", strerror(errno));
+	  return RESULT_FAIL;
+	}
+    }
+
+  m_Handle = 0;
+  return RESULT_OK;
+}
+
+//
+Result_t
+Kumu::DirScannerEx::GetNext(std::string& next_item_name, DirectoryEntryType_t& next_item_type)
+{
+  if ( m_Handle == 0 )
+    return RESULT_FILEOPEN;
+
+  struct dirent* entry;
+
+  for (;;)
+    {
+      if ( ( entry = readdir(m_Handle) ) == 0 )
+	return RESULT_ENDOFFILE;
+
+      break;
+    }
+
+  next_item_name.assign(entry->d_name, strlen(entry->d_name));
+
+  switch ( entry->d_type )
+    {
+    case DT_DIR:
+      next_item_type = DET_DIR;
+      break;
+
+    case DT_REG:
+      next_item_type = DET_FILE;
+      break;
+
+    case DT_LNK:
+      next_item_type = DET_LINK;
+      break;
+
+    default:
+      next_item_type = DET_DEV;
+    }
+
+  return RESULT_OK;
+}
+
+
 #endif // KM_WIN32
 
 

@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2003-2013, John Hurst
+Copyright (c) 2003-2014, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -104,7 +104,7 @@ banner(FILE* stream = stdout)
 {
   fprintf(stream, "\n\
 %s (asdcplib %s)\n\n\
-Copyright (c) 2003-2012 John Hurst\n\n\
+Copyright (c) 2003-2014 John Hurst\n\n\
 asdcplib may be copied only under the terms of the license found at\n\
 the top of every file in the asdcplib distribution kit.\n\n\
 Specify the -h (help) option for further information about %s\n\n",
@@ -139,6 +139,8 @@ Options:\n\
   -M                - Do not create HMAC values when writing\n\
   -m <expr>         - Write MCA labels using <expr>.  Example:\n\
                         51(L,R,C,LFE,Ls,Rs,),HI,VIN\n\
+                        Note: The symbol '-' may be used for an unlabeled\n\
+                              channel, but not within a soundfield.\n\
   -a <UUID>         - Specify the Asset ID of the file\n\
   -b <buffer-size>  - Specify size in bytes of picture frame buffer\n\
                       Defaults to 4,194,304 (4MB)\n\
@@ -186,9 +188,6 @@ decode_channel_fmt(const std::string& label_name)
 
   else if ( label_name == "7.1DS" )
     return PCM::CF_CFG_5;
-
-  else if ( label_name == "MCA" )
-    return PCM::CF_CFG_6;
 
   fprintf(stderr, "Error decoding channel format string: %s\n", label_name.c_str());
   fprintf(stderr, "Expecting '5.1', '6.1', '7.1', '7.1DS' or 'WTF'\n");

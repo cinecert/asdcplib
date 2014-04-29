@@ -76,8 +76,11 @@ namespace ASDCP
       AtmosSyncChannelMixer(const byte_t * trackUUID);
       virtual ~AtmosSyncChannelMixer();
 
+      const ui32_t& ChannelCount() const { return m_ChannelCount; }
+
       Result_t OpenRead(ui32_t argc, const char** argv, const Rational& PictureRate);
       Result_t OpenRead(const Kumu::PathList_t& argv, const Rational& PictureRate);
+      Result_t AppendSilenceChannels(const ui32_t& channel_count);
       Result_t FillAudioDescriptor(PCM::AudioDescriptor& ADesc) const;
       Result_t Reset();
       Result_t ReadFrame(PCM::FrameBuffer& OutFB);

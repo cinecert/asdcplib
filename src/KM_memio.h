@@ -128,7 +128,7 @@ namespace Kumu
 	if ( ! WriteRaw((const byte_t*)str.c_str(), len) ) return false;
 	return true;
       }
-    };
+   };
 
   //
   class MemIOReader
@@ -217,11 +217,16 @@ namespace Kumu
 
       inline bool ReadString(std::string& str)
       {
-	ui32_t str_length;
+	ui32_t str_length = 0;
 	if ( ! ReadUi32BE(&str_length) ) return false;
-	if ( ( m_size + str_length ) > m_capacity ) return false;
-	str.assign((const char*)CurrentData(), str_length);
-	if ( ! SkipOffset(str_length) ) return false;
+
+	if ( str_length > 0 )
+	  {
+	    if ( ( m_size + str_length ) > m_capacity ) return false;
+	    str.assign((const char*)CurrentData(), str_length);
+	    if ( ! SkipOffset(str_length) ) return false;
+	  }
+
 	return true;
       }
     };

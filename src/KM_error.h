@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2004-2011, John Hurst
+Copyright (c) 2004-2014, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -134,6 +134,22 @@ namespace Kumu
   if ( (p)[0] == '\0' ) { \
     return Kumu::RESULT_NULL_STR; \
   }
+
+// RESULT_STATE is ambiguous.  Use these everywhere it is assigned to provide some context
+#define KM_RESULT_STATE_TEST_IMPLICIT()					\
+  if ( result == Kumu::RESULT_STATE ) {					\
+    Kumu::DefaultLogSink().Error("RESULT_STATE RETURNED at %s (%d)\n", __FILE__, __LINE__); \
+  }
+
+#define KM_RESULT_STATE_TEST_THIS(_this__r_)				\
+  if ( _this__r_ == Kumu::RESULT_STATE ) {				\
+    Kumu::DefaultLogSink().Error("RESULT_STATE RETURNED at %s (%d)\n", __FILE__, __LINE__); \
+  }
+
+#define KM_RESULT_STATE_HERE()						\
+  Kumu::DefaultLogSink().Error("RESULT_STATE RETURNED at %s (%d)\n", __FILE__, __LINE__);
+
+
 
 namespace Kumu
 {

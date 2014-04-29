@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2003-2012, John Hurst
+Copyright (c) 2003-2014, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -75,7 +75,7 @@ banner(FILE* stream = stdout)
 {
   fprintf(stream, "\n\
 %s (asdcplib %s)\n\n\
-Copyright (c) 2003-2012 John Hurst\n\n\
+Copyright (c) 2003-2014 John Hurst\n\n\
 asdcplib may be copied only under the terms of the license found at\n\
 the top of every file in the asdcplib distribution kit.\n\n\
 Specify the -h (help) option for further information about %s\n\n",
@@ -488,14 +488,17 @@ public:
 	  }
       }
 
-    // scale bytes to megabits
-    static const double mega_const = 1.0 / ( 1000000 / 8.0 );
+    if ( KM_SUCCESS(result) )
+      {
+	// scale bytes to megabits
+	static const double mega_const = 1.0 / ( 1000000 / 8.0 );
 
-    // we did not accumulate the first or last frame, so duration -= 2
-    double avg_bytes_frame = total_frame_bytes / ( m_Desc.ContainerDuration - 2 );
+	// we did not accumulate the first or last frame, so duration -= 2
+	double avg_bytes_frame = total_frame_bytes / ( m_Desc.ContainerDuration - 2 );
 
-    m_MaxBitrate = largest_frame * mega_const * m_Desc.EditRate.Quotient();
-    m_AvgBitrate = avg_bytes_frame * mega_const * m_Desc.EditRate.Quotient();
+	m_MaxBitrate = largest_frame * mega_const * m_Desc.EditRate.Quotient();
+	m_AvgBitrate = avg_bytes_frame * mega_const * m_Desc.EditRate.Quotient();
+      }
   }
 
   //

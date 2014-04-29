@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2011-2013, Robert Scheler, Heiko Sparenberg Fraunhofer IIS,
+Copyright (c) 2011-2014, Robert Scheler, Heiko Sparenberg Fraunhofer IIS,
 John Hurst
 
 All rights reserved.
@@ -127,6 +127,11 @@ namespace AS_02
     }
 
   } // namespace MXF
+
+
+  // IMF App 2 edit rates not already exposed in namespace ASDCP
+  const ASDCP::Rational EditRate_29_97 = ASDCP::Rational(30000, 1001);
+  const ASDCP::Rational EditRate_59_94 = ASDCP::Rational(60000, 1001);
 
   //---------------------------------------------------------------------------------
   // Accessors in the MXFReader and MXFWriter classes below return these types to

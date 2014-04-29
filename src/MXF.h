@@ -459,7 +459,18 @@ namespace ASDCP
 	}
       };
 
-      typedef std::map<const std::string, const UL, ci_comp> mca_label_map_t;
+      struct label_traits
+      {
+        const std::string tag_name;
+	const bool requires_prefix;
+	const UL ul;
+
+      label_traits(const std::string& tag_name, const bool requires_prefix, const UL ul) : 
+	tag_name(tag_name), requires_prefix(requires_prefix), ul(ul) { }
+      };
+
+      typedef std::map<const std::string, const label_traits, ci_comp> mca_label_map_t;
+
       bool decode_mca_string(const std::string& s, const mca_label_map_t& labels,
 			     const Dictionary*& dict, const std::string& language, InterchangeObject_list_t&, ui32_t&);
 
@@ -477,7 +488,7 @@ namespace ASDCP
 	  
 	public:
 	  ASDCP_MCAConfigParser(const Dictionary*&);
-	  bool DecodeString(const std::string& s, const std::string& language = "en");
+	  bool DecodeString(const std::string& s, const std::string& language = "en-US");
 
 	  // Valid only after a successful call to DecodeString
 	  ui32_t ChannelCount() const;

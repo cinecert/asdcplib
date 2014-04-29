@@ -64,7 +64,13 @@ include_HEADERS += \
 	MXF.h \
 	Wav.h \
 	PCMParserList.h \
-	AtmosSyncChannel_Generator.h
+	AtmosSyncChannel_Mixer.h \
+	AtmosSyncChannel_Generator.h \
+	PCMDataProviders.h \
+	SyncCommon.h \
+	SyncEncoder.h \
+	UUIDInformation.h
+
 
 nodist_include_HEADERS = TimedText_Transform.h
 endif

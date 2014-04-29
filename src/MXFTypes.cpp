@@ -410,7 +410,7 @@ ASDCP::MXF::ISO8String::Archive(Kumu::MemIOWriter* Writer) const
       return false;
     }
 
-  return Writer->WriteString(*this);
+  return Writer->WriteRaw((const byte_t*)c_str(), size());
 }
 
 //------------------------------------------------------------------------------------------
