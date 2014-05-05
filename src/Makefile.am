@@ -200,50 +200,50 @@ endif
 
 # sources and linkage for CLI utilities
 asdcp_test_SOURCES = asdcp-test.cpp
-asdcp_test_LDADD = libasdcp.la
+asdcp_test_LDADD = libasdcp.la libkumu.la
 
 asdcp_wrap_SOURCES = asdcp-wrap.cpp
-asdcp_wrap_LDADD = libasdcp.la
+asdcp_wrap_LDADD = libasdcp.la libkumu.la
 
 asdcp_unwrap_SOURCES = asdcp-unwrap.cpp
-asdcp_unwrap_LDADD = libasdcp.la
+asdcp_unwrap_LDADD = libasdcp.la libkumu.la
 
 asdcp_util_SOURCES = asdcp-util.cpp
-asdcp_util_LDADD = libasdcp.la
+asdcp_util_LDADD = libasdcp.la libkumu.la
 
 asdcp_info_SOURCES = asdcp-info.cpp
-asdcp_info_LDADD = libasdcp.la
+asdcp_info_LDADD = libasdcp.la libkumu.la
 
 kmfilegen_SOURCES = kmfilegen.cpp
-kmfilegen_LDADD = libkumu.la
+kmfilegen_LDADD = libkumu.la 
 
 kmrandgen_SOURCES = kmrandgen.cpp
-kmrandgen_LDADD = libkumu.la
+kmrandgen_LDADD = libkumu.la 
 
 kmuuidgen_SOURCES = kmuuidgen.cpp
-kmuuidgen_LDADD = libkumu.la
+kmuuidgen_LDADD = libkumu.la 
 
 blackwave_SOURCES = blackwave.cpp
-blackwave_LDADD = libasdcp.la
+blackwave_LDADD = libasdcp.la  libkumu.la
 
 klvwalk_SOURCES = klvwalk.cpp
-klvwalk_LDADD = libasdcp.la
+klvwalk_LDADD = libasdcp.la libkumu.la
 
 wavesplit_SOURCES = wavesplit.cpp
-wavesplit_LDADD = libasdcp.la
+wavesplit_LDADD = libasdcp.la libkumu.la
 
 j2c_test_SOURCES = j2c-test.cpp
-j2c_test_LDADD = libasdcp.la
+j2c_test_LDADD = libasdcp.la libkumu.la
 
 klvsplit_SOURCES = klvsplit.cpp
-klvsplit_LDADD = libasdcp.la
+klvsplit_LDADD = libasdcp.la libkumu.la
 
 if USE_AS_02
 as_02_wrap_SOURCES = as-02-wrap.cpp
-as_02_wrap_LDADD = libas02.la
+as_02_wrap_LDADD = libas02.la libasdcp.la libkumu.la
 
 as_02_unwrap_SOURCES = as-02-unwrap.cpp
-as_02_unwrap_LDADD = libas02.la
+as_02_unwrap_LDADD = libas02.la libasdcp.la libkumu.la
 endif
 
 # list of programs that need to be compiled for use in test suite
@@ -265,7 +265,7 @@ fips_186_rng_test_SOURCES = fips-186-rng-test.cpp
 fips_186_rng_test_LDADD = libasdcp.la
 
 asdcp_version_SOURCES = asdcp-version.cpp
-asdcp_version_LDADD = libkumu.la
+asdcp_version_LDADD = libkumu.la 
 
 if DEV_HEADERS
 nodist_tt_xform_SOURCES = tt-xform.cpp
