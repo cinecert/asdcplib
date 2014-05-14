@@ -122,7 +122,7 @@ ASDCP::KLVPacket::HasUL(const byte_t* ul)
 {
   if ( m_KeyStart != 0 )
     {
-      return ( memcmp(ul, m_KeyStart, SMPTE_UL_LENGTH) == 0 ) ? true : false;
+      return UL(ul) == UL(m_KeyStart);
     }
 
   if ( m_UL.HasValue() )

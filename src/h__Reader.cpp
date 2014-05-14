@@ -38,7 +38,7 @@ using namespace ASDCP::MXF;
 
 static Kumu::Mutex sg_DefaultMDInitLock;
 static bool        sg_DefaultMDTypesInit = false;
-static const ASDCP::Dictionary *sg_dict;
+static const ASDCP::Dictionary *sg_dict = 0;
 
 //
 void

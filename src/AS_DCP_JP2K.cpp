@@ -69,7 +69,7 @@ ASDCP::JP2K::operator << (std::ostream& strm, const PictureDescriptor& PDesc)
   strm << "  bits  h-sep v-sep" << std::endl;
 
   ui32_t i;
-  for ( i = 0; i < PDesc.Csize; i++ )
+  for ( i = 0; i < PDesc.Csize && i < MaxComponents; ++i )
     {
       strm << "  " << std::setw(4) << PDesc.ImageComponents[i].Ssize + 1 /* See ISO 15444-1, Table A11, for the origin of '+1' */
 	   << "  " << std::setw(5) << PDesc.ImageComponents[i].XRsize
@@ -90,13 +90,13 @@ ASDCP::JP2K::operator << (std::ostream& strm, const PictureDescriptor& PDesc)
 
   ui32_t precinct_set_size = 0;
 
-  for ( i = 0; PDesc.CodingStyleDefault.SPcod.PrecinctSize[i] != 0 && i < MaxPrecincts; i++ )
+  for ( i = 0; PDesc.CodingStyleDefault.SPcod.PrecinctSize[i] != 0 && i < MaxPrecincts; ++i )
     precinct_set_size++;
 
   strm << "          Precincts: " << (short) precinct_set_size << std::endl;
   strm << "precinct dimensions:" << std::endl;
 
-  for ( i = 0; i < precinct_set_size; i++ )
+  for ( i = 0; i < precinct_set_size && i < MaxPrecincts; ++i )
     strm << "    " << i + 1 << ": " << s_exp_lookup[PDesc.CodingStyleDefault.SPcod.PrecinctSize[i]&0x0f] << " x "
 	 << s_exp_lookup[(PDesc.CodingStyleDefault.SPcod.PrecinctSize[i]>>4)&0x0f] << std::endl;
 
@@ -154,7 +154,7 @@ ASDCP::JP2K::PictureDescriptorDump(const PictureDescriptor& PDesc, FILE* stream)
   fprintf(stream, "  bits  h-sep v-sep\n");
 
   ui32_t i;
-  for ( i = 0; i < PDesc.Csize; i++ )
+  for ( i = 0; i < PDesc.Csize && i < MaxComponents; i++ )
     {
       fprintf(stream, "  %4d  %5d %5d\n",
 	      PDesc.ImageComponents[i].Ssize + 1, // See ISO 15444-1, Table A11, for the origin of '+1'
@@ -178,13 +178,13 @@ ASDCP::JP2K::PictureDescriptorDump(const PictureDescriptor& PDesc, FILE* stream)
 
   ui32_t precinct_set_size = 0;
 
-  for ( i = 0; PDesc.CodingStyleDefault.SPcod.PrecinctSize[i] != 0 && i < MaxPrecincts; i++ )
+  for ( i = 0; PDesc.CodingStyleDefault.SPcod.PrecinctSize[i] != 0 && i < MaxPrecincts; ++i )
     precinct_set_size++;
 
   fprintf(stream, "          Precincts: %hd\n", precinct_set_size);
   fprintf(stream, "precinct dimensions:\n");
 
-  for ( i = 0; i < precinct_set_size; i++ )
+  for ( i = 0; i < precinct_set_size && i < MaxPrecincts; i++ )
     fprintf(stream, "    %d: %d x %d\n", i + 1,
 	    s_exp_lookup[PDesc.CodingStyleDefault.SPcod.PrecinctSize[i]&0x0f],
 	    s_exp_lookup[(PDesc.CodingStyleDefault.SPcod.PrecinctSize[i]>>4)&0x0f]

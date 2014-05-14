@@ -477,7 +477,7 @@ public:
 	  {
 	    if ( last_stream_offset != 0 )
 	      {
-		ui64_t this_frame_size = entry.StreamOffset - last_stream_offset;
+		ui64_t this_frame_size = entry.StreamOffset - last_stream_offset - 20; // do not count the bytes that represent the KLV wrapping 
 		total_frame_bytes += this_frame_size;
 
 		if ( this_frame_size > largest_frame )
