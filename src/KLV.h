@@ -146,15 +146,14 @@ inline const char* ui64sz(ui64_t i, char* buf)
       std::map<ASDCP::UL, ui32_t>   m_md_lookup;
       std::map<std::string, ui32_t> m_md_sym_lookup;
       std::map<ui32_t, ASDCP::UL>   m_md_rev_lookup;
-      MDDEntry m_MDD_Table[(ui32_t)ASDCP::MDD_Max];
 
       ASDCP_NO_COPY_CONSTRUCT(Dictionary);
 
     public:
+      MDDEntry m_MDD_Table[(ui32_t)ASDCP::MDD_Max];
+
       Dictionary();
       ~Dictionary();
-
-      //      bool operator==(const Dictionary& rhs) const { return this == &rhs; }
 
       void Init();
       bool AddEntry(const MDDEntry& Entry, ui32_t index);
@@ -176,6 +175,7 @@ inline const char* ui64sz(ui64_t i, char* buf)
   const Dictionary& DefaultInteropDict();
   const Dictionary& DefaultCompositeDict();
 
+  void default_md_object_init();
 
   //
   class IPrimerLookup

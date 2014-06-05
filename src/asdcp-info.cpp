@@ -35,6 +35,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <KM_fileio.h>
 #include <AS_DCP.h>
+#include <AS_02.h>
 #include <MXF.h>
 #include <Metadata.h>
 
@@ -629,6 +630,13 @@ show_file_info(CommandOptions& Options)
     {
       FileInfoWrapper<ASDCP::ATMOS::MXFReader, MyAtmosDescriptor> wrapper;
       result = wrapper.file_info(Options, "Dolby ATMOS");
+    }
+  else if ( EssenceType == ESS_AS02_PCM_24b_48k
+	    || EssenceType == ESS_AS02_PCM_24b_96k
+	    || EssenceType == ESS_AS02_JPEG_2000
+	    || EssenceType == ESS_AS02_TIMED_TEXT )
+    {
+      fprintf(stderr, "File is AS-02. Inspection in not supported by this command.\n");
     }
   else
     {

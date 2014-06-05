@@ -60,7 +60,6 @@ extern MXF::RIP *g_RIP;
 
 namespace ASDCP
 {
-  void default_md_object_init();
 
   //
   static std::vector<int>
@@ -597,13 +596,17 @@ namespace ASDCP
 	  TrackSet<TimecodeComponent> MPTCTrack =
 	    CreateTimecodeTrack<MaterialPackage>(m_HeaderPart, *m_MaterialPackage,
 						 tc_edit_rate, TCFrameRate, 0, m_Dict);
+
+	  MPTCTrack.Sequence->Duration.set_has_value();
 	  m_DurationUpdateList.push_back(&(MPTCTrack.Sequence->Duration.get()));
+	  MPTCTrack.Clip->Duration.set_has_value();
 	  m_DurationUpdateList.push_back(&(MPTCTrack.Clip->Duration.get()));
 
 	  TrackSet<SourceClip> MPTrack =
 	    CreateTrackAndSequence<MaterialPackage, SourceClip>(m_HeaderPart, *m_MaterialPackage,
 								TrackName, clip_edit_rate, DataDefinition,
 								2, m_Dict);
+	  MPTrack.Sequence->Duration.set_has_value();
 	  m_DurationUpdateList.push_back(&(MPTrack.Sequence->Duration.get()));
 
 	  MPTrack.Clip = new SourceClip(m_Dict);
@@ -612,6 +615,8 @@ namespace ASDCP
 	  MPTrack.Clip->DataDefinition = DataDefinition;
 	  MPTrack.Clip->SourcePackageID = SourcePackageUMID;
 	  MPTrack.Clip->SourceTrackID = 2;
+
+	  MPTrack.Clip->Duration.set_has_value();
 	  m_DurationUpdateList.push_back(&(MPTrack.Clip->Duration.get()));
 
   
@@ -630,12 +635,18 @@ namespace ASDCP
 	    CreateTimecodeTrack<SourcePackage>(m_HeaderPart, *m_FilePackage,
 					       tc_edit_rate, TCFrameRate,
 					       ui64_C(3600) * TCFrameRate, m_Dict);
+
+	  FPTCTrack.Sequence->Duration.set_has_value();
 	  m_DurationUpdateList.push_back(&(FPTCTrack.Sequence->Duration.get()));
+	  FPTCTrack.Clip->Duration.set_has_value();
 	  m_DurationUpdateList.push_back(&(FPTCTrack.Clip->Duration.get()));
+
 	  TrackSet<SourceClip> FPTrack =
 	    CreateTrackAndSequence<SourcePackage, SourceClip>(m_HeaderPart, *m_FilePackage,
 							      TrackName, clip_edit_rate, DataDefinition,
 							      2, m_Dict);
+
+	  FPTrack.Sequence->Duration.set_has_value();
 	  m_DurationUpdateList.push_back(&(FPTrack.Sequence->Duration.get()));
 
 	  // Consult ST 379:2004 Sec. 6.3, "Element to track relationship" to see where "12" comes from.
@@ -649,6 +660,8 @@ namespace ASDCP
 	  // for now we do not allow setting this value, so all files will be 'original'
 	  FPTrack.Clip->SourceTrackID = 0;
 	  FPTrack.Clip->SourcePackageID = NilUMID;
+
+	  FPTrack.Clip->Duration.set_has_value();
 	  m_DurationUpdateList.push_back(&(FPTrack.Clip->Duration.get()));
 
 	  m_EssenceDescriptor->LinkedTrackID = FPTrack.Track->TrackID;
@@ -688,13 +701,17 @@ namespace ASDCP
 	  TrackSet<TimecodeComponent> MPTCTrack =
 	    CreateTimecodeTrack<MaterialPackage>(m_HeaderPart, *m_MaterialPackage,
 						 tc_edit_rate, tc_frame_rate, 0, m_Dict);
+
+	  MPTCTrack.Sequence->Duration.set_has_value();
 	  m_DurationUpdateList.push_back(&(MPTCTrack.Sequence->Duration.get()));
+	  MPTCTrack.Clip->Duration.set_has_value();
 	  m_DurationUpdateList.push_back(&(MPTCTrack.Clip->Duration.get()));
 
 	  TrackSet<DMSegment> MPTrack =
 	    CreateTrackAndSequence<MaterialPackage, DMSegment>(m_HeaderPart, *m_MaterialPackage,
 							       TrackName, clip_edit_rate, DataDefinition,
 							       2, m_Dict);
+	  MPTrack.Sequence->Duration.set_has_value();
 	  m_DurationUpdateList.push_back(&(MPTrack.Sequence->Duration.get()));
 
 	  MPTrack.Clip = new DMSegment(m_Dict);
@@ -703,6 +720,7 @@ namespace ASDCP
 	  MPTrack.Clip->DataDefinition = DataDefinition;
 	  //  MPTrack.Clip->SourcePackageID = SourcePackageUMID;
 	  //  MPTrack.Clip->SourceTrackID = 2;
+
 	  m_DurationUpdateList.push_back(&(MPTrack.Clip->Duration));
 
   
@@ -721,13 +739,18 @@ namespace ASDCP
 	    CreateTimecodeTrack<SourcePackage>(m_HeaderPart, *m_FilePackage,
 					       clip_edit_rate, tc_frame_rate,
 					       ui64_C(3600) * tc_frame_rate, m_Dict);
+
+	  FPTCTrack.Sequence->Duration.set_has_value();
 	  m_DurationUpdateList.push_back(&(FPTCTrack.Sequence->Duration.get()));
+	  FPTCTrack.Clip->Duration.set_has_value();
 	  m_DurationUpdateList.push_back(&(FPTCTrack.Clip->Duration.get()));
 
 	  TrackSet<DMSegment> FPTrack =
 	    CreateTrackAndSequence<SourcePackage, DMSegment>(m_HeaderPart, *m_FilePackage,
 							     TrackName, clip_edit_rate, DataDefinition,
 							     2, m_Dict);
+
+	  FPTrack.Sequence->Duration.set_has_value();
 	  m_DurationUpdateList.push_back(&(FPTrack.Sequence->Duration.get()));
 
 	  FPTrack.Clip = new DMSegment(m_Dict);
@@ -737,6 +760,7 @@ namespace ASDCP
 	  FPTrack.Clip->EventComment = "ST 429-5 Timed Text";
 
 	  m_DurationUpdateList.push_back(&(FPTrack.Clip->Duration));
+
 	  m_EssenceDescriptor->LinkedTrackID = FPTrack.Track->TrackID;
 	}
 

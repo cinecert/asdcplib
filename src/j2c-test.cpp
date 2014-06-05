@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2005-2010, John Hurst
+Copyright (c) 2005-2014, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -167,6 +167,7 @@ main(int argc, const char** argv)
   Marker        MyMarker;
   CodestreamParser Parser;
   std::list<std::string>::iterator i;
+  bool has_soc = false;
 
   Result_t result = FB.Capacity(1024*1024*4);
   
@@ -181,6 +182,28 @@ main(int argc, const char** argv)
 
 	  while ( p < end_p && ASDCP_SUCCESS(GetNextMarker(&p, MyMarker)) )
 	    {
+	      if ( MyMarker.m_Type == MRK_SOC )
+		{
+		  if ( has_soc )
+		    {
+		      fprintf(stderr, "Duplicate SOC detected.\n");
+		      result = RESULT_FAIL;
+		      break;
+		    }
+		  else
+		    {
+		      has_soc = true;
+		      continue;
+		    }
+
+		  if  ( ! has_soc )
+		    {
+		      fprintf(stderr, "Markers detected before SOC.\n");
+		      result = RESULT_FAIL;
+		      break;
+		    }
+		}
+
 	      if ( Options.verbose_flag )
 		{
 		  MyMarker.Dump(stdout);
@@ -208,7 +231,31 @@ main(int argc, const char** argv)
 		  Accessor::COM COM_(MyMarker);
 		  COM_.Dump(stdout);
 		}
+	      else if ( MyMarker.m_Type == MRK_QCD )
+		{
+		  Accessor::QCD QCD_(MyMarker);
+		  QCD_.Dump(stdout);
+		}
+	      else
+		{
+		  fprintf(stderr, "Unprocessed marker - %s\n", GetMarkerString(MyMarker.m_Type));
+		}
 	    }
+
+	  /*
+	  while ( p < end_p )
+	    {
+	      if ( *p == 0xff )
+		{
+		  fprintf(stdout, "0x%02x 0x%02x 0x%02x\n", *(p+1), *(p+2), *(p+3));
+		  p += 4;
+		}
+	      else
+		{
+		  ++p;
+		}
+	    }
+	  */
 	}
     }
 

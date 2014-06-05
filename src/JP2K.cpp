@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2005-2009, John Hurst
+Copyright (c) 2005-2014, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -102,7 +102,7 @@ ASDCP::JP2K::GetNextMarker(const byte_t** buf, JP2K::Marker& Marker)
 
 //
 void
-ASDCP::JP2K::Accessor::SIZ::ReadComponent(ui32_t index, ASDCP::JP2K::ImageComponent_t& IC)
+ASDCP::JP2K::Accessor::SIZ::ReadComponent(const ui32_t index, ASDCP::JP2K::ImageComponent_t& IC) const
 {
   assert ( index < Csize() );
   const byte_t* p = m_MarkerData + 36 + (index * 3);
@@ -113,7 +113,7 @@ ASDCP::JP2K::Accessor::SIZ::ReadComponent(ui32_t index, ASDCP::JP2K::ImageCompon
 
 //
 void
-ASDCP::JP2K::Accessor::SIZ::Dump(FILE* stream)
+ASDCP::JP2K::Accessor::SIZ::Dump(FILE* stream) const
 {
   if ( stream == 0 )
     stream = stderr;
@@ -146,7 +146,7 @@ ASDCP::JP2K::Accessor::SIZ::Dump(FILE* stream)
 
 //
 void
-ASDCP::JP2K::Accessor::COD::Dump(FILE* stream)
+ASDCP::JP2K::Accessor::COD::Dump(FILE* stream) const
 {
   if ( stream == 0 )
     stream = stderr;
@@ -180,20 +180,45 @@ ASDCP::JP2K::Accessor::COD::Dump(FILE* stream)
 }
 
 //
+const char*
+ASDCP::JP2K::Accessor::GetQuantizationTypeString(const Accessor::QuantizationType_t t)
+{
+  switch ( t )
+    {
+    case QT_NONE: return "none";
+    case QT_DERIVED: return "scalar derived";
+    case QT_EXP: return "scalar expounded";
+    }
+
+  return "**UNKNOWN**";
+}
+
+//
 void
-ASDCP::JP2K::Accessor::COM::Dump(FILE* stream)
+ASDCP::JP2K::Accessor::QCD::Dump(FILE* stream) const
+{
+  if ( stream == 0 )
+    stream = stderr;
+
+  fprintf(stream, "QCD: \n");
+  fprintf(stream, "QuantizationType: %s\n", GetQuantizationTypeString(QuantizationType()));
+  fprintf(stream, "       GuardBits: %d\n", GuardBits());
+  fprintf(stream, "           SPqcd:\n", GuardBits());
+  Kumu::hexdump(m_MarkerData, m_DataSize, stream);
+}
+
+//
+void
+ASDCP::JP2K::Accessor::COM::Dump(FILE* stream) const
 {
   if ( stream == 0 )
     stream = stderr;
 
   if ( IsText() )
     {
-      char* t_str = (char*)malloc(CommentSize() + 1);
-      assert( t_str != 0 );
-      ui32_t cs = CommentSize();
-      memcpy(t_str, CommentData(), cs);
-      t_str[cs] = 0;
-      fprintf(stream, "COM:%s\n", t_str);
+      std::string tmp_str;
+      tmp_str.assign((char*)CommentData(), CommentSize());
+      fprintf(stream, "COM:%s\n", tmp_str.c_str());
     }
   else
     {

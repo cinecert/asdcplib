@@ -39,6 +39,8 @@ if ENABLE_RANDOM_UUID
 AM_CPPFLAGS += -DCONFIG_RANDOM_UUID
 endif
 
+AM_CPPFLAGS += -g
+
 # list of all the header files that should be installed
 include_HEADERS = \
 	KM_error.h \
@@ -71,8 +73,6 @@ include_HEADERS += \
 	SyncEncoder.h \
 	UUIDInformation.h
 
-
-nodist_include_HEADERS = TimedText_Transform.h
 endif
 
 if USE_AS_02
@@ -117,10 +117,6 @@ libasdcp_la_SOURCES = MPEG2_Parser.cpp MPEG.cpp JP2K_Codestream_Parser.cpp \
 	SyncEncoder.c SyncEncoder.h SyncCommon.h CRC16.c CRC16.h \
 	UUIDInformation.c UUIDInformation.h
 
-
-if DEV_HEADERS
-nodist_libasdcp_la_SOURCES += TimedText_Transform.h TimedText_Transform.cpp
-endif
 
 libasdcp_la_LDFLAGS = -release @VERSION@
 # additional libraries to link against for a library
