@@ -143,7 +143,7 @@ Options:\n\
   -R                - Indicates RGB image essence (default)\n\
   -s <seconds>      - Duration of a frame-wrapped partition (default 60)\n\
   -t <min>          - Set RGB component minimum code value (default: 0)\n\
-  -T <max>          - Set RGB component maximum code value (default: 1024)\n\
+  -T <max>          - Set RGB component maximum code value (default: 1023)\n\
   -u                - Print UL catalog to stderr\n\
   -v                - Verbose, prints informative messages to stderr\n\
   -W                - Read input file only, do not write source file\n\
@@ -228,7 +228,7 @@ public:
     no_write_flag(false), version_flag(false), help_flag(false),
     duration(0xffffffff), j2c_pedantic(true), use_cdci_descriptor(false), edit_rate(24,1), fb_size(FRAME_BUFFER_SIZE),
     show_ul_values_flag(false), index_strategy(AS_02::IS_FOLLOW), partition_space(60),
-    mca_config(g_dict), rgba_MaxRef(1024), rgba_MinRef(0),
+    mca_config(g_dict), rgba_MaxRef(1023), rgba_MinRef(0),
     horizontal_subsampling(2), vertical_subsampling(2), component_depth(10),
     frame_layout(0), aspect_ratio(ASDCP::Rational(4,3)), field_dominance(0),
     mxf_header_size(16384)
