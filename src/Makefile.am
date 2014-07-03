@@ -154,7 +154,8 @@ nodist_libpyasdcp_la_SOURCES = \
 	asdcp_python_mxf.cpp \
 	asdcp_python_mxf.h \
 	asdcp_python_mxf_text.cpp \
-	asdcp_python_mxf_metadata.cpp
+	asdcp_python_mxf_metadata.cpp \
+	TimedText_Transform.h
 
 
 libpyasdcp_la_CPPFLAGS = @PYTHON_CPPFLAGS@
