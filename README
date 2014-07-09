@@ -140,6 +140,30 @@ command-line utilities all respond to -h.
 
 Change History
 
+2014-07-09 - Additional IMF/AS-02 support, bug fixes and enhancements, 2.1.4
+  o Added IMF App 2 edit rates in AS_02 namespace: EditRate_29_97, 
+    EditRate_59_94. 
+  o Revised AEC CBC context objects to copy the key rather than  
+    keep the reference passed in to it.
+  o Addressed a bug that would allow unimpeded iteration of component 
+    values in a JP2K::PictureDescriptor object.
+  o Addressed a bug that was incorrectly recording the sequence Duration 
+    in MXF Track objects.
+  o Added ASDCP::AtmosSyncChannelMixer::AppendSilenceChannels()
+  o Added a QCD decoder to the j2c parser.
+  o Altered ASDCP::KLVPacket::HasUL() to use version-blind matching.
+  o Fixed an uninitialized variable in MemIOReader::ReadString() that  
+    caused unbounded reads.
+  o Fixed broken ByteString::ArchiveLength() method
+  o Fixed broken version numbers on SoundfieldGroupLinkID and  
+    GroupOfSoundfieldGroupsLinkID UL values.
+  o Added DBOXMotionCodePrimaryStream and DBOXMotionCodeSecondaryStream UL 
+    values to the internal dictionary.
+  o Added optional prefix handling to MCA label generator.
+  o Re-factored MCA label generator to include additional  
+    metadata (Thanks to Mike Radford).
+  o Added new options to as-02-wrap.
+
 2014-01-06 – Additional IMF/AS-02 support, bug fixes 2.1.1
   o Fixed missing-index-partion bugs for AS-02 files.
   o Moved LocalFilenameResolver into the AS_DCP public API so that it
