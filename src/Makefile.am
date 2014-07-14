@@ -71,7 +71,8 @@ include_HEADERS += \
 	PCMDataProviders.h \
 	SyncCommon.h \
 	SyncEncoder.h \
-	UUIDInformation.h
+	UUIDInformation.h \
+	TimedText_Transform.h
 
 endif
 
@@ -115,7 +116,7 @@ libasdcp_la_SOURCES = MPEG2_Parser.cpp MPEG.cpp JP2K_Codestream_Parser.cpp \
 	AtmosSyncChannel_Mixer.cpp AtmosSyncChannel_Mixer.h \
 	PCMDataProviders.cpp PCMDataProviders.h \
 	SyncEncoder.c SyncEncoder.h SyncCommon.h CRC16.c CRC16.h \
-	UUIDInformation.c UUIDInformation.h
+	UUIDInformation.c UUIDInformation.h 
 
 
 libasdcp_la_LDFLAGS = -release @VERSION@
@@ -154,8 +155,7 @@ nodist_libpyasdcp_la_SOURCES = \
 	asdcp_python_mxf.cpp \
 	asdcp_python_mxf.h \
 	asdcp_python_mxf_text.cpp \
-	asdcp_python_mxf_metadata.cpp \
-	TimedText_Transform.h
+	asdcp_python_mxf_metadata.cpp 
 
 
 libpyasdcp_la_CPPFLAGS = @PYTHON_CPPFLAGS@
@@ -265,7 +265,7 @@ asdcp_version_SOURCES = asdcp-version.cpp
 asdcp_version_LDADD = libkumu.la 
 
 if DEV_HEADERS
-nodist_tt_xform_SOURCES = tt-xform.cpp
+nodist_tt_xform_SOURCES = tt-xform.cpp TimedText_Transform.h
 tt_xform_LDADD = libasdcp.la
 endif
 
