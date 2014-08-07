@@ -500,6 +500,7 @@ namespace ASDCP
 
 	MaterialPackage*   m_MaterialPackage;
 	SourcePackage*     m_FilePackage;
+	ContentStorage*    m_ContentStorage;
 
 	FileDescriptor*    m_EssenceDescriptor;
 	std::list<InterchangeObject*> m_EssenceSubDescriptorList;
@@ -514,9 +515,9 @@ namespace ASDCP
 	DurationElementList_t m_DurationUpdateList;
 
       TrackFileWriter(const Dictionary& d) :
-	m_Dict(&d), m_HeaderPart(m_Dict), m_RIP(m_Dict),
-	  m_HeaderSize(0), m_EssenceDescriptor(0),
-	  m_FramesWritten(0), m_StreamOffset(0)
+	m_Dict(&d), m_HeaderSize(0), m_HeaderPart(m_Dict), m_RIP(m_Dict),
+	  m_MaterialPackage(0), m_FilePackage(0), m_ContentStorage(0),
+	  m_EssenceDescriptor(0), m_FramesWritten(0), m_StreamOffset(0)
 	  {
 	    default_md_object_init();
 	  }
@@ -568,14 +569,16 @@ namespace ASDCP
 			   const std::string& TrackName, const UL& EssenceUL,
 			   const UL& DataDefinition, const std::string& PackageLabel)
 	{
-	  //
-	  ContentStorage* Storage = new ContentStorage(m_Dict);
-	  m_HeaderPart.AddChildObject(Storage);
-	  m_HeaderPart.m_Preface->ContentStorage = Storage->InstanceUID;
+	  if ( m_ContentStorage == 0 )
+	    {
+	      m_ContentStorage = new ContentStorage(m_Dict);
+	      m_HeaderPart.AddChildObject(m_ContentStorage);
+	      m_HeaderPart.m_Preface->ContentStorage = m_ContentStorage->InstanceUID;
+	    }
 
 	  EssenceContainerData* ECD = new EssenceContainerData(m_Dict);
 	  m_HeaderPart.AddChildObject(ECD);
-	  Storage->EssenceContainerData.push_back(ECD->InstanceUID);
+	  m_ContentStorage->EssenceContainerData.push_back(ECD->InstanceUID);
 	  ECD->IndexSID = 129;
 	  ECD->BodySID = 1;
 
@@ -591,7 +594,7 @@ namespace ASDCP
 	  m_MaterialPackage->Name = "AS-DCP Material Package";
 	  m_MaterialPackage->PackageUID = MaterialPackageUMID;
 	  m_HeaderPart.AddChildObject(m_MaterialPackage);
-	  Storage->Packages.push_back(m_MaterialPackage->InstanceUID);
+	  m_ContentStorage->Packages.push_back(m_MaterialPackage->InstanceUID);
 
 	  TrackSet<TimecodeComponent> MPTCTrack =
 	    CreateTimecodeTrack<MaterialPackage>(m_HeaderPart, *m_MaterialPackage,
@@ -629,7 +632,7 @@ namespace ASDCP
 	  ECD->LinkedPackageUID = SourcePackageUMID;
 
 	  m_HeaderPart.AddChildObject(m_FilePackage);
-	  Storage->Packages.push_back(m_FilePackage->InstanceUID);
+	  m_ContentStorage->Packages.push_back(m_FilePackage->InstanceUID);
 
 	  TrackSet<TimecodeComponent> FPTCTrack =
 	    CreateTimecodeTrack<SourcePackage>(m_HeaderPart, *m_FilePackage,
@@ -673,14 +676,16 @@ namespace ASDCP
 			  const std::string& TrackName, const UL& DataDefinition,
 			  const std::string& PackageLabel)
 	{
-	  //
-	  ContentStorage* Storage = new ContentStorage(m_Dict);
-	  m_HeaderPart.AddChildObject(Storage);
-	  m_HeaderPart.m_Preface->ContentStorage = Storage->InstanceUID;
+	  if ( m_ContentStorage == 0 )
+	    {
+	      m_ContentStorage = new ContentStorage(m_Dict);
+	      m_HeaderPart.AddChildObject(m_ContentStorage);
+	      m_HeaderPart.m_Preface->ContentStorage = m_ContentStorage->InstanceUID;
+	    }
 
 	  EssenceContainerData* ECD = new EssenceContainerData(m_Dict);
 	  m_HeaderPart.AddChildObject(ECD);
-	  Storage->EssenceContainerData.push_back(ECD->InstanceUID);
+	  m_ContentStorage->EssenceContainerData.push_back(ECD->InstanceUID);
 	  ECD->IndexSID = 129;
 	  ECD->BodySID = 1;
 
@@ -696,7 +701,7 @@ namespace ASDCP
 	  m_MaterialPackage->Name = "AS-DCP Material Package";
 	  m_MaterialPackage->PackageUID = MaterialPackageUMID;
 	  m_HeaderPart.AddChildObject(m_MaterialPackage);
-	  Storage->Packages.push_back(m_MaterialPackage->InstanceUID);
+	  m_ContentStorage->Packages.push_back(m_MaterialPackage->InstanceUID);
 
 	  TrackSet<TimecodeComponent> MPTCTrack =
 	    CreateTimecodeTrack<MaterialPackage>(m_HeaderPart, *m_MaterialPackage,
@@ -733,7 +738,7 @@ namespace ASDCP
 	  ECD->LinkedPackageUID = SourcePackageUMID;
 
 	  m_HeaderPart.AddChildObject(m_FilePackage);
-	  Storage->Packages.push_back(m_FilePackage->InstanceUID);
+	  m_ContentStorage->Packages.push_back(m_FilePackage->InstanceUID);
 
 	  TrackSet<TimecodeComponent> FPTCTrack =
 	    CreateTimecodeTrack<SourcePackage>(m_HeaderPart, *m_FilePackage,
@@ -786,6 +791,7 @@ namespace ASDCP
 	      m_HeaderPart.EssenceContainers.push_back(CryptEssenceUL);
 	      m_HeaderPart.m_Preface->DMSchemes.push_back(UL(m_Dict->ul(MDD_CryptographicFrameworkLabel)));
 	      AddDMScrypt(m_HeaderPart, *m_FilePackage, m_Info, WrappingUL, m_Dict);
+	      //// TODO: fix DMSegment Duration value
 	    }
 	  else
 	    {

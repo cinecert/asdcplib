@@ -817,6 +817,28 @@ namespace ASDCP
 	};
 
       //
+      class ContainerConstraintSubDescriptor : public InterchangeObject
+	{
+	  ContainerConstraintSubDescriptor();
+
+	public:
+	  const Dictionary*& m_Dict;
+
+      ContainerConstraintSubDescriptor(const Dictionary*& d);
+      ContainerConstraintSubDescriptor(const ContainerConstraintSubDescriptor& rhs);
+      virtual ~ContainerConstraintSubDescriptor() {}
+
+      const ContainerConstraintSubDescriptor& operator=(const ContainerConstraintSubDescriptor& rhs) { Copy(rhs); return *this; }
+      virtual void Copy(const ContainerConstraintSubDescriptor& rhs);
+      virtual const char* HasName() { return "ContainerConstraintSubDescriptor"; }
+      virtual Result_t InitFromTLVSet(TLVReader& TLVSet);
+      virtual Result_t WriteToTLVSet(TLVWriter& TLVSet);
+      virtual void     Dump(FILE* = 0);
+      virtual Result_t InitFromBuffer(const byte_t* p, ui32_t l);
+      virtual Result_t WriteToBuffer(ASDCP::FrameBuffer&);
+	};
+
+      //
       class NetworkLocator : public InterchangeObject
 	{
 	  NetworkLocator();
@@ -977,6 +999,31 @@ namespace ASDCP
       const DolbyAtmosSubDescriptor& operator=(const DolbyAtmosSubDescriptor& rhs) { Copy(rhs); return *this; }
       virtual void Copy(const DolbyAtmosSubDescriptor& rhs);
       virtual const char* HasName() { return "DolbyAtmosSubDescriptor"; }
+      virtual Result_t InitFromTLVSet(TLVReader& TLVSet);
+      virtual Result_t WriteToTLVSet(TLVWriter& TLVSet);
+      virtual void     Dump(FILE* = 0);
+      virtual Result_t InitFromBuffer(const byte_t* p, ui32_t l);
+      virtual Result_t WriteToBuffer(ASDCP::FrameBuffer&);
+	};
+
+      //
+      class PHDRMetadataTrackSubDescriptor : public InterchangeObject
+	{
+	  PHDRMetadataTrackSubDescriptor();
+
+	public:
+	  const Dictionary*& m_Dict;
+          UL DataDefinition;
+          ui32_t SourceTrackID;
+          ui32_t SimplePayloadSID;
+
+      PHDRMetadataTrackSubDescriptor(const Dictionary*& d);
+      PHDRMetadataTrackSubDescriptor(const PHDRMetadataTrackSubDescriptor& rhs);
+      virtual ~PHDRMetadataTrackSubDescriptor() {}
+
+      const PHDRMetadataTrackSubDescriptor& operator=(const PHDRMetadataTrackSubDescriptor& rhs) { Copy(rhs); return *this; }
+      virtual void Copy(const PHDRMetadataTrackSubDescriptor& rhs);
+      virtual const char* HasName() { return "PHDRMetadataTrackSubDescriptor"; }
       virtual Result_t InitFromTLVSet(TLVReader& TLVSet);
       virtual Result_t WriteToTLVSet(TLVWriter& TLVSet);
       virtual void     Dump(FILE* = 0);

@@ -68,6 +68,7 @@ static InterchangeObject* GenericDataEssenceDescriptor_Factory(const Dictionary*
 static InterchangeObject* TimedTextDescriptor_Factory(const Dictionary*& Dict) { return new TimedTextDescriptor(Dict); }
 static InterchangeObject* TimedTextResourceSubDescriptor_Factory(const Dictionary*& Dict) { return new TimedTextResourceSubDescriptor(Dict); }
 static InterchangeObject* StereoscopicPictureSubDescriptor_Factory(const Dictionary*& Dict) { return new StereoscopicPictureSubDescriptor(Dict); }
+static InterchangeObject* ContainerConstraintSubDescriptor_Factory(const Dictionary*& Dict) { return new ContainerConstraintSubDescriptor(Dict); }
 static InterchangeObject* NetworkLocator_Factory(const Dictionary*& Dict) { return new NetworkLocator(Dict); }
 static InterchangeObject* MCALabelSubDescriptor_Factory(const Dictionary*& Dict) { return new MCALabelSubDescriptor(Dict); }
 static InterchangeObject* AudioChannelLabelSubDescriptor_Factory(const Dictionary*& Dict) { return new AudioChannelLabelSubDescriptor(Dict); }
@@ -75,6 +76,7 @@ static InterchangeObject* SoundfieldGroupLabelSubDescriptor_Factory(const Dictio
 static InterchangeObject* GroupOfSoundfieldGroupsLabelSubDescriptor_Factory(const Dictionary*& Dict) { return new GroupOfSoundfieldGroupsLabelSubDescriptor(Dict); }
 static InterchangeObject* DCDataDescriptor_Factory(const Dictionary*& Dict) { return new DCDataDescriptor(Dict); }
 static InterchangeObject* DolbyAtmosSubDescriptor_Factory(const Dictionary*& Dict) { return new DolbyAtmosSubDescriptor(Dict); }
+static InterchangeObject* PHDRMetadataTrackSubDescriptor_Factory(const Dictionary*& Dict) { return new PHDRMetadataTrackSubDescriptor(Dict); }
 
 
 void
@@ -109,6 +111,7 @@ ASDCP::MXF::Metadata_InitTypes(const Dictionary*& Dict)
   SetObjectFactory(Dict->ul(MDD_TimedTextDescriptor), TimedTextDescriptor_Factory);
   SetObjectFactory(Dict->ul(MDD_TimedTextResourceSubDescriptor), TimedTextResourceSubDescriptor_Factory);
   SetObjectFactory(Dict->ul(MDD_StereoscopicPictureSubDescriptor), StereoscopicPictureSubDescriptor_Factory);
+  SetObjectFactory(Dict->ul(MDD_ContainerConstraintSubDescriptor), ContainerConstraintSubDescriptor_Factory);
   SetObjectFactory(Dict->ul(MDD_NetworkLocator), NetworkLocator_Factory);
   SetObjectFactory(Dict->ul(MDD_MCALabelSubDescriptor), MCALabelSubDescriptor_Factory);
   SetObjectFactory(Dict->ul(MDD_AudioChannelLabelSubDescriptor), AudioChannelLabelSubDescriptor_Factory);
@@ -116,6 +119,7 @@ ASDCP::MXF::Metadata_InitTypes(const Dictionary*& Dict)
   SetObjectFactory(Dict->ul(MDD_GroupOfSoundfieldGroupsLabelSubDescriptor), GroupOfSoundfieldGroupsLabelSubDescriptor_Factory);
   SetObjectFactory(Dict->ul(MDD_DCDataDescriptor), DCDataDescriptor_Factory);
   SetObjectFactory(Dict->ul(MDD_DolbyAtmosSubDescriptor), DolbyAtmosSubDescriptor_Factory);
+  SetObjectFactory(Dict->ul(MDD_PHDRMetadataTrackSubDescriptor), PHDRMetadataTrackSubDescriptor_Factory);
 }
 
 //------------------------------------------------------------------------------------------
@@ -3026,6 +3030,77 @@ StereoscopicPictureSubDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 }
 
 //------------------------------------------------------------------------------------------
+// ContainerConstraintSubDescriptor
+
+//
+
+ContainerConstraintSubDescriptor::ContainerConstraintSubDescriptor(const Dictionary*& d) : InterchangeObject(d), m_Dict(d)
+{
+  assert(m_Dict);
+  m_UL = m_Dict->ul(MDD_ContainerConstraintSubDescriptor);
+}
+
+ContainerConstraintSubDescriptor::ContainerConstraintSubDescriptor(const ContainerConstraintSubDescriptor& rhs) : InterchangeObject(rhs.m_Dict), m_Dict(rhs.m_Dict)
+{
+  assert(m_Dict);
+  m_UL = m_Dict->ul(MDD_ContainerConstraintSubDescriptor);
+  Copy(rhs);
+}
+
+
+//
+ASDCP::Result_t
+ContainerConstraintSubDescriptor::InitFromTLVSet(TLVReader& TLVSet)
+{
+  assert(m_Dict);
+  Result_t result = InterchangeObject::InitFromTLVSet(TLVSet);
+  return result;
+}
+
+//
+ASDCP::Result_t
+ContainerConstraintSubDescriptor::WriteToTLVSet(TLVWriter& TLVSet)
+{
+  assert(m_Dict);
+  Result_t result = InterchangeObject::WriteToTLVSet(TLVSet);
+  return result;
+}
+
+//
+void
+ContainerConstraintSubDescriptor::Copy(const ContainerConstraintSubDescriptor& rhs)
+{
+  InterchangeObject::Copy(rhs);
+}
+
+//
+void
+ContainerConstraintSubDescriptor::Dump(FILE* stream)
+{
+  char identbuf[IdentBufferLen];
+  *identbuf = 0;
+
+  if ( stream == 0 )
+    stream = stderr;
+
+  InterchangeObject::Dump(stream);
+}
+
+//
+ASDCP::Result_t
+ContainerConstraintSubDescriptor::InitFromBuffer(const byte_t* p, ui32_t l)
+{
+  return InterchangeObject::InitFromBuffer(p, l);
+}
+
+//
+ASDCP::Result_t
+ContainerConstraintSubDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
+{
+  return InterchangeObject::WriteToBuffer(Buffer);
+}
+
+//------------------------------------------------------------------------------------------
 // NetworkLocator
 
 //
@@ -3590,6 +3665,89 @@ DolbyAtmosSubDescriptor::InitFromBuffer(const byte_t* p, ui32_t l)
 //
 ASDCP::Result_t
 DolbyAtmosSubDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
+{
+  return InterchangeObject::WriteToBuffer(Buffer);
+}
+
+//------------------------------------------------------------------------------------------
+// PHDRMetadataTrackSubDescriptor
+
+//
+
+PHDRMetadataTrackSubDescriptor::PHDRMetadataTrackSubDescriptor(const Dictionary*& d) : InterchangeObject(d), m_Dict(d), SourceTrackID(0), SimplePayloadSID(0)
+{
+  assert(m_Dict);
+  m_UL = m_Dict->ul(MDD_PHDRMetadataTrackSubDescriptor);
+}
+
+PHDRMetadataTrackSubDescriptor::PHDRMetadataTrackSubDescriptor(const PHDRMetadataTrackSubDescriptor& rhs) : InterchangeObject(rhs.m_Dict), m_Dict(rhs.m_Dict)
+{
+  assert(m_Dict);
+  m_UL = m_Dict->ul(MDD_PHDRMetadataTrackSubDescriptor);
+  Copy(rhs);
+}
+
+
+//
+ASDCP::Result_t
+PHDRMetadataTrackSubDescriptor::InitFromTLVSet(TLVReader& TLVSet)
+{
+  assert(m_Dict);
+  Result_t result = InterchangeObject::InitFromTLVSet(TLVSet);
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(PHDRMetadataTrackSubDescriptor, DataDefinition));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadUi32(OBJ_READ_ARGS(PHDRMetadataTrackSubDescriptor, SourceTrackID));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadUi32(OBJ_READ_ARGS(PHDRMetadataTrackSubDescriptor, SimplePayloadSID));
+  return result;
+}
+
+//
+ASDCP::Result_t
+PHDRMetadataTrackSubDescriptor::WriteToTLVSet(TLVWriter& TLVSet)
+{
+  assert(m_Dict);
+  Result_t result = InterchangeObject::WriteToTLVSet(TLVSet);
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(PHDRMetadataTrackSubDescriptor, DataDefinition));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi32(OBJ_WRITE_ARGS(PHDRMetadataTrackSubDescriptor, SourceTrackID));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi32(OBJ_WRITE_ARGS(PHDRMetadataTrackSubDescriptor, SimplePayloadSID));
+  return result;
+}
+
+//
+void
+PHDRMetadataTrackSubDescriptor::Copy(const PHDRMetadataTrackSubDescriptor& rhs)
+{
+  InterchangeObject::Copy(rhs);
+  DataDefinition = rhs.DataDefinition;
+  SourceTrackID = rhs.SourceTrackID;
+  SimplePayloadSID = rhs.SimplePayloadSID;
+}
+
+//
+void
+PHDRMetadataTrackSubDescriptor::Dump(FILE* stream)
+{
+  char identbuf[IdentBufferLen];
+  *identbuf = 0;
+
+  if ( stream == 0 )
+    stream = stderr;
+
+  InterchangeObject::Dump(stream);
+  fprintf(stream, "  %22s = %s\n",  "DataDefinition", DataDefinition.EncodeString(identbuf, IdentBufferLen));
+  fprintf(stream, "  %22s = %d\n",  "SourceTrackID", SourceTrackID);
+  fprintf(stream, "  %22s = %d\n",  "SimplePayloadSID", SimplePayloadSID);
+}
+
+//
+ASDCP::Result_t
+PHDRMetadataTrackSubDescriptor::InitFromBuffer(const byte_t* p, ui32_t l)
+{
+  return InterchangeObject::InitFromBuffer(p, l);
+}
+
+//
+ASDCP::Result_t
+PHDRMetadataTrackSubDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 {
   return InterchangeObject::WriteToBuffer(Buffer);
 }
