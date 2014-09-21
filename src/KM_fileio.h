@@ -274,6 +274,9 @@ namespace Kumu
   // Recursively remove a file or directory
   Result_t DeletePath(const std::string& pathname);
 
+  // Remove the path only if it is a directory that is empty.
+  Result_t DeleteDirectoryIfEmpty(const std::string& path);
+
   //------------------------------------------------------------------------------------------
   // File I/O Wrappers
   //------------------------------------------------------------------------------------------

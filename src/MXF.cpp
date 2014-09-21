@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2005-2013, John Hurst
+Copyright (c) 2005-2014, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -1715,6 +1715,127 @@ ASDCP::MXF::AS02_MCAConfigParser::AS02_MCAConfigParser(const Dictionary*& d) : A
   m_LabelMap.insert(pair("HI",    label_traits("HI",  true,  m_Dict->ul(MDD_IMFAudioSoundfield_HI))));
   m_LabelMap.insert(pair("VIN",   label_traits("VIN", true,  m_Dict->ul(MDD_IMFAudioSoundfield_VIN))));
 }
+
+
+
+//
+bool
+ASDCP::MXF::GetEditRateFromFP(ASDCP::MXF::OP1aHeader& header, ASDCP::Rational& edit_rate)
+{
+  bool has_first_item = false;
+
+  MXF::InterchangeObject* temp_item;
+  std::list<MXF::InterchangeObject*> temp_items;
+
+  Result_t result = header.GetMDObjectsByType(DefaultCompositeDict().ul(MDD_SourcePackage), temp_items);
+
+  if ( KM_FAILURE(result) )
+    {
+      DefaultLogSink().Error("The MXF header does not contain a FilePackage item.\n");
+      return false;
+    }
+
+  if ( temp_items.size() != 1 )
+    {
+      DefaultLogSink().Error("The MXF header must contain one FilePackage item, found %d.\n", temp_items.size());
+      return false;
+    }
+
+  char buf[64];
+  MXF::Batch<UUID>::const_iterator i;
+  MXF::SourcePackage *source_package = dynamic_cast<MXF::SourcePackage*>(temp_items.front());
+  assert(source_package);
+
+  for ( i = source_package->Tracks.begin(); i != source_package->Tracks.end(); ++i )
+    {
+      // Track
+      result = header.GetMDObjectByID(*i, &temp_item);
+
+      if ( KM_FAILURE(result) )
+	{
+	  DefaultLogSink().Error("The MXF header is incomplete: strong reference %s leads nowhere.\n",
+				 i->EncodeHex(buf, 64));
+	  return false;
+	}
+
+      MXF::Track *track = dynamic_cast<MXF::Track*>(temp_item);
+
+      if ( track == 0 )
+	{
+	  DefaultLogSink().Error("The MXF header is incomplete: %s is not a Track item.\n",
+				 i->EncodeHex(buf, 64));
+	  return false;
+	}
+
+      // Sequence
+      result = header.GetMDObjectByID(track->Sequence, &temp_item);
+
+      if ( KM_FAILURE(result) )
+	{
+	  DefaultLogSink().Error("The MXF header is incomplete: strong reference %s leads nowhere.\n",
+				 i->EncodeHex(buf, 64));
+	  return false;
+	}
+
+      MXF::Sequence *sequence = dynamic_cast<MXF::Sequence*>(temp_item);
+
+      if ( sequence == 0 )
+	{
+	  DefaultLogSink().Error("The MXF header is incomplete: %s is not a Sequence item.\n",
+				 track->Sequence.get().EncodeHex(buf, 64));
+	  return false;
+	}
+
+      if ( sequence->StructuralComponents.size() != 1 )
+	{
+	  DefaultLogSink().Error("The Sequence item must contain one reference to an esence item, found %d.\n",
+				 sequence->StructuralComponents.size());
+	  return false;
+	}
+
+      // SourceClip
+      result = header.GetMDObjectByID(sequence->StructuralComponents.front(), &temp_item);
+
+      if ( KM_FAILURE(result) )
+	{
+	  DefaultLogSink().Error("The MXF header is incomplete: strong reference %s leads nowhere.\n",
+				 sequence->StructuralComponents.front().EncodeHex(buf, 64));
+	  return false;
+	}
+
+      if ( temp_item->IsA(DefaultCompositeDict().ul(MDD_SourceClip)) )
+	{
+	  MXF::SourceClip *source_clip = dynamic_cast<MXF::SourceClip*>(temp_item);
+
+	  if ( source_clip == 0 )
+	    {
+	      DefaultLogSink().Error("The MXF header is incomplete: %s is not a SourceClip item.\n",
+				     sequence->StructuralComponents.front().EncodeHex(buf, 64));
+	      return false;
+	    }
+
+	  if ( ! has_first_item )
+	    {
+	      edit_rate = track->EditRate;
+	      has_first_item = true;
+	    }
+	  else if ( edit_rate != track->EditRate )
+	    {
+	      DefaultLogSink().Error("The MXF header is incomplete: %s EditRate value does not match others in the file.\n",
+				     sequence->StructuralComponents.front().EncodeHex(buf, 64));
+	      return false;
+	    }
+	}
+      else if ( ! temp_item->IsA(DefaultCompositeDict().ul(MDD_TimecodeComponent)) )
+	{
+	  DefaultLogSink().Error("Reference from Sequence to an unexpected type: %s.\n", temp_item->ObjectName());
+	  return false;
+	}
+    }
+
+  return true;
+}
+
 
 //
 // end MXF.cpp

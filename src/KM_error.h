@@ -105,7 +105,8 @@ namespace Kumu
   KM_DECLARE_RESULT(NOTAFILE,   -19,  "Filename not found.");
   KM_DECLARE_RESULT(UNKNOWN,    -20,  "Unknown result code.");
   KM_DECLARE_RESULT(DIR_CREATE, -21,  "Unable to create directory.");
-  // -22 is reserved
+  KM_DECLARE_RESULT(NOT_EMPTY,  -22,  "Unable to delete non-empty directory.");
+  // 23-100 are reserved
  
 } // namespace Kumu
 

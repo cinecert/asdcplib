@@ -132,7 +132,9 @@ libas02_la_SOURCES	= \
 	h__02_Reader.cpp \
 	h__02_Writer.cpp \
 	AS_02_JP2K.cpp \
-	AS_02_PCM.cpp
+	AS_02_PCM.cpp \
+	ST2052_TextParser.cpp \
+	AS_02_TimedText.cpp
 
 libas02_la_LDFLAGS = -release @VERSION@
 libas02_la_LIBADD = libasdcp.la libkumu.la
@@ -155,7 +157,7 @@ nodist_libpyasdcp_la_SOURCES = \
 	asdcp_python_mxf.cpp \
 	asdcp_python_mxf.h \
 	asdcp_python_mxf_text.cpp \
-	asdcp_python_mxf_metadata.cpp 
+	asdcp_python_mxf_metadata.cpp
 
 
 libpyasdcp_la_CPPFLAGS = @PYTHON_CPPFLAGS@

@@ -354,19 +354,23 @@ AS_02::h__AS02WriterClip::FinalizeClip(ui32_t bytes_per_frame)
   ui64_t current_position = m_File.Tell();
   Result_t result = m_File.Seek(m_ClipStart+16);
 
-  if ( ASDCP_SUCCESS(result) )
+  if ( KM_SUCCESS(result) )
     {
       byte_t clip_buffer[8] = {0};
-      bool check = Kumu::write_BER(clip_buffer, m_FramesWritten * bytes_per_frame, 8);
+      ui64_t size = static_cast<ui64_t>(m_FramesWritten) * bytes_per_frame;
+      bool check = Kumu::write_BER(clip_buffer, size, 8);
       assert(check);
       result = m_File.Write(clip_buffer, 8);
     }
 
-  m_File.Seek(current_position);
-  m_ClipStart = 0;
+  if ( KM_SUCCESS(result) )
+    {
+      result = m_File.Seek(current_position);
+      m_ClipStart = 0;
+    }
+  
   return result;
 }
-
 
 
 

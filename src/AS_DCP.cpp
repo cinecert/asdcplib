@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2004-2009, John Hurst
+Copyright (c) 2004-2014, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -36,6 +36,46 @@ const char*
 ASDCP::Version()
 {
   return PACKAGE_VERSION;
+}
+
+
+
+//------------------------------------------------------------------------------------------
+//
+
+// Encodes a rational number as a string having a single delimiter character between
+// numerator and denominator.  Retuns the buffer pointer to allow convenient in-line use.
+const char*
+ASDCP::EncodeRational(const Rational& rational, char* str_buf, ui32_t buf_len, char delimiter)
+{
+  assert(str_buf);
+  snprintf(str_buf, buf_len, "%u%c%u", rational.Numerator, delimiter, rational.Denominator);
+  return str_buf;
+}
+
+// Decodes a rational number havng a single non-digit delimiter character between
+// the numerator and denominator.  Returns false if the string does not contain
+// the expected syntax.
+bool
+ASDCP::DecodeRational(const char* str_rational, Rational& rational)
+{
+  assert(str_rational);
+  rational.Numerator = strtol(str_rational, 0, 10);
+
+  const char* p = str_rational;
+  while ( *p && isdigit(*p) )
+    {
+      ++p;
+    }
+
+  if ( p[0] == 0 || p[1] == 0 )
+    {
+      return false;
+    }
+
+  ++p;
+  rational.Denominator = strtol(p, 0, 10);
+  return  true;
 }
 
 

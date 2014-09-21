@@ -1657,6 +1657,31 @@ Kumu::DeletePath(const std::string& pathname)
 }
 
 
+//
+Result_t
+Kumu::DeleteDirectoryIfEmpty(const std::string& path)
+{
+  DirScanner source_dir;
+  char next_file[Kumu::MaxFilePath];
+
+  Result_t result = source_dir.Open(path);
+
+  if ( KM_FAILURE(result) )
+    return result;
+
+  while ( KM_SUCCESS(source_dir.GetNext(next_file)) )
+    {
+      if ( ( next_file[0] == '.' && next_file[1] == 0 )
+	   || ( next_file[0] == '.' && next_file[1] == '.' && next_file[2] == 0 ) )
+	continue;
+
+      return RESULT_NOT_EMPTY; // anything other than "." and ".." indicates a non-empty directory
+    }
+
+  return DeletePath(path);
+}
+
+
 //------------------------------------------------------------------------------------------
 //
 
@@ -1665,19 +1690,21 @@ Result_t
 Kumu::FreeSpaceForPath(const std::string& path, Kumu::fsize_t& free_space, Kumu::fsize_t& total_space)
 {
 #ifdef KM_WIN32
-	ULARGE_INTEGER lTotalNumberOfBytes;
-	ULARGE_INTEGER lTotalNumberOfFreeBytes;
+  ULARGE_INTEGER lTotalNumberOfBytes;
+  ULARGE_INTEGER lTotalNumberOfFreeBytes;
 
-	BOOL fResult = ::GetDiskFreeSpaceExA(path.c_str(), NULL, &lTotalNumberOfBytes, &lTotalNumberOfFreeBytes);
-	if (fResult) {
+  BOOL fResult = ::GetDiskFreeSpaceExA(path.c_str(), NULL, &lTotalNumberOfBytes, &lTotalNumberOfFreeBytes);
+  if ( fResult )
+    {
       free_space = static_cast<Kumu::fsize_t>(lTotalNumberOfFreeBytes.QuadPart);
       total_space = static_cast<Kumu::fsize_t>(lTotalNumberOfBytes.QuadPart);
       return RESULT_OK;
-	}
-	HRESULT LastError = ::GetLastError();
+    }
 
-	DefaultLogSink().Error("FreeSpaceForPath GetDiskFreeSpaceEx %s: %lu\n", path.c_str(), ::GetLastError());
-	return RESULT_FAIL;
+  HRESULT last_error = ::GetLastError();
+
+  DefaultLogSink().Error("FreeSpaceForPath GetDiskFreeSpaceEx %s: %lu\n", path.c_str(), last_error);
+  return RESULT_FAIL;
 #else // KM_WIN32
   struct statfs s;
 

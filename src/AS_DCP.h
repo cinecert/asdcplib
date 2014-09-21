@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2003-2013, John Hurst
+Copyright (c) 2003-2014, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -31,7 +31,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 The asdcplib library is a set of file access objects that offer simplified
 access to files conforming to the standards published by the SMPTE
 D-Cinema Technology Committee 21DC. The file format, labeled AS-DCP,
-is described in series of separate documents which include but may not
+is described in a series of documents which includes but may not
 be be limited to:
 
  o SMPTE ST 429-2:2011 DCP Operational Constraints
@@ -40,8 +40,10 @@ be be limited to:
  o SMPTE ST 429-5:2009 Timed Text Track File
  o SMPTE ST 429-6:2006 MXF Track File Essence Encryption
  o SMPTE ST 429-10:2008 Stereoscopic Picture Track File
+ o SMPTE ST 429-14:2008 Aux Data Track File
  o SMPTE ST 330:2004 - UMID
  o SMPTE ST 336:2001 - KLV
+ o SMPTE ST 377:2004 - MXF (old version, required)
  o SMPTE ST 377-1:2011 - MXF
  o SMPTE ST 377-4:2012 - MXF Multichannel Audio Labeling Framework
  o SMPTE ST 390:2011 - MXF OP-Atom
@@ -61,21 +63,13 @@ be be limited to:
 The following use cases are supported by the library:
 
  o Write essence to a plaintext or ciphertext AS-DCP file:
-     MPEG2 Video Elementary Stream
-     JPEG 2000 codestreams
-     JPEG 2000 stereoscopic codestream pairs
-     PCM audio streams
-     SMPTE 429-7 Timed Text XML with font and image resources
-     Proposed SMPTE Aux Data track file
-     Proposed Dolby (TM) Atmos track file
-
  o Read essence from a plaintext or ciphertext AS-DCP file:
      MPEG2 Video Elementary Stream
      JPEG 2000 codestreams
      JPEG 2000 stereoscopic codestream pairs
      PCM audio streams
      SMPTE 429-7 Timed Text XML with font and image resources
-     Proposed SMPTE Aux Data track file
+     Aux Data (frame-wrapped synchronous blob)
      Proposed Dolby (TM) Atmos track file
 
  o Read header metadata from an AS-DCP file
@@ -279,6 +273,16 @@ namespace ASDCP {
       return false;
     }
   };
+
+  // Encodes a rational number as a string having a single delimiter character between
+  // numerator and denominator.  Retuns the buffer pointer to allow convenient in-line use.
+  const char* EncodeRational(const Rational&, char* str_buf, ui32_t buf_len, char delimiter = ' ');
+
+  // Decodes a rational number havng a single non-digit delimiter character between
+  // the numerator and denominator.  Returns false if the string does not contain
+  // the expected syntax.
+  bool DecodeRational(const char* str_rat, Rational&);
+
 
   // common edit rates, use these instead of hard coded constants
   const Rational EditRate_24 = Rational(24,1);

@@ -123,7 +123,7 @@ ASDCP::UL::EncodeString(char* str_buf, ui32_t buf_len) const
   if ( buf_len > 38 ) // room for dotted notation?
     {
       snprintf(str_buf, buf_len,
-	       "%02x%02x%02x%02x.%02x%02x.%02x%02x.%02x%02x%02x%02x.%02x%02x%02x%02x",
+	       "%02x%02x%02x%02x.%02x%02x%02x%02x.%02x%02x%02x%02x.%02x%02x%02x%02x",
 	       m_Value[0],  m_Value[1],  m_Value[2],  m_Value[3],
 	       m_Value[4],  m_Value[5],  m_Value[6],  m_Value[7],
 	       m_Value[8],  m_Value[9],  m_Value[10], m_Value[11],
@@ -189,7 +189,7 @@ ASDCP::UMID::EncodeString(char* str_buf, ui32_t buf_len) const
 {
   assert(str_buf);
 
-  snprintf(str_buf, buf_len, "[%02x%02x%02x%02x.%02x%02x.%02x%02x.%02x%02x%02x%02x],%02x,%02x,%02x,%02x,",
+  snprintf(str_buf, buf_len, "[%02x%02x%02x%02x.%02x%02x%02x%02x.%02x%02x%02x%02x],%02x,%02x,%02x,%02x,",
 	   m_Value[0],  m_Value[1],  m_Value[2],  m_Value[3],
 	   m_Value[4],  m_Value[5],  m_Value[6],  m_Value[7],
 	   m_Value[8],  m_Value[9],  m_Value[10], m_Value[11],
@@ -202,7 +202,7 @@ ASDCP::UMID::EncodeString(char* str_buf, ui32_t buf_len) const
     {
       // half-swapped UL, use [bbaa9988.ddcc.ffee.00010203.04050607]
       snprintf(str_buf + offset, buf_len - offset,
-	       "[%02x%02x%02x%02x.%02x%02x.%02x%02x.%02x%02x%02x%02x.%02x%02x%02x%02x]",
+	       "[%02x%02x%02x%02x.%02x%02x%02x%02x.%02x%02x%02x%02x.%02x%02x%02x%02x]",
                m_Value[24], m_Value[25], m_Value[26], m_Value[27],
 	       m_Value[28], m_Value[29], m_Value[30], m_Value[31],
                m_Value[16], m_Value[17], m_Value[18], m_Value[19],

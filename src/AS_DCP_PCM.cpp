@@ -276,6 +276,12 @@ ASDCP::PCM::MXFReader::h__Reader::OpenRead(const std::string& filename)
 	}
     }
 
+  if ( m_ADesc.ContainerDuration == 0 )
+    {
+      DefaultLogSink().Error("ContainerDuration unset.\n");
+      return RESULT_FORMAT;
+    }
+
   // check for sample/frame rate sanity
   if ( ASDCP_SUCCESS(result)
        && m_ADesc.EditRate != EditRate_24
@@ -297,14 +303,14 @@ ASDCP::PCM::MXFReader::h__Reader::OpenRead(const std::string& filename)
 			     m_ADesc.EditRate.Numerator, m_ADesc.EditRate.Denominator);
 
       // oh, they gave us the audio sampling rate instead, assume 24/1
-      if ( m_ADesc.EditRate == SampleRate_48k )
+      if ( m_ADesc.EditRate == SampleRate_48k || m_ADesc.EditRate == SampleRate_96k )
 	{
 	  DefaultLogSink().Warn("adjusting EditRate to 24/1\n"); 
 	  m_ADesc.EditRate = EditRate_24;
 	}
       else
 	{
-      DefaultLogSink().Error("PCM EditRate not in expected value range.\n");
+	  DefaultLogSink().Error("PCM EditRate not in expected value range.\n");
 	  // or we just drop the hammer
 	  return RESULT_FORMAT;
 	}
@@ -324,6 +330,11 @@ ASDCP::PCM::MXFReader::h__Reader::ReadFrame(ui32_t FrameNum, FrameBuffer& FrameB
 {
   if ( ! m_File.IsOpen() )
     return RESULT_INIT;
+
+  if ( (FrameNum+1) > m_ADesc.ContainerDuration )
+    {
+      return RESULT_RANGE;
+    }
 
   assert(m_Dict);
   return ReadEKLVFrame(FrameNum, FrameBuf, m_Dict->ul(MDD_WAVEssence), Ctx, HMAC);

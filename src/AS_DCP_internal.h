@@ -73,14 +73,14 @@ namespace ASDCP
       {
 	assert(r >= pstr);
 	if ( r > pstr )
-	  result.push_back(atoi(pstr));
+	  result.push_back(strtol(pstr, 0, 10));
 
 	pstr = r + 1;
 	r = strchr(pstr, '.');
       }
 
     if( strlen(pstr) > 0 )
-      result.push_back(atoi(pstr));
+      result.push_back(strtol(pstr, 0, 10));
 
     assert(result.size() == 3);
     return result;

@@ -106,10 +106,11 @@ ASDCP::KLVPacket::InitFromBuffer(const byte_t* buf, ui32_t buf_len)
 
   ui64_t tmp_size;
   if ( ! Kumu::read_BER(buf + SMPTE_UL_LENGTH, &tmp_size) )
-       return RESULT_FAIL;
+    {
+      return RESULT_FAIL;
+    }
 
-  assert (tmp_size <= 0xFFFFFFFFL);
-  m_ValueLength = (ui32_t) tmp_size;
+  m_ValueLength = tmp_size;
   m_KLLength = SMPTE_UL_LENGTH + Kumu::BER_length(buf + SMPTE_UL_LENGTH);
   m_KeyStart = buf;
   m_ValueStart = buf + m_KLLength;
@@ -170,10 +171,10 @@ ASDCP::KLVPacket::Dump(FILE* stream, const Dictionary& Dict, bool show_value)
       fprintf(stream, "%s", TmpUL.EncodeString(buf, 64));
 
       const MDDEntry* Entry = Dict.FindUL(m_KeyStart);
-      fprintf(stream, "  len: %7u (%s)\n", m_ValueLength, (Entry ? Entry->name : "Unknown"));
+      fprintf(stream, "  len: %7qu (%s)\n", m_ValueLength, (Entry ? Entry->name : "Unknown"));
 
       if ( show_value && m_ValueLength < 1000 )
-	Kumu::hexdump(m_ValueStart, Kumu::xmin(m_ValueLength, (ui32_t)128), stream);
+	Kumu::hexdump(m_ValueStart, Kumu::xmin(m_ValueLength, (ui64_t)128), stream);
     }
   else if ( m_UL.HasValue() )
     {

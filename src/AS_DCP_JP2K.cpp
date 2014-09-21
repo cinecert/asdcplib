@@ -684,7 +684,6 @@ public:
 
     if ( ASDCP_FAILURE(m_IndexAccess.Lookup(FrameNum, TmpEntry)) )
       {
-	DefaultLogSink().Error("Frame value out of range: %u\n", FrameNum);
 	return RESULT_RANGE;
       }
 

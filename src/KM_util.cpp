@@ -829,9 +829,9 @@ Kumu::Timestamp::DecodeString(const char* datestr)
   YMDhms.minute = 0;
   YMDhms.second = 0;
   YMDhms.offset = 0;
-  YMDhms.date.year = atoi(datestr);
-  YMDhms.date.month = atoi(datestr + 5);
-  YMDhms.date.day = atoi(datestr + 8);
+  YMDhms.date.year = strtol(datestr, 0, 10);
+  YMDhms.date.month = strtol(datestr + 5, 0, 10);
+  YMDhms.date.day = strtol(datestr + 8, 0, 10);
  
   if ( datestr[10] == 'T' )
     {
@@ -841,8 +841,8 @@ Kumu::Timestamp::DecodeString(const char* datestr)
 	return false;
 
       char_count += 6;
-      YMDhms.hour = atoi(datestr + 11);
-      YMDhms.minute = atoi(datestr + 14);
+      YMDhms.hour = strtol(datestr + 11, 0, 10);
+      YMDhms.minute = strtol(datestr + 14, 0, 10);
 
       if ( datestr[16] == ':' )
 	{
@@ -850,16 +850,23 @@ Kumu::Timestamp::DecodeString(const char* datestr)
 	    return false;
 
 	  char_count += 3;
-	  YMDhms.second = atoi(datestr + 17);
+	  YMDhms.second = strtol(datestr + 17, 0, 10);
 	}
 
       if ( datestr[19] == '.' )
 	{
-	  if ( ! ( isdigit(datestr[20]) && isdigit(datestr[21]) && isdigit(datestr[22]) ) )
-	    return false;
-	  
+	  if ( ! isdigit(datestr[20]) )
+	    {
+	      return false;
+	    }
+
 	  // we don't carry the ms value
-	  datestr += 4;
+	  while ( isdigit(datestr[20]) )
+	    {
+	      ++datestr;
+	    }
+
+	  ++datestr;
 	}
 
       if ( datestr[19] == '-' || datestr[19] == '+' )
@@ -871,8 +878,8 @@ Kumu::Timestamp::DecodeString(const char* datestr)
 
 	  char_count += 6;
 
-	  ui32_t TZ_hh = atoi(datestr + 20);
-	  ui32_t TZ_mm = atoi(datestr + 23);
+	  ui32_t TZ_hh = strtol(datestr + 20, 0, 10);
+	  ui32_t TZ_mm = strtol(datestr + 23, 0, 10);
 	  if ((TZ_hh > 14) || (TZ_mm > 59) || ((TZ_hh == 14) && (TZ_mm > 0)))
 	    return false;
 
@@ -1182,8 +1189,10 @@ Kumu::km_token_split(const std::string& str, const std::string& separator)
       r = strstr(pstr, separator.c_str());
     }
       
-  if( strlen(pstr) > 0 )
-    components.push_back(std::string(pstr));
+  if ( strlen(pstr) > 0 )
+    {
+      components.push_back(std::string(pstr));
+    }
 
   return components;
 }

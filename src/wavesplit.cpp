@@ -138,12 +138,12 @@ public:
 
 	      case 'd':
 		TEST_EXTRA_ARG(i, 'd');
-		duration = atoi(argv[i]); // TODO: test for negative value, should use strtol()
+		duration = abs(strtol(argv[i], 0, 10));
 		break;
 
 	      case 'f':
 		TEST_EXTRA_ARG(i, 'f');
-		start_frame = atoi(argv[i]); // TODO: test for negative value, should use strtol()
+		start_frame = abs(strtol(argv[i], 0, 10));
 		break;
 
 	      case 'h': help_flag = true; break;

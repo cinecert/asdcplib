@@ -99,6 +99,15 @@ public:
   }
 
 //
+static void
+create_random_uuid(byte_t* uuidbuf)
+{
+  Kumu::UUID tmp_id;
+  GenRandomValue(tmp_id);
+  memcpy(uuidbuf, tmp_id.Value(), tmp_id.Size());
+}
+
+//
 void
 banner(FILE* stream = stdout)
 {
@@ -514,9 +523,13 @@ write_MPEG2_file(CommandOptions& Options)
 	  Info.EncryptedEssence = true;
 
 	  if ( Options.key_id_flag )
-	    memcpy(Info.CryptographicKeyID, Options.key_id_value, UUIDlen);
+	    {
+	      memcpy(Info.CryptographicKeyID, Options.key_id_value, UUIDlen);
+	    }
 	  else
-	    RNG.FillRandom(Info.CryptographicKeyID, UUIDlen);
+	    {
+	      create_random_uuid(Info.CryptographicKeyID);
+	    }
 
 	  Context = new AESEncContext;
 	  result = Context->InitKey(Options.key_value);
@@ -679,9 +692,13 @@ write_JP2K_S_file(CommandOptions& Options)
 	  Info.EncryptedEssence = true;
 
 	  if ( Options.key_id_flag )
-	    memcpy(Info.CryptographicKeyID, Options.key_id_value, UUIDlen);
+	    {
+	      memcpy(Info.CryptographicKeyID, Options.key_id_value, UUIDlen);
+	    }
 	  else
-	    RNG.FillRandom(Info.CryptographicKeyID, UUIDlen);
+	    {
+	      create_random_uuid(Info.CryptographicKeyID);
+	    }
 
 	  Context = new AESEncContext;
 	  result = Context->InitKey(Options.key_value);
@@ -814,9 +831,13 @@ write_JP2K_file(CommandOptions& Options)
 	  Info.EncryptedEssence = true;
 
 	  if ( Options.key_id_flag )
-	    memcpy(Info.CryptographicKeyID, Options.key_id_value, UUIDlen);
+	    {
+	      memcpy(Info.CryptographicKeyID, Options.key_id_value, UUIDlen);
+	    }
 	  else
-	    RNG.FillRandom(Info.CryptographicKeyID, UUIDlen);
+	    {
+	      create_random_uuid(Info.CryptographicKeyID);
+	    }
 
 	  Context = new AESEncContext;
 	  result = Context->InitKey(Options.key_value);
@@ -954,9 +975,13 @@ write_PCM_file(CommandOptions& Options)
 	  Info.EncryptedEssence = true;
 
 	  if ( Options.key_id_flag )
-	    memcpy(Info.CryptographicKeyID, Options.key_id_value, UUIDlen);
+	    {
+	      memcpy(Info.CryptographicKeyID, Options.key_id_value, UUIDlen);
+	    }
 	  else
-	    RNG.FillRandom(Info.CryptographicKeyID, UUIDlen);
+	    {
+	      create_random_uuid(Info.CryptographicKeyID);
+	    }
 
 	  Context = new AESEncContext;
 	  result = Context->InitKey(Options.key_value);
@@ -1122,9 +1147,13 @@ write_PCM_with_ATMOS_sync_file(CommandOptions& Options)
 	  Info.EncryptedEssence = true;
 
 	  if ( Options.key_id_flag )
-	    memcpy(Info.CryptographicKeyID, Options.key_id_value, UUIDlen);
+	    {
+	      memcpy(Info.CryptographicKeyID, Options.key_id_value, UUIDlen);
+	    }
 	  else
-	    RNG.FillRandom(Info.CryptographicKeyID, UUIDlen);
+	    {
+	      create_random_uuid(Info.CryptographicKeyID);
+	    }
 
 	  Context = new AESEncContext;
 	  result = Context->InitKey(Options.key_value);
@@ -1245,9 +1274,13 @@ write_timed_text_file(CommandOptions& Options)
 	  Info.EncryptedEssence = true;
 
 	  if ( Options.key_id_flag )
-	    memcpy(Info.CryptographicKeyID, Options.key_id_value, UUIDlen);
+	    {
+	      memcpy(Info.CryptographicKeyID, Options.key_id_value, UUIDlen);
+	    }
 	  else
-	    RNG.FillRandom(Info.CryptographicKeyID, UUIDlen);
+	    {
+	      create_random_uuid(Info.CryptographicKeyID);
+	    }
 
 	  Context = new AESEncContext;
 	  result = Context->InitKey(Options.key_value);
@@ -1365,9 +1398,13 @@ write_dolby_atmos_file(CommandOptions& Options)
 	  Info.EncryptedEssence = true;
 
 	  if ( Options.key_id_flag )
-	    memcpy(Info.CryptographicKeyID, Options.key_id_value, UUIDlen);
+	    {
+	      memcpy(Info.CryptographicKeyID, Options.key_id_value, UUIDlen);
+	    }
 	  else
-	    RNG.FillRandom(Info.CryptographicKeyID, UUIDlen);
+	    {
+	      create_random_uuid(Info.CryptographicKeyID);
+	    }
 
 	  Context = new AESEncContext;
 	  result = Context->InitKey(Options.key_value);

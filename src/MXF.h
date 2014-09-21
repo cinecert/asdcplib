@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2005-2013, John Hurst
+Copyright (c) 2005-2014, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -404,6 +404,10 @@ namespace ASDCP
 	  Identification*  GetIdentification();
 	  SourcePackage*   GetSourcePackage();
 	};
+
+      // Searches the header object and returns the edit rate based on the contents of the
+      // File Package items.  Logs an error message and returns false if anthing goes wrong.
+      bool GetEditRateFromFP(ASDCP::MXF::OP1aHeader& header, ASDCP::Rational& edit_rate);
 
       //
       class OPAtomIndexFooter : public Partition

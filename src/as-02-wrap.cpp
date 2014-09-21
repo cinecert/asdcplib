@@ -91,6 +91,16 @@ public:
     return;								\
   }
 
+
+//
+static void
+create_random_uuid(byte_t* uuidbuf)
+{
+  Kumu::UUID tmp_id;
+  GenRandomValue(tmp_id);
+  memcpy(uuidbuf, tmp_id.Value(), tmp_id.Size());
+}
+
 //
 void
 banner(FILE* stream = stdout)
@@ -558,9 +568,13 @@ write_JP2K_file(CommandOptions& Options)
 	  Info.EncryptedEssence = true;
 
 	  if ( Options.key_id_flag )
-	    memcpy(Info.CryptographicKeyID, Options.key_id_value, UUIDlen);
+	    {
+	      memcpy(Info.CryptographicKeyID, Options.key_id_value, UUIDlen);
+	    }
 	  else
-	    RNG.FillRandom(Info.CryptographicKeyID, UUIDlen);
+	    {
+	      create_random_uuid(Info.CryptographicKeyID);
+	    }
 
 	  Context = new AESEncContext;
 	  result = Context->InitKey(Options.key_value);
@@ -705,9 +719,13 @@ write_PCM_file(CommandOptions& Options)
 	  Info.EncryptedEssence = true;
 
 	  if ( Options.key_id_flag )
-	    memcpy(Info.CryptographicKeyID, Options.key_id_value, UUIDlen);
+	    {
+	      memcpy(Info.CryptographicKeyID, Options.key_id_value, UUIDlen);
+	    }
 	  else
-	    RNG.FillRandom(Info.CryptographicKeyID, UUIDlen);
+	    {
+	      create_random_uuid(Info.CryptographicKeyID);
+	    }
 
 	  Context = new AESEncContext;
 	  result = Context->InitKey(Options.key_value);
@@ -778,9 +796,6 @@ write_PCM_file(CommandOptions& Options)
 
 
 
-#if 0
-// NOT YET, unfinished business with ST 2052-1
-
 
 //------------------------------------------------------------------------------------------
 // TimedText essence
@@ -832,9 +847,13 @@ write_timed_text_file(CommandOptions& Options)
 	  Info.EncryptedEssence = true;
 
 	  if ( Options.key_id_flag )
-	    memcpy(Info.CryptographicKeyID, Options.key_id_value, UUIDlen);
+	    {
+	      memcpy(Info.CryptographicKeyID, Options.key_id_value, UUIDlen);
+	    }
 	  else
-	    RNG.FillRandom(Info.CryptographicKeyID, UUIDlen);
+	    {
+	      create_random_uuid(Info.CryptographicKeyID);
+	    }
 
 	  Context = new AESEncContext;
 	  result = Context->InitKey(Options.key_value);
@@ -896,8 +915,6 @@ write_timed_text_file(CommandOptions& Options)
 
   return result;
 }
-
-#endif
 
 //
 int

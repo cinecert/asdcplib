@@ -1017,6 +1017,126 @@ Kumu::StringIsXML(const char* document, ui32_t len)
 #endif
 
 
+//----------------------------------------------------------------------------------------------------
+
+//
+bool
+Kumu::GetXMLDocType(const ByteString& buf, std::string& ns_prefix, std::string& type_name, std::string& namespace_name,
+		    AttributeList& doc_attr_list)
+{
+  return GetXMLDocType(buf.RoData(), buf.Length(), ns_prefix, type_name, namespace_name, doc_attr_list);
+}
+
+//
+bool
+Kumu::GetXMLDocType(const std::string& buf, std::string& ns_prefix, std::string& type_name, std::string& namespace_name,
+		    AttributeList& doc_attr_list)
+{
+  return GetXMLDocType((const byte_t*)buf.c_str(), buf.size(), ns_prefix, type_name, namespace_name, doc_attr_list);
+}
+
+//
+bool
+Kumu::GetXMLDocType(const byte_t* buf, ui32_t buf_len, std::string& ns_prefix, std::string& type_name, std::string& namespace_name,
+		    AttributeList& doc_attr_list)
+{
+  assert(buf);
+  const byte_t *p1 = buf, *p2;
+  const byte_t *end_p = buf + buf_len;
+
+  while ( p1 < end_p && *p1 )
+    {
+      if ( *p1 == '<' && isalpha(*(p1+1)) )
+        {
+          p2 = ++p1;
+
+          // collect element name
+          while ( p2 < end_p && *p2 && ! ( isspace(*p2) || *p2 == '>' ) )
+            ++p2;
+
+          if ( p2 < end_p )
+            {
+              const byte_t* separator = (byte_t*)strchr(reinterpret_cast<const char*>(p1), ':');
+              if ( separator != 0 && separator < p2 )
+                {
+                  ns_prefix.assign(reinterpret_cast<const char*>(p1), separator - p1);
+                  p1 = separator + 1;
+                }
+
+              type_name.assign(reinterpret_cast<const char*>(p1), p2 - p1);
+              break;
+            }
+        }
+
+      p1++;
+    }
+
+  if ( *p2 == ' ' )
+    {
+      const byte_t *p3 = p2+1;
+      while ( p3 < end_p && *p3 && *p3 != '>'  )
+      	{	
+	  ++p3;
+	}
+
+      if ( *p3 != '>' )
+	{
+	  return false; // not well-formed XML
+	}
+
+      std::string attr_str;
+      attr_str.assign(reinterpret_cast<const char*>(p2+1), p3 - p2 - 1);
+      
+      // normalize whitespace so the subesquent split works properly
+      for ( int j = 0; j < attr_str.length(); ++j )
+      	{
+	  if ( attr_str[j] != ' ' && isspace(attr_str[j]) )
+	    {
+	      attr_str[j] = ' ';
+	    }
+      	}
+
+      std::list<std::string> doc_attr_nvpairs = km_token_split(attr_str, " ");
+      
+      std::list<std::string>::iterator i;
+      std::map<std::string, std::string> ns_map;
+
+      for ( i = doc_attr_nvpairs.begin(); i != doc_attr_nvpairs.end(); ++i )
+        {
+	  // trim leading and trailing whitespace an right-most character, i.e., \"
+	  std::string trimmed = i->substr(i->find_first_not_of(" "), i->find_last_not_of(" "));
+          std::list<std::string> nv_tokens = km_token_split(trimmed, "=\"");
+
+          if ( nv_tokens.size() != 2 )
+	    {
+	      continue;
+	    }
+
+	  NVPair nv_pair;
+	  nv_pair.name = nv_tokens.front();
+	  nv_pair.value = nv_tokens.back();
+	  doc_attr_list.push_back(nv_pair);
+          ns_map.insert(std::map<std::string,std::string>::value_type(nv_pair.name, nv_pair.value));
+        }
+
+      std::string doc_ns_name_selector = ns_prefix.empty() ? "xmlns" : "xmlns:"+ns_prefix;
+      std::map<std::string,std::string>::iterator j = ns_map.find(doc_ns_name_selector);
+
+      if ( j != ns_map.end() )
+        {
+          namespace_name = j->second;
+        }
+    }
+ else if ( *p2 != '>' )
+   {
+     return false; // not well-formed XML
+   }
+
+  return ! type_name.empty();
+}
+
+
+
 //
 // end KM_xml.cpp
 //

@@ -196,22 +196,22 @@ inline const char* ui64sz(ui64_t i, char* buf)
       const byte_t* m_KeyStart;
       ui32_t        m_KLLength;
       const byte_t* m_ValueStart;
-      ui32_t        m_ValueLength;
+      ui64_t        m_ValueLength;
       UL m_UL;
 
     public:
       KLVPacket() : m_KeyStart(0), m_KLLength(0), m_ValueStart(0), m_ValueLength(0) {}
       virtual ~KLVPacket() {}
 
-      ui32_t  PacketLength() {
+      inline ui64_t  PacketLength() {
 	return m_KLLength + m_ValueLength;
       }
 
-      ui32_t   ValueLength() {
+      inline ui64_t   ValueLength() {
 	return m_ValueLength;
       }
 
-      ui32_t   KLLength() {
+      inline ui32_t   KLLength() {
 	return m_KLLength;
       }
 
@@ -221,10 +221,16 @@ inline const char* ui64sz(ui64_t i, char* buf)
       virtual Result_t InitFromBuffer(const byte_t*, ui32_t);
       virtual Result_t InitFromBuffer(const byte_t*, ui32_t, const UL& label);
       virtual Result_t WriteKLToBuffer(ASDCP::FrameBuffer&, const UL& label, ui32_t length);
-      virtual Result_t WriteKLToBuffer(ASDCP::FrameBuffer& fb, ui32_t length) {
+
+      virtual Result_t WriteKLToBuffer(ASDCP::FrameBuffer& fb, ui32_t length)
+      {
 	if ( ! m_UL.HasValue() )
-	  return RESULT_STATE;
-	return WriteKLToBuffer(fb, m_UL, length); }
+	  {
+	    return RESULT_STATE;
+	  }
+
+	return WriteKLToBuffer(fb, m_UL, length);
+      }
 
       virtual void     Dump(FILE*, const Dictionary& Dict, bool show_value);
     };

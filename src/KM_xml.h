@@ -57,6 +57,15 @@ namespace Kumu
   typedef std::list<XMLElement*> ElementList;
   typedef ElementList::const_iterator Elem_i;
 
+  bool GetXMLDocType(const ByteString& buf, std::string& ns_prefix, std::string& type_name,
+		     std::string& namespace_name, AttributeList& doc_attr_list);
+
+  bool GetXMLDocType(const std::string& buf, std::string& ns_prefix, std::string& type_name,
+		     std::string& namespace_name, AttributeList& doc_attr_list);
+
+  bool GetXMLDocType(const byte_t* buf, ui32_t buf_len, std::string& ns_prefix, std::string& type_name,
+		     std::string& namespace_name, AttributeList& doc_attr_list);
+
   //
   class XMLNamespace
   {

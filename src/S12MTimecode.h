@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2007-2009, John Hurst
+Copyright (c) 2007-2014, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -106,10 +106,10 @@ public:
 
     if ( *p != 0 )
       {
-	ui32_t hours = atoi(p);
-	ui32_t minutes = atoi(p+3);
-	ui32_t seconds = atoi(p+6);
-	ui32_t frames = atoi(p+9);
+	ui32_t hours = strtol(p, 0, 10);
+	ui32_t minutes = strtol(p+3, 0, 10);
+	ui32_t seconds = strtol(p+6, 0, 10);
+	ui32_t frames = strtol(p+9, 0, 10);
 
 	m_FrameCount = (((((hours * 60) + minutes) * 60) + seconds) * m_FPS)+ frames;
       }
