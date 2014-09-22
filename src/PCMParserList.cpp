@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2004-2013, John Hurst
+Copyright (c) 2004-2014, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -110,11 +110,14 @@ ASDCP::PCMParserList::~PCMParserList()
 Result_t
 ASDCP::PCMParserList::OpenRead(ui32_t argc, const char** argv, const Rational& PictureRate)
 {
-  ASDCP_TEST_NULL_STR(argv);
+  ASDCP_TEST_NULL(argv);
   PathList_t TmpFileList;
 
   for ( ui32_t i = 0; i < argc; ++i )
-    TmpFileList.push_back(argv[i]);
+    {
+      ASDCP_TEST_NULL(argv[i]);
+      TmpFileList.push_back(argv[i]);
+    }
 
   return OpenRead(TmpFileList, PictureRate);
 }

@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2005-2012, John Hurst
+Copyright (c) 2005-2014, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -354,7 +354,7 @@ namespace ASDCP
 	  void Dump(FILE* = 0);
 
 	  const char* EncodeString(char* str_buf, ui32_t buf_len) const {
-	    snprintf(str_buf, buf_len, "%hu.%hu.%hu.%hur%hu", Major, Minor, Patch, Build, Release);
+	    snprintf(str_buf, buf_len, "%hu.%hu.%hu.%hur%hu", Major, Minor, Patch, Build, ui16_t(Release));
 	    return str_buf;
 	  }
 

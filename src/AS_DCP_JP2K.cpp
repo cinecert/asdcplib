@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2004-2013, John Hurst
+Copyright (c) 2004-2014, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -296,7 +296,7 @@ ASDCP::MD_to_JP2K_PDesc(const ASDCP::MXF::GenericPictureEssenceDescriptor&  Esse
     }
   else
     {
-      DefaultLogSink().Error("Unexpected PictureComponentSizing size: %u, should be 17\n", tmp_size);
+      DefaultLogSink().Warn("Unexpected PictureComponentSizing size: %u, should be 17\n", tmp_size);
     }
 
   // CodingStyleDefault

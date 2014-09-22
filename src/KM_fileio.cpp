@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2004-2012, John Hurst
+Copyright (c) 2004-2014, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -691,7 +691,7 @@ Kumu::FileReader::OpenRead(const std::string& filename) const
   // suppress popup window on error
   UINT prev = ::SetErrorMode(SEM_FAILCRITICALERRORS|SEM_NOOPENFILEERRORBOX);
 
-  const_cast<FileReader*>(this)->m_Handle = ::CreateFileA(filename,
+  const_cast<FileReader*>(this)->m_Handle = ::CreateFileA(filename.c_str(),
 			  (GENERIC_READ),                // open for reading
 			  FILE_SHARE_READ,               // share for reading
 			  NULL,                          // no security
