@@ -71,8 +71,8 @@ include_HEADERS += \
 	PCMDataProviders.h \
 	SyncCommon.h \
 	SyncEncoder.h \
-	UUIDInformation.h \
-	TimedText_Transform.h
+	UUIDInformation.h 
+
 
 endif
 

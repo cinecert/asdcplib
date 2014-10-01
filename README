@@ -139,6 +139,11 @@ command-line utilities all respond to -h.
 
 
 Change History
+2014-10-01 - Bug fixes and enhancements, 2.2.5
+  o Finished AS-02 text wrap/unwrap
+  o Fixed fractional seconds parsing for Timestamp objects
+  o Updated KLVPacket to use 64-bit length; allows huge packets in AS-02 PCM files
+  o cleaned up use of atoi() in the library
 
 2014-07-09 - Additional IMF/AS-02 support, bug fixes and enhancements, 2.1.4
   o Added IMF App 2 edit rates in AS_02 namespace: EditRate_29_97, 

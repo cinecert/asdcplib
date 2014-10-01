@@ -38,8 +38,7 @@ using namespace ASDCP;
 
 using Kumu::DefaultLogSink;
 
-// TODO: 
-const char* c_dcst_namespace_name = "http://www.smpte-ra.org/schemas/428-7/2007/DCST";
+const char* c_tt_namespace_name = "http://www.smpte-ra.org/schemas/2052-1/2010/smpte-tt";
 
 //------------------------------------------------------------------------------------------
 
@@ -122,8 +121,8 @@ AS_02::TimedText::ST2052_TextParser::h__TextParser::OpenRead()
 
   if ( ns == 0 )
     {
-      DefaultLogSink(). Warn("Document has no namespace name, assuming %s\n", c_dcst_namespace_name);
-      m_TDesc.NamespaceName = c_dcst_namespace_name;
+      DefaultLogSink(). Warn("Document has no namespace name, assuming %s\n", c_tt_namespace_name);
+      m_TDesc.NamespaceName = c_tt_namespace_name;
     }
   else
     {
