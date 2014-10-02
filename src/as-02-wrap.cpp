@@ -698,7 +698,7 @@ write_PCM_file(CommandOptions& Options)
 	    }
 
 	  // this is the d-cinema MCA label, what is the one for IMF?
-	  essence_descriptor->ChannelAssignment = g_dict->ul(MDD_DCAudioChannelCfg_MCA);
+	  essence_descriptor->ChannelAssignment = g_dict->ul(MDD_IMFAudioChannelCfg_MCA);
 	}
     }
 

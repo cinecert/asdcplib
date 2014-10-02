@@ -139,6 +139,12 @@ command-line utilities all respond to -h.
 
 
 Change History
+2014-10-2 - Bug fixes and enhancements, 2.2.6
+  o Fixed erroneous 377-4 MCA identifier in AS_DCP_PCM dump routine
+  o Fixed erroneous byte 13 in WaveAudioDescriptor_ReferenceAudioAlignmentLevel label
+  o Added missing implementation of -W option to as-02.unwrap
+  o Fixed erroneous use of d-cinema ChannelAssignment label in as-02-wrap
+
 2014-10-01 - Bug fixes and enhancements, 2.2.5
   o Finished AS-02 text wrap/unwrap
   o Fixed fractional seconds parsing for Timestamp objects

@@ -170,7 +170,7 @@ ASDCP::PCM::operator << (std::ostream& strm, const AudioDescriptor& ADesc)
       break;
 
     case CF_CFG_6:
-      strm << "Config 6 (ST 377-1 MCA)";
+      strm << "Config 6 (ST 377-4 MCA)";
       break;
   }
   strm << std::endl;

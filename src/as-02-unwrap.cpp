@@ -376,7 +376,7 @@ read_JP2K_file(CommandOptions& Options)
     {
       result = Reader.ReadFrame(i, FrameBuffer, Context, HMAC);
 
-      if ( ASDCP_SUCCESS(result) )
+      if ( ASDCP_SUCCESS(result)  && ( ! Options.no_write_flag ) )
 	{
 	  Kumu::FileWriter OutFile;
 	  char filename[256];
@@ -387,8 +387,10 @@ read_JP2K_file(CommandOptions& Options)
 	  if ( ASDCP_SUCCESS(result) )
 	    result = OutFile.Write(FrameBuffer.Data(), FrameBuffer.Size(), &write_count);
 
-	  if ( Options.verbose_flag )
-	    FrameBuffer.Dump(stderr, Options.fb_dump_size);
+	  if ( ASDCP_SUCCESS(result) && Options.verbose_flag )
+	    {
+	      FrameBuffer.Dump(stderr, Options.fb_dump_size);
+	    }
 	}
     }
 
