@@ -1046,7 +1046,7 @@ Kumu::GetXMLDocType(const byte_t* buf, ui32_t buf_len, std::string& ns_prefix, s
 
   while ( p1 < end_p && *p1 )
     {
-      if ( *p1 == '<' && isalpha(*(p1+1)) )
+      if ( *p1 == '<' && isalpha(p1[1]) )
         {
           p2 = ++p1;
 
@@ -1068,10 +1068,10 @@ Kumu::GetXMLDocType(const byte_t* buf, ui32_t buf_len, std::string& ns_prefix, s
             }
         }
 
-      p1++;
+      ++p1;
     }
 
-  if ( *p2 == ' ' )
+  if ( isspace(*p2) )
     {
       const byte_t *p3 = p2+1;
       while ( p3 < end_p && *p3 && *p3 != '>'  )
