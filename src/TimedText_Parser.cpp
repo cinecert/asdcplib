@@ -78,7 +78,7 @@ ASDCP::TimedText::LocalFilenameResolver::ResolveRID(const byte_t* uuid, TimedTex
   if ( found_list.size() == 1 )
     {
       FileReader Reader;
-      DefaultLogSink().Debug("retrieving resource %s from file %s\n", buf, found_list.front().c_str());
+      DefaultLogSink().Debug("Retrieving resource %s from file %s\n", buf, found_list.front().c_str());
 
       result = Reader.OpenRead(found_list.front().c_str());
 

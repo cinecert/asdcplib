@@ -1067,8 +1067,29 @@ Kumu::GetXMLDocType(const byte_t* buf, ui32_t buf_len, std::string& ns_prefix, s
               break;
             }
         }
+      else if ( *p1 == '<' && ( ( p1 + 3 ) < end_p ) && p1[1] == '!' && p1[2] == '-' && p1[3] == '-' )
+	{
+          p1 += 4;
 
-      ++p1;
+	  for (;;)
+	    {
+	      while ( *p1 != '>' && p1 < end_p )
+		{
+		  ++p1;
+		}
+
+	      if ( *(p1-2) == '-' && *(p1-1) == '-' && *p1 == '>' )
+		{
+		  break;
+		}
+
+	      ++p1;
+	    }
+	}
+      else
+	{
+	  ++p1;
+	}
     }
 
   if ( isspace(*p2) )
@@ -1104,7 +1125,7 @@ Kumu::GetXMLDocType(const byte_t* buf, ui32_t buf_len, std::string& ns_prefix, s
       for ( i = doc_attr_nvpairs.begin(); i != doc_attr_nvpairs.end(); ++i )
         {
 	  // trim leading and trailing whitespace an right-most character, i.e., \"
-	  std::string trimmed = i->substr(i->find_first_not_of(" "), i->find_last_not_of(" "));
+	  std::string trimmed = i->substr(i->find_first_not_of(" "), i->find_last_not_of(" \r\n\t"));
           std::list<std::string> nv_tokens = km_token_split(trimmed, "=\"");
 
           if ( nv_tokens.size() != 2 )
