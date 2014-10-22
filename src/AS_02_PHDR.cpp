@@ -193,7 +193,6 @@ AS_02::PHDR::MXFReader::h__Reader::OpenRead(const std::string& filename, std::st
 	}
     }
 
-  m_IndexAccess.Dump();
   return result;
 }
 
@@ -563,18 +562,46 @@ AS_02::PHDR::MXFWriter::h__Writer::WriteFrame(const AS_02::PHDR::FrameBuffer& Fr
 
   if ( KM_SUCCESS(result) )
     {
-      result = WriteEKLVPacket(FrameBuf, m_EssenceUL, Ctx, HMAC);
-    }
-
-  if ( KM_SUCCESS(result) )
-    {
-      ASDCP::FrameBuffer metadata_buffer_wrapper;
-      metadata_buffer_wrapper.SetData((byte_t*)(FrameBuf.OpaqueMetadata.c_str()), FrameBuf.OpaqueMetadata.size());
-      metadata_buffer_wrapper.Size(FrameBuf.OpaqueMetadata.size());
-
+      ui64_t this_stream_offset = m_StreamOffset; // m_StreamOffset will be changed by the call to Write_EKLV_Packet
 
       result = Write_EKLV_Packet(m_File, *m_Dict, m_HeaderPart, m_Info, m_CtFrameBuf, m_FramesWritten,
-				 m_StreamOffset, metadata_buffer_wrapper, m_MetadataUL, Ctx, HMAC);
+				 m_StreamOffset, FrameBuf, m_EssenceUL, Ctx, HMAC);
+      
+      if ( KM_SUCCESS(result) )
+	{
+	  ASDCP::FrameBuffer metadata_buffer_wrapper;
+	  metadata_buffer_wrapper.SetData((byte_t*)(FrameBuf.OpaqueMetadata.c_str()), FrameBuf.OpaqueMetadata.size());
+	  metadata_buffer_wrapper.Size(FrameBuf.OpaqueMetadata.size());
+	  
+	  
+	  result = Write_EKLV_Packet(m_File, *m_Dict, m_HeaderPart, m_Info, m_CtFrameBuf, m_FramesWritten,
+				     m_StreamOffset, metadata_buffer_wrapper, m_MetadataUL, Ctx, HMAC);
+	}
+      
+      if ( KM_SUCCESS(result) )
+	{  
+	  IndexTableSegment::IndexEntry Entry;
+	  Entry.StreamOffset = this_stream_offset;
+	  m_IndexWriter.PushIndexEntry(Entry);
+	}
+
+      if ( m_FramesWritten > 1 && ( ( m_FramesWritten + 1 ) % m_PartitionSpace ) == 0 )
+	{
+	  m_IndexWriter.ThisPartition = m_File.Tell();
+	  m_IndexWriter.WriteToFile(m_File);
+	  m_RIP.PairArray.push_back(RIP::Pair(0, m_IndexWriter.ThisPartition));
+
+	  UL body_ul(m_Dict->ul(MDD_ClosedCompleteBodyPartition));
+	  Partition body_part(m_Dict);
+	  body_part.BodySID = 1;
+	  body_part.OperationalPattern = m_HeaderPart.OperationalPattern;
+	  body_part.EssenceContainers = m_HeaderPart.EssenceContainers;
+	  body_part.ThisPartition = m_File.Tell();
+
+	  body_part.BodyOffset = m_StreamOffset;
+	  result = body_part.WriteToFile(m_File, body_ul);
+	  m_RIP.PairArray.push_back(RIP::Pair(1, body_part.ThisPartition));
+	}
     }
 
   if ( KM_SUCCESS(result) )
