@@ -376,12 +376,25 @@ read_JP2K_file(CommandOptions& Options)
     {
       result = Reader.ReadFrame(i, FrameBuffer, Context, HMAC);
 
+      char filename[1024];
+      snprintf(filename, 1024, name_format, Options.file_prefix, i);
+
+      if ( ASDCP_SUCCESS(result) && Options.verbose_flag )
+	{
+	  printf("Frame %d, %d bytes", i, FrameBuffer.Size());
+
+	  if ( ! Options.no_write_flag )
+	    {
+	      printf(" -> %s", filename);
+	    }
+
+	  printf("\n");
+	}
+
       if ( ASDCP_SUCCESS(result)  && ( ! Options.no_write_flag ) )
 	{
 	  Kumu::FileWriter OutFile;
-	  char filename[256];
 	  ui32_t write_count;
-	  snprintf(filename, 256, name_format, Options.file_prefix, i);
 	  result = OutFile.OpenWrite(filename);
 
 	  if ( ASDCP_SUCCESS(result) )

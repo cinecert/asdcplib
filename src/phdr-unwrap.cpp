@@ -255,7 +255,7 @@ read_JP2K_file(CommandOptions& Options)
   std::string PHDR_master_metadata; // todo: write to a file?
 
   Result_t result = Reader.OpenRead(Options.input_filename, PHDR_master_metadata);
-  fprintf(stderr, "PHDR_master_metadata size=%d\n", PHDR_master_metadata.size());
+  fprintf(stderr, "PHDR_master_metadata size=%zd\n", PHDR_master_metadata.size());
 
   if ( ASDCP_SUCCESS(result) )
     {
@@ -347,19 +347,34 @@ read_JP2K_file(CommandOptions& Options)
     {
       result = Reader.ReadFrame(i, FrameBuffer, Context, HMAC);
 
-      if ( ASDCP_SUCCESS(result) )
+      char filename[1024];
+      snprintf(filename, 1024, name_format, Options.file_prefix, i);
+
+      if ( ASDCP_SUCCESS(result) && Options.verbose_flag )
+	{
+	  printf("Frame %d, %d bytes", i, FrameBuffer.Size());
+
+	  if ( ! Options.no_write_flag )
+	    {
+	      printf(" -> %s", filename);
+	    }
+
+	  printf("\n");
+	}
+
+      if ( ASDCP_SUCCESS(result)  && ( ! Options.no_write_flag ) )
 	{
 	  Kumu::FileWriter OutFile;
-	  char filename[256];
 	  ui32_t write_count;
-	  snprintf(filename, 256, name_format, Options.file_prefix, i);
 	  result = OutFile.OpenWrite(filename);
 
 	  if ( ASDCP_SUCCESS(result) )
 	    result = OutFile.Write(FrameBuffer.Data(), FrameBuffer.Size(), &write_count);
 
-	  if ( Options.verbose_flag )
-	    FrameBuffer.Dump(stderr, Options.fb_dump_size);
+	  if ( ASDCP_SUCCESS(result) && Options.verbose_flag )
+	    {
+	      FrameBuffer.Dump(stderr, Options.fb_dump_size);
+	    }
 	}
     }
 

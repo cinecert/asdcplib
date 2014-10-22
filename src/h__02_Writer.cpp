@@ -191,7 +191,7 @@ AS_02::h__AS02WriterFrame::WriteEKLVPacket(const ASDCP::FrameBuffer& FrameBuf,co
       m_IndexWriter.PushIndexEntry(Entry);
     }
 
-  if ( m_FramesWritten > 0 && ( m_FramesWritten % m_PartitionSpace ) == 0 )
+  if ( m_FramesWritten > 1 && ( ( m_FramesWritten + 1 ) % m_PartitionSpace ) == 0 )
     {
       m_IndexWriter.ThisPartition = m_File.Tell();
       m_IndexWriter.WriteToFile(m_File);

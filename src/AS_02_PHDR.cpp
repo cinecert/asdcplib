@@ -57,7 +57,12 @@ AS_02::PHDR::FrameBuffer::Dump(FILE* stream, ui32_t dump_bytes) const
   if ( stream == 0 )
     stream = stderr;
 
-  fprintf(stream, "Hello, HDR world!\n");
+  fprintf(stream, "Frame %d, %d bytes (metadata: %zd bytes)\n", FrameNumber(), Size(), OpaqueMetadata.size());
+
+  if ( dump_bytes > 0 )
+    {
+      Kumu::hexdump(RoData(), Kumu::xmin(dump_bytes, Size()), stream);
+    }
 }
 
 
@@ -189,7 +194,6 @@ AS_02::PHDR::MXFReader::h__Reader::OpenRead(const std::string& filename, std::st
     }
 
   m_IndexAccess.Dump();
-
   return result;
 }
 
@@ -390,7 +394,7 @@ AS_02::PHDR::MXFWriter::h__Writer::OpenWrite(const std::string& filename,
   if ( KM_SUCCESS(result) )
     {
       m_IndexStrategy = IndexStrategy;
-      m_PartitionSpace = PartitionSpace_sec; // later converted to edit units by SetSourceStream()
+      m_PartitionSpace = PartitionSpace_sec; // later converted to edit units by WritePHDRHeader()
       m_HeaderSize = HeaderSize;
 
       if ( essence_descriptor->GetUL() != UL(m_Dict->ul(MDD_RGBAEssenceDescriptor))
@@ -446,7 +450,7 @@ AS_02::PHDR::MXFWriter::h__Writer::WritePHDRHeader(const std::string& PackageLab
     CreateTrackAndSequence<SourcePackage, SourceClip>(m_HeaderPart, *m_FilePackage,
 						      MD_DEF_LABEL, EditRate,
 						      UL(m_Dict->ul(MDD_PHDRImageMetadataItem)),
-						      3, m_Dict);
+						      3 /* track id */, m_Dict);
 
   metdata_track.Sequence->Duration.set_has_value();
   m_DurationUpdateList.push_back(&(metdata_track.Sequence->Duration.get()));
@@ -629,8 +633,6 @@ AS_02::PHDR::MXFWriter::h__Writer::Finalize(const std::string& PHDR_master_metad
 
 	      result = Write_EKLV_Packet(m_File, *m_Dict, m_HeaderPart, m_Info, m_CtFrameBuf, m_FramesWritten,
 					 m_StreamOffset, tmp_buf, GenericStream_DataElement.Value(), 0, 0);
-
-	      m_FramesWritten++;
 	    }
 	}
 
