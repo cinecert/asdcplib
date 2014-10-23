@@ -220,6 +220,11 @@ AS_02::PHDR::MXFReader::h__Reader::ReadFrame(ui32_t FrameNum, AS_02::PHDR::Frame
 	{
 	  FrameBuf.OpaqueMetadata.assign((const char*)tmp_metadata_buffer.RoData(), tmp_metadata_buffer.Size());
 	}
+      else
+	{
+	  DefaultLogSink().Error("Metadata packet not found at frame %d.\n", FrameNum);
+	  result = RESULT_OK;
+	}
     }
 
   return result;

@@ -93,7 +93,8 @@ AS_02::MXF::AS02IndexReader::InitFromFile(const Kumu::FileReader& reader, const 
 	}
       else if ( i->BodySID != first_body_sid )
 	{
-	  DefaultLogSink().Error("RIP contains multipls BodySID identities.\n");
+	  DefaultLogSink().Debug("The index assembler is ignoring BodySID %d.\n", i->BodySID);
+	  continue;
 	}
 
       reader.Seek(i->ByteOffset);
