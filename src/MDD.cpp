@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2006-2013, John Hurst
+Copyright (c) 2006-2015, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -1182,6 +1182,10 @@ static const ASDCP::MDDEntry s_MDD_Table[] = {
   { { 0x06, 0x0e, 0x2b, 0x34, 0x01, 0x01, 0x01, 0x05, // 379
       0x0e, 0x09, 0x06, 0x07, 0x01, 0x01, 0x01, 0x06 },
     {0}, false, "PHDRMetadataTrackSubDescriptor_SimplePayloadSID" },
+
+  { { 0x06, 0x0e, 0x2b, 0x34, 0x01, 0x01, 0x01, 0x0e, // 380
+      0x04, 0x01, 0x06, 0x03, 0x0e, 0x00, 0x00, 0x00 },
+      {0}, true, "JPEG2000PictureSubDescriptor_J2CLayout" },
 
   { {0}, {0}, false, 0 }
 };

@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2006-2013, John Hurst
+Copyright (c) 2006-2015, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -415,6 +415,7 @@ namespace ASDCP {
 	MDD_PHDRMetadataTrackSubDescriptor_DataDefinition, // 377
 	MDD_PHDRMetadataTrackSubDescriptor_SourceTrackID, // 378
 	MDD_PHDRMetadataTrackSubDescriptor_SimplePayloadSID, // 379
+	MDD_JPEG2000PictureSubDescriptor_J2CLayout, // 380
         MDD_Max
     }; // enum MDD_t
 

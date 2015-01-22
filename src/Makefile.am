@@ -80,12 +80,20 @@ if USE_AS_02
 include_HEADERS		+= AS_02.h
 endif
 
+if USE_PHDR
+include_HEADERS		+= AS_02_PHDR.h
+endif
+
 # list of the libraries to build and install
 
 lib_LTLIBRARIES = libkumu.la libasdcp.la
 
 if USE_AS_02
 lib_LTLIBRARIES		+= libas02.la
+endif
+
+if USE_PHDR
+lib_LTLIBRARIES		+= libphdr.la
 endif
 
 # sources for kumu library
@@ -139,6 +147,19 @@ libas02_la_SOURCES	= \
 libas02_la_LDFLAGS = -release @VERSION@
 libas02_la_LIBADD = libasdcp.la libkumu.la
 libas02_la_CPPFLAGS = -DASDCP_PLATFORM=\"@host@\"
+endif
+
+
+if USE_PHDR
+# sources for PHDR library
+libphdr_la_SOURCES	= \
+	AS_02_PHDR.h \
+	PHDR_Sequence_Parser.cpp \
+	AS_02_PHDR.cpp
+
+libphdr_la_LDFLAGS = -release @VERSION@
+libphdr_la_LIBADD = libasdcp.la libkumu.la
+libphdr_la_CPPFLAGS = -DASDCP_PLATFORM=\"@host@\"
 endif
 
 # Python extension
@@ -196,6 +217,11 @@ bin_PROGRAMS += \
 	as-02-unwrap
 endif
 
+if USE_PHDR
+bin_PROGRAMS += \
+	phdr-wrap \
+	phdr-unwrap
+endif
 
 # sources and linkage for CLI utilities
 asdcp_test_SOURCES = asdcp-test.cpp
@@ -243,6 +269,14 @@ as_02_wrap_LDADD = libas02.la libasdcp.la libkumu.la
 
 as_02_unwrap_SOURCES = as-02-unwrap.cpp
 as_02_unwrap_LDADD = libas02.la libasdcp.la libkumu.la
+endif
+
+if USE_PHDR
+phdr_wrap_SOURCES = phdr-wrap.cpp
+phdr_wrap_LDADD = libphdr.la libas02.la libasdcp.la libkumu.la
+
+phdr_unwrap_SOURCES = phdr-unwrap.cpp
+phdr_unwrap_LDADD = libphdr.la libas02.la libasdcp.la libkumu.la
 endif
 
 # list of programs that need to be compiled for use in test suite

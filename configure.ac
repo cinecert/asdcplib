@@ -1,6 +1,6 @@
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
-# Copyright (c) 2007-2013 John Hurst. All rights reserved.
+# Copyright (c) 2007-2015 John Hurst. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -37,7 +37,7 @@ AC_PREREQ([2.59])
 # For example, if asdcplib version 1.0.0 were modified to accomodate changes
 # in file format, and if no changes were made to AS_DCP.h, the new version would be
 # 1.0.1. If changes were also required in AS_DCP.h, the new version would be 1.1.1.
-AC_INIT([asdcplib], [2.2.7], [asdcplib@cinecert.com])
+AC_INIT([asdcplib], [2.3.8], [asdcplib@cinecert.com])
 
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_SRCDIR([src/KM_error.h])
@@ -105,6 +105,14 @@ AC_ARG_ENABLE([as-02],
        *) AC_MSG_ERROR([bad value ${enableval} for --enable-as-02]) ;;
      esac],[as_02_use=false])
      AM_CONDITIONAL([USE_AS_02], [test x$as_02_use = xtrue])
+AC_ARG_ENABLE([phdr],
+     [  --enable-phdr    enable support for Prototype for High Dyamic Range in AS-02],
+     [case "${enableval}" in
+       yes) phdr_use=true ;;
+       no)  phdr_use=false ;;
+       *) AC_MSG_ERROR([bad value ${enableval} for --enable-phdr]) ;;
+     esac],[phdr_use=false])
+     AM_CONDITIONAL([USE_PHDR], [test x$phdr_use = xtrue])
 
 # Checks for libraries.
 AC_CHECK_LIB([pthread], [pthread_create])

@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2011-2014, John Hurst
+Copyright (c) 2011-2015, John Hurst
 
 All rights reserved.
 

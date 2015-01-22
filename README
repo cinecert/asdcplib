@@ -129,6 +129,17 @@ blackwave - Write a WAVE file full of zeros,  Used to make filler
 
 j2c-test - Displays information about JP2K codestreams.
 
+Experimental feature: Prototype for High Dynamic Range is a wrapper
+for the IMF application that allows JPEG-2000 codestreams to be paired
+with opaque blobs of metadata.  AS-02 support must be enabled to
+build this feature, so --enable-as-02 must be enabled if
+--enable-phdr is to be used.  The following executable programs will be
+built:
+
+phdr-wrap - Writes AS-02 PHDR Essence Component files.
+
+phdr-unwrap - Extracts essence from AS-02 PHDR Essence Component files.
+
 
 Documentation
 
@@ -139,17 +150,28 @@ command-line utilities all respond to -h.
 
 
 Change History
+2015-01-22 - PHDR feature, bug fixes
+  o Added PHDR wrapping for AS-02.
+  o Added J2CLayout property to the JPEG2000PictureSubDescriptor.  This
+    support is preliminary: the Raw data type is being used instead of
+    RGBALayout type, which will be in the next release.
+
+
 2014-10-2 - Bug fixes and enhancements, 2.2.6
   o Fixed erroneous 377-4 MCA identifier in AS_DCP_PCM dump routine
-  o Fixed erroneous byte 13 in WaveAudioDescriptor_ReferenceAudioAlignmentLevel label
+  o Fixed erroneous byte 13 in
+    WaveAudioDescriptor_ReferenceAudioAlignmentLevel label
   o Added missing implementation of -W option to as-02.unwrap
   o Fixed erroneous use of d-cinema ChannelAssignment label in as-02-wrap
+
 
 2014-10-01 - Bug fixes and enhancements, 2.2.5
   o Finished AS-02 text wrap/unwrap
   o Fixed fractional seconds parsing for Timestamp objects
-  o Updated KLVPacket to use 64-bit length; allows huge packets in AS-02 PCM files
+  o Updated KLVPacket to use 64-bit length; allows huge packets
+    in AS-02 PCM files
   o cleaned up use of atoi() in the library
+
 
 2014-07-09 - Additional IMF/AS-02 support, bug fixes and enhancements, 2.1.4
   o Added IMF App 2 edit rates in AS_02 namespace: EditRate_29_97, 
@@ -174,6 +196,7 @@ Change History
   o Re-factored MCA label generator to include additional  
     metadata (Thanks to Mike Radford).
   o Added new options to as-02-wrap.
+
 
 2014-01-06 – Additional IMF/AS-02 support, bug fixes 2.1.1
   o Fixed missing-index-partion bugs for AS-02 files.

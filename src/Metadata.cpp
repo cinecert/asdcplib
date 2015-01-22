@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2005-2012, John Hurst
+Copyright (c) 2005-2015, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -2048,6 +2048,10 @@ JPEG2000PictureSubDescriptor::InitFromTLVSet(TLVReader& TLVSet)
     result = TLVSet.ReadObject(OBJ_READ_ARGS_OPT(JPEG2000PictureSubDescriptor, QuantizationDefault));
     QuantizationDefault.set_has_value( result == RESULT_OK );
   }
+  if ( ASDCP_SUCCESS(result) ) {
+    result = TLVSet.ReadObject(OBJ_READ_ARGS_OPT(JPEG2000PictureSubDescriptor, J2CLayout));
+    J2CLayout.set_has_value( result == RESULT_OK );
+  }
   return result;
 }
 
@@ -2070,6 +2074,7 @@ JPEG2000PictureSubDescriptor::WriteToTLVSet(TLVWriter& TLVSet)
   if ( ASDCP_SUCCESS(result)  && ! PictureComponentSizing.empty() ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS_OPT(JPEG2000PictureSubDescriptor, PictureComponentSizing));
   if ( ASDCP_SUCCESS(result)  && ! CodingStyleDefault.empty() ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS_OPT(JPEG2000PictureSubDescriptor, CodingStyleDefault));
   if ( ASDCP_SUCCESS(result)  && ! QuantizationDefault.empty() ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS_OPT(JPEG2000PictureSubDescriptor, QuantizationDefault));
+  if ( ASDCP_SUCCESS(result)  && ! J2CLayout.empty() ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS_OPT(JPEG2000PictureSubDescriptor, J2CLayout));
   return result;
 }
 
@@ -2091,6 +2096,7 @@ JPEG2000PictureSubDescriptor::Copy(const JPEG2000PictureSubDescriptor& rhs)
   PictureComponentSizing = rhs.PictureComponentSizing;
   CodingStyleDefault = rhs.CodingStyleDefault;
   QuantizationDefault = rhs.QuantizationDefault;
+  J2CLayout = rhs.J2CLayout;
 }
 
 //
@@ -2122,6 +2128,9 @@ JPEG2000PictureSubDescriptor::Dump(FILE* stream)
   }
   if ( ! QuantizationDefault.empty() ) {
     fprintf(stream, "  %22s = %s\n",  "QuantizationDefault", QuantizationDefault.get().EncodeString(identbuf, IdentBufferLen));
+  }
+  if ( ! J2CLayout.empty() ) {
+    fprintf(stream, "  %22s = %s\n",  "J2CLayout", J2CLayout.get().EncodeString(identbuf, IdentBufferLen));
   }
 }
 
