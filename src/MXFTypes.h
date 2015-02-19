@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2005-2014, John Hurst
+Copyright (c) 2005-2015, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -381,6 +381,114 @@ namespace ASDCP
 	    return true;
 	  }
 	};
+
+      /*
+	The RGBALayout type shall be a fixed-size 8 element sequence with a total length
+	of 16 bytes, where each element shall consist of the RGBAComponent type with the
+	following fields:
+
+	Code (UInt8): Enumerated value specifying component (i.e., component identifier).
+	"0" is the layout terminator.
+
+	Depth (UInt8): Integer specifying the number of bits occupied (see also G.2.26) 
+	  1->32 indicates integer depth
+	  253 = HALF (floating point 16-bit value)
+	  254 = IEEE floating point 32-bit value
+	  255 = IEEE floating point 64-bit value
+	  0 = RGBALayout terminator
+
+	A Fill component indicates unused bits. After the components have been specified,
+	the remaining Code and Size fields shall be set to zero (0).
+
+	For each component in the Pixel, one of the following Codes or the terminator
+	shall be specified (explained below):
+
+	Code	ASCII
+
+      */
+      struct RGBALayoutTableEntry
+      {
+	byte_t code;
+	char symbol;
+	const char* label;
+      };
+
+      struct RGBALayoutTableEntry const RGBALayoutTable[] = {
+	{ 0x52, 'R', "Red component" },
+	{ 0x47, 'G', "Green component" },
+	{ 0x42, 'B', "Blue component" },
+	{ 0x41, 'A', "Alpha component" },
+	{ 0x72, 'r', "Red component (LSBs)" },
+	{ 0x67, 'g', "Green component (LSBs)" },
+	{ 0x62, 'b', "Blue component (LSBs)" },
+	{ 0x61, 'a', "Alpha component (LSBs)" },
+	{ 0x46, 'F', "Fill component" },
+	{ 0x50, 'P', "Palette code" },
+	{ 0x55, 'U', "Color Difference Sample (e.g. U, Cb, I etc.)" },
+	{ 0x56, 'V', "Color Difference Sample (e.g. V, Cr, Q etc.)" },
+	{ 0x57, 'W', "Composite Video" },
+	{ 0x58, 'X', "Non co-sited luma component" },
+	{ 0x59, 'Y', "Luma component" },
+	{ 0x5a, 'Z', "Depth component (SMPTE ST 268 compatible)" },
+	{ 0x75, 'u', "Color Difference Sample (e.g. U, Cb, I etc.) (LSBs)" },
+	{ 0x76, 'v', "Color Difference Sample (e.g. V, Cr, Q etc.) (LSBs)" },
+	{ 0x77, 'w', "Composite Video (LSBs)" },
+	{ 0x78, 'x', "Non co-sited luma component (LSBs)" },
+	{ 0x79, 'y', "Luma component (LSBs)" },
+	{ 0x7a, 'z', "Depth component (LSBs) (SMPTE ST 268 compatible)" },
+	{ 0xd8, 'X', "The DCDM X color component (see SMPTE ST 428-1 X')" },
+	{ 0xd9, 'Y', "The DCDM Y color component (see SMPTE ST 428-1 Y')" },
+	{ 0xda, 'Z', "The DCDM Z color component (see SMPTE ST 428-1 Z')" },
+	{ 0x00, '_', "Terminator" }
+      };
+
+
+      size_t const RGBAValueLength = 16;
+
+      byte_t const RGBAValue_RGB_10[RGBAValueLength] = { 'R', 10, 'G', 10, 'B', 10, 0, 0 };
+      byte_t const RGBAValue_RGB_8[RGBAValueLength]  = { 'R', 8,  'G', 8,  'B', 8,  0, 0 };
+      byte_t const RGBAValue_YUV_10[RGBAValueLength] = { 'Y', 10, 'U', 10, 'V', 10, 0, 0 };
+      byte_t const RGBAValue_YUV_8[RGBAValueLength]  = { 'Y', 8,  'U', 8,  'V', 8,  0, 0 };
+      byte_t const RGBAValue_DCDM[RGBAValueLength] = { 0xd8, 10, 0xd9, 10, 0xda, 10, 0, 0 };
+
+
+      class RGBALayout : public Kumu::IArchive
+	{
+	  byte_t m_value[RGBAValueLength];
+
+	public:
+	  RGBALayout();
+	  RGBALayout(const byte_t* value);
+	  ~RGBALayout();
+
+	  RGBALayout(const RGBALayout& rhs) { Set(rhs.m_value); }
+	  const RGBALayout& operator=(const RGBALayout& rhs) { Set(rhs.m_value); return *this; }
+	  
+	  void Set(const byte_t* value) {
+	    memcpy(m_value, value, RGBAValueLength);
+	  }
+
+	  const char* EncodeString(char* buf, ui32_t buf_len) const;
+
+	  bool HasValue() const { return true; }
+	  ui32_t ArchiveLength() const { return RGBAValueLength; }
+
+	  bool Archive(Kumu::MemIOWriter* Writer) const {
+	    return Writer->WriteRaw(m_value, RGBAValueLength);
+	  }
+
+	  bool Unarchive(Kumu::MemIOReader* Reader) {
+	    if ( Reader->Remainder() < RGBAValueLength )
+	      {
+		return false;
+	      }
+
+	    memcpy(m_value, Reader->CurrentData(), RGBAValueLength);
+	    Reader->SkipOffset(RGBAValueLength);
+	    return true;
+	  }
+	};
+
 
       //
       class Raw : public Kumu::ByteString

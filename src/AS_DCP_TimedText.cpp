@@ -569,6 +569,7 @@ ASDCP::TimedText::MXFWriter::h__Writer::SetSourceStream(ASDCP::TimedText::TimedT
       resourceSubdescriptor->EssenceStreamID = m_EssenceStreamID++;
       m_EssenceSubDescriptorList.push_back((FileDescriptor*)resourceSubdescriptor);
       m_EssenceDescriptor->SubDescriptors.push_back(resourceSubdescriptor->InstanceUID);
+      m_HeaderSize += resourceSubdescriptor->MIMEMediaType.ArchiveLength() + 20; // 20 == sizeof uuid + sizeof int32
     }
 
   m_EssenceStreamID = 10;
@@ -585,7 +586,7 @@ ASDCP::TimedText::MXFWriter::h__Writer::SetSourceStream(ASDCP::TimedText::TimedT
 	}
       else
 	{
-	  DefaultLogSink().Error("Unable to write Interop timed-text MXF file.  Use SMOTE DCP options instead.\n");
+	  DefaultLogSink().Error("Unable to write Interop timed-text MXF file.  Use SMPTE DCP options instead.\n");
 	  return RESULT_FORMAT;
 	}
 

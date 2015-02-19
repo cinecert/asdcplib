@@ -150,7 +150,46 @@ command-line utilities all respond to -h.
 
 
 Change History
-2015-01-22 - PHDR feature, bug fixes
+
+2015-02-19 - PHDR feature, bug fixes
+  o Modified PCMParser and PCMParserList to return partial frame buffers at the
+    end of a WAV input file.  This was needed to allow wrapping all samples into
+    an AS-02 audio file (which is clip-wrapped) in the case where the input file
+    has an odd number of samples with respect to the frame buffer size being
+    used.  If there is more than one input file the length of the last buffer
+    will be determined by PCMParserList to be the shortest of the input files.
+    Prior to this change, partial samples in an input WAV file have been
+    abandoned (i.e., not written out to the MXF file).  As a result, AS-DCP
+    applications will have to decide whether to abandon the partial last frame
+    (usually detected by testing frame_buffer.Size() != frame_buffer.Capacity())
+    or write it to the MXF file.  Programs written to the old API will write the
+    partial frame (i.e., new behavior.)  This should not be harmful since the
+    remainder of the buffer is zeroed and the output file will contain one
+    additional edit unit compared to the previous version.
+  o asdcp-wrap has been modified to test for the partial buffer and by default
+    will complain and abandon the buffer (i.e., same behavior but with a warning
+    message.)  A new command line switch (-g) alters this behavior and writes
+    the buffer to the MXF file (it still warns the user that this condition is
+    present.)
+  o as-02-wrap now wraps all samples from the input file to the MXF file. There
+    is no padding, the clip is exactly the set of samples from the input.
+  o as-02 unwrap is temporarily restricted to creating wav files that are
+    aligned with the frame buffer size.  This means that the output file will
+    be longer than the original WAV input in the case where the input file has
+    an odd number of samples with respect to the frame buffer size being used.
+    The pad samples are zero (silence).
+  o Modified CalcFramesFromDurationInSamples() to increment the count by one for
+    the case where the input file has an odd number of samples with respect to
+    the frame buffer size being used (previously it truncated the odd samples.)
+  o Fixed ST 429-5 / ST 2067-5 wrapping to increase header space when ancillary
+    resources are present (fixes a bug that cause the header to overflow the
+    allotted space when large numbers of PNG files were present.)
+  o Refactored GetXMLDocType() to use the XML parser.
+  o Added ParseFirstFromString() method to Kumu::XMLElement
+  o Removed Kumu::StringIsXML from the API.
+  o Added ASDCP::MXF::RGBALayout type
+  o Added J2CLayout property to JPEG2000PictureSubDescriptor
+  o Changed km_token_split() to retain empty elements in the output list
   o Added PHDR wrapping for AS-02.
   o Added J2CLayout property to the JPEG2000PictureSubDescriptor.  This
     support is preliminary: the Raw data type is being used instead of

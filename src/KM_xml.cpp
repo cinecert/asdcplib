@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2005-2010, John Hurst
+Copyright (c) 2005-2015, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -399,6 +399,20 @@ Kumu::XMLElement::ParseString(const std::string& document)
   return ParseString(document.c_str(), document.size());
 }
 
+//
+bool
+Kumu::XMLElement::ParseFirstFromString(const ByteString& document)
+{
+  return ParseFirstFromString((const char*)document.RoData(), document.Length());
+}
+
+//
+bool
+Kumu::XMLElement::ParseFirstFromString(const std::string& document)
+{
+  return ParseFirstFromString(document.c_str(), document.size());
+}
+
 
 //----------------------------------------------------------------------------------------------------
 
@@ -525,6 +539,11 @@ xph_namespace_start(void* p, const XML_Char* ns_prefix, const XML_Char* ns_name)
 bool
 Kumu::XMLElement::ParseString(const char* document, ui32_t doc_len)
 {
+  if ( doc_len == 0 )
+    {
+      return false;
+    }
+
   XML_Parser Parser = XML_ParserCreateNS("UTF-8", '|');
 
   if ( Parser == 0 )
@@ -551,45 +570,33 @@ Kumu::XMLElement::ParseString(const char* document, ui32_t doc_len)
   XML_ParserFree(Parser);
 
   if ( ! Ctx.Namespaces->empty() )
-    m_NamespaceOwner = (void*)Ctx.Namespaces;
+    {
+      m_NamespaceOwner = (void*)Ctx.Namespaces;
+    }
 
   return true;
 }
 
-//------------------------------------------------------------------------------------------
-
-struct xph_test_wrapper
-{
-  XML_Parser Parser;
-  bool  Status;
-
-  xph_test_wrapper(XML_Parser p) : Parser(p), Status(false) {}
-};
-
-// expat wrapper functions, map callbacks to IASAXHandler
+// expat wrapper functions
 // 
 static void
-xph_test_start(void* p, const XML_Char* name, const XML_Char** attrs)
+xph_start_one_shot(void* p, const XML_Char* name, const XML_Char** attrs)
 {
-  assert(p);
-  xph_test_wrapper* Wrapper = (xph_test_wrapper*)p;
-
-  Wrapper->Status = true;
-  XML_StopParser(Wrapper->Parser, false);
+  xph_start(p, name, attrs);
+  XML_Parser parser = (XML_Parser)p;
+  XML_StopParser(parser, false);
 }
-
 
 //
 bool
-Kumu::StringIsXML(const char* document, ui32_t len)
+Kumu::XMLElement::ParseFirstFromString(const char* document, ui32_t doc_len)
 {
-  if ( document == 0 )
-    return false;
+  if ( doc_len == 0 )
+    {
+      return false;
+    }
 
-  if ( len == 0 )
-    len = strlen(document);
-
-  XML_Parser Parser = XML_ParserCreate("UTF-8");
+  XML_Parser Parser = XML_ParserCreateNS("UTF-8", '|');
 
   if ( Parser == 0 )
     {
@@ -597,14 +604,32 @@ Kumu::StringIsXML(const char* document, ui32_t len)
       return false;
     }
 
-  xph_test_wrapper Wrapper(Parser);
-  XML_SetUserData(Parser, (void*)&Wrapper);
-  XML_SetStartElementHandler(Parser, xph_test_start);
+  ExpatParseContext Ctx(this);
+  XML_SetUserData(Parser, (void*)&Ctx);
+  XML_SetElementHandler(Parser, xph_start_one_shot, xph_end);
+  XML_SetCharacterDataHandler(Parser, xph_char);
+  XML_SetStartNamespaceDeclHandler(Parser, xph_namespace_start);
 
-  XML_Parse(Parser, document, len, 1);
+  if ( ! XML_Parse(Parser, document, doc_len, 1) )
+    {
+      DefaultLogSink().Error("XML Parse error on line %d: %s\n",
+			     XML_GetCurrentLineNumber(Parser),
+			     XML_ErrorString(XML_GetErrorCode(Parser)));
+      XML_ParserFree(Parser);
+      return false;
+    }
+
   XML_ParserFree(Parser);
-  return Wrapper.Status;
+
+  if ( ! Ctx.Namespaces->empty() )
+    {
+      m_NamespaceOwner = (void*)Ctx.Namespaces;
+    }
+
+  return true;
 }
+
+
 
 #endif
 
@@ -905,7 +930,9 @@ bool
 Kumu::XMLElement::ParseString(const char* document, ui32_t doc_len)
 {
   if ( doc_len == 0 )
-    return false;
+    {
+      return false;
+    }
 
   init_xml_dom();
 
@@ -958,37 +985,69 @@ Kumu::XMLElement::ParseString(const char* document, ui32_t doc_len)
 
 //
 bool
-Kumu::StringIsXML(const char* document, ui32_t len)
+Kumu::XMLElement::ParseFirstFromString(const char* document, ui32_t doc_len)
 {
-  if ( document == 0 || *document == 0 )
-    return false;
+  if ( doc_len == 0 )
+    {
+      return false;
+    }
 
   init_xml_dom();
 
-  if ( len == 0 )
-    len = strlen(document);
+  int errorCount = 0;
+  SAXParser* parser = new SAXParser();
 
-  SAXParser parser;
+  parser->setValidationScheme(SAXParser::Val_Always);
+  parser->setDoNamespaces(true);    // optional
+
+  MyTreeHandler* docHandler = new MyTreeHandler(this);
+  parser->setDocumentHandler(docHandler);
+  parser->setErrorHandler(docHandler);
   XMLPScanToken token;
-  bool status = false;
 
   try
     {
       MemBufInputSource xmlSource(reinterpret_cast<const XMLByte*>(document),
-				  static_cast<const unsigned int>(len),
+				  static_cast<const unsigned int>(doc_len),
 				  "pidc_rules_file");
 
-      if ( parser.parseFirst(xmlSource, token) )
+      if ( ! parser->parseFirst(xmlSource, token) )
 	{
-	  if ( parser.parseNext(token) )
-	    status = true;
+	  ++errorCount;
 	}
+
+      if ( ! parser->parseNext(token) )
+	{
+	  ++errorCount;
+	}
+    }
+  catch (const XMLException& e)
+    {
+      char* message = XMLString::transcode(e.getMessage());
+      DefaultLogSink().Error("Parser error: %s\n", message);
+      XMLString::release(&message);
+      errorCount++;
+    }
+  catch (const SAXParseException& e)
+    {
+      char* message = XMLString::transcode(e.getMessage());
+      DefaultLogSink().Error("Parser error: %s at line %d\n", message, e.getLineNumber());
+      XMLString::release(&message);
+      errorCount++;
     }
   catch (...)
     {
+      DefaultLogSink().Error("Unexpected XML parser error\n");
+      errorCount++;
     }
   
-  return status;
+  if ( errorCount == 0 )
+    m_NamespaceOwner = (void*)docHandler->TakeNamespaceMap();
+
+  delete parser;
+  delete docHandler;
+
+  return errorCount > 0 ? false : true;
 }
 
 
@@ -1006,9 +1065,8 @@ Kumu::XMLElement::ParseString(const char* document, ui32_t doc_len)
   return false;
 }
 
-//
 bool
-Kumu::StringIsXML(const char* document, ui32_t len)
+Kumu::XMLElement::ParseFirstFromString(const char* document, ui32_t doc_len)
 {
   DefaultLogSink().Error("Kumu compiled without XML parser support.\n");
   return false;
@@ -1040,122 +1098,25 @@ bool
 Kumu::GetXMLDocType(const byte_t* buf, ui32_t buf_len, std::string& ns_prefix, std::string& type_name, std::string& namespace_name,
 		    AttributeList& doc_attr_list)
 {
-  assert(buf);
-  const byte_t *p1 = buf, *p2;
-  const byte_t *end_p = buf + buf_len;
+  XMLElement tmp_element("tmp");
 
-  while ( p1 < end_p && *p1 )
+  if ( ! tmp_element.ParseFirstFromString((const char*)buf, buf_len) )
     {
-      if ( *p1 == '<' && isalpha(p1[1]) )
-        {
-          p2 = ++p1;
-
-          // collect element name
-          while ( p2 < end_p && *p2 && ! ( isspace(*p2) || *p2 == '>' ) )
-            ++p2;
-
-          if ( p2 < end_p )
-            {
-              const byte_t* separator = (byte_t*)strchr(reinterpret_cast<const char*>(p1), ':');
-              if ( separator != 0 && separator < p2 )
-                {
-                  ns_prefix.assign(reinterpret_cast<const char*>(p1), separator - p1);
-                  p1 = separator + 1;
-                }
-
-              type_name.assign(reinterpret_cast<const char*>(p1), p2 - p1);
-              break;
-            }
-        }
-      else if ( *p1 == '<' && ( ( p1 + 3 ) < end_p ) && p1[1] == '!' && p1[2] == '-' && p1[3] == '-' )
-	{
-          p1 += 4;
-
-	  for (;;)
-	    {
-	      while ( *p1 != '>' && p1 < end_p )
-		{
-		  ++p1;
-		}
-
-	      if ( *(p1-2) == '-' && *(p1-1) == '-' && *p1 == '>' )
-		{
-		  break;
-		}
-
-	      ++p1;
-	    }
-	}
-      else
-	{
-	  ++p1;
-	}
+      return false;
     }
 
-  if ( isspace(*p2) )
+  const XMLNamespace* ns = tmp_element.Namespace();
+
+  if ( ns != 0 )
     {
-      const byte_t *p3 = p2+1;
-      while ( p3 < end_p && *p3 && *p3 != '>'  )
-      	{	
-	  ++p3;
-	}
-
-      if ( *p3 != '>' )
-	{
-	  return false; // not well-formed XML
-	}
-
-      std::string attr_str;
-      attr_str.assign(reinterpret_cast<const char*>(p2+1), p3 - p2 - 1);
-      
-      // normalize whitespace so the subesquent split works properly
-      for ( int j = 0; j < attr_str.length(); ++j )
-      	{
-	  if ( attr_str[j] != ' ' && isspace(attr_str[j]) )
-	    {
-	      attr_str[j] = ' ';
-	    }
-      	}
-
-      std::list<std::string> doc_attr_nvpairs = km_token_split(attr_str, " ");
-      
-      std::list<std::string>::iterator i;
-      std::map<std::string, std::string> ns_map;
-
-      for ( i = doc_attr_nvpairs.begin(); i != doc_attr_nvpairs.end(); ++i )
-        {
-	  // trim leading and trailing whitespace an right-most character, i.e., \"
-	  std::string trimmed = i->substr(i->find_first_not_of(" "), i->find_last_not_of(" \r\n\t"));
-          std::list<std::string> nv_tokens = km_token_split(trimmed, "=\"");
-
-          if ( nv_tokens.size() != 2 )
-	    {
-	      continue;
-	    }
-
-	  NVPair nv_pair;
-	  nv_pair.name = nv_tokens.front();
-	  nv_pair.value = nv_tokens.back();
-	  doc_attr_list.push_back(nv_pair);
-          ns_map.insert(std::map<std::string,std::string>::value_type(nv_pair.name, nv_pair.value));
-        }
-
-      std::string doc_ns_name_selector = ns_prefix.empty() ? "xmlns" : "xmlns:"+ns_prefix;
-      std::map<std::string,std::string>::iterator j = ns_map.find(doc_ns_name_selector);
-
-      if ( j != ns_map.end() )
-        {
-          namespace_name = j->second;
-        }
+      ns_prefix = ns->Prefix();
+      namespace_name = ns->Name();
     }
- else if ( *p2 != '>' )
-   {
-     return false; // not well-formed XML
-   }
 
-  return ! type_name.empty();
+  type_name = tmp_element.GetName();
+  doc_attr_list = tmp_element.GetAttributes();
+  return true;
 }
-
 
 
 //

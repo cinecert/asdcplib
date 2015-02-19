@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2011-2013, Robert Scheler, Heiko Sparenberg Fraunhofer IIS,
+Copyright (c) 2011-2015, Robert Scheler, Heiko Sparenberg Fraunhofer IIS,
 John Hurst
 
 All rights reserved.
@@ -47,17 +47,15 @@ static std::string SOUND_DEF_LABEL = "Sound Track";
 
 class AS_02::PCM::MXFReader::h__Reader : public AS_02::h__AS02Reader
 {
-  ui64_t m_ClipEssenceBegin;
-  ui64_t m_SamplesPerFrame;
-  ui32_t m_BytesPerFrame;
-  ui32_t m_ContainerDuration;
+  ui64_t m_ClipEssenceBegin, m_ClipSize;
+  ui32_t m_ClipDurationFrames, m_BytesPerFrame;
 
   ASDCP_NO_COPY_CONSTRUCT(h__Reader);
   h__Reader();
 
 public:
-  h__Reader(const Dictionary& d) : AS_02::h__AS02Reader(d), m_ClipEssenceBegin(0),
-				   m_SamplesPerFrame(0), m_BytesPerFrame(0), m_ContainerDuration(0) {}
+  h__Reader(const Dictionary& d) : AS_02::h__AS02Reader(d), m_ClipEssenceBegin(0), m_ClipSize(0),
+				   m_ClipDurationFrames(0) {}
   virtual ~h__Reader() {}
 
   ASDCP::Result_t    OpenRead(const std::string&, const ASDCP::Rational& edit_rate);
@@ -134,10 +132,14 @@ AS_02::PCM::MXFReader::h__Reader::OpenRead(const std::string& filename, const AS
 	    }
 
 	  m_ClipEssenceBegin = m_File.Tell();
-	  m_SamplesPerFrame = AS_02::MXF::CalcSamplesPerFrame(*wave_descriptor, edit_rate);
+	  m_ClipSize = reader.Length();
 	  m_BytesPerFrame = AS_02::MXF::CalcFrameBufferSize(*wave_descriptor, edit_rate);
-	  m_ContainerDuration = static_cast<ui32_t>(reader.Length() / ( m_SamplesPerFrame * AS_02::MXF::CalcSampleSize(*wave_descriptor)));
+	  m_ClipDurationFrames = m_ClipSize / m_BytesPerFrame;
 
+	  if ( m_ClipSize % m_BytesPerFrame > 0 )
+	    {
+	      ++m_ClipDurationFrames; // there is a partial frame at the end
+	    }
 	}
     }
 
@@ -154,13 +156,14 @@ AS_02::PCM::MXFReader::h__Reader::ReadFrame(ui32_t FrameNum, ASDCP::PCM::FrameBu
       return RESULT_INIT;
     }
 
-  if ( FrameNum > m_ContainerDuration )
+  if ( ! ( FrameNum < m_ClipDurationFrames ) )
     {
       return RESULT_RANGE;
     }
 
   assert(m_ClipEssenceBegin);
-  ui64_t position = m_ClipEssenceBegin + ( FrameNum * m_BytesPerFrame );
+  ui64_t offset = FrameNum * m_BytesPerFrame;
+  ui64_t position = m_ClipEssenceBegin + offset;
   Result_t result = RESULT_OK;
 
   if ( m_File.Tell() != position )
@@ -170,12 +173,19 @@ AS_02::PCM::MXFReader::h__Reader::ReadFrame(ui32_t FrameNum, ASDCP::PCM::FrameBu
 
   if ( KM_SUCCESS(result) )
     {
-      result = m_File.Read(FrameBuf.Data(), m_BytesPerFrame);
-    }
+      ui64_t remainder = m_ClipSize - offset;
+      ui32_t read_size = ( remainder < m_BytesPerFrame ) ? remainder : m_BytesPerFrame;
+      result = m_File.Read(FrameBuf.Data(), read_size);
 
-  if ( KM_SUCCESS(result) )
-    {
-      FrameBuf.Size(m_BytesPerFrame);
+      if ( KM_SUCCESS(result) )
+	{
+	  FrameBuf.Size(read_size);
+
+	  if ( read_size < FrameBuf.Capacity() )
+	    {
+	      memset(FrameBuf.Data() + FrameBuf.Size(), 0, FrameBuf.Capacity() - FrameBuf.Size());
+	    }
+	}
     }
 
   return result;
@@ -319,10 +329,9 @@ class AS_02::PCM::MXFWriter::h__Writer : public AS_02::h__AS02WriterClip
 public:
   ASDCP::MXF::WaveAudioDescriptor *m_WaveAudioDescriptor;
   byte_t m_EssenceUL[SMPTE_UL_LENGTH];
-  ui32_t m_BytesPerFrame;
-  ui32_t m_SamplesPerFrame;
-
-  h__Writer(const Dictionary& d) : AS_02::h__AS02WriterClip(d), m_WaveAudioDescriptor(0), m_BytesPerFrame(0), m_SamplesPerFrame(0)
+  ui32_t m_BytesPerSample;
+  
+  h__Writer(const Dictionary& d) : AS_02::h__AS02WriterClip(d), m_WaveAudioDescriptor(0), m_BytesPerSample(0)
   {
     memset(m_EssenceUL, 0, SMPTE_UL_LENGTH);
   }
@@ -406,10 +415,7 @@ AS_02::PCM::MXFWriter::h__Writer::SetSourceStream(const ASDCP::Rational& edit_ra
   if ( KM_SUCCESS(result) )
     {
       assert(m_WaveAudioDescriptor);
-      m_BytesPerFrame = AS_02::MXF::CalcFrameBufferSize(*m_WaveAudioDescriptor, edit_rate);
-      m_SamplesPerFrame = AS_02::MXF::CalcSamplesPerFrame(*m_WaveAudioDescriptor, edit_rate);
-      m_WaveAudioDescriptor->ContainerDuration = 0;
-      assert(m_BytesPerFrame);
+      m_BytesPerSample = AS_02::MXF::CalcSampleSize(*m_WaveAudioDescriptor);
       result = WriteAS02Header(PCM_PACKAGE_LABEL, UL(m_Dict->ul(MDD_WAVWrappingClip)),
 			       SOUND_DEF_LABEL, UL(m_EssenceUL), UL(m_Dict->ul(MDD_SoundDataDef)),
 			       m_EssenceDescriptor->SampleRate, derive_timecode_rate_from_edit_rate(edit_rate));
@@ -437,12 +443,6 @@ AS_02::PCM::MXFWriter::h__Writer::WriteFrame(const FrameBuffer& frame_buf, AESEn
       return RESULT_PARAM;
     }
 
-  if ( frame_buf.Size() % m_BytesPerFrame != 0 )
-    {
-      DefaultLogSink().Error("The frame buffer does not contain an integral number of sample sets.\n");
-      return RESULT_AS02_FORMAT;
-    }
-
   Result_t result = RESULT_OK;
 
   if ( m_State.Test_READY() )
@@ -462,7 +462,7 @@ AS_02::PCM::MXFWriter::h__Writer::WriteFrame(const FrameBuffer& frame_buf, AESEn
 
   if ( KM_SUCCESS(result) )
     {
-      m_FramesWritten += m_SamplesPerFrame;
+      m_FramesWritten += frame_buf.Size() / m_BytesPerSample;
     }
 
   return result;
@@ -482,7 +482,7 @@ AS_02::PCM::MXFWriter::h__Writer::Finalize()
 
   if ( KM_SUCCESS(result) )
     {
-      m_IndexWriter.m_Duration = m_FramesWritten;
+      m_WaveAudioDescriptor->ContainerDuration = m_IndexWriter.m_Duration = m_FramesWritten;
       WriteAS02Footer();
     }
 

@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2003-2014, John Hurst
+Copyright (c) 2003-2015, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -113,7 +113,7 @@ banner(FILE* stream = stdout)
 {
   fprintf(stream, "\n\
 %s (asdcplib %s)\n\n\
-Copyright (c) 2003-2014 John Hurst\n\n\
+Copyright (c) 2003-2015 John Hurst\n\n\
 asdcplib may be copied only under the terms of the license found at\n\
 the top of every file in the asdcplib distribution kit.\n\n\
 Specify the -h (help) option for further information about %s\n\n",
@@ -221,6 +221,7 @@ public:
   bool   version_flag;   // true if the version display option was selected
   bool   help_flag;      // true if the help display option was selected
   bool   stereo_image_flag; // if true, expect stereoscopic JP2K input (left eye first)
+  bool   write_partial_pcm_flag; // if true, write the last frame of PCM input even when it is incomplete
   ui32_t start_frame;    // frame number to begin processing
   ui32_t duration;       // number of frames to be processed
   bool   use_smpte_labels; // if true, SMPTE UL values will be written instead of MXF Interop values
@@ -289,7 +290,7 @@ public:
     encrypt_header_flag(true), write_hmac(true),
     verbose_flag(false), fb_dump_size(0),
     no_write_flag(false), version_flag(false), help_flag(false), stereo_image_flag(false),
-    start_frame(0),
+    write_partial_pcm_flag(false), start_frame(0),
     duration(0xffffffff), use_smpte_labels(false), j2c_pedantic(true),
     fb_size(FRAME_BUFFER_SIZE),
     channel_fmt(PCM::CF_NONE),
@@ -364,6 +365,7 @@ public:
 		start_frame = abs(atoi(argv[i]));
 		break;
 
+	      case 'g': write_partial_pcm_flag = true; break;
 	      case 'h': help_flag = true; break;
 
 	      case 'j': key_id_flag = true;
@@ -1059,8 +1061,12 @@ write_PCM_file(CommandOptions& Options)
 		{
 		  fprintf(stderr, "WARNING: Last frame read was short, PCM input is possibly not frame aligned.\n");
 		  fprintf(stderr, "Expecting %u bytes, got %u.\n", FrameBuffer.Capacity(), FrameBuffer.Size());
-		  result = RESULT_ENDOFFILE;
-		  continue;
+
+		  if ( Options.write_partial_pcm_flag )
+		    {
+		      result = RESULT_ENDOFFILE;
+		      continue;
+		    }
 		}
 
 	      if ( Options.verbose_flag )
@@ -1188,8 +1194,12 @@ write_PCM_with_ATMOS_sync_file(CommandOptions& Options)
 		{
 		  fprintf(stderr, "WARNING: Last frame read was short, PCM input is possibly not frame aligned.\n");
 		  fprintf(stderr, "Expecting %u bytes, got %u.\n", FrameBuffer.Capacity(), FrameBuffer.Size());
-		  result = RESULT_ENDOFFILE;
-		  continue;
+
+		  if ( Options.write_partial_pcm_flag )
+		    {
+		      result = RESULT_ENDOFFILE;
+		      continue;
+		    }
 		}
 
         if ( Options.verbose_flag )

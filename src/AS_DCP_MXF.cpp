@@ -259,6 +259,16 @@ ASDCP::EssenceType(const std::string& filename, EssenceType_t& type)
 }
 
 //
+static bool
+string_is_xml(const ASDCP::FrameBuffer& buffer)
+{
+  std::string ns_prefix, type_name, namespace_name;
+  Kumu::AttributeList doc_attr_list;
+  return GetXMLDocType(buffer.RoData(), buffer.Size(),
+		       ns_prefix, type_name, namespace_name, doc_attr_list);
+}
+
+//
 ASDCP::Result_t
 ASDCP::RawEssenceType(const std::string& filename, EssenceType_t& type)
 {
@@ -324,7 +334,7 @@ ASDCP::RawEssenceType(const std::string& filename, EssenceType_t& type)
 	    {
 	      type = ESS_PCM_24b_48k;
 	    }
-	  else if ( Kumu::StringIsXML((const char*)FB.RoData(), FB.Size()) )
+	  else if ( string_is_xml(FB) )
 	    {
 	      type = ESS_TIMED_TEXT;
 	    }

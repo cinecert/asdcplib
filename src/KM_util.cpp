@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2005-2012, John Hurst
+Copyright (c) 2005-2015, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -1178,18 +1178,14 @@ Kumu::km_token_split(const std::string& str, const std::string& separator)
   while ( r != 0 )
     {
       assert(r >= pstr);
-      if ( r > pstr )
-	{
-	  std::string tmp_str;
-	  tmp_str.assign(pstr, r - pstr);
-	  components.push_back(tmp_str);
-	}
-
+      std::string tmp_str;
+      tmp_str.assign(pstr, r - pstr);
+      components.push_back(tmp_str);
       pstr = r + separator.size();
       r = strstr(pstr, separator.c_str());
     }
       
-  if ( strlen(pstr) > 0 )
+  if ( strlen(pstr) >= 0 )
     {
       components.push_back(std::string(pstr));
     }

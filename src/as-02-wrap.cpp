@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2011-2014, Robert Scheler, Heiko Sparenberg Fraunhofer IIS,
+Copyright (c) 2011-2015, Robert Scheler, Heiko Sparenberg Fraunhofer IIS,
 John Hurst
 
 All rights reserved.
@@ -107,7 +107,7 @@ banner(FILE* stream = stdout)
 {
   fprintf(stream, "\n\
 %s (asdcplib %s)\n\n\
-Copyright (c) 2011-2014, Robert Scheler, Heiko Sparenberg Fraunhofer IIS, John Hurst\n\n\
+Copyright (c) 2011-2015, Robert Scheler, Heiko Sparenberg Fraunhofer IIS, John Hurst\n\n\
 asdcplib may be copied only under the terms of the license found at\n\
 the top of every file in the asdcplib distribution kit.\n\n\
 Specify the -h (help) option for further information about %s\n\n",
@@ -173,7 +173,7 @@ decode_rational(const char* str_rat)
 {
   assert(str_rat);
   ui32_t Num = atoi(str_rat);
-  ui32_t Den = 0;
+  ui32_t Den = 1;
 
   const char* den_str = strrchr(str_rat, '/');
   if ( den_str != 0 )
@@ -759,14 +759,6 @@ write_PCM_file(CommandOptions& Options)
 
 	  if ( ASDCP_SUCCESS(result) )
 	    {
-	      if ( FrameBuffer.Size() != FrameBuffer.Capacity() )
-		{
-		  fprintf(stderr, "WARNING: Last frame read was short, PCM input is possibly not frame aligned.\n");
-		  fprintf(stderr, "Expecting %u bytes, got %u.\n", FrameBuffer.Capacity(), FrameBuffer.Size());
-		  result = RESULT_ENDOFFILE;
-		  continue;
-		}
-
 	      if ( Options.verbose_flag )
 		FrameBuffer.Dump(stderr, Options.fb_dump_size);
 

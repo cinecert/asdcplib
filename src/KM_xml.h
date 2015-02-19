@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2005-2011, John Hurst
+Copyright (c) 2005-2015, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -40,9 +40,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 namespace Kumu
 {
   class XMLElement;
-
-  // Return true if the given string contains an XML document (or the start of one).
-  bool StringIsXML(const char* document, ui32_t len = 0);
 
   //
   struct NVPair
@@ -108,6 +105,10 @@ namespace Kumu
       bool        ParseString(const char* document, ui32_t doc_len);
       bool        ParseString(const ByteString& document);
       bool        ParseString(const std::string& document);
+
+      bool        ParseFirstFromString(const char* document, ui32_t doc_len);
+      bool        ParseFirstFromString(const ByteString& document);
+      bool        ParseFirstFromString(const std::string& document);
 
       // building
       void        SetName(const char* name);

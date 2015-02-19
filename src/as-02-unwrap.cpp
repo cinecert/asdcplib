@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2011-2014, Robert Scheler, Heiko Sparenberg Fraunhofer IIS,
+Copyright (c) 2011-2015, Robert Scheler, Heiko Sparenberg Fraunhofer IIS,
 John Hurst
 
 All rights reserved.
@@ -69,7 +69,7 @@ banner(FILE* stream = stdout)
 {
   fprintf(stream, "\n\
 %s (asdcplib %s)\n\n\
-Copyright (c) 2011-2014, Robert Scheler, Heiko Sparenberg Fraunhofer IIS, John Hurst\n\n\
+Copyright (c) 2011-2015, Robert Scheler, Heiko Sparenberg Fraunhofer IIS, John Hurst\n\n\
 asdcplib may be copied only under the terms of the license found at\n\
 the top of every file in the asdcplib distribution kit.\n\n\
 Specify the -h (help) option for further information about %s\n\n",
@@ -550,6 +550,13 @@ read_PCM_file(CommandOptions& Options)
 	      FrameBuffer.Dump(stderr, Options.fb_dump_size);
 	    }
 
+	  if ( FrameBuffer.Size() != FrameBuffer.Capacity() )
+	    {
+	      fprintf(stderr, "Last frame is incomplete, padding with zeros.\n");
+	      // actually, it has already been zeroed for us, we just need to recognize the appropriate size
+	      FrameBuffer.Size(FrameBuffer.Capacity());
+	    }
+
 	  result = OutWave.WriteFrame(FrameBuffer);
 	}
     }
@@ -597,7 +604,7 @@ main(int argc, const char** argv)
 	  break;
 
 	default:
-	  fprintf(stderr, "%s: Unknown file type, not ASDCP essence.\n", Options.input_filename);
+	  fprintf(stderr, "%s: Unknown file type, not AS-02 essence.\n", Options.input_filename);
 	  return 5;
 	}
     }

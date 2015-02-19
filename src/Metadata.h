@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2005-2015, John Hurst
+Copyright (c) 2005-2012, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -564,7 +564,7 @@ namespace ASDCP
           optional_property<Raw> PictureComponentSizing;
           optional_property<Raw> CodingStyleDefault;
           optional_property<Raw> QuantizationDefault;
-	  optional_property<Raw> J2CLayout;
+          optional_property<RGBALayout> J2CLayout;
 
       JPEG2000PictureSubDescriptor(const Dictionary*& d);
       JPEG2000PictureSubDescriptor(const JPEG2000PictureSubDescriptor& rhs);

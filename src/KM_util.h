@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2005-2012, John Hurst
+Copyright (c) 2005-2015, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -540,7 +540,8 @@ namespace Kumu
   const char *km_strnstr(const char *s1, const char *s2, size_t n);
 
   // Split the input string into tokens using the given separator. If the separator is not found the
-  // entire string will be returned as a single-item list.
+  // entire string will be returned as a single-item list.  Empty items will be recorded for
+  // adjacent instances of the separator. E.g., "/foo//bar/" will return ["", "foo", "", "bar", ""].
   std::list<std::string> km_token_split(const std::string& str, const std::string& separator);
 
 } // namespace Kumu

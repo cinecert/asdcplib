@@ -235,12 +235,22 @@ Kumu::PathsAreEquivalent(const std::string& lhs, const std::string& rhs)
 
 //
 Kumu::PathCompList_t&
-Kumu::PathToComponents(const std::string& Path, PathCompList_t& CList, char separator)
+Kumu::PathToComponents(const std::string& path, PathCompList_t& component_list, char separator)
 {
   std::string s;
   s = separator;
-  CList = km_token_split(Path, s);
-  return CList;
+  PathCompList_t tmp_list = km_token_split(path, std::string(s));
+  PathCompList_t::const_iterator i;
+
+  for ( i = tmp_list.begin(); i != tmp_list.end(); ++i )
+    {
+      if ( ! i->empty() )
+	{
+	  component_list.push_back(*i);
+	}
+    }
+
+  return component_list;
 }
 
 //

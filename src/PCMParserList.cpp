@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2004-2014, John Hurst
+Copyright (c) 2004-2015, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -72,11 +72,18 @@ ASDCP::ParserInstance::PutSample(byte_t* p)
 {
   ASDCP_TEST_NULL(p);
 
-  memcpy(p, m_p, m_SampleSize);
-  m_p += m_SampleSize;
-  return RESULT_OK;
-}
+  if ( m_p != 0 )
+    {
+      if ( m_p < ( FB.RoData() + FB.Size() ) )
+	{
+	  memcpy(p, m_p, m_SampleSize);
+	  m_p += m_SampleSize;
+	  return RESULT_OK;
+	}
+    }
 
+  return RESULT_ENDOFFILE;
+}
 
 //
 Result_t
@@ -247,21 +254,23 @@ ASDCP::PCMParserList::ReadFrame(PCM::FrameBuffer& OutFB)
   Result_t result = RESULT_OK;
 
   if ( size() == 1 )
-    return front()->Parser.ReadFrame(OutFB);
+    {
+      return front()->Parser.ReadFrame(OutFB);
+    }
 
   PCMParserList::iterator self_i;
   assert(PCM::CalcFrameBufferSize(m_ADesc) <= OutFB.Capacity());
 
   for ( self_i = begin(); self_i != end() && ASDCP_SUCCESS(result) ; self_i++ )
-    result = (*self_i)->ReadFrame();
+    {
+      result = (*self_i)->ReadFrame();
+    }
 
   if ( ASDCP_SUCCESS(result) )
     {
-      OutFB.Size(PCM::CalcFrameBufferSize(m_ADesc));
-
-      //      ui32_t sample_size = (PCM::CalcSampleSize(m_ADesc));
       byte_t* Out_p = OutFB.Data();
-      byte_t* End_p = Out_p + OutFB.Size();
+      byte_t* End_p = Out_p + OutFB.Capacity();
+      ui64_t total_sample_bytes = 0;
 
       while ( Out_p < End_p && ASDCP_SUCCESS(result) )
 	{
@@ -270,12 +279,22 @@ ASDCP::PCMParserList::ReadFrame(PCM::FrameBuffer& OutFB)
 	  while ( self_i != end() && ASDCP_SUCCESS(result) )
 	    {
 	      result = (*self_i)->PutSample(Out_p);
-	      Out_p += (*self_i)->SampleSize();
-	      self_i++;
+
+	      if ( ASDCP_SUCCESS(result) )
+		{
+		  Out_p += (*self_i)->SampleSize();
+		  total_sample_bytes += (*self_i)->SampleSize();
+		  self_i++;
+		}
 	    }
 	}
 
-      assert(Out_p == End_p);
+      OutFB.Size(total_sample_bytes);
+
+      if ( result == RESULT_ENDOFFILE )
+	{
+	  result = RESULT_OK;
+	}
     }
 
   return result;

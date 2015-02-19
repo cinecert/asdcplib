@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2005-2012, John Hurst
+Copyright (c) 2005-2015, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -662,6 +662,63 @@ ASDCP::MXF::TLVWriter::WriteUi64(const MDDEntry& Entry, ui64_t* value)
     }
 
   return result;
+}
+
+
+//----------------------------------------------------------------------------------------------------
+//
+
+
+ASDCP::MXF::RGBALayout::RGBALayout()
+{
+  memset(m_value, 0, RGBAValueLength);
+}
+
+ASDCP::MXF::RGBALayout::RGBALayout(const byte_t* value)
+{
+  memcpy(m_value, value, RGBAValueLength);
+}
+
+ASDCP::MXF::RGBALayout::~RGBALayout()
+{
+}
+
+static char
+get_char_for_code(byte_t c)
+{
+  for ( int i = 0; ASDCP::MXF::RGBALayoutTable[i].code != 0; ++i )
+    {
+      if ( ASDCP::MXF::RGBALayoutTable[i].code == c )
+	{
+	  return ASDCP::MXF::RGBALayoutTable[i].symbol;
+	}
+    }
+
+  return '_';
+}
+
+//
+const char*
+ASDCP::MXF::RGBALayout::EncodeString(char* buf, ui32_t buf_len) const
+{
+  std::string tmp_str;
+  char tmp_buf[64];
+
+  for ( int i = 0; i < RGBAValueLength && m_value[i] != 0; i += 2 )
+    {
+      snprintf(tmp_buf, 64, "%c(%d)", get_char_for_code(m_value[i]), m_value[i+1]);
+
+      if ( ! tmp_str.empty() )
+	{
+	  tmp_str += " ";
+	}
+
+      tmp_str += tmp_buf;
+    }
+
+  assert(tmp_str.size() < buf_len);
+  strncpy(buf, tmp_str.c_str(), tmp_str.size());
+  return buf;
 }
 
 
