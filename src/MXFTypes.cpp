@@ -326,7 +326,9 @@ ASDCP::MXF::UTF16String::Archive(Kumu::MemIOWriter* Writer) const
 	  return false;
 	}
       else if ( count  == 0 )
-	break;
+	{
+	  break;
+	}
 
       bool result = Writer->WriteUi16BE((ui16_t)wcp);
 

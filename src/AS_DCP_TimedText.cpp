@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2008-2014, John Hurst
+Copyright (c) 2008-2015, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -569,7 +569,9 @@ ASDCP::TimedText::MXFWriter::h__Writer::SetSourceStream(ASDCP::TimedText::TimedT
       resourceSubdescriptor->EssenceStreamID = m_EssenceStreamID++;
       m_EssenceSubDescriptorList.push_back((FileDescriptor*)resourceSubdescriptor);
       m_EssenceDescriptor->SubDescriptors.push_back(resourceSubdescriptor->InstanceUID);
-      m_HeaderSize += resourceSubdescriptor->MIMEMediaType.ArchiveLength() + 20; // 20 == sizeof uuid + sizeof int32
+
+      // 72 == sizeof K, L, instanceuid, uuid + sizeof int32 + tag/len * 4
+      m_HeaderSize += ( resourceSubdescriptor->MIMEMediaType.ArchiveLength() * 2 /*ArchiveLength is broken*/ ) + 72;
     }
 
   m_EssenceStreamID = 10;

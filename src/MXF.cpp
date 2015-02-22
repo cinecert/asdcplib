@@ -881,7 +881,7 @@ ASDCP::MXF::OP1aHeader::WriteToFile(Kumu::FileWriter& Writer, ui32_t HeaderSize)
   if ( HeaderSize < 4096 ) 
     {
       DefaultLogSink().Error("HeaderSize %u is too small. Must be >= 4096\n", HeaderSize);
-      return RESULT_FAIL;
+      return RESULT_PARAM;
     }
 
   ASDCP::FrameBuffer HeaderBuffer;

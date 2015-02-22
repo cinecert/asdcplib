@@ -141,6 +141,7 @@ main(int argc, const char** argv)
   FreeSpaceForPath("/", free_space, total_space);
   cerr << "Free space: " << free_space << endl;
   cerr << "Total space: " << total_space << endl;
+  cerr << "Used space: " << ( (total_space - free_space ) / float(total_space) ) << endl;
 
   cerr << "OK" << endl;
 
