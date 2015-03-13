@@ -395,6 +395,10 @@ ASDCP::RawEssenceType(const std::string& filename, EssenceType_t& type)
 		    {
 		      type = ESS_DCDATA_DOLBY_ATMOS;
 		    }
+		  else
+		    {
+		      type = ESS_DCDATA_UNKNOWN;
+		    }
 		}
 	      
 	      break;

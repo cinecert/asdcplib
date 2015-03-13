@@ -151,6 +151,13 @@ command-line utilities all respond to -h.
 
 Change History
 
+
+2015-02-23 - bug fixes
+  o Fixed a new bug introduced by the fix to large numbers of subtitle ancillary
+    resources.
+  o Added support for generic Aux Data (ST 429-14) to asdcp-wrap.
+
+
 2015-02-19 - PHDR feature, bug fixes
   o Modified PCMParser and PCMParserList to return partial frame buffers at the
     end of a WAV input file.  This was needed to allow wrapping all samples into

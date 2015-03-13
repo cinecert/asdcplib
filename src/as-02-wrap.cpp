@@ -815,6 +815,8 @@ write_timed_text_file(CommandOptions& Options)
   if ( ASDCP_SUCCESS(result) )
     {
       Parser.FillTimedTextDescriptor(TDesc);
+      TDesc.EditRate = Options.edit_rate;
+      TDesc.ContainerDuration = Options.duration;
       FrameBuffer.Capacity(Options.fb_size);
 
       if ( Options.verbose_flag )
@@ -827,6 +829,8 @@ write_timed_text_file(CommandOptions& Options)
   if ( ASDCP_SUCCESS(result) && ! Options.no_write_flag )
     {
       WriterInfo Info = s_MyInfo;  // fill in your favorite identifiers here
+      Info.LabelSetType = LS_MXF_SMPTE;
+
       if ( Options.asset_id_flag )
 	memcpy(Info.AssetUUID, Options.asset_id_value, UUIDlen);
       else
@@ -953,6 +957,10 @@ main(int argc, const char** argv)
 	case ESS_PCM_24b_48k:
 	case ESS_PCM_24b_96k:
 	  result = write_PCM_file(Options);
+	  break;
+
+	case ESS_TIMED_TEXT:
+	  result = write_timed_text_file(Options);
 	  break;
 
 	default:
