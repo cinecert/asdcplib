@@ -175,7 +175,7 @@ ASDCP::Wav::SimpleWaveHeader::ReadFromBuffer(const byte_t* buf, ui32_t buf_len, 
 	{
 	  ui16_t format = KM_i16_LE(*(ui16_t*)p); p += 2;
 
-	  if ( format != WAVE_FORMAT_PCM && format != WAVE_FORMAT_EXTENSIBLE )
+	  if ( format != ASDCP_WAVE_FORMAT_PCM && format != ASDCP_WAVE_FORMAT_EXTENSIBLE )
 	    {
 	      DefaultLogSink().Error("Expecting uncompressed PCM data, got format type %hd\n", format);
 	      return RESULT_RAW_FORMAT;
@@ -564,7 +564,7 @@ ASDCP::RF64::SimpleRF64Header::ReadFromBuffer(const byte_t* buf, ui32_t buf_len,
         {
             ui16_t format = KM_i16_LE(*(ui16_t*)p); p += 2;
 
-            if ( format != Wav::WAVE_FORMAT_PCM && format != Wav::WAVE_FORMAT_EXTENSIBLE )
+            if ( format != Wav::ASDCP_WAVE_FORMAT_PCM && format != Wav::ASDCP_WAVE_FORMAT_EXTENSIBLE )
             {
                 DefaultLogSink().Error("Expecting uncompressed PCM data, got format type %hd\n", format);
                 return RESULT_RAW_FORMAT;

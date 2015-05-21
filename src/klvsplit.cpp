@@ -292,7 +292,7 @@ main(int argc, const char** argv)
 	      snprintf(filename_buf, 1024, "%s%010qu%s", this_prefix.c_str(), item_counter, Options.suffix.c_str());
 
 	      if ( Options.verbose_flag )
-		fprintf(stderr, "%s (%d bytes)\n", filename_buf, packet.ValueLength());
+		fprintf(stderr, "%s (%llu bytes)\n", filename_buf, packet.ValueLength());
 
 	      Kumu::FileWriter writer;
 	      writer.OpenWrite(filename_buf);

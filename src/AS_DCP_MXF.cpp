@@ -310,24 +310,39 @@ ASDCP::RawEssenceType(const std::string& filename, EssenceType_t& type)
 	    {
 	      type = ESS_JPEG_2000;
 	    }
-	  else if ( ASDCP_SUCCESS(WavHeader.ReadFromBuffer(FB.RoData(), read_count, &data_offset)) )
+	  else if ( std::string((const char*)FB.RoData() + 8, 4) == "WAVE" )
 	    {
-	      switch ( WavHeader.samplespersec )
+	      if ( std::string((const char*)FB.RoData(), 4) == "RIFF" )
 		{
-		case 48000: type = ESS_PCM_24b_48k; break;
-		case 96000: type = ESS_PCM_24b_96k; break;
-		default:
-		  return RESULT_FORMAT;
+		  result = WavHeader.ReadFromBuffer(FB.RoData(), read_count, &data_offset);
+
+		  if ( ASDCP_SUCCESS(result) )
+		    {
+		      switch ( WavHeader.samplespersec )
+			{
+			case 48000: type = ESS_PCM_24b_48k; break;
+			case 96000: type = ESS_PCM_24b_96k; break;
+			default:
+			  DefaultLogSink().Error("Unexpected sample rate: %d\n", WavHeader.samplespersec);
+			  result = RESULT_FORMAT;
+			}
+		    }
 		}
-	    }
-	  else if ( ASDCP_SUCCESS(RF64Header.ReadFromBuffer(FB.RoData(), read_count, &data_offset)) )
-	    {
-	      switch ( RF64Header.samplespersec )
+	      else
 		{
-		case 48000: type = ESS_PCM_24b_48k; break;
-		case 96000: type = ESS_PCM_24b_96k; break;
-		default:
-		  return RESULT_FORMAT;
+		  result = RF64Header.ReadFromBuffer(FB.RoData(), read_count, &data_offset);
+		
+		  if ( ASDCP_SUCCESS(result) )
+		    {
+		      switch ( RF64Header.samplespersec )
+			{
+			case 48000: type = ESS_PCM_24b_48k; break;
+			case 96000: type = ESS_PCM_24b_96k; break;
+			default:
+			  DefaultLogSink().Error("Unexpected sample rate: %d\n", WavHeader.samplespersec);
+			  result = RESULT_FORMAT;
+			}
+		    }
 		}
 	    }
 	  else if ( ASDCP_SUCCESS(AIFFHeader.ReadFromBuffer(FB.RoData(), read_count, &data_offset)) )

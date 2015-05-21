@@ -1485,6 +1485,7 @@ namespace ASDCP {
 
 	public:
 	  LocalFilenameResolver();
+	  virtual ~LocalFilenameResolver();
 	  Result_t OpenRead(const std::string& dirname);
 	  Result_t ResolveRID(const byte_t* uuid, FrameBuffer& FrameBuf) const;
 	};

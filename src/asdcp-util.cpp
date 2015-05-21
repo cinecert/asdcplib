@@ -79,7 +79,7 @@ USAGE: %s [-h|-help] [-V]\n\
        %s -d <input-file>\n\
 \n\
        %s -g | -u\n",
-	  PROGRAM_NAME, PROGRAM_NAME, PROGRAM_NAME, PROGRAM_NAME);
+	  PROGRAM_NAME, PROGRAM_NAME, PROGRAM_NAME);
 
   fprintf(stream, "\
 Major modes:\n\

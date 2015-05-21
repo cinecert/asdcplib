@@ -334,6 +334,22 @@ namespace AS_02
       using ASDCP::TimedText::ResourceList_t;
 
       //
+      class Type5UUIDFilenameResolver : public ASDCP::TimedText::IResourceResolver
+	{
+	  typedef std::map<Kumu::UUID, std::string> ResourceMap;
+	    
+	  ResourceMap m_ResourceMap;
+	  std::string m_Dirname;
+	  KM_NO_COPY_CONSTRUCT(Type5UUIDFilenameResolver);
+
+	public:
+	  Type5UUIDFilenameResolver();
+	  virtual ~Type5UUIDFilenameResolver();
+	  Result_t OpenRead(const std::string& dirname);
+	  Result_t ResolveRID(const byte_t* uuid, ASDCP::TimedText::FrameBuffer& FrameBuf) const;
+	};
+      
+      //
       class ST2052_TextParser
 	{
 	  class h__TextParser;

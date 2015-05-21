@@ -86,7 +86,7 @@ USAGE: %s [-h|-help] [-V]\n\
        %s [-1|-2] [-b <buffer-size>] [-d <duration>]\n\
        [-f <starting-frame>] [-m] [-p <frame-rate>] [-R] [-s <size>] [-v] [-W]\n\
        [-w] <input-file> [<file-prefix>]\n\n",
-	  PROGRAM_NAME, PROGRAM_NAME, PROGRAM_NAME);
+	  PROGRAM_NAME, PROGRAM_NAME);
 
   fprintf(stream, "\
 Options:\n\

@@ -45,6 +45,7 @@ const char* c_dcst_namespace_name = "http://www.smpte-ra.org/schemas/428-7/2007/
 
 
 ASDCP::TimedText::LocalFilenameResolver::LocalFilenameResolver() {}
+ASDCP::TimedText::LocalFilenameResolver::~LocalFilenameResolver() {}
 
 //
 Result_t

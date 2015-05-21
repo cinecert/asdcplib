@@ -89,8 +89,8 @@ namespace ASDCP
       const fourcc FCC_fmt_("fmt ");
       const fourcc FCC_data("data");
 
-      const ui16_t WAVE_FORMAT_PCM = 1;
-      const ui16_t WAVE_FORMAT_EXTENSIBLE = 65534;
+      const ui16_t ASDCP_WAVE_FORMAT_PCM = 1;
+      const ui16_t ASDCP_WAVE_FORMAT_EXTENSIBLE = 65534;
 
       //
       class SimpleWaveHeader

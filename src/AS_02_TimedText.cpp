@@ -626,7 +626,6 @@ AS_02::TimedText::MXFWriter::h__Writer::Finalize()
     }
 
   m_IndexWriter.m_Duration = m_FramesWritten = m_TDesc.ContainerDuration;
-  fprintf(stderr, "m_IndexWriter.m_Duration=%d\n", m_IndexWriter.m_Duration);
 
   Result_t result = m_State.Goto_FINAL();
 

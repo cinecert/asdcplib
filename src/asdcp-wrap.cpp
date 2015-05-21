@@ -1681,8 +1681,7 @@ main(int argc, const char** argv)
 	case ESS_DCDATA_UNKNOWN:
 	  if ( ! Options.aux_data_coding.HasValue() )
 	    {
-	      fprintf(stderr, "Option \"-A <UL>\" is required for Aux Data essence.\n",
-		      Options.filenames.front().c_str());
+	      fprintf(stderr, "Option \"-A <UL>\" is required for Aux Data essence.\n");
 	      return 3;
 	    }
 	  else
