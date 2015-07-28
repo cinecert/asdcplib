@@ -822,7 +822,7 @@ public:
 	ns_prefix = "";
       }
 
-    ns_map::iterator ni = m_Namespaces->find(ns_name);
+    ns_map::iterator ni = m_Namespaces->find(ns_prefix);
 
     if  ( ni != m_Namespaces->end() )
       {
