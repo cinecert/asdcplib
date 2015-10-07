@@ -308,7 +308,7 @@ ASDCP::MPEG2::FrameBuffer::Dump(FILE* stream, ui32_t dump_len) const
   if ( stream == 0 )
     stream = stderr;
 
-  fprintf(stream, "Frame: %06u, %c%-2hu, %7u bytes",
+  fprintf(stream, "Frame: %06u, %c%-2hhu, %7u bytes",
 	  m_FrameNumber, FrameTypeChar(m_FrameType), m_TemporalOffset, m_Size);
 
   if ( m_GOPStart )

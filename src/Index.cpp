@@ -131,8 +131,8 @@ ASDCP::MXF::IndexTableSegment::Dump(FILE* stream)
   fprintf(stream, "  EditUnitByteCount  = %u\n",  EditUnitByteCount);
   fprintf(stream, "  IndexSID           = %u\n",  IndexSID);
   fprintf(stream, "  BodySID            = %u\n",  BodySID);
-  fprintf(stream, "  SliceCount         = %hu\n", SliceCount);
-  fprintf(stream, "  PosTableCount      = %hu\n", PosTableCount);
+  fprintf(stream, "  SliceCount         = %hhu\n", SliceCount);
+  fprintf(stream, "  PosTableCount      = %hhu\n", PosTableCount);
 
   fprintf(stream, "  DeltaEntryArray:\n");  DeltaEntryArray.Dump(stream);
 
@@ -154,7 +154,7 @@ ASDCP::MXF::IndexTableSegment::Dump(FILE* stream)
 const char*
 ASDCP::MXF::IndexTableSegment::DeltaEntry::EncodeString(char* str_buf, ui32_t buf_len) const
 {
-  snprintf(str_buf, buf_len, "%3d %-3hu %-3u", PosTableIndex, Slice, ElementData);
+  snprintf(str_buf, buf_len, "%3d %-3hhu %-3u", PosTableIndex, Slice, ElementData);
   return str_buf;
 }
 
@@ -207,7 +207,7 @@ ASDCP::MXF::IndexTableSegment::IndexEntry::EncodeString(char* str_buf, ui32_t bu
   txt_flags[4] = ( (Flags & 0x0f) == 3 ) ? 'B' : ( (Flags & 0x0f) == 2 ) ? 'P' : 'I';
   txt_flags[5] = 0;
 
-  snprintf(str_buf, buf_len, "%3i %-3hu %s %s",
+  snprintf(str_buf, buf_len, "%3i %-3hhu %s %s",
 	   TemporalOffset, KeyFrameOffset, txt_flags,
 	   i64sz(StreamOffset, intbuf));
 

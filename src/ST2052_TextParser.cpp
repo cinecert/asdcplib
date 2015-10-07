@@ -45,22 +45,32 @@ const char* c_tt_namespace_name = "http://www.smpte-ra.org/schemas/2052-1/2010/s
 //------------------------------------------------------------------------------------------
 
 //
+int const NS_ID_LENGTH = 16;
+
 //
-static byte_t s_id_prefix[16] = {
+static byte_t s_png_id_prefix[NS_ID_LENGTH] = {
   // RFC 4122 type 5
-  // 2067-2 5.4.5
+  // 2067-2 5.4.5 / RFC4122 Appendix C
   0x6b, 0xa7, 0xb8, 0x11, 0x9d, 0xad, 0x11, 0xd1,
   0x80, 0xb4, 0x00, 0xc0, 0x4f, 0xd4, 0x30, 0xc8
 };
 
 //
-void
-gen_png_name_id(const std::string& image_name, UUID& asset_id)
+static byte_t s_font_id_prefix[NS_ID_LENGTH] = {
+  // RFC 4122 type 5
+  // 2067-2 5.4.6
+  0xb6, 0xcc, 0x57, 0xa0, 0x87, 0xe7, 0x4e, 0x75,
+  0xb1, 0xc3, 0x33, 0x59, 0xf3, 0xae, 0x88, 0x17
+};
+
+//
+static Kumu::UUID
+create_4122_type5_id(const std::string& subject_name, const byte_t* ns_id)
 {
   SHA_CTX ctx;
   SHA1_Init(&ctx);
-  SHA1_Update(&ctx, s_id_prefix, 16);
-  SHA1_Update(&ctx, (byte_t*)image_name.c_str(), image_name.length());
+  SHA1_Update(&ctx, ns_id, NS_ID_LENGTH);
+  SHA1_Update(&ctx, (byte_t*)subject_name.c_str(), subject_name.size());
 
   const ui32_t sha_len = 20;
   byte_t bin_buf[sha_len];
@@ -73,7 +83,21 @@ gen_png_name_id(const std::string& image_name, UUID& asset_id)
   buf[6] |= 0x50; // set UUID version 'digest'
   buf[8] &= 0x3f; // clear bits 6&7
   buf[8] |= 0x80; // set bit 7
-  asset_id.Set(buf);
+  return Kumu::UUID(buf);
+}
+
+//
+static Kumu::UUID
+create_png_name_id(const std::string& image_name)
+{
+  return create_4122_type5_id(image_name, s_png_id_prefix);
+}
+
+//
+static Kumu::UUID
+create_font_name_id(const std::string& font_name)
+{
+  return create_4122_type5_id(font_name, s_font_id_prefix);
 }
 
 //------------------------------------------------------------------------------------------
@@ -101,7 +125,9 @@ AS_02::TimedText::Type5UUIDFilenameResolver::OpenRead(const std::string& dirname
       abs_dirname = ".";
     }
 
-  if ( KM_SUCCESS(dir_reader.Open(abs_dirname.c_str())) )
+  Result_t result = dir_reader.Open(abs_dirname);
+
+  if ( KM_SUCCESS(result) )
     {
       while ( KM_SUCCESS(dir_reader.GetNext(next_item, ft)) )
         {
@@ -111,26 +137,35 @@ AS_02::TimedText::Type5UUIDFilenameResolver::OpenRead(const std::string& dirname
 	  if ( ft == DET_FILE )
 	    {
 	      FileReader reader;
-	      Result_t result = reader.OpenRead(tmp_path);
+	      Result_t read_result = reader.OpenRead(tmp_path);
 
-	      if ( KM_SUCCESS(result) )
+	      if ( KM_SUCCESS(read_result) )
 		{
-		  result = reader.Read(read_buffer, 16);
+		  read_result = reader.Read(read_buffer, 16);
 		}
 
-	      if ( KM_SUCCESS(result) )
+	      if ( KM_SUCCESS(read_result) )
 		{
 		  // is it PNG?
 		  if ( memcmp(read_buffer, PNGMagic, sizeof(PNGMagic)) == 0 )
 		    {
-		      UUID asset_id;
-		      gen_png_name_id(next_item, asset_id);
+		      UUID asset_id = create_png_name_id(next_item);
+		      m_ResourceMap.insert(ResourceMap::value_type(asset_id, next_item));
+		    }
+		  // is it a font?
+		  else if ( memcmp(read_buffer, OpenTypeMagic, sizeof(OpenTypeMagic)) == 0
+			    || memcmp(read_buffer, TrueTypeMagic, sizeof(TrueTypeMagic)) == 0 )
+		    {
+		      fprintf(stderr, "wrap font!\n");
+		      UUID asset_id = create_font_name_id(next_item);
 		      m_ResourceMap.insert(ResourceMap::value_type(asset_id, next_item));
 		    }
 		}
 	    }
 	}
     }
+
+  return result;
 }
 
 //
@@ -144,6 +179,7 @@ AS_02::TimedText::Type5UUIDFilenameResolver::ResolveRID(const byte_t* uuid, ASDC
 
   if ( i == m_ResourceMap.end() )
     {
+      DefaultLogSink().Debug("Missing timed-text resource \"%s\"\n", tmp_id.EncodeHex(buf, 64));
       return RESULT_NOT_FOUND;
     }
 
@@ -315,13 +351,27 @@ AS_02::TimedText::ST2052_TextParser::h__TextParser::OpenRead()
 
   for ( i = png_visitor.value_list.begin(); i != png_visitor.value_list.end(); ++i )
     {
-      UUID asset_id;
-      gen_png_name_id(*i, asset_id);
-      TimedTextResourceDescriptor TmpResource;
-      memcpy(TmpResource.ResourceID, asset_id.Value(), UUIDlen);
-      TmpResource.Type = ASDCP::TimedText::MT_PNG;
-      m_TDesc.ResourceList.push_back(TmpResource);
-      m_ResourceTypes.insert(ResourceTypeMap_t::value_type(UUID(TmpResource.ResourceID), ASDCP::TimedText::MT_PNG));
+      UUID asset_id = create_png_name_id(*i);
+      TimedTextResourceDescriptor png_resource;
+      memcpy(png_resource.ResourceID, asset_id.Value(), UUIDlen);
+      png_resource.Type = ASDCP::TimedText::MT_PNG;
+      m_TDesc.ResourceList.push_back(png_resource);
+      m_ResourceTypes.insert(ResourceTypeMap_t::value_type(UUID(png_resource.ResourceID),
+							   ASDCP::TimedText::MT_PNG));
+    }
+
+  AttributeVisitor font_visitor("fontFamily");
+  apply_visitor(m_Root, font_visitor);
+
+  for ( i = font_visitor.value_list.begin(); i != font_visitor.value_list.end(); ++i )
+    {
+      UUID font_id = create_font_name_id(*i);
+      TimedTextResourceDescriptor font_resource;
+      memcpy(font_resource.ResourceID, font_id.Value(), UUIDlen);
+      font_resource.Type = ASDCP::TimedText::MT_OPENTYPE;
+      m_TDesc.ResourceList.push_back(font_resource);
+      m_ResourceTypes.insert(ResourceTypeMap_t::value_type(UUID(font_resource.ResourceID),
+							   ASDCP::TimedText::MT_OPENTYPE));
     }
 
   return RESULT_OK;

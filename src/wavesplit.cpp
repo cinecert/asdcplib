@@ -138,12 +138,12 @@ public:
 
 	      case 'd':
 		TEST_EXTRA_ARG(i, 'd');
-		duration = abs(strtol(argv[i], 0, 10));
+		duration = Kumu::xabs(strtol(argv[i], 0, 10));
 		break;
 
 	      case 'f':
 		TEST_EXTRA_ARG(i, 'f');
-		start_frame = abs(strtol(argv[i], 0, 10));
+		start_frame = Kumu::xabs(strtol(argv[i], 0, 10));
 		break;
 
 	      case 'h': help_flag = true; break;

@@ -103,39 +103,17 @@ namespace ASDCP
 	  Batch() {}
 	  virtual ~Batch() {}
 
-	  //
-	  virtual bool Unarchive(Kumu::MemIOReader* Reader) {
-	    ui32_t ItemCount, ItemSize;
-	    if ( ! Reader->ReadUi32BE(&ItemCount) ) return false;
-	    if ( ! Reader->ReadUi32BE(&ItemSize) ) return false;
-
-	    if ( ( ItemCount > 65536 ) || ( ItemSize > 1024 ) )
-	      return false;
-
-	    bool result = true;
-	    for ( ui32_t i = 0; i < ItemCount && result; i++ )
-	      {
-		T Tmp;
-		result = Tmp.Unarchive(Reader);
-
-		if ( result )
-		  this->push_back(Tmp);
-	      }
-
-	    return result;
-	  }
-
 	  inline virtual bool HasValue() const { return ! this->empty(); }
 
 	  virtual ui32_t ArchiveLength() const {
-	    ui32_t arch_size = sizeof(ui32_t)*2;
+	    ui32_t arch_size = sizeof(ui32_t) * 2;
+	    typename std::vector<T>::const_iterator i;
 
-	    typename std::vector<T>::const_iterator l_i = this->begin();
-	    assert(l_i != this->end());
+	    for ( i = this->begin(); i != this->end(); ++i )
+	      {
+		arch_size += i->ArchiveLength();
+	      }
 
-	    for ( ; l_i != this->end(); l_i++ )
-	      arch_size += l_i->ArchiveLength();
-	    
 	    return arch_size;
 	  }
 
@@ -147,18 +125,46 @@ namespace ASDCP
 	    if ( ! Writer->WriteUi32BE(0) ) return false;
 	    if ( this->empty() ) return true;
 	    
-	    typename std::vector<T>::const_iterator l_i = this->begin();
-	    assert(l_i != this->end());
+	    typename std::vector<T>::const_iterator i = this->begin();
+	    assert(i != this->end());
 
 	    ui32_t ItemSize = Writer->Remainder();
-	    if ( ! (*l_i).Archive(Writer) ) return false;
+	    if ( ! i->Archive(Writer) ) return false;
 	    ItemSize -= Writer->Remainder();
 	    Kumu::i2p<ui32_t>(KM_i32_BE(ItemSize), p);
-	    l_i++;
+	    ++i;
 
 	    bool result = true;
-	    for ( ; l_i != this->end() && result; l_i++ )
-	      result = (*l_i).Archive(Writer);
+	    for ( ; i != this->end() && result; ++i )
+	      {
+		result = i->Archive(Writer);
+	      }
+
+	    return result;
+	  }
+
+	  //
+	  virtual bool Unarchive(Kumu::MemIOReader* Reader) {
+	    ui32_t item_count, item_size;
+	    if ( ! Reader->ReadUi32BE(&item_count) ) return false;
+	    if ( ! Reader->ReadUi32BE(&item_size) ) return false;
+
+	    if ( ( item_count > 65536 ) || ( item_size > 1024 ) )
+	      {
+		return false;
+	      }
+
+	    bool result = true;
+	    for ( ui32_t i = 0; i < item_count && result; ++i )
+	      {
+		T Tmp;
+		result = Tmp.Unarchive(Reader);
+
+		if ( result )
+		  {
+		    this->push_back(Tmp);
+		  }
+	      }
 
 	    return result;
 	  }
@@ -184,6 +190,95 @@ namespace ASDCP
 	public:
 	  Array() {}
 	  virtual ~Array() {}
+
+	  inline virtual bool HasValue() const { return ! this->empty(); }
+
+	  virtual ui32_t ArchiveLength() const {
+	    ui32_t arch_size = sizeof(ui32_t) * 2;
+	    typename std::list<T>::const_iterator i;
+
+	    for ( i = this->begin(); i != this->end(); ++i )
+	      {
+		arch_size += i->ArchiveLength();
+	      }
+
+	    return arch_size;
+	  }
+
+	  //
+	  virtual bool Archive(Kumu::MemIOWriter* Writer) const {
+	    if ( ! Writer->WriteUi32BE(this->size()) ) return false;
+	    byte_t* p = Writer->CurrentData();
+
+	    if ( ! Writer->WriteUi32BE(0) ) return false;
+	    if ( this->empty() ) return true;
+	    
+	    typename std::list<T>::const_iterator i = this->begin();
+	    assert(i != this->end());
+
+	    ui32_t ItemSize = Writer->Remainder();
+	    if ( ! i->Archive(Writer) ) return false;
+	    ItemSize -= Writer->Remainder();
+	    Kumu::i2p<ui32_t>(KM_i32_BE(ItemSize), p);
+	    ++i;
+
+	    bool result = true;
+	    for ( ; i != this->end() && result; ++i )
+	      {
+		result = i->Archive(Writer);
+	      }
+
+	    return result;
+	  }
+
+	  //
+	  virtual bool Unarchive(Kumu::MemIOReader* Reader) {
+	    ui32_t item_count, item_size;
+	    if ( ! Reader->ReadUi32BE(&item_count) ) return false;
+	    if ( ! Reader->ReadUi32BE(&item_size) ) return false;
+
+	    if ( ( item_count > 65536 ) || ( item_size > 1024 ) )
+	      {
+		return false;
+	      }
+
+	    bool result = true;
+	    for ( ui32_t i = 0; i < item_count && result; ++i )
+	      {
+		T Tmp;
+		result = Tmp.Unarchive(Reader);
+
+		if ( result )
+		  {
+		    this->push_back(Tmp);
+		  }
+	      }
+
+	    return result;
+	  }
+	    
+
+	  //
+	  void Dump(FILE* stream = 0, ui32_t depth = 0)
+	    {
+	      char identbuf[IdentBufferLen];
+
+	      if ( stream == 0 )
+		stream = stderr;
+
+	      typename std::list<T>::iterator i = this->begin();
+	      for ( ; i != this->end(); i++ )
+		fprintf(stream, "  %s\n", (*i).EncodeString(identbuf, IdentBufferLen));
+	    }
+	};
+
+      //
+      template <class T>
+	class HeadlessArray : public std::list<T>, public Kumu::IArchive
+	{
+	public:
+	  HeadlessArray() {}
+	  virtual ~HeadlessArray() {}
 
 	  //
 	  virtual bool Unarchive(Kumu::MemIOReader* Reader)

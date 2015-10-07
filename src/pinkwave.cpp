@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2005-2012, John Hurst
+Copyright (c) 2015, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -30,6 +30,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include "Wav.h"
+#include "ST2095_PinkNoise.h"
 #include <assert.h>
 
 using namespace ASDCP;
@@ -38,7 +39,7 @@ using namespace ASDCP;
 //
 // command line option parser class
 
-static const char* PROGRAM_NAME = "blackwave";    // program name for messages
+static const char* PROGRAM_NAME = "pinkwave";    // program name for messages
 
 // Macros used to test command option data state.
 
@@ -56,7 +57,7 @@ banner(FILE* stream = stderr)
 {
   fprintf(stream, "\n\
 %s (asdcplib %s)\n\n\
-Copyright (c) 2005-2012 John Hurst\n\n\
+Copyright (c) 2015 John Hurst\n\n\
 %s is part of asdcplib.\n\
 asdcplib may be copied only under the terms of the license found at\n\
 the top of every file in the asdcplib distribution kit.\n\n\
@@ -97,11 +98,13 @@ public:
   bool   help_flag;      // true if the help display option was selected
   bool   s96_flag;       // true if the samples should be at 96 kHz
   ui32_t duration;       // number of frames to be processed
-  const char* filename;  // filename prefix for files written by the extract mode
+  float  HpFc;           // Highpass filter cutoff frequency in Hz
+  float  LpFc;           // Lowpass filter cutoff frequency in Hz
+  const char* filename;  //
 
   CommandOptions(int argc, const char** argv) :
     error_flag(true), verbose_flag(false), version_flag(false), help_flag(false), s96_flag(false),
-    duration(1440), filename(0)
+    duration(1440), HpFc(PinkFilterHighPassConstant), LpFc(PinkFilterLowPassConstant), filename(0)
   {
     for ( int i = 1; i < argc; i++ )
       {
@@ -115,7 +118,7 @@ public:
 
 	      case 'd':
 		TEST_EXTRA_ARG(i, 'd');
-		duration = atoi(argv[i]); // TODO: test for negative value, should use strtol()
+		duration = Kumu::xabs(strtol(argv[i], 0, 10));
 		break;
 
 	      case '9':
@@ -149,11 +152,10 @@ public:
   }
 };
 
-
 // 
 //
 Result_t
-make_black_wav_file(CommandOptions& Options)
+make_pink_wav_file(CommandOptions& Options)
 {
   PCM::FrameBuffer FrameBuffer;
   PCM::AudioDescriptor ADesc;
@@ -168,15 +170,21 @@ make_black_wav_file(CommandOptions& Options)
   ADesc.LinkedTrackID = 1;
   ADesc.ContainerDuration = Options.duration;
 
-  // fill the frame buffer with a frame (2000 samples) of black
+  // set up LCG and pink filter
+  PinkFilter pink_filter(Options.s96_flag ? ASDCP::SampleRate_96k.Numerator : ASDCP::SampleRate_48k.Numerator,
+			 Options.HpFc, Options.LpFc);
+
+  LinearCongruentialGenerator lcg(Options.s96_flag ? ASDCP::SampleRate_96k.Numerator : ASDCP::SampleRate_48k.Numerator);
+
+
   FrameBuffer.Capacity(PCM::CalcFrameBufferSize(ADesc));
-  memset(FrameBuffer.Data(), 0, FrameBuffer.Capacity());
   FrameBuffer.Size(FrameBuffer.Capacity());
+  ui32_t samples_per_frame = PCM::CalcSamplesPerFrame(ADesc);
 
   if ( Options.verbose_flag )
     {
       fprintf(stderr, "%s kHz PCM Audio, 24 fps (%u spf)\n",
-	      (Options.s96_flag?"96":"48"), PCM::CalcSamplesPerFrame(ADesc));
+	      (Options.s96_flag?"96":"48"), samples_per_frame);
       fputs("AudioDescriptor:\n", stderr);
       PCM::AudioDescriptorDump(ADesc);
     }
@@ -195,17 +203,25 @@ make_black_wav_file(CommandOptions& Options)
     {
       ui32_t write_count = 0;
       ui32_t duration = 0;
+      byte_t scaled_pink[sizeof(ui32_t)];
 
       while ( ASDCP_SUCCESS(result) && (duration++ < Options.duration) )
 	{
-	  result = OutFile.Write(FrameBuffer.Data(), FrameBuffer.Size(), &write_count);
-	}
+	  // fill the frame buffer with a frame of pink noise
+	  byte_t *p = FrameBuffer.Data();
 
-      if ( result == RESULT_ENDOFFILE )
-	result = RESULT_OK;
+	  for ( int i = 0; i < samples_per_frame; ++i )
+	    {
+	      float pink_sample = pink_filter.GetNextSample(lcg.GetNextSample());
+	      ScalePackSample(pink_sample, p, ADesc.BlockAlign);
+	      p += ADesc.BlockAlign;
+	    }
+
+	  result = OutFile.Write(FrameBuffer.RoData(), FrameBuffer.Size(), &write_count);
+	}
     }
 
-  return RESULT_OK;
+  return result;
 }
 
 
@@ -229,7 +245,7 @@ main(int argc, const char** argv)
     banner();
 
   else
-    result = make_black_wav_file(Options);
+    result = make_pink_wav_file(Options);
 
   if ( result != RESULT_OK )
     {
@@ -248,4 +264,6 @@ main(int argc, const char** argv)
 }
 
 
+//
+// end pinkwave.cpp
 //

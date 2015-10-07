@@ -796,8 +796,8 @@ Kumu::Timestamp::EncodeString(char* str_buf, ui32_t buf_len) const
       tmp_t.AddMinutes(m_TZOffsetMinutes);
       tmp_t.GetComponents(year, month, day, hour, minute, second);
 
-      ofst_hours = abs(m_TZOffsetMinutes) / 60;
-      ofst_minutes = abs(m_TZOffsetMinutes) % 60;
+      ofst_hours = Kumu::xabs(m_TZOffsetMinutes) / 60;
+      ofst_minutes = Kumu::xabs(m_TZOffsetMinutes) % 60;
 
       if ( m_TZOffsetMinutes < 0 )
 	direction = '-';
@@ -805,7 +805,7 @@ Kumu::Timestamp::EncodeString(char* str_buf, ui32_t buf_len) const
   
   // 2004-05-01T13:20:00+00:00
   snprintf(str_buf, buf_len,
-	   "%04hu-%02hu-%02huT%02hu:%02hu:%02hu%c%02hu:%02hu",
+	   "%04hu-%02hhu-%02hhuT%02hhu:%02hhu:%02hhu%c%02u:%02u",
 	   year, month, day, hour, minute, second,
 	   direction, ofst_hours, ofst_minutes);
 
@@ -1185,11 +1185,7 @@ Kumu::km_token_split(const std::string& str, const std::string& separator)
       r = strstr(pstr, separator.c_str());
     }
       
-  if ( strlen(pstr) >= 0 )
-    {
-      components.push_back(std::string(pstr));
-    }
-
+  components.push_back(std::string(pstr));
   return components;
 }
 

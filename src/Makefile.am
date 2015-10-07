@@ -58,6 +58,7 @@ include_HEADERS = \
 if DEV_HEADERS
 include_HEADERS += \
 	S12MTimecode.h \
+	ST2095_PinkNoise.h \
 	MDD.h \
 	Metadata.h \
 	KLV.h \
@@ -124,7 +125,8 @@ libasdcp_la_SOURCES = MPEG2_Parser.cpp MPEG.cpp JP2K_Codestream_Parser.cpp \
 	AtmosSyncChannel_Mixer.cpp AtmosSyncChannel_Mixer.h \
 	PCMDataProviders.cpp PCMDataProviders.h \
 	SyncEncoder.c SyncEncoder.h SyncCommon.h CRC16.c CRC16.h \
-	UUIDInformation.c UUIDInformation.h 
+	UUIDInformation.c UUIDInformation.h \
+	ST2095_PinkNoise.cpp
 
 
 libasdcp_la_LDFLAGS = -release @VERSION@
@@ -207,9 +209,20 @@ endif
 
 # list of programs to be built and installed
 bin_PROGRAMS = \
-	asdcp-wrap asdcp-unwrap asdcp-util asdcp-info asdcp-test \
-	j2c-test blackwave klvwalk wavesplit klvsplit \
-	kmfilegen kmrandgen kmuuidgen
+	asdcp-wrap \
+	asdcp-unwrap \
+	asdcp-util \
+	asdcp-info \
+	asdcp-test \
+	j2c-test \
+	blackwave \
+	pinkwave \
+	klvwalk \
+	wavesplit \
+	klvsplit \
+	kmfilegen \
+	kmrandgen \
+	kmuuidgen
 
 if USE_AS_02
 bin_PROGRAMS += \
@@ -250,6 +263,9 @@ kmuuidgen_LDADD = libkumu.la
 
 blackwave_SOURCES = blackwave.cpp
 blackwave_LDADD = libasdcp.la  libkumu.la
+
+pinkwave_SOURCES = pinkwave.cpp
+pinkwave_LDADD = libasdcp.la  libkumu.la
 
 klvwalk_SOURCES = klvwalk.cpp
 klvwalk_LDADD = libasdcp.la libkumu.la

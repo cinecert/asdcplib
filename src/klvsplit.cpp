@@ -136,7 +136,7 @@ USAGE: %s [-l <limit>] [-p <prefix>] [-s <suffix>] [-u|-U] [-v] \n\
 
 	       case 'l':
 		 TEST_EXTRA_ARG(i, 'l');
-		 extract_limit = abs(strtoll(argv[i], 0, 10));
+		 extract_limit = Kumu::xabs(strtoll(argv[i], 0, 10));
 		 break;
 
 	       case 'p':

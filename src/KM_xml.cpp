@@ -61,13 +61,13 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 XERCES_CPP_NAMESPACE_USE 
 
-namespace Kumu {
-  void init_xml_dom();
-  typedef std::basic_string<XMLCh> XercesString;
-  bool UTF_8_to_XercesString(const std::string& in_str, XercesString& out_str);
-  bool UTF_8_to_XercesString(const char* in_str, XercesString& out_str);
-  bool XercesString_to_UTF_8(const XercesString& in_str, std::string& out_str);
-  bool XercesString_to_UTF_8(const XMLCh* in_str, std::string& out_str);
+extern "C"
+{
+  void kumu_init_xml_dom();
+  bool kumu_UTF_8_to_XercesString(const std::string& in_str, std::basic_string<XMLCh>& out_str);
+  bool kumu_UTF_8_to_XercesString_p(const char* in_str, std::basic_string<XMLCh>& out_str);
+  bool kumu_XercesString_to_UTF_8(const std::basic_string<XMLCh>& in_str, std::string& out_str);
+  bool kumu_XercesString_to_UTF_8_p(const XMLCh* in_str, std::string& out_str);
 }
 
 #endif
@@ -651,7 +651,7 @@ static const XMLCh sg_label_UTF_8[] = { chLatin_U, chLatin_T, chLatin_F,
 
 //
 void
-Kumu::init_xml_dom()
+kumu_init_xml_dom()
 {
   if ( ! sg_xml_init )
     {
@@ -691,13 +691,13 @@ Kumu::init_xml_dom()
 
 //
 bool
-Kumu::XercesString_to_UTF_8(const Kumu::XercesString& in_str, std::string& out_str) {
-  return XercesString_to_UTF_8(in_str.c_str(), out_str);
+kumu_XercesString_to_UTF_8(const std::basic_string<XMLCh>& in_str, std::string& out_str) {
+  return kumu_XercesString_to_UTF_8_p(in_str.c_str(), out_str);
 }
 
 //
 bool
-Kumu::XercesString_to_UTF_8(const XMLCh* in_str, std::string& out_str)
+kumu_XercesString_to_UTF_8_p(const XMLCh* in_str, std::string& out_str)
 {
   assert(in_str);
   assert(sg_xml_init);
@@ -734,13 +734,13 @@ Kumu::XercesString_to_UTF_8(const XMLCh* in_str, std::string& out_str)
 
 //
 bool
-Kumu::UTF_8_to_XercesString(const std::string& in_str, Kumu::XercesString& out_str) {
-  return UTF_8_to_XercesString(in_str.c_str(), out_str);
+kumu_UTF_8_to_XercesString(const std::string& in_str, std::basic_string<XMLCh>& out_str) {
+  return kumu_UTF_8_to_XercesString_p(in_str.c_str(), out_str);
 }
 
 //
 bool
-Kumu::UTF_8_to_XercesString(const char* in_str, Kumu::XercesString& out_str)
+kumu_UTF_8_to_XercesString_p(const char* in_str, std::basic_string<XMLCh>& out_str)
 {
   assert(in_str);
   assert(sg_xml_init);
@@ -848,7 +848,7 @@ public:
     assert(x_name);
     std::string tx_name;
 
-    if ( ! XercesString_to_UTF_8(x_name, tx_name) )
+    if ( ! kumu_XercesString_to_UTF_8(x_name, tx_name) )
       m_HasEncodeErrors = true;
 
     const char* name = tx_name.c_str();
@@ -878,10 +878,10 @@ public:
     for ( ui32_t i = 0; i < a_len; i++)
       {
 	std::string aname, value;
-	if ( ! XercesString_to_UTF_8(attributes.getName(i), aname) )
+	if ( ! kumu_XercesString_to_UTF_8(attributes.getName(i), aname) )
 	  m_HasEncodeErrors = true;
 
-	if ( ! XercesString_to_UTF_8(attributes.getValue(i), value) )
+	if ( ! kumu_XercesString_to_UTF_8(attributes.getValue(i), value) )
 	  m_HasEncodeErrors = true;
 
 	const char* x_aname = aname.c_str();
@@ -917,7 +917,7 @@ public:
     if ( length > 0 )
       {
 	std::string tmp;
-	if ( ! XercesString_to_UTF_8(chars, tmp) )
+	if ( ! kumu_XercesString_to_UTF_8(chars, tmp) )
 	  m_HasEncodeErrors = true;
 
 	m_Scope.top()->AppendBody(tmp);
@@ -934,7 +934,7 @@ Kumu::XMLElement::ParseString(const char* document, ui32_t doc_len)
       return false;
     }
 
-  init_xml_dom();
+  kumu_init_xml_dom();
 
   int errorCount = 0;
   SAXParser* parser = new SAXParser();
@@ -992,8 +992,8 @@ Kumu::XMLElement::ParseFirstFromString(const char* document, ui32_t doc_len)
       return false;
     }
 
-  init_xml_dom();
-
+  kumu_init_xml_dom();
+  
   int errorCount = 0;
   SAXParser* parser = new SAXParser();
 

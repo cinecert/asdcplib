@@ -347,7 +347,7 @@ public:
 
 	      case 'b':
 		TEST_EXTRA_ARG(i, 'b');
-		fb_size = abs(atoi(argv[i]));
+		fb_size = Kumu::xabs(strtol(argv[i], 0, 10));
 
 		if ( verbose_flag )
 		  fprintf(stderr, "Frame Buffer size: %u bytes.\n", fb_size);
@@ -365,7 +365,7 @@ public:
 
 	      case 'd':
 		TEST_EXTRA_ARG(i, 'd');
-		duration = abs(atoi(argv[i]));
+		duration = Kumu::xabs(strtol(argv[i], 0, 10));
 		break;
 
 	      case 'E': encrypt_header_flag = false; break;
@@ -373,7 +373,7 @@ public:
 
 	      case 'f':
 		TEST_EXTRA_ARG(i, 'f');
-		start_frame = abs(atoi(argv[i]));
+		start_frame = Kumu::xabs(strtol(argv[i], 0, 10));
 		break;
 
 	      case 'g': write_partial_pcm_flag = true; break;
@@ -434,7 +434,7 @@ public:
 
 	      case 'p':
 		TEST_EXTRA_ARG(i, 'p');
-		picture_rate = abs(atoi(argv[i]));
+		picture_rate = Kumu::xabs(strtol(argv[i], 0, 10));
 		break;
 
 	      case 's': dolby_atmos_sync_flag = true; break;

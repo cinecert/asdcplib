@@ -283,7 +283,7 @@ public:
 
 	      case 'b':
 		TEST_EXTRA_ARG(i, 'b');
-		fb_size = abs(atoi(argv[i]));
+		fb_size = Kumu::xabs(strtol(argv[i], 0, 10));
 
 		if ( verbose_flag )
 		  fprintf(stderr, "Frame Buffer size: %u bytes.\n", fb_size);
@@ -301,12 +301,12 @@ public:
 
 	      case 'D':
 		TEST_EXTRA_ARG(i, 'D');
-		component_depth = abs(atoi(argv[i]));
+		component_depth = Kumu::xabs(strtol(argv[i], 0, 10));
 		break;
 
 	      case 'd':
 		TEST_EXTRA_ARG(i, 'd');
-		duration = abs(atoi(argv[i]));
+		duration = Kumu::xabs(strtol(argv[i], 0, 10));
 		break;
 
 	      case 'E': encrypt_header_flag = false; break;
@@ -314,7 +314,7 @@ public:
 
 	      case 'F':
 		TEST_EXTRA_ARG(i, 'F');
-		field_dominance = abs(atoi(argv[i]));
+		field_dominance = Kumu::xabs(strtol(argv[i], 0, 10));
 		if ( field_dominance > 1 )
 		  {
 		    fprintf(stderr, "Field dominance value must be \"0\" or \"1\"\n");
@@ -388,17 +388,17 @@ public:
 
 	      case 's':
 		TEST_EXTRA_ARG(i, 's');
-		partition_space = abs(atoi(argv[i]));
+		partition_space = Kumu::xabs(strtol(argv[i], 0, 10));
 		break;
 
 	      case 't':
 		TEST_EXTRA_ARG(i, 't');
-		rgba_MinRef = abs(atoi(argv[i]));
+		rgba_MinRef = Kumu::xabs(strtol(argv[i], 0, 10));
 		break;
 
 	      case 'T':
 		TEST_EXTRA_ARG(i, 'T');
-		rgba_MaxRef = abs(atoi(argv[i]));
+		rgba_MaxRef = Kumu::xabs(strtol(argv[i], 0, 10));
 		break;
 
 	      case 'u': show_ul_values_flag = true; break;
@@ -408,12 +408,12 @@ public:
 
 	      case 'x':
 		TEST_EXTRA_ARG(i, 'x');
-		horizontal_subsampling = abs(atoi(argv[i]));
+		horizontal_subsampling = Kumu::xabs(strtol(argv[i], 0, 10));
 		break;
 
 	      case 'X':
 		TEST_EXTRA_ARG(i, 'X');
-		vertical_subsampling = abs(atoi(argv[i]));
+		vertical_subsampling = Kumu::xabs(strtol(argv[i], 0, 10));
 		break;
 
 	      case 'Y':

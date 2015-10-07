@@ -163,17 +163,17 @@ ASDCP::JP2K::PictureDescriptorDump(const PictureDescriptor& PDesc, FILE* stream)
 	      );
     }
   
-  fprintf(stream, "               Scod: %hd\n", PDesc.CodingStyleDefault.Scod);
-  fprintf(stream, "   ProgressionOrder: %hd\n", PDesc.CodingStyleDefault.SGcod.ProgressionOrder);
+  fprintf(stream, "               Scod: %hhu\n", PDesc.CodingStyleDefault.Scod);
+  fprintf(stream, "   ProgressionOrder: %hhu\n", PDesc.CodingStyleDefault.SGcod.ProgressionOrder);
   fprintf(stream, "     NumberOfLayers: %hd\n",
 	  KM_i16_BE(Kumu::cp2i<ui16_t>(PDesc.CodingStyleDefault.SGcod.NumberOfLayers)));
 
-  fprintf(stream, " MultiCompTransform: %hd\n", PDesc.CodingStyleDefault.SGcod.MultiCompTransform);
-  fprintf(stream, "DecompositionLevels: %hd\n", PDesc.CodingStyleDefault.SPcod.DecompositionLevels);
-  fprintf(stream, "     CodeblockWidth: %hd\n", PDesc.CodingStyleDefault.SPcod.CodeblockWidth);
-  fprintf(stream, "    CodeblockHeight: %hd\n", PDesc.CodingStyleDefault.SPcod.CodeblockHeight);
-  fprintf(stream, "     CodeblockStyle: %hd\n", PDesc.CodingStyleDefault.SPcod.CodeblockStyle);
-  fprintf(stream, "     Transformation: %hd\n", PDesc.CodingStyleDefault.SPcod.Transformation);
+  fprintf(stream, " MultiCompTransform: %hhu\n", PDesc.CodingStyleDefault.SGcod.MultiCompTransform);
+  fprintf(stream, "DecompositionLevels: %hhu\n", PDesc.CodingStyleDefault.SPcod.DecompositionLevels);
+  fprintf(stream, "     CodeblockWidth: %hhu\n", PDesc.CodingStyleDefault.SPcod.CodeblockWidth);
+  fprintf(stream, "    CodeblockHeight: %hhu\n", PDesc.CodingStyleDefault.SPcod.CodeblockHeight);
+  fprintf(stream, "     CodeblockStyle: %hhu\n", PDesc.CodingStyleDefault.SPcod.CodeblockStyle);
+  fprintf(stream, "     Transformation: %hhu\n", PDesc.CodingStyleDefault.SPcod.Transformation);
 
 
   ui32_t precinct_set_size = 0;
@@ -181,7 +181,7 @@ ASDCP::JP2K::PictureDescriptorDump(const PictureDescriptor& PDesc, FILE* stream)
   for ( i = 0; PDesc.CodingStyleDefault.SPcod.PrecinctSize[i] != 0 && i < MaxPrecincts; ++i )
     precinct_set_size++;
 
-  fprintf(stream, "          Precincts: %hd\n", precinct_set_size);
+  fprintf(stream, "          Precincts: %u\n", precinct_set_size);
   fprintf(stream, "precinct dimensions:\n");
 
   for ( i = 0; i < precinct_set_size && i < MaxPrecincts; i++ )
@@ -190,7 +190,7 @@ ASDCP::JP2K::PictureDescriptorDump(const PictureDescriptor& PDesc, FILE* stream)
 	    s_exp_lookup[(PDesc.CodingStyleDefault.SPcod.PrecinctSize[i]>>4)&0x0f]
 	    );
 
-  fprintf(stream, "               Sqcd: %hd\n", PDesc.QuantizationDefault.Sqcd);
+  fprintf(stream, "               Sqcd: %hhu\n", PDesc.QuantizationDefault.Sqcd);
 
   char tmp_buf[MaxDefaults*2];
   fprintf(stream, "              SPqcd: %s\n",
@@ -392,12 +392,12 @@ lh__Reader::OpenRead(const std::string& filename, EssenceType_t type)
 	      DefaultLogSink().Warn("EditRate and SampleRate do not match (%.03f, %.03f).\n",
 				    m_EditRate.Quotient(), m_SampleRate.Quotient());
 	      
-	      if ( m_EditRate == EditRate_24 && m_SampleRate == EditRate_48 ||
-		   m_EditRate == EditRate_25 && m_SampleRate == EditRate_50 ||
-		   m_EditRate == EditRate_30 && m_SampleRate == EditRate_60 ||
-		   m_EditRate == EditRate_48 && m_SampleRate == EditRate_96 ||
-		   m_EditRate == EditRate_50 && m_SampleRate == EditRate_100 ||
-		   m_EditRate == EditRate_60 && m_SampleRate == EditRate_120 )
+	      if ( ( m_EditRate == EditRate_24 && m_SampleRate == EditRate_48 )
+		   || ( m_EditRate == EditRate_25 && m_SampleRate == EditRate_50 )
+		   || ( m_EditRate == EditRate_30 && m_SampleRate == EditRate_60 )
+		   || ( m_EditRate == EditRate_48 && m_SampleRate == EditRate_96 )
+		   || ( m_EditRate == EditRate_50 && m_SampleRate == EditRate_100 )
+		   || ( m_EditRate == EditRate_60 && m_SampleRate == EditRate_120 ) )
 		{
 		  DefaultLogSink().Debug("File may contain JPEG Interop stereoscopic images.\n");
 		  return RESULT_SFORMAT;

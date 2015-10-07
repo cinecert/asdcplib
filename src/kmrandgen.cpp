@@ -133,7 +133,7 @@ public:
 
 	      case 's':
 		TEST_EXTRA_ARG(i, 's');
-		request_size = abs(atoi(argv[i]));
+		request_size = Kumu::xabs(strtol(argv[i], 0, 10));
 		break;
 
 	      case 'v': verbose_flag = true; break;

@@ -209,13 +209,13 @@ public:
 
 	      case 'b':
 		TEST_EXTRA_ARG(i, 'b');
-		fb_size = abs(atoi(argv[i]));
+		fb_size = Kumu::xabs(strtol(argv[i], 0, 10));
 		break;
 
 	      case 'd':
 		TEST_EXTRA_ARG(i, 'd');
 		duration_flag = true;
-		duration = abs(atoi(argv[i]));
+		duration = Kumu::xabs(strtol(argv[i], 0, 10));
 		break;
 
           case 'e':
@@ -225,7 +225,7 @@ public:
 
 	      case 'f':
 		TEST_EXTRA_ARG(i, 'f');
-		start_frame = abs(atoi(argv[i]));
+		start_frame = Kumu::xabs(strtol(argv[i], 0, 10));
 		break;
 
 	      case 'G': mode = MMT_GOP_START; break;
@@ -249,12 +249,12 @@ public:
 
 	      case 'p':
 		TEST_EXTRA_ARG(i, 'p');
-		picture_rate = abs(atoi(argv[i]));
+		picture_rate = Kumu::xabs(strtol(argv[i], 0, 10));
 		break;
 
 	      case 's':
 		TEST_EXTRA_ARG(i, 's');
-		fb_dump_size = abs(atoi(argv[i]));
+		fb_dump_size = Kumu::xabs(strtol(argv[i], 0, 10));
 		break;
 
 	      case 'V': version_flag = true; break;
@@ -263,7 +263,7 @@ public:
 
 	      case 'w':
 		TEST_EXTRA_ARG(i, 'w');
-		number_width = abs(atoi(argv[i]));
+		number_width = Kumu::xabs(strtol(argv[i], 0, 10));
 		break;
 
 	      case 'Z': j2c_pedantic = false; break;

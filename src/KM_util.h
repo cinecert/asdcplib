@@ -531,7 +531,7 @@ namespace Kumu
     };
 
   inline void hexdump(const ByteString& buf, FILE* stream = 0) {
-    hexdump(buf.RoData(), buf.Length());
+    hexdump(buf.RoData(), buf.Length(), stream);
   }
 
   // Locates the first occurrence of the null-terminated string s2 in the string s1, where not more

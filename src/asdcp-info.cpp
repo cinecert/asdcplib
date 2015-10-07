@@ -164,7 +164,7 @@ public:
 
 	      case 't':
 		TEST_EXTRA_ARG(i, 't');
-		max_bitrate = abs(atoi(argv[i]));
+		max_bitrate = Kumu::xabs(strtol(argv[i], 0, 10));
 		max_bitrate_flag = true;
 		break;
 

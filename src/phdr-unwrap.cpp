@@ -154,7 +154,7 @@ public:
 	      {
 	      case 'b':
 		TEST_EXTRA_ARG(i, 'b');
-		fb_size = abs(atoi(argv[i]));
+		fb_size = Kumu::xabs(strtol(argv[i], 0, 10));
 
 		if ( verbose_flag )
 		  fprintf(stderr, "Frame Buffer size: %u bytes.\n", fb_size);
@@ -164,12 +164,12 @@ public:
 	      case 'd':
 		TEST_EXTRA_ARG(i, 'd');
 		duration_flag = true;
-		duration = abs(atoi(argv[i]));
+		duration = Kumu::xabs(strtol(argv[i], 0, 10));
 		break;
 
 	      case 'f':
 		TEST_EXTRA_ARG(i, 'f');
-		start_frame = abs(atoi(argv[i]));
+		start_frame = Kumu::xabs(strtol(argv[i], 0, 10));
 		break;
 
 	      case 'h': help_flag = true; break;
@@ -177,7 +177,7 @@ public:
 
 	      case 's':
 		TEST_EXTRA_ARG(i, 's');
-		fb_dump_size = abs(atoi(argv[i]));
+		fb_dump_size = Kumu::xabs(strtol(argv[i], 0, 10));
 		break;
 
 	      case 'V': version_flag = true; break;
@@ -186,7 +186,7 @@ public:
 
 	      case 'w':
 		TEST_EXTRA_ARG(i, 'w');
-		number_width = abs(atoi(argv[i]));
+		number_width = Kumu::xabs(strtol(argv[i], 0, 10));
 		break;
 
 	      default:

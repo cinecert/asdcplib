@@ -114,13 +114,17 @@ AS_02::TimedText::MXFReader::h__Reader::MD_to_TimedText_TDesc(TimedTextDescripto
 	  if ( DescObject->MIMEMediaType.find("application/x-font-opentype") != std::string::npos
 	       || DescObject->MIMEMediaType.find("application/x-opentype") != std::string::npos
 	       || DescObject->MIMEMediaType.find("font/opentype") != std::string::npos )
-	    TmpResource.Type = ASDCP::TimedText::MT_OPENTYPE;
-
+	    {
+	      TmpResource.Type = ASDCP::TimedText::MT_OPENTYPE;
+	    }
 	  else if ( DescObject->MIMEMediaType.find("image/png") != std::string::npos )
-	    TmpResource.Type = ASDCP::TimedText::MT_PNG;
-
+	    {
+	      TmpResource.Type = ASDCP::TimedText::MT_PNG;
+	    }
 	  else
-	    TmpResource.Type = ASDCP::TimedText::MT_BIN;
+	    {
+	      TmpResource.Type = ASDCP::TimedText::MT_BIN;
+	    }
 
 	  TDesc.ResourceList.push_back(TmpResource);
 	  m_ResourceMap.insert(ResourceMap_t::value_type(DescObject->AncillaryResourceID, *sdi));

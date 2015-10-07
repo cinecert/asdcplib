@@ -220,7 +220,7 @@ namespace Kumu
   {
   public:
     virtual ~PathMatchAny() {}
-    inline bool Match(const std::string& s) const { return true; }
+    inline bool Match(const std::string&) const { return true; }
   };
 
 #ifndef KM_WIN32
@@ -260,6 +260,8 @@ namespace Kumu
 
   PathList_t& FindInPaths(const IPathMatch& Pattern, const PathList_t& SearchPaths,
 			  PathList_t& FoundPaths, bool one_shot = false, char separator = '/');
+
+  std::string GetExecutablePath(const std::string& default_path);
 
   //------------------------------------------------------------------------------------------
   // Directory Manipulation

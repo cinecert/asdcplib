@@ -123,15 +123,16 @@ public:
   bool   verbose_flag;   // true if the verbose option was selected
   bool   version_flag;   // true if the version display option was selected
   bool   help_flag;      // true if the help display option was selected
-  const char* filename;  // filename to be processed
-  const char* write_filename;  // filename to write with val_write_flag
+  std::string filename;  // filename to be processed
+  std::string write_filename;  // filename to write with val_write_flag
   ui32_t chunk_count;
   MajorMode_t mode;      // MajorMode selector
 
   //
   CommandOptions(int argc, const char** argv) :
-    error_flag(true), order(""), verbose_flag(false), version_flag(false), help_flag(false),
-    filename(""), write_filename(""), chunk_count(0), mode(MMT_VALIDATE)
+    error_flag(true), order(""), verbose_flag(false),
+    version_flag(false), help_flag(false),
+    chunk_count(0), mode(MMT_VALIDATE)
   {
     //    order = "rand";
 
@@ -187,7 +188,7 @@ public:
 	  {
 	    if (argv[i][0] != '-' )
 	      {
-		if ( filename != "" )
+		if ( ! filename.empty() )
 		  {
 		    fprintf(stderr, "Extra filename found: %s\n", argv[i]);
 		    return;
@@ -206,7 +207,7 @@ public:
     if ( help_flag || version_flag )
       return;
     
-    if ( strlen ( filename ) == 0 )
+    if ( filename.empty() )
       {
 	fprintf(stderr, "Filename required.\n");
 	return;
@@ -221,7 +222,7 @@ public:
       if ( strcmp(order, "") == 0 )
 	order = "rand";
 
-    if ( strcmp ( filename, write_filename ) == 0 )
+    if ( filename == write_filename )
       {
 	fprintf(stderr, "Output and input files must be different.\n");
 	return;
@@ -382,7 +383,7 @@ randomize_list(read_list_t* read_list, ui32_t check_total)
 Result_t
 ReadValidateWriteLargeFile(CommandOptions& Options)
 {
-  assert(Options.write_filename);
+  assert(!Options.write_filename.empty());
   ui32_t  check_total = 0;
   ui32_t  write_total = 0;
   ui32_t  read_count = 0;

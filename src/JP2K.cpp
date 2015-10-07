@@ -172,7 +172,7 @@ ASDCP::JP2K::Accessor::COD::Dump(FILE* stream) const
 
   fprintf(stream, "      ProgOrder: %s\n", prog_order_str);
   fprintf(stream, "         Layers: %hu\n", Layers());
-  fprintf(stream, "   DecompLevels: %hu\n", DecompLevels());
+  fprintf(stream, "   DecompLevels: %hhu\n", DecompLevels());
   fprintf(stream, " CodeBlockWidth: %d\n", 1 << CodeBlockWidth());
   fprintf(stream, "CodeBlockHeight: %d\n", 1 << CodeBlockHeight());
   fprintf(stream, " CodeBlockStyle: %d\n", CodeBlockStyle());
@@ -203,7 +203,7 @@ ASDCP::JP2K::Accessor::QCD::Dump(FILE* stream) const
   fprintf(stream, "QCD: \n");
   fprintf(stream, "QuantizationType: %s\n", GetQuantizationTypeString(QuantizationType()));
   fprintf(stream, "       GuardBits: %d\n", GuardBits());
-  fprintf(stream, "           SPqcd:\n", GuardBits());
+  fprintf(stream, "           SPqcd: %d\n", GuardBits());
   Kumu::hexdump(m_MarkerData, m_DataSize, stream);
 }
 
