@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2011-2013, Robert Scheler, Heiko Sparenberg Fraunhofer IIS,
+Copyright (c) 2011-2015, Robert Scheler, Heiko Sparenberg Fraunhofer IIS,
 John Hurst
 
 All rights reserved.
@@ -77,7 +77,7 @@ AS_02::MXF::AS02IndexReader::InitFromFile(const Kumu::FileReader& reader, const 
   body_part_array_t body_part_array;
   body_part_array_t::const_iterator body_part_iter;
 
-  ASDCP::MXF::Array<ASDCP::MXF::RIP::Pair>::const_iterator i;
+  RIP::const_pair_iterator i;
   Result_t result = m_IndexSegmentData.Capacity(128*Kumu::Kilobyte); // will be grown if needed
   ui32_t first_body_sid = 0;
 
@@ -429,7 +429,7 @@ AS_02::h__AS02Reader::OpenMXFRead(const char* filename)
 
       Kumu::fpos_t first_partition_after_header = 0;
       bool has_body_sid = false;
-      Array<RIP::Pair>::iterator r_i;
+      RIP::pair_iterator r_i;
 
       for ( r_i = m_RIP.PairArray.begin(); r_i != m_RIP.PairArray.end(); ++r_i )
 	{

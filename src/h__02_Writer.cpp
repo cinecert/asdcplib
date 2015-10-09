@@ -195,7 +195,7 @@ AS_02::h__AS02WriterFrame::WriteEKLVPacket(const ASDCP::FrameBuffer& FrameBuf,co
     {
       m_IndexWriter.ThisPartition = m_File.Tell();
       m_IndexWriter.WriteToFile(m_File);
-      m_RIP.PairArray.push_back(RIP::Pair(0, m_IndexWriter.ThisPartition));
+      m_RIP.PairArray.push_back(RIP::PartitionPair(0, m_IndexWriter.ThisPartition));
 
       UL body_ul(m_Dict->ul(MDD_ClosedCompleteBodyPartition));
       Partition body_part(m_Dict);
@@ -206,7 +206,7 @@ AS_02::h__AS02WriterFrame::WriteEKLVPacket(const ASDCP::FrameBuffer& FrameBuf,co
 
       body_part.BodyOffset = m_StreamOffset;
       result = body_part.WriteToFile(m_File, body_ul);
-      m_RIP.PairArray.push_back(RIP::Pair(1, body_part.ThisPartition));
+      m_RIP.PairArray.push_back(RIP::PartitionPair(1, body_part.ThisPartition));
     }
 
   return result;

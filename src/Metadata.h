@@ -133,7 +133,7 @@ namespace ASDCP
           optional_property<UTF16String> Name;
           Kumu::Timestamp PackageCreationDate;
           Kumu::Timestamp PackageModifiedDate;
-          Batch<UUID> Tracks;
+          Array<UUID> Tracks;
 
       GenericPackage(const Dictionary*& d);
       GenericPackage(const GenericPackage& rhs);
@@ -292,7 +292,7 @@ namespace ASDCP
 
 	public:
 	  const Dictionary*& m_Dict;
-          Batch<UUID> StructuralComponents;
+          Array<UUID> StructuralComponents;
 
       Sequence(const Dictionary*& d);
       Sequence(const Sequence& rhs);
@@ -365,8 +365,8 @@ namespace ASDCP
 
 	public:
 	  const Dictionary*& m_Dict;
-          Batch<UUID> Locators;
-          Batch<UUID> SubDescriptors;
+          Array<UUID> Locators;
+          Array<UUID> SubDescriptors;
 
       GenericDescriptor(const Dictionary*& d);
       GenericDescriptor(const GenericDescriptor& rhs);

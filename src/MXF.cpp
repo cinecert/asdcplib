@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2005-2014, John Hurst
+Copyright (c) 2005-2015, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -100,20 +100,20 @@ ASDCP::MXF::SeekToRIP(const Kumu::FileReader& Reader)
 }
 
 //
-ASDCP::Result_t
-ASDCP::MXF::RIP::GetPairBySID(ui32_t SID, Pair& outPair) const
+bool
+ASDCP::MXF::RIP::GetPairBySID(ui32_t SID, PartitionPair& outPair) const
 {
-  Array<Pair>::const_iterator pi = PairArray.begin();
-  for ( ; pi != PairArray.end(); pi++ )
+  RIP::const_pair_iterator i;
+  for ( i = PairArray.begin(); i != PairArray.end(); ++i )
     {
-      if ( (*pi).BodySID == SID )
+      if ( i->BodySID == SID )
 	{
-	  outPair = *pi;
-	  return RESULT_OK;
+	  outPair = *i;
+	  return true;
 	}
     }
 
-  return RESULT_FAIL;
+  return false;
 }
 
 //
@@ -526,7 +526,7 @@ ASDCP::MXF::Primer::InsertTag(const MDDEntry& Entry, ASDCP::TagValue& Tag)
       TmpEntry.UL = TestUL;
       TmpEntry.Tag = Tag;
 
-      LocalTagEntryBatch.push_back(TmpEntry);
+      LocalTagEntryBatch.insert(TmpEntry);
       m_Lookup->insert(std::map<UL, TagValue>::value_type(TmpEntry.UL, TmpEntry.Tag));
     }
   else
@@ -1511,9 +1511,8 @@ ASDCP::MXF::decode_mca_string(const std::string& s, const mca_label_map_t& label
 	    }
 
 	  current_soundfield = new ASDCP::MXF::SoundfieldGroupLabelSubDescriptor(dict);
-
-	  GenRandomValue(current_soundfield->InstanceUID);
 	  GenRandomValue(current_soundfield->MCALinkID);
+
 	  current_soundfield->MCATagSymbol = (i->second.requires_prefix ? "sg" : "") + i->first;
 	  current_soundfield->MCATagName = i->second.tag_name;
 	  current_soundfield->RFC5646SpokenLanguage = language;
@@ -1543,12 +1542,12 @@ ASDCP::MXF::decode_mca_string(const std::string& s, const mca_label_map_t& label
 	      return false;
 	    }
 
+	  assert(current_soundfield);
+
 	  ASDCP::MXF::AudioChannelLabelSubDescriptor *channel_descr =
 	    new ASDCP::MXF::AudioChannelLabelSubDescriptor(dict);
-
-	  GenRandomValue(channel_descr->InstanceUID);
 	  GenRandomValue(channel_descr->MCALinkID);
-	  assert(current_soundfield);
+
 	  channel_descr->SoundfieldGroupLinkID = current_soundfield->MCALinkID;
 	  channel_descr->MCAChannelID = channel_count++ + 1;
 	  channel_descr->MCATagSymbol = (i->second.requires_prefix ? "ch" : "") + i->first;
@@ -1584,8 +1583,7 @@ ASDCP::MXF::decode_mca_string(const std::string& s, const mca_label_map_t& label
 
 	      ASDCP::MXF::AudioChannelLabelSubDescriptor *channel_descr =
 		new ASDCP::MXF::AudioChannelLabelSubDescriptor(dict);
-
-	      GenRandomValue(channel_descr->InstanceUID);
+	      GenRandomValue(channel_descr->MCALinkID);
 
 	      if ( current_soundfield != 0 )
 		{
@@ -1628,8 +1626,6 @@ ASDCP::MXF::decode_mca_string(const std::string& s, const mca_label_map_t& label
 
       ASDCP::MXF::AudioChannelLabelSubDescriptor *channel_descr =
 	new ASDCP::MXF::AudioChannelLabelSubDescriptor(dict);
-
-      GenRandomValue(channel_descr->InstanceUID);
       GenRandomValue(channel_descr->MCALinkID);
 
       if ( current_soundfield != 0 )
@@ -1742,7 +1738,7 @@ ASDCP::MXF::GetEditRateFromFP(ASDCP::MXF::OP1aHeader& header, ASDCP::Rational& e
     }
 
   char buf[64];
-  MXF::Batch<UUID>::const_iterator i;
+  MXF::Array<UUID>::const_iterator i;
   MXF::SourcePackage *source_package = dynamic_cast<MXF::SourcePackage*>(temp_items.front());
   assert(source_package);
 

@@ -64,15 +64,15 @@ namespace ASDCP
 
 	public:
 	  //
-	  class Pair : public Kumu::IArchive
+	  class PartitionPair : public Kumu::IArchive
 	    {
 	    public:
 	      ui32_t BodySID;
 	      ui64_t ByteOffset;
 
-	      Pair() : BodySID(0), ByteOffset(0) {}
-	      Pair(ui32_t sid, ui64_t offset) : BodySID(sid), ByteOffset(offset) {}
-	      virtual ~Pair() {}
+	      PartitionPair() : BodySID(0), ByteOffset(0) {}
+	      PartitionPair(ui32_t sid, ui64_t offset) : BodySID(sid), ByteOffset(offset) {}
+	      virtual ~PartitionPair() {}
 
 	      ui32_t Size() { return sizeof(ui32_t) + sizeof(ui64_t); }
 
@@ -99,13 +99,17 @@ namespace ASDCP
 	    };
 
 	  const Dictionary*& m_Dict;
-	  HeadlessArray<Pair> PairArray;
+
+	  typedef SimpleArray<PartitionPair>::iterator pair_iterator;
+	  typedef SimpleArray<PartitionPair>::const_iterator const_pair_iterator;
+
+	  SimpleArray<PartitionPair> PairArray;
 
 	RIP(const Dictionary*& d) : m_Dict(d) {}
 	  virtual ~RIP() {}
 	  virtual Result_t InitFromFile(const Kumu::FileReader& Reader);
 	  virtual Result_t WriteToFile(Kumu::FileWriter& Writer);
-	  virtual Result_t GetPairBySID(ui32_t, Pair&) const;
+	  virtual bool GetPairBySID(ui32_t, PartitionPair&) const;
 	  virtual void     Dump(FILE* = 0);
 	};
 
@@ -179,6 +183,10 @@ namespace ASDCP
 
 	      LocalTagEntry() { Tag.a = Tag.b = 0; }
 	    LocalTagEntry(const TagValue& tag, ASDCP::UL& ul) : Tag(tag), UL(ul) {}
+
+	      bool operator<(const LocalTagEntry& rhs) const {
+		return ( ( Tag.a < rhs.Tag.a ) || ( Tag.b < rhs.Tag.b ) );
+	      }
 
 	      inline const char* EncodeString(char* str_buf, ui32_t buf_len) const {
 		snprintf(str_buf, buf_len, "%02x %02x: ", Tag.a, Tag.b);
@@ -280,7 +288,7 @@ namespace ASDCP
 	  ui16_t       Version;
 	  optional_property<ui32_t> ObjectModelVersion;
 	  optional_property<UUID> PrimaryPackage;
-	  Batch<UUID>  Identifications;
+	  Array<UUID>  Identifications;
 	  UUID         ContentStorage;
 	  UL           OperationalPattern;
 	  Batch<UL>    EssenceContainers;
@@ -360,8 +368,8 @@ namespace ASDCP
 	  ui32_t      BodySID;
 	  ui8_t       SliceCount;
 	  ui8_t       PosTableCount;
-	  Batch<DeltaEntry> DeltaEntryArray;
-	  Batch<IndexEntry> IndexEntryArray;
+	  Array<DeltaEntry> DeltaEntryArray;
+	  Array<IndexEntry> IndexEntryArray;
 
 	  IndexTableSegment(const Dictionary*&);
 	  virtual ~IndexTableSegment();

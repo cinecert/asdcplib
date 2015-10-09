@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2011-2013, Robert Scheler, Heiko Sparenberg Fraunhofer IIS,
+Copyright (c) 2011-2015, Robert Scheler, Heiko Sparenberg Fraunhofer IIS,
 John Hurst
 
 All rights reserved.
@@ -178,7 +178,7 @@ namespace AS_02
 	AddEssenceDescriptor(WrappingUL);
 
 	this->m_IndexWriter.SetPrimerLookup(&this->m_HeaderPart.m_Primer);
-	this->m_RIP.PairArray.push_back(RIP::Pair(0, 0)); // Header partition RIP entry
+	this->m_RIP.PairArray.push_back(RIP::PartitionPair(0, 0)); // Header partition RIP entry
 	this->m_IndexWriter.OperationalPattern = this->m_HeaderPart.OperationalPattern;
 	this->m_IndexWriter.EssenceContainers = this->m_HeaderPart.EssenceContainers;
 
@@ -197,7 +197,7 @@ namespace AS_02
 	    body_part.EssenceContainers = this->m_HeaderPart.EssenceContainers;
 	    body_part.ThisPartition = this->m_ECStart;
 	    result = body_part.WriteToFile(this->m_File, body_ul);
-	    this->m_RIP.PairArray.push_back(RIP::Pair(1, body_part.ThisPartition)); // Second RIP Entry
+	    this->m_RIP.PairArray.push_back(RIP::PartitionPair(1, body_part.ThisPartition)); // Second RIP Entry
 	  }
 
 	return result;
@@ -211,7 +211,7 @@ namespace AS_02
 	  {
 	    this->m_IndexWriter.ThisPartition = this->m_File.Tell();
 	    this->m_IndexWriter.WriteToFile(this->m_File);
-	    this->m_RIP.PairArray.push_back(RIP::Pair(0, this->m_IndexWriter.ThisPartition));
+	    this->m_RIP.PairArray.push_back(RIP::PartitionPair(0, this->m_IndexWriter.ThisPartition));
 	  }
 
 	// update all Duration properties
@@ -227,7 +227,7 @@ namespace AS_02
 	footer_part.PreviousPartition = this->m_RIP.PairArray.back().ByteOffset;
 
 	Kumu::fpos_t here = this->m_File.Tell();
-	this->m_RIP.PairArray.push_back(RIP::Pair(0, here)); // Last RIP Entry
+	this->m_RIP.PairArray.push_back(RIP::PartitionPair(0, here)); // Last RIP Entry
 	this->m_HeaderPart.FooterPartition = here;
 
 	assert(this->m_Dict);
@@ -250,7 +250,7 @@ namespace AS_02
   
 	if ( KM_SUCCESS(result) )
 	  {
-	    ASDCP::MXF::Array<ASDCP::MXF::RIP::Pair>::const_iterator i = this->m_RIP.PairArray.begin();
+	    ASDCP::MXF::RIP::const_pair_iterator i = this->m_RIP.PairArray.begin();
 	    ui64_t header_byte_count = this->m_HeaderPart.HeaderByteCount;
 	    ui64_t previous_partition = 0;
 

@@ -169,7 +169,9 @@ Options:\n\
                       will overide -C and -l options with Configuration 4 \n\
                       Channel Assigment and no format label respectively. \n\
   -v                - Verbose, prints informative messages to stderr\n\
-  -W                - Read input file only, do not write source file\n\
+  -w                - When writing 377-4 MCA labels, use the WTF Channel\n\
+                      assignment label instead of the standard MCA label\n\
+  -W                - Read input file only, do not write output file\n\
   -z                - Fail if j2c inputs have unequal parameters (default)\n\
   -Z                - Ignore unequal parameters in j2c inputs\n\
 \n\
@@ -241,9 +243,10 @@ public:
   UL picture_coding;
   UL aux_data_coding;
   bool dolby_atmos_sync_flag;  // if true, insert a Dolby Atmos Synchronization channel.
-  ui32_t ffoa;  /// first frame of action for atmos wrapping
-  ui32_t max_channel_count; /// max channel count for atmos wrapping
-  ui32_t max_object_count; /// max object count for atmos wrapping
+  ui32_t ffoa;                 // first frame of action for atmos wrapping
+  ui32_t max_channel_count;    // max channel count for atmos wrapping
+  ui32_t max_object_count;     // max object count for atmos wrapping
+  bool use_interop_sound_wtf;  // make true to force WTF assignment label instead of MCA
   ASDCP::MXF::ASDCP_MCAConfigParser mca_config;
 
   //
@@ -299,7 +302,8 @@ public:
     ffoa(0), max_channel_count(10), max_object_count(118), // hard-coded sample atmos properties
     dolby_atmos_sync_flag(false),
     show_ul_values_flag(false),
-    mca_config(g_dict)
+    mca_config(g_dict),
+    use_interop_sound_wtf(false)
   {
     memset(key_value, 0, KeyLen);
     memset(key_id_value, 0, UUIDlen);
@@ -441,6 +445,7 @@ public:
 	      case 'u': show_ul_values_flag = true; break;
 	      case 'V': version_flag = true; break;
 	      case 'v': verbose_flag = true; break;
+	      case 'w': use_interop_sound_wtf = true; break;
 	      case 'W': no_write_flag = true; break;
 	      case 'Z': j2c_pedantic = false; break;
 	      case 'z': j2c_pedantic = true; break;
@@ -1035,7 +1040,14 @@ write_PCM_file(CommandOptions& Options)
 		  return RESULT_FAIL;
 		}
 
-	      essence_descriptor->ChannelAssignment = g_dict->ul(MDD_DCAudioChannelCfg_MCA);
+	      if ( Options.use_interop_sound_wtf )
+		{
+		  essence_descriptor->ChannelAssignment = g_dict->ul(MDD_DCAudioChannelCfg_4_WTF);
+		}
+	      else
+		{
+		  essence_descriptor->ChannelAssignment = g_dict->ul(MDD_DCAudioChannelCfg_MCA);
+		}
 
 	      // add descriptors to the essence_descriptor and header
 	      ASDCP::MXF::InterchangeObject_list_t::iterator i;

@@ -144,8 +144,8 @@ AS_02::PHDR::MXFReader::h__Reader::OpenRead(const std::string& filename, std::st
   // if PHDRSimplePayload exists, go get it
   if ( KM_SUCCESS(result) && SimplePayloadSID )
     {
-      Array<RIP::Pair>::const_iterator pi;
-      RIP::Pair TmpPair;
+      RIP::const_pair_iterator pi;
+      RIP::PartitionPair TmpPair;
       
       // Look up the partition start in the RIP using the SID.
       for ( pi = m_RIP.PairArray.begin(); pi != m_RIP.PairArray.end(); ++pi )
@@ -485,7 +485,7 @@ AS_02::PHDR::MXFWriter::h__Writer::WritePHDRHeader(const std::string& PackageLab
   AddEssenceDescriptor(WrappingUL);
 
   m_IndexWriter.SetPrimerLookup(&m_HeaderPart.m_Primer);
-  m_RIP.PairArray.push_back(RIP::Pair(0, 0)); // Header partition RIP entry
+  m_RIP.PairArray.push_back(RIP::PartitionPair(0, 0)); // Header partition RIP entry
   m_IndexWriter.OperationalPattern = m_HeaderPart.OperationalPattern;
   m_IndexWriter.EssenceContainers = m_HeaderPart.EssenceContainers;
 
@@ -504,7 +504,7 @@ AS_02::PHDR::MXFWriter::h__Writer::WritePHDRHeader(const std::string& PackageLab
       body_part.EssenceContainers = m_HeaderPart.EssenceContainers;
       body_part.ThisPartition = m_ECStart;
       result = body_part.WriteToFile(m_File, body_ul);
-      m_RIP.PairArray.push_back(RIP::Pair(1, body_part.ThisPartition)); // Second RIP Entry
+      m_RIP.PairArray.push_back(RIP::PartitionPair(1, body_part.ThisPartition)); // Second RIP Entry
     }
 
   return result;
@@ -594,7 +594,7 @@ AS_02::PHDR::MXFWriter::h__Writer::WriteFrame(const AS_02::PHDR::FrameBuffer& Fr
 	{
 	  m_IndexWriter.ThisPartition = m_File.Tell();
 	  m_IndexWriter.WriteToFile(m_File);
-	  m_RIP.PairArray.push_back(RIP::Pair(0, m_IndexWriter.ThisPartition));
+	  m_RIP.PairArray.push_back(RIP::PartitionPair(0, m_IndexWriter.ThisPartition));
 
 	  UL body_ul(m_Dict->ul(MDD_ClosedCompleteBodyPartition));
 	  Partition body_part(m_Dict);
@@ -605,7 +605,7 @@ AS_02::PHDR::MXFWriter::h__Writer::WriteFrame(const AS_02::PHDR::FrameBuffer& Fr
 
 	  body_part.BodyOffset = m_StreamOffset;
 	  result = body_part.WriteToFile(m_File, body_ul);
-	  m_RIP.PairArray.push_back(RIP::Pair(1, body_part.ThisPartition));
+	  m_RIP.PairArray.push_back(RIP::PartitionPair(1, body_part.ThisPartition));
 	}
     }
 
@@ -633,7 +633,7 @@ AS_02::PHDR::MXFWriter::h__Writer::Finalize(const std::string& PHDR_master_metad
 	{
 	  m_IndexWriter.ThisPartition = this->m_File.Tell();
 	  m_IndexWriter.WriteToFile(this->m_File);
-	  m_RIP.PairArray.push_back(RIP::Pair(0, this->m_IndexWriter.ThisPartition));
+	  m_RIP.PairArray.push_back(RIP::PartitionPair(0, this->m_IndexWriter.ThisPartition));
 	}
 
       if ( ! PHDR_master_metadata.empty() )
@@ -651,7 +651,7 @@ AS_02::PHDR::MXFWriter::h__Writer::Finalize(const std::string& PHDR_master_metad
 	  GSPart.BodySID = 2;
   	  m_MetadataTrackSubDescriptor->SimplePayloadSID = 2;
 
-	  m_RIP.PairArray.push_back(RIP::Pair(2, here));
+	  m_RIP.PairArray.push_back(RIP::PartitionPair(2, here));
 	  GSPart.EssenceContainers = m_HeaderPart.EssenceContainers;
 
 	  static UL gs_part_ul(m_Dict->ul(MDD_GenericStreamPartition));

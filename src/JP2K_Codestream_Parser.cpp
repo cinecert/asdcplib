@@ -163,9 +163,9 @@ ASDCP::JP2K::ParseMetadataIntoDesc(const FrameBuffer& FB, PictureDescriptor& PDe
 	case MRK_QCD:
 	  memset(&PDesc.QuantizationDefault, 0, sizeof(QuantizationDefault_t));
 
-	  if ( NextMarker.m_DataSize < 16 )
+	  if ( NextMarker.m_DataSize < 3 ) // ( Sqcd = 8 bits, SPqcd = 8 bits ) == 2 bytes, error if not greater
 	    {
-	      DefaultLogSink().Error("No quantization signaled\n");
+	      DefaultLogSink().Error("No quantization signaled. QCD size=%s.\n", NextMarker.m_DataSize);
 	      return RESULT_RAW_FORMAT;
 	    }
 	  

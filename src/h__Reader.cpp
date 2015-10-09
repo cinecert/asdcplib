@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2004-2013, John Hurst
+Copyright (c) 2004-2015, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -126,7 +126,7 @@ ASDCP::h__ASDCPReader::OpenMXFRead(const std::string& filename)
         {
 	  // if this is a three partition file, go to the body
 	  // partition and read the partition pack
-	  Array<RIP::Pair>::iterator r_i = m_RIP.PairArray.begin();
+	  RIP::const_pair_iterator r_i = m_RIP.PairArray.begin();
 	  r_i++;
 	  m_File.Seek((*r_i).ByteOffset);
 	  result = m_BodyPart.InitFromFile(m_File);

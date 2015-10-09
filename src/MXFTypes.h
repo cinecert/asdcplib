@@ -35,6 +35,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "KLV.h"
 #include <list>
 #include <vector>
+#include <set>
 #include <map>
 #include <wchar.h>
 
@@ -96,46 +97,32 @@ namespace ASDCP
 	};
 
       //
-      template <class T>
-	class Batch : public std::vector<T>, public Kumu::IArchive
+      template <class ContainerType>
+	class FixedSizeItemCollection : public ContainerType, public Kumu::IArchive
 	{
 	public:
-	  Batch() {}
-	  virtual ~Batch() {}
+	  FixedSizeItemCollection() {}
+	  virtual ~FixedSizeItemCollection() {}
 
-	  inline virtual bool HasValue() const { return ! this->empty(); }
-
-	  virtual ui32_t ArchiveLength() const {
-	    ui32_t arch_size = sizeof(ui32_t) * 2;
-	    typename std::vector<T>::const_iterator i;
-
-	    for ( i = this->begin(); i != this->end(); ++i )
-	      {
-		arch_size += i->ArchiveLength();
-	      }
-
-	    return arch_size;
+	  ui32_t ItemSize() const {
+	    typename ContainerType::value_type tmp_item;
+	    return tmp_item.ArchiveLength();
 	  }
 
-	  //
-	  virtual bool Archive(Kumu::MemIOWriter* Writer) const {
-	    if ( ! Writer->WriteUi32BE(this->size()) ) return false;
-	    byte_t* p = Writer->CurrentData();
+	  bool HasValue() const { return ! this->empty(); }
 
-	    if ( ! Writer->WriteUi32BE(0) ) return false;
+	  ui32_t ArchiveLength() const {
+	    return ( sizeof(ui32_t) * 2 ) +  ( this->size() * this->ItemSize() );
+	  }
+
+	  bool Archive(Kumu::MemIOWriter* Writer) const {
+	    if ( ! Writer->WriteUi32BE(this->size()) ) return false;
+	    if ( ! Writer->WriteUi32BE(this->ItemSize()) ) return false;
 	    if ( this->empty() ) return true;
 	    
-	    typename std::vector<T>::const_iterator i = this->begin();
-	    assert(i != this->end());
-
-	    ui32_t ItemSize = Writer->Remainder();
-	    if ( ! i->Archive(Writer) ) return false;
-	    ItemSize -= Writer->Remainder();
-	    Kumu::i2p<ui32_t>(KM_i32_BE(ItemSize), p);
-	    ++i;
-
+	    typename ContainerType::const_iterator i;
 	    bool result = true;
-	    for ( ; i != this->end() && result; ++i )
+	    for ( i = this->begin(); i != this->end() && result; ++i )
 	      {
 		result = i->Archive(Writer);
 	      }
@@ -144,141 +131,76 @@ namespace ASDCP
 	  }
 
 	  //
-	  virtual bool Unarchive(Kumu::MemIOReader* Reader) {
+	  bool Unarchive(Kumu::MemIOReader* Reader) {
 	    ui32_t item_count, item_size;
 	    if ( ! Reader->ReadUi32BE(&item_count) ) return false;
 	    if ( ! Reader->ReadUi32BE(&item_size) ) return false;
-
-	    if ( ( item_count > 65536 ) || ( item_size > 1024 ) )
-	      {
-		return false;
-	      }
+	    if ( this->ItemSize() != item_size ) return false;
 
 	    bool result = true;
 	    for ( ui32_t i = 0; i < item_count && result; ++i )
 	      {
-		T Tmp;
-		result = Tmp.Unarchive(Reader);
+		typename ContainerType::value_type tmp_item;
+		result = tmp_item.Unarchive(Reader);
 
 		if ( result )
 		  {
-		    this->push_back(Tmp);
+		    this->push_back(tmp_item);
 		  }
 	      }
 
 	    return result;
 	  }
 
-	  //
-	  void Dump(FILE* stream = 0, ui32_t depth = 0)
-	    {
-	      char identbuf[IdentBufferLen];
+	  void Dump(FILE* stream = 0, ui32_t depth = 0) {
+	    char identbuf[IdentBufferLen];
 
-	      if ( stream == 0 )
+	    if ( stream == 0 )
+	      {
 		stream = stderr;
-
-	      typename std::vector<T>::iterator i = this->begin();
-	      for ( ; i != this->end(); i++ )
-		fprintf(stream, "  %s\n", (*i).EncodeString(identbuf, IdentBufferLen));
-	    }
-	};
-
-      //
-      template <class T>
-	class Array : public std::list<T>, public Kumu::IArchive
-	{
-	public:
-	  Array() {}
-	  virtual ~Array() {}
-
-	  inline virtual bool HasValue() const { return ! this->empty(); }
-
-	  virtual ui32_t ArchiveLength() const {
-	    ui32_t arch_size = sizeof(ui32_t) * 2;
-	    typename std::list<T>::const_iterator i;
-
+	      }
+	    
+	    typename ContainerType::const_iterator i;
 	    for ( i = this->begin(); i != this->end(); ++i )
 	      {
-		arch_size += i->ArchiveLength();
-	      }
-
-	    return arch_size;
-	  }
-
-	  //
-	  virtual bool Archive(Kumu::MemIOWriter* Writer) const {
-	    if ( ! Writer->WriteUi32BE(this->size()) ) return false;
-	    byte_t* p = Writer->CurrentData();
-
-	    if ( ! Writer->WriteUi32BE(0) ) return false;
-	    if ( this->empty() ) return true;
-	    
-	    typename std::list<T>::const_iterator i = this->begin();
-	    assert(i != this->end());
-
-	    ui32_t ItemSize = Writer->Remainder();
-	    if ( ! i->Archive(Writer) ) return false;
-	    ItemSize -= Writer->Remainder();
-	    Kumu::i2p<ui32_t>(KM_i32_BE(ItemSize), p);
-	    ++i;
-
-	    bool result = true;
-	    for ( ; i != this->end() && result; ++i )
-	      {
-		result = i->Archive(Writer);
-	      }
-
-	    return result;
-	  }
-
-	  //
-	  virtual bool Unarchive(Kumu::MemIOReader* Reader) {
-	    ui32_t item_count, item_size;
-	    if ( ! Reader->ReadUi32BE(&item_count) ) return false;
-	    if ( ! Reader->ReadUi32BE(&item_size) ) return false;
-
-	    if ( ( item_count > 65536 ) || ( item_size > 1024 ) )
-	      {
-		return false;
-	      }
-
-	    bool result = true;
-	    for ( ui32_t i = 0; i < item_count && result; ++i )
-	      {
-		T Tmp;
-		result = Tmp.Unarchive(Reader);
-
-		if ( result )
-		  {
-		    this->push_back(Tmp);
-		  }
-	      }
-
-	    return result;
-	  }
-	    
-
-	  //
-	  void Dump(FILE* stream = 0, ui32_t depth = 0)
-	    {
-	      char identbuf[IdentBufferLen];
-
-	      if ( stream == 0 )
-		stream = stderr;
-
-	      typename std::list<T>::iterator i = this->begin();
-	      for ( ; i != this->end(); i++ )
 		fprintf(stream, "  %s\n", (*i).EncodeString(identbuf, IdentBufferLen));
-	    }
+	      }
+	  }
 	};
+
+
+      template <class item_type>
+	class PushSet : public std::set<item_type>
+      {
+      public:
+	PushSet() {}
+	virtual ~PushSet() {}
+	void push_back(const item_type& item) { this->insert(item); }
+      };
+
+      template <class ItemType>
+	class Batch : public FixedSizeItemCollection<PushSet<ItemType> >
+      {
+      public:
+	Batch() {}
+	virtual ~Batch() {}
+      };
+
+      template <class ItemType>
+	class Array : public FixedSizeItemCollection<std::vector<ItemType> >
+      {
+      public:
+	Array() {}
+	virtual ~Array() {}
+      };
 
       //
       template <class T>
-	class HeadlessArray : public std::list<T>, public Kumu::IArchive
+	class SimpleArray : public std::list<T>, public Kumu::IArchive
 	{
 	public:
-	  HeadlessArray() {}
-	  virtual ~HeadlessArray() {}
+	  SimpleArray() {}
+	  virtual ~SimpleArray() {}
 
 	  //
 	  virtual bool Unarchive(Kumu::MemIOReader* Reader)

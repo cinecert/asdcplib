@@ -96,7 +96,7 @@ AS_02::TimedText::MXFReader::h__Reader::MD_to_TimedText_TDesc(TimedTextDescripto
   TDesc.NamespaceName = TDescObj->NamespaceURI;
   TDesc.EncodingName = TDescObj->UCSEncoding;
 
-  Batch<Kumu::UUID>::const_iterator sdi = TDescObj->SubDescriptors.begin();
+  Array<Kumu::UUID>::const_iterator sdi = TDescObj->SubDescriptors.begin();
   TimedTextResourceSubDescriptor* DescObject = 0;
   Result_t result = RESULT_OK;
 
@@ -203,8 +203,8 @@ AS_02::TimedText::MXFReader::h__Reader::ReadAncillaryResource(const Kumu::UUID& 
 
   if ( KM_SUCCESS(result) )
     {
-      Array<RIP::Pair>::const_iterator pi;
-      RIP::Pair TmpPair;
+      RIP::const_pair_iterator pi;
+      RIP::PartitionPair TmpPair;
       ui32_t sequence = 0;
 
       // Look up the partition start in the RIP using the SID.
@@ -602,7 +602,7 @@ AS_02::TimedText::MXFWriter::h__Writer::WriteAncillaryResource(const ASDCP::Time
   GSPart.BodySID = m_EssenceStreamID;
   GSPart.OperationalPattern = m_HeaderPart.OperationalPattern;
 
-  m_RIP.PairArray.push_back(RIP::Pair(m_EssenceStreamID++, here));
+  m_RIP.PairArray.push_back(RIP::PartitionPair(m_EssenceStreamID++, here));
   GSPart.EssenceContainers.push_back(UL(m_Dict->ul(MDD_TimedTextEssence)));
   UL TmpUL(m_Dict->ul(MDD_GenericStreamPartition));
   Result_t result = GSPart.WriteToFile(m_File, TmpUL);
