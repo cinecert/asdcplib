@@ -235,8 +235,12 @@ namespace ASDCP
 
 	public:
 	optional_property() : m_has_value(false) {}
-	optional_property(const PropertyType& value) : m_property(value), m_has_value(false) {}
-	  const optional_property<PropertyType>& operator=(const PropertyType& rhs) { this->m_property = rhs; this->m_has_value = true; return *this; }
+	optional_property(const PropertyType& value) : m_property(value), m_has_value(true) {}
+	  const optional_property<PropertyType>& operator=(const PropertyType& rhs) {
+	    this->m_property = rhs;
+	    this->m_has_value = true;
+	    return *this;
+	  }
 	  bool operator==(const PropertyType& rhs) const { return this->m_property == rhs; }
 	  bool operator==(const optional_property<PropertyType>& rhs) const { return this->m_property == rhs.m_property; }
 	  operator PropertyType&() { return this->m_property; }
@@ -244,6 +248,30 @@ namespace ASDCP
 	  void set_has_value(bool has_value = true) { this->m_has_value = has_value; }
 	  void reset(const PropertyType& rhs) { this->m_has_value = false; }
 	  bool empty() const { return ! m_has_value; }
+	  PropertyType& get() { return m_property; }
+	  const PropertyType& const_get() const { return m_property; }
+	};
+
+      // wrapper object manages optional properties
+      template <class PropertyType>
+	class optional_container_property
+	{
+	  PropertyType m_property;
+
+	public:
+	  optional_container_property() {}
+	optional_container_property(const PropertyType& value) : m_property(value) {}
+	  const optional_container_property<PropertyType>& operator=(const PropertyType& rhs) {
+	    this->Copy(rhs.m_property);
+	    return *this;
+	  }
+
+	  bool operator==(const PropertyType& rhs) const { return this->m_property == rhs; }
+	  bool operator==(const optional_property<PropertyType>& rhs) const { return this->m_property == rhs.m_property; }
+	  operator PropertyType&() { return this->m_property; }
+	  void set(const PropertyType& rhs) { this->m_property = rhs; }
+	  void reset(const PropertyType& rhs) { this->clear(); }
+	  bool empty() const { return ! this->m_property.HasValue(); }
 	  PropertyType& get() { return m_property; }
 	  const PropertyType& const_get() const { return m_property; }
 	};

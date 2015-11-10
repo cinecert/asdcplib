@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2005-2012, John Hurst
+Copyright (c) 2005-2015, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -1578,7 +1578,7 @@ WaveAudioDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 
 //
 
-GenericPictureEssenceDescriptor::GenericPictureEssenceDescriptor(const Dictionary*& d) : FileDescriptor(d), m_Dict(d), SignalStandard(0), SampledWidth(0), SampledXOffset(0), DisplayHeight(0), DisplayXOffset(0), DisplayF2Offset(0), AlphaTransparency(0), ImageAlignmentOffset(0), ImageEndOffset(0), ActiveWidth(0), ActiveXOffset(0)
+GenericPictureEssenceDescriptor::GenericPictureEssenceDescriptor(const Dictionary*& d) : FileDescriptor(d), m_Dict(d), SignalStandard(0), SampledWidth(0), SampledXOffset(0), DisplayHeight(0), DisplayXOffset(0), DisplayF2Offset(0), AlphaTransparency(0), ImageAlignmentOffset(0), ImageEndOffset(0), ActiveHeight(0), ActiveYOffset(0)
 {
   assert(m_Dict);
   m_UL = m_Dict->ul(MDD_GenericPictureEssenceDescriptor);
@@ -1683,7 +1683,9 @@ GenericPictureEssenceDescriptor::InitFromTLVSet(TLVReader& TLVSet)
     result = TLVSet.ReadObject(OBJ_READ_ARGS_OPT(GenericPictureEssenceDescriptor, ColorPrimaries));
     ColorPrimaries.set_has_value( result == RESULT_OK );
   }
-  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(GenericPictureEssenceDescriptor, AlternativeCenterCuts));
+  if ( ASDCP_SUCCESS(result) ) {
+    result = TLVSet.ReadObject(OBJ_READ_ARGS_OPT(GenericPictureEssenceDescriptor, AlternativeCenterCuts));
+  }
   if ( ASDCP_SUCCESS(result) ) { 
     result = TLVSet.ReadUi32(OBJ_READ_ARGS_OPT(GenericPictureEssenceDescriptor, ActiveWidth));
     ActiveWidth.set_has_value( result == RESULT_OK );
@@ -1734,7 +1736,7 @@ GenericPictureEssenceDescriptor::WriteToTLVSet(TLVWriter& TLVSet)
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(GenericPictureEssenceDescriptor, PictureEssenceCoding));
   if ( ASDCP_SUCCESS(result)  && ! CodingEquations.empty() ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS_OPT(GenericPictureEssenceDescriptor, CodingEquations));
   if ( ASDCP_SUCCESS(result)  && ! ColorPrimaries.empty() ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS_OPT(GenericPictureEssenceDescriptor, ColorPrimaries));
-  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(GenericPictureEssenceDescriptor, AlternativeCenterCuts));
+  if ( ASDCP_SUCCESS(result)  && ! AlternativeCenterCuts.empty() ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS_OPT(GenericPictureEssenceDescriptor, AlternativeCenterCuts));
   if ( ASDCP_SUCCESS(result)  && ! ActiveWidth.empty() ) result = TLVSet.WriteUi32(OBJ_WRITE_ARGS_OPT(GenericPictureEssenceDescriptor, ActiveWidth));
   if ( ASDCP_SUCCESS(result)  && ! ActiveHeight.empty() ) result = TLVSet.WriteUi32(OBJ_WRITE_ARGS_OPT(GenericPictureEssenceDescriptor, ActiveHeight));
   if ( ASDCP_SUCCESS(result)  && ! ActiveXOffset.empty() ) result = TLVSet.WriteUi32(OBJ_WRITE_ARGS_OPT(GenericPictureEssenceDescriptor, ActiveXOffset));
@@ -1855,8 +1857,10 @@ GenericPictureEssenceDescriptor::Dump(FILE* stream)
   if ( ! ColorPrimaries.empty() ) {
     fprintf(stream, "  %22s = %s\n",  "ColorPrimaries", ColorPrimaries.get().EncodeString(identbuf, IdentBufferLen));
   }
-  fprintf(stream, "  %22s:\n",  "AlternativeCenterCuts");
-  AlternativeCenterCuts.Dump(stream);
+  if ( ! AlternativeCenterCuts.empty() ) {
+    fprintf(stream, "  %22s:\n",  "AlternativeCenterCuts");
+  AlternativeCenterCuts.get().Dump(stream);
+  }
   if ( ! ActiveWidth.empty() ) {
     fprintf(stream, "  %22s = %d\n",  "ActiveWidth", ActiveWidth.get());
   }
@@ -3319,7 +3323,10 @@ AudioChannelLabelSubDescriptor::InitFromTLVSet(TLVReader& TLVSet)
 {
   assert(m_Dict);
   Result_t result = MCALabelSubDescriptor::InitFromTLVSet(TLVSet);
-  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(AudioChannelLabelSubDescriptor, SoundfieldGroupLinkID));
+  if ( ASDCP_SUCCESS(result) ) {
+    result = TLVSet.ReadObject(OBJ_READ_ARGS_OPT(AudioChannelLabelSubDescriptor, SoundfieldGroupLinkID));
+    SoundfieldGroupLinkID.set_has_value( result == RESULT_OK );
+  }
   return result;
 }
 
@@ -3329,7 +3336,7 @@ AudioChannelLabelSubDescriptor::WriteToTLVSet(TLVWriter& TLVSet)
 {
   assert(m_Dict);
   Result_t result = MCALabelSubDescriptor::WriteToTLVSet(TLVSet);
-  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(AudioChannelLabelSubDescriptor, SoundfieldGroupLinkID));
+  if ( ASDCP_SUCCESS(result)  && ! SoundfieldGroupLinkID.empty() ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS_OPT(AudioChannelLabelSubDescriptor, SoundfieldGroupLinkID));
   return result;
 }
 
@@ -3352,7 +3359,9 @@ AudioChannelLabelSubDescriptor::Dump(FILE* stream)
     stream = stderr;
 
   MCALabelSubDescriptor::Dump(stream);
-  fprintf(stream, "  %22s = %s\n",  "SoundfieldGroupLinkID", SoundfieldGroupLinkID.EncodeString(identbuf, IdentBufferLen));
+  if ( ! SoundfieldGroupLinkID.empty() ) {
+    fprintf(stream, "  %22s = %s\n",  "SoundfieldGroupLinkID", SoundfieldGroupLinkID.get().EncodeString(identbuf, IdentBufferLen));
+  }
 }
 
 //
@@ -3394,7 +3403,9 @@ SoundfieldGroupLabelSubDescriptor::InitFromTLVSet(TLVReader& TLVSet)
 {
   assert(m_Dict);
   Result_t result = MCALabelSubDescriptor::InitFromTLVSet(TLVSet);
-  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(SoundfieldGroupLabelSubDescriptor, GroupOfSoundfieldGroupsLinkID));
+  if ( ASDCP_SUCCESS(result) ) {
+    result = TLVSet.ReadObject(OBJ_READ_ARGS_OPT(SoundfieldGroupLabelSubDescriptor, GroupOfSoundfieldGroupsLinkID));
+  }
   return result;
 }
 
@@ -3404,7 +3415,7 @@ SoundfieldGroupLabelSubDescriptor::WriteToTLVSet(TLVWriter& TLVSet)
 {
   assert(m_Dict);
   Result_t result = MCALabelSubDescriptor::WriteToTLVSet(TLVSet);
-  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(SoundfieldGroupLabelSubDescriptor, GroupOfSoundfieldGroupsLinkID));
+  if ( ASDCP_SUCCESS(result)  && ! GroupOfSoundfieldGroupsLinkID.empty() ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS_OPT(SoundfieldGroupLabelSubDescriptor, GroupOfSoundfieldGroupsLinkID));
   return result;
 }
 
@@ -3427,8 +3438,10 @@ SoundfieldGroupLabelSubDescriptor::Dump(FILE* stream)
     stream = stderr;
 
   MCALabelSubDescriptor::Dump(stream);
-  fprintf(stream, "  %22s:\n",  "GroupOfSoundfieldGroupsLinkID");
-  GroupOfSoundfieldGroupsLinkID.Dump(stream);
+  if ( ! GroupOfSoundfieldGroupsLinkID.empty() ) {
+    fprintf(stream, "  %22s:\n",  "GroupOfSoundfieldGroupsLinkID");
+  GroupOfSoundfieldGroupsLinkID.get().Dump(stream);
+  }
 }
 
 //

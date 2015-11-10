@@ -126,11 +126,11 @@ ASDCP::MXF::RIP::InitFromFile(const Kumu::FileReader& Reader)
   if ( ASDCP_SUCCESS(result) )
     {
       Kumu::MemIOReader MemRDR(m_ValueStart, m_ValueLength - 4);
-      result = PairArray.Unarchive(&MemRDR) ? RESULT_OK : RESULT_KLV_CODING;
+      result = PairArray.Unarchive(&MemRDR) ? RESULT_OK : RESULT_KLV_CODING(__LINE__, __FILE__);
     }
 
   if ( ASDCP_FAILURE(result) )
-    DefaultLogSink().Error("Failed to initialize RIP\n");
+    DefaultLogSink().Error("Failed to initialize RIP.\n");
 
   return result;
 }
@@ -149,7 +149,7 @@ ASDCP::MXF::RIP::WriteToFile(Kumu::FileWriter& Writer)
 
   if ( ASDCP_SUCCESS(result) )
     {
-      result = RESULT_KLV_CODING;
+      result = RESULT_KLV_CODING(__LINE__, __FILE__);
 
       Kumu::MemIOWriter MemWRT(Buffer.Data(), Buffer.Capacity());
       if ( PairArray.Archive(&MemWRT) )
@@ -301,7 +301,7 @@ ASDCP::Result_t
 ASDCP::MXF::Partition::InitFromBuffer(const byte_t* p, ui32_t l)
 {
   Kumu::MemIOReader MemRDR(p, l);
-  Result_t result = RESULT_KLV_CODING;
+  Result_t result = RESULT_KLV_CODING(__LINE__, __FILE__);
 
   if ( MemRDR.ReadUi16BE(&MajorVersion) )
     if ( MemRDR.ReadUi16BE(&MinorVersion) )
@@ -319,7 +319,7 @@ ASDCP::MXF::Partition::InitFromBuffer(const byte_t* p, ui32_t l)
 			    result = RESULT_OK;
 
   if ( ASDCP_FAILURE(result) )
-    DefaultLogSink().Error("Failed to initialize Partition\n");
+    DefaultLogSink().Error("Failed to initialize Partition.\n");
 
   return result;
 }
@@ -334,7 +334,7 @@ ASDCP::MXF::Partition::WriteToFile(Kumu::FileWriter& Writer, UL& PartitionLabel)
   if ( ASDCP_SUCCESS(result) )
     {
       Kumu::MemIOWriter MemWRT(Buffer.Data(), Buffer.Capacity());
-      result = RESULT_KLV_CODING;
+      result = RESULT_KLV_CODING(__LINE__, __FILE__);
       if ( MemWRT.WriteUi16BE(MajorVersion) )
 	if ( MemWRT.WriteUi16BE(MinorVersion) )
 	  if ( MemWRT.WriteUi32BE(KAGSize) )
@@ -449,7 +449,7 @@ ASDCP::MXF::Primer::InitFromBuffer(const byte_t* p, ui32_t l)
   if ( ASDCP_SUCCESS(result) )
     {
       Kumu::MemIOReader MemRDR(m_ValueStart, m_ValueLength);
-      result = LocalTagEntryBatch.Unarchive(&MemRDR) ? RESULT_OK : RESULT_KLV_CODING;
+      result = LocalTagEntryBatch.Unarchive(&MemRDR) ? RESULT_OK : RESULT_KLV_CODING(__LINE__, __FILE__);
     }
 
   if ( ASDCP_SUCCESS(result) )
@@ -459,7 +459,7 @@ ASDCP::MXF::Primer::InitFromBuffer(const byte_t* p, ui32_t l)
     }
 
   if ( ASDCP_FAILURE(result) )
-    DefaultLogSink().Error("Failed to initialize Primer\n");
+    DefaultLogSink().Error("Failed to initialize Primer.\n");
 
   return result;
 }
@@ -487,7 +487,7 @@ ASDCP::MXF::Primer::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
   assert(m_Dict);
   ASDCP::FrameBuffer LocalTagBuffer;
   Kumu::MemIOWriter MemWRT(Buffer.Data() + kl_length, Buffer.Capacity() - kl_length);
-  Result_t result = LocalTagEntryBatch.Archive(&MemWRT) ? RESULT_OK : RESULT_KLV_CODING;
+  Result_t result = LocalTagEntryBatch.Archive(&MemWRT) ? RESULT_OK : RESULT_KLV_CODING(__LINE__, __FILE__);
 
   if ( ASDCP_SUCCESS(result) )
     {
@@ -737,9 +737,9 @@ ASDCP::MXF::OP1aHeader::InitFromFile(const Kumu::FileReader& Reader)
 
       if ( read_count != m_HeaderData.Capacity() )
 	{
-	  DefaultLogSink().Error("Short read of OP-Atom header metadata; wanted %u, got %u\n",
+	  DefaultLogSink().Error("Short read of OP-Atom header metadata; wanted %u, got %u.\n",
 				 m_HeaderData.Capacity(), read_count);
-	  return RESULT_KLV_CODING;
+	  return RESULT_KLV_CODING(__LINE__, __FILE__);
 	}
     }
 
@@ -783,9 +783,9 @@ ASDCP::MXF::OP1aHeader::InitFromBuffer(const byte_t* p, ui32_t l)
 
       object->m_Lookup = &m_Primer;
       result = object->InitFromBuffer(p, end_p - p);
+
       const byte_t* redo_p = p;
       p += object->PacketLength();
-      //      hexdump(p, object->PacketLength());
 
       if ( ASDCP_SUCCESS(result) )
 	{
@@ -813,7 +813,8 @@ ASDCP::MXF::OP1aHeader::InitFromBuffer(const byte_t* p, ui32_t l)
 	}
       else
 	{
-	  DefaultLogSink().Error("Error initializing packet\n");
+	  DefaultLogSink().Error("Error initializing OP1a header packet.\n");
+	  //	  Kumu::hexdump(p-object->PacketLength(), object->PacketLength());
 	  delete object;
 	}
     }
@@ -1074,13 +1075,15 @@ ASDCP::MXF::OPAtomIndexFooter::InitFromBuffer(const byte_t* p, ui32_t l)
 	}
       else
 	{
-	  DefaultLogSink().Error("Error initializing packet\n");
+	  DefaultLogSink().Error("Error initializing OPAtom footer packet.\n");
 	  delete object;
 	}
     }
 
   if ( ASDCP_FAILURE(result) )
-    DefaultLogSink().Error("Failed to initialize OPAtomIndexFooter\n");
+    {
+      DefaultLogSink().Error("Failed to initialize OPAtomIndexFooter.\n");
+    }
 
   return result;
 }

@@ -152,7 +152,7 @@ public:
 	      case 'c':
 		mode = MMT_CREATE;
 		TEST_EXTRA_ARG(i, 'c');
-		chunk_count = atoi(argv[i]);
+		chunk_count = Kumu::xabs(strtol(argv[i], 0, 10));
 		break;
 		
 	      case 'V': version_flag = true; break;

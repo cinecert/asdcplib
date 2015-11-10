@@ -129,10 +129,10 @@ Kumu::Result_t::Get(unsigned int i)
 }
 
 //
-Kumu::Result_t::Result_t(int v, const char* s, const char* l) : value(v), symbol(s), label(l)
+Kumu::Result_t::Result_t(int v, const std::string& s, const std::string& l) : value(v), symbol(s), label(l)
 {
-  assert(l);
-  assert(s);
+  assert(!l.empty());
+  assert(!s.empty());
 
   if ( v == 0 )
     return;
@@ -162,7 +162,64 @@ Kumu::Result_t::Result_t(int v, const char* s, const char* l) : value(v), symbol
   return;
 }
 
+
+Kumu::Result_t::Result_t(const Result_t& rhs)
+{
+  value = rhs.value;
+  symbol = rhs.symbol;
+  label = rhs.label;
+  message = rhs.message;
+}
+
 Kumu::Result_t::~Result_t() {}
+
+//
+const Kumu::Result_t&
+Kumu::Result_t::operator=(const Result_t& rhs)
+{
+  value = rhs.value;
+  symbol = rhs.symbol;
+  label = rhs.label;
+  message = rhs.message;
+  return *this;
+}
+
+//
+const Kumu::Result_t
+Kumu::Result_t::operator()(const std::string& message) const
+{
+  Result_t result = *this;
+  result.message = message;
+  return result;
+}
+
+static int const MESSAGE_BUF_MAX = 2048;
+
+//
+const Kumu::Result_t
+Kumu::Result_t::operator()(const int& line, const char* filename) const
+{
+  assert(filename);
+  char buf[MESSAGE_BUF_MAX];
+  snprintf(buf, MESSAGE_BUF_MAX-1, "%s, line %d", filename, line);
+
+  Result_t result = *this;
+  result.message = buf;
+  return result;
+}
+
+//
+const Kumu::Result_t
+Kumu::Result_t::operator()(const std::string& message, const int& line, const char* filename) const
+{
+  assert(filename);
+  char buf[MESSAGE_BUF_MAX];
+  snprintf(buf, MESSAGE_BUF_MAX-1, "%s, line %d", filename, line);
+
+  Result_t result = *this;
+  result.message = message + buf;
+  return result;
+}
 
 
 //------------------------------------------------------------------------------------------

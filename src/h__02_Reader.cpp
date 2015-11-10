@@ -281,13 +281,15 @@ AS_02::MXF::AS02IndexReader::InitFromBuffer(const byte_t* p, ui32_t l, const ui6
 	}
       else
 	{
-	  DefaultLogSink().Error("Error initializing packet\n");
+	  DefaultLogSink().Error("Error initializing index segment packet.\n");
 	  delete object;
 	}
     }
 
   if ( KM_FAILURE(result) )
-    DefaultLogSink().Error("Failed to initialize AS02IndexReader\n");
+    {
+      DefaultLogSink().Error("Failed to initialize AS02IndexReader.\n");
+    }
 
   return result;
 }

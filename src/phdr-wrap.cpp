@@ -152,21 +152,6 @@ Options:\n\
 }
 
 //
-static ASDCP::Rational
-decode_rational(const char* str_rat)
-{
-  assert(str_rat);
-  ui32_t Num = atoi(str_rat);
-  ui32_t Den = 0;
-
-  const char* den_str = strrchr(str_rat, '/');
-  if ( den_str != 0 )
-    Den = atoi(den_str+1);
-
-  return ASDCP::Rational(Num, Den);
-}
-
-//
 //
 class CommandOptions
 {
@@ -246,7 +231,11 @@ public:
 	      {
 	      case 'A':
 		TEST_EXTRA_ARG(i, 'A');
-		edit_rate = decode_rational(argv[i]);
+		if ( ! DecodeRational(argv[i], aspect_ratio) )
+		  {
+		    fprintf(stderr, "Error decoding aspect ratio value: %s\n", argv[i]);
+		    return;
+		  }
 		break;
 
 	      case 'a':
@@ -354,7 +343,12 @@ public:
 
 	      case 'r':
 		TEST_EXTRA_ARG(i, 'r');
-		edit_rate = decode_rational(argv[i]);
+		if ( ! DecodeRational(argv[i], edit_rate) )
+		  {
+		    fprintf(stderr, "Error decoding edit rate value: %s\n", argv[i]);
+		    return;
+		  }
+
 		break;
 
 	      case 'R':

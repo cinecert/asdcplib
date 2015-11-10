@@ -1040,7 +1040,11 @@ write_PCM_file(CommandOptions& Options)
 		  return RESULT_FAIL;
 		}
 
-	      if ( Options.use_interop_sound_wtf )
+	      if ( Options.channel_assignment.HasValue() )
+		{
+		  essence_descriptor->ChannelAssignment = Options.channel_assignment;
+		}
+	      else if ( Options.use_interop_sound_wtf )
 		{
 		  essence_descriptor->ChannelAssignment = g_dict->ul(MDD_DCAudioChannelCfg_4_WTF);
 		}

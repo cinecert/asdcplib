@@ -115,7 +115,7 @@ public:
 
 	      case 'd':
 		TEST_EXTRA_ARG(i, 'd');
-		duration = atoi(argv[i]); // TODO: test for negative value, should use strtol()
+		duration = Kumu::xabs(strtol(argv[i], 0, 10));
 		break;
 
 	      case '9':

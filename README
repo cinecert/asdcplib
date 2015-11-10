@@ -151,6 +151,35 @@ command-line utilities all respond to -h.
 
 Change History
 
+2015-11-10 - bug fixes, IMF text, pink noise
+ o I moved personal dev environment from older gcc to newer clang.  Many
+   small changes were made to satisfy the new compiler:
+   - Altered many printf format codes to use the correct format for the
+     given integer type.
+   - Parenthesized some expressions to clarify previously ambiguous
+     expectation about precedence.
+   - Created macro KM_MACOSX for use in OS-specific code selection.
+   - Removed last uses of the old C-language abs(), now using Kumu::xabs().
+   - Removed last uses of the old C-language atoi(), not using strtol().
+ o Added platform-independent call Kumu::GetExecutablePath() (to be tested
+   on win32).
+ o Added new capabilities to Result_t.
+ o Added imlementation of SMPTE ST 2092-1 pink noise generator.
+ o Added pinkwave CLI utility.
+ o Added font support to the IMF timed-text wrapper.
+ o Fixed a bug that was causing Array properties to be written without
+   the (count, length) header (from PAL).
+ o General review of Batch/Array distinction throughout the project.
+ o Cleaned up definitions of optional properties in all MXF metadata packs.
+ o Fixed Win32 build (from Crowe).
+ o Fixed a bug that caused incorrect failure when parsing JPEG 2000
+   codestreams having fewer than five decomposition levels. (from Korneder).
+ o Fixed missing UUID generation in some instances of the MCALinkID property.
+ o Added -w option to asdcp-wrap to support use of WTF label with MCA.
+ o Altered asdcp-wrap to recognize "-C <UL>" when MCA is being used.
+ o Fixed broken -A <w>/<h> option in as-02-wrap and phdr-wrap.
+ o asdcp-wrap and as-02-wrap now allow split channel groups in MCA labels.
+
 
 2015-02-23 - bug fixes
   o Fixed a new bug introduced by the fix to large numbers of subtitle ancillary

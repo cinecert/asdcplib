@@ -439,7 +439,7 @@ ASDCP::MXF::TLVReader::TLVReader(const byte_t* p, ui32_t c, IPrimerLookup* Prime
 
       DefaultLogSink().Error("Malformed Set\n");
       m_ElementMap.clear();
-      result = RESULT_KLV_CODING;
+      result = RESULT_KLV_CODING(__LINE__, __FILE__);
     }
 }
 
@@ -489,7 +489,10 @@ ASDCP::MXF::TLVReader::ReadObject(const MDDEntry& Entry, Kumu::IArchive* Object)
   if ( FindTL(Entry) )
     {
       if ( m_size < m_capacity ) // don't try to unarchive an empty item
-	return Object->Unarchive(this) ? RESULT_OK : RESULT_KLV_CODING;
+	{
+	  // TODO: carry on if uachive fails
+	  return Object->Unarchive(this) ? RESULT_OK : RESULT_FALSE(__LINE__, __FILE__);
+	}
     }
 
   return RESULT_FALSE;
@@ -502,7 +505,7 @@ ASDCP::MXF::TLVReader::ReadUi8(const MDDEntry& Entry, ui8_t* value)
   ASDCP_TEST_NULL(value);
 
   if ( FindTL(Entry) )
-    return MemIOReader::ReadUi8(value) ? RESULT_OK : RESULT_KLV_CODING;
+    return MemIOReader::ReadUi8(value) ? RESULT_OK : RESULT_FALSE(__LINE__, __FILE__);
 
   return RESULT_FALSE;
 }
@@ -514,7 +517,7 @@ ASDCP::MXF::TLVReader::ReadUi16(const MDDEntry& Entry, ui16_t* value)
   ASDCP_TEST_NULL(value);
 
   if ( FindTL(Entry) )
-    return MemIOReader::ReadUi16BE(value) ? RESULT_OK : RESULT_KLV_CODING;
+    return MemIOReader::ReadUi16BE(value) ? RESULT_OK : RESULT_FALSE(__LINE__, __FILE__);
 
   return RESULT_FALSE;
 }
@@ -526,7 +529,7 @@ ASDCP::MXF::TLVReader::ReadUi32(const MDDEntry& Entry, ui32_t* value)
   ASDCP_TEST_NULL(value);
 
   if ( FindTL(Entry) )
-    return MemIOReader::ReadUi32BE(value) ? RESULT_OK : RESULT_KLV_CODING;
+    return MemIOReader::ReadUi32BE(value) ? RESULT_OK : RESULT_FALSE(__LINE__, __FILE__);
 
   return RESULT_FALSE;
 }
@@ -538,7 +541,7 @@ ASDCP::MXF::TLVReader::ReadUi64(const MDDEntry& Entry, ui64_t* value)
   ASDCP_TEST_NULL(value);
 
   if ( FindTL(Entry) )
-    return MemIOReader::ReadUi64BE(value) ? RESULT_OK : RESULT_KLV_CODING;
+    return MemIOReader::ReadUi64BE(value) ? RESULT_OK : RESULT_FALSE(__LINE__, __FILE__);
 
   return RESULT_FALSE;
 }
@@ -570,8 +573,8 @@ ASDCP::MXF::TLVWriter::WriteTag(const MDDEntry& Entry)
       return RESULT_FAIL;
     }
 
-  if ( ! MemIOWriter::WriteUi8(TmpTag.a) ) return RESULT_KLV_CODING;
-  if ( ! MemIOWriter::WriteUi8(TmpTag.b) ) return RESULT_KLV_CODING;
+  if ( ! MemIOWriter::WriteUi8(TmpTag.a) ) return RESULT_KLV_CODING(__LINE__, __FILE__);
+  if ( ! MemIOWriter::WriteUi8(TmpTag.b) ) return RESULT_KLV_CODING(__LINE__, __FILE__);
   return RESULT_OK;
 }
 
@@ -591,11 +594,11 @@ ASDCP::MXF::TLVWriter::WriteObject(const MDDEntry& Entry, Kumu::IArchive* Object
       // write a temp length
       byte_t* l_p = CurrentData();
 
-      if ( ! MemIOWriter::WriteUi16BE(0) ) return RESULT_KLV_CODING;
+      if ( ! MemIOWriter::WriteUi16BE(0) ) return RESULT_KLV_CODING(__LINE__, __FILE__);
 
       ui32_t before = Length();
-      if ( ! Object->Archive(this) ) return RESULT_KLV_CODING;
-      if ( (Length() - before) > 0xffffL ) return RESULT_KLV_CODING;
+      if ( ! Object->Archive(this) ) return RESULT_KLV_CODING(__LINE__, __FILE__);
+      if ( (Length() - before) > 0xffffL ) return RESULT_KLV_CODING(__LINE__, __FILE__);
       Kumu::i2p<ui16_t>(KM_i16_BE(Length() - before), l_p);
     }
 
@@ -611,8 +614,8 @@ ASDCP::MXF::TLVWriter::WriteUi8(const MDDEntry& Entry, ui8_t* value)
 
   if ( ASDCP_SUCCESS(result) )
     {
-      if ( ! MemIOWriter::WriteUi16BE(sizeof(ui8_t)) ) return RESULT_KLV_CODING;
-      if ( ! MemIOWriter::WriteUi8(*value) ) return RESULT_KLV_CODING;
+      if ( ! MemIOWriter::WriteUi16BE(sizeof(ui8_t)) ) return RESULT_KLV_CODING(__LINE__, __FILE__);
+      if ( ! MemIOWriter::WriteUi8(*value) ) return RESULT_KLV_CODING(__LINE__, __FILE__);
     }
   
   return result;
@@ -627,8 +630,8 @@ ASDCP::MXF::TLVWriter::WriteUi16(const MDDEntry& Entry, ui16_t* value)
 
   if ( KM_SUCCESS(result) )
     {
-      if ( ! MemIOWriter::WriteUi16BE(sizeof(ui16_t)) ) return RESULT_KLV_CODING;
-      if ( ! MemIOWriter::WriteUi16BE(*value) ) return RESULT_KLV_CODING;
+      if ( ! MemIOWriter::WriteUi16BE(sizeof(ui16_t)) ) return RESULT_KLV_CODING(__LINE__, __FILE__);
+      if ( ! MemIOWriter::WriteUi16BE(*value) ) return RESULT_KLV_CODING(__LINE__, __FILE__);
     }
 
   return result;
@@ -643,8 +646,8 @@ ASDCP::MXF::TLVWriter::WriteUi32(const MDDEntry& Entry, ui32_t* value)
 
   if ( KM_SUCCESS(result) )
     {
-      if ( ! MemIOWriter::WriteUi16BE(sizeof(ui32_t)) ) return RESULT_KLV_CODING;
-      if ( ! MemIOWriter::WriteUi32BE(*value) ) return RESULT_KLV_CODING;
+      if ( ! MemIOWriter::WriteUi16BE(sizeof(ui32_t)) ) return RESULT_KLV_CODING(__LINE__, __FILE__);
+      if ( ! MemIOWriter::WriteUi32BE(*value) ) return RESULT_KLV_CODING(__LINE__, __FILE__);
     }
 
   return result;
@@ -659,8 +662,8 @@ ASDCP::MXF::TLVWriter::WriteUi64(const MDDEntry& Entry, ui64_t* value)
 
   if ( KM_SUCCESS(result) )
     {
-      if ( ! MemIOWriter::WriteUi16BE(sizeof(ui64_t)) ) return RESULT_KLV_CODING;
-      if ( ! MemIOWriter::WriteUi64BE(*value) ) return RESULT_KLV_CODING;
+      if ( ! MemIOWriter::WriteUi16BE(sizeof(ui64_t)) ) return RESULT_KLV_CODING(__LINE__, __FILE__);
+      if ( ! MemIOWriter::WriteUi64BE(*value) ) return RESULT_KLV_CODING(__LINE__, __FILE__);
     }
 
   return result;

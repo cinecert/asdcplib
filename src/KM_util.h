@@ -36,7 +36,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <KM_error.h>
 #include <KM_tai.h>
 #include <string.h>
-#include <string>
 #include <list>
 
 namespace Kumu

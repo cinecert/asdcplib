@@ -135,7 +135,11 @@ namespace ASDCP
 	    ui32_t item_count, item_size;
 	    if ( ! Reader->ReadUi32BE(&item_count) ) return false;
 	    if ( ! Reader->ReadUi32BE(&item_size) ) return false;
-	    if ( this->ItemSize() != item_size ) return false;
+
+	    if ( item_count > 0 )
+	      {
+		if ( this->ItemSize() != item_size ) return false;
+	      }
 
 	    bool result = true;
 	    for ( ui32_t i = 0; i < item_count && result; ++i )
@@ -203,7 +207,7 @@ namespace ASDCP
 	  virtual ~SimpleArray() {}
 
 	  //
-	  virtual bool Unarchive(Kumu::MemIOReader* Reader)
+	  bool Unarchive(Kumu::MemIOReader* Reader)
 	    {
 	      bool result = true;
 
@@ -211,15 +215,19 @@ namespace ASDCP
 		{
 		  T Tmp;
 		  result = Tmp.Unarchive(Reader);
-		  this->push_back(Tmp);
+
+		  if ( result )
+		    {
+		      this->push_back(Tmp);
+		    }
 		}
 
 	      return result;
 	    }
 
-	  inline virtual bool HasValue() const { return ! this->empty(); }
+	  inline bool HasValue() const { return ! this->empty(); }
 
-	  virtual ui32_t ArchiveLength() const {
+	  ui32_t ArchiveLength() const {
 	    ui32_t arch_size = 0;
 
 	    typename std::list<T>::const_iterator l_i = this->begin();
@@ -231,7 +239,7 @@ namespace ASDCP
 	  }
 
 	  //
-	  virtual bool Archive(Kumu::MemIOWriter* Writer) const {
+	  bool Archive(Kumu::MemIOWriter* Writer) const {
 	    bool result = true;
 	    typename std::list<T>::const_iterator l_i = this->begin();
 

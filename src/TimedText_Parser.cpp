@@ -166,21 +166,6 @@ get_UUID_from_child_element(const char* name, XMLElement* Parent, UUID& outID)
 }
 
 //
-static ASDCP::Rational
-decode_rational(const char* str_rat)
-{
-  assert(str_rat);
-  ui32_t Num = atoi(str_rat);
-  ui32_t Den = 0;
-
-  const char* den_str = strrchr(str_rat, ' ');
-  if ( den_str != 0 )
-    Den = atoi(den_str+1);
-
-  return ASDCP::Rational(Num, Den);
-}
-
-//
 Result_t
 ASDCP::TimedText::DCSubtitleParser::h__SubtitleParser::OpenRead(const std::string& filename)
 {
@@ -225,7 +210,7 @@ ASDCP::TimedText::DCSubtitleParser::h__SubtitleParser::OpenRead()
 
   if ( ns == 0 )
     {
-      DefaultLogSink(). Warn("Document has no namespace name, assuming %s\n", c_dcst_namespace_name);
+      DefaultLogSink(). Warn("Document has no namespace name, assuming \"%s\".\n", c_dcst_namespace_name);
       m_TDesc.NamespaceName = c_dcst_namespace_name;
     }
   else
@@ -236,7 +221,7 @@ ASDCP::TimedText::DCSubtitleParser::h__SubtitleParser::OpenRead()
   UUID DocID;
   if ( ! get_UUID_from_child_element("Id", &m_Root, DocID) )
     {
-      DefaultLogSink(). Error("Id element missing from input document\n");
+      DefaultLogSink(). Error("Id element missing from input document.\n");
       return RESULT_FORMAT;
     }
 
@@ -245,11 +230,15 @@ ASDCP::TimedText::DCSubtitleParser::h__SubtitleParser::OpenRead()
 
   if ( EditRate == 0 )
     {
-      DefaultLogSink(). Error("EditRate element missing from input document\n");
+      DefaultLogSink().Error("EditRate element missing from input document.\n");
       return RESULT_FORMAT;
     }
 
-  m_TDesc.EditRate = decode_rational(EditRate->GetBody().c_str());
+  if ( ! DecodeRational(EditRate->GetBody().c_str(), m_TDesc.EditRate) )
+    {
+      DefaultLogSink().Error("Error decoding edit rate value: \"%s\"\n", EditRate->GetBody().c_str());
+      return RESULT_FORMAT;
+    }
 
   if ( m_TDesc.EditRate != EditRate_23_98
        && m_TDesc.EditRate != EditRate_24
