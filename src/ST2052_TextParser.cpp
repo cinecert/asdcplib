@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2013-2015, John Hurst
+Copyright (c) 2013-2016, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -28,7 +28,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     \version $Id$       
     \brief   AS-DCP library, PCM essence reader and writer implementation
 */
-
 
 #include "AS_02_internal.h"
 #include "KM_xml.h"
@@ -100,6 +99,24 @@ create_font_name_id(const std::string& font_name)
   return create_4122_type5_id(font_name, s_font_id_prefix);
 }
 
+//
+static Kumu::Mutex sg_default_font_family_list_lock;
+static std::set<std::string> sg_default_font_family_list;
+
+static void
+setup_default_font_family_list()
+{
+  sg_default_font_family_list.insert("default");
+  sg_default_font_family_list.insert("monospace");
+  sg_default_font_family_list.insert("sansSerif");
+  sg_default_font_family_list.insert("serif");
+  sg_default_font_family_list.insert("monospaceSansSerif");
+  sg_default_font_family_list.insert("monospaceSerif");
+  sg_default_font_family_list.insert("proportionalSansSerif");
+  sg_default_font_family_list.insert("proportionalSerif");
+}
+
+
 //------------------------------------------------------------------------------------------
 
 
@@ -156,8 +173,8 @@ AS_02::TimedText::Type5UUIDFilenameResolver::OpenRead(const std::string& dirname
 		  else if ( memcmp(read_buffer, OpenTypeMagic, sizeof(OpenTypeMagic)) == 0
 			    || memcmp(read_buffer, TrueTypeMagic, sizeof(TrueTypeMagic)) == 0 )
 		    {
-		      fprintf(stderr, "wrap font!\n");
-		      UUID asset_id = create_font_name_id(next_item);
+		      std::string font_root_name = PathSetExtension(next_item, "");
+		      UUID asset_id = create_font_name_id(font_root_name);
 		      m_ResourceMap.insert(ResourceMap::value_type(asset_id, next_item));
 		    }
 		}
@@ -325,8 +342,11 @@ public:
 Result_t
 AS_02::TimedText::ST2052_TextParser::h__TextParser::OpenRead()
 {
+  setup_default_font_family_list();
+
   if ( ! m_Root.ParseString(m_XMLDoc.c_str()) )
     {
+      DefaultLogSink(). Error("ST 2052-1 document is not well-formed.\n");
       return RESULT_FORMAT;
     }
 
@@ -362,16 +382,32 @@ AS_02::TimedText::ST2052_TextParser::h__TextParser::OpenRead()
 
   AttributeVisitor font_visitor("fontFamily");
   apply_visitor(m_Root, font_visitor);
+  char buf[64];
 
   for ( i = font_visitor.value_list.begin(); i != font_visitor.value_list.end(); ++i )
     {
       UUID font_id = create_font_name_id(*i);
-      TimedTextResourceDescriptor font_resource;
-      memcpy(font_resource.ResourceID, font_id.Value(), UUIDlen);
-      font_resource.Type = ASDCP::TimedText::MT_OPENTYPE;
-      m_TDesc.ResourceList.push_back(font_resource);
-      m_ResourceTypes.insert(ResourceTypeMap_t::value_type(UUID(font_resource.ResourceID),
-							   ASDCP::TimedText::MT_OPENTYPE));
+
+      if ( PathIsFile(font_id.EncodeHex(buf, 64))
+	   || PathIsFile(*i+".ttf")
+	   || PathIsFile(*i+".otf") )
+	{
+	  TimedTextResourceDescriptor font_resource;
+	  memcpy(font_resource.ResourceID, font_id.Value(), UUIDlen);
+	  font_resource.Type = ASDCP::TimedText::MT_OPENTYPE;
+	  m_TDesc.ResourceList.push_back(font_resource);
+	  m_ResourceTypes.insert(ResourceTypeMap_t::value_type(UUID(font_resource.ResourceID),
+							       ASDCP::TimedText::MT_OPENTYPE));
+	}
+      else
+	{
+	  AutoMutex l(sg_default_font_family_list_lock);
+	  if ( sg_default_font_family_list.find(*i) == sg_default_font_family_list.end() )
+	    {
+	      DefaultLogSink(). Error("Unable to locate external font resource \"%s\".\n", i->c_str());
+	      return RESULT_FORMAT;
+	    }
+	}
     }
 
   return RESULT_OK;

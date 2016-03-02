@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2004-2014, John Hurst
+Copyright (c) 2004-2016, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -1052,7 +1052,7 @@ Kumu::Result_t
 Kumu::FileWriter::OpenWrite(const std::string& filename)
 {
   m_Filename = filename;
-  m_Handle = open(filename.c_str(), O_RDWR|O_CREAT|O_TRUNC, 0664);
+  m_Handle = open(filename.c_str(), O_RDWR|O_CREAT|O_TRUNC, 0666);
 
   if ( m_Handle == -1L )
     {
@@ -1069,7 +1069,7 @@ Kumu::Result_t
 Kumu::FileWriter::OpenModify(const std::string& filename)
 {
   m_Filename = filename;
-  m_Handle = open(filename.c_str(), O_RDWR|O_CREAT, 0664);
+  m_Handle = open(filename.c_str(), O_RDWR|O_CREAT, 0666);
 
   if ( m_Handle == -1L )
     {
@@ -1478,6 +1478,7 @@ Kumu::DirScanner::GetNext(char* filename)
   return RESULT_OK;
 }
 
+//------------------------------------------------------------------------------------------
 
 //
 Kumu::DirScannerEx::DirScannerEx() : m_Handle(0) {}
@@ -1614,7 +1615,7 @@ Kumu::CreateDirectoriesInPath(const std::string& Path)
 #ifdef KM_WIN32
 	  if ( _mkdir(tmp_path.c_str()) != 0 )
 #else // KM_WIN32
-	  if ( mkdir(tmp_path.c_str(), 0775) != 0 )
+	  if ( mkdir(tmp_path.c_str(), 0777) != 0 )
 #endif // KM_WIN32
 	    {
 	      DefaultLogSink().Error("CreateDirectoriesInPath mkdir %s: %s\n",

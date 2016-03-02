@@ -190,6 +190,7 @@ Kumu::TAI::tai::now()
   ct.hour = st.wHour;
   ct.minute = st.wMinute;
   ct.second = st.wSecond;
+  ct.offset = 0;
   caltime_tai(&ct, this);
 #else
   struct timeval now;
