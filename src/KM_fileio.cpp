@@ -75,6 +75,9 @@ struct iovec {
 typedef struct stat     fstat_t;
 #endif
 
+#if defined(__sun) && defined(__SVR4)
+#include <sys/statfs.h>
+#endif
 
 //
 static Kumu::Result_t
@@ -1550,6 +1553,9 @@ Kumu::DirScannerEx::GetNext(std::string& next_item_name, DirectoryEntryType_t& n
   if ( m_Handle == 0 )
     return RESULT_FILEOPEN;
 
+#if defined(__sun) && defined(__SVR4)
+  struct stat s;
+#endif
   struct dirent* entry;
 
   for (;;)
@@ -1562,6 +1568,28 @@ Kumu::DirScannerEx::GetNext(std::string& next_item_name, DirectoryEntryType_t& n
 
   next_item_name.assign(entry->d_name, strlen(entry->d_name));
 
+#if defined(__sun) && defined(__SVR4)
+
+  stat(entry->d_name, &s);
+
+  switch ( s.st_mode )
+    {
+    case S_IFDIR:
+      next_item_type = DET_DIR;
+      break;
+
+    case S_IFREG:
+      next_item_type = DET_FILE;
+      break;
+
+    case S_IFLNK:
+      next_item_type = DET_LINK;
+      break;
+
+    default:
+      next_item_type = DET_DEV;
+    }
+#else // __sun 
   switch ( entry->d_type )
     {
     case DT_DIR:
@@ -1579,10 +1607,9 @@ Kumu::DirScannerEx::GetNext(std::string& next_item_name, DirectoryEntryType_t& n
     default:
       next_item_type = DET_DEV;
     }
-
+#endif // __sun
   return RESULT_OK;
 }
-
 
 #endif // KM_WIN32
 
@@ -1773,6 +1800,20 @@ Kumu::FreeSpaceForPath(const std::string& path, Kumu::fsize_t& free_space, Kumu:
 #else // KM_WIN32
   struct statfs s;
 
+#if defined(__sun) && defined(__SVR4)
+  if ( statfs(path.c_str(), &s, s.f_bsize, s.f_fstyp ) == 0 )
+    {      if ( s.f_blocks < 1 )
+	{
+	  DefaultLogSink().Error("File system %s has impossible size: %ld\n",
+				 path.c_str(), s.f_blocks);
+	  return RESULT_FAIL;
+	}
+
+      free_space = (Kumu::fsize_t)s.f_bsize * (Kumu::fsize_t)s.f_bfree;
+      total_space = (Kumu::fsize_t)s.f_bsize * (Kumu::fsize_t)s.f_blocks;
+      return RESULT_OK;
+    }
+#else
   if ( statfs(path.c_str(), &s) == 0 )
     {
       if ( s.f_blocks < 1 )
@@ -1796,6 +1837,7 @@ Kumu::FreeSpaceForPath(const std::string& path, Kumu::fsize_t& free_space, Kumu:
 
   DefaultLogSink().Error("FreeSpaceForPath statfs %s: %s\n", path.c_str(), strerror(errno));
   return RESULT_FAIL;
+#endif // __sun 
 #endif // KM_WIN32
 } 
 
