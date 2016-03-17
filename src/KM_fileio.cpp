@@ -670,6 +670,11 @@ Kumu::GetExecutablePath(const std::string& default_path)
   size_t size = X_BUFSIZE;
   ssize_t rc = readlink("/proc/curproc/file", path, size);
   success = ( rc != -1 );
+#elif defined(__sun) && defined(__SVR4)
+  size_t size = X_BUFSIZE;
+  char program[MAXPATHLEN];
+  snprintf(program, MAXPATHLEN, "/proc/%d/path/a.out", getpid());
+  ssize_t rc = readlink(program, path, size);
 #else
 #error GetExecutablePath --> Create a method for obtaining the executable name
 #endif
@@ -1395,6 +1400,33 @@ Kumu::DirScanner::GetNext(char* filename)
   return result;
 }
 
+
+//
+Kumu::DirScannerEx::DirScannerEx() : m_Handle(0) {}
+
+//
+Result_t
+Kumu::DirScannerEx::Open(const std::string& dirname)
+{
+  Kumu::DefaultLogSink().Critical("Kumu::DirScannerEx unimplemented for Win32 API.\n");
+  return RESULT_NOTIMPL;
+}
+
+//
+Result_t
+Kumu::DirScannerEx::Close()
+{
+  Kumu::DefaultLogSink().Critical("Kumu::DirScannerEx unimplemented for Win32 API.\n");
+  return RESULT_NOTIMPL;
+}
+
+//
+Result_t
+Kumu::DirScannerEx::GetNext(std::string& next_item_name, DirectoryEntryType_t& next_item_type)
+{
+  Kumu::DefaultLogSink().Critical("Kumu::DirScannerEx unimplemented for Win32 API.\n");
+  return RESULT_NOTIMPL;
+}
 
 #else // KM_WIN32
 

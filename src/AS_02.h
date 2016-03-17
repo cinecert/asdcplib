@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2011-2014, Robert Scheler, Heiko Sparenberg Fraunhofer IIS,
+Copyright (c) 2011-2016, Robert Scheler, Heiko Sparenberg Fraunhofer IIS,
 John Hurst
 
 All rights reserved.
@@ -301,7 +301,7 @@ namespace AS_02
 
       // Open the file for reading. The file must exist. Returns error if the
       // operation cannot be completed.
-      Result_t OpenRead(const std::string& filename, const ASDCP::Rational& EditRate);
+      Result_t OpenRead(const std::string& filename, const ASDCP::Rational& EditRate) const;
 
       // Returns RESULT_INIT if the file is not open.
       Result_t Close() const;

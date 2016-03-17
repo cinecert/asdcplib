@@ -151,7 +151,27 @@ command-line utilities all respond to -h.
 
 Change History
 
-2015-11-10 - bug fixes, IMF text, pink noise
+
+2016-03-17 - bug fixes, 2.5.12
+ o Changed default UNIX file permissions to "666"
+ o Changed default UNIX file permissions to "777"
+ o Added missing initializer for caltime::offset
+ o Fixed UL values for Aux Data files (per ST 429-14)
+ o Added support for default TTML fonts (ST2052_TextParser)
+ o Added Solaris patch to KM_fileio (Thanks Mikey!)
+ o Fixed the version byte in UL DataEssenceCoding
+ o Fixed duplicate linkage error for symbol MIME2str
+ o Big patch from Wolfgang Ruppel:
+   o Corrected erroneous fixed-tag values in ActiveHeight, ActiveWidth,
+     ActiveXOffset, ActiveYOffset UL definitions.
+   o Provided a stub implementation for Kumu::DirScannerEx (A real
+     implementation will follow soon.)
+   o Added as-02-info program
+   o Added Seek() method to PCM parsers
+   o Added CMakeLists.txt
+
+
+2015-11-10 - bug fixes, IMF text, pink noise, 2.5.11
  o I moved personal dev environment from older gcc to newer clang.  Many
    small changes were made to satisfy the new compiler:
    - Altered many printf format codes to use the correct format for the
@@ -181,13 +201,13 @@ Change History
  o asdcp-wrap and as-02-wrap now allow split channel groups in MCA labels.
 
 
-2015-02-23 - bug fixes
+2015-02-23 - bug fixes, 2.4.10
   o Fixed a new bug introduced by the fix to large numbers of subtitle ancillary
     resources.
   o Added support for generic Aux Data (ST 429-14) to asdcp-wrap.
 
 
-2015-02-19 - PHDR feature, bug fixes
+2015-02-19 - PHDR feature, bug fixes, 2.4.9
   o Modified PCMParser and PCMParserList to return partial frame buffers at the
     end of a WAV input file.  This was needed to allow wrapping all samples into
     an AS-02 audio file (which is clip-wrapped) in the case where the input file

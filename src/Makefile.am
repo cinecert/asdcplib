@@ -2,7 +2,7 @@
 #
 # $Id$
 #
-# Copyright (c) 2007-2013 John Hurst. All rights reserved.
+# Copyright (c) 2007-2016 John Hurst. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -227,7 +227,8 @@ bin_PROGRAMS = \
 if USE_AS_02
 bin_PROGRAMS += \
 	as-02-wrap \
-	as-02-unwrap
+	as-02-unwrap \
+	as-02-info
 endif
 
 if USE_PHDR
@@ -285,6 +286,9 @@ as_02_wrap_LDADD = libas02.la libasdcp.la libkumu.la
 
 as_02_unwrap_SOURCES = as-02-unwrap.cpp
 as_02_unwrap_LDADD = libas02.la libasdcp.la libkumu.la
+
+as_02_info_SOURCES = as-02-info.cpp
+as_02_info_LDADD = libas02.la libasdcp.la libkumu.la
 endif
 
 if USE_PHDR
@@ -333,7 +337,7 @@ TESTS_ENVIRONMENT = BUILD_DIR="." TEST_FILES=../tests TEST_FILE_PREFIX=DCPd1-M1 
 	JP2K_PREFIX=MM_2k_XYZ_
 
 # files to include in the distribution that automake doesn't automatically include
-EXTRA_DIST = fips-186-test-harness.pl $(TESTS)
+EXTRA_DIST = fips-186-test-harness.pl $(TESTS) ../CMakeLists.txt
 if !FREEDIST
 if DEV_HEADERS
 EXTRA_DIST += $(nodist_libasdcp_la_SOURCES) $(nodist_tt_xform_SOURCES)

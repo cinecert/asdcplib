@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2004-2013, John Hurst
+Copyright (c) 2004-2016, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -78,6 +78,7 @@ namespace ASDCP
       Result_t FillAudioDescriptor(PCM::AudioDescriptor& ADesc) const;
       Result_t Reset();
       Result_t ReadFrame(PCM::FrameBuffer& OutFB);
+      Result_t Seek(ui32_t frame_number);
     };
 }
 

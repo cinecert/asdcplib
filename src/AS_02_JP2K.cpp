@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2011-2013, Robert Scheler, Heiko Sparenberg Fraunhofer IIS,
+Copyright (c) 2011-2016, Robert Scheler, Heiko Sparenberg Fraunhofer IIS,
 John Hurst
 
 All rights reserved.
@@ -223,6 +223,26 @@ AS_02::JP2K::MXFReader::FillWriterInfo(WriterInfo& Info) const
   return RESULT_INIT;
 }
 
+//
+void
+AS_02::JP2K::MXFReader::DumpHeaderMetadata(FILE* stream) const
+{
+  if ( m_Reader && m_Reader->m_File.IsOpen() )
+    {
+      m_Reader->m_HeaderPart.Dump(stream);
+    }
+}
+
+
+//
+void
+AS_02::JP2K::MXFReader::DumpIndex(FILE* stream) const
+{
+  if ( m_Reader && m_Reader->m_File.IsOpen() )
+    {
+      m_Reader->m_IndexAccess.Dump(stream);
+    }
+}
 
 //------------------------------------------------------------------------------------------
 

@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2008-2015, John Hurst
+Copyright (c) 2008-2016, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -43,7 +43,7 @@ static std::string TIMED_TEXT_DEF_LABEL = "Timed Text Track";
 
 //------------------------------------------------------------------------------------------
 
-const char*
+static const char*
 MIME2str(TimedText::MIMEType_t m)
 {
   if ( m == TimedText::MT_PNG )

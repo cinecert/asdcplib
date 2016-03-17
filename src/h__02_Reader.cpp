@@ -228,8 +228,8 @@ AS_02::MXF::AS02IndexReader::InitFromFile(const Kumu::FileReader& reader, const 
       fprintf(stderr, "  EditUnitByteCount  = %u\n",  segment->EditUnitByteCount);
       fprintf(stderr, "  IndexSID           = %u\n",  segment->IndexSID);
       fprintf(stderr, "  BodySID            = %u\n",  segment->BodySID);
-      fprintf(stderr, "  SliceCount         = %hu\n", segment->SliceCount);
-      fprintf(stderr, "  PosTableCount      = %hu\n", segment->PosTableCount);
+      fprintf(stderr, "  SliceCount         = %hhu\n", segment->SliceCount);
+      fprintf(stderr, "  PosTableCount      = %hhu\n", segment->PosTableCount);
       fprintf(stderr, "  RtFileOffset       = %s\n",  i64sz(segment->RtFileOffset, identbuf));
       fprintf(stderr, "  RtEntryOffset      = %s\n",  i64sz(segment->RtEntryOffset, identbuf));
       fprintf(stderr, "  IndexEntryArray:\n");

@@ -473,6 +473,20 @@ read_PCM_file(CommandOptions& Options)
 
 	  if ( last_frame == 0 )
 	    {
+	      fprintf(stderr, "ContainerDuration not set in index, attempting to use Duration from SourceClip.\n");
+	      result = Reader.OP1aHeader().GetMDObjectByType(DefaultCompositeDict().ul(MDD_SourceClip), &tmp_obj);
+	      if ( KM_SUCCESS(result))
+		{
+	    	  ASDCP::MXF::SourceClip *sourceClip = dynamic_cast<ASDCP::MXF::SourceClip*>(tmp_obj);
+	    	  if ( ! sourceClip->Duration.empty() )
+		    {
+		      last_frame = sourceClip->Duration;
+		    }
+		}
+	    }
+
+	  if ( last_frame == 0 )
+	    {
 	      fprintf(stderr, "Unable to determine file duration.\n");
 	      return RESULT_FAIL;
 	    }

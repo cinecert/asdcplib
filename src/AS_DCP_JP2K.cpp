@@ -42,7 +42,7 @@ static std::string JP2K_PACKAGE_LABEL = "File Package: SMPTE 429-4 frame wrappin
 static std::string JP2K_S_PACKAGE_LABEL = "File Package: SMPTE 429-10 frame wrapping of stereoscopic JPEG 2000 codestreams";
 static std::string PICT_DEF_LABEL = "Picture Track";
 
-int s_exp_lookup[16] = { 0, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024,2048, 4096, 8192, 16384, 32768 };
+static int s_exp_lookup[16] = { 0, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024,2048, 4096, 8192, 16384, 32768 };
 
 //
 std::ostream&
@@ -296,7 +296,7 @@ ASDCP::MD_to_JP2K_PDesc(const ASDCP::MXF::GenericPictureEssenceDescriptor&  Esse
     }
   else
     {
-      DefaultLogSink().Warn("Unexpected PictureComponentSizing size: %u, should be 17\n", tmp_size);
+      DefaultLogSink().Warn("Unexpected PictureComponentSizing size: %u, should be 17.\n", tmp_size);
     }
 
   // CodingStyleDefault

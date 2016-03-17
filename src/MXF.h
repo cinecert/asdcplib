@@ -185,7 +185,17 @@ namespace ASDCP
 	    LocalTagEntry(const TagValue& tag, ASDCP::UL& ul) : Tag(tag), UL(ul) {}
 
 	      bool operator<(const LocalTagEntry& rhs) const {
-		return ( ( Tag.a < rhs.Tag.a ) || ( Tag.b < rhs.Tag.b ) );
+		if ( Tag.a < rhs.Tag.a )
+		  {
+		    return true;
+		  }
+		
+		if ( Tag.a == rhs.Tag.a && Tag.b < rhs.Tag.b )
+		  {
+		    return true;
+		  }
+
+		return false;
 	      }
 
 	      inline const char* EncodeString(char* str_buf, ui32_t buf_len) const {

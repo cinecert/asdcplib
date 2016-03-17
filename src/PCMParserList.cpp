@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2004-2015, John Hurst
+Copyright (c) 2004-2016, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -297,6 +297,20 @@ ASDCP::PCMParserList::ReadFrame(PCM::FrameBuffer& OutFB)
 	}
     }
 
+  return result;
+}
+
+//
+ASDCP::Result_t ASDCP::PCMParserList::Seek(ui32_t frame_number)
+{
+  Result_t result = RESULT_OK;
+  PCMParserList::iterator self_i;
+
+  for( self_i = begin(); self_i != end() && ASDCP_SUCCESS(result); self_i++ )
+    {
+      result = (*self_i)->Parser.Seek(frame_number);
+    }
+  
   return result;
 }
 

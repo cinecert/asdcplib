@@ -73,6 +73,7 @@ public:
   void     Close();
   void     Reset();
   Result_t ReadFrame(FrameBuffer&);
+  Result_t Seek(ui32_t frame_number);
 };
 
 
@@ -196,6 +197,14 @@ ASDCP::PCM::WAVParser::h__WAVParser::ReadFrame(FrameBuffer& FB)
   return result;
 }
 
+//
+ASDCP::Result_t ASDCP::PCM::WAVParser::h__WAVParser::Seek(ui32_t frame_number)
+{
+  m_FramesRead = frame_number - 1;
+  m_ReadCount = 0;
+  return m_FileReader.Seek(m_DataStart + m_FrameBufferSize * frame_number);
+}
+
 
 //------------------------------------------------------------------------------------------
 
@@ -254,6 +263,13 @@ ASDCP::PCM::WAVParser::FillAudioDescriptor(AudioDescriptor& ADesc) const
   return RESULT_OK;
 }
 
+ASDCP::Result_t ASDCP::PCM::WAVParser::Seek(ui32_t frame_number) const
+{
+  if ( m_Parser.empty() )
+    return RESULT_INIT;
+
+  return m_Parser->Seek(frame_number);;
+}
 
 //
 // end PCM_Parser.cpp

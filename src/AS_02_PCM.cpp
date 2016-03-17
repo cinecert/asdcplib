@@ -255,7 +255,7 @@ AS_02::PCM::MXFReader::RIP()
 // Open the file for reading. The file must exist. Returns error if the
 // operation cannot be completed.
 ASDCP::Result_t
-AS_02::PCM::MXFReader::OpenRead(const std::string& filename, const ASDCP::Rational& edit_rate)
+AS_02::PCM::MXFReader::OpenRead(const std::string& filename, const ASDCP::Rational& edit_rate) const
 {
   return m_Reader->OpenRead(filename, edit_rate);
 }
@@ -307,16 +307,19 @@ void
 AS_02::PCM::MXFReader::DumpHeaderMetadata(FILE* stream) const
 {
   if ( m_Reader && m_Reader->m_File.IsOpen() )
-    m_Reader->m_HeaderPart.Dump(stream);
+    {
+      m_Reader->m_HeaderPart.Dump(stream);
+    }
 }
-
 
 //
 void
 AS_02::PCM::MXFReader::DumpIndex(FILE* stream) const
 {
-  if ( m_Reader->m_File.IsOpen() )
-    m_Reader->m_IndexAccess.Dump(stream);
+  if ( m_Reader && m_Reader->m_File.IsOpen() )
+    {
+      m_Reader->m_IndexAccess.Dump(stream);
+    }
 }
 
 
