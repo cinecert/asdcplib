@@ -3,9 +3,9 @@ cmake_minimum_required(VERSION 2.8.12)
 project(asdcplibmod)
 
 # The version number.
-set(VERSION_MAJOR 3)
-set(VERSION_MINOR 0)
-set(VERSION_PATCH 0)
+set(VERSION_MAJOR 2)
+set(VERSION_MINOR 5)
+set(VERSION_PATCH 13)
 set(VERSION_STRING ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH})
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 set_property(GLOBAL PROPERTY PREDEFINED_TARGETS_FOLDER "Default Targets")

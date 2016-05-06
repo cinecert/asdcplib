@@ -151,6 +151,35 @@ command-line utilities all respond to -h.
 
 Change History
 
+2016-05-06 - bug fixes, 2.5.13
+
+ o Release 2.5.12 caused two problems with Atoms and DTS-X wrapping that are
+   addressed by this release. The UL values that were changed to correct the
+   DCData (ST 429-14) implementation had two unintended side-effects:
+     1. v2.5.12 cannot read old DCData (and thus DTS-X) track files
+     2. v2.5.12 creates broken Atmos track files (incorrect ULs)
+   The fix for this involved the following changes:
+     1. ASDCP::DCData::(MXFReader|MXFWriter) are no longer base classes of
+        ASDCP::ATMOS::(MXFReader|MXFWriter).
+     2. New UL values have been added to carry the original Atoms UL values:
+        a. DolbyAtmosDCDataWrappingFrame
+        b. DolbyAtmosDCDataEssence
+        c. DolbyAtmosDCDataDescriptor
+     3. ASDCP::ATMOS::(MXFReader|MXFWriter) have been modified to use the
+        DolbyAtmosDCData* UL values.
+     4. ASDCP::DCData::MXFReader will parse files having either DCData* or
+        DolbyAtmosDCData* UL values.
+     5. ASDCP::DCData:: MXFWriter continues to use DCData* UL values from ST
+        429-14
+  o Some optional parameters of the MXF metadata packs were being erroneously
+    initialized with a value of zero (0), such as GenericPictureEssenceDescriptor
+    ::SignalStandard, GenericPictureEssenceDescriptor::SampledXOffset(0), etc.
+  o Added higher edit rates (96, 100, 120) to the cinema TimedText_Parser
+ o New files:
+     src/info.in
+ o Removed files:
+     AS_DCP_DCData_internal.h
+
 
 2016-03-17 - bug fixes, 2.5.12
  o Changed default UNIX file permissions to "666"
