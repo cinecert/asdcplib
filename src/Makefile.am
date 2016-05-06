@@ -119,7 +119,7 @@ libasdcp_la_SOURCES = MPEG2_Parser.cpp MPEG.cpp JP2K_Codestream_Parser.cpp \
 	Wav.h WavFileWriter.h MXF.h Metadata.h \
 	JP2K.h AS_DCP.h AS_DCP_internal.h KLV.h MPEG.h MXFTypes.h MDD.h \
 	PCMParserList.h S12MTimecode.h MDD.cpp \
-	AS_DCP_ATMOS.cpp  AS_DCP_DCData.cpp info.in\
+	AS_DCP_ATMOS.cpp  AS_DCP_DCData.cpp info.in \
 	DCData_ByteStream_Parser.cpp DCData_Sequence_Parser.cpp \
 	AtmosSyncChannel_Generator.cpp AtmosSyncChannel_Generator.h \
 	AtmosSyncChannel_Mixer.cpp AtmosSyncChannel_Mixer.h \
@@ -337,7 +337,7 @@ TESTS_ENVIRONMENT = BUILD_DIR="." TEST_FILES=../tests TEST_FILE_PREFIX=DCPd1-M1 
 	JP2K_PREFIX=MM_2k_XYZ_
 
 # files to include in the distribution that automake doesn't automatically include
-EXTRA_DIST = fips-186-test-harness.pl $(TESTS) ../CMakeLists.txt
+EXTRA_DIST = fips-186-test-harness.pl $(TESTS) CMakeLists.txt
 if !FREEDIST
 if DEV_HEADERS
 EXTRA_DIST += $(nodist_libasdcp_la_SOURCES) $(nodist_tt_xform_SOURCES)
