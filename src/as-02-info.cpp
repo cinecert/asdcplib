@@ -371,6 +371,7 @@ class MyAudioDescriptor : public PCM::AudioDescriptor
     if ( m_WaveAudioDescriptor != 0 )
       {
 	AudioSamplingRate = m_WaveAudioDescriptor->SampleRate;
+	ContainerDuration = m_WaveAudioDescriptor->ContainerDuration;
       }
     else
       {

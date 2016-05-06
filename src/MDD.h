@@ -416,6 +416,9 @@ namespace ASDCP {
 	MDD_PHDRMetadataTrackSubDescriptor_SourceTrackID, // 378
 	MDD_PHDRMetadataTrackSubDescriptor_SimplePayloadSID, // 379
 	MDD_JPEG2000PictureSubDescriptor_J2CLayout, // 380
+	MDD_DolbyAtmosDCDataWrappingFrame, // 381
+	MDD_DolbyAtmosDCDataEssence,  // 382
+	MDD_DolbyAtmosDCDataDescriptor, // 383
         MDD_Max
     }; // enum MDD_t
 

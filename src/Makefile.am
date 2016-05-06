@@ -119,7 +119,7 @@ libasdcp_la_SOURCES = MPEG2_Parser.cpp MPEG.cpp JP2K_Codestream_Parser.cpp \
 	Wav.h WavFileWriter.h MXF.h Metadata.h \
 	JP2K.h AS_DCP.h AS_DCP_internal.h KLV.h MPEG.h MXFTypes.h MDD.h \
 	PCMParserList.h S12MTimecode.h MDD.cpp \
-	AS_DCP_ATMOS.cpp  AS_DCP_DCData.cpp AS_DCP_DCData_internal.h \
+	AS_DCP_ATMOS.cpp  AS_DCP_DCData.cpp info.in\
 	DCData_ByteStream_Parser.cpp DCData_Sequence_Parser.cpp \
 	AtmosSyncChannel_Generator.cpp AtmosSyncChannel_Generator.h \
 	AtmosSyncChannel_Mixer.cpp AtmosSyncChannel_Mixer.h \

@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2005-2015, John Hurst
+Copyright (c) 2005-2012, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -325,7 +325,7 @@ ContentStorage::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 
 //
 
-EssenceContainerData::EssenceContainerData(const Dictionary*& d) : InterchangeObject(d), m_Dict(d), IndexSID(0)
+EssenceContainerData::EssenceContainerData(const Dictionary*& d) : InterchangeObject(d), m_Dict(d), BodySID(0)
 {
   assert(m_Dict);
   m_UL = m_Dict->ul(MDD_EssenceContainerData);
@@ -871,7 +871,7 @@ Track::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 // StructuralComponent
 
 //
-StructuralComponent::StructuralComponent(const Dictionary*& d) : InterchangeObject(d), m_Dict(d), Duration(0) {}
+StructuralComponent::StructuralComponent(const Dictionary*& d) : InterchangeObject(d), m_Dict(d) {}
 
 StructuralComponent::StructuralComponent(const StructuralComponent& rhs) : InterchangeObject(rhs.m_Dict), m_Dict(rhs.m_Dict)
 {
@@ -1239,7 +1239,7 @@ GenericDescriptor::Dump(FILE* stream)
 
 //
 
-FileDescriptor::FileDescriptor(const Dictionary*& d) : GenericDescriptor(d), m_Dict(d), LinkedTrackID(0)
+FileDescriptor::FileDescriptor(const Dictionary*& d) : GenericDescriptor(d), m_Dict(d)
 {
   assert(m_Dict);
   m_UL = m_Dict->ul(MDD_FileDescriptor);
@@ -1345,7 +1345,7 @@ FileDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 
 //
 
-GenericSoundEssenceDescriptor::GenericSoundEssenceDescriptor(const Dictionary*& d) : FileDescriptor(d), m_Dict(d), Locked(0), AudioRefLevel(0), ChannelCount(0), QuantizationBits(0), DialNorm(0)
+GenericSoundEssenceDescriptor::GenericSoundEssenceDescriptor(const Dictionary*& d) : FileDescriptor(d), m_Dict(d), Locked(0), ChannelCount(0), QuantizationBits(0)
 {
   assert(m_Dict);
   m_UL = m_Dict->ul(MDD_GenericSoundEssenceDescriptor);
@@ -1463,7 +1463,7 @@ GenericSoundEssenceDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 
 //
 
-WaveAudioDescriptor::WaveAudioDescriptor(const Dictionary*& d) : GenericSoundEssenceDescriptor(d), m_Dict(d), BlockAlign(0), SequenceOffset(0)
+WaveAudioDescriptor::WaveAudioDescriptor(const Dictionary*& d) : GenericSoundEssenceDescriptor(d), m_Dict(d), BlockAlign(0), AvgBps(0)
 {
   assert(m_Dict);
   m_UL = m_Dict->ul(MDD_WaveAudioDescriptor);
@@ -1578,7 +1578,7 @@ WaveAudioDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 
 //
 
-GenericPictureEssenceDescriptor::GenericPictureEssenceDescriptor(const Dictionary*& d) : FileDescriptor(d), m_Dict(d), SignalStandard(0), SampledWidth(0), SampledXOffset(0), DisplayHeight(0), DisplayXOffset(0), DisplayF2Offset(0), AlphaTransparency(0), ImageAlignmentOffset(0), ImageEndOffset(0), ActiveHeight(0), ActiveYOffset(0)
+GenericPictureEssenceDescriptor::GenericPictureEssenceDescriptor(const Dictionary*& d) : FileDescriptor(d), m_Dict(d), FrameLayout(0), StoredWidth(0), StoredHeight(0)
 {
   assert(m_Dict);
   m_UL = m_Dict->ul(MDD_GenericPictureEssenceDescriptor);
@@ -1894,7 +1894,7 @@ GenericPictureEssenceDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 
 //
 
-RGBAEssenceDescriptor::RGBAEssenceDescriptor(const Dictionary*& d) : GenericPictureEssenceDescriptor(d), m_Dict(d), ComponentMaxRef(0), AlphaMinRef(0), ScanningDirection(0)
+RGBAEssenceDescriptor::RGBAEssenceDescriptor(const Dictionary*& d) : GenericPictureEssenceDescriptor(d), m_Dict(d)
 {
   assert(m_Dict);
   m_UL = m_Dict->ul(MDD_RGBAEssenceDescriptor);
@@ -2157,7 +2157,7 @@ JPEG2000PictureSubDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 
 //
 
-CDCIEssenceDescriptor::CDCIEssenceDescriptor(const Dictionary*& d) : GenericPictureEssenceDescriptor(d), m_Dict(d), ComponentDepth(0), HorizontalSubsampling(0), VerticalSubsampling(0), ReversedByteOrder(0), AlphaSampleDepth(0), WhiteReflevel(0)
+CDCIEssenceDescriptor::CDCIEssenceDescriptor(const Dictionary*& d) : GenericPictureEssenceDescriptor(d), m_Dict(d), ComponentDepth(0), HorizontalSubsampling(0)
 {
   assert(m_Dict);
   m_UL = m_Dict->ul(MDD_CDCIEssenceDescriptor);
@@ -2308,7 +2308,7 @@ CDCIEssenceDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 
 //
 
-MPEG2VideoDescriptor::MPEG2VideoDescriptor(const Dictionary*& d) : CDCIEssenceDescriptor(d), m_Dict(d), SingleSequence(0), CodedContentType(0), ClosedGOP(0), MaxGOP(0), BitRate(0)
+MPEG2VideoDescriptor::MPEG2VideoDescriptor(const Dictionary*& d) : CDCIEssenceDescriptor(d), m_Dict(d)
 {
   assert(m_Dict);
   m_UL = m_Dict->ul(MDD_MPEG2VideoDescriptor);

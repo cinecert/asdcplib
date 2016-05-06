@@ -1214,7 +1214,7 @@ Kumu::ReadFileIntoObject(const std::string& Filename, Kumu::IArchive& Object, ui
   if ( KM_SUCCESS(result) )
     {
       ui32_t read_count = 0;
-      FileWriter Reader;
+      FileReader Reader;
 
       result = Reader.OpenRead(Filename);
 
@@ -1274,7 +1274,7 @@ Kumu::ReadFileIntoBuffer(const std::string& Filename, Kumu::ByteString& Buffer, 
   if ( KM_SUCCESS(result) )
     {
       ui32_t read_count = 0;
-      FileWriter Reader;
+      FileReader Reader;
 
       result = Reader.OpenRead(Filename);
 

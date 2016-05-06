@@ -33,11 +33,11 @@ OBJDIR = .
 
 !ifdef ENABLE_RANDOM_UUID
 CXXFLAGS1 = /nologo /W3 /GR /EHsc /DWIN32 /DKM_WIN32 /D_CONSOLE /I. /I$(SRCDIR) /DASDCP_PLATFORM=\"win32\" \
-	/D_CRT_SECURE_NO_WARNINGS /D_CRT_NONSTDC_NO_WARNINGS /DPACKAGE_VERSION=\"2.5.11rc1\" \
+	/D_CRT_SECURE_NO_WARNINGS /D_CRT_NONSTDC_NO_WARNINGS /DPACKAGE_VERSION=\"2.5.13\" \
 	/I"$(WITH_OPENSSL)"\inc32 /DCONFIG_RANDOM_UUID=1
 !else
 CXXFLAGS1 = /nologo /W3 /GR /EHsc /DWIN32 /DKM_WIN32 /D_CONSOLE /I. /I$(SRCDIR) /DASDCP_PLATFORM=\"win32\" \
-	/D_CRT_SECURE_NO_WARNINGS /D_CRT_NONSTDC_NO_WARNINGS /DPACKAGE_VERSION=\"2.5.11rc1\" \
+	/D_CRT_SECURE_NO_WARNINGS /D_CRT_NONSTDC_NO_WARNINGS /DPACKAGE_VERSION=\"2.5.13\" \
 	/I"$(WITH_OPENSSL)"\inc32
 !endif
 LIB_EXE = lib.exe
@@ -87,10 +87,9 @@ ASDCP_OBJS = MPEG2_Parser.obj MPEG.obj JP2K_Codestream_Parser.obj \
 	DCData_ByteStream_Parser.obj DCData_Sequence_Parser.obj \
 	AtmosSyncChannel_Generator.obj AtmosSyncChannel_Mixer.obj \
 	PCMDataProviders.obj SyncEncoder.obj CRC16.obj \
-	UUIDInformation.obj ST2095_PinkNoise.obj
+	UUIDInformation.obj
 AS02_OBJS = h__02_Reader.obj h__02_Writer.obj AS_02_JP2K.obj \
-	AS_02_PCM.obj AS_02_TimedText.obj ST2052_TextParser.obj
-PHDR_OBJS = AS_02_PHDR.obj
+	AS_02_PCM.obj
 
 {$(SRCDIR)\}.cpp{}.obj:
 	$(CXX) $(CXXFLAGS) -Fd$(OBJDIR)\ /c $<
@@ -98,31 +97,15 @@ PHDR_OBJS = AS_02_PHDR.obj
 {$(SRCDIR)\}.c{}.obj:
 	$(CXX) $(CXXFLAGS) -Fd$(OBJDIR)\ /c $<
 
-all: \
-	kmfilegen.exe \
-	kmrandgen.exe \
-	kmuuidgen.exe \
-	asdcp-test.exe \
-	asdcp-wrap.exe \
-	asdcp-unwrap.exe \
-	asdcp-info.exe \
-	blackwave.exe \
-	pinkwave.exe \
-	wavesplit.exe
-	j2c-test.exe \
-	klvwalk.exe \
-	klvsplit.exe
+all: kmfilegen.exe kmrandgen.exe kmuuidgen.exe asdcp-test.exe \
+     asdcp-wrap.exe asdcp-unwrap.exe asdcp-info.exe \
+     blackwave.exe klvwalk.exe j2c-test.exe wavesplit.exe 
 !IFDEF USE_AS_02
-all +=	as-02-wrap.exe \
-	as-02-unwrap.exe
-!ENDIF
-!IFDEF USE_PHDR
-all +=	phdr-wrap.exe \
-	phdr-unwrap.exe
+       as-02-wrap.exe as-02-unwrap.exe \
 !ENDIF
 
 clean:
-	erase *.exe *.lib *.obj *.ilk *.pdb *.idb *.manifest
+	erase *.exe *.lib *.obj *.ilk *.pdb *.idb
 
 libkumu.lib : $(KUMU_OBJS)
 !IFDEF WITH_XERCES
@@ -145,64 +128,48 @@ libas02.lib: libasdcp.lib libkumu.lib $(AS02_OBJS)
 	$(LIB_EXE) $(LIBFLAGS) /OUT:libas02.lib $**
 !ENDIF
 
-!IFDEF USE_PHDR
-libas02-phdr.lib: libas02.lib libasdcp.lib libkumu.lib $(PHDR_OBJS)
-	$(LIB_EXE) $(LIBFLAGS) /OUT:libas02-phdr.lib $**
-!ENDIF
-
 blackwave.exe: libasdcp.lib blackwave.obj
-	$(LINK) $(LINKFLAGS) /OUT:blackwave.exe $** Advapi32.lib user32.lib
-
-pinkwave.exe: libasdcp.lib pinkwave.obj
-	$(LINK) $(LINKFLAGS) /OUT:pinkwave.exe $** Advapi32.lib user32.lib
+	$(LINK) $(LINKFLAGS) /OUT:blackwave.exe $** Advapi32.lib
 
 wavesplit.exe: libasdcp.lib wavesplit.obj
-	$(LINK) $(LINKFLAGS) /OUT:wavesplit.exe $** Advapi32.lib user32.lib
+	$(LINK) $(LINKFLAGS) /OUT:wavesplit.exe $** Advapi32.lib
 
 kmuuidgen.exe: libkumu.lib kmuuidgen.obj
-	$(LINK) $(LINKFLAGS) /OUT:kmuuidgen.exe $** Advapi32.lib user32.lib
+	$(LINK) $(LINKFLAGS) /OUT:kmuuidgen.exe $** Advapi32.lib
 
 kmrandgen.exe: libkumu.lib kmrandgen.obj
-	$(LINK) $(LINKFLAGS) /OUT:kmrandgen.exe $** Advapi32.lib user32.lib
+	$(LINK) $(LINKFLAGS) /OUT:kmrandgen.exe $** Advapi32.lib
 
 kmfilegen.exe: libkumu.lib kmfilegen.obj
-	$(LINK) $(LINKFLAGS) /OUT:kmfilegen.exe $** Advapi32.lib user32.lib
+	$(LINK) $(LINKFLAGS) /OUT:kmfilegen.exe $** Advapi32.lib
 
 klvwalk.exe: libasdcp.lib klvwalk.obj
-	$(LINK) $(LINKFLAGS) /OUT:klvwalk.exe $** Advapi32.lib user32.lib
+	$(LINK) $(LINKFLAGS) /OUT:klvwalk.exe $** Advapi32.lib
 
 asdcp-test.exe: libasdcp.lib asdcp-test.obj
-	$(LINK) $(LINKFLAGS) /OUT:asdcp-test.exe $** Advapi32.lib user32.lib
+	$(LINK) $(LINKFLAGS) /OUT:asdcp-test.exe $** Advapi32.lib
 
 asdcp-wrap.exe: libasdcp.lib asdcp-wrap.obj
-	$(LINK) $(LINKFLAGS) /OUT:asdcp-wrap.exe $** Advapi32.lib user32.lib
+	$(LINK) $(LINKFLAGS) /OUT:asdcp-wrap.exe $** Advapi32.lib
 
 asdcp-unwrap.exe: libasdcp.lib asdcp-unwrap.obj
-	$(LINK) $(LINKFLAGS) /OUT:asdcp-unwrap.exe $** Advapi32.lib user32.lib
+	$(LINK) $(LINKFLAGS) /OUT:asdcp-unwrap.exe $** Advapi32.lib
 
 asdcp-info.exe: libasdcp.lib asdcp-info.obj
-	$(LINK) $(LINKFLAGS) /OUT:asdcp-info.exe $** Advapi32.lib user32.lib
+	$(LINK) $(LINKFLAGS) /OUT:asdcp-info.exe $** Advapi32.lib
 
 asdcp-util.exe: libasdcp.lib asdcp-util.obj
-	$(LINK) $(LINKFLAGS) /OUT:asdcp-util.exe $** Advapi32.lib user32.lib
+	$(LINK) $(LINKFLAGS) /OUT:asdcp-util.exe $** Advapi32.lib
 
 j2c-test.exe: libasdcp.lib j2c-test.obj
-	$(LINK) $(LINKFLAGS) /OUT:j2c-test.exe $** Advapi32.lib user32.lib
+	$(LINK) $(LINKFLAGS) /OUT:j2c-test.exe $** Advapi32.lib
 
 !IFDEF USE_AS_02
 as-02-wrap.exe: libas02.lib as-02-wrap.obj
-	$(LINK) $(LINKFLAGS) /OUT:as-02-wrap.exe $** Advapi32.lib user32.lib
+	$(LINK) $(LINKFLAGS) /OUT:as-02-wrap.exe $** Advapi32.lib
 
 as-02-unwrap.exe: libas02.lib as-02-unwrap.obj
-	$(LINK) $(LINKFLAGS) /OUT:as-02-unwrap.exe $** Advapi32.lib user32.lib
-!ENDIF
-
-!IFDEF USE_PHDR
-phdr-wrap.exe: libas02-phdr.lib phdr-wrap.obj
-	$(LINK) $(LINKFLAGS) /OUT:phdr-wrap.exe $** Advapi32.lib user32.lib
-
-phdr-unwrap.exe: libas02-phdr.lib phdr-unwrap.obj
-	$(LINK) $(LINKFLAGS) /OUT:phdr-unwrap.exe $** Advapi32.lib user32.lib
+	$(LINK) $(LINKFLAGS) /OUT:as-02-unwrap.exe $** Advapi32.lib
 !ENDIF
 
 
