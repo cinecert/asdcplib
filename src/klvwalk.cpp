@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2005-2015, John Hurst
+Copyright (c) 2005-2016, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -201,31 +201,33 @@ main(int argc, const char** argv)
 	  ASDCP::MXF::OP1aHeader Header(Dict);
 	  ASDCP::MXF::RIP RIP(Dict);
 	  
-	  result = Reader.OpenRead((*fi).c_str());
+	  result = Reader.OpenRead(*fi);
 	  
 	  if ( ASDCP_SUCCESS(result) )
-	    result = MXF::SeekToRIP(Reader);
-
-	  if ( ASDCP_SUCCESS(result) )
 	    {
-	      result = RIP.InitFromFile(Reader);
-	      ui32_t test_s = RIP.PairArray.size();
-
-	      if ( ASDCP_FAILURE(result) )
+	      result = MXF::SeekToRIP(Reader);
+	      
+	      if ( ASDCP_SUCCESS(result) )
 		{
-		  DefaultLogSink().Error("File contains no RIP\n");
-		  result = RESULT_OK;
-		}
-	      else if ( RIP.PairArray.empty() )
-		{
-		  DefaultLogSink().Error("RIP contains no Pairs.\n");
-		}
+		  result = RIP.InitFromFile(Reader);
+		  ui32_t test_s = RIP.PairArray.size();
 
-	      Reader.Seek(0);
-	    }
-	  else
-	    {
-	      DefaultLogSink().Error("read_mxf SeekToRIP failed: %s\n", result.Label());
+		  if ( ASDCP_FAILURE(result) )
+		    {
+		      DefaultLogSink().Error("File contains no RIP\n");
+		      result = RESULT_OK;
+		    }
+		  else if ( RIP.PairArray.empty() )
+		    {
+		      DefaultLogSink().Error("RIP contains no Pairs.\n");
+		    }
+
+		  Reader.Seek(0);
+		}
+	      else
+		{
+		  DefaultLogSink().Error("read_mxf SeekToRIP failed: %s\n", result.Label());
+		}
 	    }
 
 	  if ( ASDCP_SUCCESS(result) )

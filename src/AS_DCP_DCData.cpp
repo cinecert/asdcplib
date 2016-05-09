@@ -78,31 +78,42 @@ typedef std::list<MXF::InterchangeObject*> SubDescriptorList_t;
 
 class ASDCP::DCData::MXFReader::h__Reader : public ASDCP::h__ASDCPReader
 {
-  bool m_AtmosLabelCompatibilityMode;
-  MXF::DCDataDescriptor* m_EssenceDescriptor;
+  bool m_PrivateLabelCompatibilityMode;
   ASDCP_NO_COPY_CONSTRUCT(h__Reader);
   h__Reader();
 
  public:
   DCDataDescriptor m_DDesc;
 
-  h__Reader(const Dictionary& d) : ASDCP::h__ASDCPReader(d), m_AtmosLabelCompatibilityMode(false), m_EssenceDescriptor(0), m_DDesc() {}
+  h__Reader(const Dictionary& d) : ASDCP::h__ASDCPReader(d), m_PrivateLabelCompatibilityMode(false), m_DDesc() {}
   ~h__Reader() {}
   Result_t    OpenRead(const std::string&);
   Result_t    ReadFrame(ui32_t, FrameBuffer&, AESDecContext*, HMACContext*);
-  Result_t    MD_to_DCData_DDesc(DCData::DCDataDescriptor& DDesc);
+  Result_t    MD_to_DCData_DDesc(const MXF::DCDataDescriptor& descriptor_object, DCData::DCDataDescriptor& DDesc);
+  Result_t    MD_to_DCData_DDesc(const MXF::PrivateDCDataDescriptor& descriptor_object, DCData::DCDataDescriptor& DDesc);
 };
 
-
+//
 ASDCP::Result_t
-ASDCP::DCData::MXFReader::h__Reader::MD_to_DCData_DDesc(DCData::DCDataDescriptor& DDesc)
+ASDCP::DCData::MXFReader::h__Reader::MD_to_DCData_DDesc(const MXF::DCDataDescriptor& descriptor_object,
+							DCData::DCDataDescriptor& DDesc)
 {
-  ASDCP_TEST_NULL(m_EssenceDescriptor);
-  MXF::DCDataDescriptor* DDescObj = m_EssenceDescriptor;
-  DDesc.EditRate = DDescObj->SampleRate;
-  assert(DDescObj->ContainerDuration <= 0xFFFFFFFFL);
-  DDesc.ContainerDuration = static_cast<ui32_t>(DDescObj->ContainerDuration);
-  memcpy(DDesc.DataEssenceCoding, DDescObj->DataEssenceCoding.Value(), SMPTE_UL_LENGTH);
+  DDesc.EditRate = descriptor_object.SampleRate;
+  assert(descriptor_object.ContainerDuration.const_get() <= 0xFFFFFFFFL);
+  DDesc.ContainerDuration = static_cast<ui32_t>(descriptor_object.ContainerDuration.const_get());
+  memcpy(DDesc.DataEssenceCoding, descriptor_object.DataEssenceCoding.Value(), SMPTE_UL_LENGTH);
+  return RESULT_OK;
+}
+
+//
+ASDCP::Result_t
+ASDCP::DCData::MXFReader::h__Reader::MD_to_DCData_DDesc(const MXF::PrivateDCDataDescriptor& descriptor_object,
+							DCData::DCDataDescriptor& DDesc)
+{
+  DDesc.EditRate = descriptor_object.SampleRate;
+  assert(descriptor_object.ContainerDuration.const_get() <= 0xFFFFFFFFL);
+  DDesc.ContainerDuration = static_cast<ui32_t>(descriptor_object.ContainerDuration.const_get());
+  memcpy(DDesc.DataEssenceCoding, descriptor_object.DataEssenceCoding.Value(), SMPTE_UL_LENGTH);
   return RESULT_OK;
 }
 
@@ -112,38 +123,36 @@ ASDCP::Result_t
 ASDCP::DCData::MXFReader::h__Reader::OpenRead(const std::string& filename)
 {
   Result_t result = OpenMXFRead(filename);
-  m_EssenceDescriptor = 0;
 
   if( KM_SUCCESS(result) )
     {
       InterchangeObject* iObj = 0;
       result = m_HeaderPart.GetMDObjectByType(OBJ_TYPE_ARGS(DCDataDescriptor), &iObj);
 
-      if ( KM_FAILURE(result) )
+      if ( KM_SUCCESS(result) )
 	{
-	  result = m_HeaderPart.GetMDObjectByType(OBJ_TYPE_ARGS(DolbyAtmosDCDataDescriptor), &iObj);
+	  const MXF::DCDataDescriptor* p = dynamic_cast<const MXF::DCDataDescriptor*>(iObj);
+	  assert(p);
+	  result = MD_to_DCData_DDesc(*p, m_DDesc);
+	}
+      else
+	{
+	  result = m_HeaderPart.GetMDObjectByType(OBJ_TYPE_ARGS(PrivateDCDataDescriptor), &iObj);
 	  
 	  if ( KM_SUCCESS(result) )
 	    {
-	      m_AtmosLabelCompatibilityMode = true;
+	      m_PrivateLabelCompatibilityMode = true;
+	      const MXF::PrivateDCDataDescriptor* p = dynamic_cast<const MXF::PrivateDCDataDescriptor*>(iObj);
+	      assert(p);
+	      result = MD_to_DCData_DDesc(*p, m_DDesc);
 	    }
 	}
 
-      if ( KM_SUCCESS(result) )
+      if ( KM_FAILURE(result) )
 	{
-	  m_EssenceDescriptor = static_cast<MXF::DCDataDescriptor*>(iObj);
+	  DefaultLogSink().Error("DCDataDescriptor object not found.\n");
+	  result = RESULT_FORMAT;
 	}
-    }
-
-  if ( m_EssenceDescriptor == 0 )
-    {
-      DefaultLogSink().Error("DCDataDescriptor object not found.\n");
-      result = RESULT_FORMAT;
-    }
-  
-  if ( KM_SUCCESS(result) )
-    {
-      result = MD_to_DCData_DDesc(m_DDesc);
     }
 
   // check for sample/frame rate sanity
@@ -177,9 +186,9 @@ ASDCP::DCData::MXFReader::h__Reader::ReadFrame(ui32_t FrameNum, FrameBuffer& Fra
     return RESULT_INIT;
 
   assert(m_Dict);
-  if ( m_AtmosLabelCompatibilityMode )
+  if ( m_PrivateLabelCompatibilityMode )
     {
-      return ReadEKLVFrame(FrameNum, FrameBuf, m_Dict->ul(MDD_DolbyAtmosDCDataEssence), Ctx, HMAC);
+      return ReadEKLVFrame(FrameNum, FrameBuf, m_Dict->ul(MDD_PrivateDCDataEssence), Ctx, HMAC);
     }
 
   return ReadEKLVFrame(FrameNum, FrameBuf, m_Dict->ul(MDD_DCDataEssence), Ctx, HMAC);

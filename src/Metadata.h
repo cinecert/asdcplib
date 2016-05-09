@@ -981,6 +981,28 @@ namespace ASDCP
 	};
 
       //
+      class PrivateDCDataDescriptor : public GenericDataEssenceDescriptor
+	{
+	  PrivateDCDataDescriptor();
+
+	public:
+	  const Dictionary*& m_Dict;
+
+      PrivateDCDataDescriptor(const Dictionary*& d);
+      PrivateDCDataDescriptor(const PrivateDCDataDescriptor& rhs);
+      virtual ~PrivateDCDataDescriptor() {}
+
+      const PrivateDCDataDescriptor& operator=(const PrivateDCDataDescriptor& rhs) { Copy(rhs); return *this; }
+      virtual void Copy(const PrivateDCDataDescriptor& rhs);
+      virtual const char* HasName() { return "PrivateDCDataDescriptor"; }
+      virtual Result_t InitFromTLVSet(TLVReader& TLVSet);
+      virtual Result_t WriteToTLVSet(TLVWriter& TLVSet);
+      virtual void     Dump(FILE* = 0);
+      virtual Result_t InitFromBuffer(const byte_t* p, ui32_t l);
+      virtual Result_t WriteToBuffer(ASDCP::FrameBuffer&);
+	};
+
+      //
       class DolbyAtmosSubDescriptor : public InterchangeObject
 	{
 	  DolbyAtmosSubDescriptor();

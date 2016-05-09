@@ -166,7 +166,7 @@ ASDCP::ATMOS::MXFReader::h__Reader::OpenRead(const std::string& filename)
   if ( KM_SUCCESS(result) )
     {
       InterchangeObject* iObj = 0;
-      result = m_HeaderPart.GetMDObjectByType(OBJ_TYPE_ARGS(DolbyAtmosDCDataDescriptor), &iObj);
+      result = m_HeaderPart.GetMDObjectByType(OBJ_TYPE_ARGS(PrivateDCDataDescriptor), &iObj);
 
       if ( KM_SUCCESS(result) )
 	{
@@ -237,7 +237,7 @@ ASDCP::ATMOS::MXFReader::h__Reader::ReadFrame(ui32_t FrameNum, FrameBuffer& Fram
     return RESULT_INIT;
 
   assert(m_Dict);
-  return ReadEKLVFrame(FrameNum, FrameBuf, m_Dict->ul(MDD_DolbyAtmosDCDataEssence), Ctx, HMAC);
+  return ReadEKLVFrame(FrameNum, FrameBuf, m_Dict->ul(MDD_PrivateDCDataEssence), Ctx, HMAC);
 }
 
 
@@ -518,7 +518,7 @@ ASDCP::ATMOS::MXFWriter::h__Writer::SetSourceStream(ASDCP::DCData::DCDataDescrip
 
   if ( ASDCP_SUCCESS(result) )
   {
-    memcpy(m_EssenceUL, m_Dict->ul(MDD_DolbyAtmosDCDataEssence), SMPTE_UL_LENGTH);
+    memcpy(m_EssenceUL, m_Dict->ul(MDD_PrivateDCDataEssence), SMPTE_UL_LENGTH);
     m_EssenceUL[SMPTE_UL_LENGTH-1] = 1; // first (and only) essence container
     result = m_State.Goto_READY();
   }
@@ -527,7 +527,7 @@ ASDCP::ATMOS::MXFWriter::h__Writer::SetSourceStream(ASDCP::DCData::DCDataDescrip
   {
     ui32_t TCFrameRate = m_DDesc.EditRate.Numerator;
 
-    result = WriteASDCPHeader(packageLabel, UL(m_Dict->ul(MDD_DolbyAtmosDCDataWrappingFrame)),
+    result = WriteASDCPHeader(packageLabel, UL(m_Dict->ul(MDD_PrivateDCDataWrappingFrame)),
 			      defLabel, UL(m_EssenceUL), UL(m_Dict->ul(MDD_DataDataDef)),
 			      m_DDesc.EditRate, TCFrameRate);
   }

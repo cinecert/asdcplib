@@ -75,6 +75,7 @@ static InterchangeObject* AudioChannelLabelSubDescriptor_Factory(const Dictionar
 static InterchangeObject* SoundfieldGroupLabelSubDescriptor_Factory(const Dictionary*& Dict) { return new SoundfieldGroupLabelSubDescriptor(Dict); }
 static InterchangeObject* GroupOfSoundfieldGroupsLabelSubDescriptor_Factory(const Dictionary*& Dict) { return new GroupOfSoundfieldGroupsLabelSubDescriptor(Dict); }
 static InterchangeObject* DCDataDescriptor_Factory(const Dictionary*& Dict) { return new DCDataDescriptor(Dict); }
+static InterchangeObject* PrivateDCDataDescriptor_Factory(const Dictionary*& Dict) { return new PrivateDCDataDescriptor(Dict); }
 static InterchangeObject* DolbyAtmosSubDescriptor_Factory(const Dictionary*& Dict) { return new DolbyAtmosSubDescriptor(Dict); }
 static InterchangeObject* PHDRMetadataTrackSubDescriptor_Factory(const Dictionary*& Dict) { return new PHDRMetadataTrackSubDescriptor(Dict); }
 
@@ -118,6 +119,7 @@ ASDCP::MXF::Metadata_InitTypes(const Dictionary*& Dict)
   SetObjectFactory(Dict->ul(MDD_SoundfieldGroupLabelSubDescriptor), SoundfieldGroupLabelSubDescriptor_Factory);
   SetObjectFactory(Dict->ul(MDD_GroupOfSoundfieldGroupsLabelSubDescriptor), GroupOfSoundfieldGroupsLabelSubDescriptor_Factory);
   SetObjectFactory(Dict->ul(MDD_DCDataDescriptor), DCDataDescriptor_Factory);
+  SetObjectFactory(Dict->ul(MDD_PrivateDCDataDescriptor), PrivateDCDataDescriptor_Factory);
   SetObjectFactory(Dict->ul(MDD_DolbyAtmosSubDescriptor), DolbyAtmosSubDescriptor_Factory);
   SetObjectFactory(Dict->ul(MDD_PHDRMetadataTrackSubDescriptor), PHDRMetadataTrackSubDescriptor_Factory);
 }
@@ -3596,6 +3598,77 @@ DCDataDescriptor::InitFromBuffer(const byte_t* p, ui32_t l)
 //
 ASDCP::Result_t
 DCDataDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
+{
+  return InterchangeObject::WriteToBuffer(Buffer);
+}
+
+//------------------------------------------------------------------------------------------
+// PrivateDCDataDescriptor
+
+//
+
+PrivateDCDataDescriptor::PrivateDCDataDescriptor(const Dictionary*& d) : GenericDataEssenceDescriptor(d), m_Dict(d)
+{
+  assert(m_Dict);
+  m_UL = m_Dict->ul(MDD_PrivateDCDataDescriptor);
+}
+
+PrivateDCDataDescriptor::PrivateDCDataDescriptor(const PrivateDCDataDescriptor& rhs) : GenericDataEssenceDescriptor(rhs.m_Dict), m_Dict(rhs.m_Dict)
+{
+  assert(m_Dict);
+  m_UL = m_Dict->ul(MDD_PrivateDCDataDescriptor);
+  Copy(rhs);
+}
+
+
+//
+ASDCP::Result_t
+PrivateDCDataDescriptor::InitFromTLVSet(TLVReader& TLVSet)
+{
+  assert(m_Dict);
+  Result_t result = GenericDataEssenceDescriptor::InitFromTLVSet(TLVSet);
+  return result;
+}
+
+//
+ASDCP::Result_t
+PrivateDCDataDescriptor::WriteToTLVSet(TLVWriter& TLVSet)
+{
+  assert(m_Dict);
+  Result_t result = GenericDataEssenceDescriptor::WriteToTLVSet(TLVSet);
+  return result;
+}
+
+//
+void
+PrivateDCDataDescriptor::Copy(const PrivateDCDataDescriptor& rhs)
+{
+  GenericDataEssenceDescriptor::Copy(rhs);
+}
+
+//
+void
+PrivateDCDataDescriptor::Dump(FILE* stream)
+{
+  char identbuf[IdentBufferLen];
+  *identbuf = 0;
+
+  if ( stream == 0 )
+    stream = stderr;
+
+  GenericDataEssenceDescriptor::Dump(stream);
+}
+
+//
+ASDCP::Result_t
+PrivateDCDataDescriptor::InitFromBuffer(const byte_t* p, ui32_t l)
+{
+  return InterchangeObject::InitFromBuffer(p, l);
+}
+
+//
+ASDCP::Result_t
+PrivateDCDataDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 {
   return InterchangeObject::WriteToBuffer(Buffer);
 }

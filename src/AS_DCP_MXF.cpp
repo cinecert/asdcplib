@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2004-2013, John Hurst
+Copyright (c) 2004-2016, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -213,7 +213,8 @@ ASDCP::EssenceType(const std::string& filename, EssenceType_t& type)
 	    {
 	      type = ESS_TIMED_TEXT;
 	    }
-	  else if ( ASDCP_SUCCESS(TestHeader.GetMDObjectByType(OBJ_TYPE_ARGS(DCDataDescriptor))) )
+	  else if ( ASDCP_SUCCESS(TestHeader.GetMDObjectByType(OBJ_TYPE_ARGS(DCDataDescriptor)))
+		    || ASDCP_SUCCESS(TestHeader.GetMDObjectByType(OBJ_TYPE_ARGS(PrivateDCDataDescriptor))) )
 	    {
 	      if ( ASDCP_SUCCESS(TestHeader.GetMDObjectByType(OBJ_TYPE_ARGS(DolbyAtmosSubDescriptor))) )
 		{
