@@ -151,7 +151,7 @@ command-line utilities all respond to -h.
 
 Change History
 
-2016-05-06 - bug fixes, 2.5.13
+2016-05-06 - bug fixes, 2.5.14
 
  o Release 2.5.12 caused two problems with Atoms and DTS-X wrapping that are
    addressed by this release. The UL values that were changed to correct the
@@ -175,10 +175,12 @@ Change History
     initialized with a value of zero (0), such as GenericPictureEssenceDescriptor
     ::SignalStandard, GenericPictureEssenceDescriptor::SampledXOffset(0), etc.
   o Added higher edit rates (96, 100, 120) to the cinema TimedText_Parser
- o New files:
-     src/info.in
- o Removed files:
-     AS_DCP_DCData_internal.h
+
+  o Defined bool ASDCP::UL::operator<(const UL& rhs) const, which is needed to
+    carry out the version-insensitive lookup policy when searching for ULs in a
+    std::map<> of UL entries.
+  o New files:  src/info.in src/CMakeLists.txt
+  o Removed filess:  AS_DCP_DCData_internal.h
 
 
 2016-03-17 - bug fixes, 2.5.12
