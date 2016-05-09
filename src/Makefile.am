@@ -337,7 +337,7 @@ TESTS_ENVIRONMENT = BUILD_DIR="." TEST_FILES=../tests TEST_FILE_PREFIX=DCPd1-M1 
 	JP2K_PREFIX=MM_2k_XYZ_
 
 # files to include in the distribution that automake doesn't automatically include
-EXTRA_DIST = fips-186-test-harness.pl $(TESTS) README.cmake ../CMakeLists.txt  CMakeLists.txt 
+EXTRA_DIST = fips-186-test-harness.pl $(TESTS) ../README.cmake ../CMakeLists.txt  CMakeLists.txt 
 if !FREEDIST
 if DEV_HEADERS
 EXTRA_DIST += $(nodist_libasdcp_la_SOURCES) $(nodist_tt_xform_SOURCES)
