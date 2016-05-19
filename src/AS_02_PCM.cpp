@@ -106,7 +106,7 @@ AS_02::PCM::MXFReader::h__Reader::OpenRead(const std::string& filename, const AS
 	{
 	  if ( ! UL(reader.Key()).MatchIgnoreStream(m_Dict->ul(MDD_WAVEssenceClip)) )
 	    {
-	      const MDDEntry *entry = m_Dict->FindUL(reader.Key());
+	      const MDDEntry *entry = m_Dict->FindULAnyVersion(reader.Key());
 
 	      if ( entry == 0 )
 		{

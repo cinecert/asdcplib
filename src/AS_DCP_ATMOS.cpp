@@ -107,7 +107,7 @@ typedef std::list<MXF::InterchangeObject*> SubDescriptorList_t;
 
 class ASDCP::ATMOS::MXFReader::h__Reader : public ASDCP::h__ASDCPReader
 {
-  MXF::DCDataDescriptor* m_EssenceDescriptor;
+  MXF::PrivateDCDataDescriptor* m_EssenceDescriptor;
   MXF::DolbyAtmosSubDescriptor* m_EssenceSubDescriptor;
 
   KM_NO_COPY_CONSTRUCT(h__Reader);
@@ -130,7 +130,7 @@ ASDCP::Result_t
 ASDCP::ATMOS::MXFReader::h__Reader::MD_to_DCData_DDesc(ASDCP::DCData::DCDataDescriptor& DDesc)
 {
   ASDCP_TEST_NULL(m_EssenceDescriptor);
-  MXF::DCDataDescriptor* DDescObj = m_EssenceDescriptor;
+  MXF::PrivateDCDataDescriptor* DDescObj = m_EssenceDescriptor;
   DDesc.EditRate = DDescObj->SampleRate;
   assert(DDescObj->ContainerDuration <= 0xFFFFFFFFL);
   DDesc.ContainerDuration = static_cast<ui32_t>(DDescObj->ContainerDuration);
@@ -170,13 +170,13 @@ ASDCP::ATMOS::MXFReader::h__Reader::OpenRead(const std::string& filename)
 
       if ( KM_SUCCESS(result) )
 	{
-	  m_EssenceDescriptor = static_cast<MXF::DCDataDescriptor*>(iObj);
+	  m_EssenceDescriptor = static_cast<MXF::PrivateDCDataDescriptor*>(iObj);
 	}
     }
 
   if ( m_EssenceDescriptor == 0 )
     {
-      DefaultLogSink().Error("DCDataDescriptor object not found.\n");
+      DefaultLogSink().Error("DCDataDescriptor object not found in Atmos file.\n");
       result = RESULT_FORMAT;
     }
 
@@ -420,7 +420,7 @@ ASDCP::Result_t
 ASDCP::ATMOS::MXFWriter::h__Writer::DCData_DDesc_to_MD(ASDCP::DCData::DCDataDescriptor& DDesc)
 {
   ASDCP_TEST_NULL(m_EssenceDescriptor);
-  MXF::DCDataDescriptor* DDescObj = static_cast<MXF::DCDataDescriptor *>(m_EssenceDescriptor);
+  MXF::PrivateDCDataDescriptor* DDescObj = static_cast<MXF::PrivateDCDataDescriptor *>(m_EssenceDescriptor);
 
   DDescObj->SampleRate = DDesc.EditRate;
   DDescObj->ContainerDuration = DDesc.ContainerDuration;
@@ -456,7 +456,7 @@ ASDCP::ATMOS::MXFWriter::h__Writer::OpenWrite(const std::string& filename, ui32_
   if ( ASDCP_SUCCESS(result) )
     {
       m_HeaderSize = HeaderSize;
-      m_EssenceDescriptor = new MXF::DCDataDescriptor(m_Dict);
+      m_EssenceDescriptor = new MXF::PrivateDCDataDescriptor(m_Dict);
       m_EssenceSubDescriptor = new DolbyAtmosSubDescriptor(m_Dict);
       SubDescriptorList_t subDescriptors;
       subDescriptors.push_back(m_EssenceSubDescriptor);

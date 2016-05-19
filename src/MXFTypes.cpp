@@ -65,72 +65,6 @@ ASDCP::UL::operator==(const UL& rhs) const
   return false;
 }
 
-
-//
-bool
-ASDCP::UL::operator<(const UL& rhs) const
-{
-  if ( m_Value[0] < rhs.m_Value[0] ) return true;
-  if ( m_Value[0] == rhs.m_Value[0] )
-    {
-      if ( m_Value[1] < rhs.m_Value[1] ) return true;
-      if ( m_Value[1] == rhs.m_Value[1] )
-	{
-	  if ( m_Value[2] < rhs.m_Value[2] ) return true;
-	  if ( m_Value[2] == rhs.m_Value[2] )
-	    {
-	      if ( m_Value[3] < rhs.m_Value[3] ) return true;
-	      if ( m_Value[3] == rhs.m_Value[3] )
-		{
-		  if ( m_Value[4] < rhs.m_Value[4] ) return true;
-		  if ( m_Value[4] == rhs.m_Value[4] )
-		    {
-		      if ( m_Value[5] < rhs.m_Value[5] ) return true;
-		      if ( m_Value[5] == rhs.m_Value[5] )
-			{
-			  if ( m_Value[6] < rhs.m_Value[6] ) return true;
-			  if ( m_Value[6] == rhs.m_Value[6] )
-			    {
-			      if ( m_Value[8] < rhs.m_Value[8] ) return true;
-			      if ( m_Value[8] == rhs.m_Value[8] )
-				{
-				  if ( m_Value[9] < rhs.m_Value[9] ) return true;
-				  if ( m_Value[9] == rhs.m_Value[9] )
-				    {
-				      if ( m_Value[10] < rhs.m_Value[10] ) return true;
-				      if ( m_Value[10] == rhs.m_Value[10] )
-					{
-					  if ( m_Value[11] < rhs.m_Value[11] ) return true;
-					  if ( m_Value[11] == rhs.m_Value[11] )
-					    {
-					      if ( m_Value[12] < rhs.m_Value[12] ) return true;
-					      if ( m_Value[12] == rhs.m_Value[12] )
-						{
-						  if ( m_Value[13] < rhs.m_Value[13] ) return true;
-						  if ( m_Value[13] == rhs.m_Value[13] )
-						    {
-						      if ( m_Value[14] < rhs.m_Value[14] ) return true;
-						      if ( m_Value[14] == rhs.m_Value[14] )
-							{
-							  if ( m_Value[15] < rhs.m_Value[15] ) return true;
-							}
-						    }
-						}
-					    }
-					}
-				    }
-				}
-			    }
-			}
-		    }
-		}
-	    }
-	}
-    }
-
-  return false;
-}
-
 //
 bool
 ASDCP::UL::MatchIgnoreStream(const UL& rhs) const
@@ -159,7 +93,7 @@ ASDCP::UL::MatchIgnoreStream(const UL& rhs) const
 
 //
 bool
-ASDCP::UL::ExactMatch(const UL& rhs) const
+ASDCP::UL::MatchExact(const UL& rhs) const
 {
   if ( m_Value[0] == rhs.m_Value[0] &&
        m_Value[1] == rhs.m_Value[1] &&

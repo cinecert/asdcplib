@@ -409,7 +409,7 @@ AS_02::h__AS02Reader::OpenMXFRead(const char* filename)
       if ( m_HeaderPart.OperationalPattern != OP1a_ul )
 	{
 	  char strbuf[IdentBufferLen];
-	  const MDDEntry* Entry = m_Dict->FindUL(m_HeaderPart.OperationalPattern.Value());
+	  const MDDEntry* Entry = m_Dict->FindULAnyVersion(m_HeaderPart.OperationalPattern.Value());
 
 	  if ( Entry == 0 )
 	    {

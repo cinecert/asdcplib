@@ -575,7 +575,7 @@ ASDCP::MXF::Primer::Dump(FILE* stream)
   Batch<LocalTagEntry>::iterator i = LocalTagEntryBatch.begin();
   for ( ; i != LocalTagEntryBatch.end(); i++ )
     {
-      const MDDEntry* Entry = m_Dict->FindUL((*i).UL.Value());
+      const MDDEntry* Entry = m_Dict->FindULAnyVersion((*i).UL.Value());
       fprintf(stream, "  %s %s\n", (*i).EncodeString(identbuf, IdentBufferLen), (Entry ? Entry->name : "Unknown"));
     }
 }
@@ -702,11 +702,11 @@ ASDCP::MXF::OP1aHeader::InitFromFile(const Kumu::FileReader& Reader)
   if ( m_Dict == &DefaultCompositeDict() )
     {
       // select more explicit dictionary if one is available
-      if ( OperationalPattern.ExactMatch(MXFInterop_OPAtom_Entry().ul) )
+      if ( OperationalPattern.MatchExact(MXFInterop_OPAtom_Entry().ul) )
 	{
 	  m_Dict = &DefaultInteropDict();
 	}
-      else if ( OperationalPattern.ExactMatch(SMPTE_390_OPAtom_Entry().ul) )
+      else if ( OperationalPattern.MatchExact(SMPTE_390_OPAtom_Entry().ul) )
 	{
 	  m_Dict = &DefaultSMPTEDict();
 	}

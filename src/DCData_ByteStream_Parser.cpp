@@ -24,7 +24,7 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-/*! \file    AtmosSyncChannel_Mixer.h
+/*! \file    DCData_ByteStream_Parser.cpp
     \version $Id$
     \brief   AS-DCP library, Digital Cinema Data bytestream essence reader
 */

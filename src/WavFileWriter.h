@@ -154,7 +154,7 @@ class WavFileWriter
       {
           for ( ui32_t i = 0; i < file_count && ASDCP_SUCCESS(result); i++ )
           {
-              snprintf(filename, Kumu::MaxFilePath, "%s_%u.wav", file_root, (i + 1));
+              snprintf(filename, Kumu::MaxFilePath, "%s_%02u.wav", file_root, (i + 1));
               m_OutFile.push_back(new WavFileElement(element_size));
               result = m_OutFile.back()->OpenWrite(filename);
 

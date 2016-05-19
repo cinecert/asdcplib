@@ -150,7 +150,7 @@ ASDCP::DCData::MXFReader::h__Reader::OpenRead(const std::string& filename)
 
       if ( KM_FAILURE(result) )
 	{
-	  DefaultLogSink().Error("DCDataDescriptor object not found.\n");
+	  DefaultLogSink().Error("DCDataDescriptor object not found in ST 429-14 file.\n");
 	  result = RESULT_FORMAT;
 	}
     }

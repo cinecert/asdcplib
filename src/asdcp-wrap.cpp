@@ -1151,6 +1151,11 @@ write_PCM_with_ATMOS_sync_file(CommandOptions& Options)
   // set up MXF writer
   if ( ASDCP_SUCCESS(result) )
   {
+    if ( Mixer.ChannelCount() % 2 != 0 )
+      {
+        result = Mixer.AppendSilenceChannels(1);
+      }
+
     Mixer.FillAudioDescriptor(ADesc);
 
     ADesc.EditRate = PictureRate;

@@ -171,7 +171,7 @@ ASDCP::KLVPacket::Dump(FILE* stream, const Dictionary& Dict, bool show_value)
       UL TmpUL(m_KeyStart);
       fprintf(stream, "%s", TmpUL.EncodeString(buf, 64));
 
-      const MDDEntry* Entry = Dict.FindUL(m_KeyStart);
+      const MDDEntry* Entry = Dict.FindULAnyVersion(m_KeyStart);
       fprintf(stream, "  len: %7qu (%s)\n", m_ValueLength, (Entry ? Entry->name : "Unknown"));
 
       if ( show_value && m_ValueLength < 1000 )
