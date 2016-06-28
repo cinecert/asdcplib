@@ -65,10 +65,10 @@ namespace ASDCP
 
 	  TLVReader();
 	  ASDCP_NO_COPY_CONSTRUCT(TLVReader);
-	  bool FindTL(const MDDEntry&);
 
 	public:
 	  TLVReader(const byte_t* p, ui32_t c, IPrimerLookup* = 0);
+	  bool FindTL(const MDDEntry&);
 	  Result_t ReadObject(const MDDEntry&, Kumu::IArchive*);
 	  Result_t ReadUi8(const MDDEntry&, ui8_t*);
 	  Result_t ReadUi16(const MDDEntry&, ui16_t*);

@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2011-2015, Robert Scheler, Heiko Sparenberg Fraunhofer IIS,
+Copyright (c) 2011-2016, Robert Scheler, Heiko Sparenberg Fraunhofer IIS,
 John Hurst
 
 All rights reserved.
@@ -353,7 +353,7 @@ AS_02::MXF::AS02IndexReader::Lookup(ui32_t frame_num, ASDCP::MXF::IndexTableSegm
 	{
 	  ui64_t start_pos = segment->IndexStartPosition;
 
-	  if ( segment->EditUnitByteCount > 0 )
+	  if ( segment->EditUnitByteCount > 0 ) // CBR
 	    {
 	      if ( m_PacketList->m_List.size() > 1 )
 		DefaultLogSink().Error("Unexpected multiple IndexTableSegment in CBR file\n");
@@ -365,13 +365,21 @@ AS_02::MXF::AS02IndexReader::Lookup(ui32_t frame_num, ASDCP::MXF::IndexTableSegm
 	      return RESULT_OK;
 	    }
 	  else if ( (ui64_t)frame_num >= start_pos
-		    && (ui64_t)frame_num < (start_pos + segment->IndexDuration) )
+		    && (ui64_t)frame_num < (start_pos + segment->IndexDuration) ) // VBR in segments
 	    {
 	      ui64_t tmp = frame_num - start_pos;
 	      assert(tmp <= 0xFFFFFFFFL);
-	      Entry = segment->IndexEntryArray[(ui32_t) tmp];
-	      Entry.StreamOffset = Entry.StreamOffset - segment->RtEntryOffset + segment->RtFileOffset;
-	      return RESULT_OK;
+
+	      if ( tmp < segment->IndexEntryArray.size() )
+		{
+		  Entry = segment->IndexEntryArray[(ui32_t) tmp];
+		  Entry.StreamOffset = Entry.StreamOffset - segment->RtEntryOffset + segment->RtFileOffset;
+		  return RESULT_OK;
+		}
+	      else
+		{
+		  DefaultLogSink().Error("Malformed index table segment, IndexDuration does not match entries.\n");
+		}
 	    }
 	}
     }

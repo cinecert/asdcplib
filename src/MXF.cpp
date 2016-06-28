@@ -1216,8 +1216,16 @@ ASDCP::MXF::OPAtomIndexFooter::Lookup(ui32_t frame_num, IndexTableSegment::Index
 	    {
 	      ui64_t tmp = frame_num - start_pos;
 	      assert(tmp <= 0xFFFFFFFFL);
-	      Entry = segment->IndexEntryArray[(ui32_t) tmp];
-	      return RESULT_OK;
+
+	      if ( tmp < segment->IndexEntryArray.size() )
+		{
+		  Entry = segment->IndexEntryArray[(ui32_t) tmp];
+		  return RESULT_OK;
+		}
+	      else
+		{
+		  DefaultLogSink().Error("Malformed index table segment, IndexDuration does not match entries.\n");
+		}
 	    }
 	}
     }
