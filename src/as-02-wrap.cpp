@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2011-2015, Robert Scheler, Heiko Sparenberg Fraunhofer IIS,
+Copyright (c) 2011-2016, Robert Scheler, Heiko Sparenberg Fraunhofer IIS,
 John Hurst
 
 All rights reserved.
@@ -46,15 +46,13 @@ using namespace ASDCP;
 
 const ui32_t FRAME_BUFFER_SIZE = 4 * Kumu::Megabyte;
 const ASDCP::Dictionary *g_dict = 0;
-
-
+ 
 const char*
 RationalToString(const ASDCP::Rational& r, char* buf, const ui32_t& len)
 {
   snprintf(buf, len, "%d/%d", r.Numerator, r.Denominator);
   return buf;
 }
-
 
 
 //------------------------------------------------------------------------------------------
@@ -107,7 +105,7 @@ banner(FILE* stream = stdout)
 {
   fprintf(stream, "\n\
 %s (asdcplib %s)\n\n\
-Copyright (c) 2011-2015, Robert Scheler, Heiko Sparenberg Fraunhofer IIS, John Hurst\n\n\
+Copyright (c) 2011-2016, Robert Scheler, Heiko Sparenberg Fraunhofer IIS, John Hurst\n\n\
 asdcplib may be copied only under the terms of the license found at\n\
 the top of every file in the asdcplib distribution kit.\n\n\
 Specify the -h (help) option for further information about %s\n\n",
@@ -125,6 +123,7 @@ USAGE: %s [-h|-help] [-V]\n\
             [-D <depth>] [-e|-E] [-i] [-j <key-id-string>] [-k <key-string>]\n\
             [-M] [-m <expr>] [-p <ul>] [-r <n>/<d>] [-R] [-s <seconds>]\n\
             [-t <min>] [-T <max>] [-u] [-v] [-W] [-x <int>] [-X <int>] [-Y]\n\
+            [-y <white-ref>[,<black-ref>[,<color-range>]]]\n\
             [-z|-Z] <input-file>+ <output-file>\n\n",
 	  PROGRAM_NAME, PROGRAM_NAME);
 
@@ -159,7 +158,12 @@ Options:\n\
   -W                - Read input file only, do not write source file\n\
   -x <int>          - Horizontal subsampling degree (default: 2)\n\
   -X <int>          - Vertical subsampling degree (default: 2)\n\
-  -Y                - Indicates YCbCr image essence (default: RGB)\n\
+  -Y                - Indicates YCbCr image essence (default: RGB), uses\n\
+                      default values for White Ref, Black Ref and Color Range,\n\
+                       940,64,897, indicating 10 bit standard Video Range\n\
+  -y <white-ref>[,<black-ref>[,<color-range>]]\n\
+                    - Same as -Y but White Ref, Black Ref and Color Range are\n\
+                      set from the given argument\n\
   -z                - Fail if j2c inputs have unequal parameters (default)\n\
   -Z                - Ignore unequal parameters in j2c inputs\n\
 \n\
@@ -212,12 +216,46 @@ public:
   ASDCP::Rational aspect_ratio;
   ui8_t field_dominance;
   ui32_t mxf_header_size;
+  ui32_t cdci_BlackRefLevel; 
+  ui32_t cdci_WhiteRefLevel;
+  ui32_t cdci_ColorRange;
 
   //new attributes for AS-02 support 
   AS_02::IndexStrategy_t index_strategy; //Shim parameter index_strategy_frame/clip
   ui32_t partition_space; //Shim parameter partition_spacing
 
   //
+  bool set_video_ref(const std::string& arg)
+  {
+    std::list<std::string> ref_tokens = Kumu::km_token_split(arg, ",");
+
+    switch ( ref_tokens.size() )
+      {
+      case 3:
+	cdci_ColorRange = Kumu::xabs(strtol(ref_tokens.back().c_str(), 0, 10));
+	ref_tokens.pop_back();
+      case 2:
+	cdci_BlackRefLevel = Kumu::xabs(strtol(ref_tokens.back().c_str(), 0, 10));
+	ref_tokens.pop_back();
+      case 1:
+	cdci_WhiteRefLevel = Kumu::xabs(strtol(ref_tokens.back().c_str(), 0, 10));
+	break;
+
+      default:
+	fprintf(stderr, "Expecting <white-ref>[,<black-ref>[,<color-range>]]\n");
+	return false;
+      }
+
+    if ( cdci_WhiteRefLevel > 65535 || cdci_BlackRefLevel > 65535 || cdci_ColorRange > 65535 )
+      {
+	fprintf(stderr, "Unexpected CDCI video referece levels.\n");
+	return false;
+      }
+
+    return true;
+  }
+
+
   CommandOptions(int argc, const char** argv) :
     error_flag(true), key_flag(false), key_id_flag(false), asset_id_flag(false),
     encrypt_header_flag(true), write_hmac(true), verbose_flag(false), fb_dump_size(0),
@@ -227,7 +265,7 @@ public:
     mca_config(g_dict), rgba_MaxRef(1023), rgba_MinRef(0),
     horizontal_subsampling(2), vertical_subsampling(2), component_depth(10),
     frame_layout(0), aspect_ratio(ASDCP::Rational(4,3)), field_dominance(0),
-    mxf_header_size(16384)
+    mxf_header_size(16384), cdci_WhiteRefLevel(940), cdci_BlackRefLevel(64), cdci_ColorRange(897)
   {
     memset(key_value, 0, KeyLen);
     memset(key_id_value, 0, UUIDlen);
@@ -279,7 +317,6 @@ public:
 		  fprintf(stderr, "Frame Buffer size: %u bytes.\n", fb_size);
 
 		break;
-
 	      case 'C':
 		TEST_EXTRA_ARG(i, 'C');
 		if ( ! channel_assignment.DecodeHex(argv[i]) )
@@ -413,6 +450,17 @@ public:
 
 	      case 'Y':
 		use_cdci_descriptor = true;
+		// default 10 bit video range YUV, ref levels already set
+		break;
+
+	      case 'y':
+		// Use values provded as argument, sharp tool, be careful
+		use_cdci_descriptor = true;
+		TEST_EXTRA_ARG(i, 'y');
+		if ( ! set_video_ref(argv[i]) )
+		  {
+		    return;
+		  }
 		break;
 
 	      case 'Z': j2c_pedantic = false; break;
@@ -524,6 +572,9 @@ write_JP2K_file(CommandOptions& Options)
 	      tmp_dscr->FrameLayout = Options.frame_layout;
 	      tmp_dscr->AspectRatio = Options.aspect_ratio;
 	      tmp_dscr->FieldDominance = Options.field_dominance;
+	      tmp_dscr->WhiteReflevel = Options.cdci_WhiteRefLevel;
+	      tmp_dscr->BlackRefLevel = Options.cdci_BlackRefLevel;
+	      tmp_dscr->ColorRange = Options.cdci_ColorRange;
 	      essence_descriptor = static_cast<ASDCP::MXF::FileDescriptor*>(tmp_dscr);
 	    }
 	}
