@@ -151,10 +151,15 @@ command-line utilities all respond to -h.
 
 Change History
 
-2016-06-29 - bug fixes, 2.5.15
 
-o Fixed a bug in the index reader that allowed an out-of-bounds vector index to be used
-o Modified the IndexEntry parser to ignore additional bytes belonging to slice values
+2016-08-11 - bug fixes, 2.5.15
+
+ o Modified as-02-wrap to pass WhiteRefLev, BlackRefLev and ColorRange
+    (contributed by Elmer Musser / Rod Bogart)
+ o Fixed a bug in the index reader that allowed an out-of-bounds vector index
+   to be used.
+ o Modified the IndexEntry parser to ignore additional bytes belonging to slice
+   values.
 
 2016-05-06 - bug fixes, 2.5.14
 
