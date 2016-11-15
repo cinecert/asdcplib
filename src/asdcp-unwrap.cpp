@@ -218,10 +218,10 @@ public:
 		duration = Kumu::xabs(strtol(argv[i], 0, 10));
 		break;
 
-          case 'e':
-            TEST_EXTRA_ARG(i, 'e');
-            extension = argv[i];
-            break;
+	      case 'e':
+		TEST_EXTRA_ARG(i, 'e');
+		extension = argv[i];
+		break;
 
 	      case 'f':
 		TEST_EXTRA_ARG(i, 'f');

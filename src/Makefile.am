@@ -143,6 +143,7 @@ libas02_la_SOURCES	= \
 	h__02_Writer.cpp \
 	AS_02_JP2K.cpp \
 	AS_02_PCM.cpp \
+	AS_02_AUX_DATA.cpp \
 	ST2052_TextParser.cpp \
 	AS_02_TimedText.cpp
 

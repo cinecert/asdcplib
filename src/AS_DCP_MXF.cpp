@@ -248,6 +248,10 @@ ASDCP::EssenceType(const std::string& filename, EssenceType_t& type)
 	    {
 	      type = ESS_AS02_TIMED_TEXT;
 	    }
+	  else if ( ASDCP_SUCCESS(TestHeader.GetMDObjectByType(OBJ_TYPE_ARGS(DCDataDescriptor))) )
+	    {
+	      type = ESS_DCDATA_UNKNOWN;
+	    }
 	}
       else
 	{
@@ -263,11 +267,11 @@ ASDCP::EssenceType(const std::string& filename, EssenceType_t& type)
 static bool
 string_is_xml(const ASDCP::FrameBuffer& buffer)
 {
-  std::string ns_prefix, type_name, namespace_name;
-  Kumu::AttributeList doc_attr_list;
-  return GetXMLDocType(buffer.RoData(), buffer.Size(),
-		       ns_prefix, type_name, namespace_name, doc_attr_list);
-}
+  return (strncmp((const char *)buffer.RoData(),             "<?xml", 5) == 0 ||
+          strncmp((const char *)buffer.RoData(), "\xEF\xBB\xBF<?xml", 8) == 0); // Allow BOM
+ }
+ 
+ //
 
 //
 ASDCP::Result_t

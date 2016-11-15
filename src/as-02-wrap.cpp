@@ -154,6 +154,7 @@ Options:\n\
   -t <min>          - Set RGB component minimum code value (default: 0)\n\
   -T <max>          - Set RGB component maximum code value (default: 1023)\n\
   -u                - Print UL catalog to stderr\n\
+  -U <UL>           - Set DataEssenceCoding UL value in an Aux Data file\n\
   -v                - Verbose, prints informative messages to stderr\n\
   -W                - Read input file only, do not write source file\n\
   -x <int>          - Horizontal subsampling degree (default: 2)\n\
@@ -223,6 +224,9 @@ public:
   //new attributes for AS-02 support 
   AS_02::IndexStrategy_t index_strategy; //Shim parameter index_strategy_frame/clip
   ui32_t partition_space; //Shim parameter partition_spacing
+
+  //
+  UL aux_data_coding;
 
   //
   bool set_video_ref(const std::string& arg)
@@ -434,6 +438,16 @@ public:
 		break;
 
 	      case 'u': show_ul_values_flag = true; break;
+
+	      case 'U':
+		TEST_EXTRA_ARG(i, 'U');
+		if ( ! aux_data_coding.DecodeHex(argv[i]) )
+		  {
+		    fprintf(stderr, "Error decoding UL value: %s\n", argv[i]);
+		    return;
+		  }
+		break;
+
 	      case 'V': version_flag = true; break;
 	      case 'v': verbose_flag = true; break;
 	      case 'W': no_write_flag = true; break;
@@ -958,6 +972,129 @@ write_timed_text_file(CommandOptions& Options)
   return result;
 }
 
+
+// Write one or more plaintext Aux Data bytestreams to a plaintext AS-02 file
+// Write one or more plaintext Aux Data bytestreams to a ciphertext AS-02 file
+//
+Result_t
+write_aux_data_file(CommandOptions& Options)
+{
+  AESEncContext*          Context = 0;
+  HMACContext*            HMAC = 0;
+  AS_02::AuxData::MXFWriter Writer;
+  DCData::FrameBuffer     FrameBuffer(Options.fb_size);
+  DCData::SequenceParser  Parser;
+  byte_t                  IV_buf[CBC_BLOCK_SIZE];
+  Kumu::FortunaRNG        RNG;
+
+  // set up essence parser
+  Result_t result = Parser.OpenRead(Options.filenames.front());
+
+  // set up MXF writer
+  if ( ASDCP_SUCCESS(result) )
+  {
+
+    if ( Options.verbose_flag )
+	{
+	  fprintf(stderr, "Aux Data\n");
+	  fprintf(stderr, "Frame Buffer size: %u\n", Options.fb_size);
+	}
+  }
+
+  if ( ASDCP_SUCCESS(result) && ! Options.no_write_flag )
+  {
+    WriterInfo Info = s_MyInfo;  // fill in your favorite identifiers here
+    if ( Options.asset_id_flag )
+      memcpy(Info.AssetUUID, Options.asset_id_value, UUIDlen);
+    else
+      Kumu::GenRandomUUID(Info.AssetUUID);
+
+    Info.LabelSetType = LS_MXF_SMPTE;
+
+      // configure encryption
+    if( Options.key_flag )
+	{
+	  Kumu::GenRandomUUID(Info.ContextID);
+	  Info.EncryptedEssence = true;
+
+	  if ( Options.key_id_flag )
+	    {
+	      memcpy(Info.CryptographicKeyID, Options.key_id_value, UUIDlen);
+	    }
+	  else
+	    {
+	      create_random_uuid(Info.CryptographicKeyID);
+	    }
+
+	  Context = new AESEncContext;
+	  result = Context->InitKey(Options.key_value);
+
+	  if ( ASDCP_SUCCESS(result) )
+	    result = Context->SetIVec(RNG.FillRandom(IV_buf, CBC_BLOCK_SIZE));
+
+	  if ( ASDCP_SUCCESS(result) && Options.write_hmac )
+      {
+        Info.UsesHMAC = true;
+        HMAC = new HMACContext;
+        result = HMAC->InitKey(Options.key_value, Info.LabelSetType);
+      }
+	}
+
+    if ( ASDCP_SUCCESS(result) )
+      {
+	ASDCP::MXF::InterchangeObject_list_t essence_sub_descriptor_list; // empty for now
+	ASDCP::MXF::DCDataDescriptor *essence_descriptor = new ASDCP::MXF::DCDataDescriptor(g_dict);
+	essence_descriptor->SampleRate = Options.edit_rate;
+	essence_descriptor->ContainerDuration = 0;
+	essence_descriptor->DataEssenceCoding = Options.aux_data_coding;
+	
+	result = Writer.OpenWrite(Options.out_file, Info, essence_descriptor,
+				  essence_sub_descriptor_list, Options.edit_rate);
+      }
+  }
+
+  if ( ASDCP_SUCCESS(result) )
+  {
+    ui32_t duration = 0;
+    result = Parser.Reset();
+
+    while ( ASDCP_SUCCESS(result) && duration++ < Options.duration )
+      {
+	result = Parser.ReadFrame(FrameBuffer);
+
+	if ( ASDCP_SUCCESS(result) )
+	  {
+	    if ( Options.verbose_flag )
+	      FrameBuffer.Dump(stderr, Options.fb_dump_size);
+
+	    if ( Options.encrypt_header_flag )
+	      FrameBuffer.PlaintextOffset(0);
+	  }
+
+	if ( ASDCP_SUCCESS(result) && ! Options.no_write_flag )
+	  {
+	    result = Writer.WriteFrame(FrameBuffer, Context, HMAC);
+
+	    // The Writer class will forward the last block of ciphertext
+	    // to the encryption context for use as the IV for the next
+	    // frame. If you want to use non-sequitur IV values, un-comment
+	    // the following  line of code.
+	    // if ( ASDCP_SUCCESS(result) && Options.key_flag )
+	    //   Context->SetIVec(RNG.FillRandom(IV_buf, CBC_BLOCK_SIZE));
+	  }
+      }
+
+    if ( result == RESULT_ENDOFFILE )
+      result = RESULT_OK;
+  }
+
+  if ( ASDCP_SUCCESS(result) && ! Options.no_write_flag )
+    result = Writer.Finalize();
+
+  return result;
+}
+
+
 //
 int
 main(int argc, const char** argv)
@@ -1009,8 +1146,20 @@ main(int argc, const char** argv)
 	  result = write_timed_text_file(Options);
 	  break;
 
+	case ESS_DCDATA_UNKNOWN:
+	  if ( ! Options.aux_data_coding.HasValue() )
+	    {
+	      fprintf(stderr, "Option \"-U <UL>\" is required for Aux Data essence.\n");
+	      return 3;
+	    }
+	  else
+	    {
+	      result = write_aux_data_file(Options);
+	    }
+	  break;
+
 	default:
-	  fprintf(stderr, "%s: Unknown file type, not ASDCP-compatible essence.\n",
+	  fprintf(stderr, "%s: Unknown file type, not AS-02-compatible essence.\n",
 		  Options.filenames.front().c_str());
 	  return 5;
 	}
