@@ -151,6 +151,10 @@ command-line utilities all respond to -h.
 
 Change History
 
+2016-11-15 - AS-02 Aux Data, 2.3.16a (pre-release)
+
+ o Added support for proposed Aux Data wrapping for AS-02/IMF
+
 
 2016-08-11 - bug fixes, 2.5.15
 
