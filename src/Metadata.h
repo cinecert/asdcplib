@@ -502,6 +502,7 @@ namespace ASDCP
           optional_property<ui32_t > ActiveHeight;
           optional_property<ui32_t > ActiveXOffset;
           optional_property<ui32_t > ActiveYOffset;
+          optional_property<LineMapPair > VideoLineMap;
 
       GenericPictureEssenceDescriptor(const Dictionary*& d);
       GenericPictureEssenceDescriptor(const GenericPictureEssenceDescriptor& rhs);
@@ -875,6 +876,14 @@ namespace ASDCP
           optional_property<UTF16String > MCATagName;
           optional_property<ui32_t > MCAChannelID;
           optional_property<ISO8String > RFC5646SpokenLanguage;
+          optional_property<UTF16String > MCATitle;
+          optional_property<UTF16String > MCATitleVersion;
+          optional_property<UTF16String > MCATitleSubVersion;
+          optional_property<UTF16String > MCAEpisode;
+          optional_property<UTF16String > MCAPartitionKind;
+          optional_property<UTF16String > MCAPartitionNumber;
+          optional_property<UTF16String > MCAAudioContentKind;
+          optional_property<UTF16String > MCAAudioElementKind;
 
       MCALabelSubDescriptor(const Dictionary*& d);
       MCALabelSubDescriptor(const MCALabelSubDescriptor& rhs);
@@ -1047,6 +1056,29 @@ namespace ASDCP
       const PHDRMetadataTrackSubDescriptor& operator=(const PHDRMetadataTrackSubDescriptor& rhs) { Copy(rhs); return *this; }
       virtual void Copy(const PHDRMetadataTrackSubDescriptor& rhs);
       virtual const char* HasName() { return "PHDRMetadataTrackSubDescriptor"; }
+      virtual Result_t InitFromTLVSet(TLVReader& TLVSet);
+      virtual Result_t WriteToTLVSet(TLVWriter& TLVSet);
+      virtual void     Dump(FILE* = 0);
+      virtual Result_t InitFromBuffer(const byte_t* p, ui32_t l);
+      virtual Result_t WriteToBuffer(ASDCP::FrameBuffer&);
+	};
+
+      //
+      class IMFDynamicMetadataDescriptor : public GenericDataEssenceDescriptor
+	{
+	  IMFDynamicMetadataDescriptor();
+
+	public:
+	  const Dictionary*& m_Dict;
+          ui32_t GlobalPayloadSID;
+
+      IMFDynamicMetadataDescriptor(const Dictionary*& d);
+      IMFDynamicMetadataDescriptor(const IMFDynamicMetadataDescriptor& rhs);
+      virtual ~IMFDynamicMetadataDescriptor() {}
+
+      const IMFDynamicMetadataDescriptor& operator=(const IMFDynamicMetadataDescriptor& rhs) { Copy(rhs); return *this; }
+      virtual void Copy(const IMFDynamicMetadataDescriptor& rhs);
+      virtual const char* HasName() { return "IMFDynamicMetadataDescriptor"; }
       virtual Result_t InitFromTLVSet(TLVReader& TLVSet);
       virtual Result_t WriteToTLVSet(TLVWriter& TLVSet);
       virtual void     Dump(FILE* = 0);

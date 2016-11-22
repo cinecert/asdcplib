@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2003-2015, John Hurst
+Copyright (c) 2003-2016, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -266,6 +266,9 @@ public:
     if ( picture_rate == 96 ) return EditRate_96;
     if ( picture_rate == 100 ) return EditRate_100;
     if ( picture_rate == 120 ) return EditRate_120;
+    if ( picture_rate == 192 ) return EditRate_192;
+    if ( picture_rate == 200 ) return EditRate_200;
+    if ( picture_rate == 240 ) return EditRate_240;
     return EditRate_24;
   }
 
@@ -286,6 +289,9 @@ public:
     if ( picture_rate == 96 ) return "96";
     if ( picture_rate == 100 ) return "100";
     if ( picture_rate == 120 ) return "120";
+    if ( picture_rate == 192 ) return "192";
+    if ( picture_rate == 200 ) return "200";
+    if ( picture_rate == 240 ) return "240";
     return "24";
   }
 
@@ -617,7 +623,8 @@ bool
 check_phfr_params(CommandOptions& Options, JP2K::PictureDescriptor& PDesc)
 {
   Rational rate = Options.PictureRate();
-  if ( rate != EditRate_96 && rate != EditRate_100 && rate != EditRate_120 )
+  if ( rate != EditRate_96 && rate != EditRate_100 && rate != EditRate_120
+       && rate != EditRate_192 && rate != EditRate_200 && rate != EditRate_240 )
     return true;
 
   if ( PDesc.StoredWidth > 2048 )

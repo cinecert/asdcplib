@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2004-2014, John Hurst
+Copyright (c) 2004-2016, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -397,7 +397,10 @@ lh__Reader::OpenRead(const std::string& filename, EssenceType_t type)
 		   || ( m_EditRate == EditRate_30 && m_SampleRate == EditRate_60 )
 		   || ( m_EditRate == EditRate_48 && m_SampleRate == EditRate_96 )
 		   || ( m_EditRate == EditRate_50 && m_SampleRate == EditRate_100 )
-		   || ( m_EditRate == EditRate_60 && m_SampleRate == EditRate_120 ) )
+		   || ( m_EditRate == EditRate_60 && m_SampleRate == EditRate_120 )
+		   || ( m_EditRate == EditRate_96 && m_SampleRate == EditRate_192 )
+		   || ( m_EditRate == EditRate_100 && m_SampleRate == EditRate_200 )
+		   || ( m_EditRate == EditRate_120 && m_SampleRate == EditRate_240 ) )
 		{
 		  DefaultLogSink().Debug("File may contain JPEG Interop stereoscopic images.\n");
 		  return RESULT_SFORMAT;
@@ -453,6 +456,30 @@ lh__Reader::OpenRead(const std::string& filename, EssenceType_t type)
 	      if ( m_SampleRate != EditRate_120 )
 		{
 		  DefaultLogSink().Error("EditRate and SampleRate not correct for 60/120 stereoscopic essence.\n");
+		  return RESULT_FORMAT;
+		}
+	    }
+	  else if ( m_EditRate == EditRate_96 )
+	    {
+	      if ( m_SampleRate != EditRate_192 )
+		{
+		  DefaultLogSink().Error("EditRate and SampleRate not correct for 96/192 stereoscopic essence.\n");
+		  return RESULT_FORMAT;
+		}
+	    }
+	  else if ( m_EditRate == EditRate_100 )
+	    {
+	      if ( m_SampleRate != EditRate_200 )
+		{
+		  DefaultLogSink().Error("EditRate and SampleRate not correct for 100/200 stereoscopic essence.\n");
+		  return RESULT_FORMAT;
+		}
+	    }
+	  else if ( m_EditRate == EditRate_120 )
+	    {
+	      if ( m_SampleRate != EditRate_240 )
+		{
+		  DefaultLogSink().Error("EditRate and SampleRate not correct for 120/240 stereoscopic essence.\n");
 		  return RESULT_FORMAT;
 		}
 	    }
@@ -1329,6 +1356,15 @@ ASDCP::JP2K::MXFSWriter::OpenWrite(const std::string& filename, const WriterInfo
 
       else if ( PDesc.EditRate == ASDCP::EditRate_60 )
 	TmpPDesc.EditRate = ASDCP::EditRate_120;
+
+      else if ( PDesc.EditRate == ASDCP::EditRate_96 )
+	TmpPDesc.EditRate = ASDCP::EditRate_192;
+
+      else if ( PDesc.EditRate == ASDCP::EditRate_100 )
+	TmpPDesc.EditRate = ASDCP::EditRate_200;
+
+      else if ( PDesc.EditRate == ASDCP::EditRate_120 )
+	TmpPDesc.EditRate = ASDCP::EditRate_240;
 
       result = m_Writer->SetSourceStream(TmpPDesc, JP2K_S_PACKAGE_LABEL, PDesc.EditRate);
     }

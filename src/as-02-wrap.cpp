@@ -141,9 +141,13 @@ Options:\n\
   -e                - Encrypt JP2K headers (default)\n\
   -E                - Do not encrypt JP2K headers\n\
   -F (0|1)          - Set field dominance for interlaced image (default: 0)\n\
+  -g <filename>     - Write global metadata from the named file.\n\
   -i                - Indicates input essence is interlaced fields (forces -Y)\n\
   -j <key-id-str>   - Write key ID instead of creating a random value\n\
   -k <key-string>   - Use key for ciphertext operations\n\
+  -l <first>,<second>\n\
+                    - Integer values that set the VideoLineMap when creating\n\
+                      interlaced YCbCr files\n\
   -M                - Do not create HMAC values when writing\n\
   -m <expr>         - Write MCA labels using <expr>.  Example:\n\
                         51(L,R,C,LFE,Ls,Rs,),HI,VIN\n\
@@ -199,7 +203,7 @@ public:
   bool   key_id_flag;    // true if a key ID was given
   byte_t key_id_value[UUIDlen];// value of given key ID (when key_id_flag is true)
   byte_t asset_id_value[UUIDlen];// value of asset ID (when asset_id_flag is true)
-  std::string out_file; //
+  std::string global_metadata_filename, out_file; //
   bool show_ul_values_flag;    /// if true, dump the UL table before going tp work.
   Kumu::PathList_t filenames;  // list of filenames to be processed
 
@@ -227,6 +231,23 @@ public:
 
   //
   UL aux_data_coding;
+  MXF::LineMapPair line_map;
+
+  //
+  bool set_video_line_map(const std::string& arg)
+  {
+    const char* sep_str = strrchr(arg.c_str(), ',');
+
+    if ( sep_str == 0 )
+      {
+	fprintf(stderr, "Expecting <first>,<second>\n");
+	return false;
+      }
+
+    line_map.First = Kumu::xabs(strtol(arg.c_str(), 0, 10));
+    line_map.Second = Kumu::xabs(strtol(sep_str+1, 0, 10));
+    return true;
+  }
 
   //
   bool set_video_ref(const std::string& arg)
@@ -269,7 +290,8 @@ public:
     mca_config(g_dict), rgba_MaxRef(1023), rgba_MinRef(0),
     horizontal_subsampling(2), vertical_subsampling(2), component_depth(10),
     frame_layout(0), aspect_ratio(ASDCP::Rational(4,3)), field_dominance(0),
-    mxf_header_size(16384), cdci_WhiteRefLevel(940), cdci_BlackRefLevel(64), cdci_ColorRange(897)
+    mxf_header_size(16384), cdci_WhiteRefLevel(940), cdci_BlackRefLevel(64), cdci_ColorRange(897),
+    line_map(0,0)
   {
     memset(key_value, 0, KeyLen);
     memset(key_id_value, 0, UUIDlen);
@@ -353,6 +375,11 @@ public:
 		  }
 		break;
 
+	      case 'g':
+		TEST_EXTRA_ARG(i, 'g');
+		global_metadata_filename = argv[i];
+		break;
+
 	      case 'h': help_flag = true; break;
 
 	      case 'i':
@@ -387,6 +414,14 @@ public:
 		      return;
 		    }
 		}
+		break;
+
+	      case 'l':
+		TEST_EXTRA_ARG(i, 'y');
+		if ( ! set_video_line_map(argv[i]) )
+		  {
+		    return;
+		  }
 		break;
 
 	      case 'M': write_hmac = false; break;
@@ -589,6 +624,7 @@ write_JP2K_file(CommandOptions& Options)
 	      tmp_dscr->WhiteReflevel = Options.cdci_WhiteRefLevel;
 	      tmp_dscr->BlackRefLevel = Options.cdci_BlackRefLevel;
 	      tmp_dscr->ColorRange = Options.cdci_ColorRange;
+	      tmp_dscr->VideoLineMap = Options.line_map;
 	      essence_descriptor = static_cast<ASDCP::MXF::FileDescriptor*>(tmp_dscr);
 	    }
 	}
@@ -987,6 +1023,15 @@ write_aux_data_file(CommandOptions& Options)
   byte_t                  IV_buf[CBC_BLOCK_SIZE];
   Kumu::FortunaRNG        RNG;
 
+  if ( ! Options.global_metadata_filename.empty() )
+    {
+      if ( ! Kumu::PathIsFile(Options.global_metadata_filename) )
+	{
+	  fprintf(stderr, "No such file or filename: \"%s\".\n", Options.global_metadata_filename.c_str());
+	  return RESULT_PARAM;
+	}
+    }
+
   // set up essence parser
   Result_t result = Parser.OpenRead(Options.filenames.front());
 
@@ -1042,14 +1087,7 @@ write_aux_data_file(CommandOptions& Options)
 
     if ( ASDCP_SUCCESS(result) )
       {
-	ASDCP::MXF::InterchangeObject_list_t essence_sub_descriptor_list; // empty for now
-	ASDCP::MXF::DCDataDescriptor *essence_descriptor = new ASDCP::MXF::DCDataDescriptor(g_dict);
-	essence_descriptor->SampleRate = Options.edit_rate;
-	essence_descriptor->ContainerDuration = 0;
-	essence_descriptor->DataEssenceCoding = Options.aux_data_coding;
-	
-	result = Writer.OpenWrite(Options.out_file, Info, essence_descriptor,
-				  essence_sub_descriptor_list, Options.edit_rate);
+	result = Writer.OpenWrite(Options.out_file, Info, Options.aux_data_coding, Options.edit_rate);
       }
   }
 
@@ -1089,7 +1127,39 @@ write_aux_data_file(CommandOptions& Options)
   }
 
   if ( ASDCP_SUCCESS(result) && ! Options.no_write_flag )
-    result = Writer.Finalize();
+    {
+      if ( Options.global_metadata_filename.empty() )
+	{
+	  result = Writer.Finalize();
+	}
+      else
+	{
+	  ASDCP::FrameBuffer global_metadata;
+	  ui32_t file_size = Kumu::FileSize(Options.global_metadata_filename);
+	  result = global_metadata.Capacity(file_size);
+
+	  if ( ASDCP_SUCCESS(result) )
+	    {
+	      ui32_t read_count = 0;
+	      Kumu::FileReader Reader;
+
+	      result = Reader.OpenRead(Options.global_metadata_filename);
+
+	      if ( ASDCP_SUCCESS(result) )
+		result = Reader.Read(global_metadata.Data(), file_size, &read_count);
+    
+	      if ( ASDCP_SUCCESS(result) )
+		{
+		  if ( file_size != read_count) 
+		    return RESULT_READFAIL;
+
+		  global_metadata.Size(read_count);
+		}
+	    }
+  
+	  result = Writer.Finalize(global_metadata);
+	}
+    }
 
   return result;
 }

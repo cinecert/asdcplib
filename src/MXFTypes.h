@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2005-2015, John Hurst
+Copyright (c) 2005-2016, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -348,6 +348,61 @@ namespace ASDCP
 	  inline virtual bool Archive(Kumu::MemIOWriter* Writer) const {
 	    if ( ! Writer->WriteUi32BE((ui32_t)Numerator) ) return false;
 	    if ( ! Writer->WriteUi32BE((ui32_t)Denominator) ) return false;
+	    return true;
+	  }
+	};
+
+      //
+      class LineMapPair : public Kumu::IArchive
+	{
+	public:
+	  ui32_t First;
+	  ui32_t Second;
+
+	  LineMapPair() {}
+	  ~LineMapPair() {}
+
+	LineMapPair(const ui32_t& first, const ui32_t& second) : IArchive() {
+	    First = first;
+	    Second = second;
+	  }
+
+	  LineMapPair(const LineMapPair& rhs) : IArchive() {
+	    First = rhs.First;
+	    Second = rhs.Second;
+	  }
+
+	  const LineMapPair& operator=(const LineMapPair& rhs) {
+	    First = rhs.First;
+	    Second = rhs.Second;
+	    return *this;
+	  }
+
+	  //
+	  inline const char* EncodeString(char* str_buf, ui32_t buf_len) const {
+	    snprintf(str_buf, buf_len, "%d,%d", First, Second);
+	    return str_buf;
+	  }
+
+	  inline virtual bool Unarchive(Kumu::MemIOReader* Reader) {
+	    ui32_t n;
+	    if ( ! Reader->ReadUi32BE(&n) ) return false;
+	    if ( n != 4 ) return false;
+	    if ( ! Reader->ReadUi32BE(&n) ) return false;
+	    if ( n != 2 ) return false;
+	    if ( ! Reader->ReadUi32BE((ui32_t*)&First) ) return false;
+	    if ( ! Reader->ReadUi32BE((ui32_t*)&Second) ) return false;
+	    return true;
+	  }
+
+	  inline virtual bool HasValue() const { return true; }
+	  inline virtual ui32_t ArchiveLength() const { return sizeof(ui32_t)*4; }
+
+	  inline virtual bool Archive(Kumu::MemIOWriter* Writer) const {
+	    if ( ! Writer->WriteUi32BE(4UL) ) return false;
+	    if ( ! Writer->WriteUi32BE(2UL) ) return false;
+	    if ( ! Writer->WriteUi32BE((ui32_t)First) ) return false;
+	    if ( ! Writer->WriteUi32BE((ui32_t)Second) ) return false;
 	    return true;
 	  }
 	};

@@ -306,6 +306,9 @@ public:
     if ( picture_rate == 96 ) return EditRate_96;
     if ( picture_rate == 100 ) return EditRate_100;
     if ( picture_rate == 120 ) return EditRate_120;
+    if ( picture_rate == 192 ) return EditRate_192;
+    if ( picture_rate == 200 ) return EditRate_200;
+    if ( picture_rate == 240 ) return EditRate_240;
     return EditRate_24;
   }
 
@@ -326,6 +329,9 @@ public:
     if ( picture_rate == 96 ) return "96";
     if ( picture_rate == 100 ) return "100";
     if ( picture_rate == 120 ) return "120";
+    if ( picture_rate == 192 ) return "192";
+    if ( picture_rate == 200 ) return "200";
+    if ( picture_rate == 240 ) return "240";
     return "24";
   }
 

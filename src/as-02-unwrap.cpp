@@ -99,6 +99,7 @@ Options:\n\
   -d <duration>     - Number of frames to process, default all\n\
   -e <extension>    - Extension to use for aux data files. default \"bin\"\n\
   -f <start-frame>  - Starting frame number, default 0\n\
+  -g <filename>     - Extract global metadata to the named file.\n\
   -h | -help        - Show help\n\
   -k <key-string>   - Use key for ciphertext operations\n\
   -m                - verify HMAC values when reading\n\
@@ -146,7 +147,7 @@ public:
   PCM::ChannelFormat_t channel_fmt; // audio channel arrangement
   const char* input_filename;
   const char* extension;
-  std::string prefix_buffer;
+  std::string global_metadata_filename, prefix_buffer;
 
   //
   CommandOptions(int argc, const char** argv) :
@@ -201,6 +202,11 @@ public:
 	      case 'f':
 		TEST_EXTRA_ARG(i, 'f');
 		start_frame = Kumu::xabs(strtol(argv[i], 0, 10));
+		break;
+
+	      case 'g':
+		TEST_EXTRA_ARG(i, 'g');
+		global_metadata_filename = argv[i];
 		break;
 
 	      case 'h': help_flag = true; break;
@@ -586,6 +592,87 @@ read_PCM_file(CommandOptions& Options)
 }
 
 
+//------------------------------------------------------------------------------------------
+// TimedText essence
+
+// Read one or more timed text streams from a plaintext AS-02 file
+//
+Result_t
+read_timed_text_file(CommandOptions& Options)
+{
+  AESDecContext*     Context = 0;
+  HMACContext*       HMAC = 0;
+  AS_02::TimedText::MXFReader     Reader;
+  TimedText::FrameBuffer   FrameBuffer(Options.fb_size);
+  //ASDCP::TimedText::FrameBuffer   FrameBuffer(Options.fb_size);
+  AS_02::TimedText::TimedTextDescriptor TDesc;
+  ASDCP::MXF::TimedTextDescriptor *tt_descriptor = 0;
+
+  Result_t result = Reader.OpenRead(Options.input_filename);
+
+  if ( ASDCP_SUCCESS(result) )
+    {
+      result = Reader.OP1aHeader().GetMDObjectByType(DefaultCompositeDict().ul(MDD_TimedTextDescriptor),
+						     reinterpret_cast<MXF::InterchangeObject**>(&tt_descriptor));
+    if ( Options.verbose_flag ) {
+    	tt_descriptor->Dump();
+    }
+
+
+  if ( ASDCP_FAILURE(result) )
+    return result;
+
+  std::string XMLDoc;
+  std::string out_path = Kumu::PathDirname(Options.file_prefix);
+  ui32_t write_count;
+  char buf[64];
+  TimedText::ResourceList_t::const_iterator ri;
+
+  result = Reader.ReadTimedTextResource(XMLDoc);
+
+  if ( ASDCP_SUCCESS(result) )
+    {
+      Reader.FillTimedTextDescriptor(TDesc);
+      FrameBuffer.Capacity(Options.fb_size);
+
+      if ( Options.verbose_flag )
+	TimedText::DescriptorDump(TDesc);
+    }
+
+  if ( ASDCP_SUCCESS(result) && ( ! Options.no_write_flag ) )
+    {
+      Kumu::FileWriter Writer;
+      result = Writer.OpenWrite(Options.file_prefix);
+
+      if ( ASDCP_SUCCESS(result) )
+	result = Writer.Write(reinterpret_cast<const byte_t*>(XMLDoc.c_str()), XMLDoc.size(), &write_count);
+    }
+
+  for ( ri = TDesc.ResourceList.begin() ; ri != TDesc.ResourceList.end() && ASDCP_SUCCESS(result); ri++ )
+    {
+      result = Reader.ReadAncillaryResource(ri->ResourceID, FrameBuffer, Context, HMAC);
+
+      if ( ASDCP_SUCCESS(result) && ( ! Options.no_write_flag ) )
+	{
+	  Kumu::FileWriter Writer;
+	  if (out_path != "") {
+		  result = Writer.OpenWrite(Kumu::PathJoin(out_path, Kumu::UUID(ri->ResourceID).EncodeHex(buf, 64)).c_str());
+	  } else {
+		  // Workaround for a bug in Kumu::PathJoin
+		  result = Writer.OpenWrite(Kumu::UUID(ri->ResourceID).EncodeHex(buf, 64));
+	  }
+
+	  if ( ASDCP_SUCCESS(result) )
+	    result = Writer.Write(FrameBuffer.RoData(), FrameBuffer.Size(), &write_count);
+
+	      if ( Options.verbose_flag )
+		FrameBuffer.Dump(stderr, Options.fb_dump_size);
+	}
+    }
+    }
+  return result;
+}
+
 // Read one or more plaintext DCData bytestreams from a plaintext ASDCP file
 // Read one or more plaintext DCData bytestreams from a ciphertext ASDCP file
 // Read one or more ciphertext DCData byestreams from a ciphertext ASDCP file
@@ -599,7 +686,28 @@ read_aux_data_file(CommandOptions& Options)
   DCData::FrameBuffer FrameBuffer(Options.fb_size);
   ui32_t             frame_count = 0;
 
-  Result_t result = Reader.OpenRead(Options.input_filename);
+  ASDCP::FrameBuffer global_metadata;
+  Result_t result = Reader.OpenRead(Options.input_filename, global_metadata);
+
+  if ( ASDCP_SUCCESS(result)
+       && global_metadata.Size()
+       && ! Options.global_metadata_filename.empty() )
+    {
+      ui32_t write_count = 0;
+      Kumu::FileWriter Writer;
+
+      result = Writer.OpenWrite(Options.global_metadata_filename);
+
+      if ( ASDCP_SUCCESS(result) )
+	{
+	  result = Writer.Write(global_metadata.RoData(), global_metadata.Size(), &write_count);
+	}
+
+      if ( ASDCP_SUCCESS(result) && global_metadata.Size() != write_count) 
+	{
+	  return RESULT_WRITEFAIL;
+	}
+    }
 
   if ( ASDCP_SUCCESS(result) )
     {
@@ -703,6 +811,10 @@ main(int argc, const char** argv)
 	case ESS_AS02_PCM_24b_48k:
 	case ESS_AS02_PCM_24b_96k:
 	  result = read_PCM_file(Options);
+	  break;
+
+	case ESS_AS02_TIMED_TEXT:
+	  result = read_timed_text_file(Options);
 	  break;
 
         case ESS_DCDATA_UNKNOWN:

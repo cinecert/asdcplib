@@ -511,8 +511,7 @@ namespace AS_02
       // the operation cannot be completed or if nonsensical data is discovered
       // in the essence descriptor.
       Result_t OpenWrite(const std::string& filename, const ASDCP::WriterInfo&,
-			 ASDCP::MXF::FileDescriptor* essence_descriptor,
-			 ASDCP::MXF::InterchangeObject_list_t& essence_sub_descriptor_list,
+			 const ASDCP::UL& data_essence_coding,
 			 const ASDCP::Rational& edit_rate, const ui32_t& header_size = 16384,
 			 const IndexStrategy_t& strategy = IS_FOLLOW, const ui32_t& partition_space = 10);
 
@@ -522,8 +521,11 @@ namespace AS_02
       // error occurs.
       Result_t WriteFrame(const ASDCP::FrameBuffer&, ASDCP::AESEncContext* = 0, ASDCP::HMACContext* = 0);
 
-      // Closes the MXF file, writing the index and revised header.
+      // Closes the MXF file, writing the index and revised header. No global metadata block is written.
       Result_t Finalize();
+
+      // Closes the MXF file, writing the global metadata block and then final index and revised header.
+      Result_t Finalize(const ASDCP::FrameBuffer& global_metadata);
     };
 
     //
@@ -546,6 +548,11 @@ namespace AS_02
       // Open the file for reading. The file must exist. Returns error if the
       // operation cannot be completed.
       Result_t OpenRead(const std::string& filename) const;
+
+      // Open the file for reading. The file must exist. Returns error if the
+      // operation cannot be completed. If global metadata is available it will
+      // be placed into the buffer object passed as the second argument.
+      Result_t OpenRead(const std::string& filename, ASDCP::FrameBuffer& global_metadata) const;
 
       // Returns RESULT_INIT if the file is not open.
       Result_t Close() const;

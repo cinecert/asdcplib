@@ -187,15 +187,18 @@ ASDCP::ATMOS::MXFReader::h__Reader::OpenRead(const std::string& filename)
 
   // check for sample/frame rate sanity
   if ( ASDCP_SUCCESS(result)
-                && m_DDesc.EditRate != EditRate_24
-                && m_DDesc.EditRate != EditRate_25
-                && m_DDesc.EditRate != EditRate_30
-                && m_DDesc.EditRate != EditRate_48
-                && m_DDesc.EditRate != EditRate_50
-                && m_DDesc.EditRate != EditRate_60
-                && m_DDesc.EditRate != EditRate_96
-                && m_DDesc.EditRate != EditRate_100
-       && m_DDesc.EditRate != EditRate_120 )
+       && m_DDesc.EditRate != EditRate_24
+       && m_DDesc.EditRate != EditRate_25
+       && m_DDesc.EditRate != EditRate_30
+       && m_DDesc.EditRate != EditRate_48
+       && m_DDesc.EditRate != EditRate_50
+       && m_DDesc.EditRate != EditRate_60
+       && m_DDesc.EditRate != EditRate_96
+       && m_DDesc.EditRate != EditRate_100
+       && m_DDesc.EditRate != EditRate_120
+       && m_DDesc.EditRate != EditRate_192
+       && m_DDesc.EditRate != EditRate_200
+       && m_DDesc.EditRate != EditRate_240 )
   {
     DefaultLogSink().Error("DC Data file EditRate is not a supported value: %d/%d\n", // lu
                            m_DDesc.EditRate.Numerator, m_DDesc.EditRate.Denominator);
@@ -503,7 +506,10 @@ ASDCP::ATMOS::MXFWriter::h__Writer::SetSourceStream(ASDCP::DCData::DCDataDescrip
        && DDesc.EditRate != EditRate_60
        && DDesc.EditRate != EditRate_96
        && DDesc.EditRate != EditRate_100
-       && DDesc.EditRate != EditRate_120 )
+       && DDesc.EditRate != EditRate_120
+       && DDesc.EditRate != EditRate_192
+       && DDesc.EditRate != EditRate_200
+       && DDesc.EditRate != EditRate_240 )
   {
     DefaultLogSink().Error("DCDataDescriptor.EditRate is not a supported value: %d/%d\n",
                            DDesc.EditRate.Numerator, DDesc.EditRate.Denominator);

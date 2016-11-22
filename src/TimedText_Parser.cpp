@@ -249,7 +249,10 @@ ASDCP::TimedText::DCSubtitleParser::h__SubtitleParser::OpenRead()
        && m_TDesc.EditRate != EditRate_60
        && m_TDesc.EditRate != EditRate_96
        && m_TDesc.EditRate != EditRate_100
-       && m_TDesc.EditRate != EditRate_120 )
+       && m_TDesc.EditRate != EditRate_120
+       && m_TDesc.EditRate != EditRate_192
+       && m_TDesc.EditRate != EditRate_200
+       && m_TDesc.EditRate != EditRate_240 )
     {
       DefaultLogSink(). Error("Unexpected EditRate: %d/%d\n",
 			      m_TDesc.EditRate.Numerator, m_TDesc.EditRate.Denominator);

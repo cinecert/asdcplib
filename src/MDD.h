@@ -419,6 +419,20 @@ namespace ASDCP {
 	MDD_PrivateDCDataWrappingFrame, // 381
 	MDD_PrivateDCDataEssence,  // 382
 	MDD_PrivateDCDataDescriptor, // 383
+
+	MDD_MCALabelSubDescriptor_MCATitle, // 384
+	MDD_MCALabelSubDescriptor_MCATitleVersion, // 385
+	MDD_MCALabelSubDescriptor_MCATitleSubVersion, // 386
+	MDD_MCALabelSubDescriptor_MCAEpisode, // 387
+	MDD_MCALabelSubDescriptor_MCAPartitionKind, // 388
+	MDD_MCALabelSubDescriptor_MCAPartitionNumber, // 389
+	MDD_MCALabelSubDescriptor_MCAAudioContentKind, // 390
+	MDD_MCALabelSubDescriptor_MCAAudioElementKind, // 391
+
+	MDD_IMFDynamicMetadataWrappingFrame, // 392
+	MDD_IMFDynamicMetadataEssence, // 393
+	MDD_IMFDynamicMetadataDescriptor, // 394
+	MDD_IMFDynamicMetadataDescriptor_GlobalPayloadSID, // 395
         MDD_Max
     }; // enum MDD_t
 

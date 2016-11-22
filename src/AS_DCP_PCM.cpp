@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2004-2013, John Hurst
+Copyright (c) 2004-2016, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -293,6 +293,9 @@ ASDCP::PCM::MXFReader::h__Reader::OpenRead(const std::string& filename)
        && m_ADesc.EditRate != EditRate_96
        && m_ADesc.EditRate != EditRate_100
        && m_ADesc.EditRate != EditRate_120
+       && m_ADesc.EditRate != EditRate_192
+       && m_ADesc.EditRate != EditRate_200
+       && m_ADesc.EditRate != EditRate_240
        && m_ADesc.EditRate != EditRate_16
        && m_ADesc.EditRate != EditRate_18
        && m_ADesc.EditRate != EditRate_20
@@ -567,6 +570,9 @@ ASDCP::PCM::MXFWriter::h__Writer::SetSourceStream(const AudioDescriptor& ADesc)
        && ADesc.EditRate != EditRate_96
        && ADesc.EditRate != EditRate_100
        && ADesc.EditRate != EditRate_120
+       && ADesc.EditRate != EditRate_192
+       && ADesc.EditRate != EditRate_200
+       && ADesc.EditRate != EditRate_240
        && ADesc.EditRate != EditRate_16
        && ADesc.EditRate != EditRate_18
        && ADesc.EditRate != EditRate_20

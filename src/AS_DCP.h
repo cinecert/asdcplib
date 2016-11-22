@@ -302,6 +302,9 @@ namespace ASDCP {
   const Rational EditRate_96 = Rational(96,1);
   const Rational EditRate_100 = Rational(100,1);
   const Rational EditRate_120 = Rational(120,1);
+  const Rational EditRate_192 = Rational(192,1);
+  const Rational EditRate_200 = Rational(200,1);
+  const Rational EditRate_240 = Rational(240,1);
 
   // Archival frame rates, see ST 428-21
   // These rates are new and not supported by all systems. Do not assume that

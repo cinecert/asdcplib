@@ -399,7 +399,7 @@ AS_02::h__AS02Reader::~h__AS02Reader() {}
 
 // AS-DCP method of opening an MXF file for read
 Result_t
-AS_02::h__AS02Reader::OpenMXFRead(const char* filename)
+AS_02::h__AS02Reader::OpenMXFRead(const std::string& filename)
 {
   bool has_header_essence = false;
   Result_t result = ASDCP::MXF::TrackFileReader<OP1aHeader, AS_02::MXF::AS02IndexReader>::OpenMXFRead(filename);

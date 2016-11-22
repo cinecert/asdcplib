@@ -63,7 +63,7 @@ namespace AS_02
       h__AS02Reader(const ASDCP::Dictionary&);
       virtual ~h__AS02Reader();
 
-      Result_t OpenMXFRead(const char* filename);
+      Result_t OpenMXFRead(const std::string& filename);
 
       // USE FRAME WRAPPING...
       Result_t ReadEKLVFrame(ui32_t FrameNum, ASDCP::FrameBuffer& FrameBuf,
