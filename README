@@ -151,9 +151,26 @@ command-line utilities all respond to -h.
 
 Change History
 
-2016-11-15 - AS-02 Aux Data, 2.3.16a (pre-release)
+
+======
+NOTE: pre-release changes to be merged in final release version
+
+2016-11-22 - AS-02 Aux Data, 2.5.17b (pre-release)
+
+ o Added optional Generic Partition to IMF Aux Data prototype, used to carry global metadata
+ o Added support for 192, 200 and 240 fps images, includes 96, 100 and 120 fpe stereo
+ o Fixed raw essence detector for IMF Aux Data files
+ o Added missing MCA properties to MCALabelSubDescriptor (contributed by Ruppel)
+ o New MXF data type: LineMapPair
+ o Added default 0,0 VideoLineMap value when wrapping CDCI with as-02-wrap
+ o Added VideoLineMap property to GenericPictureEssenceDescriptor
+ o Added timed text unwrap support to as-02-unwrap (contributed by Ruppel)
+
+2016-11-15 - AS-02 Aux Data, 2.5.17a (pre-release)
 
  o Added support for proposed Aux Data wrapping for AS-02/IMF
+
+======
 
 
 2016-08-11 - bug fixes, 2.5.15

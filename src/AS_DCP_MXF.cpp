@@ -248,7 +248,7 @@ ASDCP::EssenceType(const std::string& filename, EssenceType_t& type)
 	    {
 	      type = ESS_AS02_TIMED_TEXT;
 	    }
-	  else if ( ASDCP_SUCCESS(TestHeader.GetMDObjectByType(OBJ_TYPE_ARGS(IMFDynamicMetadataDescriptor))) )
+	  else if ( ASDCP_SUCCESS(TestHeader.GetMDObjectByType(OBJ_TYPE_ARGS(PIMFDynamicMetadataDescriptor))) )
 	    {
 	      type = ESS_DCDATA_UNKNOWN;
 	    }

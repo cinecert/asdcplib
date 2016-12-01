@@ -387,9 +387,9 @@ namespace ASDCP
 	  inline virtual bool Unarchive(Kumu::MemIOReader* Reader) {
 	    ui32_t n;
 	    if ( ! Reader->ReadUi32BE(&n) ) return false;
-	    if ( n != 4 ) return false;
-	    if ( ! Reader->ReadUi32BE(&n) ) return false;
 	    if ( n != 2 ) return false;
+	    if ( ! Reader->ReadUi32BE(&n) ) return false;
+	    if ( n != 4 ) return false;
 	    if ( ! Reader->ReadUi32BE((ui32_t*)&First) ) return false;
 	    if ( ! Reader->ReadUi32BE((ui32_t*)&Second) ) return false;
 	    return true;
@@ -399,8 +399,8 @@ namespace ASDCP
 	  inline virtual ui32_t ArchiveLength() const { return sizeof(ui32_t)*4; }
 
 	  inline virtual bool Archive(Kumu::MemIOWriter* Writer) const {
-	    if ( ! Writer->WriteUi32BE(4UL) ) return false;
 	    if ( ! Writer->WriteUi32BE(2UL) ) return false;
+	    if ( ! Writer->WriteUi32BE(4UL) ) return false;
 	    if ( ! Writer->WriteUi32BE((ui32_t)First) ) return false;
 	    if ( ! Writer->WriteUi32BE((ui32_t)Second) ) return false;
 	    return true;

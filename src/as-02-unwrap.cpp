@@ -97,9 +97,7 @@ Options:\n\
   -b <buffer-size>  - Specify size in bytes of picture frame buffer\n\
                       Defaults to 4,194,304 (4MB)\n\
   -d <duration>     - Number of frames to process, default all\n\
-  -e <extension>    - Extension to use for aux data files. default \"bin\"\n\
   -f <start-frame>  - Starting frame number, default 0\n\
-  -g <filename>     - Extract global metadata to the named file.\n\
   -h | -help        - Show help\n\
   -k <key-string>   - Use key for ciphertext operations\n\
   -m                - verify HMAC values when reading\n\
@@ -147,7 +145,7 @@ public:
   PCM::ChannelFormat_t channel_fmt; // audio channel arrangement
   const char* input_filename;
   const char* extension;
-  std::string global_metadata_filename, prefix_buffer;
+  std::string prefix_buffer;
 
   //
   CommandOptions(int argc, const char** argv) :
@@ -156,7 +154,7 @@ public:
     version_flag(false), help_flag(false), number_width(6),
     start_frame(0), duration(0xffffffff), duration_flag(false), j2c_pedantic(true),
     picture_rate(24), fb_size(FRAME_BUFFER_SIZE), file_prefix(0),
-    input_filename(0), extension("bin")
+    input_filename(0)
   {
     memset(key_value, 0, KeyLen);
     memset(key_id_value, 0, UUIDlen);
@@ -202,11 +200,6 @@ public:
 	      case 'f':
 		TEST_EXTRA_ARG(i, 'f');
 		start_frame = Kumu::xabs(strtol(argv[i], 0, 10));
-		break;
-
-	      case 'g':
-		TEST_EXTRA_ARG(i, 'g');
-		global_metadata_filename = argv[i];
 		break;
 
 	      case 'h': help_flag = true; break;
@@ -673,108 +666,6 @@ read_timed_text_file(CommandOptions& Options)
   return result;
 }
 
-// Read one or more plaintext DCData bytestreams from a plaintext ASDCP file
-// Read one or more plaintext DCData bytestreams from a ciphertext ASDCP file
-// Read one or more ciphertext DCData byestreams from a ciphertext ASDCP file
-//
-Result_t
-read_aux_data_file(CommandOptions& Options)
-{
-  AESDecContext*     Context = 0;
-  HMACContext*       HMAC = 0;
-  AS_02::AuxData::MXFReader Reader;
-  DCData::FrameBuffer FrameBuffer(Options.fb_size);
-  ui32_t             frame_count = 0;
-
-  ASDCP::FrameBuffer global_metadata;
-  Result_t result = Reader.OpenRead(Options.input_filename, global_metadata);
-
-  if ( ASDCP_SUCCESS(result)
-       && global_metadata.Size()
-       && ! Options.global_metadata_filename.empty() )
-    {
-      ui32_t write_count = 0;
-      Kumu::FileWriter Writer;
-
-      result = Writer.OpenWrite(Options.global_metadata_filename);
-
-      if ( ASDCP_SUCCESS(result) )
-	{
-	  result = Writer.Write(global_metadata.RoData(), global_metadata.Size(), &write_count);
-	}
-
-      if ( ASDCP_SUCCESS(result) && global_metadata.Size() != write_count) 
-	{
-	  return RESULT_WRITEFAIL;
-	}
-    }
-
-  if ( ASDCP_SUCCESS(result) )
-    {
-      frame_count = Reader.AS02IndexReader().GetDuration();
-
-      if ( Options.verbose_flag )
-	{
-	  fprintf(stderr, "Frame Buffer size: %u\n", Options.fb_size);
-	}
-    }
-
-  if ( ASDCP_SUCCESS(result) && Options.key_flag )
-    {
-      Context = new AESDecContext;
-      result = Context->InitKey(Options.key_value);
-
-      if ( ASDCP_SUCCESS(result) && Options.read_hmac )
-	{
-	  WriterInfo Info;
-	  Reader.FillWriterInfo(Info);
-
-	  if ( Info.UsesHMAC )
-	    {
-	      HMAC = new HMACContext;
-	      result = HMAC->InitKey(Options.key_value, Info.LabelSetType);
-	    }
-	  else
-	    {
-	      fputs("File does not contain HMAC values, ignoring -m option.\n", stderr);
-	    }
-	}
-    }
-
-  ui32_t last_frame = Options.start_frame + ( Options.duration ? Options.duration : frame_count);
-  if ( last_frame > frame_count )
-    last_frame = frame_count;
-
-  char name_format[64];
-  snprintf(name_format,  64, "%%s%%0%du.%s", Options.number_width, Options.extension);
-
-  for ( ui32_t i = Options.start_frame; ASDCP_SUCCESS(result) && i < last_frame; i++ )
-    {
-      result = Reader.ReadFrame(i, FrameBuffer, Context, HMAC);
-
-      if ( ASDCP_SUCCESS(result) )
-	{
-	  if ( ! Options.no_write_flag )
-	    {
-	  Kumu::FileWriter OutFile;
-	  char filename[256];
-	  ui32_t write_count;
-	  snprintf(filename, 256, name_format, Options.file_prefix, i);
-	  result = OutFile.OpenWrite(filename);
-
-	  if ( ASDCP_SUCCESS(result) )
-	    result = OutFile.Write(FrameBuffer.Data(), FrameBuffer.Size(), &write_count);
-        }
-
-	  if ( Options.verbose_flag )
-	    FrameBuffer.Dump(stderr, Options.fb_dump_size);
-	}
-    }
-
-  return result;
-}
-
-
 //
 int
 main(int argc, const char** argv)
@@ -816,10 +707,6 @@ main(int argc, const char** argv)
 	case ESS_AS02_TIMED_TEXT:
 	  result = read_timed_text_file(Options);
 	  break;
-
-        case ESS_DCDATA_UNKNOWN:
-          result = read_aux_data_file(Options);
-          break;
 
 	default:
 	  fprintf(stderr, "%s: Unknown file type, not AS-02 essence.\n", Options.input_filename);

@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2011-2014, John Hurst
+Copyright (c) 2011-2016, John Hurst
 
 All rights reserved.
 
@@ -86,6 +86,15 @@ public:
   }
 
 //
+static void
+create_random_uuid(byte_t* uuidbuf)
+{
+  Kumu::UUID tmp_id;
+  GenRandomValue(tmp_id);
+  memcpy(uuidbuf, tmp_id.Value(), tmp_id.Size());
+}
+
+//
 void
 banner(FILE* stream = stdout)
 {
@@ -126,6 +135,7 @@ Options:\n\
   -e                - Encrypt JP2K headers (default)\n\
   -E                - Do not encrypt JP2K headers\n\
   -F (0|1)          - Set field dominance for interlaced image (default: 0)\n\
+  -g <filename>     - Write global metadata from the named PIDM file.\n\
   -i                - Indicates input essence is interlaced fields (forces -Y)\n\
   -j <key-id-str>   - Write key ID instead of creating a random value\n\
   -k <key-string>   - Use key for ciphertext operations\n\
@@ -139,6 +149,7 @@ Options:\n\
   -t <min>          - Set RGB component minimum code value (default: 0)\n\
   -T <max>          - Set RGB component maximum code value (default: 1023)\n\
   -u                - Print UL catalog to stderr\n\
+  -U <UL>           - Set DataEssenceCoding UL value in an Aux Data file\n\
   -v                - Verbose, prints informative messages to stderr\n\
   -W                - Read input file only, do not write source file\n\
   -x <int>          - Horizontal subsampling degree (default: 2)\n\
@@ -197,7 +208,9 @@ public:
   AS_02::IndexStrategy_t index_strategy; //Shim parameter index_strategy_frame/clip
   ui32_t partition_space; //Shim parameter partition_spacing
 
-  std::string PHDR_master_metadata; //
+  std::string PHDR_master_metadata;
+  UL aux_data_coding;
+  std::string global_metadata_filename;
 
   //
   CommandOptions(int argc, const char** argv) :
@@ -283,6 +296,11 @@ public:
 		    fprintf(stderr, "Field dominance value must be \"0\" or \"1\"\n");
 		    return;
 		  }
+		break;
+
+	      case 'g':
+		TEST_EXTRA_ARG(i, 'g');
+		global_metadata_filename = argv[i];
 		break;
 
 	      case 'h': help_flag = true; break;
@@ -371,6 +389,16 @@ public:
 		break;
 
 	      case 'u': show_ul_values_flag = true; break;
+
+	      case 'U':
+		TEST_EXTRA_ARG(i, 'U');
+		if ( ! aux_data_coding.DecodeHex(argv[i]) )
+		  {
+		    fprintf(stderr, "Error decoding UL value: %s\n", argv[i]);
+		    return;
+		  }
+		break;
+
 	      case 'V': version_flag = true; break;
 	      case 'v': verbose_flag = true; break;
 	      case 'W': no_write_flag = true; break;
@@ -603,6 +631,163 @@ write_JP2K_file(CommandOptions& Options)
   return result;
 }
 
+
+
+// Write one or more plaintext Aux Data bytestreams to a plaintext AS-02 file
+// Write one or more plaintext Aux Data bytestreams to a ciphertext AS-02 file
+//
+Result_t
+write_aux_data_file(CommandOptions& Options)
+{
+  AESEncContext*          Context = 0;
+  HMACContext*            HMAC = 0;
+  AS_02::PIDM::MXFWriter Writer;
+  DCData::FrameBuffer     FrameBuffer(Options.fb_size);
+  DCData::SequenceParser  Parser;
+  byte_t                  IV_buf[CBC_BLOCK_SIZE];
+  Kumu::FortunaRNG        RNG;
+
+  if ( ! Options.global_metadata_filename.empty() )
+    {
+      if ( ! Kumu::PathIsFile(Options.global_metadata_filename) )
+	{
+	  fprintf(stderr, "No such file or filename: \"%s\".\n", Options.global_metadata_filename.c_str());
+	  return RESULT_PARAM;
+	}
+    }
+
+  // set up essence parser
+  Result_t result = Parser.OpenRead(Options.filenames.front());
+
+  // set up MXF writer
+  if ( ASDCP_SUCCESS(result) )
+  {
+
+    if ( Options.verbose_flag )
+	{
+	  fprintf(stderr, "Aux Data\n");
+	  fprintf(stderr, "Frame Buffer size: %u\n", Options.fb_size);
+	}
+  }
+
+  if ( ASDCP_SUCCESS(result) && ! Options.no_write_flag )
+  {
+    WriterInfo Info = s_MyInfo;  // fill in your favorite identifiers here
+    if ( Options.asset_id_flag )
+      memcpy(Info.AssetUUID, Options.asset_id_value, UUIDlen);
+    else
+      Kumu::GenRandomUUID(Info.AssetUUID);
+
+    Info.LabelSetType = LS_MXF_SMPTE;
+
+      // configure encryption
+    if( Options.key_flag )
+	{
+	  Kumu::GenRandomUUID(Info.ContextID);
+	  Info.EncryptedEssence = true;
+
+	  if ( Options.key_id_flag )
+	    {
+	      memcpy(Info.CryptographicKeyID, Options.key_id_value, UUIDlen);
+	    }
+	  else
+	    {
+	      create_random_uuid(Info.CryptographicKeyID);
+	    }
+
+	  Context = new AESEncContext;
+	  result = Context->InitKey(Options.key_value);
+
+	  if ( ASDCP_SUCCESS(result) )
+	    result = Context->SetIVec(RNG.FillRandom(IV_buf, CBC_BLOCK_SIZE));
+
+	  if ( ASDCP_SUCCESS(result) && Options.write_hmac )
+      {
+        Info.UsesHMAC = true;
+        HMAC = new HMACContext;
+        result = HMAC->InitKey(Options.key_value, Info.LabelSetType);
+      }
+	}
+
+    if ( ASDCP_SUCCESS(result) )
+      {
+	result = Writer.OpenWrite(Options.out_file, Info, Options.aux_data_coding, Options.edit_rate);
+      }
+  }
+
+  if ( ASDCP_SUCCESS(result) )
+  {
+    ui32_t duration = 0;
+    result = Parser.Reset();
+
+    while ( ASDCP_SUCCESS(result) && duration++ < Options.duration )
+      {
+	result = Parser.ReadFrame(FrameBuffer);
+
+	if ( ASDCP_SUCCESS(result) )
+	  {
+	    if ( Options.verbose_flag )
+	      FrameBuffer.Dump(stderr, Options.fb_dump_size);
+
+	    if ( Options.encrypt_header_flag )
+	      FrameBuffer.PlaintextOffset(0);
+	  }
+
+	if ( ASDCP_SUCCESS(result) && ! Options.no_write_flag )
+	  {
+	    result = Writer.WriteFrame(FrameBuffer, Context, HMAC);
+
+	    // The Writer class will forward the last block of ciphertext
+	    // to the encryption context for use as the IV for the next
+	    // frame. If you want to use non-sequitur IV values, un-comment
+	    // the following  line of code.
+	    // if ( ASDCP_SUCCESS(result) && Options.key_flag )
+	    //   Context->SetIVec(RNG.FillRandom(IV_buf, CBC_BLOCK_SIZE));
+	  }
+      }
+
+    if ( result == RESULT_ENDOFFILE )
+      result = RESULT_OK;
+  }
+
+  if ( ASDCP_SUCCESS(result) && ! Options.no_write_flag )
+    {
+      if ( Options.global_metadata_filename.empty() )
+	{
+	  result = Writer.Finalize();
+	}
+      else
+	{
+	  ASDCP::FrameBuffer global_metadata;
+	  ui32_t file_size = Kumu::FileSize(Options.global_metadata_filename);
+	  result = global_metadata.Capacity(file_size);
+
+	  if ( ASDCP_SUCCESS(result) )
+	    {
+	      ui32_t read_count = 0;
+	      Kumu::FileReader Reader;
+
+	      result = Reader.OpenRead(Options.global_metadata_filename);
+
+	      if ( ASDCP_SUCCESS(result) )
+		result = Reader.Read(global_metadata.Data(), file_size, &read_count);
+    
+	      if ( ASDCP_SUCCESS(result) )
+		{
+		  if ( file_size != read_count) 
+		    return RESULT_READFAIL;
+
+		  global_metadata.Size(read_count);
+		}
+	    }
+  
+	  result = Writer.Finalize(global_metadata);
+	}
+    }
+
+  return result;
+}
+
 //
 int
 main(int argc, const char** argv)
@@ -643,6 +828,18 @@ main(int argc, const char** argv)
 	{
 	case ESS_JPEG_2000:
 	  result = write_JP2K_file(Options);
+	  break;
+
+	case ESS_DCDATA_UNKNOWN:
+	  if ( ! Options.aux_data_coding.HasValue() )
+	    {
+	      fprintf(stderr, "Option \"-U <UL>\" is required for Aux Data essence.\n");
+	      return 3;
+	    }
+	  else
+	    {
+	      result = write_aux_data_file(Options);
+	    }
 	  break;
 
 	default:

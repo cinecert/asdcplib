@@ -78,7 +78,7 @@ static InterchangeObject* DCDataDescriptor_Factory(const Dictionary*& Dict) { re
 static InterchangeObject* PrivateDCDataDescriptor_Factory(const Dictionary*& Dict) { return new PrivateDCDataDescriptor(Dict); }
 static InterchangeObject* DolbyAtmosSubDescriptor_Factory(const Dictionary*& Dict) { return new DolbyAtmosSubDescriptor(Dict); }
 static InterchangeObject* PHDRMetadataTrackSubDescriptor_Factory(const Dictionary*& Dict) { return new PHDRMetadataTrackSubDescriptor(Dict); }
-static InterchangeObject* IMFDynamicMetadataDescriptor_Factory(const Dictionary*& Dict) { return new IMFDynamicMetadataDescriptor(Dict); }
+static InterchangeObject* PIMFDynamicMetadataDescriptor_Factory(const Dictionary*& Dict) { return new PIMFDynamicMetadataDescriptor(Dict); }
 
 
 void
@@ -123,7 +123,7 @@ ASDCP::MXF::Metadata_InitTypes(const Dictionary*& Dict)
   SetObjectFactory(Dict->ul(MDD_PrivateDCDataDescriptor), PrivateDCDataDescriptor_Factory);
   SetObjectFactory(Dict->ul(MDD_DolbyAtmosSubDescriptor), DolbyAtmosSubDescriptor_Factory);
   SetObjectFactory(Dict->ul(MDD_PHDRMetadataTrackSubDescriptor), PHDRMetadataTrackSubDescriptor_Factory);
-  SetObjectFactory(Dict->ul(MDD_IMFDynamicMetadataDescriptor), IMFDynamicMetadataDescriptor_Factory);
+  SetObjectFactory(Dict->ul(MDD_PIMFDynamicMetadataDescriptor), PIMFDynamicMetadataDescriptor_Factory);
 }
 
 //------------------------------------------------------------------------------------------
@@ -1947,6 +1947,7 @@ RGBAEssenceDescriptor::InitFromTLVSet(TLVReader& TLVSet)
     result = TLVSet.ReadUi8(OBJ_READ_ARGS_OPT(RGBAEssenceDescriptor, ScanningDirection));
     ScanningDirection.set_has_value( result == RESULT_OK );
   }
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(RGBAEssenceDescriptor, PixelLayout));
   return result;
 }
 
@@ -1961,6 +1962,7 @@ RGBAEssenceDescriptor::WriteToTLVSet(TLVWriter& TLVSet)
   if ( ASDCP_SUCCESS(result)  && ! AlphaMinRef.empty() ) result = TLVSet.WriteUi32(OBJ_WRITE_ARGS_OPT(RGBAEssenceDescriptor, AlphaMinRef));
   if ( ASDCP_SUCCESS(result)  && ! AlphaMaxRef.empty() ) result = TLVSet.WriteUi32(OBJ_WRITE_ARGS_OPT(RGBAEssenceDescriptor, AlphaMaxRef));
   if ( ASDCP_SUCCESS(result)  && ! ScanningDirection.empty() ) result = TLVSet.WriteUi8(OBJ_WRITE_ARGS_OPT(RGBAEssenceDescriptor, ScanningDirection));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(RGBAEssenceDescriptor, PixelLayout));
   return result;
 }
 
@@ -1974,6 +1976,7 @@ RGBAEssenceDescriptor::Copy(const RGBAEssenceDescriptor& rhs)
   AlphaMinRef = rhs.AlphaMinRef;
   AlphaMaxRef = rhs.AlphaMaxRef;
   ScanningDirection = rhs.ScanningDirection;
+  PixelLayout = rhs.PixelLayout;
 }
 
 //
@@ -2002,6 +2005,7 @@ RGBAEssenceDescriptor::Dump(FILE* stream)
   if ( ! ScanningDirection.empty() ) {
     fprintf(stream, "  %22s = %d\n",  "ScanningDirection", ScanningDirection.get());
   }
+  fprintf(stream, "  %22s = %s\n",  "PixelLayout", PixelLayout.EncodeString(identbuf, IdentBufferLen));
 }
 
 //
@@ -3931,47 +3935,47 @@ PHDRMetadataTrackSubDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 }
 
 //------------------------------------------------------------------------------------------
-// IMFDynamicMetadataDescriptor
+// PIMFDynamicMetadataDescriptor
 
 //
 
-IMFDynamicMetadataDescriptor::IMFDynamicMetadataDescriptor(const Dictionary*& d) : GenericDataEssenceDescriptor(d), m_Dict(d), GlobalPayloadSID(0)
+PIMFDynamicMetadataDescriptor::PIMFDynamicMetadataDescriptor(const Dictionary*& d) : GenericDataEssenceDescriptor(d), m_Dict(d), GlobalPayloadSID(0)
 {
   assert(m_Dict);
-  m_UL = m_Dict->ul(MDD_IMFDynamicMetadataDescriptor);
+  m_UL = m_Dict->ul(MDD_PIMFDynamicMetadataDescriptor);
 }
 
-IMFDynamicMetadataDescriptor::IMFDynamicMetadataDescriptor(const IMFDynamicMetadataDescriptor& rhs) : GenericDataEssenceDescriptor(rhs.m_Dict), m_Dict(rhs.m_Dict)
+PIMFDynamicMetadataDescriptor::PIMFDynamicMetadataDescriptor(const PIMFDynamicMetadataDescriptor& rhs) : GenericDataEssenceDescriptor(rhs.m_Dict), m_Dict(rhs.m_Dict)
 {
   assert(m_Dict);
-  m_UL = m_Dict->ul(MDD_IMFDynamicMetadataDescriptor);
+  m_UL = m_Dict->ul(MDD_PIMFDynamicMetadataDescriptor);
   Copy(rhs);
 }
 
 
 //
 ASDCP::Result_t
-IMFDynamicMetadataDescriptor::InitFromTLVSet(TLVReader& TLVSet)
+PIMFDynamicMetadataDescriptor::InitFromTLVSet(TLVReader& TLVSet)
 {
   assert(m_Dict);
   Result_t result = GenericDataEssenceDescriptor::InitFromTLVSet(TLVSet);
-  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadUi32(OBJ_READ_ARGS(IMFDynamicMetadataDescriptor, GlobalPayloadSID));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadUi32(OBJ_READ_ARGS(PIMFDynamicMetadataDescriptor, GlobalPayloadSID));
   return result;
 }
 
 //
 ASDCP::Result_t
-IMFDynamicMetadataDescriptor::WriteToTLVSet(TLVWriter& TLVSet)
+PIMFDynamicMetadataDescriptor::WriteToTLVSet(TLVWriter& TLVSet)
 {
   assert(m_Dict);
   Result_t result = GenericDataEssenceDescriptor::WriteToTLVSet(TLVSet);
-  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi32(OBJ_WRITE_ARGS(IMFDynamicMetadataDescriptor, GlobalPayloadSID));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi32(OBJ_WRITE_ARGS(PIMFDynamicMetadataDescriptor, GlobalPayloadSID));
   return result;
 }
 
 //
 void
-IMFDynamicMetadataDescriptor::Copy(const IMFDynamicMetadataDescriptor& rhs)
+PIMFDynamicMetadataDescriptor::Copy(const PIMFDynamicMetadataDescriptor& rhs)
 {
   GenericDataEssenceDescriptor::Copy(rhs);
   GlobalPayloadSID = rhs.GlobalPayloadSID;
@@ -3979,7 +3983,7 @@ IMFDynamicMetadataDescriptor::Copy(const IMFDynamicMetadataDescriptor& rhs)
 
 //
 void
-IMFDynamicMetadataDescriptor::Dump(FILE* stream)
+PIMFDynamicMetadataDescriptor::Dump(FILE* stream)
 {
   char identbuf[IdentBufferLen];
   *identbuf = 0;
@@ -3993,14 +3997,14 @@ IMFDynamicMetadataDescriptor::Dump(FILE* stream)
 
 //
 ASDCP::Result_t
-IMFDynamicMetadataDescriptor::InitFromBuffer(const byte_t* p, ui32_t l)
+PIMFDynamicMetadataDescriptor::InitFromBuffer(const byte_t* p, ui32_t l)
 {
   return InterchangeObject::InitFromBuffer(p, l);
 }
 
 //
 ASDCP::Result_t
-IMFDynamicMetadataDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
+PIMFDynamicMetadataDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 {
   return InterchangeObject::WriteToBuffer(Buffer);
 }

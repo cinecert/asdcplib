@@ -530,7 +530,7 @@ AS_02::PHDR::MXFWriter::h__Writer::SetSourceStream(const std::string& label, con
 
   if ( KM_SUCCESS(result) )
     {
-      result = WritePHDRHeader(label, UL(m_Dict->ul(MDD_JPEG_2000WrappingFrame)),
+      result = WritePHDRHeader(label, UL(m_Dict->ul(MDD_MXFGCFUFrameWrappedPictureElement)),
 			       PICT_DEF_LABEL, UL(m_EssenceUL), UL(m_Dict->ul(MDD_PictureDataDef)),
 			       edit_rate, derive_timecode_rate_from_edit_rate(edit_rate));
 

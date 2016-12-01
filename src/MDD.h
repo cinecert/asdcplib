@@ -46,7 +46,7 @@ namespace ASDCP {
         MDD_DescriptiveMetaDataDef,  // 8
         MDD_WAVWrappingFrame,  // 9
         MDD_MPEG2_VESWrappingFrame,  // 10
-        MDD_JPEG_2000WrappingFrame,  // 11
+        MDD_MXFGCFUFrameWrappedPictureElement,  // 11
         MDD_JPEG2000Essence,  // 12
         MDD_MPEG2Essence,  // 13
         MDD_MXFInterop_CryptEssence,  // 14
@@ -419,7 +419,6 @@ namespace ASDCP {
 	MDD_PrivateDCDataWrappingFrame, // 381
 	MDD_PrivateDCDataEssence,  // 382
 	MDD_PrivateDCDataDescriptor, // 383
-
 	MDD_MCALabelSubDescriptor_MCATitle, // 384
 	MDD_MCALabelSubDescriptor_MCATitleVersion, // 385
 	MDD_MCALabelSubDescriptor_MCATitleSubVersion, // 386
@@ -428,11 +427,15 @@ namespace ASDCP {
 	MDD_MCALabelSubDescriptor_MCAPartitionNumber, // 389
 	MDD_MCALabelSubDescriptor_MCAAudioContentKind, // 390
 	MDD_MCALabelSubDescriptor_MCAAudioElementKind, // 391
+	MDD_PIMFDynamicMetadataWrappingFrame, // 392
+	MDD_PIMFDynamicMetadataEssence, // 393
+	MDD_PIMFDynamicMetadataDescriptor, // 394
+	MDD_PIMFDynamicMetadataDescriptor_GlobalPayloadSID, // 395
 
-	MDD_IMFDynamicMetadataWrappingFrame, // 392
-	MDD_IMFDynamicMetadataEssence, // 393
-	MDD_IMFDynamicMetadataDescriptor, // 394
-	MDD_IMFDynamicMetadataDescriptor_GlobalPayloadSID, // 395
+	//
+	MDD_MXFGCI1FrameWrappedPictureElement, // 396
+	MDD_MXFGCP1FrameWrappedPictureElement, // 397
+
         MDD_Max
     }; // enum MDD_t
 

@@ -350,7 +350,18 @@ AS_02::JP2K::MXFWriter::h__Writer::SetSourceStream(const std::string& label, con
 
   if ( KM_SUCCESS(result) )
     {
-      result = WriteAS02Header(label, UL(m_Dict->ul(MDD_JPEG_2000WrappingFrame)),
+      UL wrapping_label = UL(m_Dict->ul(MDD_MXFGCP1FrameWrappedPictureElement));
+
+      CDCIEssenceDescriptor *cdci_descriptor = dynamic_cast<CDCIEssenceDescriptor*>(m_EssenceDescriptor);
+      if ( cdci_descriptor )
+	{
+	  if ( cdci_descriptor->FrameLayout ) // 0 == progressive, 1 == interlace
+	    {
+	      wrapping_label = UL(m_Dict->ul(MDD_MXFGCI1FrameWrappedPictureElement));
+	    }
+	}
+
+      result = WriteAS02Header(label, wrapping_label,
 			       PICT_DEF_LABEL, UL(m_EssenceUL), UL(m_Dict->ul(MDD_PictureDataDef)),
 			       edit_rate, derive_timecode_rate_from_edit_rate(edit_rate));
 

@@ -530,6 +530,7 @@ namespace ASDCP
           optional_property<ui32_t > AlphaMinRef;
           optional_property<ui32_t > AlphaMaxRef;
           optional_property<ui8_t > ScanningDirection;
+          RGBALayout PixelLayout;
 
       RGBAEssenceDescriptor(const Dictionary*& d);
       RGBAEssenceDescriptor(const RGBAEssenceDescriptor& rhs);
@@ -1064,21 +1065,21 @@ namespace ASDCP
 	};
 
       //
-      class IMFDynamicMetadataDescriptor : public GenericDataEssenceDescriptor
+      class PIMFDynamicMetadataDescriptor : public GenericDataEssenceDescriptor
 	{
-	  IMFDynamicMetadataDescriptor();
+	  PIMFDynamicMetadataDescriptor();
 
 	public:
 	  const Dictionary*& m_Dict;
           ui32_t GlobalPayloadSID;
 
-      IMFDynamicMetadataDescriptor(const Dictionary*& d);
-      IMFDynamicMetadataDescriptor(const IMFDynamicMetadataDescriptor& rhs);
-      virtual ~IMFDynamicMetadataDescriptor() {}
+      PIMFDynamicMetadataDescriptor(const Dictionary*& d);
+      PIMFDynamicMetadataDescriptor(const PIMFDynamicMetadataDescriptor& rhs);
+      virtual ~PIMFDynamicMetadataDescriptor() {}
 
-      const IMFDynamicMetadataDescriptor& operator=(const IMFDynamicMetadataDescriptor& rhs) { Copy(rhs); return *this; }
-      virtual void Copy(const IMFDynamicMetadataDescriptor& rhs);
-      virtual const char* HasName() { return "IMFDynamicMetadataDescriptor"; }
+      const PIMFDynamicMetadataDescriptor& operator=(const PIMFDynamicMetadataDescriptor& rhs) { Copy(rhs); return *this; }
+      virtual void Copy(const PIMFDynamicMetadataDescriptor& rhs);
+      virtual const char* HasName() { return "PIMFDynamicMetadataDescriptor"; }
       virtual Result_t InitFromTLVSet(TLVReader& TLVSet);
       virtual Result_t WriteToTLVSet(TLVWriter& TLVSet);
       virtual void     Dump(FILE* = 0);

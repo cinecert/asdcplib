@@ -143,7 +143,6 @@ libas02_la_SOURCES	= \
 	h__02_Writer.cpp \
 	AS_02_JP2K.cpp \
 	AS_02_PCM.cpp \
-	AS_02_AUX_DATA.cpp \
 	ST2052_TextParser.cpp \
 	AS_02_TimedText.cpp
 
@@ -158,7 +157,8 @@ if USE_PHDR
 libphdr_la_SOURCES	= \
 	AS_02_PHDR.h \
 	PHDR_Sequence_Parser.cpp \
-	AS_02_PHDR.cpp
+	AS_02_PHDR.cpp \
+	AS_02_PIDM.cpp
 
 libphdr_la_LDFLAGS = -release @VERSION@
 libphdr_la_LIBADD = libasdcp.la libkumu.la
@@ -338,7 +338,7 @@ TESTS_ENVIRONMENT = BUILD_DIR="." TEST_FILES=../tests TEST_FILE_PREFIX=DCPd1-M1 
 	JP2K_PREFIX=MM_2k_XYZ_
 
 # files to include in the distribution that automake doesn't automatically include
-EXTRA_DIST = fips-186-test-harness.pl $(TESTS) ../README.cmake ../CMakeLists.txt  CMakeLists.txt 
+EXTRA_DIST = fips-186-test-harness.pl $(TESTS) ../README.cmake ../CMakeLists.txt  CMakeLists.txt dirent_win.h
 if !FREEDIST
 if DEV_HEADERS
 EXTRA_DIST += $(nodist_libasdcp_la_SOURCES) $(nodist_tt_xform_SOURCES)

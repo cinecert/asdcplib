@@ -15,7 +15,7 @@ endif(NOT WIN32)
 set(kumu_src KM_fileio.cpp KM_log.cpp KM_prng.cpp KM_util.cpp KM_xml.cpp KM_tai.cpp)
 
 # header
-set(kumu_src ${kumu_src} KM_fileio.h KM_log.h KM_prng.h KM_util.h KM_xml.h KM_tai.h KM_error.h KM_memio.h KM_mutex.h KM_platform.h)
+set(kumu_src ${kumu_src} KM_fileio.h KM_log.h KM_prng.h KM_util.h KM_xml.h KM_tai.h KM_error.h KM_memio.h KM_mutex.h KM_platform.h dirent_win.h)
 
 # ----------libasdcp----------
 # source

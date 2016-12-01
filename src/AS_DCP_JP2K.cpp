@@ -1039,7 +1039,7 @@ lh__Writer::SetSourceStream(const PictureDescriptor& PDesc, const std::string& l
 
   if ( ASDCP_SUCCESS(result) )
     {
-      result = WriteASDCPHeader(label, UL(m_Dict->ul(MDD_JPEG_2000WrappingFrame)),
+      result = WriteASDCPHeader(label, UL(m_Dict->ul(MDD_MXFGCFUFrameWrappedPictureElement)),
 				PICT_DEF_LABEL, UL(m_EssenceUL), UL(m_Dict->ul(MDD_PictureDataDef)),
 				LocalEditRate, derive_timecode_rate_from_edit_rate(m_PDesc.EditRate));
     }
