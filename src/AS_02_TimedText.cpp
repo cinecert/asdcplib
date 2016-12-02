@@ -167,7 +167,9 @@ AS_02::TimedText::MXFReader::h__Reader::ReadTimedTextResource(ASDCP::TimedText::
 							      AESDecContext* Ctx, HMACContext* HMAC)
 {
   if ( ! m_File.IsOpen() )
-    return RESULT_INIT;
+    {
+      return RESULT_INIT;
+    }
 
   assert(m_Dict);
   Result_t result = ReadEKLVFrame(0, FrameBuf, m_Dict->ul(MDD_TimedTextEssence), Ctx, HMAC);
@@ -437,6 +439,7 @@ public:
   TimedTextDescriptor m_TDesc;
   byte_t m_EssenceUL[SMPTE_UL_LENGTH];
   ui32_t m_EssenceStreamID;
+  ASDCP::Rational m_EditRate;
 
   h__Writer(const Dictionary& d) : AS_02::h__AS02WriterClip(d), m_EssenceStreamID(10)
   {
@@ -522,25 +525,25 @@ AS_02::TimedText::MXFWriter::h__Writer::SetSourceStream(ASDCP::TimedText::TimedT
 	  // 72 == sizeof K, L, instanceuid, uuid + sizeof int32 + tag/len * 4
 	  m_HeaderSize += ( resourceSubdescriptor->MIMEMediaType.ArchiveLength() * 2 /*ArchiveLength is broken*/ ) + 72;
 	}
-    }
-  
-  if ( KM_SUCCESS(result) )
-    {
-      result = WriteAS02Header(TIMED_TEXT_PACKAGE_LABEL, UL(m_Dict->ul(MDD_TimedTextWrappingClip)),
-			       "Data Track", UL(m_EssenceUL), UL(m_Dict->ul(MDD_TimedTextEssence)),
-			       TDesc.EditRate, derive_timecode_rate_from_edit_rate(TDesc.EditRate));
-    }
- 
-  if ( KM_SUCCESS(result) )
-    {
-      this->m_IndexWriter.SetPrimerLookup(&this->m_HeaderPart.m_Primer);
-    }
+    }  
+
+  //Reset m_EssenceStreamID to 10 for later usage in WriteAncillaryResource
+  m_EssenceStreamID = 10;
+  assert(m_Dict);
 
   if ( KM_SUCCESS(result) )
     {
       memcpy(m_EssenceUL, m_Dict->ul(MDD_TimedTextEssence), SMPTE_UL_LENGTH);
       m_EssenceUL[SMPTE_UL_LENGTH-1] = 1; // first (and only) essence container
       result = m_State.Goto_READY();
+    }
+
+  if ( KM_SUCCESS(result) )
+    {
+      m_EditRate = TDesc.EditRate;
+      result = WriteAS02Header(TIMED_TEXT_PACKAGE_LABEL, UL(m_Dict->ul(MDD_TimedTextWrappingClip)),
+			       "Data Track", UL(m_EssenceUL), UL(m_Dict->ul(MDD_DataDataDef)),
+			       TDesc.EditRate, derive_timecode_rate_from_edit_rate(TDesc.EditRate));
     }
 
   return result;
@@ -551,6 +554,8 @@ ASDCP::Result_t
 AS_02::TimedText::MXFWriter::h__Writer::WriteTimedTextResource(const std::string& XMLDoc,
 							       ASDCP::AESEncContext* Ctx, ASDCP::HMACContext* HMAC)
 {
+  ASDCP::FrameBuffer segment_buffer;
+  IndexTableSegment::IndexEntry index_entry;
   Result_t result = m_State.Goto_RUNNING();
 
   if ( KM_SUCCESS(result) )
@@ -562,17 +567,65 @@ AS_02::TimedText::MXFWriter::h__Writer::WriteTimedTextResource(const std::string
       
       memcpy(FrameBuf.Data(), XMLDoc.c_str(), str_size);
       FrameBuf.Size(str_size);
-
-      IndexTableSegment::IndexEntry Entry;
-      Entry.StreamOffset = m_StreamOffset;
+      index_entry.StreamOffset = m_StreamOffset;
       
+      result = Write_EKLV_Packet(m_File, *m_Dict, m_HeaderPart, m_Info, m_CtFrameBuf, m_FramesWritten,
+				 m_StreamOffset, FrameBuf, m_EssenceUL, Ctx, HMAC);
+    }
+
+  if ( KM_SUCCESS(result) )
+    {
+      // encode the index table
+      IndexTableSegment::DeltaEntry nil_delta_entry;
+      IndexTableSegment segment(m_Dict);
+      segment.m_Lookup = &m_HeaderPart.m_Primer;
+      GenRandomValue(segment.InstanceUID);
+
+      segment.DeltaEntryArray.push_back(nil_delta_entry);
+      segment.IndexEditRate = m_EditRate;
+      segment.IndexStartPosition = 0;
+      segment.IndexDuration = -1;
+      segment.IndexEntryArray.push_back(index_entry);
+
+      result = segment_buffer.Capacity(MaxIndexSegmentSize); // segment-count * max-segment-size
+
       if ( KM_SUCCESS(result) )
 	{
-	  ui64_t this_stream_offset = m_StreamOffset; // m_StreamOffset will be changed by the call to Write_EKLV_Packet
-
-	  result = Write_EKLV_Packet(m_File, *m_Dict, m_HeaderPart, m_Info, m_CtFrameBuf, m_FramesWritten,
-				     m_StreamOffset, FrameBuf, m_EssenceUL, Ctx, HMAC);
+	  result = segment.WriteToBuffer(segment_buffer);
 	}
+    }
+
+  if ( KM_SUCCESS(result) )
+    {
+      // create an index partition header
+      Kumu::fpos_t here = m_File.Tell();
+      assert(m_Dict);
+
+      ASDCP::MXF::Partition partition(m_Dict);
+      partition.ThisPartition = here;
+      partition.BodySID = 0;
+      partition.IndexSID = 129;
+      partition.IndexByteCount = segment_buffer.Size();
+      partition.PreviousPartition = m_RIP.PairArray.back().ByteOffset;
+      partition.OperationalPattern = m_HeaderPart.OperationalPattern;
+
+      m_RIP.PairArray.push_back(RIP::PartitionPair(0, here));
+      partition.EssenceContainers = m_HeaderPart.EssenceContainers;
+      UL TmpUL(m_Dict->ul(MDD_ClosedCompleteBodyPartition));
+      result = partition.WriteToFile(m_File, TmpUL);
+    }
+  
+  if ( KM_SUCCESS(result) )
+    {
+      // write the encoded index table
+      ui32_t write_count = 0;
+      result = m_File.Write(segment_buffer.RoData(), segment_buffer.Size(), &write_count);
+      assert(write_count == segment_buffer.Size());
+    }
+
+  if ( KM_SUCCESS(result) )
+    {
+      m_FramesWritten++;
     }
 
   return result;
@@ -603,14 +656,12 @@ AS_02::TimedText::MXFWriter::h__Writer::WriteAncillaryResource(const ASDCP::Time
   GSPart.OperationalPattern = m_HeaderPart.OperationalPattern;
 
   m_RIP.PairArray.push_back(RIP::PartitionPair(m_EssenceStreamID++, here));
-  GSPart.EssenceContainers.push_back(UL(m_Dict->ul(MDD_TimedTextEssence)));
+  GSPart.EssenceContainers = m_HeaderPart.EssenceContainers;
   UL TmpUL(m_Dict->ul(MDD_GenericStreamPartition));
   Result_t result = GSPart.WriteToFile(m_File, TmpUL);
 
   if ( KM_SUCCESS(result) )
     {
-      ui64_t this_stream_offset = m_StreamOffset; // m_StreamOffset will be changed by the call to Write_EKLV_Packet
-      
       result = Write_EKLV_Packet(m_File, *m_Dict, m_HeaderPart, m_Info, m_CtFrameBuf, m_FramesWritten,
 				 m_StreamOffset, FrameBuf, GenericStream_DataElement.Value(), Ctx, HMAC);
     }
@@ -629,7 +680,7 @@ AS_02::TimedText::MXFWriter::h__Writer::Finalize()
       return RESULT_STATE;
     }
 
-  m_IndexWriter.m_Duration = m_FramesWritten = m_TDesc.ContainerDuration;
+  m_FramesWritten = m_TDesc.ContainerDuration;
 
   Result_t result = m_State.Goto_FINAL();
 

@@ -709,7 +709,7 @@ main(int argc, const char** argv)
 	  break;
 
 	default:
-	  fprintf(stderr, "%s: Unknown file type, not AS-02 essence.\n", Options.input_filename);
+	  fprintf(stderr, "%s: Unknown file type (%d), not AS-02 essence.\n", Options.input_filename, EssenceType);
 	  return 5;
 	}
     }

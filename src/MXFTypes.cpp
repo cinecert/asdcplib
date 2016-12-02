@@ -561,7 +561,7 @@ ASDCP::MXF::TLVWriter::WriteTag(const MDDEntry& Entry)
 {
   if ( m_Lookup == 0 )
     {
-      DefaultLogSink().Error("No Primer object available\n");
+      DefaultLogSink().Error("No Primer object available.\n");
       return RESULT_FAIL;
     }
 

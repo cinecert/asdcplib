@@ -309,7 +309,6 @@ namespace AS_02
     public:
       ui64_t  m_ECStart; // offset of the first essence element
       ui64_t  m_ClipStart;  // state variable for clip-wrap-in-progress
-      //      AS_02::MXF::AS02IndexWriterCBR m_IndexWriter;
       IndexStrategy_t m_IndexStrategy; // per SMPTE ST 2067-5
 
       h__AS02WriterClip(const Dictionary&);
