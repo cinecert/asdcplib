@@ -580,7 +580,7 @@ ASDCP::TimedText::MXFWriter::h__Writer::SetSourceStream(ASDCP::TimedText::TimedT
 
   if ( ASDCP_SUCCESS(result) )
     {
-      InitHeader();
+      InitHeader(MXFVersion_2004);
 
       // First RIP Entry
       if ( m_Info.LabelSetType == LS_MXF_SMPTE )  // ERK

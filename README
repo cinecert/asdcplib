@@ -123,9 +123,9 @@ kmuuidgen, kmrandgen - generate UUID values and random numbers.
 wavesplit - Splits a WAVE file into two or more output files. Used
   to untangle incorrectly-paired DCDM sound files.
 
-blackwave - Write a WAVE file full of zeros,  Used to make filler
-  tracks (though you would be better off modifying asdcp-test if
-  this is a common use case).
+blackwave - Write a WAVE file of zeros.
+
+pinkwave - Write a WAVE file of SMPTE ST 2095 pink noise.
 
 j2c-test - Displays information about JP2K codestreams.
 
@@ -153,6 +153,17 @@ Change History
 
 
 2016-12-01 - bug fixes 2.6.17
+ o Fixed Partiton and Preface version numbers in AS-02 files
+ o Replaced WIN32 directory scanner with dirent_win.h
+ o The NamespaceURI property of AS-02 timed text files has been exposed in the API
+   and via as-02-wrap -P. This behavior replaces previous bad behavior, but puts
+   responsibility for selecting the correct value on the operator.
+ o Exposed CreatePNGNameId and CreateFontNameId subroutines in AS_02::TimedText
+ o Adjusted UUID generation based on PNG and font names to exclude paths by
+   inserting a call to PathBasename at each Id generation site
+ o Fixed AS-02 timed text index partition
+ o Fixed contents of generic partiton EssenceContainers property in AS-DCP timed
+   text files
  o Added PixelLayout to RGBAEssenceDescriptor (contributed by Schleich)
  o Cleared up MXFGCP1FrameWrappedPictureElement / MXFGCP1FrameWrappedPictureElement
    ambiguity. PHDR continues to use MXFGCP1FrameWrappedPictureElement.

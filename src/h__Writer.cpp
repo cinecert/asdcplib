@@ -141,7 +141,7 @@ ASDCP::h__ASDCPWriter::WriteASDCPHeader(const std::string& PackageLabel, const U
 					const std::string& TrackName, const UL& EssenceUL, const UL& DataDefinition,
 					const MXF::Rational& EditRate, ui32_t TCFrameRate, ui32_t BytesPerEditUnit)
 {
-  InitHeader();
+  InitHeader(MXFVersion_2004);
 
   // First RIP Entry
   if ( m_Info.LabelSetType == LS_MXF_SMPTE )  // ERK

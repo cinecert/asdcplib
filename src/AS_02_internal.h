@@ -172,7 +172,7 @@ namespace AS_02
 	    return RESULT_PARAM;
 	  }
 
-	InitHeader();
+	InitHeader(MXFVersion_2011);
 
 	AddSourceClip(EditRate, EditRate/*TODO: for a moment*/, TCFrameRate, TrackName, EssenceUL, DataDefinition, PackageLabel);
 	AddEssenceDescriptor(WrappingUL);

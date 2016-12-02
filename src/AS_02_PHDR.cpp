@@ -445,7 +445,7 @@ AS_02::PHDR::MXFWriter::h__Writer::WritePHDRHeader(const std::string& PackageLab
       return RESULT_PARAM;
     }
   
-  InitHeader();
+  InitHeader(MXFVersion_2011);
   
   AddSourceClip(EditRate, EditRate/*TODO: for a moment*/, TCFrameRate, TrackName, EssenceUL, DataDefinition, PackageLabel);
 
