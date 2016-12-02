@@ -1315,123 +1315,6 @@ Kumu::WriteBufferIntoFile(const Kumu::ByteString& Buffer, const std::string& Fil
 //
 
 
-// Win32 directory scanner
-//
-#ifdef KM_WIN32
-
-//
-Kumu::DirScanner::DirScanner(void) : m_Handle(-1) {}
-
-//
-//
-Result_t
-Kumu::DirScanner::Open(const std::string& filename)
-{
-  // we need to append a '*' to read the entire directory
-  ui32_t fn_len = filename.size(); 
-  char* tmp_file = (char*)malloc(fn_len + 8);
-
-  if ( tmp_file == 0 )
-    return RESULT_ALLOC;
-
-  strcpy(tmp_file, filename.c_str());
-  char* p = &tmp_file[fn_len] - 1;
-
-  if ( *p != '/' && *p != '\\' )
-    {
-      p++;
-      *p++ = '/';
-    }
-
-  *p++ = '*';
-  *p = 0;
-  // whew...
-
-  m_Handle = _findfirsti64(tmp_file, &m_FileInfo);
-  Result_t result = RESULT_OK;
-
-  if ( m_Handle == -1 )
-    result = RESULT_NOT_FOUND;
-
-  return result;
-}
-
-
-//
-//
-Result_t
-Kumu::DirScanner::Close()
-{
-  if ( m_Handle == -1 )
-    return RESULT_FILEOPEN;
-
-  if ( _findclose((long)m_Handle) == -1 )
-    return RESULT_FAIL;
-
-  m_Handle = -1;
-  return RESULT_OK;
-}
-
-
-// This sets filename param to the same per-instance buffer every time, so
-// the value will change on the next call
-Result_t
-Kumu::DirScanner::GetNext(char* filename)
-{
-  KM_TEST_NULL_L(filename);
-
-  if ( m_Handle == -1 )
-    return RESULT_FILEOPEN;
-
-  if ( m_FileInfo.name[0] == '\0' )
-    return RESULT_ENDOFFILE;
-
-  strncpy(filename, m_FileInfo.name, MaxFilePath);
-  Result_t result = RESULT_OK;
-
-  if ( _findnexti64((long)m_Handle, &m_FileInfo) == -1 )
-    {
-      m_FileInfo.name[0] = '\0';
-	  
-      if ( errno != ENOENT )
-	result = RESULT_FAIL;
-    }
-
-  return result;
-}
-
-
-//
-Kumu::DirScannerEx::DirScannerEx() : m_Handle(0) {}
-
-//
-Result_t
-Kumu::DirScannerEx::Open(const std::string& dirname)
-{
-  Kumu::DefaultLogSink().Critical("Kumu::DirScannerEx unimplemented for Win32 API.\n");
-  return RESULT_NOTIMPL;
-}
-
-//
-Result_t
-Kumu::DirScannerEx::Close()
-{
-  Kumu::DefaultLogSink().Critical("Kumu::DirScannerEx unimplemented for Win32 API.\n");
-  return RESULT_NOTIMPL;
-}
-
-//
-Result_t
-Kumu::DirScannerEx::GetNext(std::string& next_item_name, DirectoryEntryType_t& next_item_type)
-{
-  Kumu::DefaultLogSink().Critical("Kumu::DirScannerEx unimplemented for Win32 API.\n");
-  return RESULT_NOTIMPL;
-}
-
-#else // KM_WIN32
-
-// POSIX directory scanner
-
 //
 Kumu::DirScanner::DirScanner(void) : m_Handle(NULL) {}
 
@@ -1642,8 +1525,6 @@ Kumu::DirScannerEx::GetNext(std::string& next_item_name, DirectoryEntryType_t& n
 #endif // __sun
   return RESULT_OK;
 }
-
-#endif // KM_WIN32
 
 
 //------------------------------------------------------------------------------------------

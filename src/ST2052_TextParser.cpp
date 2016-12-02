@@ -86,15 +86,15 @@ create_4122_type5_id(const std::string& subject_name, const byte_t* ns_id)
 }
 
 //
-static Kumu::UUID
-create_png_name_id(const std::string& image_name)
+Kumu::UUID
+AS_02::TimedText::CreatePNGNameId(const std::string& image_name)
 {
   return create_4122_type5_id(image_name, s_png_id_prefix);
 }
 
 //
-static Kumu::UUID
-create_font_name_id(const std::string& font_name)
+Kumu::UUID
+AS_02::TimedText::CreateFontNameId(const std::string& font_name)
 {
   return create_4122_type5_id(font_name, s_font_id_prefix);
 }
@@ -106,6 +106,7 @@ static std::set<std::string> sg_default_font_family_list;
 static void
 setup_default_font_family_list()
 {
+  AutoMutex l(sg_default_font_family_list_lock);
   sg_default_font_family_list.insert("default");
   sg_default_font_family_list.insert("monospace");
   sg_default_font_family_list.insert("sansSerif");
@@ -166,7 +167,7 @@ AS_02::TimedText::Type5UUIDFilenameResolver::OpenRead(const std::string& dirname
 		  // is it PNG?
 		  if ( memcmp(read_buffer, PNGMagic, sizeof(PNGMagic)) == 0 )
 		    {
-		      UUID asset_id = create_png_name_id(next_item);
+		      UUID asset_id = CreatePNGNameId(PathBasename(next_item));
 		      m_ResourceMap.insert(ResourceMap::value_type(asset_id, next_item));
 		    }
 		  // is it a font?
@@ -174,7 +175,7 @@ AS_02::TimedText::Type5UUIDFilenameResolver::OpenRead(const std::string& dirname
 			    || memcmp(read_buffer, TrueTypeMagic, sizeof(TrueTypeMagic)) == 0 )
 		    {
 		      std::string font_root_name = PathSetExtension(next_item, "");
-		      UUID asset_id = create_font_name_id(font_root_name);
+		      UUID asset_id = CreateFontNameId(PathBasename(font_root_name));
 		      m_ResourceMap.insert(ResourceMap::value_type(asset_id, next_item));
 		    }
 		}
@@ -362,7 +363,7 @@ AS_02::TimedText::ST2052_TextParser::h__TextParser::OpenRead(const std::string& 
 
   for ( i = png_visitor.value_list.begin(); i != png_visitor.value_list.end(); ++i )
     {
-      UUID asset_id = create_png_name_id(*i);
+      UUID asset_id = CreatePNGNameId(PathBasename(*i));
       TimedTextResourceDescriptor png_resource;
       memcpy(png_resource.ResourceID, asset_id.Value(), UUIDlen);
       png_resource.Type = ASDCP::TimedText::MT_PNG;
@@ -377,7 +378,7 @@ AS_02::TimedText::ST2052_TextParser::h__TextParser::OpenRead(const std::string& 
 
   for ( i = font_visitor.value_list.begin(); i != font_visitor.value_list.end(); ++i )
     {
-      UUID font_id = create_font_name_id(*i);
+      UUID font_id = CreateFontNameId(PathBasename(*i));
 
       if ( PathIsFile(font_id.EncodeHex(buf, 64))
 	   || PathIsFile(*i+".ttf")

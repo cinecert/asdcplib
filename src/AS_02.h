@@ -349,6 +349,11 @@ namespace AS_02
 	  Result_t ResolveRID(const byte_t* uuid, ASDCP::TimedText::FrameBuffer& FrameBuf) const;
 	};
       
+
+      // Generate UUID asset ID values from file contents
+      Kumu::UUID CreatePNGNameId(const std::string& image_name);
+      Kumu::UUID CreateFontNameId(const std::string& font_name);
+
       //
       class ST2052_TextParser
 	{
