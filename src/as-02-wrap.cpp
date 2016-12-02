@@ -150,6 +150,7 @@ Options:\n\
   -M                - Do not create HMAC values when writing\n\
   -m <expr>         - Write MCA labels using <expr>.  Example:\n\
                         51(L,R,C,LFE,Ls,Rs,),HI,VIN\n\
+  -P <string>       - Set NamespaceURI property when creating timed text MXF\n\
   -p <ul>           - Set broadcast profile\n\
   -r <n>/<d>        - Edit Rate of the output file.  24/1 is the default\n\
   -R                - Indicates RGB image essence (default)\n\
@@ -228,7 +229,7 @@ public:
 
   //
   MXF::LineMapPair line_map;
-  std::string out_file; //
+  std::string out_file, profile_name; //
 
   //
   bool set_video_line_map(const std::string& arg)
@@ -424,6 +425,11 @@ public:
 		  {
 		    return;
 		  }
+		break;
+
+	      case 'P':
+		TEST_EXTRA_ARG(i, 'P');
+		profile_name = argv[i];
 		break;
 
 	      case 'p':
@@ -888,7 +894,8 @@ write_timed_text_file(CommandOptions& Options)
   Kumu::FortunaRNG  RNG;
 
   // set up essence parser
-  Result_t result = Parser.OpenRead(Options.filenames.front().c_str());
+  Result_t result = Parser.OpenRead(Options.filenames.front().c_str(),
+				    Options.profile_name);
 
   // set up MXF writer
   if ( ASDCP_SUCCESS(result) )
