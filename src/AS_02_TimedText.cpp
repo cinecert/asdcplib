@@ -602,6 +602,8 @@ AS_02::TimedText::MXFWriter::h__Writer::WriteTimedTextResource(const std::string
       assert(m_Dict);
 
       ASDCP::MXF::Partition partition(m_Dict);
+      partition.MajorVersion = m_HeaderPart.MajorVersion;
+      partition.MinorVersion = m_HeaderPart.MinorVersion;
       partition.ThisPartition = here;
       partition.BodySID = 0;
       partition.IndexSID = 129;
@@ -650,6 +652,8 @@ AS_02::TimedText::MXFWriter::h__Writer::WriteAncillaryResource(const ASDCP::Time
   static UL GenericStream_DataElement(m_Dict->ul(MDD_GenericStream_DataElement));
   ASDCP::MXF::Partition GSPart(m_Dict);
 
+  GSPart.MajorVersion = m_HeaderPart.MajorVersion;
+  GSPart.MinorVersion = m_HeaderPart.MinorVersion;
   GSPart.ThisPartition = here;
   GSPart.PreviousPartition = m_RIP.PairArray.back().ByteOffset;
   GSPart.BodySID = m_EssenceStreamID;

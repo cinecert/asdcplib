@@ -48,6 +48,10 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <mach-o/dyld.h>
 #endif
 
+#if defined(__OpenBSD__)
+#include <sys/sysctl.h>
+#endif
+
 using namespace Kumu;
 
 #ifdef KM_WIN32
@@ -658,17 +662,23 @@ Kumu::GetExecutablePath(const std::string& default_path)
   size_t size = X_BUFSIZE;
   ssize_t rc = readlink("/proc/self/exe", path, size);
   success = ( rc != -1 );
-#elif defined(__OpenBSD__) || defined(__FreeBSD__)
-  size_t size = X_BUFSIZE;
-  ssize_t rc = readlink("/proc/curproc/file", path, size);
-  success = ( rc != -1 );
+#elif defined(__OpenBSD__)
+  // This fails if the CWD changes after the program has started but before the
+  // call to GetExecutablePath(). For least surprise, call GetExecutablePath()
+  // immediately in main() and save the value for later use.
+  const,  char* p = getenv("_");
+  if ( p )
+    {
+      return Kumu::PathMakeAbsolute(p);
+    }
 #elif defined(__FreeBSD__)
+  // requires procfs
   size_t size = X_BUFSIZE;
   ssize_t rc = readlink("/proc/curproc/file", path, size);
   success = ( rc != -1 );
 #elif defined(__NetBSD__)
   size_t size = X_BUFSIZE;
-  ssize_t rc = readlink("/proc/curproc/file", path, size);
+  ssize_t rc = readlink("/proc/curproc/exe", path, size);
   success = ( rc != -1 );
 #elif defined(__sun) && defined(__SVR4)
   size_t size = X_BUFSIZE;

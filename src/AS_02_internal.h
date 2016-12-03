@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2011-2015, Robert Scheler, Heiko Sparenberg Fraunhofer IIS,
+Copyright (c) 2011-2016, Robert Scheler, Heiko Sparenberg Fraunhofer IIS,
 John Hurst
 
 All rights reserved.
@@ -193,6 +193,8 @@ namespace AS_02
 	    UL body_ul(this->m_Dict->ul(MDD_ClosedCompleteBodyPartition));
 	    Partition body_part(this->m_Dict);
 	    body_part.BodySID = 1;
+	    body_part.MajorVersion = this->m_HeaderPart.MajorVersion;
+	    body_part.MinorVersion = this->m_HeaderPart.MinorVersion;
 	    body_part.OperationalPattern = this->m_HeaderPart.OperationalPattern;
 	    body_part.EssenceContainers = this->m_HeaderPart.EssenceContainers;
 	    body_part.ThisPartition = this->m_ECStart;
@@ -231,6 +233,8 @@ namespace AS_02
 	this->m_HeaderPart.FooterPartition = here;
 
 	assert(this->m_Dict);
+	footer_part.MajorVersion = this->m_HeaderPart.MajorVersion;
+	footer_part.MinorVersion = this->m_HeaderPart.MinorVersion;
 	footer_part.OperationalPattern = this->m_HeaderPart.OperationalPattern;
 	footer_part.EssenceContainers = this->m_HeaderPart.EssenceContainers;
 	footer_part.FooterPartition = here;

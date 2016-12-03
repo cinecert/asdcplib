@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2011-2013, Robert Scheler, Heiko Sparenberg Fraunhofer IIS,
+Copyright (c) 2011-2016, Robert Scheler, Heiko Sparenberg Fraunhofer IIS,
 John Hurst
 
 All rights reserved.
@@ -199,6 +199,8 @@ AS_02::h__AS02WriterFrame::WriteEKLVPacket(const ASDCP::FrameBuffer& FrameBuf,co
 
       UL body_ul(m_Dict->ul(MDD_ClosedCompleteBodyPartition));
       Partition body_part(m_Dict);
+      body_part.MajorVersion = m_HeaderPart.MajorVersion;
+      body_part.MinorVersion = m_HeaderPart.MinorVersion;
       body_part.BodySID = 1;
       body_part.OperationalPattern = m_HeaderPart.OperationalPattern;
       body_part.EssenceContainers = m_HeaderPart.EssenceContainers;

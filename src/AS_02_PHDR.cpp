@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2011-2015, John Hurst
+Copyright (c) 2011-2016, John Hurst
 
 All rights reserved.
 
@@ -500,6 +500,8 @@ AS_02::PHDR::MXFWriter::h__Writer::WritePHDRHeader(const std::string& PackageLab
       UL body_ul(m_Dict->ul(MDD_ClosedCompleteBodyPartition));
       Partition body_part(m_Dict);
       body_part.BodySID = 1;
+      body_part.MajorVersion = m_HeaderPart.MajorVersion;
+      body_part.MinorVersion = m_HeaderPart.MinorVersion;
       body_part.OperationalPattern = m_HeaderPart.OperationalPattern;
       body_part.EssenceContainers = m_HeaderPart.EssenceContainers;
       body_part.ThisPartition = m_ECStart;
@@ -599,6 +601,8 @@ AS_02::PHDR::MXFWriter::h__Writer::WriteFrame(const AS_02::PHDR::FrameBuffer& Fr
 	  UL body_ul(m_Dict->ul(MDD_ClosedCompleteBodyPartition));
 	  Partition body_part(m_Dict);
 	  body_part.BodySID = 1;
+	  body_part.MajorVersion = m_HeaderPart.MajorVersion;
+	  body_part.MinorVersion = m_HeaderPart.MinorVersion;
 	  body_part.OperationalPattern = m_HeaderPart.OperationalPattern;
 	  body_part.EssenceContainers = m_HeaderPart.EssenceContainers;
 	  body_part.ThisPartition = m_File.Tell();
@@ -645,6 +649,8 @@ AS_02::PHDR::MXFWriter::h__Writer::Finalize(const std::string& PHDR_master_metad
 	  static UL GenericStream_DataElement(m_Dict->ul(MDD_GenericStream_DataElement));
 	  ASDCP::MXF::Partition GSPart(m_Dict);
 
+	  GSPart.MajorVersion = m_HeaderPart.MajorVersion;
+	  GSPart.MinorVersion = m_HeaderPart.MinorVersion;
 	  GSPart.ThisPartition = here;
 	  GSPart.PreviousPartition = m_RIP.PairArray.back().ByteOffset;
 	  GSPart.OperationalPattern = m_HeaderPart.OperationalPattern;
