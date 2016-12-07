@@ -543,6 +543,27 @@ namespace Kumu
   // adjacent instances of the separator. E.g., "/foo//bar/" will return ["", "foo", "", "bar", ""].
   std::list<std::string> km_token_split(const std::string& str, const std::string& separator);
 
+  // Join the tokens in the given list using delimiter. If prefix is defined then each token
+  // will be concatenated with the prefix before being added to the composite string.
+  template <class T>
+    std::string
+    km_join(const T& list, const std::string& delimiter, const std::string& prefix = "")
+    {
+      std::string result;
+
+      for ( typename T::const_iterator i = list.begin(); i != list.end(); ++i )
+	{
+	  if ( i != list.begin() )
+	    {
+	      result += delimiter;
+	    }
+      
+	  result += prefix + *i;
+	}
+
+      return result;
+    }
+
 } // namespace Kumu
 
 

@@ -290,55 +290,10 @@ AS_02::TimedText::ST2052_TextParser::h__TextParser::OpenRead(const std::string& 
   return OpenRead(profile_name);
 }
 
-//
-template <class VisitorType>
-bool
-apply_visitor(const XMLElement& element, VisitorType& visitor)
-{
-  const ElementList& l = element.GetChildren();
-  ElementList::const_iterator i;
 
-  for ( i = l.begin(); i != l.end(); ++i )
-    {
-      if ( ! visitor.Element(**i) )
-	{
-	  return false;
-	}
 
-      if ( ! apply_visitor(**i, visitor) )
-	{
-	  return false;
-	}
-    }
-
-  return true;
-}
-
-//
-class AttributeVisitor
-{
-  std::string attr_name;
-
-public:
-  AttributeVisitor(const std::string& n) : attr_name(n) {}
-  std::set<std::string> value_list;
-
-  bool Element(const XMLElement& e)
-  {
-    const AttributeList& l = e.GetAttributes();
-    AttributeList::const_iterator i;
- 
-    for ( i = l.begin(); i != l.end(); ++i )
-      {
-	if ( i->name == attr_name )
-	  {
-	    value_list.insert(i->value);
-	  }
-      }
-
-    return true;
-  }
-};
+std::string const IMSC1_imageProfile = "http://www.w3.org/ns/ttml/profile/imsc1/image";
+std::string const IMSC1_textProfile = "http://www.w3.org/ns/ttml/profile/imsc1/text";
 
 //
 Result_t
@@ -355,11 +310,45 @@ AS_02::TimedText::ST2052_TextParser::h__TextParser::OpenRead(const std::string& 
   m_TDesc.EncodingName = "UTF-8"; // the XML parser demands UTF-8
   m_TDesc.ResourceList.clear();
   m_TDesc.ContainerDuration = 0;
-  m_TDesc.NamespaceName = profile_name;
+  m_TDesc.NamespaceName = profile_name; // set the profile explicitly
+  std::set<std::string>::const_iterator i;
 
+  // Attempt to set the profile from <conformsToStandard>
+  if ( m_TDesc.NamespaceName.empty() )
+    {
+      ElementVisitor conforms_visitor("conformsToStandard");
+      apply_visitor(m_Root, conforms_visitor);
+
+      for ( i = conforms_visitor.value_list.begin(); i != conforms_visitor.value_list.end(); ++i )
+	{
+	  if ( *i == IMSC1_imageProfile || *i == IMSC1_textProfile )
+	    {
+	      m_TDesc.NamespaceName = *i;
+	      break;
+	    }
+	}
+    }
+
+  // Attempt to set the profile from the use of attribute "profile"
+  if ( m_TDesc.NamespaceName.empty() )
+    {
+      AttributeVisitor profile_visitor("profile");
+      apply_visitor(m_Root, profile_visitor);
+
+      for ( i = profile_visitor.value_list.begin(); i != profile_visitor.value_list.end(); ++i )
+	{
+	  if ( *i == IMSC1_imageProfile || *i == IMSC1_textProfile )
+	    {
+	      m_TDesc.NamespaceName = *i;
+	      break;
+	    }
+	}
+    }
+
+  // Find image resources for later packaging as GS partitions.
+  // Attempt to set the profile; infer from use of images.
   AttributeVisitor png_visitor("backgroundImage");
   apply_visitor(m_Root, png_visitor);
-  std::set<std::string>::const_iterator i;
 
   for ( i = png_visitor.value_list.begin(); i != png_visitor.value_list.end(); ++i )
     {
@@ -370,8 +359,27 @@ AS_02::TimedText::ST2052_TextParser::h__TextParser::OpenRead(const std::string& 
       m_TDesc.ResourceList.push_back(png_resource);
       m_ResourceTypes.insert(ResourceTypeMap_t::value_type(UUID(png_resource.ResourceID),
 							   ASDCP::TimedText::MT_PNG));
+
+      if ( m_TDesc.NamespaceName.empty() )
+	{
+	  m_TDesc.NamespaceName = IMSC1_imageProfile;
+	}
     }
 
+  // If images are present and profile is "text" make sure to say something.
+  if ( ! m_ResourceTypes.empty() && m_TDesc.NamespaceName == IMSC1_textProfile )
+    {
+      DefaultLogSink().Warn("Unexpected IMSC-1 text profile; document contains images.\n ");
+    }
+  
+  // If all else fails set the profile to "text".
+  if ( m_TDesc.NamespaceName.empty() )
+    {
+      DefaultLogSink().Warn("Using default IMSC-1 text profile.\n ");
+      m_TDesc.NamespaceName = IMSC1_textProfile;
+    }
+
+  // Find font resources for later packaging as GS partitions.
   AttributeVisitor font_visitor("fontFamily");
   apply_visitor(m_Root, font_visitor);
   char buf[64];
