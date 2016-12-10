@@ -435,7 +435,93 @@ namespace ASDCP {
 	//
 	MDD_MXFGCI1FrameWrappedPictureElement, // 396
 	MDD_MXFGCP1FrameWrappedPictureElement, // 397
+		
+		
+		MDD_TransferCharacteristics_709,
+		MDD_TransferCharacteristics_2020,  //
+		MDD_TransferCharacteristics_xvYCC,
+		MDD_TransferCharacteristics_St2084,	
+		MDD_TransferCharacteristics_linear,
 
+	
+		MDD_CodingEquations_601,  //
+		MDD_CodingEquations_709,
+		MDD_CodingEquations_Rec2020,
+	
+		MDD_ColorPrimaries_BT709, //
+		MDD_ColorPrimaries_BT2020,
+		MDD_ColorPrimaries_P3D65,
+		MDD_ColorPrimaries_XYZ,
+
+
+		MDD_GenericPictureEssenceDescriptor_MasteringDisplayPrimaries,
+		MDD_GenericPictureEssenceDescriptor_MasteringDisplayWhitePointChromaticity,
+		MDD_GenericPictureEssenceDescriptor_MasteringDisplayMaximumLuminance,
+		MDD_GenericPictureEssenceDescriptor_MasteringDisplayMinimumLuminance,
+
+		MDD_JP2KEssenceCompression_IMFProfile_2K_Lossy, //
+		MDD_JP2KEssenceCompression_IMFProfile_4K_Lossy,
+		MDD_JP2KEssenceCompression_IMFProfile_8K_Lossy,
+
+		MDD_JP2KEssenceCompression_IMFProfile_2K_Reversible,
+		MDD_JP2KEssenceCompression_IMFProfile_4K_Reversible,
+		MDD_JP2KEssenceCompression_IMFProfile_8K_Reversible,
+		
+		MDD_JP2KEssenceCompression_IMFProfile_4K_Lossy_1_1, //
+		MDD_JP2KEssenceCompression_IMFProfile_4K_Lossy_2_1, //
+		MDD_JP2KEssenceCompression_IMFProfile_4K_Lossy_3_1,
+		MDD_JP2KEssenceCompression_IMFProfile_4K_Lossy_4_1,
+		MDD_JP2KEssenceCompression_IMFProfile_4K_Lossy_4_2,
+		MDD_JP2KEssenceCompression_IMFProfile_4K_Lossy_5_1,
+		MDD_JP2KEssenceCompression_IMFProfile_4K_Lossy_5_2,
+		MDD_JP2KEssenceCompression_IMFProfile_4K_Lossy_5_3,
+		MDD_JP2KEssenceCompression_IMFProfile_4K_Lossy_6_1,
+		MDD_JP2KEssenceCompression_IMFProfile_4K_Lossy_6_2,
+		MDD_JP2KEssenceCompression_IMFProfile_4K_Lossy_6_3,
+		MDD_JP2KEssenceCompression_IMFProfile_4K_Lossy_6_4,
+
+		MDD_JP2KEssenceCompression_IMFProfile_4K_Lossy_7_1,
+		MDD_JP2KEssenceCompression_IMFProfile_4K_Lossy_7_2,
+		MDD_JP2KEssenceCompression_IMFProfile_4K_Lossy_7_3,
+		MDD_JP2KEssenceCompression_IMFProfile_4K_Lossy_7_4,
+		MDD_JP2KEssenceCompression_IMFProfile_4K_Lossy_7_5,
+		
+		MDD_JP2KEssenceCompression_IMFProfile_4K_Lossy_8_1,
+		MDD_JP2KEssenceCompression_IMFProfile_4K_Lossy_8_2,
+		MDD_JP2KEssenceCompression_IMFProfile_4K_Lossy_8_3,
+		MDD_JP2KEssenceCompression_IMFProfile_4K_Lossy_8_4,
+		MDD_JP2KEssenceCompression_IMFProfile_4K_Lossy_8_5,
+		MDD_JP2KEssenceCompression_IMFProfile_4K_Lossy_8_6,
+		
+		MDD_JP2KEssenceCompression_IMFProfile_2K_Reversible_1_0,
+		MDD_JP2KEssenceCompression_IMFProfile_2K_Reversible_2_0,
+		MDD_JP2KEssenceCompression_IMFProfile_2K_Reversible_3_0,
+		MDD_JP2KEssenceCompression_IMFProfile_2K_Reversible_4_0,
+		MDD_JP2KEssenceCompression_IMFProfile_2K_Reversible_5_0,
+		MDD_JP2KEssenceCompression_IMFProfile_2K_Reversible_6_0,
+		
+		MDD_JP2KEssenceCompression_IMFProfile_4K_Reversible_1_0,
+		MDD_JP2KEssenceCompression_IMFProfile_4K_Reversible_2_0,
+		MDD_JP2KEssenceCompression_IMFProfile_4K_Reversible_3_0,
+		MDD_JP2KEssenceCompression_IMFProfile_4K_Reversible_4_0,
+		MDD_JP2KEssenceCompression_IMFProfile_4K_Reversible_5_0,
+		MDD_JP2KEssenceCompression_IMFProfile_4K_Reversible_6_0,
+		MDD_JP2KEssenceCompression_IMFProfile_4K_Reversible_7_0,
+		MDD_JP2KEssenceCompression_IMFProfile_4K_Reversible_8_0,
+		
+    MDD_JP2KEssenceCompression_IMFProfile_8K_Reversible_1_0,
+	MDD_JP2KEssenceCompression_IMFProfile_8K_Reversible_2_0,
+	MDD_JP2KEssenceCompression_IMFProfile_8K_Reversible_3_0,
+	MDD_JP2KEssenceCompression_IMFProfile_8K_Reversible_4_0,
+	MDD_JP2KEssenceCompression_IMFProfile_8K_Reversible_5_0,
+	MDD_JP2KEssenceCompression_IMFProfile_8K_Reversible_6_0,
+	MDD_JP2KEssenceCompression_IMFProfile_8K_Reversible_7_0,
+	MDD_JP2KEssenceCompression_IMFProfile_8K_Reversible_8_0,
+	MDD_JP2KEssenceCompression_IMFProfile_8K_Reversible_9_0,
+	MDD_JP2KEssenceCompression_IMFProfile_8K_Reversible_10_0,
+
+	MDD_SMPTE382MDefaultUncompressedSoundCoding,
+		
         MDD_Max
     }; // enum MDD_t
 

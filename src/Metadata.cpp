@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2005-2012, John Hurst
+Copyright (c) 2005-2017, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -1710,6 +1710,22 @@ GenericPictureEssenceDescriptor::InitFromTLVSet(TLVReader& TLVSet)
     result = TLVSet.ReadObject(OBJ_READ_ARGS_OPT(GenericPictureEssenceDescriptor, VideoLineMap));
     VideoLineMap.set_has_value( result == RESULT_OK );
   }
+  if ( ASDCP_SUCCESS(result) ) {
+    result = TLVSet.ReadObject(OBJ_READ_ARGS_OPT(GenericPictureEssenceDescriptor, MasteringDisplayPrimaries));
+    MasteringDisplayPrimaries.set_has_value( result == RESULT_OK );
+  }
+  if ( ASDCP_SUCCESS(result) ) {
+    result = TLVSet.ReadObject(OBJ_READ_ARGS_OPT(GenericPictureEssenceDescriptor, MasteringDisplayWhitePointChromaticity));
+    MasteringDisplayWhitePointChromaticity.set_has_value( result == RESULT_OK );
+  }
+  if ( ASDCP_SUCCESS(result) ) { 
+    result = TLVSet.ReadUi32(OBJ_READ_ARGS_OPT(GenericPictureEssenceDescriptor, MasteringDisplayMaximumLuminance));
+    MasteringDisplayMaximumLuminance.set_has_value( result == RESULT_OK );
+  }
+  if ( ASDCP_SUCCESS(result) ) { 
+    result = TLVSet.ReadUi32(OBJ_READ_ARGS_OPT(GenericPictureEssenceDescriptor, MasteringDisplayMinimumLuminance));
+    MasteringDisplayMinimumLuminance.set_has_value( result == RESULT_OK );
+  }
   return result;
 }
 
@@ -1750,6 +1766,10 @@ GenericPictureEssenceDescriptor::WriteToTLVSet(TLVWriter& TLVSet)
   if ( ASDCP_SUCCESS(result)  && ! ActiveXOffset.empty() ) result = TLVSet.WriteUi32(OBJ_WRITE_ARGS_OPT(GenericPictureEssenceDescriptor, ActiveXOffset));
   if ( ASDCP_SUCCESS(result)  && ! ActiveYOffset.empty() ) result = TLVSet.WriteUi32(OBJ_WRITE_ARGS_OPT(GenericPictureEssenceDescriptor, ActiveYOffset));
   if ( ASDCP_SUCCESS(result)  && ! VideoLineMap.empty() ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS_OPT(GenericPictureEssenceDescriptor, VideoLineMap));
+  if ( ASDCP_SUCCESS(result)  && ! MasteringDisplayPrimaries.empty() ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS_OPT(GenericPictureEssenceDescriptor, MasteringDisplayPrimaries));
+  if ( ASDCP_SUCCESS(result)  && ! MasteringDisplayWhitePointChromaticity.empty() ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS_OPT(GenericPictureEssenceDescriptor, MasteringDisplayWhitePointChromaticity));
+  if ( ASDCP_SUCCESS(result)  && ! MasteringDisplayMaximumLuminance.empty() ) result = TLVSet.WriteUi32(OBJ_WRITE_ARGS_OPT(GenericPictureEssenceDescriptor, MasteringDisplayMaximumLuminance));
+  if ( ASDCP_SUCCESS(result)  && ! MasteringDisplayMinimumLuminance.empty() ) result = TLVSet.WriteUi32(OBJ_WRITE_ARGS_OPT(GenericPictureEssenceDescriptor, MasteringDisplayMinimumLuminance));
   return result;
 }
 
@@ -1789,6 +1809,10 @@ GenericPictureEssenceDescriptor::Copy(const GenericPictureEssenceDescriptor& rhs
   ActiveXOffset = rhs.ActiveXOffset;
   ActiveYOffset = rhs.ActiveYOffset;
   VideoLineMap = rhs.VideoLineMap;
+  MasteringDisplayPrimaries = rhs.MasteringDisplayPrimaries;
+  MasteringDisplayWhitePointChromaticity = rhs.MasteringDisplayWhitePointChromaticity;
+  MasteringDisplayMaximumLuminance = rhs.MasteringDisplayMaximumLuminance;
+  MasteringDisplayMinimumLuminance = rhs.MasteringDisplayMinimumLuminance;
 }
 
 //
@@ -1885,6 +1909,18 @@ GenericPictureEssenceDescriptor::Dump(FILE* stream)
   }
   if ( ! VideoLineMap.empty() ) {
     fprintf(stream, "  %22s = %s\n",  "VideoLineMap", VideoLineMap.get().EncodeString(identbuf, IdentBufferLen));
+  }
+  if ( ! MasteringDisplayPrimaries.empty() ) {
+    fprintf(stream, "  %22s = %s\n",  "MasteringDisplayPrimaries", MasteringDisplayPrimaries.get().EncodeString(identbuf, IdentBufferLen));
+  }
+  if ( ! MasteringDisplayWhitePointChromaticity.empty() ) {
+    fprintf(stream, "  %22s = %s\n",  "MasteringDisplayWhitePointChromaticity", MasteringDisplayWhitePointChromaticity.get().EncodeString(identbuf, IdentBufferLen));
+  }
+  if ( ! MasteringDisplayMaximumLuminance.empty() ) {
+    fprintf(stream, "  %22s = %d\n",  "MasteringDisplayMaximumLuminance", MasteringDisplayMaximumLuminance.get());
+  }
+  if ( ! MasteringDisplayMinimumLuminance.empty() ) {
+    fprintf(stream, "  %22s = %d\n",  "MasteringDisplayMinimumLuminance", MasteringDisplayMinimumLuminance.get());
   }
 }
 

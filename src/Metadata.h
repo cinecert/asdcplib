@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2005-2015, John Hurst
+Copyright (c) 2005-2017, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -503,6 +503,10 @@ namespace ASDCP
           optional_property<ui32_t > ActiveXOffset;
           optional_property<ui32_t > ActiveYOffset;
           optional_property<LineMapPair > VideoLineMap;
+          optional_property<ThreeColorPrimaries > MasteringDisplayPrimaries;
+          optional_property<ColorPrimary > MasteringDisplayWhitePointChromaticity;
+          optional_property<ui32_t > MasteringDisplayMaximumLuminance;
+          optional_property<ui32_t > MasteringDisplayMinimumLuminance;
 
       GenericPictureEssenceDescriptor(const Dictionary*& d);
       GenericPictureEssenceDescriptor(const GenericPictureEssenceDescriptor& rhs);

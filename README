@@ -151,6 +151,11 @@ command-line utilities all respond to -h.
 
 Change History
 
+2016-12-07 - bug fixes 2.6.18
+ o Fixed *all* Partiton version numbers in AS-02 files
+ o Improved IMSC-1 profile detection. May not yet be perfect, experimentation
+   encouraged!
+
 
 2016-12-01 - bug fixes 2.6.17
  o Fixed Partiton and Preface version numbers in AS-02 files
@@ -177,6 +182,7 @@ Change History
  o Added prototype PIDM dynamic metadata wrapping, config with --enable-phdr
    (Not for production use, caveat emptor, not the droids, etc.)
 
+
 2016-08-11 - bug fixes, 2.5.15
 
  o Modified as-02-wrap to pass WhiteRefLev, BlackRefLev and ColorRange
@@ -185,6 +191,7 @@ Change History
    to be used.
  o Modified the IndexEntry parser to ignore additional bytes belonging to slice
    values.
+
 
 2016-05-06 - bug fixes, 2.5.14
 

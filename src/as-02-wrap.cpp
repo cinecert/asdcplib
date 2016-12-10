@@ -119,12 +119,7 @@ usage(FILE* stream = stdout)
   fprintf(stream, "\
 USAGE: %s [-h|-help] [-V]\n\
 \n\
-       %s [-a <uuid>] [-A <w>/<h>] [-b <buffer-size>] [-C <UL>] [-d <duration>]\n\
-            [-D <depth>] [-e|-E] [-i] [-j <key-id-string>] [-k <key-string>]\n\
-            [-M] [-m <expr>] [-p <ul>] [-r <n>/<d>] [-R] [-s <seconds>]\n\
-            [-t <min>] [-T <max>] [-u] [-v] [-W] [-x <int>] [-X <int>] [-Y]\n\
-            [-y <white-ref>[,<black-ref>[,<color-range>]]]\n\
-            [-z|-Z] <input-file>+ <output-file>\n\n",
+       %s [options] <input-file>+ <output-file>\n\n",
 	  PROGRAM_NAME, PROGRAM_NAME);
 
   fprintf(stream, "\
@@ -150,6 +145,10 @@ Options:\n\
   -M                - Do not create HMAC values when writing\n\
   -m <expr>         - Write MCA labels using <expr>.  Example:\n\
                         51(L,R,C,LFE,Ls,Rs,),HI,VIN\n\
+  -o <min>,<max>    - Mastering Display luminance, cd*m*m, e.g., \".05,100\"\n\
+  -O <rx>,<ry>,<gx>,<gy>,<bx>,<by>,<wx>,<wy>\n\
+                    - Mastering Display Color Primaries and white point\n\
+                      e.g., \".64,.33,.3,.6,.15,.06,.3457,.3585\"\n\
   -P <string>       - Set NamespaceURI property when creating timed text MXF\n\
   -p <ul>           - Set broadcast profile\n\
   -r <n>/<d>        - Edit Rate of the output file.  24/1 is the default\n\
@@ -175,8 +174,45 @@ Options:\n\
          o All option arguments must be separated from the option by whitespace.\n\n");
 }
 
-
+const float chromaticity_scale = 50000.0;
 //
+ui32_t
+set_primary_from_token(const std::string& token, ui16_t& primary)
+{
+  float raw_value = strtod(token.c_str(),0);
+
+  if ( raw_value == 0.0 || raw_value > 1.0 )
+    {
+      fprintf(stderr, "Invalid coordinate value \"%s\".\n", token.c_str());
+      return false;
+    }
+
+  primary = floor(0.5 + ( raw_value * chromaticity_scale ));
+  return true;
+}
+
+const float luminance_scale = 10000.0;
+//
+ui32_t
+set_luminance_from_token(const std::string& token, ui32_t& luminance)
+{
+  float raw_value = strtod(token.c_str(),0);
+
+  if ( raw_value == 0.0 || raw_value > 400000.0 )
+    {
+      fprintf(stderr, "Invalid luminance value \"%s\".\n", token.c_str());
+      return false;
+    }
+
+  luminance = floor(0.5 + ( raw_value * luminance_scale ));
+  return true;
+}
+
+#define SET_LUMINANCE(p,t)			\
+  if ( ! set_luminance_from_token(t, p) ) {	\
+    return false;				\
+  }
+
 //
 class CommandOptions
 {
@@ -222,6 +258,10 @@ public:
   ui32_t cdci_BlackRefLevel; 
   ui32_t cdci_WhiteRefLevel;
   ui32_t cdci_ColorRange;
+
+  ui32_t md_min_luminance, md_max_luminance;
+  ASDCP::MXF::ThreeColorPrimaries md_primaries;
+  ASDCP::MXF::ColorPrimary md_white_point;
 
   //new attributes for AS-02 support 
   AS_02::IndexStrategy_t index_strategy; //Shim parameter index_strategy_frame/clip
@@ -278,18 +318,57 @@ public:
     return true;
   }
 
+  //
+  bool set_display_primaries(const std::string& arg)
+  {
+    std::list<std::string> coordinate_tokens = Kumu::km_token_split(arg, ",");
+    if ( coordinate_tokens.size() != 8 )
+      {
+	fprintf(stderr, "Expecting four coordinate pairs.\n");
+	return false;
+      }
+
+    std::list<std::string>::const_iterator i = coordinate_tokens.begin();
+    if ( ! set_primary_from_token(*(i++), md_primaries.First.X) ) return false;
+    if ( ! set_primary_from_token(*(i++), md_primaries.First.Y) ) return false;
+    if ( ! set_primary_from_token(*(i++), md_primaries.Second.X) ) return false;
+    if ( ! set_primary_from_token(*(i++), md_primaries.Second.Y) ) return false;
+    if ( ! set_primary_from_token(*(i++), md_primaries.Third.X) ) return false;
+    if ( ! set_primary_from_token(*(i++), md_primaries.Third.Y) ) return false;
+    if ( ! set_primary_from_token(*(i++), md_white_point.X) ) return false;
+    if ( ! set_primary_from_token(*i, md_white_point.Y) ) return false;
+
+    return true;
+  }
+
+  //
+  bool set_display_luminance(const std::string& arg)
+  {
+    std::list<std::string> luminance_tokens = Kumu::km_token_split(arg, ",");
+    if ( luminance_tokens.size() != 2 )
+      {
+	fprintf(stderr, "Expecting a luminance pair.\n");
+	return false;
+      }
+
+    if ( ! set_luminance_from_token(luminance_tokens.front(), md_min_luminance) ) return false;
+    if ( ! set_luminance_from_token(luminance_tokens.back(), md_max_luminance) ) return false;
+
+    return true;
+  }
 
   CommandOptions(int argc, const char** argv) :
     error_flag(true), key_flag(false), key_id_flag(false), asset_id_flag(false),
     encrypt_header_flag(true), write_hmac(true), verbose_flag(false), fb_dump_size(0),
     no_write_flag(false), version_flag(false), help_flag(false),
-    duration(0xffffffff), j2c_pedantic(true), use_cdci_descriptor(false), edit_rate(24,1), fb_size(FRAME_BUFFER_SIZE),
+    duration(0xffffffff), j2c_pedantic(true), use_cdci_descriptor(false),
+    edit_rate(24,1), fb_size(FRAME_BUFFER_SIZE),
     show_ul_values_flag(false), index_strategy(AS_02::IS_FOLLOW), partition_space(60),
     mca_config(g_dict), rgba_MaxRef(1023), rgba_MinRef(0),
     horizontal_subsampling(2), vertical_subsampling(2), component_depth(10),
     frame_layout(0), aspect_ratio(ASDCP::Rational(4,3)), field_dominance(0),
     mxf_header_size(16384), cdci_WhiteRefLevel(940), cdci_BlackRefLevel(64), cdci_ColorRange(897),
-    line_map(0,0)
+    md_min_luminance(0), md_max_luminance(0), line_map(0,0)
   {
     memset(key_value, 0, KeyLen);
     memset(key_id_value, 0, UUIDlen);
@@ -422,6 +501,22 @@ public:
 	      case 'm':
 		TEST_EXTRA_ARG(i, 'm');
 		if ( ! mca_config.DecodeString(argv[i]) )
+		  {
+		    return;
+		  }
+		break;
+
+	      case 'O':
+		TEST_EXTRA_ARG(i, ')');
+		if ( ! set_display_primaries(argv[i]) )
+		  {
+		    return;
+		  }
+		break;
+
+	      case 'o':
+		TEST_EXTRA_ARG(i, 'o');
+		if ( ! set_display_luminance(argv[i]) )
 		  {
 		    return;
 		  }
@@ -614,6 +709,19 @@ write_JP2K_file(CommandOptions& Options)
 	      tmp_dscr->BlackRefLevel = Options.cdci_BlackRefLevel;
 	      tmp_dscr->ColorRange = Options.cdci_ColorRange;
 	      tmp_dscr->VideoLineMap = Options.line_map;
+
+	      if ( Options.md_min_luminance || Options.md_max_luminance )
+		{
+		  tmp_dscr->MasteringDisplayMinimumLuminance = Options.md_min_luminance;
+		  tmp_dscr->MasteringDisplayMaximumLuminance = Options.md_max_luminance;
+		}
+
+	      if ( Options.md_primaries.HasValue() )
+		{
+		  tmp_dscr->MasteringDisplayPrimaries = Options.md_primaries;
+		  tmp_dscr->MasteringDisplayWhitePointChromaticity = Options.md_white_point;
+		}
+
 	      essence_descriptor = static_cast<ASDCP::MXF::FileDescriptor*>(tmp_dscr);
 	    }
 	}
@@ -628,9 +736,22 @@ write_JP2K_file(CommandOptions& Options)
 
 	  if ( ASDCP_SUCCESS(result) )
 	    {
-	      tmp_dscr->PictureEssenceCoding = UL(g_dict->ul(MDD_JP2KEssenceCompression_BroadcastProfile_1));
+	      tmp_dscr->PictureEssenceCoding = Options.picture_coding;
 	      tmp_dscr->ComponentMaxRef = Options.rgba_MaxRef;
 	      tmp_dscr->ComponentMinRef = Options.rgba_MinRef;
+
+	      if ( Options.md_min_luminance || Options.md_max_luminance )
+		{
+		  tmp_dscr->MasteringDisplayMinimumLuminance = Options.md_min_luminance;
+		  tmp_dscr->MasteringDisplayMaximumLuminance = Options.md_max_luminance;
+		}
+
+	      if ( Options.md_primaries.HasValue() )
+		{
+		  tmp_dscr->MasteringDisplayPrimaries = Options.md_primaries;
+		  tmp_dscr->MasteringDisplayWhitePointChromaticity = Options.md_white_point;
+		}
+
 	      essence_descriptor = static_cast<ASDCP::MXF::FileDescriptor*>(tmp_dscr);
 	    }
 	}
