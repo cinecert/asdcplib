@@ -151,10 +151,19 @@ command-line utilities all respond to -h.
 
 Change History
 
-2016-12-07 - bug fixes 2.6.18
- o Fixed *all* Partiton version numbers in AS-02 files
+2016-12-10 - bug fixes 2.7.18
+ o Fixed *all* Partiton version numbers in AS-02 files (the previous attempt
+   only affected the header partition)
  o Improved IMSC-1 profile detection. May not yet be perfect, experimentation
    encouraged!
+ o Added IMF App2e UL values and new MXF data types ColorPrimary and
+   ThreeColorPrimaries (contributed by Schleich)
+ o Added picture descriptor elements MasteringDisplayPrimaries,
+   MasteringDisplayWhitePointChromaticity, MasteringDisplayMaximumLuminance,
+   and MasteringDisplayMinimumLuminance
+ o Added -o and -O options to as-02-wrap 
+ o Fixed as-02-wrap option -p when making 4:4:4 files
+ o Simplified as-02-wrap syntax description
 
 
 2016-12-01 - bug fixes 2.6.17
