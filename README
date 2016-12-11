@@ -151,6 +151,11 @@ command-line utilities all respond to -h.
 
 Change History
 
+2016-12-10 - MDD bug fix 2.7.19
+ o The previous version (2.7.18) contained incorrect MDD.cpp and MDD.h
+   files which affect the PIMF and JP2KEssenceCompression labels.
+
+
 2016-12-10 - bug fixes 2.7.18
  o Fixed *all* Partiton version numbers in AS-02 files (the previous attempt
    only affected the header partition)
