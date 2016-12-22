@@ -666,7 +666,7 @@ Kumu::GetExecutablePath(const std::string& default_path)
   // This fails if the CWD changes after the program has started but before the
   // call to GetExecutablePath(). For least surprise, call GetExecutablePath()
   // immediately in main() and save the value for later use.
-  const,  char* p = getenv("_");
+  const  char* p = getenv("_");
   if ( p )
     {
       return Kumu::PathMakeAbsolute(p);
