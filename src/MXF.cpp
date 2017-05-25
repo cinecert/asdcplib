@@ -713,7 +713,12 @@ ASDCP::MXF::OP1aHeader::InitFromFile(const Kumu::FileReader& Reader)
     }
 
   // slurp up the remainder of the header
-  if ( HeaderByteCount < 1024 )
+  if ( HeaderByteCount == 0 )
+    {
+      DefaultLogSink().Warn("MXF file contents incomplete.\n");
+      return RESULT_KLV_CODING(__LINE__, __FILE__);
+    }
+  else if ( HeaderByteCount < 1024 )
     {
       DefaultLogSink().Warn("Improbably small HeaderByteCount value: %qu\n", HeaderByteCount);
     }
@@ -731,7 +736,7 @@ ASDCP::MXF::OP1aHeader::InitFromFile(const Kumu::FileReader& Reader)
 
       if ( ASDCP_FAILURE(result) )
         {
-	  DefaultLogSink().Error("OP1aHeader::InitFromFile, Read failed\n");
+	  DefaultLogSink().Error("OP1aHeader::InitFromFile, read failed.\n");
 	  return result;
         }
 

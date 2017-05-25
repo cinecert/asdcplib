@@ -503,7 +503,8 @@ namespace ASDCP {
 	MDD_PIMFDynamicMetadataEssence, // 465
 	MDD_PIMFDynamicMetadataDescriptor, // 466
 	MDD_PIMFDynamicMetadataDescriptor_GlobalPayloadSID, // 467
-	
+	MDD_ColorPrimaries_ITU470_PAL, // 468
+	MDD_ColorPrimaries_SMPTE170M, // 469
         MDD_Max
     }; // enum MDD_t
 

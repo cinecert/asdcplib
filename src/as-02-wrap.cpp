@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2011-2016, Robert Scheler, Heiko Sparenberg Fraunhofer IIS,
+Copyright (c) 2011-2017, Robert Scheler, Heiko Sparenberg Fraunhofer IIS,
 John Hurst
 
 All rights reserved.
@@ -105,7 +105,7 @@ banner(FILE* stream = stdout)
 {
   fprintf(stream, "\n\
 %s (asdcplib %s)\n\n\
-Copyright (c) 2011-2016, Robert Scheler, Heiko Sparenberg Fraunhofer IIS, John Hurst\n\n\
+Copyright (c) 2011-2017, Robert Scheler, Heiko Sparenberg Fraunhofer IIS, John Hurst\n\n\
 asdcplib may be copied only under the terms of the license found at\n\
 the top of every file in the asdcplib distribution kit.\n\n\
 Specify the -h (help) option for further information about %s\n\n",
@@ -130,6 +130,10 @@ Options:\n\
   -A <w>/<h>        - Set aspect ratio for image (default 4/3)\n\
   -b <buffer-size>  - Specify size in bytes of picture frame buffer\n\
                       Defaults to 4,194,304 (4MB)\n\
+  -c <num>          - Select the IMF color system to be signaled:\n\
+                      Application 2 (2067-20): 1, 2, or 3\n\
+                      Application 2e (2067-21): 4 or 5\n\
+                      All color system values assume YCbCr; also use -R for RGB\n\
   -C <ul>           - Set ChannelAssignment UL value\n\
   -d <duration>     - Number of frames to process, default all\n\
   -D <depth>        - Component depth for YCbCr images (default: 10)\n\
@@ -145,23 +149,25 @@ Options:\n\
   -M                - Do not create HMAC values when writing\n\
   -m <expr>         - Write MCA labels using <expr>.  Example:\n\
                         51(L,R,C,LFE,Ls,Rs,),HI,VIN\n\
+  -n <UL>           - Set the TransferCharacteristic UL\n\
   -o <min>,<max>    - Mastering Display luminance, cd*m*m, e.g., \".05,100\"\n\
   -O <rx>,<ry>,<gx>,<gy>,<bx>,<by>,<wx>,<wy>\n\
                     - Mastering Display Color Primaries and white point\n\
                       e.g., \".64,.33,.3,.6,.15,.06,.3457,.3585\"\n\
   -P <string>       - Set NamespaceURI property when creating timed text MXF\n\
   -p <ul>           - Set broadcast profile\n\
+  -q <UL>           - Set the CodingEquations UL\n\
   -r <n>/<d>        - Edit Rate of the output file.  24/1 is the default\n\
-  -R                - Indicates RGB image essence (default)\n\
+  -R                - Indicates RGB image essence (default except with -c)\n\
   -s <seconds>      - Duration of a frame-wrapped partition (default 60)\n\
   -t <min>          - Set RGB component minimum code value (default: 0)\n\
   -T <max>          - Set RGB component maximum code value (default: 1023)\n\
-  -u                - Print UL catalog to stderr\n\
+  -u                - Print UL catalog to stdout\n\
   -v                - Verbose, prints informative messages to stderr\n\
   -W                - Read input file only, do not write source file\n\
   -x <int>          - Horizontal subsampling degree (default: 2)\n\
   -X <int>          - Vertical subsampling degree (default: 2)\n\
-  -Y                - Indicates YCbCr image essence (default: RGB), uses\n\
+  -Y                - Indicates YCbCr image essence (default with -c), uses\n\
                       default values for White Ref, Black Ref and Color Range,\n\
                        940,64,897, indicating 10 bit standard Video Range\n\
   -y <white-ref>[,<black-ref>[,<color-range>]]\n\
@@ -241,10 +247,9 @@ public:
   bool show_ul_values_flag;    /// if true, dump the UL table before going tp work.
   Kumu::PathList_t filenames;  // list of filenames to be processed
 
-  UL channel_assignment;
+  UL channel_assignment, picture_coding, transfer_characteristic, color_primaries, coding_equations;
   ASDCP::MXF::AS02_MCAConfigParser mca_config;
 
-  UL picture_coding;
   ui32_t rgba_MaxRef;
   ui32_t rgba_MinRef;
 
@@ -357,6 +362,58 @@ public:
     return true;
   }
 
+  //
+  bool set_color_system_from_arg(const char* arg)
+  {
+    assert(arg);
+
+    switch ( *arg )
+      {
+	// Application 2 (ST 2067-20)
+      case '1':
+	coding_equations = g_dict->ul(MDD_CodingEquations_601);
+	transfer_characteristic = g_dict->ul(MDD_TransferCharacteristics_709);
+	color_primaries = g_dict->ul(MDD_ColorPrimaries_ITU470_PAL);
+	use_cdci_descriptor = true;
+	break;
+
+      case '2':
+	coding_equations = g_dict->ul(MDD_CodingEquations_601);
+	transfer_characteristic = g_dict->ul(MDD_TransferCharacteristics_709);
+	color_primaries = g_dict->ul(MDD_ColorPrimaries_SMPTE170M);
+	use_cdci_descriptor = true;
+	break;
+
+      case '3':
+	coding_equations = g_dict->ul(MDD_CodingEquations_709);
+	transfer_characteristic = g_dict->ul(MDD_TransferCharacteristics_709);
+	color_primaries = g_dict->ul(MDD_ColorPrimaries_BT709);
+	use_cdci_descriptor = true;
+	break;
+
+	// Application 2e (ST 2067-21)
+      case '4':
+	coding_equations = g_dict->ul(MDD_CodingEquations_709);
+	transfer_characteristic = g_dict->ul(MDD_TransferCharacteristics_xvYCC);
+	color_primaries = g_dict->ul(MDD_ColorPrimaries_BT709);
+	use_cdci_descriptor = true;
+	break;
+
+      case '5':
+	coding_equations = g_dict->ul(MDD_CodingEquations_709);
+	transfer_characteristic = g_dict->ul(MDD_TransferCharacteristics_2020);
+	color_primaries = g_dict->ul(MDD_ColorPrimaries_BT2020);
+	use_cdci_descriptor = true;
+	break;
+
+      default:
+	fprintf(stderr, "Unrecognized color system number, expecting one of 1-5.\n");
+	return false;
+      }
+    
+    return true;
+  }
+
   CommandOptions(int argc, const char** argv) :
     error_flag(true), key_flag(false), key_id_flag(false), asset_id_flag(false),
     encrypt_header_flag(true), write_hmac(true), verbose_flag(false), fb_dump_size(0),
@@ -372,6 +429,10 @@ public:
   {
     memset(key_value, 0, KeyLen);
     memset(key_id_value, 0, UUIDlen);
+
+    coding_equations = g_dict->ul(MDD_CodingEquations_709);
+    color_primaries = g_dict->ul(MDD_ColorPrimaries_BT709);
+    transfer_characteristic = g_dict->ul(MDD_TransferCharacteristics_709);
 
     for ( int i = 1; i < argc; i++ )
       {
@@ -420,6 +481,15 @@ public:
 		  fprintf(stderr, "Frame Buffer size: %u bytes.\n", fb_size);
 
 		break;
+
+	      case 'c':
+		TEST_EXTRA_ARG(i, 'c');
+		if ( ! set_color_system_from_arg(argv[i]) )
+		  {
+		    return;
+		  }
+		break;
+
 	      case 'C':
 		TEST_EXTRA_ARG(i, 'C');
 		if ( ! channel_assignment.DecodeHex(argv[i]) )
@@ -506,8 +576,17 @@ public:
 		  }
 		break;
 
+	      case 'n':
+		TEST_EXTRA_ARG(i, 'n');
+		if ( ! transfer_characteristic.DecodeHex(argv[i]) )
+		  {
+		    fprintf(stderr, "Error decoding TransferCharacteristic UL value: %s\n", argv[i]);
+		    return;
+		  }
+		break;
+
 	      case 'O':
-		TEST_EXTRA_ARG(i, ')');
+		TEST_EXTRA_ARG(i, 'O');
 		if ( ! set_display_primaries(argv[i]) )
 		  {
 		    return;
@@ -532,6 +611,15 @@ public:
 		if ( ! picture_coding.DecodeHex(argv[i]) )
 		  {
 		    fprintf(stderr, "Error decoding PictureEssenceCoding UL value: %s\n", argv[i]);
+		    return;
+		  }
+		break;
+
+	      case 'q':
+		TEST_EXTRA_ARG(i, 'q');
+		if ( ! coding_equations.DecodeHex(argv[i]) )
+		  {
+		    fprintf(stderr, "Error decoding CodingEquations UL value: %s\n", argv[i]);
 		    return;
 		  }
 		break;
@@ -587,7 +675,7 @@ public:
 		break;
 
 	      case 'y':
-		// Use values provded as argument, sharp tool, be careful
+		// Use values provided as argument, sharp tool, be careful
 		use_cdci_descriptor = true;
 		TEST_EXTRA_ARG(i, 'y');
 		if ( ! set_video_ref(argv[i]) )
@@ -698,6 +786,9 @@ write_JP2K_file(CommandOptions& Options)
 
 	  if ( ASDCP_SUCCESS(result) )
 	    {
+	      tmp_dscr->CodingEquations = Options.coding_equations;
+	      tmp_dscr->TransferCharacteristic = Options.transfer_characteristic;
+	      tmp_dscr->ColorPrimaries = Options.color_primaries;
 	      tmp_dscr->PictureEssenceCoding = Options.picture_coding;
 	      tmp_dscr->HorizontalSubsampling = Options.horizontal_subsampling;
 	      tmp_dscr->VerticalSubsampling = Options.vertical_subsampling;
@@ -736,6 +827,10 @@ write_JP2K_file(CommandOptions& Options)
 
 	  if ( ASDCP_SUCCESS(result) )
 	    {
+	      tmp_dscr->CodingEquations = Options.coding_equations;
+	      tmp_dscr->TransferCharacteristic = Options.transfer_characteristic;
+	      tmp_dscr->ColorPrimaries = Options.color_primaries;
+	      tmp_dscr->ScanningDirection = 0;
 	      tmp_dscr->PictureEssenceCoding = Options.picture_coding;
 	      tmp_dscr->ComponentMaxRef = Options.rgba_MaxRef;
 	      tmp_dscr->ComponentMinRef = Options.rgba_MinRef;
