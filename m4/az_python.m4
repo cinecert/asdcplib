@@ -361,8 +361,7 @@ AC_DEFUN([AZ_PYTHON_PREFIX],
     ax_python_execprefix=`${PYTHON} -c "import sys; print sys.exec_prefix"`
     AC_SUBST([PYTHON_PREFIX], ["${ax_python_prefix}"])
     AC_SUBST([PYTHON_EXECPREFIX], ["${ax_python_execprefix}"])
-    PYTHON_EXECDIR=`$PYTHON -c "import distutils.sysconfig; \
-	        print distutils.sysconfig.get_python_lib();"`
+    PYTHON_EXECDIR=${prefix}/python${az_python_version}/site-packages
     AC_SUBST([PYTHON_EXECDIR])
     AC_MSG_RESULT([$PYTHON_EXECDIR])
 ])

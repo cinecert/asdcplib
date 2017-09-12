@@ -72,8 +72,9 @@ include_HEADERS += \
 	PCMDataProviders.h \
 	SyncCommon.h \
 	SyncEncoder.h \
-	UUIDInformation.h 
-
+	UUIDInformation.h \
+	AS_DCP_internal.h \
+	AS_DCP_DCData_internal.h
 
 endif
 
@@ -193,7 +194,7 @@ libpyasdcp_la_LIBADD	+= libas02.la
 endif
 
 pyexecdir = @PYTHON_EXECDIR@
-pyexec_includedir = $(PYTHON_PREFIX)/include/python$(PYTHON_SHORTVERSION)
+pyexec_includedir = $(prefix)/include
 nodist_pyexec_include_HEADERS = kumu_python.h asdcp_python.h asdcp_wrappers.h
 pyexec_LTLIBRARIES = kumu.la asdcp.la
 
