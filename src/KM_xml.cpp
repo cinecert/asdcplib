@@ -912,7 +912,11 @@ public:
     m_Scope.pop();
   }
 
+#if XERCES_VERSION_MAJOR < 3
   void characters(const XMLCh *const chars, const unsigned int length)
+#else
+  void characters(const XMLCh* const chars, const XMLSize_t length)
+#endif
   {
     if ( length > 0 )
       {

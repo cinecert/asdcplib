@@ -151,7 +151,12 @@ get_UUID_from_element(XMLElement* Element, UUID& ID)
 {
   assert(Element);
   const char* p = Element->GetBody().c_str();
-  if ( strncmp(p, "urn:uuid:", 9) == 0 )    p += 9;
+
+  if ( strncmp(p, "urn:uuid:", 9) == 0 )
+    {
+      p += 9;
+    }
+  
   return ID.DecodeHex(p);
 }
 
@@ -159,9 +164,15 @@ get_UUID_from_element(XMLElement* Element, UUID& ID)
 bool
 get_UUID_from_child_element(const char* name, XMLElement* Parent, UUID& outID)
 {
-  assert(name); assert(Parent);
+  assert(name);
+  assert(Parent);
   XMLElement* Child = Parent->GetChildWithName(name);
-  if ( Child == 0 )    return false;
+
+  if ( Child == 0 )
+    {
+      return false;
+    }
+
   return get_UUID_from_element(Child, outID);
 }
 
@@ -200,7 +211,7 @@ ASDCP::TimedText::DCSubtitleParser::h__SubtitleParser::OpenRead(const std::strin
 Result_t
 ASDCP::TimedText::DCSubtitleParser::h__SubtitleParser::OpenRead()
 {
-  if ( ! m_Root.ParseString(m_XMLDoc.c_str()) )
+  if ( ! m_Root.ParseString(m_XMLDoc) )
     return RESULT_FORMAT;
 
   m_TDesc.EncodingName = "UTF-8"; // the XML parser demands UTF-8
