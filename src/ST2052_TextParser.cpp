@@ -230,7 +230,7 @@ class AS_02::TimedText::ST2052_TextParser::h__TextParser
 {
   XMLElement  m_Root;
   ResourceTypeMap_t m_ResourceTypes;
-  Result_t OpenRead(const std::string& profile_name);
+  Result_t OpenRead();
 
   ASDCP_NO_COPY_CONSTRUCT(h__TextParser);
 
@@ -259,22 +259,22 @@ public:
     return m_DefaultResolver;
   }
 
-  Result_t OpenRead(const std::string& filename, const std::string& profile_name);
-  Result_t OpenRead(const std::string& xml_doc, const std::string& filename, const std::string& profile_name);
+  Result_t OpenRead(const std::string& filename);
+  Result_t OpenRead(const std::string& xml_doc, const std::string& filename);
   Result_t ReadAncillaryResource(const byte_t *uuid, ASDCP::TimedText::FrameBuffer& FrameBuf,
 				 const ASDCP::TimedText::IResourceResolver& Resolver) const;
 };
 
 //
 Result_t
-AS_02::TimedText::ST2052_TextParser::h__TextParser::OpenRead(const std::string& filename, const std::string& profile_name)
+AS_02::TimedText::ST2052_TextParser::h__TextParser::OpenRead(const std::string& filename)
 {
   Result_t result = ReadFileIntoString(filename, m_XMLDoc);
 
   if ( KM_SUCCESS(result) )
     {
       m_Filename = filename;
-      result = OpenRead(profile_name);
+      result = OpenRead();
     }
 
   return result;
@@ -282,12 +282,11 @@ AS_02::TimedText::ST2052_TextParser::h__TextParser::OpenRead(const std::string& 
 
 //
 Result_t
-AS_02::TimedText::ST2052_TextParser::h__TextParser::OpenRead(const std::string& xml_doc, const std::string& filename,
-							     const std::string& profile_name)
+AS_02::TimedText::ST2052_TextParser::h__TextParser::OpenRead(const std::string& xml_doc, const std::string& filename)
 {
   m_XMLDoc = xml_doc;
   m_Filename = filename;
-  return OpenRead(profile_name);
+  return OpenRead();
 }
 
 
@@ -297,7 +296,7 @@ std::string const IMSC1_textProfile = "http://www.w3.org/ns/ttml/profile/imsc1/t
 
 //
 Result_t
-AS_02::TimedText::ST2052_TextParser::h__TextParser::OpenRead(const std::string& profile_name)
+AS_02::TimedText::ST2052_TextParser::h__TextParser::OpenRead()
 {
   setup_default_font_family_list();
 
@@ -310,7 +309,6 @@ AS_02::TimedText::ST2052_TextParser::h__TextParser::OpenRead(const std::string& 
   m_TDesc.EncodingName = "UTF-8"; // the XML parser demands UTF-8
   m_TDesc.ResourceList.clear();
   m_TDesc.ContainerDuration = 0;
-  m_TDesc.NamespaceName = profile_name; // set the profile explicitly
   std::set<std::string>::const_iterator i;
 
   // Attempt to set the profile from <conformsToStandard>
@@ -466,11 +464,11 @@ AS_02::TimedText::ST2052_TextParser::~ST2052_TextParser()
 // Opens the stream for reading, parses enough data to provide a complete
 // set of stream metadata for the MXFWriter below.
 ASDCP::Result_t
-AS_02::TimedText::ST2052_TextParser::OpenRead(const std::string& filename, const std::string& profile_name) const
+AS_02::TimedText::ST2052_TextParser::OpenRead(const std::string& filename) const
 {
   const_cast<AS_02::TimedText::ST2052_TextParser*>(this)->m_Parser = new h__TextParser;
 
-  Result_t result = m_Parser->OpenRead(filename, profile_name);
+  Result_t result = m_Parser->OpenRead(filename);
 
   if ( ASDCP_FAILURE(result) )
     const_cast<AS_02::TimedText::ST2052_TextParser*>(this)->m_Parser = 0;
@@ -480,12 +478,11 @@ AS_02::TimedText::ST2052_TextParser::OpenRead(const std::string& filename, const
 
 // Parses an XML document to provide a complete set of stream metadata for the MXFWriter below.
 Result_t
-AS_02::TimedText::ST2052_TextParser::OpenRead(const std::string& xml_doc, const std::string& filename,
-					      const std::string& profile_name) const
+AS_02::TimedText::ST2052_TextParser::OpenRead(const std::string& xml_doc, const std::string& filename) const
 {
   const_cast<AS_02::TimedText::ST2052_TextParser*>(this)->m_Parser = new h__TextParser;
 
-  Result_t result = m_Parser->OpenRead(xml_doc, filename, profile_name);
+  Result_t result = m_Parser->OpenRead(xml_doc, filename);
 
   if ( ASDCP_FAILURE(result) )
     const_cast<AS_02::TimedText::ST2052_TextParser*>(this)->m_Parser = 0;

@@ -367,12 +367,16 @@ namespace AS_02
 
 	  // Opens an XML file for reading, parses data to provide a complete
 	  // set of stream metadata for the MXFWriter below.
-	  Result_t OpenRead(const std::string& filename, const std::string& profile_name) const;
+	  Result_t OpenRead(const std::string& filename) const;
 
 	  // Parse an XML string 
-	  Result_t OpenRead(const std::string& xml_doc, const std::string& filename,
-			    const std::string& profile_name) const;
+	  Result_t OpenRead(const std::string& xml_doc, const std::string& filename) const;
 
+	  // The "profile_name" parameter was removed from OpenRead() because it made the API
+	  // awkward WRT lexical compatibility with TimedText_Parser. The value can still be
+	  // modified by changing the descriptor's NamespaceName property after the call to
+	  // FillTimedTextDescriptor() has set it.
+			      
 	  // Fill a TimedTextDescriptor struct with the values from the file's contents.
 	  // Returns RESULT_INIT if the file is not open.
 	  Result_t FillTimedTextDescriptor(ASDCP::TimedText::TimedTextDescriptor&) const;

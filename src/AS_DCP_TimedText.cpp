@@ -594,11 +594,10 @@ ASDCP::TimedText::MXFWriter::h__Writer::SetSourceStream(ASDCP::TimedText::TimedT
 	}
 
       // timecode rate and essence rate are the same
-      AddDMSegment(m_TDesc.EditRate, m_TDesc.EditRate, derive_timecode_rate_from_edit_rate(m_TDesc.EditRate), TIMED_TEXT_DEF_LABEL,
-		   UL(m_Dict->ul(MDD_DataDataDef)), TIMED_TEXT_PACKAGE_LABEL);
+      AddSourceClip(m_TDesc.EditRate, m_TDesc.EditRate, derive_timecode_rate_from_edit_rate(m_TDesc.EditRate),
+		    TIMED_TEXT_DEF_LABEL, m_EssenceUL, UL(m_Dict->ul(MDD_DataDataDef)), TIMED_TEXT_PACKAGE_LABEL);
 
       AddEssenceDescriptor(UL(m_Dict->ul(MDD_TimedTextWrappingClip)));
-
       result = m_HeaderPart.WriteToFile(m_File, m_HeaderSize);
       
       if ( KM_SUCCESS(result) )

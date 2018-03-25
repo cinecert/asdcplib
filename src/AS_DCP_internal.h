@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2004-2016, John Hurst
+Copyright (c) 2004-2018, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -129,6 +129,13 @@ namespace ASDCP
     MXFVersion_2011,
     MXFVersion_MAX
   };
+
+  // version numbers from the MXF spec, to be written into files
+  
+  ui8_t const MXF_ObjectModelVersion = 1;
+  ui8_t const MXF_2004_MinorVersion = 2;
+  ui8_t const MXF_2011_MinorVersion = 3;
+	    
 
   //------------------------------------------------------------------------------------------
   //
@@ -552,16 +559,16 @@ namespace ASDCP
 
 	  if ( mxf_ver == MXFVersion_2004 )
 	    {
-	      m_HeaderPart.MinorVersion = 2;
-	      m_HeaderPart.m_Preface->Version = 258;
-	      m_HeaderPart.m_Preface->ObjectModelVersion = 1;
+	      m_HeaderPart.MinorVersion = MXF_2004_MinorVersion;
+	      m_HeaderPart.m_Preface->Version = ((MXF_ObjectModelVersion < 8) | MXF_2004_MinorVersion);
+	      m_HeaderPart.m_Preface->ObjectModelVersion = MXF_ObjectModelVersion;
 	    }
 	  else
 	    {
 	      assert(mxf_ver == MXFVersion_2011);
-	      m_HeaderPart.MinorVersion = 3;
-	      m_HeaderPart.m_Preface->Version = 259;
-	      m_HeaderPart.m_Preface->ObjectModelVersion = 1;
+	      m_HeaderPart.MinorVersion = MXF_2011_MinorVersion;
+	      m_HeaderPart.m_Preface->Version = ((MXF_ObjectModelVersion < 8) | MXF_2011_MinorVersion);
+	      m_HeaderPart.m_Preface->ObjectModelVersion = MXF_ObjectModelVersion;
 	    }
 
 	  // Identification
@@ -658,8 +665,7 @@ namespace ASDCP
 
 	  TrackSet<TimecodeComponent> FPTCTrack =
 	    CreateTimecodeTrack<SourcePackage>(m_HeaderPart, *m_FilePackage,
-					       tc_edit_rate, TCFrameRate,
-					       ui64_C(3600) * TCFrameRate, m_Dict);
+					       tc_edit_rate, TCFrameRate, 0, m_Dict);
 
 	  FPTCTrack.Sequence->Duration.set_has_value();
 	  m_DurationUpdateList.push_back(&(FPTCTrack.Sequence->Duration.get()));

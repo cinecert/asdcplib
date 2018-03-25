@@ -707,7 +707,7 @@ public:
 	  }
       }
 
-    if ( help_flag || version_flag )
+    if ( help_flag || version_flag || show_ul_values_flag )
       return;
     
     if ( filenames.size() < 2 )
@@ -1110,8 +1110,7 @@ write_timed_text_file(CommandOptions& Options)
   Kumu::FortunaRNG  RNG;
 
   // set up essence parser
-  Result_t result = Parser.OpenRead(Options.filenames.front().c_str(),
-				    Options.profile_name);
+  Result_t result = Parser.OpenRead(Options.filenames.front());
 
   // set up MXF writer
   if ( ASDCP_SUCCESS(result) )
@@ -1120,6 +1119,11 @@ write_timed_text_file(CommandOptions& Options)
       TDesc.EditRate = Options.edit_rate;
       TDesc.ContainerDuration = Options.duration;
       FrameBuffer.Capacity(Options.fb_size);
+
+      if ( ! Options.profile_name.empty() )
+	{
+	  TDesc.NamespaceName = Options.profile_name;
+	}
 
       if ( Options.verbose_flag )
 	{

@@ -179,6 +179,8 @@ namespace AS_02
 
 	this->m_IndexWriter.SetPrimerLookup(&this->m_HeaderPart.m_Primer);
 	this->m_RIP.PairArray.push_back(RIP::PartitionPair(0, 0)); // Header partition RIP entry
+	this->m_IndexWriter.MajorVersion = m_HeaderPart.MajorVersion;
+	this->m_IndexWriter.MinorVersion = m_HeaderPart.MinorVersion;
 	this->m_IndexWriter.OperationalPattern = this->m_HeaderPart.OperationalPattern;
 	this->m_IndexWriter.EssenceContainers = this->m_HeaderPart.EssenceContainers;
 
