@@ -1500,13 +1500,17 @@ ASDCP::MXF::decode_mca_string(const std::string& s, const mca_label_map_t& label
     {
       if ( *i == '(' )
 	{
-	  if ( current_soundfield != 0 )
+	  if ( current_soundfield != 0 && symbol_buf.empty() )
+	    {
+	      // appending to the existing soundfield group
+	      continue;
+	    }
+	  else if ( current_soundfield != 0 )
 	    {
 	      DefaultLogSink().Error("Encountered '(', already processing a soundfield group.\n");
 	      return false;
 	    }
-
-	  if ( symbol_buf.empty() )
+	  else if ( symbol_buf.empty() )
 	    {
 	      DefaultLogSink().Error("Encountered '(', without leading soundfield group symbol.\n");
 	      return false;
@@ -1572,7 +1576,6 @@ ASDCP::MXF::decode_mca_string(const std::string& s, const mca_label_map_t& label
 	  channel_descr->MCALabelDictionaryID = i->second.ul;
 	  descriptor_list.push_back(reinterpret_cast<ASDCP::MXF::InterchangeObject*>(channel_descr));
 	  symbol_buf.clear();
-	  current_soundfield = 0;
 	}
       else if ( *i == ',' )
 	{
