@@ -1044,6 +1044,65 @@ namespace ASDCP
 	};
 
       //
+      class ACESPictureSubDescriptor : public InterchangeObject
+	{
+	  ACESPictureSubDescriptor();
+
+	public:
+	  const Dictionary*& m_Dict;
+          optional_property<UTF16String > ACESAuthoringInformation;
+          optional_property<ThreeColorPrimaries > ACESMasteringDisplayPrimaries;
+          optional_property<ColorPrimary > ACESMasteringDisplayWhitePointChromaticity;
+          optional_property<ui32_t > ACESMasteringDisplayMaximumLuminance;
+          optional_property<ui32_t > ACESMasteringDisplayMinimumLuminance;
+
+      ACESPictureSubDescriptor(const Dictionary*& d);
+      ACESPictureSubDescriptor(const ACESPictureSubDescriptor& rhs);
+      virtual ~ACESPictureSubDescriptor() {}
+
+      const ACESPictureSubDescriptor& operator=(const ACESPictureSubDescriptor& rhs) { Copy(rhs); return *this; }
+      virtual void Copy(const ACESPictureSubDescriptor& rhs);
+      virtual const char* HasName() { return "ACESPictureSubDescriptor"; }
+      virtual Result_t InitFromTLVSet(TLVReader& TLVSet);
+      virtual Result_t WriteToTLVSet(TLVWriter& TLVSet);
+      virtual void     Dump(FILE* = 0);
+      virtual Result_t InitFromBuffer(const byte_t* p, ui32_t l);
+      virtual Result_t WriteToBuffer(ASDCP::FrameBuffer&);
+	};
+
+      //
+      class TargetFrameSubDescriptor : public InterchangeObject
+	{
+	  TargetFrameSubDescriptor();
+
+	public:
+	  const Dictionary*& m_Dict;
+          UUID TargetFrameAncillaryResourceID;
+          UTF16String MediaType;
+          ui64_t TargetFrameIndex;
+          UL TargetFrameTransferCharacteristic;
+          UL TargetFrameColorPrimaries;
+          ui32_t TargetFrameComponentMaxRef;
+          ui32_t TargetFrameComponentMinRef;
+          ui32_t TargetFrameEssenceStreamID;
+          optional_property<UUID > ACESPictureSubDescriptorInstanceID;
+          optional_property<UL > TargetFrameViewingEnvironment;
+
+      TargetFrameSubDescriptor(const Dictionary*& d);
+      TargetFrameSubDescriptor(const TargetFrameSubDescriptor& rhs);
+      virtual ~TargetFrameSubDescriptor() {}
+
+      const TargetFrameSubDescriptor& operator=(const TargetFrameSubDescriptor& rhs) { Copy(rhs); return *this; }
+      virtual void Copy(const TargetFrameSubDescriptor& rhs);
+      virtual const char* HasName() { return "TargetFrameSubDescriptor"; }
+      virtual Result_t InitFromTLVSet(TLVReader& TLVSet);
+      virtual Result_t WriteToTLVSet(TLVWriter& TLVSet);
+      virtual void     Dump(FILE* = 0);
+      virtual Result_t InitFromBuffer(const byte_t* p, ui32_t l);
+      virtual Result_t WriteToBuffer(ASDCP::FrameBuffer&);
+	};
+
+      //
       class PHDRMetadataTrackSubDescriptor : public InterchangeObject
 	{
 	  PHDRMetadataTrackSubDescriptor();

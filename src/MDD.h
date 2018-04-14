@@ -505,6 +505,29 @@ namespace ASDCP {
 	MDD_PIMFDynamicMetadataDescriptor_GlobalPayloadSID, // 467
 	MDD_ColorPrimaries_ITU470_PAL, // 468
 	MDD_ColorPrimaries_SMPTE170M, // 469
+	MDD_ACESPictureSubDescriptor, //  470
+	MDD_ACESPictureSubDescriptor_ACESAuthoringInformation, //  471
+	MDD_ACESPictureSubDescriptor_ACESMasteringDisplayPrimaries, // 472
+	MDD_ACESPictureSubDescriptor_ACESMasteringDisplayWhitePointChromaticity, // 473
+	MDD_ACESPictureSubDescriptor_ACESMasteringDisplayMaximumLuminance, // 474
+	MDD_ACESPictureSubDescriptor_ACESMasteringDisplayMinimumLuminance, // 475
+	MDD_TargetFrameSubDescriptor, //  476
+	MDD_TargetFrameSubDescriptor_TargetFrameAncillaryResourceID, // 477
+	MDD_TargetFrameSubDescriptor_MediaType, // 478
+	MDD_TargetFrameSubDescriptor_TargetFrameIndex, // 479
+	MDD_TargetFrameSubDescriptor_TargetFrameTransferCharacteristic, // 480
+	MDD_TargetFrameSubDescriptor_TargetFrameColorPrimaries, // 481
+	MDD_TargetFrameSubDescriptor_TargetFrameComponentMaxRef, // 482
+	MDD_TargetFrameSubDescriptor_TargetFrameComponentMinRef, // 483
+	MDD_TargetFrameSubDescriptor_TargetFrameEssenceStreamID, // 484
+	MDD_TargetFrameSubDescriptor_ACESPictureSubDescriptorInstanceID, // 485
+	MDD_TargetFrameSubDescriptor_TargetFrameViewingEnvironment, // 486
+	MDD_TransferCharacteristic_Gamma_2_6, // 487
+	MDD_TransferCharacteristic_sRGB, // 488
+	MDD_TheatricalViewingEnvironment, // 489
+	MDD_HDTVReferenceViewingEnvironment, // 490
+	MDD_HDRReferenceViewingEnvironment, // 491
+
         MDD_Max
     }; // enum MDD_t
 

@@ -77,6 +77,8 @@ static InterchangeObject* GroupOfSoundfieldGroupsLabelSubDescriptor_Factory(cons
 static InterchangeObject* DCDataDescriptor_Factory(const Dictionary*& Dict) { return new DCDataDescriptor(Dict); }
 static InterchangeObject* PrivateDCDataDescriptor_Factory(const Dictionary*& Dict) { return new PrivateDCDataDescriptor(Dict); }
 static InterchangeObject* DolbyAtmosSubDescriptor_Factory(const Dictionary*& Dict) { return new DolbyAtmosSubDescriptor(Dict); }
+static InterchangeObject* ACESPictureSubDescriptor_Factory(const Dictionary*& Dict) { return new ACESPictureSubDescriptor(Dict); }
+static InterchangeObject* TargetFrameSubDescriptor_Factory(const Dictionary*& Dict) { return new TargetFrameSubDescriptor(Dict); }
 static InterchangeObject* PHDRMetadataTrackSubDescriptor_Factory(const Dictionary*& Dict) { return new PHDRMetadataTrackSubDescriptor(Dict); }
 static InterchangeObject* PIMFDynamicMetadataDescriptor_Factory(const Dictionary*& Dict) { return new PIMFDynamicMetadataDescriptor(Dict); }
 
@@ -122,6 +124,8 @@ ASDCP::MXF::Metadata_InitTypes(const Dictionary*& Dict)
   SetObjectFactory(Dict->ul(MDD_DCDataDescriptor), DCDataDescriptor_Factory);
   SetObjectFactory(Dict->ul(MDD_PrivateDCDataDescriptor), PrivateDCDataDescriptor_Factory);
   SetObjectFactory(Dict->ul(MDD_DolbyAtmosSubDescriptor), DolbyAtmosSubDescriptor_Factory);
+  SetObjectFactory(Dict->ul(MDD_ACESPictureSubDescriptor), ACESPictureSubDescriptor_Factory);
+  SetObjectFactory(Dict->ul(MDD_TargetFrameSubDescriptor), TargetFrameSubDescriptor_Factory);
   SetObjectFactory(Dict->ul(MDD_PHDRMetadataTrackSubDescriptor), PHDRMetadataTrackSubDescriptor_Factory);
   SetObjectFactory(Dict->ul(MDD_PIMFDynamicMetadataDescriptor), PIMFDynamicMetadataDescriptor_Factory);
 }
@@ -3883,6 +3887,243 @@ DolbyAtmosSubDescriptor::InitFromBuffer(const byte_t* p, ui32_t l)
 //
 ASDCP::Result_t
 DolbyAtmosSubDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
+{
+  return InterchangeObject::WriteToBuffer(Buffer);
+}
+
+//------------------------------------------------------------------------------------------
+// ACESPictureSubDescriptor
+
+//
+
+ACESPictureSubDescriptor::ACESPictureSubDescriptor(const Dictionary*& d) : InterchangeObject(d), m_Dict(d)
+{
+  assert(m_Dict);
+  m_UL = m_Dict->ul(MDD_ACESPictureSubDescriptor);
+}
+
+ACESPictureSubDescriptor::ACESPictureSubDescriptor(const ACESPictureSubDescriptor& rhs) : InterchangeObject(rhs.m_Dict), m_Dict(rhs.m_Dict)
+{
+  assert(m_Dict);
+  m_UL = m_Dict->ul(MDD_ACESPictureSubDescriptor);
+  Copy(rhs);
+}
+
+
+//
+ASDCP::Result_t
+ACESPictureSubDescriptor::InitFromTLVSet(TLVReader& TLVSet)
+{
+  assert(m_Dict);
+  Result_t result = InterchangeObject::InitFromTLVSet(TLVSet);
+  if ( ASDCP_SUCCESS(result) ) {
+    result = TLVSet.ReadObject(OBJ_READ_ARGS_OPT(ACESPictureSubDescriptor, ACESAuthoringInformation));
+    ACESAuthoringInformation.set_has_value( result == RESULT_OK );
+  }
+  if ( ASDCP_SUCCESS(result) ) {
+    result = TLVSet.ReadObject(OBJ_READ_ARGS_OPT(ACESPictureSubDescriptor, ACESMasteringDisplayPrimaries));
+    ACESMasteringDisplayPrimaries.set_has_value( result == RESULT_OK );
+  }
+  if ( ASDCP_SUCCESS(result) ) {
+    result = TLVSet.ReadObject(OBJ_READ_ARGS_OPT(ACESPictureSubDescriptor, ACESMasteringDisplayWhitePointChromaticity));
+    ACESMasteringDisplayWhitePointChromaticity.set_has_value( result == RESULT_OK );
+  }
+  if ( ASDCP_SUCCESS(result) ) { 
+    result = TLVSet.ReadUi32(OBJ_READ_ARGS_OPT(ACESPictureSubDescriptor, ACESMasteringDisplayMaximumLuminance));
+    ACESMasteringDisplayMaximumLuminance.set_has_value( result == RESULT_OK );
+  }
+  if ( ASDCP_SUCCESS(result) ) { 
+    result = TLVSet.ReadUi32(OBJ_READ_ARGS_OPT(ACESPictureSubDescriptor, ACESMasteringDisplayMinimumLuminance));
+    ACESMasteringDisplayMinimumLuminance.set_has_value( result == RESULT_OK );
+  }
+  return result;
+}
+
+//
+ASDCP::Result_t
+ACESPictureSubDescriptor::WriteToTLVSet(TLVWriter& TLVSet)
+{
+  assert(m_Dict);
+  Result_t result = InterchangeObject::WriteToTLVSet(TLVSet);
+  if ( ASDCP_SUCCESS(result)  && ! ACESAuthoringInformation.empty() ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS_OPT(ACESPictureSubDescriptor, ACESAuthoringInformation));
+  if ( ASDCP_SUCCESS(result)  && ! ACESMasteringDisplayPrimaries.empty() ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS_OPT(ACESPictureSubDescriptor, ACESMasteringDisplayPrimaries));
+  if ( ASDCP_SUCCESS(result)  && ! ACESMasteringDisplayWhitePointChromaticity.empty() ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS_OPT(ACESPictureSubDescriptor, ACESMasteringDisplayWhitePointChromaticity));
+  if ( ASDCP_SUCCESS(result)  && ! ACESMasteringDisplayMaximumLuminance.empty() ) result = TLVSet.WriteUi32(OBJ_WRITE_ARGS_OPT(ACESPictureSubDescriptor, ACESMasteringDisplayMaximumLuminance));
+  if ( ASDCP_SUCCESS(result)  && ! ACESMasteringDisplayMinimumLuminance.empty() ) result = TLVSet.WriteUi32(OBJ_WRITE_ARGS_OPT(ACESPictureSubDescriptor, ACESMasteringDisplayMinimumLuminance));
+  return result;
+}
+
+//
+void
+ACESPictureSubDescriptor::Copy(const ACESPictureSubDescriptor& rhs)
+{
+  InterchangeObject::Copy(rhs);
+  ACESAuthoringInformation = rhs.ACESAuthoringInformation;
+  ACESMasteringDisplayPrimaries = rhs.ACESMasteringDisplayPrimaries;
+  ACESMasteringDisplayWhitePointChromaticity = rhs.ACESMasteringDisplayWhitePointChromaticity;
+  ACESMasteringDisplayMaximumLuminance = rhs.ACESMasteringDisplayMaximumLuminance;
+  ACESMasteringDisplayMinimumLuminance = rhs.ACESMasteringDisplayMinimumLuminance;
+}
+
+//
+void
+ACESPictureSubDescriptor::Dump(FILE* stream)
+{
+  char identbuf[IdentBufferLen];
+  *identbuf = 0;
+
+  if ( stream == 0 )
+    stream = stderr;
+
+  InterchangeObject::Dump(stream);
+  if ( ! ACESAuthoringInformation.empty() ) {
+    fprintf(stream, "  %22s = %s\n",  "ACESAuthoringInformation", ACESAuthoringInformation.get().EncodeString(identbuf, IdentBufferLen));
+  }
+  if ( ! ACESMasteringDisplayPrimaries.empty() ) {
+    fprintf(stream, "  %22s = %s\n",  "ACESMasteringDisplayPrimaries", ACESMasteringDisplayPrimaries.get().EncodeString(identbuf, IdentBufferLen));
+  }
+  if ( ! ACESMasteringDisplayWhitePointChromaticity.empty() ) {
+    fprintf(stream, "  %22s = %s\n",  "ACESMasteringDisplayWhitePointChromaticity", ACESMasteringDisplayWhitePointChromaticity.get().EncodeString(identbuf, IdentBufferLen));
+  }
+  if ( ! ACESMasteringDisplayMaximumLuminance.empty() ) {
+    fprintf(stream, "  %22s = %d\n",  "ACESMasteringDisplayMaximumLuminance", ACESMasteringDisplayMaximumLuminance.get());
+  }
+  if ( ! ACESMasteringDisplayMinimumLuminance.empty() ) {
+    fprintf(stream, "  %22s = %d\n",  "ACESMasteringDisplayMinimumLuminance", ACESMasteringDisplayMinimumLuminance.get());
+  }
+}
+
+//
+ASDCP::Result_t
+ACESPictureSubDescriptor::InitFromBuffer(const byte_t* p, ui32_t l)
+{
+  return InterchangeObject::InitFromBuffer(p, l);
+}
+
+//
+ASDCP::Result_t
+ACESPictureSubDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
+{
+  return InterchangeObject::WriteToBuffer(Buffer);
+}
+
+//------------------------------------------------------------------------------------------
+// TargetFrameSubDescriptor
+
+//
+
+TargetFrameSubDescriptor::TargetFrameSubDescriptor(const Dictionary*& d) : InterchangeObject(d), m_Dict(d), TargetFrameIndex(0), TargetFrameComponentMaxRef(0), TargetFrameComponentMinRef(0), TargetFrameEssenceStreamID(0)
+{
+  assert(m_Dict);
+  m_UL = m_Dict->ul(MDD_TargetFrameSubDescriptor);
+}
+
+TargetFrameSubDescriptor::TargetFrameSubDescriptor(const TargetFrameSubDescriptor& rhs) : InterchangeObject(rhs.m_Dict), m_Dict(rhs.m_Dict)
+{
+  assert(m_Dict);
+  m_UL = m_Dict->ul(MDD_TargetFrameSubDescriptor);
+  Copy(rhs);
+}
+
+
+//
+ASDCP::Result_t
+TargetFrameSubDescriptor::InitFromTLVSet(TLVReader& TLVSet)
+{
+  assert(m_Dict);
+  Result_t result = InterchangeObject::InitFromTLVSet(TLVSet);
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(TargetFrameSubDescriptor, TargetFrameAncillaryResourceID));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(TargetFrameSubDescriptor, MediaType));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadUi64(OBJ_READ_ARGS(TargetFrameSubDescriptor, TargetFrameIndex));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(TargetFrameSubDescriptor, TargetFrameTransferCharacteristic));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(TargetFrameSubDescriptor, TargetFrameColorPrimaries));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadUi32(OBJ_READ_ARGS(TargetFrameSubDescriptor, TargetFrameComponentMaxRef));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadUi32(OBJ_READ_ARGS(TargetFrameSubDescriptor, TargetFrameComponentMinRef));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadUi32(OBJ_READ_ARGS(TargetFrameSubDescriptor, TargetFrameEssenceStreamID));
+  if ( ASDCP_SUCCESS(result) ) {
+    result = TLVSet.ReadObject(OBJ_READ_ARGS_OPT(TargetFrameSubDescriptor, ACESPictureSubDescriptorInstanceID));
+    ACESPictureSubDescriptorInstanceID.set_has_value( result == RESULT_OK );
+  }
+  if ( ASDCP_SUCCESS(result) ) {
+    result = TLVSet.ReadObject(OBJ_READ_ARGS_OPT(TargetFrameSubDescriptor, TargetFrameViewingEnvironment));
+    TargetFrameViewingEnvironment.set_has_value( result == RESULT_OK );
+  }
+  return result;
+}
+
+//
+ASDCP::Result_t
+TargetFrameSubDescriptor::WriteToTLVSet(TLVWriter& TLVSet)
+{
+  assert(m_Dict);
+  Result_t result = InterchangeObject::WriteToTLVSet(TLVSet);
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(TargetFrameSubDescriptor, TargetFrameAncillaryResourceID));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(TargetFrameSubDescriptor, MediaType));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi64(OBJ_WRITE_ARGS(TargetFrameSubDescriptor, TargetFrameIndex));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(TargetFrameSubDescriptor, TargetFrameTransferCharacteristic));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(TargetFrameSubDescriptor, TargetFrameColorPrimaries));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi32(OBJ_WRITE_ARGS(TargetFrameSubDescriptor, TargetFrameComponentMaxRef));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi32(OBJ_WRITE_ARGS(TargetFrameSubDescriptor, TargetFrameComponentMinRef));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi32(OBJ_WRITE_ARGS(TargetFrameSubDescriptor, TargetFrameEssenceStreamID));
+  if ( ASDCP_SUCCESS(result)  && ! ACESPictureSubDescriptorInstanceID.empty() ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS_OPT(TargetFrameSubDescriptor, ACESPictureSubDescriptorInstanceID));
+  if ( ASDCP_SUCCESS(result)  && ! TargetFrameViewingEnvironment.empty() ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS_OPT(TargetFrameSubDescriptor, TargetFrameViewingEnvironment));
+  return result;
+}
+
+//
+void
+TargetFrameSubDescriptor::Copy(const TargetFrameSubDescriptor& rhs)
+{
+  InterchangeObject::Copy(rhs);
+  TargetFrameAncillaryResourceID = rhs.TargetFrameAncillaryResourceID;
+  MediaType = rhs.MediaType;
+  TargetFrameIndex = rhs.TargetFrameIndex;
+  TargetFrameTransferCharacteristic = rhs.TargetFrameTransferCharacteristic;
+  TargetFrameColorPrimaries = rhs.TargetFrameColorPrimaries;
+  TargetFrameComponentMaxRef = rhs.TargetFrameComponentMaxRef;
+  TargetFrameComponentMinRef = rhs.TargetFrameComponentMinRef;
+  TargetFrameEssenceStreamID = rhs.TargetFrameEssenceStreamID;
+  ACESPictureSubDescriptorInstanceID = rhs.ACESPictureSubDescriptorInstanceID;
+  TargetFrameViewingEnvironment = rhs.TargetFrameViewingEnvironment;
+}
+
+//
+void
+TargetFrameSubDescriptor::Dump(FILE* stream)
+{
+  char identbuf[IdentBufferLen];
+  *identbuf = 0;
+
+  if ( stream == 0 )
+    stream = stderr;
+
+  InterchangeObject::Dump(stream);
+  fprintf(stream, "  %22s = %s\n",  "TargetFrameAncillaryResourceID", TargetFrameAncillaryResourceID.EncodeString(identbuf, IdentBufferLen));
+  fprintf(stream, "  %22s = %s\n",  "MediaType", MediaType.EncodeString(identbuf, IdentBufferLen));
+  fprintf(stream, "  %22s = %s\n",  "TargetFrameIndex", i64sz(TargetFrameIndex, identbuf));
+  fprintf(stream, "  %22s = %s\n",  "TargetFrameTransferCharacteristic", TargetFrameTransferCharacteristic.EncodeString(identbuf, IdentBufferLen));
+  fprintf(stream, "  %22s = %s\n",  "TargetFrameColorPrimaries", TargetFrameColorPrimaries.EncodeString(identbuf, IdentBufferLen));
+  fprintf(stream, "  %22s = %d\n",  "TargetFrameComponentMaxRef", TargetFrameComponentMaxRef);
+  fprintf(stream, "  %22s = %d\n",  "TargetFrameComponentMinRef", TargetFrameComponentMinRef);
+  fprintf(stream, "  %22s = %d\n",  "TargetFrameEssenceStreamID", TargetFrameEssenceStreamID);
+  if ( ! ACESPictureSubDescriptorInstanceID.empty() ) {
+    fprintf(stream, "  %22s = %s\n",  "ACESPictureSubDescriptorInstanceID", ACESPictureSubDescriptorInstanceID.get().EncodeString(identbuf, IdentBufferLen));
+  }
+  if ( ! TargetFrameViewingEnvironment.empty() ) {
+    fprintf(stream, "  %22s = %s\n",  "TargetFrameViewingEnvironment", TargetFrameViewingEnvironment.get().EncodeString(identbuf, IdentBufferLen));
+  }
+}
+
+//
+ASDCP::Result_t
+TargetFrameSubDescriptor::InitFromBuffer(const byte_t* p, ui32_t l)
+{
+  return InterchangeObject::InitFromBuffer(p, l);
+}
+
+//
+ASDCP::Result_t
+TargetFrameSubDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 {
   return InterchangeObject::WriteToBuffer(Buffer);
 }
