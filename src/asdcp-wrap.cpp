@@ -1,5 +1,6 @@
 /*
-Copyright (c) 2003-2016, John Hurst
+Copyright (c) 2003-2018
+, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -113,7 +114,7 @@ banner(FILE* stream = stdout)
 {
   fprintf(stream, "\n\
 %s (asdcplib %s)\n\n\
-Copyright (c) 2003-2015 John Hurst\n\n\
+Copyright (c) 2003-2018 John Hurst\n\n\
 asdcplib may be copied only under the terms of the license found at\n\
 the top of every file in the asdcplib distribution kit.\n\n\
 Specify the -h (help) option for further information about %s\n\n",
@@ -135,35 +136,38 @@ USAGE: %s [-h|-help] [-V]\n\
 
   fprintf(stream, "\
 Options:\n\
+  -h | -help        - Show help\n\
+  -V                - Show version information\n\
   -3                - Create a stereoscopic image file. Expects two\n\
                       directories of JP2K codestreams (directories must have\n\
                       an equal number of frames; the left eye is first)\n\
-  -A <UL>           - Set DataEssenceCoding UL value in an Aux Data file\n\
-  -C <UL>           - Set ChannelAssignment UL value in a PCM file\n\
-  -h | -help        - Show help\n\
-  -V                - Show version information\n\
-  -e                - Encrypt MPEG or JP2K headers (default)\n\
-  -E                - Do not encrypt MPEG or JP2K headers\n\
-  -j <key-id-str>   - Write key ID instead of creating a random value\n\
-  -k <key-string>   - Use key for ciphertext operations\n\
-  -M                - Do not create HMAC values when writing\n\
-  -m <expr>         - Write MCA labels using <expr>.  Example:\n\
-                        51(L,R,C,LFE,Ls,Rs,),HI,VIN\n\
-                        Note: The symbol '-' may be used for an unlabeled\n\
-                              channel, but not within a soundfield.\n\
   -a <UUID>         - Specify the Asset ID of the file\n\
+  -A <UL>           - Set DataEssenceCoding UL value in an Aux Data file\n\
   -b <buffer-size>  - Specify size in bytes of picture frame buffer\n\
                       Defaults to 4,194,304 (4MB)\n\
+  -C <UL>           - Set ChannelAssignment UL value in a PCM file\n\
   -d <duration>     - Number of frames to process, default all\n\
+  -e                - Encrypt MPEG or JP2K headers (default)\n\
+  -E                - Do not encrypt MPEG or JP2K headers\n\
   -f <start-frame>  - Starting frame number, default 0\n\
+  -g <rfc-5646-code>\n\
+                    - Create MCA labels having the given RFC 5646 language code\n\
+                      (requires option \"-m\")\n\
+  -j <key-id-str>   - Write key ID instead of creating a random value\n\
+  -k <key-string>   - Use key for ciphertext operations\n\
   -l <label>        - Use given channel format label when writing MXF sound\n\
                       files. SMPTE 429-2 labels: '5.1', '6.1', '7.1',\n\
                       '7.1DS', 'WTF'\n\
                       Default is no label (valid for Interop only).\n\
   -L                - Write SMPTE UL values instead of MXF Interop\n\
-  -P <UL>           - Set PictureEssenceCoding UL value in a JP2K file\n\
+  -m <expr>         - Write MCA labels using <expr>.  Example:\n\
+                        51(L,R,C,LFE,Ls,Rs,),HI,VIN\n\
+                        Note: The symbol '-' may be used for an unlabeled\n\
+                              channel, but not within a soundfield.\n\
+  -M                - Do not create HMAC values when writing\n\
   -p <rate>         - fps of picture when wrapping PCM or JP2K:\n\
                       Use one of [23|24|25|30|48|50|60], 24 is default\n\
+  -P <UL>           - Set PictureEssenceCoding UL value in a JP2K file\n\
   -s                - Insert a Dolby Atmos synchronization channel when\n\
                       wrapping PCM. This implies a -L option(SMPTE ULs) and \n\
                       will overide -C and -l options with Configuration 4 \n\
@@ -248,6 +252,7 @@ public:
   ui32_t max_object_count;     // max object count for atmos wrapping
   bool use_interop_sound_wtf;  // make true to force WTF assignment label instead of MCA
   ASDCP::MXF::ASDCP_MCAConfigParser mca_config;
+  std::string mca_language;
 
   //
   Rational PictureRate()
@@ -313,6 +318,7 @@ public:
   {
     memset(key_value, 0, KeyLen);
     memset(key_id_value, 0, UUIDlen);
+    std::string mca_config_str;
 
     for ( int i = 1; i < argc; i++ )
       {
@@ -386,7 +392,11 @@ public:
 		start_frame = Kumu::xabs(strtol(argv[i], 0, 10));
 		break;
 
-	      case 'g': write_partial_pcm_flag = true; break;
+	      case 'g':
+		TEST_EXTRA_ARG(i, 'g');
+		mca_language = argv[i];
+		break;
+
 	      case 'h': help_flag = true; break;
 
 	      case 'j': key_id_flag = true;
@@ -427,10 +437,7 @@ public:
 
 	      case 'm':
 		TEST_EXTRA_ARG(i, 'm');
-		if ( ! mca_config.DecodeString(argv[i]) )
-		  {
-		    return;
-		  }
+		mca_config_str = argv[i];
 		break;
 
 	      case 'P':
@@ -453,6 +460,7 @@ public:
 	      case 'v': verbose_flag = true; break;
 	      case 'w': use_interop_sound_wtf = true; break;
 	      case 'W': no_write_flag = true; break;
+	      case 'x': write_partial_pcm_flag = true; break;
 	      case 'Z': j2c_pedantic = false; break;
 	      case 'z': j2c_pedantic = true; break;
 
@@ -476,8 +484,28 @@ public:
 	  }
       }
 
+    if ( ! mca_config_str.empty() )
+      {
+	if ( mca_language.empty() )
+	  {
+	    if ( ! mca_config.DecodeString(mca_config_str) )
+	      {
+		return;
+	      }
+	  }
+	else
+	  {
+	    if ( ! mca_config.DecodeString(mca_config_str, mca_language) )
+	      {
+		return;
+	      }
+	  }
+      }
+		
     if ( help_flag || version_flag )
-      return;
+      {
+	return;
+      }
 
     if ( filenames.size() < 2 )
       {

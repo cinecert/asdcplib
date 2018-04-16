@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2011-2017, Robert Scheler, Heiko Sparenberg Fraunhofer IIS,
+Copyright (c) 2011-2018, Robert Scheler, Heiko Sparenberg Fraunhofer IIS,
 John Hurst
 
 All rights reserved.
@@ -105,7 +105,7 @@ banner(FILE* stream = stdout)
 {
   fprintf(stream, "\n\
 %s (asdcplib %s)\n\n\
-Copyright (c) 2011-2017, Robert Scheler, Heiko Sparenberg Fraunhofer IIS, John Hurst\n\n\
+Copyright (c) 2011-2018, Robert Scheler, Heiko Sparenberg Fraunhofer IIS, John Hurst\n\n\
 asdcplib may be copied only under the terms of the license found at\n\
 the top of every file in the asdcplib distribution kit.\n\n\
 Specify the -h (help) option for further information about %s\n\n",
@@ -140,22 +140,25 @@ Options:\n\
   -e                - Encrypt JP2K headers (default)\n\
   -E                - Do not encrypt JP2K headers\n\
   -F (0|1)          - Set field dominance for interlaced image (default: 0)\n\
+  -g <rfc-5646-code>\n\
+                    - Create MCA labels having the given RFC 5646 language code\n\
+                      (requires option \"-m\")\n\
   -i                - Indicates input essence is interlaced fields (forces -Y)\n\
   -j <key-id-str>   - Write key ID instead of creating a random value\n\
   -k <key-string>   - Use key for ciphertext operations\n\
   -l <first>,<second>\n\
                     - Integer values that set the VideoLineMap when creating\n\
                       interlaced YCbCr files\n\
-  -M                - Do not create HMAC values when writing\n\
   -m <expr>         - Write MCA labels using <expr>.  Example:\n\
                         51(L,R,C,LFE,Ls,Rs,),HI,VIN\n\
+  -M                - Do not create HMAC values when writing\n\
   -n <UL>           - Set the TransferCharacteristic UL\n\
   -o <min>,<max>    - Mastering Display luminance, cd*m*m, e.g., \".05,100\"\n\
   -O <rx>,<ry>,<gx>,<gy>,<bx>,<by>,<wx>,<wy>\n\
                     - Mastering Display Color Primaries and white point\n\
                       e.g., \".64,.33,.3,.6,.15,.06,.3457,.3585\"\n\
-  -P <string>       - Set NamespaceURI property when creating timed text MXF\n\
   -p <ul>           - Set broadcast profile\n\
+  -P <string>       - Set NamespaceURI property when creating timed text MXF\n\
   -q <UL>           - Set the CodingEquations UL\n\
   -r <n>/<d>        - Edit Rate of the output file.  24/1 is the default\n\
   -R                - Indicates RGB image essence (default except with -c)\n\
@@ -167,12 +170,12 @@ Options:\n\
   -W                - Read input file only, do not write source file\n\
   -x <int>          - Horizontal subsampling degree (default: 2)\n\
   -X <int>          - Vertical subsampling degree (default: 2)\n\
-  -Y                - Indicates YCbCr image essence (default with -c), uses\n\
-                      default values for White Ref, Black Ref and Color Range,\n\
-                       940,64,897, indicating 10 bit standard Video Range\n\
   -y <white-ref>[,<black-ref>[,<color-range>]]\n\
                     - Same as -Y but White Ref, Black Ref and Color Range are\n\
                       set from the given argument\n\
+  -Y                - Indicates YCbCr image essence (default with -c), uses\n\
+                      default values for White Ref, Black Ref and Color Range,\n\
+                       940,64,897, indicating 10 bit standard Video Range\n\
   -z                - Fail if j2c inputs have unequal parameters (default)\n\
   -Z                - Ignore unequal parameters in j2c inputs\n\
 \n\
@@ -249,6 +252,7 @@ public:
 
   UL channel_assignment, picture_coding, transfer_characteristic, color_primaries, coding_equations;
   ASDCP::MXF::AS02_MCAConfigParser mca_config;
+  std::string mca_language;
 
   ui32_t rgba_MaxRef;
   ui32_t rgba_MinRef;
@@ -433,6 +437,7 @@ public:
     coding_equations = g_dict->ul(MDD_CodingEquations_709);
     color_primaries = g_dict->ul(MDD_ColorPrimaries_BT709);
     transfer_characteristic = g_dict->ul(MDD_TransferCharacteristics_709);
+    std::string mca_config_str;
 
     for ( int i = 1; i < argc; i++ )
       {
@@ -522,6 +527,11 @@ public:
 		  }
 		break;
 
+	      case 'g':
+		TEST_EXTRA_ARG(i, 'g');
+		mca_language = argv[i];
+		break;
+
 	      case 'h': help_flag = true; break;
 
 	      case 'i':
@@ -570,10 +580,7 @@ public:
 
 	      case 'm':
 		TEST_EXTRA_ARG(i, 'm');
-		if ( ! mca_config.DecodeString(argv[i]) )
-		  {
-		    return;
-		  }
+		mca_config_str = argv[i];
 		break;
 
 	      case 'n':
@@ -707,9 +714,29 @@ public:
 	  }
       }
 
+    if ( ! mca_config_str.empty() )
+      {
+	if ( mca_language.empty() )
+	  {
+	    if ( ! mca_config.DecodeString(mca_config_str) )
+	      {
+		return;
+	      }
+	  }
+	else
+	  {
+	    if ( ! mca_config.DecodeString(mca_config_str, mca_language) )
+	      {
+		return;
+	      }
+	  }
+      }
+
     if ( help_flag || version_flag || show_ul_values_flag )
-      return;
-    
+      {
+	return;
+      }
+
     if ( filenames.size() < 2 )
       {
 	fputs("Option requires at least two filename arguments: <input-file> <output-file>\n", stderr);
