@@ -172,6 +172,7 @@ lib_LTLIBRARIES += libpyasdcp.la
 
 nodist_libpyasdcp_la_SOURCES = \
 	kumu_python.cpp \
+	kumu_python_list.cpp \
 	kumu_python.h \
 	asdcp_python.cpp \
 	asdcp_python.h \
