@@ -1493,7 +1493,7 @@ ASDCP::MXF::decode_mca_string(const std::string& s, const mca_label_map_t& label
 {
   std::string symbol_buf;
   channel_count = 0;
-  ASDCP::MXF::SoundfieldGroupLabelSubDescriptor *current_soundfield = 0;
+  ASDCP::MXF::SoundfieldGroupLabelSubDescriptor *current_soundfield = 0, *prev_soundfield = 0;
   std::string::const_iterator i;
 
   for ( i = s.begin(); i != s.end(); ++i )
@@ -1512,12 +1512,21 @@ ASDCP::MXF::decode_mca_string(const std::string& s, const mca_label_map_t& label
 	    }
 	  else if ( symbol_buf.empty() )
 	    {
-	      DefaultLogSink().Error("Encountered '(', without leading soundfield group symbol.\n");
-	      return false;
+	      if ( prev_soundfield != 0 )
+		{
+		  current_soundfield = prev_soundfield;
+		  // appending to the existing soundfield group
+		  continue;
+		}
+	      else
+		{
+		  DefaultLogSink().Error("Encountered '(', without leading soundfield group symbol.\n");
+		  return false;
+		}
 	    }
 
 	  mca_label_map_t::const_iterator i = labels.find(symbol_buf);
-      
+
 	  if ( i == labels.end() )
 	    {
 	      DefaultLogSink().Error("Unknown symbol: '%s'\n", symbol_buf.c_str());
@@ -1538,6 +1547,7 @@ ASDCP::MXF::decode_mca_string(const std::string& s, const mca_label_map_t& label
 	  current_soundfield->RFC5646SpokenLanguage = language;
 	  current_soundfield->MCALabelDictionaryID = i->second.ul;
 	  descriptor_list.push_back(reinterpret_cast<ASDCP::MXF::InterchangeObject*>(current_soundfield));
+	  prev_soundfield = current_soundfield;
 	  symbol_buf.clear();
 	}
       else if ( *i == ')' )
@@ -1576,6 +1586,7 @@ ASDCP::MXF::decode_mca_string(const std::string& s, const mca_label_map_t& label
 	  channel_descr->MCALabelDictionaryID = i->second.ul;
 	  descriptor_list.push_back(reinterpret_cast<ASDCP::MXF::InterchangeObject*>(channel_descr));
 	  symbol_buf.clear();
+	  current_soundfield = 0;
 	}
       else if ( *i == ',' )
 	{
