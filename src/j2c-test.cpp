@@ -62,7 +62,7 @@ banner(FILE* stream = stderr)
 {
   fprintf(stream, "\n\
 %s (asdcplib %s)\n\n\
-Copyright (c) 2005-2010 John Hurst\n\n\
+Copyright (c) 2005-2018 John Hurst\n\n\
 %s is part of asdcplib.\n\
 asdcplib may be copied only under the terms of the license found at\n\
 the top of every file in the asdcplib distribution kit.\n\n\
@@ -164,10 +164,12 @@ main(int argc, const char** argv)
     }
 
   ASDCP::JP2K::FrameBuffer FB;
-  Marker        MyMarker;
+  Marker        current_marker;
   CodestreamParser Parser;
   std::list<std::string>::iterator i;
   bool has_soc = false;
+  bool has_tlm = false;
+  int marker_count = 0;
 
   Result_t result = FB.Capacity(1024*1024*4);
   
@@ -180,9 +182,11 @@ main(int argc, const char** argv)
 	  const byte_t* p = FB.RoData();
 	  const byte_t* end_p = p + FB.Size();
 
-	  while ( p < end_p && ASDCP_SUCCESS(GetNextMarker(&p, MyMarker)) )
+	  while ( p < end_p && ASDCP_SUCCESS(GetNextMarker(&p, current_marker)) )
 	    {
-	      if ( MyMarker.m_Type == MRK_SOC )
+	      ++marker_count;
+
+	      if ( current_marker.m_Type == MRK_SOC )
 		{
 		  if ( has_soc )
 		    {
@@ -195,50 +199,56 @@ main(int argc, const char** argv)
 		      has_soc = true;
 		      continue;
 		    }
+		}
 
-		  if  ( ! has_soc )
-		    {
-		      fprintf(stderr, "Markers detected before SOC.\n");
-		      result = RESULT_FAIL;
-		      break;
-		    }
+	      if  ( ! has_soc )
+		{
+		  fprintf(stderr, "Markers detected before SOC.\n");
+		  result = RESULT_FAIL;
+		  break;
 		}
 
 	      if ( Options.verbose_flag )
 		{
-		  MyMarker.Dump(stdout);
+		  current_marker.Dump(stdout);
 
 		  if ( Options.detail_flag )
-		    hexdump(MyMarker.m_Data - 2, MyMarker.m_DataSize + 2, stdout);
+		    {
+		      hexdump(current_marker.m_Data - 2, current_marker.m_DataSize + 2, stdout);
+		    }
 		}
 
-	      if ( MyMarker.m_Type == MRK_SOD )
+	      if ( current_marker.m_Type == MRK_SOD )
 		{
 		  p = end_p;
 		}
-	      else if ( MyMarker.m_Type == MRK_SIZ )
+	      else if ( current_marker.m_Type == MRK_SIZ )
 		{
-		  Accessor::SIZ SIZ_(MyMarker);
+		  Accessor::SIZ SIZ_(current_marker);
 		  SIZ_.Dump(stdout);
 		}
-	      else if ( MyMarker.m_Type == MRK_COD )
+	      else if ( current_marker.m_Type == MRK_COD )
 		{
-		  Accessor::COD COD_(MyMarker);
+		  Accessor::COD COD_(current_marker);
 		  COD_.Dump(stdout);
 		}
-	      else if ( MyMarker.m_Type == MRK_COM )
+	      else if ( current_marker.m_Type == MRK_COM )
 		{
-		  Accessor::COM COM_(MyMarker);
+		  Accessor::COM COM_(current_marker);
 		  COM_.Dump(stdout);
 		}
-	      else if ( MyMarker.m_Type == MRK_QCD )
+	      else if ( current_marker.m_Type == MRK_QCD )
 		{
-		  Accessor::QCD QCD_(MyMarker);
+		  Accessor::QCD QCD_(current_marker);
 		  QCD_.Dump(stdout);
+		}
+	      else if ( current_marker.m_Type == MRK_TLM )
+		{
+		  has_tlm = true;
 		}
 	      else
 		{
-		  fprintf(stderr, "Unprocessed marker - %s\n", GetMarkerString(MyMarker.m_Type));
+		  fprintf(stderr, "Unprocessed marker - %s\n", GetMarkerString(current_marker.m_Type));
 		}
 	    }
 
@@ -256,6 +266,22 @@ main(int argc, const char** argv)
 		}
 	    }
 	  */
+	}
+    }
+
+  if ( marker_count == 0 )
+    {
+      fprintf(stderr, "No JPEG 2000 marker items found.\n");
+      result = RESULT_FAIL;
+    }
+  else
+    {
+      fprintf(stderr, "Processed %d JPEG 2000 marker item%s.\n", marker_count, (marker_count==1?"":"s"));
+
+      if  ( ! has_tlm )
+	{
+	  fprintf(stderr, "No TLM marker found.\n");
+	  result = RESULT_FAIL;
 	}
     }
 
