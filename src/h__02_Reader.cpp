@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2011-2016, Robert Scheler, Heiko Sparenberg Fraunhofer IIS,
+Copyright (c) 2011-2018, Robert Scheler, Heiko Sparenberg Fraunhofer IIS,
 John Hurst
 
 All rights reserved.
@@ -93,7 +93,7 @@ AS_02::MXF::AS02IndexReader::InitFromFile(const Kumu::FileReader& reader, const 
 	}
       else if ( i->BodySID != first_body_sid )
 	{
-	  DefaultLogSink().Debug("The index assembler is ignoring BodySID %d.\n", i->BodySID);
+	  //	  DefaultLogSink().Debug("The index assembler is ignoring BodySID %d.\n", i->BodySID);
 	  continue;
 	}
 
@@ -411,7 +411,6 @@ AS_02::h__AS02Reader::OpenMXFRead(const std::string& filename)
     {
       //
       UL OP1a_ul(m_Dict->ul(MDD_OP1a));
-      InterchangeObject* Object;
       m_Info.LabelSetType = LS_MXF_SMPTE;
 
       if ( m_HeaderPart.OperationalPattern != OP1a_ul )

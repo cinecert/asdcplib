@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2003-2014, John Hurst
+Copyright (c) 2003-2018, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -221,8 +221,8 @@ namespace ASDCP {
     ESS_AS02_PCM_24b_48k,     // the file contains one or more PCM audio pairs, clip wrapped
     ESS_AS02_PCM_24b_96k,     // the file contains one or more PCM audio pairs, clip wrapped
     ESS_AS02_TIMED_TEXT,      // the file contains a TTML document and zero or more resources
-
-    ESS_ACES,                 // the file contains one ACES codestream
+    ESS_AS02_ISXD,            // the file contains an ISXD document stream (per SMPTE RDD 47)
+    ESS_AS02_ACES,            // the file contains two or more ACES codestreams (per SMPTE ST 2067-50)
     ESS_MAX
   };
 

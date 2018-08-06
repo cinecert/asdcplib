@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2005-2015, John Hurst
+Copyright (c) 2005-2018, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -200,7 +200,7 @@ namespace ASDCP
 
 	      inline const char* EncodeString(char* str_buf, ui32_t buf_len) const {
 		snprintf(str_buf, buf_len, "%02x %02x: ", Tag.a, Tag.b);
-		UL.EncodeString(str_buf + strlen(str_buf), buf_len - strlen(str_buf));
+		UL.EncodeString(str_buf + strlen(str_buf), buf_len - (ui32_t)strlen(str_buf));
 		return str_buf;
 	      }
 
@@ -332,6 +332,7 @@ namespace ASDCP
 	  Batch<UL>    EssenceContainers;
 	  Batch<UL>    DMSchemes;
 	  optional_property<Batch<UL> > ApplicationSchemes;
+	  optional_property<Batch<UL> > ConformsToSpecifications;
 
 	  Preface(const Dictionary*& d);
 	  virtual ~Preface() {}

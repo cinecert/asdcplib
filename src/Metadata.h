@@ -728,6 +728,52 @@ namespace ASDCP
 	};
 
       //
+      class DescriptiveFramework : public InterchangeObject
+	{
+	  DescriptiveFramework();
+
+	public:
+	  const Dictionary*& m_Dict;
+          optional_property<UUID > LinkedDescriptiveFrameworkPlugInId;
+
+      DescriptiveFramework(const Dictionary*& d);
+      DescriptiveFramework(const DescriptiveFramework& rhs);
+      virtual ~DescriptiveFramework() {}
+
+      const DescriptiveFramework& operator=(const DescriptiveFramework& rhs) { Copy(rhs); return *this; }
+      virtual void Copy(const DescriptiveFramework& rhs);
+      virtual const char* HasName() { return "DescriptiveFramework"; }
+      virtual Result_t InitFromTLVSet(TLVReader& TLVSet);
+      virtual Result_t WriteToTLVSet(TLVWriter& TLVSet);
+      virtual void     Dump(FILE* = 0);
+      virtual Result_t InitFromBuffer(const byte_t* p, ui32_t l);
+      virtual Result_t WriteToBuffer(ASDCP::FrameBuffer&);
+	};
+
+      //
+      class DescriptiveObject : public InterchangeObject
+	{
+	  DescriptiveObject();
+
+	public:
+	  const Dictionary*& m_Dict;
+          optional_property<UUID > LinkedDescriptiveObjectPlugInId;
+
+      DescriptiveObject(const Dictionary*& d);
+      DescriptiveObject(const DescriptiveObject& rhs);
+      virtual ~DescriptiveObject() {}
+
+      const DescriptiveObject& operator=(const DescriptiveObject& rhs) { Copy(rhs); return *this; }
+      virtual void Copy(const DescriptiveObject& rhs);
+      virtual const char* HasName() { return "DescriptiveObject"; }
+      virtual Result_t InitFromTLVSet(TLVReader& TLVSet);
+      virtual Result_t WriteToTLVSet(TLVWriter& TLVSet);
+      virtual void     Dump(FILE* = 0);
+      virtual Result_t InitFromBuffer(const byte_t* p, ui32_t l);
+      virtual Result_t WriteToBuffer(ASDCP::FrameBuffer&);
+	};
+
+      //
       class GenericDataEssenceDescriptor : public FileDescriptor
 	{
 	  GenericDataEssenceDescriptor();
@@ -1095,6 +1141,101 @@ namespace ASDCP
       const TargetFrameSubDescriptor& operator=(const TargetFrameSubDescriptor& rhs) { Copy(rhs); return *this; }
       virtual void Copy(const TargetFrameSubDescriptor& rhs);
       virtual const char* HasName() { return "TargetFrameSubDescriptor"; }
+      virtual Result_t InitFromTLVSet(TLVReader& TLVSet);
+      virtual Result_t WriteToTLVSet(TLVWriter& TLVSet);
+      virtual void     Dump(FILE* = 0);
+      virtual Result_t InitFromBuffer(const byte_t* p, ui32_t l);
+      virtual Result_t WriteToBuffer(ASDCP::FrameBuffer&);
+	};
+
+      //
+      class TextBasedDMFramework : public DescriptiveFramework
+	{
+	  TextBasedDMFramework();
+
+	public:
+	  const Dictionary*& m_Dict;
+          optional_property<UUID > ObjectRef;
+
+      TextBasedDMFramework(const Dictionary*& d);
+      TextBasedDMFramework(const TextBasedDMFramework& rhs);
+      virtual ~TextBasedDMFramework() {}
+
+      const TextBasedDMFramework& operator=(const TextBasedDMFramework& rhs) { Copy(rhs); return *this; }
+      virtual void Copy(const TextBasedDMFramework& rhs);
+      virtual const char* HasName() { return "TextBasedDMFramework"; }
+      virtual Result_t InitFromTLVSet(TLVReader& TLVSet);
+      virtual Result_t WriteToTLVSet(TLVWriter& TLVSet);
+      virtual void     Dump(FILE* = 0);
+      virtual Result_t InitFromBuffer(const byte_t* p, ui32_t l);
+      virtual Result_t WriteToBuffer(ASDCP::FrameBuffer&);
+	};
+
+      //
+      class TextBasedObject : public DescriptiveObject
+	{
+	  TextBasedObject();
+
+	public:
+	  const Dictionary*& m_Dict;
+          UL PayloadSchemeID;
+          UTF16String TextMIMEMediaType;
+          UTF16String RFC5646TextLanguageCode;
+          optional_property<UTF16String > TextDataDescription;
+
+      TextBasedObject(const Dictionary*& d);
+      TextBasedObject(const TextBasedObject& rhs);
+      virtual ~TextBasedObject() {}
+
+      const TextBasedObject& operator=(const TextBasedObject& rhs) { Copy(rhs); return *this; }
+      virtual void Copy(const TextBasedObject& rhs);
+      virtual const char* HasName() { return "TextBasedObject"; }
+      virtual Result_t InitFromTLVSet(TLVReader& TLVSet);
+      virtual Result_t WriteToTLVSet(TLVWriter& TLVSet);
+      virtual void     Dump(FILE* = 0);
+      virtual Result_t InitFromBuffer(const byte_t* p, ui32_t l);
+      virtual Result_t WriteToBuffer(ASDCP::FrameBuffer&);
+	};
+
+      //
+      class GenericStreamTextBasedSet : public TextBasedObject
+	{
+	  GenericStreamTextBasedSet();
+
+	public:
+	  const Dictionary*& m_Dict;
+          ui32_t GenericStreamSID;
+
+      GenericStreamTextBasedSet(const Dictionary*& d);
+      GenericStreamTextBasedSet(const GenericStreamTextBasedSet& rhs);
+      virtual ~GenericStreamTextBasedSet() {}
+
+      const GenericStreamTextBasedSet& operator=(const GenericStreamTextBasedSet& rhs) { Copy(rhs); return *this; }
+      virtual void Copy(const GenericStreamTextBasedSet& rhs);
+      virtual const char* HasName() { return "GenericStreamTextBasedSet"; }
+      virtual Result_t InitFromTLVSet(TLVReader& TLVSet);
+      virtual Result_t WriteToTLVSet(TLVWriter& TLVSet);
+      virtual void     Dump(FILE* = 0);
+      virtual Result_t InitFromBuffer(const byte_t* p, ui32_t l);
+      virtual Result_t WriteToBuffer(ASDCP::FrameBuffer&);
+	};
+
+      //
+      class ISXDDataEssenceDescriptor : public GenericDataEssenceDescriptor
+	{
+	  ISXDDataEssenceDescriptor();
+
+	public:
+	  const Dictionary*& m_Dict;
+          ISO8String NamespaceURI;
+
+      ISXDDataEssenceDescriptor(const Dictionary*& d);
+      ISXDDataEssenceDescriptor(const ISXDDataEssenceDescriptor& rhs);
+      virtual ~ISXDDataEssenceDescriptor() {}
+
+      const ISXDDataEssenceDescriptor& operator=(const ISXDDataEssenceDescriptor& rhs) { Copy(rhs); return *this; }
+      virtual void Copy(const ISXDDataEssenceDescriptor& rhs);
+      virtual const char* HasName() { return "ISXDDataEssenceDescriptor"; }
       virtual Result_t InitFromTLVSet(TLVReader& TLVSet);
       virtual Result_t WriteToTLVSet(TLVWriter& TLVSet);
       virtual void     Dump(FILE* = 0);

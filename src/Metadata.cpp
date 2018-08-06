@@ -64,6 +64,8 @@ static InterchangeObject* MPEG2VideoDescriptor_Factory(const Dictionary*& Dict) 
 static InterchangeObject* DMSegment_Factory(const Dictionary*& Dict) { return new DMSegment(Dict); }
 static InterchangeObject* CryptographicFramework_Factory(const Dictionary*& Dict) { return new CryptographicFramework(Dict); }
 static InterchangeObject* CryptographicContext_Factory(const Dictionary*& Dict) { return new CryptographicContext(Dict); }
+static InterchangeObject* DescriptiveFramework_Factory(const Dictionary*& Dict) { return new DescriptiveFramework(Dict); }
+static InterchangeObject* DescriptiveObject_Factory(const Dictionary*& Dict) { return new DescriptiveObject(Dict); }
 static InterchangeObject* GenericDataEssenceDescriptor_Factory(const Dictionary*& Dict) { return new GenericDataEssenceDescriptor(Dict); }
 static InterchangeObject* TimedTextDescriptor_Factory(const Dictionary*& Dict) { return new TimedTextDescriptor(Dict); }
 static InterchangeObject* TimedTextResourceSubDescriptor_Factory(const Dictionary*& Dict) { return new TimedTextResourceSubDescriptor(Dict); }
@@ -79,6 +81,10 @@ static InterchangeObject* PrivateDCDataDescriptor_Factory(const Dictionary*& Dic
 static InterchangeObject* DolbyAtmosSubDescriptor_Factory(const Dictionary*& Dict) { return new DolbyAtmosSubDescriptor(Dict); }
 static InterchangeObject* ACESPictureSubDescriptor_Factory(const Dictionary*& Dict) { return new ACESPictureSubDescriptor(Dict); }
 static InterchangeObject* TargetFrameSubDescriptor_Factory(const Dictionary*& Dict) { return new TargetFrameSubDescriptor(Dict); }
+static InterchangeObject* TextBasedDMFramework_Factory(const Dictionary*& Dict) { return new TextBasedDMFramework(Dict); }
+static InterchangeObject* TextBasedObject_Factory(const Dictionary*& Dict) { return new TextBasedObject(Dict); }
+static InterchangeObject* GenericStreamTextBasedSet_Factory(const Dictionary*& Dict) { return new GenericStreamTextBasedSet(Dict); }
+static InterchangeObject* ISXDDataEssenceDescriptor_Factory(const Dictionary*& Dict) { return new ISXDDataEssenceDescriptor(Dict); }
 static InterchangeObject* PHDRMetadataTrackSubDescriptor_Factory(const Dictionary*& Dict) { return new PHDRMetadataTrackSubDescriptor(Dict); }
 static InterchangeObject* PIMFDynamicMetadataDescriptor_Factory(const Dictionary*& Dict) { return new PIMFDynamicMetadataDescriptor(Dict); }
 
@@ -111,6 +117,8 @@ ASDCP::MXF::Metadata_InitTypes(const Dictionary*& Dict)
   SetObjectFactory(Dict->ul(MDD_DMSegment), DMSegment_Factory);
   SetObjectFactory(Dict->ul(MDD_CryptographicFramework), CryptographicFramework_Factory);
   SetObjectFactory(Dict->ul(MDD_CryptographicContext), CryptographicContext_Factory);
+  SetObjectFactory(Dict->ul(MDD_DescriptiveFramework), DescriptiveFramework_Factory);
+  SetObjectFactory(Dict->ul(MDD_DescriptiveObject), DescriptiveObject_Factory);
   SetObjectFactory(Dict->ul(MDD_GenericDataEssenceDescriptor), GenericDataEssenceDescriptor_Factory);
   SetObjectFactory(Dict->ul(MDD_TimedTextDescriptor), TimedTextDescriptor_Factory);
   SetObjectFactory(Dict->ul(MDD_TimedTextResourceSubDescriptor), TimedTextResourceSubDescriptor_Factory);
@@ -126,6 +134,10 @@ ASDCP::MXF::Metadata_InitTypes(const Dictionary*& Dict)
   SetObjectFactory(Dict->ul(MDD_DolbyAtmosSubDescriptor), DolbyAtmosSubDescriptor_Factory);
   SetObjectFactory(Dict->ul(MDD_ACESPictureSubDescriptor), ACESPictureSubDescriptor_Factory);
   SetObjectFactory(Dict->ul(MDD_TargetFrameSubDescriptor), TargetFrameSubDescriptor_Factory);
+  SetObjectFactory(Dict->ul(MDD_TextBasedDMFramework), TextBasedDMFramework_Factory);
+  SetObjectFactory(Dict->ul(MDD_TextBasedObject), TextBasedObject_Factory);
+  SetObjectFactory(Dict->ul(MDD_GenericStreamTextBasedSet), GenericStreamTextBasedSet_Factory);
+  SetObjectFactory(Dict->ul(MDD_ISXDDataEssenceDescriptor), ISXDDataEssenceDescriptor_Factory);
   SetObjectFactory(Dict->ul(MDD_PHDRMetadataTrackSubDescriptor), PHDRMetadataTrackSubDescriptor_Factory);
   SetObjectFactory(Dict->ul(MDD_PIMFDynamicMetadataDescriptor), PIMFDynamicMetadataDescriptor_Factory);
 }
@@ -2779,6 +2791,166 @@ CryptographicContext::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 }
 
 //------------------------------------------------------------------------------------------
+// DescriptiveFramework
+
+//
+
+DescriptiveFramework::DescriptiveFramework(const Dictionary*& d) : InterchangeObject(d), m_Dict(d)
+{
+  assert(m_Dict);
+  m_UL = m_Dict->ul(MDD_DescriptiveFramework);
+}
+
+DescriptiveFramework::DescriptiveFramework(const DescriptiveFramework& rhs) : InterchangeObject(rhs.m_Dict), m_Dict(rhs.m_Dict)
+{
+  assert(m_Dict);
+  m_UL = m_Dict->ul(MDD_DescriptiveFramework);
+  Copy(rhs);
+}
+
+
+//
+ASDCP::Result_t
+DescriptiveFramework::InitFromTLVSet(TLVReader& TLVSet)
+{
+  assert(m_Dict);
+  Result_t result = InterchangeObject::InitFromTLVSet(TLVSet);
+  if ( ASDCP_SUCCESS(result) ) {
+    result = TLVSet.ReadObject(OBJ_READ_ARGS_OPT(DescriptiveFramework, LinkedDescriptiveFrameworkPlugInId));
+    LinkedDescriptiveFrameworkPlugInId.set_has_value( result == RESULT_OK );
+  }
+  return result;
+}
+
+//
+ASDCP::Result_t
+DescriptiveFramework::WriteToTLVSet(TLVWriter& TLVSet)
+{
+  assert(m_Dict);
+  Result_t result = InterchangeObject::WriteToTLVSet(TLVSet);
+  if ( ASDCP_SUCCESS(result)  && ! LinkedDescriptiveFrameworkPlugInId.empty() ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS_OPT(DescriptiveFramework, LinkedDescriptiveFrameworkPlugInId));
+  return result;
+}
+
+//
+void
+DescriptiveFramework::Copy(const DescriptiveFramework& rhs)
+{
+  InterchangeObject::Copy(rhs);
+  LinkedDescriptiveFrameworkPlugInId = rhs.LinkedDescriptiveFrameworkPlugInId;
+}
+
+//
+void
+DescriptiveFramework::Dump(FILE* stream)
+{
+  char identbuf[IdentBufferLen];
+  *identbuf = 0;
+
+  if ( stream == 0 )
+    stream = stderr;
+
+  InterchangeObject::Dump(stream);
+  if ( ! LinkedDescriptiveFrameworkPlugInId.empty() ) {
+    fprintf(stream, "  %22s = %s\n",  "LinkedDescriptiveFrameworkPlugInId", LinkedDescriptiveFrameworkPlugInId.get().EncodeString(identbuf, IdentBufferLen));
+  }
+}
+
+//
+ASDCP::Result_t
+DescriptiveFramework::InitFromBuffer(const byte_t* p, ui32_t l)
+{
+  return InterchangeObject::InitFromBuffer(p, l);
+}
+
+//
+ASDCP::Result_t
+DescriptiveFramework::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
+{
+  return InterchangeObject::WriteToBuffer(Buffer);
+}
+
+//------------------------------------------------------------------------------------------
+// DescriptiveObject
+
+//
+
+DescriptiveObject::DescriptiveObject(const Dictionary*& d) : InterchangeObject(d), m_Dict(d)
+{
+  assert(m_Dict);
+  m_UL = m_Dict->ul(MDD_DescriptiveObject);
+}
+
+DescriptiveObject::DescriptiveObject(const DescriptiveObject& rhs) : InterchangeObject(rhs.m_Dict), m_Dict(rhs.m_Dict)
+{
+  assert(m_Dict);
+  m_UL = m_Dict->ul(MDD_DescriptiveObject);
+  Copy(rhs);
+}
+
+
+//
+ASDCP::Result_t
+DescriptiveObject::InitFromTLVSet(TLVReader& TLVSet)
+{
+  assert(m_Dict);
+  Result_t result = InterchangeObject::InitFromTLVSet(TLVSet);
+  if ( ASDCP_SUCCESS(result) ) {
+    result = TLVSet.ReadObject(OBJ_READ_ARGS_OPT(DescriptiveObject, LinkedDescriptiveObjectPlugInId));
+    LinkedDescriptiveObjectPlugInId.set_has_value( result == RESULT_OK );
+  }
+  return result;
+}
+
+//
+ASDCP::Result_t
+DescriptiveObject::WriteToTLVSet(TLVWriter& TLVSet)
+{
+  assert(m_Dict);
+  Result_t result = InterchangeObject::WriteToTLVSet(TLVSet);
+  if ( ASDCP_SUCCESS(result)  && ! LinkedDescriptiveObjectPlugInId.empty() ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS_OPT(DescriptiveObject, LinkedDescriptiveObjectPlugInId));
+  return result;
+}
+
+//
+void
+DescriptiveObject::Copy(const DescriptiveObject& rhs)
+{
+  InterchangeObject::Copy(rhs);
+  LinkedDescriptiveObjectPlugInId = rhs.LinkedDescriptiveObjectPlugInId;
+}
+
+//
+void
+DescriptiveObject::Dump(FILE* stream)
+{
+  char identbuf[IdentBufferLen];
+  *identbuf = 0;
+
+  if ( stream == 0 )
+    stream = stderr;
+
+  InterchangeObject::Dump(stream);
+  if ( ! LinkedDescriptiveObjectPlugInId.empty() ) {
+    fprintf(stream, "  %22s = %s\n",  "LinkedDescriptiveObjectPlugInId", LinkedDescriptiveObjectPlugInId.get().EncodeString(identbuf, IdentBufferLen));
+  }
+}
+
+//
+ASDCP::Result_t
+DescriptiveObject::InitFromBuffer(const byte_t* p, ui32_t l)
+{
+  return InterchangeObject::InitFromBuffer(p, l);
+}
+
+//
+ASDCP::Result_t
+DescriptiveObject::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
+{
+  return InterchangeObject::WriteToBuffer(Buffer);
+}
+
+//------------------------------------------------------------------------------------------
 // GenericDataEssenceDescriptor
 
 //
@@ -4124,6 +4296,328 @@ TargetFrameSubDescriptor::InitFromBuffer(const byte_t* p, ui32_t l)
 //
 ASDCP::Result_t
 TargetFrameSubDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
+{
+  return InterchangeObject::WriteToBuffer(Buffer);
+}
+
+//------------------------------------------------------------------------------------------
+// TextBasedDMFramework
+
+//
+
+TextBasedDMFramework::TextBasedDMFramework(const Dictionary*& d) : DescriptiveFramework(d), m_Dict(d)
+{
+  assert(m_Dict);
+  m_UL = m_Dict->ul(MDD_TextBasedDMFramework);
+}
+
+TextBasedDMFramework::TextBasedDMFramework(const TextBasedDMFramework& rhs) : DescriptiveFramework(rhs.m_Dict), m_Dict(rhs.m_Dict)
+{
+  assert(m_Dict);
+  m_UL = m_Dict->ul(MDD_TextBasedDMFramework);
+  Copy(rhs);
+}
+
+
+//
+ASDCP::Result_t
+TextBasedDMFramework::InitFromTLVSet(TLVReader& TLVSet)
+{
+  assert(m_Dict);
+  Result_t result = DescriptiveFramework::InitFromTLVSet(TLVSet);
+  if ( ASDCP_SUCCESS(result) ) {
+    result = TLVSet.ReadObject(OBJ_READ_ARGS_OPT(TextBasedDMFramework, ObjectRef));
+    ObjectRef.set_has_value( result == RESULT_OK );
+  }
+  return result;
+}
+
+//
+ASDCP::Result_t
+TextBasedDMFramework::WriteToTLVSet(TLVWriter& TLVSet)
+{
+  assert(m_Dict);
+  Result_t result = DescriptiveFramework::WriteToTLVSet(TLVSet);
+  if ( ASDCP_SUCCESS(result)  && ! ObjectRef.empty() ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS_OPT(TextBasedDMFramework, ObjectRef));
+  return result;
+}
+
+//
+void
+TextBasedDMFramework::Copy(const TextBasedDMFramework& rhs)
+{
+  DescriptiveFramework::Copy(rhs);
+  ObjectRef = rhs.ObjectRef;
+}
+
+//
+void
+TextBasedDMFramework::Dump(FILE* stream)
+{
+  char identbuf[IdentBufferLen];
+  *identbuf = 0;
+
+  if ( stream == 0 )
+    stream = stderr;
+
+  DescriptiveFramework::Dump(stream);
+  if ( ! ObjectRef.empty() ) {
+    fprintf(stream, "  %22s = %s\n",  "ObjectRef", ObjectRef.get().EncodeString(identbuf, IdentBufferLen));
+  }
+}
+
+//
+ASDCP::Result_t
+TextBasedDMFramework::InitFromBuffer(const byte_t* p, ui32_t l)
+{
+  return InterchangeObject::InitFromBuffer(p, l);
+}
+
+//
+ASDCP::Result_t
+TextBasedDMFramework::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
+{
+  return InterchangeObject::WriteToBuffer(Buffer);
+}
+
+//------------------------------------------------------------------------------------------
+// TextBasedObject
+
+//
+
+TextBasedObject::TextBasedObject(const Dictionary*& d) : DescriptiveObject(d), m_Dict(d)
+{
+  assert(m_Dict);
+  m_UL = m_Dict->ul(MDD_TextBasedObject);
+}
+
+TextBasedObject::TextBasedObject(const TextBasedObject& rhs) : DescriptiveObject(rhs.m_Dict), m_Dict(rhs.m_Dict)
+{
+  assert(m_Dict);
+  m_UL = m_Dict->ul(MDD_TextBasedObject);
+  Copy(rhs);
+}
+
+
+//
+ASDCP::Result_t
+TextBasedObject::InitFromTLVSet(TLVReader& TLVSet)
+{
+  assert(m_Dict);
+  Result_t result = DescriptiveObject::InitFromTLVSet(TLVSet);
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(TextBasedObject, PayloadSchemeID));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(TextBasedObject, TextMIMEMediaType));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(TextBasedObject, RFC5646TextLanguageCode));
+  if ( ASDCP_SUCCESS(result) ) {
+    result = TLVSet.ReadObject(OBJ_READ_ARGS_OPT(TextBasedObject, TextDataDescription));
+    TextDataDescription.set_has_value( result == RESULT_OK );
+  }
+  return result;
+}
+
+//
+ASDCP::Result_t
+TextBasedObject::WriteToTLVSet(TLVWriter& TLVSet)
+{
+  assert(m_Dict);
+  Result_t result = DescriptiveObject::WriteToTLVSet(TLVSet);
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(TextBasedObject, PayloadSchemeID));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(TextBasedObject, TextMIMEMediaType));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(TextBasedObject, RFC5646TextLanguageCode));
+  if ( ASDCP_SUCCESS(result)  && ! TextDataDescription.empty() ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS_OPT(TextBasedObject, TextDataDescription));
+  return result;
+}
+
+//
+void
+TextBasedObject::Copy(const TextBasedObject& rhs)
+{
+  DescriptiveObject::Copy(rhs);
+  PayloadSchemeID = rhs.PayloadSchemeID;
+  TextMIMEMediaType = rhs.TextMIMEMediaType;
+  RFC5646TextLanguageCode = rhs.RFC5646TextLanguageCode;
+  TextDataDescription = rhs.TextDataDescription;
+}
+
+//
+void
+TextBasedObject::Dump(FILE* stream)
+{
+  char identbuf[IdentBufferLen];
+  *identbuf = 0;
+
+  if ( stream == 0 )
+    stream = stderr;
+
+  DescriptiveObject::Dump(stream);
+  fprintf(stream, "  %22s = %s\n",  "PayloadSchemeID", PayloadSchemeID.EncodeString(identbuf, IdentBufferLen));
+  fprintf(stream, "  %22s = %s\n",  "TextMIMEMediaType", TextMIMEMediaType.EncodeString(identbuf, IdentBufferLen));
+  fprintf(stream, "  %22s = %s\n",  "RFC5646TextLanguageCode", RFC5646TextLanguageCode.EncodeString(identbuf, IdentBufferLen));
+  if ( ! TextDataDescription.empty() ) {
+    fprintf(stream, "  %22s = %s\n",  "TextDataDescription", TextDataDescription.get().EncodeString(identbuf, IdentBufferLen));
+  }
+}
+
+//
+ASDCP::Result_t
+TextBasedObject::InitFromBuffer(const byte_t* p, ui32_t l)
+{
+  return InterchangeObject::InitFromBuffer(p, l);
+}
+
+//
+ASDCP::Result_t
+TextBasedObject::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
+{
+  return InterchangeObject::WriteToBuffer(Buffer);
+}
+
+//------------------------------------------------------------------------------------------
+// GenericStreamTextBasedSet
+
+//
+
+GenericStreamTextBasedSet::GenericStreamTextBasedSet(const Dictionary*& d) : TextBasedObject(d), m_Dict(d), GenericStreamSID(0)
+{
+  assert(m_Dict);
+  m_UL = m_Dict->ul(MDD_GenericStreamTextBasedSet);
+}
+
+GenericStreamTextBasedSet::GenericStreamTextBasedSet(const GenericStreamTextBasedSet& rhs) : TextBasedObject(rhs.m_Dict), m_Dict(rhs.m_Dict)
+{
+  assert(m_Dict);
+  m_UL = m_Dict->ul(MDD_GenericStreamTextBasedSet);
+  Copy(rhs);
+}
+
+
+//
+ASDCP::Result_t
+GenericStreamTextBasedSet::InitFromTLVSet(TLVReader& TLVSet)
+{
+  assert(m_Dict);
+  Result_t result = TextBasedObject::InitFromTLVSet(TLVSet);
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadUi32(OBJ_READ_ARGS(GenericStreamTextBasedSet, GenericStreamSID));
+  return result;
+}
+
+//
+ASDCP::Result_t
+GenericStreamTextBasedSet::WriteToTLVSet(TLVWriter& TLVSet)
+{
+  assert(m_Dict);
+  Result_t result = TextBasedObject::WriteToTLVSet(TLVSet);
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi32(OBJ_WRITE_ARGS(GenericStreamTextBasedSet, GenericStreamSID));
+  return result;
+}
+
+//
+void
+GenericStreamTextBasedSet::Copy(const GenericStreamTextBasedSet& rhs)
+{
+  TextBasedObject::Copy(rhs);
+  GenericStreamSID = rhs.GenericStreamSID;
+}
+
+//
+void
+GenericStreamTextBasedSet::Dump(FILE* stream)
+{
+  char identbuf[IdentBufferLen];
+  *identbuf = 0;
+
+  if ( stream == 0 )
+    stream = stderr;
+
+  TextBasedObject::Dump(stream);
+  fprintf(stream, "  %22s = %d\n",  "GenericStreamSID", GenericStreamSID);
+}
+
+//
+ASDCP::Result_t
+GenericStreamTextBasedSet::InitFromBuffer(const byte_t* p, ui32_t l)
+{
+  return InterchangeObject::InitFromBuffer(p, l);
+}
+
+//
+ASDCP::Result_t
+GenericStreamTextBasedSet::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
+{
+  return InterchangeObject::WriteToBuffer(Buffer);
+}
+
+//------------------------------------------------------------------------------------------
+// ISXDDataEssenceDescriptor
+
+//
+
+ISXDDataEssenceDescriptor::ISXDDataEssenceDescriptor(const Dictionary*& d) : GenericDataEssenceDescriptor(d), m_Dict(d)
+{
+  assert(m_Dict);
+  m_UL = m_Dict->ul(MDD_ISXDDataEssenceDescriptor);
+}
+
+ISXDDataEssenceDescriptor::ISXDDataEssenceDescriptor(const ISXDDataEssenceDescriptor& rhs) : GenericDataEssenceDescriptor(rhs.m_Dict), m_Dict(rhs.m_Dict)
+{
+  assert(m_Dict);
+  m_UL = m_Dict->ul(MDD_ISXDDataEssenceDescriptor);
+  Copy(rhs);
+}
+
+
+//
+ASDCP::Result_t
+ISXDDataEssenceDescriptor::InitFromTLVSet(TLVReader& TLVSet)
+{
+  assert(m_Dict);
+  Result_t result = GenericDataEssenceDescriptor::InitFromTLVSet(TLVSet);
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(ISXDDataEssenceDescriptor, NamespaceURI));
+  return result;
+}
+
+//
+ASDCP::Result_t
+ISXDDataEssenceDescriptor::WriteToTLVSet(TLVWriter& TLVSet)
+{
+  assert(m_Dict);
+  Result_t result = GenericDataEssenceDescriptor::WriteToTLVSet(TLVSet);
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(ISXDDataEssenceDescriptor, NamespaceURI));
+  return result;
+}
+
+//
+void
+ISXDDataEssenceDescriptor::Copy(const ISXDDataEssenceDescriptor& rhs)
+{
+  GenericDataEssenceDescriptor::Copy(rhs);
+  NamespaceURI = rhs.NamespaceURI;
+}
+
+//
+void
+ISXDDataEssenceDescriptor::Dump(FILE* stream)
+{
+  char identbuf[IdentBufferLen];
+  *identbuf = 0;
+
+  if ( stream == 0 )
+    stream = stderr;
+
+  GenericDataEssenceDescriptor::Dump(stream);
+  fprintf(stream, "  %22s = %s\n",  "NamespaceURI", NamespaceURI.EncodeString(identbuf, IdentBufferLen));
+}
+
+//
+ASDCP::Result_t
+ISXDDataEssenceDescriptor::InitFromBuffer(const byte_t* p, ui32_t l)
+{
+  return InterchangeObject::InitFromBuffer(p, l);
+}
+
+//
+ASDCP::Result_t
+ISXDDataEssenceDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 {
   return InterchangeObject::WriteToBuffer(Buffer);
 }

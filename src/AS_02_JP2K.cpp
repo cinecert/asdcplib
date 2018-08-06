@@ -68,7 +68,7 @@ public:
 Result_t
 AS_02::JP2K::MXFReader::h__Reader::OpenRead(const std::string& filename)
 {
-  Result_t result = OpenMXFRead(filename.c_str());
+  Result_t result = OpenMXFRead(filename);
 
   if( KM_SUCCESS(result) )
     {

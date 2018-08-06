@@ -161,9 +161,15 @@ namespace ASDCP
   Result_t PCM_ADesc_to_MD(PCM::AudioDescriptor& ADesc, ASDCP::MXF::WaveAudioDescriptor* ADescObj);
   Result_t MD_to_PCM_ADesc(ASDCP::MXF::WaveAudioDescriptor* ADescObj, PCM::AudioDescriptor& ADesc);
 
-  void     AddDMScrypt(Partition& HeaderPart, SourcePackage& Package,
+  void     AddDmsCrypt(Partition& HeaderPart, SourcePackage& Package,
 		       WriterInfo& Descr, const UL& WrappingUL, const Dictionary*& Dict);
 
+  Result_t AddDmsTrackGenericPartUtf8Text(Kumu::FileWriter&, ASDCP::MXF::OP1aHeader&, SourcePackage&,
+					  ASDCP::MXF::RIP&, const Dictionary*&);
+  //
+  Result_t WriteGenericStreamPartition(Kumu::FileWriter&, ASDCP::MXF::OP1aHeader&, ASDCP::MXF::RIP&, const Dictionary*&,
+				       const ASDCP::FrameBuffer&, ASDCP::AESEncContext* = 0, ASDCP::HMACContext* = 0);
+  
   Result_t Read_EKLV_Packet(Kumu::FileReader& File, const ASDCP::Dictionary& Dict,
 			    const ASDCP::WriterInfo& Info, Kumu::fpos_t& LastPosition, ASDCP::FrameBuffer& CtFrameBuf,
 			    ui32_t FrameNum, ui32_t SequenceNum, ASDCP::FrameBuffer& FrameBuf,
@@ -238,7 +244,7 @@ namespace ASDCP
 	  if ( ASDCP_SUCCESS(result) )
 	    {
 	      result = m_RIP.InitFromFile(m_File);
-	      ui32_t test_s = m_RIP.PairArray.size();
+	      ui32_t test_s = (ui32_t)m_RIP.PairArray.size();
 
 	      if ( ASDCP_FAILURE(result) )
 		{
@@ -388,6 +394,69 @@ namespace ASDCP
 	  keyFrameOffset = TmpEntry.KeyFrameOffset;
 	  
 	  return RESULT_OK;
+	}
+
+	// Reads a Generic Stream Partition payload. Returns RESULT_FORMAT if the SID is
+	// not present in the  RIP, or if the actual partition at ByteOffset does not have
+	// a matching BodySID value. Encryption is not currently supported.
+	Result_t ReadGenericStreamPartitionPayload(const ui32_t sid, ASDCP::FrameBuffer& frame_buf)
+	{
+	  Kumu::fpos_t start_offset = 0, end_offset = 0;
+	  ui32_t sequence = 0;
+
+	  // locate SID, record the offset
+	  // Count the sequence length in because this is the sequence
+	  // value needed to  complete the HMAC.
+	  ASDCP::MXF::RIP::const_pair_iterator i;
+	  for ( i = m_RIP.PairArray.begin(); i != m_RIP.PairArray.end(); ++i, ++sequence )
+	    {
+	      if ( sid == i->BodySID )
+		{
+		  start_offset = i->ByteOffset;
+		}
+	      else if ( start_offset != 0 )
+		{
+		  end_offset = i->ByteOffset;
+		  break;
+		}
+	    }
+
+	  if ( start_offset == 0 || end_offset == 0 )
+	    {
+	      DefaultLogSink().Error("Body SID not found: %d.\n", sid);
+	      return RESULT_NOT_FOUND;
+	    }
+
+	  // Read the Partition header and then read the payload.
+	  Result_t result = m_File.Seek(start_offset);
+
+	  if ( KM_SUCCESS(result) )
+	    {
+	      result = frame_buf.Capacity(end_offset-start_offset);
+	    }
+    
+	  if ( KM_SUCCESS(result) )
+	    {
+	      // read the partition header
+	      ASDCP::MXF::Partition GSPart(m_Dict);
+	      result = GSPart.InitFromFile(m_File);
+
+	      if ( KM_SUCCESS(result) )
+		{
+		  // check the SID
+		  if ( GSPart.BodySID != sid )
+		    {
+		      DefaultLogSink().Error("Generic stream partition Body SID differs: %s\n", sid);
+		      result = RESULT_FORMAT;
+		    }
+		  else
+		    {
+		      result = ReadEKLVPacket(0, sequence, frame_buf, m_Dict->ul(MDD_GenericStream_DataElement), 0, 0);
+		    }
+		}
+	    }
+  
+	  return result;
 	}
 
 	//
@@ -620,7 +689,7 @@ namespace ASDCP
 	  // Material Package
 	  //
 	  m_MaterialPackage = new MaterialPackage(m_Dict);
-	  m_MaterialPackage->Name = "AS-DCP Material Package";
+	  m_MaterialPackage->Name = "Material Package";
 	  m_MaterialPackage->PackageUID = MaterialPackageUMID;
 	  m_HeaderPart.AddChildObject(m_MaterialPackage);
 	  m_ContentStorage->Packages.push_back(m_MaterialPackage->InstanceUID);
@@ -699,105 +768,6 @@ namespace ASDCP
 	}
 
 	//
-	void AddDMSegment(const MXF::Rational& clip_edit_rate,
-			  const MXF::Rational& tc_edit_rate, ui32_t tc_frame_rate,
-			  const std::string& TrackName, const UL& DataDefinition,
-			  const std::string& PackageLabel)
-	{
-	  if ( m_ContentStorage == 0 )
-	    {
-	      m_ContentStorage = new ContentStorage(m_Dict);
-	      m_HeaderPart.AddChildObject(m_ContentStorage);
-	      m_HeaderPart.m_Preface->ContentStorage = m_ContentStorage->InstanceUID;
-	    }
-
-	  EssenceContainerData* ECD = new EssenceContainerData(m_Dict);
-	  m_HeaderPart.AddChildObject(ECD);
-	  m_ContentStorage->EssenceContainerData.push_back(ECD->InstanceUID);
-	  ECD->IndexSID = 129;
-	  ECD->BodySID = 1;
-
-	  UUID assetUUID(m_Info.AssetUUID);
-	  UMID SourcePackageUMID, MaterialPackageUMID;
-	  SourcePackageUMID.MakeUMID(0x0f, assetUUID);
-	  MaterialPackageUMID.MakeUMID(0x0f); // unidentified essence
-
-	  //
-	  // Material Package
-	  //
-	  m_MaterialPackage = new MaterialPackage(m_Dict);
-	  m_MaterialPackage->Name = "AS-DCP Material Package";
-	  m_MaterialPackage->PackageUID = MaterialPackageUMID;
-	  m_HeaderPart.AddChildObject(m_MaterialPackage);
-	  m_ContentStorage->Packages.push_back(m_MaterialPackage->InstanceUID);
-
-	  TrackSet<TimecodeComponent> MPTCTrack =
-	    CreateTimecodeTrack<MaterialPackage>(m_HeaderPart, *m_MaterialPackage,
-						 tc_edit_rate, tc_frame_rate, 0, m_Dict);
-
-	  MPTCTrack.Sequence->Duration.set_has_value();
-	  m_DurationUpdateList.push_back(&(MPTCTrack.Sequence->Duration.get()));
-	  MPTCTrack.Clip->Duration.set_has_value();
-	  m_DurationUpdateList.push_back(&(MPTCTrack.Clip->Duration.get()));
-
-	  TrackSet<DMSegment> MPTrack =
-	    CreateTrackAndSequence<MaterialPackage, DMSegment>(m_HeaderPart, *m_MaterialPackage,
-							       TrackName, clip_edit_rate, DataDefinition,
-							       2, m_Dict);
-	  MPTrack.Sequence->Duration.set_has_value();
-	  m_DurationUpdateList.push_back(&(MPTrack.Sequence->Duration.get()));
-
-	  MPTrack.Clip = new DMSegment(m_Dict);
-	  m_HeaderPart.AddChildObject(MPTrack.Clip);
-	  MPTrack.Sequence->StructuralComponents.push_back(MPTrack.Clip->InstanceUID);
-	  MPTrack.Clip->DataDefinition = DataDefinition;
-	  //  MPTrack.Clip->SourcePackageID = SourcePackageUMID;
-	  //  MPTrack.Clip->SourceTrackID = 2;
-
-	  m_DurationUpdateList.push_back(&(MPTrack.Clip->Duration));
-
-  
-	  //
-	  // File (Source) Package
-	  //
-	  m_FilePackage = new SourcePackage(m_Dict);
-	  m_FilePackage->Name = PackageLabel.c_str();
-	  m_FilePackage->PackageUID = SourcePackageUMID;
-	  ECD->LinkedPackageUID = SourcePackageUMID;
-
-	  m_HeaderPart.AddChildObject(m_FilePackage);
-	  m_ContentStorage->Packages.push_back(m_FilePackage->InstanceUID);
-
-	  TrackSet<TimecodeComponent> FPTCTrack =
-	    CreateTimecodeTrack<SourcePackage>(m_HeaderPart, *m_FilePackage,
-					       clip_edit_rate, tc_frame_rate,
-					       ui64_C(3600) * tc_frame_rate, m_Dict);
-
-	  FPTCTrack.Sequence->Duration.set_has_value();
-	  m_DurationUpdateList.push_back(&(FPTCTrack.Sequence->Duration.get()));
-	  FPTCTrack.Clip->Duration.set_has_value();
-	  m_DurationUpdateList.push_back(&(FPTCTrack.Clip->Duration.get()));
-
-	  TrackSet<DMSegment> FPTrack =
-	    CreateTrackAndSequence<SourcePackage, DMSegment>(m_HeaderPart, *m_FilePackage,
-							     TrackName, clip_edit_rate, DataDefinition,
-							     2, m_Dict);
-
-	  FPTrack.Sequence->Duration.set_has_value();
-	  m_DurationUpdateList.push_back(&(FPTrack.Sequence->Duration.get()));
-
-	  FPTrack.Clip = new DMSegment(m_Dict);
-	  m_HeaderPart.AddChildObject(FPTrack.Clip);
-	  FPTrack.Sequence->StructuralComponents.push_back(FPTrack.Clip->InstanceUID);
-	  FPTrack.Clip->DataDefinition = DataDefinition;
-	  FPTrack.Clip->EventComment = "ST 429-5 Timed Text";
-
-	  m_DurationUpdateList.push_back(&(FPTrack.Clip->Duration));
-
-	  m_EssenceDescriptor->LinkedTrackID = FPTrack.Track->TrackID;
-	}
-
-	//
 	void AddEssenceDescriptor(const UL& WrappingUL)
 	{
 	  //
@@ -818,7 +788,7 @@ namespace ASDCP
 	      UL CryptEssenceUL(m_Dict->ul(MDD_EncryptedContainerLabel));
 	      m_HeaderPart.EssenceContainers.push_back(CryptEssenceUL);
 	      m_HeaderPart.m_Preface->DMSchemes.push_back(UL(m_Dict->ul(MDD_CryptographicFrameworkLabel)));
-	      AddDMScrypt(m_HeaderPart, *m_FilePackage, m_Info, WrappingUL, m_Dict);
+	      AddDmsCrypt(m_HeaderPart, *m_FilePackage, m_Info, WrappingUL, m_Dict);
 	      //// TODO: fix DMSegment Duration value
 	    }
 	  else
@@ -834,6 +804,47 @@ namespace ASDCP
 	    m_HeaderPart.AddChildObject(*sdli);
 
 	  m_FilePackage->Descriptor = m_EssenceDescriptor->InstanceUID;
+	}
+
+	Result_t AddDmsGenericPartUtf8Text(const ASDCP::FrameBuffer& frame_buffer,
+					   ASDCP::AESEncContext* enc = 0, ASDCP::HMACContext* hmac = 0)
+	{
+	  Kumu::fpos_t previous_partition_offset = m_RIP.PairArray.back().ByteOffset;
+	  Result_t result = AddDmsTrackGenericPartUtf8Text(m_File, m_HeaderPart, *m_FilePackage, m_RIP, m_Dict);
+
+	  if ( KM_SUCCESS(result) )
+	    {
+	      // m_RIP now contains an entry (at the back) for the new generic stream
+	      // (this entry was created during the call to AddDmsTrackGenericPartUtf8Text())
+	      if ( m_File.Tell() != m_RIP.PairArray.back().ByteOffset )
+		{
+		  DefaultLogSink().Error("File offset has moved since RIP modification. Unrecoverable error.\n");
+		  return RESULT_FAIL;
+		}
+	  
+	      // create generic stream partition header
+	      static UL GenericStream_DataElement(m_Dict->ul(MDD_GenericStream_DataElement));
+	      ASDCP::MXF::Partition GSPart(m_Dict);
+
+	      GSPart.MajorVersion = m_HeaderPart.MajorVersion;
+	      GSPart.MinorVersion = m_HeaderPart.MinorVersion;
+	      GSPart.ThisPartition = m_RIP.PairArray.back().ByteOffset;
+	      GSPart.PreviousPartition = previous_partition_offset;
+	      GSPart.OperationalPattern = m_HeaderPart.OperationalPattern;
+	      GSPart.BodySID = m_RIP.PairArray.back().BodySID;
+	      GSPart.EssenceContainers = m_HeaderPart.EssenceContainers;
+
+	      static UL gs_part_ul(m_Dict->ul(MDD_GenericStreamPartition));
+	      Result_t result = GSPart.WriteToFile(m_File, gs_part_ul);
+	  
+	      if ( KM_SUCCESS(result) )
+		{
+		  result = Write_EKLV_Packet(m_File, *m_Dict, m_HeaderPart, m_Info, m_CtFrameBuf, m_FramesWritten,
+					     m_StreamOffset, frame_buffer, GenericStream_DataElement.Value(), enc, hmac);
+		}
+	    }
+
+	  return result;
 	}
 
 	//

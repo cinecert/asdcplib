@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2011-2016, Robert Scheler, Heiko Sparenberg Fraunhofer IIS,
+Copyright (c) 2011-2018, Robert Scheler, Heiko Sparenberg Fraunhofer IIS,
 John Hurst
 
 All rights reserved.
@@ -188,7 +188,7 @@ namespace AS_02
 
 	if ( KM_SUCCESS(result) )
 	  {
-	    this->m_PartitionSpace *= floor( EditRate.Quotient() + 0.5 );  // convert seconds to edit units
+	    this->m_PartitionSpace *= (ui32_t)floor( EditRate.Quotient() + 0.5 );  // convert seconds to edit units
 	    this->m_ECStart = this->m_File.Tell();
 	    this->m_IndexWriter.IndexSID = 129;
 
@@ -207,9 +207,7 @@ namespace AS_02
 	return result;
       }
 
-      // standard method of writing the header and footer of a completed AS-02 file
-      //
-      Result_t WriteAS02Footer()
+      void FlushIndexPartition()
       {
 	if ( this->m_IndexWriter.GetDuration() > 0 )
 	  {
@@ -217,7 +215,14 @@ namespace AS_02
 	    this->m_IndexWriter.WriteToFile(this->m_File);
 	    this->m_RIP.PairArray.push_back(RIP::PartitionPair(0, this->m_IndexWriter.ThisPartition));
 	  }
-
+      }
+      
+      // standard method of writing the header and footer of a completed AS-02 file
+      //
+      Result_t WriteAS02Footer()
+      {
+	this->FlushIndexPartition();
+	  
 	// update all Duration properties
 	ASDCP::MXF::Partition footer_part(this->m_Dict);
 	DurationElementList_t::iterator dli = this->m_DurationUpdateList.begin();

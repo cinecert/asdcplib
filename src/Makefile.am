@@ -2,7 +2,7 @@
 #
 # $Id$
 #
-# Copyright (c) 2007-2016 John Hurst. All rights reserved.
+# Copyright (c) 2007-2018 John Hurst. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -144,6 +144,7 @@ libas02_la_SOURCES	= \
 	h__02_Writer.cpp \
 	AS_02_JP2K.cpp \
 	AS_02_PCM.cpp \
+	AS_02_ISXD.cpp \
 	ST2052_TextParser.cpp \
 	AS_02_TimedText.cpp
 

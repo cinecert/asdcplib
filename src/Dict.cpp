@@ -201,7 +201,7 @@ ASDCP::Dictionary::AddEntry(const MDDEntry& Entry, ui32_t index)
   std::map<ASDCP::UL, ui32_t>::iterator ii = m_md_lookup.find(TmpUL);
   if ( ii != m_md_lookup.end() )
     {
-      fprintf(stderr, "DUPE! %s (%02x, %02x) %s | (%02x, %02x) %s\n",
+      Kumu::DefaultLogSink().Warn("Duplicate Dictionary item: %s (%02x, %02x) %s | (%02x, %02x) %s\n",
 	      TmpUL.EncodeString(buf, 64),
 	      m_MDD_Table[ii->second].tag.a, m_MDD_Table[ii->second].tag.b,
 	      m_MDD_Table[ii->second].name,

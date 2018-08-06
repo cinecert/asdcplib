@@ -172,7 +172,7 @@ ASDCP::KLVPacket::Dump(FILE* stream, const Dictionary& Dict, bool show_value)
       fprintf(stream, "%s", TmpUL.EncodeString(buf, 64));
 
       const MDDEntry* Entry = Dict.FindULAnyVersion(m_KeyStart);
-      fprintf(stream, "  len: %7qu (%s)\n", m_ValueLength, (Entry ? Entry->name : "Unknown"));
+      fprintf(stream, "  len: %7llu (%s)\n", m_ValueLength, (Entry ? Entry->name : "Unknown"));
 
       if ( show_value && m_ValueLength < 1000 )
 	Kumu::hexdump(m_ValueStart, Kumu::xmin(m_ValueLength, (ui64_t)128), stream);

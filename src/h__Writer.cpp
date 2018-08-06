@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2004-2015, John Hurst
+Copyright (c) 2004-2018, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -39,13 +39,13 @@ using namespace ASDCP::MXF;
 ui32_t
 ASDCP::derive_timecode_rate_from_edit_rate(const ASDCP::Rational& edit_rate)
 {
-  return floor(0.5 + edit_rate.Quotient());
+  return (ui32_t)floor(0.5 + edit_rate.Quotient());
 }
 
 //
 // add DMS CryptographicFramework entry to source package
 void
-ASDCP::AddDMScrypt(Partition& HeaderPart, SourcePackage& Package,
+ASDCP::AddDmsCrypt(Partition& HeaderPart, SourcePackage& Package,
 		   WriterInfo& Descr, const UL& WrappingUL, const Dictionary*& Dict)
 {
   assert(Dict);
@@ -65,6 +65,7 @@ ASDCP::AddDMScrypt(Partition& HeaderPart, SourcePackage& Package,
   HeaderPart.AddChildObject(Segment);
   Seq->StructuralComponents.push_back(Segment->InstanceUID);
   Segment->EventComment = "AS-DCP KLV Encryption";
+  Segment->DataDefinition = UL(Dict->ul(MDD_DescriptiveMetaDataDef));
 
   CryptographicFramework* CFW = new CryptographicFramework(Dict);
   HeaderPart.AddChildObject(CFW);
@@ -81,7 +82,127 @@ ASDCP::AddDMScrypt(Partition& HeaderPart, SourcePackage& Package,
   Context->CryptographicKeyID.Set(Descr.CryptographicKeyID);
 }
 
+static std::string const rp2057_static_track_label = "SMPTE RP 2057 Generic Stream Text-Based Set";
 
+//
+static bool
+id_batch_contains(const Array<Kumu::UUID>& batch, const Kumu::UUID& value)
+{
+  Array<Kumu::UUID>::const_iterator i;
+  for ( i = batch.begin(); i != batch.end(); ++i )
+    {
+      if ( *i == value )
+	{
+	  return true;
+	}
+    }
+  return false;
+}
+
+//
+Result_t
+ASDCP::AddDmsTrackGenericPartUtf8Text(Kumu::FileWriter& file_writer, MXF::OP1aHeader& header_part,
+				      SourcePackage& source_package, MXF::RIP& rip, const Dictionary*& Dict)
+{
+  Sequence* Sequence_obj = 0;
+  InterchangeObject* tmp_iobj = 0;
+  std::list<InterchangeObject*> object_list;
+
+  // get the SourcePackage else die
+  header_part.GetMDObjectByType(Dict->ul(MDD_SourcePackage), &tmp_iobj);
+  SourcePackage *SourcePackage_obj = dynamic_cast<SourcePackage*>(tmp_iobj);
+  if ( SourcePackage_obj == 0 )
+    {
+      DefaultLogSink().Error("MXF Metadata contains no SourcePackage Set.\n");
+      return RESULT_FORMAT;
+    }
+
+  // find the first StaticTrack object, having the right label, that is ref'd by the source package
+  StaticTrack *StaticTrack_obj = 0;
+  header_part.GetMDObjectsByType(Dict->ul(MDD_StaticTrack), object_list);
+  std::list<InterchangeObject*>::iterator j;
+  for ( j = object_list.begin(); j != object_list.end(); ++j )
+    {
+      StaticTrack_obj = dynamic_cast<StaticTrack*>(*j);
+      assert(StaticTrack_obj);
+      if ( id_batch_contains(SourcePackage_obj->Tracks, StaticTrack_obj->InstanceUID)
+	   && StaticTrack_obj->TrackName.get() == rp2057_static_track_label )
+	{
+	  break;
+	}
+      StaticTrack_obj = 0;
+    }
+
+  if ( StaticTrack_obj )
+    {
+      object_list.clear();
+      header_part.GetMDObjectsByType(Dict->ul(MDD_Sequence), object_list);
+      for ( j = object_list.begin(); j != object_list.end(); ++j )
+	{
+	  Sequence_obj = dynamic_cast<Sequence*>(*j);
+	  assert(Sequence_obj);
+	  if ( Sequence_obj->InstanceUID == StaticTrack_obj->Sequence )
+	    {
+	      break;
+	    }
+	  Sequence_obj = 0;
+	}
+    }
+
+  if ( Sequence_obj == 0 )
+    {
+      assert(Dict);
+      StaticTrack* static_track = new StaticTrack(Dict);
+      header_part.AddChildObject(static_track);
+      source_package.Tracks.push_back(static_track->InstanceUID);
+      static_track->TrackName = "Descriptive Track";
+      static_track->TrackID = 4;
+
+      Sequence_obj = new Sequence(Dict);
+      header_part.AddChildObject(Sequence_obj);
+      static_track->Sequence = Sequence_obj->InstanceUID;
+      Sequence_obj->DataDefinition = UL(Dict->ul(MDD_DescriptiveMetaDataDef));
+      header_part.m_Preface->DMSchemes.push_back(UL(Dict->ul(MDD_MXFTextBasedFramework)));
+    }
+
+  assert(Sequence_obj);
+  // 
+  DMSegment* Segment = new DMSegment(Dict);
+  header_part.AddChildObject(Segment);
+  Sequence_obj->StructuralComponents.push_back(Segment->InstanceUID);
+  Segment->EventComment = rp2057_static_track_label;
+  Segment->DataDefinition = UL(Dict->ul(MDD_DescriptiveMetaDataDef));
+
+  //
+  TextBasedDMFramework *dmf_obj = new TextBasedDMFramework(Dict);
+  assert(dmf_obj);
+  header_part.AddChildObject(dmf_obj);
+  Segment->DMFramework = dmf_obj->InstanceUID;
+  GenRandomValue(dmf_obj->ObjectRef);
+
+
+  // Create new SID in DMF
+  ui32_t max_sid = 0;
+  ASDCP::MXF::RIP::pair_iterator i;
+  for ( i = rip.PairArray.begin(); i != rip.PairArray.end(); ++i )
+    {
+      if ( max_sid < i->BodySID )
+	{
+	  max_sid = i->BodySID;
+	}
+    }
+
+  rip.PairArray.push_back(RIP::PartitionPair(max_sid + 1, file_writer.Tell()));
+
+  // Add new GSTBS linked to DMF
+  GenericStreamTextBasedSet *gst_obj = new GenericStreamTextBasedSet(Dict);
+  header_part.AddChildObject(gst_obj);
+  gst_obj->InstanceUID = dmf_obj->ObjectRef;
+  gst_obj->GenericStreamSID = max_sid + 1;
+  gst_obj->PayloadSchemeID = UL(Dict->ul(MDD_MXFTextBasedFramework));
+  
+  return RESULT_OK;
+}
 
 //
 ASDCP::h__ASDCPWriter::h__ASDCPWriter(const Dictionary& d) :

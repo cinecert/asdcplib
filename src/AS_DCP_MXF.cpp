@@ -252,6 +252,14 @@ ASDCP::EssenceType(const std::string& filename, EssenceType_t& type)
 	    {
 	      type = ESS_DCDATA_UNKNOWN;
 	    }
+	  else if ( ASDCP_SUCCESS(TestHeader.GetMDObjectByType(OBJ_TYPE_ARGS(ISXDDataEssenceDescriptor))) )
+	    {
+	      type = ESS_AS02_ISXD;
+	    }
+	  else if ( ASDCP_SUCCESS(TestHeader.GetMDObjectByType(OBJ_TYPE_ARGS(ACESPictureSubDescriptor))) )
+	    {
+	      type = ESS_AS02_ACES;
+	    }
 	}
       else
 	{

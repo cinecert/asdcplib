@@ -594,9 +594,8 @@ AS_02::PHDR::MXFWriter::h__Writer::WriteFrame(const AS_02::PHDR::FrameBuffer& Fr
 
       if ( m_FramesWritten > 1 && ( ( m_FramesWritten + 1 ) % m_PartitionSpace ) == 0 )
 	{
-	  m_IndexWriter.ThisPartition = m_File.Tell();
-	  m_IndexWriter.WriteToFile(m_File);
-	  m_RIP.PairArray.push_back(RIP::PartitionPair(0, m_IndexWriter.ThisPartition));
+	  assert(m_IndexWriter.GetDuration() > 0);
+	  FlushIndexPartition();
 
 	  UL body_ul(m_Dict->ul(MDD_ClosedCompleteBodyPartition));
 	  Partition body_part(m_Dict);
@@ -627,18 +626,16 @@ Result_t
 AS_02::PHDR::MXFWriter::h__Writer::Finalize(const std::string& PHDR_master_metadata)
 {
   if ( ! m_State.Test_RUNNING() )
-    return RESULT_STATE;
+    {
+      KM_RESULT_STATE_HERE();
+      return RESULT_STATE;
+    }
 
   Result_t result = m_State.Goto_FINAL();
 
   if ( KM_SUCCESS(result) )
     {
-      if ( m_IndexWriter.GetDuration() > 0 )
-	{
-	  m_IndexWriter.ThisPartition = this->m_File.Tell();
-	  m_IndexWriter.WriteToFile(this->m_File);
-	  m_RIP.PairArray.push_back(RIP::PartitionPair(0, this->m_IndexWriter.ThisPartition));
-	}
+      FlushIndexPartition();
 
       if ( ! PHDR_master_metadata.empty() )
 	{

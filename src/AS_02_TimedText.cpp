@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2008-2016, John Hurst
+Copyright (c) 2008-2018, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -186,7 +186,7 @@ AS_02::TimedText::MXFReader::h__Reader::ReadTimedTextResource(ASDCP::TimedText::
 //
 ASDCP::Result_t
 AS_02::TimedText::MXFReader::h__Reader::ReadAncillaryResource(const Kumu::UUID& uuid,
-							      ASDCP::TimedText::FrameBuffer& FrameBuf,
+							      ASDCP::TimedText::FrameBuffer& frame_buf,
 							      AESDecContext* Ctx, HMACContext* HMAC)
 {
   ResourceMap_t::const_iterator ri = m_ResourceMap.find(uuid);
@@ -197,70 +197,23 @@ AS_02::TimedText::MXFReader::h__Reader::ReadAncillaryResource(const Kumu::UUID& 
       return RESULT_RANGE;
     }
 
-  TimedTextResourceSubDescriptor* DescObject = 0;
   // get the subdescriptor
   InterchangeObject* tmp_iobj = 0;
   Result_t result = m_HeaderPart.GetMDObjectByID((*ri).second, &tmp_iobj);
-  DescObject = static_cast<TimedTextResourceSubDescriptor*>(tmp_iobj);
+  TimedTextResourceSubDescriptor* desc_object = dynamic_cast<TimedTextResourceSubDescriptor*>(tmp_iobj);
 
   if ( KM_SUCCESS(result) )
     {
-      RIP::const_pair_iterator pi;
-      RIP::PartitionPair TmpPair;
-      ui32_t sequence = 0;
-
-      // Look up the partition start in the RIP using the SID.
-      // Count the sequence length in because this is the sequence
-      // value needed to  complete the HMAC.
-      for ( pi = m_RIP.PairArray.begin(); pi != m_RIP.PairArray.end(); ++pi, ++sequence )
-	{
-	  if ( (*pi).BodySID == DescObject->EssenceStreamID )
-	    {
-	      TmpPair = *pi;
-	      break;
-	    }
-	}
-
-      if ( TmpPair.ByteOffset == 0 )
-	{
-	  DefaultLogSink().Error("Body SID not found in RIP set: %d\n", DescObject->EssenceStreamID);
-	  return RESULT_FORMAT;
-	}
-
-      if ( KM_SUCCESS(result) )
-	{
-	  FrameBuf.AssetID(uuid.Value());
-	  FrameBuf.MIMEType(DescObject->MIMEMediaType);
-
-	  // seek tp the start of the partition
-	  if ( (Kumu::fpos_t)TmpPair.ByteOffset != m_LastPosition )
-	    {
-	      m_LastPosition = TmpPair.ByteOffset;
-	      result = m_File.Seek(TmpPair.ByteOffset);
-	    }
-
-	  // read the partition header
-	  ASDCP::MXF::Partition GSPart(m_Dict);
-	  result = GSPart.InitFromFile(m_File);
-
-	  if( ASDCP_SUCCESS(result) )
-	    {
-	      // check the SID
-	      if ( DescObject->EssenceStreamID != GSPart.BodySID )
-		{
-		  char buf[64];
-		  DefaultLogSink().Error("Generic stream partition body differs: %s\n", uuid.EncodeHex(buf, 64));
-		  return RESULT_FORMAT;
-		}
-
-	      // read the essence packet
-	      assert(m_Dict);
-	      if( ASDCP_SUCCESS(result) )
-		result = ReadEKLVPacket(0, sequence, FrameBuf, m_Dict->ul(MDD_GenericStream_DataElement), Ctx, HMAC);
-	    }
-	}
+      assert(desc_object);
+      result = ReadGenericStreamPartitionPayload(desc_object->EssenceStreamID, frame_buf);
     }
 
+  if ( KM_SUCCESS(result) )
+    {
+      frame_buf.AssetID(uuid.Value());
+      frame_buf.MIMEType(desc_object->MIMEMediaType);
+    }
+  
   return result;
 }
 

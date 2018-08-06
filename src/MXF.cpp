@@ -608,6 +608,8 @@ ASDCP::MXF::Preface::Copy(const Preface& rhs)
   OperationalPattern = rhs.OperationalPattern;
   EssenceContainers = rhs.EssenceContainers;
   DMSchemes = rhs.DMSchemes;
+  ApplicationSchemes = rhs.ApplicationSchemes;
+  ConformsToSpecifications = rhs.ConformsToSpecifications;
 }
 
 //
@@ -624,6 +626,16 @@ ASDCP::MXF::Preface::InitFromTLVSet(TLVReader& TLVSet)
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(Preface, OperationalPattern));
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(Preface, EssenceContainers));
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(Preface, DMSchemes));
+  if ( ASDCP_SUCCESS(result) ) 
+    {
+      result = TLVSet.ReadObject(OBJ_READ_ARGS_OPT(Preface, ApplicationSchemes));
+      ApplicationSchemes.set_has_value( result == RESULT_OK);
+    }
+  if ( ASDCP_SUCCESS(result) )
+    {
+      result = TLVSet.ReadObject(OBJ_READ_ARGS_OPT(Preface, ConformsToSpecifications));
+      ConformsToSpecifications.set_has_value( result == RESULT_OK);
+    }
   return result;
 }
 
@@ -641,6 +653,14 @@ ASDCP::MXF::Preface::WriteToTLVSet(TLVWriter& TLVSet)
   if ( ASDCP_SUCCESS(result) )  result = TLVSet.WriteObject(OBJ_WRITE_ARGS(Preface, OperationalPattern));
   if ( ASDCP_SUCCESS(result) )  result = TLVSet.WriteObject(OBJ_WRITE_ARGS(Preface, EssenceContainers));
   if ( ASDCP_SUCCESS(result) )  result = TLVSet.WriteObject(OBJ_WRITE_ARGS(Preface, DMSchemes));
+  if ( ASDCP_SUCCESS(result) && !ApplicationSchemes.empty() )
+    {
+      result = TLVSet.WriteObject(OBJ_WRITE_ARGS_OPT(Preface, ApplicationSchemes));
+    }
+  if ( ASDCP_SUCCESS(result) && !ConformsToSpecifications.empty())
+    {
+      result = TLVSet.WriteObject(OBJ_WRITE_ARGS_OPT(Preface, ConformsToSpecifications));
+    }
   return result;
 }
 
@@ -682,6 +702,14 @@ ASDCP::MXF::Preface::Dump(FILE* stream)
   fprintf(stream, "  %22s = %s\n",  "OperationalPattern", OperationalPattern.EncodeString(identbuf, IdentBufferLen));
   fprintf(stream, "  %22s:\n", "EssenceContainers");  EssenceContainers.Dump(stream);
   fprintf(stream, "  %22s:\n", "DMSchemes");  DMSchemes.Dump(stream);
+  if ( ! ApplicationSchemes.empty() )
+    {
+      fprintf(stream, "  %22s:\n", "ApplicationSchemes");  ApplicationSchemes.get().Dump(stream);
+    }
+  if ( ! ConformsToSpecifications.empty() )
+    {
+      fprintf(stream, "  %22s:\n", "ConformsToSpecifications");  ConformsToSpecifications.get().Dump(stream);
+    }
 }
 
 //------------------------------------------------------------------------------------------

@@ -112,12 +112,12 @@ namespace ASDCP
 	  bool HasValue() const { return ! this->empty(); }
 
 	  ui32_t ArchiveLength() const {
-	    return ( sizeof(ui32_t) * 2 ) +  ( this->size() * this->ItemSize() );
+	    return ( sizeof(ui32_t) * 2 ) +  ( (ui32_t)this->size() * this->ItemSize() );
 	  }
 
 	  bool Archive(Kumu::MemIOWriter* Writer) const {
-	    if ( ! Writer->WriteUi32BE(this->size()) ) return false;
-	    if ( ! Writer->WriteUi32BE(this->ItemSize()) ) return false;
+	    if ( ! Writer->WriteUi32BE((ui32_t)this->size()) ) return false;
+	    if ( ! Writer->WriteUi32BE((ui32_t)this->ItemSize()) ) return false;
 	    if ( this->empty() ) return true;
 	    
 	    typename ContainerType::const_iterator i;
@@ -277,7 +277,7 @@ namespace ASDCP
 
 	  const char* EncodeString(char* str_buf, ui32_t buf_len) const;
 	  inline virtual bool HasValue() const { return ! empty(); }
-	  inline virtual ui32_t ArchiveLength() const { return sizeof(ui32_t) + size(); }
+	  inline virtual ui32_t ArchiveLength() const { return (ui32_t)(sizeof(ui32_t) + size()); }
 	  virtual bool Unarchive(Kumu::MemIOReader* Reader);
 	  virtual bool Archive(Kumu::MemIOWriter* Writer) const;
 	};
@@ -296,7 +296,7 @@ namespace ASDCP
 
 	  const char* EncodeString(char* str_buf, ui32_t buf_len) const;
 	  inline virtual bool HasValue() const { return ! empty(); }
-	  inline virtual ui32_t ArchiveLength() const { return sizeof(ui32_t) + size(); }
+	  inline virtual ui32_t ArchiveLength() const { return (ui32_t)(sizeof(ui32_t) + size()); }
 	  virtual bool Unarchive(Kumu::MemIOReader* Reader);
 	  virtual bool Archive(Kumu::MemIOWriter* Writer) const;
 	};
@@ -359,7 +359,7 @@ namespace ASDCP
 	  ui32_t First;
 	  ui32_t Second;
 
-	  LineMapPair() {}
+	LineMapPair() : First(0), Second() {}
 	  ~LineMapPair() {}
 
 	LineMapPair(const ui32_t& first, const ui32_t& second) : IArchive() {

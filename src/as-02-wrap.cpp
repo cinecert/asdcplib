@@ -38,6 +38,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <KM_fileio.h>
 #include <KM_prng.h>
+#include <KM_xml.h>
 #include <AS_02.h>
 #include <PCMParserList.h>
 #include <Metadata.h>
@@ -142,7 +143,10 @@ Options:\n\
   -F (0|1)          - Set field dominance for interlaced image (default: 0)\n\
   -g <rfc-5646-code>\n\
                     - Create MCA labels having the given RFC 5646 language code\n\
-                      (requires option \"-m\")\n\
+                      (requires option \"-m\") -- Also used with -G to set the\n\
+                      value of the TextMIMEMediaType property\n\
+  -G <filename>     - Filename of XML resource to be carried per RP 2057 Generic\n\
+                      Stream. May be issued multiple times.\n\
   -i                - Indicates input essence is interlaced fields (forces -Y)\n\
   -j <key-id-str>   - Write key ID instead of creating a random value\n\
   -k <key-string>   - Use key for ciphertext operations\n\
@@ -166,6 +170,7 @@ Options:\n\
   -t <min>          - Set RGB component minimum code value (default: 0)\n\
   -T <max>          - Set RGB component maximum code value (default: 1023)\n\
   -u                - Print UL catalog to stdout\n\
+  -u <UL>           - ISXD (RDD47) essence coding label\n\
   -v                - Verbose, prints informative messages to stderr\n\
   -W                - Read input file only, do not write source file\n\
   -x <int>          - Horizontal subsampling degree (default: 2)\n\
@@ -252,7 +257,7 @@ public:
 
   UL channel_assignment, picture_coding, transfer_characteristic, color_primaries, coding_equations;
   ASDCP::MXF::AS02_MCAConfigParser mca_config;
-  std::string mca_language;
+  std::string language;
 
   ui32_t rgba_MaxRef;
   ui32_t rgba_MinRef;
@@ -275,6 +280,10 @@ public:
   //new attributes for AS-02 support 
   AS_02::IndexStrategy_t index_strategy; //Shim parameter index_strategy_frame/clip
   ui32_t partition_space; //Shim parameter partition_spacing
+
+  // ISXD
+  UL isxd_essence_coding;
+  std::list<std::string> global_isxd_metadata;
 
   //
   MXF::LineMapPair line_map;
@@ -529,7 +538,12 @@ public:
 
 	      case 'g':
 		TEST_EXTRA_ARG(i, 'g');
-		mca_language = argv[i];
+		language = argv[i];
+		break;
+
+	      case 'G':
+		TEST_EXTRA_ARG(i, 'G');
+		global_isxd_metadata.push_back(argv[i]);
 		break;
 
 	      case 'h': help_flag = true; break;
@@ -662,6 +676,15 @@ public:
 
 	      case 'u': show_ul_values_flag = true; break;
 
+	      case 'U':
+		TEST_EXTRA_ARG(i, 'U');
+		if ( ! isxd_essence_coding.DecodeHex(argv[i]) )
+		  {
+		    fprintf(stderr, "Error decoding UL value: %s\n", argv[i]);
+		    return;
+		  }
+		break;
+
 	      case 'V': version_flag = true; break;
 	      case 'v': verbose_flag = true; break;
 	      case 'W': no_write_flag = true; break;
@@ -716,7 +739,7 @@ public:
 
     if ( ! mca_config_str.empty() )
       {
-	if ( mca_language.empty() )
+	if ( language.empty() )
 	  {
 	    if ( ! mca_config.DecodeString(mca_config_str) )
 	      {
@@ -725,7 +748,7 @@ public:
 	  }
 	else
 	  {
-	    if ( ! mca_config.DecodeString(mca_config_str, mca_language) )
+	    if ( ! mca_config.DecodeString(mca_config_str, language) )
 	      {
 		return;
 	      }
@@ -1245,6 +1268,195 @@ write_timed_text_file(CommandOptions& Options)
   return result;
 }
 
+//
+bool
+get_current_dms_text_descriptor(AS_02::ISXD::MXFWriter& writer, ASDCP::MXF::GenericStreamTextBasedSet *&text_object)
+{
+  std::list<MXF::InterchangeObject*> object_list;
+  writer.OP1aHeader().GetMDObjectsByType(DefaultSMPTEDict().ul(MDD_GenericStreamTextBasedSet), object_list);
+
+  if ( object_list.empty() )
+    {
+      return false;
+    }
+
+  text_object = dynamic_cast<MXF::GenericStreamTextBasedSet*>(object_list.back());
+  assert(text_object != 0);
+  return true;
+}
+		      
+
+// Write one or more plaintext Aux Data bytestreams to a plaintext AS-02 file
+// Write one or more plaintext Aux Data bytestreams to a ciphertext AS-02 file
+//
+Result_t
+write_isxd_file(CommandOptions& Options)
+{
+  AESEncContext*          Context = 0;
+  HMACContext*            HMAC = 0;
+  AS_02::ISXD::MXFWriter Writer;
+  DCData::FrameBuffer     FrameBuffer(Options.fb_size);
+  DCData::SequenceParser  Parser;
+  byte_t                  IV_buf[CBC_BLOCK_SIZE];
+  Kumu::FortunaRNG        RNG;
+
+  // set up essence parser
+  Result_t result = Parser.OpenRead(Options.filenames.front());
+
+  // set up MXF writer
+  if ( ASDCP_SUCCESS(result) )
+  {
+
+    if ( Options.verbose_flag )
+	{
+	  fprintf(stderr, "Aux Data\n");
+	  fprintf(stderr, "Frame Buffer size: %u\n", Options.fb_size);
+	}
+  }
+
+  if ( ASDCP_SUCCESS(result) && ! Options.no_write_flag )
+  {
+    WriterInfo Info = s_MyInfo;  // fill in your favorite identifiers here
+    if ( Options.asset_id_flag )
+      memcpy(Info.AssetUUID, Options.asset_id_value, UUIDlen);
+    else
+      Kumu::GenRandomUUID(Info.AssetUUID);
+
+    Info.LabelSetType = LS_MXF_SMPTE;
+
+      // configure encryption
+    if( Options.key_flag )
+	{
+	  Kumu::GenRandomUUID(Info.ContextID);
+	  Info.EncryptedEssence = true;
+
+	  if ( Options.key_id_flag )
+	    {
+	      memcpy(Info.CryptographicKeyID, Options.key_id_value, UUIDlen);
+	    }
+	  else
+	    {
+	      create_random_uuid(Info.CryptographicKeyID);
+	    }
+
+	  Context = new AESEncContext;
+	  result = Context->InitKey(Options.key_value);
+
+	  if ( ASDCP_SUCCESS(result) )
+	    result = Context->SetIVec(RNG.FillRandom(IV_buf, CBC_BLOCK_SIZE));
+
+	  if ( ASDCP_SUCCESS(result) && Options.write_hmac )
+      {
+        Info.UsesHMAC = true;
+        HMAC = new HMACContext;
+        result = HMAC->InitKey(Options.key_value, Info.LabelSetType);
+      }
+	}
+
+    if ( ASDCP_SUCCESS(result) )
+      {
+	result = Writer.OpenWrite(Options.out_file, Info, Options.isxd_essence_coding, Options.edit_rate);
+      }
+  }
+
+  if ( ASDCP_SUCCESS(result) )
+  {
+    ui32_t duration = 0;
+    result = Parser.Reset();
+
+    while ( ASDCP_SUCCESS(result) && duration++ < Options.duration )
+      {
+	result = Parser.ReadFrame(FrameBuffer);
+
+	if ( ASDCP_SUCCESS(result) )
+	  {
+	    if ( Options.verbose_flag )
+	      FrameBuffer.Dump(stderr, Options.fb_dump_size);
+
+	    if ( Options.encrypt_header_flag )
+	      FrameBuffer.PlaintextOffset(0);
+	  }
+
+	if ( ASDCP_SUCCESS(result) && ! Options.no_write_flag )
+	  {
+	    result = Writer.WriteFrame(FrameBuffer, Context, HMAC);
+
+	    // The Writer class will forward the last block of ciphertext
+	    // to the encryption context for use as the IV for the next
+	    // frame. If you want to use non-sequitur IV values, un-comment
+	    // the following  line of code.
+	    // if ( ASDCP_SUCCESS(result) && Options.key_flag )
+	    //   Context->SetIVec(RNG.FillRandom(IV_buf, CBC_BLOCK_SIZE));
+	  }
+      }
+
+    if ( result == RESULT_ENDOFFILE )
+      {
+	result = RESULT_OK;
+      }
+  }
+
+  if ( KM_SUCCESS(result) && ! Options.no_write_flag )
+    {
+      ASDCP::FrameBuffer global_metadata;
+      std::list<std::string>::iterator i;
+      
+      for ( i = Options.global_isxd_metadata.begin(); i != Options.global_isxd_metadata.end(); ++i )
+	{
+	  ui32_t file_size = Kumu::FileSize(*i);
+	  result = global_metadata.Capacity(file_size);
+
+	  if ( KM_SUCCESS(result) )
+	    {
+	      ui32_t read_count = 0;
+	      Kumu::FileReader Reader;
+	      std::string namespace_name;
+
+	      result = Reader.OpenRead(*i);
+
+	      if ( KM_SUCCESS(result) )
+		{
+		  result = Reader.Read(global_metadata.Data(), file_size, &read_count);
+		}
+
+	      if ( KM_SUCCESS(result) )
+		{
+		  if ( file_size != read_count) 
+		    return RESULT_READFAIL;
+
+		  global_metadata.Size(read_count);
+
+		  std::string ns_prefix, type_name;
+		  Kumu::AttributeList doc_attr_list;
+		  result = GetXMLDocType(global_metadata.RoData(), global_metadata.Size(), ns_prefix, type_name,
+					 namespace_name, doc_attr_list) ? RESULT_OK : RESULT_FAIL;
+		}
+
+	      if ( KM_SUCCESS(result) )
+		{
+		  result = Writer.AddDmsGenericPartUtf8Text(global_metadata, Context, HMAC);
+		}
+
+	      if ( KM_SUCCESS(result) )
+		{
+		  ASDCP::MXF::GenericStreamTextBasedSet *text_object = 0;
+		  get_current_dms_text_descriptor(Writer, text_object);
+		  assert(text_object);
+		  text_object->TextMIMEMediaType = "text/xml";
+		  text_object->TextDataDescription = namespace_name;
+		  text_object->RFC5646TextLanguageCode = Options.language;
+		}
+	    }
+	}
+
+      if ( KM_SUCCESS(result) )
+	{
+	  result = Writer.Finalize();
+	}
+    }
+
+  return result;
+}
 
 //
 int
@@ -1295,6 +1507,19 @@ main(int argc, const char** argv)
 
 	case ESS_TIMED_TEXT:
 	  result = write_timed_text_file(Options);
+	  break;
+
+	case ESS_DCDATA_UNKNOWN:
+	  if ( Options.isxd_essence_coding.HasValue() )
+	    {
+	      result = write_isxd_file(Options);      
+	    }
+	  else
+	    {
+	      fprintf(stderr, "%s: Unknown synchronous data file type, not AS-02-compatible essence.\n",
+		      Options.filenames.front().c_str());
+	      return 5;
+	    }
 	  break;
 
 	default:

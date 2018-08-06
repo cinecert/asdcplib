@@ -57,7 +57,7 @@ AS_02::MXF::AS02IndexWriterVBR::WriteToFile(Kumu::FileWriter& Writer)
 {
   assert(m_Dict);
   ASDCP::FrameBuffer index_body_buffer;
-  ui32_t   index_body_size = m_PacketList->m_List.size() * MaxIndexSegmentSize; // segment-count * max-segment-size
+  ui32_t index_body_size = (ui32_t)m_PacketList->m_List.size() * MaxIndexSegmentSize; // segment-count * max-segment-size
   Result_t result = index_body_buffer.Capacity(index_body_size); 
   ui64_t start_position = 0;
 
@@ -140,7 +140,7 @@ AS_02::MXF::AS02IndexWriterVBR::GetDuration() const
       IndexTableSegment* segment = dynamic_cast<IndexTableSegment*>(*i);
       if ( segment != 0 )
 	{
-	  duration += segment->IndexEntryArray.size();
+	  duration += (ui32_t)segment->IndexEntryArray.size();
 	}
     }
 
@@ -193,9 +193,8 @@ AS_02::h__AS02WriterFrame::WriteEKLVPacket(const ASDCP::FrameBuffer& FrameBuf,co
 
   if ( m_FramesWritten > 1 && ( ( m_FramesWritten + 1 ) % m_PartitionSpace ) == 0 )
     {
-      m_IndexWriter.ThisPartition = m_File.Tell();
-      m_IndexWriter.WriteToFile(m_File);
-      m_RIP.PairArray.push_back(RIP::PartitionPair(0, m_IndexWriter.ThisPartition));
+      assert(m_IndexWriter.GetDuration() > 0);
+      FlushIndexPartition();
 
       UL body_ul(m_Dict->ul(MDD_ClosedCompleteBodyPartition));
       Partition body_part(m_Dict);
@@ -373,8 +372,6 @@ AS_02::h__AS02WriterClip::FinalizeClip(ui32_t bytes_per_frame)
   
   return result;
 }
-
-
 
 //
 // end h__02_Writer.cpp

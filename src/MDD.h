@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2006-2016, John Hurst
+Copyright (c) 2006-2018, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -278,7 +278,7 @@ namespace ASDCP {
         MDD_JPEG2000PictureSubDescriptor_PictureComponentSizing,  // 240
         MDD_JPEG2000PictureSubDescriptor_CodingStyleDefault,  // 241
         MDD_JPEG2000PictureSubDescriptor_QuantizationDefault,  // 242
-        MDD_DM_Framework,  // 243
+        MDD_DescriptiveFramework,  // 243
         MDD_DM_Set,  // 244
         MDD_EncryptedContainerLabel,  // 245
         MDD_CryptographicFrameworkLabel,  // 246
@@ -527,7 +527,26 @@ namespace ASDCP {
 	MDD_TheatricalViewingEnvironment, // 489
 	MDD_HDTVReferenceViewingEnvironment, // 490
 	MDD_HDRReferenceViewingEnvironment, // 491
-
+	MDD_FrameWrappedISXDData, // 492
+	MDD_FrameWrappedISXDContainer, // 493
+	MDD_ISXDDataEssenceDescriptor, // 494
+	MDD_ISXDDataEssenceDescriptor_NamespaceURI, // 495
+	MDD_UTF_8_Text_DataEssenceCoding, // 496
+	MDD_TextBasedDMFramework, // 497
+	MDD_TextBasedDMFramework_ObjectRef, // 498
+	MDD_TextBasedObject, // 499
+	MDD_TextBasedObject_PayloadSchemeID, // 500
+	MDD_TextBasedObject_TextMIMEMediaType, // 501
+	MDD_TextBasedObject_RFC5646TextLanguageCode, // 502
+	MDD_TextBasedObject_TextDataDescription, // 503
+	MDD_GenericStreamTextBasedSet, // 504
+	MDD_GenericStreamTextBasedSet_GenericStreamSID, // 505
+	MDD_DescriptiveObject,   // 506
+	MDD_DescriptiveFramework_LinkedDescriptiveFrameworkPlugInId, // 507
+	MDD_DescriptiveObject_LinkedDescriptiveObjectPlugInId, // 508
+	MDD_Preface_ApplicationSchemes,  // 509
+	MDD_Preface_ConformsToSpecifications, // 510
+	MDD_MXFTextBasedFramework,  // 511
         MDD_Max
     }; // enum MDD_t
 

@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2011-2016, Robert Scheler, Heiko Sparenberg Fraunhofer IIS,
+Copyright (c) 2011-2018, Robert Scheler, Heiko Sparenberg Fraunhofer IIS,
 John Hurst
 
 All rights reserved.
@@ -69,7 +69,7 @@ banner(FILE* stream = stdout)
 {
   fprintf(stream, "\n\
 %s (asdcplib %s)\n\n\
-Copyright (c) 2011-2015, Robert Scheler, Heiko Sparenberg Fraunhofer IIS, John Hurst\n\n\
+Copyright (c) 2011-2018, Robert Scheler, Heiko Sparenberg Fraunhofer IIS, John Hurst\n\n\
 asdcplib may be copied only under the terms of the license found at\n\
 the top of every file in the asdcplib distribution kit.\n\n\
 Specify the -h (help) option for further information about %s\n\n",
@@ -98,6 +98,7 @@ Options:\n\
                       Defaults to 4,194,304 (4MB)\n\
   -d <duration>     - Number of frames to process, default all\n\
   -f <start-frame>  - Starting frame number, default 0\n\
+  -g <SID>          - Extract the Generic Stream Partition payload\n\
   -h | -help        - Show help\n\
   -k <key-string>   - Use key for ciphertext operations\n\
   -m                - verify HMAC values when reading\n\
@@ -142,9 +143,9 @@ public:
   const char* file_prefix; // filename pre for files written by the extract mode
   byte_t key_value[KeyLen];  // value of given encryption key (when key_flag is true)
   byte_t key_id_value[UUIDlen];// value of given key ID (when key_id_flag is true)
-  PCM::ChannelFormat_t channel_fmt; // audio channel arrangement
   const char* input_filename;
   const char* extension;
+  i32_t g_stream_sid;     // Stream ID of a generic stream partition payload to be extracted
   std::string prefix_buffer;
 
   //
@@ -154,7 +155,7 @@ public:
     version_flag(false), help_flag(false), number_width(6),
     start_frame(0), duration(0xffffffff), duration_flag(false), j2c_pedantic(true),
     picture_rate(24), fb_size(FRAME_BUFFER_SIZE), file_prefix(0),
-    input_filename(0)
+    input_filename(0), extension(0), g_stream_sid(0)
   {
     memset(key_value, 0, KeyLen);
     memset(key_id_value, 0, UUIDlen);
@@ -202,6 +203,11 @@ public:
 		start_frame = Kumu::xabs(strtol(argv[i], 0, 10));
 		break;
 
+	      case 'g':
+		TEST_EXTRA_ARG(i, 'g');
+		g_stream_sid = strtol(argv[i], 0, 10);
+		break;
+		  
 	      case 'h': help_flag = true; break;
 	      case 'm': read_hmac = true; break;
 
@@ -308,7 +314,7 @@ read_JP2K_file(CommandOptions& Options)
       if ( KM_SUCCESS(result) )
 	{
 	  assert(rgba_descriptor);
-	  frame_count = rgba_descriptor->ContainerDuration;
+	  frame_count = (ui32_t)rgba_descriptor->ContainerDuration;
 
 	  if ( Options.verbose_flag )
 	    {
@@ -323,7 +329,7 @@ read_JP2K_file(CommandOptions& Options)
 	  if ( KM_SUCCESS(result) )
 	    {
 	      assert(cdci_descriptor);
-	      frame_count = cdci_descriptor->ContainerDuration;
+	      frame_count = (ui32_t)cdci_descriptor->ContainerDuration;
 
 	      if ( Options.verbose_flag )
 		{
@@ -474,7 +480,7 @@ read_PCM_file(CommandOptions& Options)
 	    }
 	  else
 	    {
-	      last_frame = wave_descriptor->ContainerDuration;
+	      last_frame = (ui32_t)wave_descriptor->ContainerDuration;
 	    }
 
 	  if ( last_frame == 0 )
@@ -486,7 +492,7 @@ read_PCM_file(CommandOptions& Options)
 	    	  ASDCP::MXF::SourceClip *sourceClip = dynamic_cast<ASDCP::MXF::SourceClip*>(tmp_obj);
 	    	  if ( ! sourceClip->Duration.empty() )
 		    {
-		      last_frame = sourceClip->Duration;
+		      last_frame = (ui32_t)sourceClip->Duration;
 		    }
 		}
 	    }
@@ -667,10 +673,121 @@ read_timed_text_file(CommandOptions& Options)
 }
 
 //
+Result_t
+read_isxd_file(CommandOptions& Options)
+{
+  AESDecContext*     Context = 0;
+  HMACContext*       HMAC = 0;
+  AS_02::ISXD::MXFReader    Reader;
+  ASDCP::FrameBuffer  FrameBuffer;
+  ui32_t             frame_count = 0;
+
+  Result_t result = Reader.OpenRead(Options.input_filename);
+
+  if ( ASDCP_SUCCESS(result) )
+    {
+      result = FrameBuffer.Capacity(Options.fb_size);
+    }
+
+  if ( ASDCP_SUCCESS(result) )
+    {
+      std::list<MXF::InterchangeObject*> object_list;
+      Reader.OP1aHeader().GetMDObjectsByType(DefaultSMPTEDict().ul(MDD_GenericStreamTextBasedSet), object_list);
+
+      std::list<MXF::InterchangeObject*>::iterator i;
+      for ( i = object_list.begin(); i != object_list.end(); ++i )
+	{
+	  MXF::GenericStreamTextBasedSet *text_object = dynamic_cast<MXF::GenericStreamTextBasedSet*>(*i);
+	  assert(text_object);
+	  text_object->Dump(stderr);
+	}
+    }
+
+  if ( ASDCP_SUCCESS(result) && Options.key_flag )
+    {
+      Context = new AESDecContext;
+      result = Context->InitKey(Options.key_value);
+
+      if ( ASDCP_SUCCESS(result) && Options.read_hmac )
+	{
+	  WriterInfo Info;
+	  Reader.FillWriterInfo(Info);
+
+	  if ( Info.UsesHMAC )
+	    {
+	      HMAC = new HMACContext;
+	      result = HMAC->InitKey(Options.key_value, Info.LabelSetType);
+	    }
+	  else
+	    {
+	      fputs("File does not contain HMAC values, ignoring -m option.\n", stderr);
+	    }
+	}
+    }
+
+  ui32_t last_frame = Options.start_frame + ( Options.duration ? Options.duration : frame_count);
+  if ( last_frame > frame_count )
+    last_frame = frame_count;
+
+  char name_format[64];
+  snprintf(name_format,  64, "%%s%%0%du.%s", Options.number_width, Options.extension);
+
+  for ( ui32_t i = Options.start_frame; ASDCP_SUCCESS(result) && i < last_frame; i++ )
+    {
+      result = Reader.ReadFrame(i, FrameBuffer, Context, HMAC);
+
+      if ( ASDCP_SUCCESS(result) )
+	{
+	  if ( ! Options.no_write_flag )
+	    {
+	      Kumu::FileWriter OutFile;
+	      char filename[256];
+	      ui32_t write_count;
+	      snprintf(filename, 256, name_format, Options.file_prefix, i);
+	      result = OutFile.OpenWrite(filename);
+
+	      if ( ASDCP_SUCCESS(result) )
+		result = OutFile.Write(FrameBuffer.Data(), FrameBuffer.Size(), &write_count);
+	    }
+	}
+    }
+
+  return result;
+}
+
+Result_t
+extract_generic_stream_partition_payload(const std::string& in_filename, const ui32_t sid, const std::string& out_filename)
+{
+  ASDCP::FrameBuffer payload;
+  AS_02::ISXD::MXFReader reader;
+
+  Result_t result = reader.OpenRead(in_filename);
+          
+  if ( KM_SUCCESS(result) )
+    {
+      result = reader.ReadGenericStreamPartitionPayload(sid, payload);
+    }
+  
+  if ( KM_SUCCESS(result) )
+    {
+      Kumu::FileWriter writer;
+      ui32_t write_count = 0;
+      result = writer.OpenWrite(out_filename);
+      
+      if ( KM_SUCCESS(result) )
+	{
+	  result = writer.Write(payload.RoData(), payload.Size(), &write_count);
+	}
+    }
+
+  return result;
+}
+
+
+//
 int
 main(int argc, const char** argv)
 {
-  char     str_buf[64];
   CommandOptions Options(argc, argv);
 
   if ( Options.version_flag )
@@ -706,6 +823,19 @@ main(int argc, const char** argv)
 
 	case ESS_AS02_TIMED_TEXT:
 	  result = read_timed_text_file(Options);
+	  break;
+
+	case ESS_AS02_ISXD:
+	  if ( Options.g_stream_sid == 0 )
+	    {
+	      result = read_isxd_file(Options);
+	    }
+	  else
+	    {
+	      result = extract_generic_stream_partition_payload(Options.input_filename,
+								Options.g_stream_sid,
+								Options.file_prefix);
+	    }
 	  break;
 
 	default:

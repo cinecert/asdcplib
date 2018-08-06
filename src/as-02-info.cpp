@@ -347,7 +347,7 @@ class MyPictureDescriptor : public JP2K::PictureDescriptor
 	fprintf(stream, "          Precincts: %u\n", precinct_set_size);
 	fprintf(stream, "precinct dimensions:\n");
 
-	for ( int i = 0; i < precinct_set_size && i < JP2K::MaxPrecincts; i++ )
+	for ( unsigned int i = 0; i < precinct_set_size && i < JP2K::MaxPrecincts; i++ )
 	  fprintf(stream, "    %d: %d x %d\n", i + 1,
 		  s_exp_lookup[coding_style_default.SPcod.PrecinctSize[i]&0x0f],
 		  s_exp_lookup[(coding_style_default.SPcod.PrecinctSize[i]>>4)&0x0f]
@@ -539,7 +539,7 @@ public:
 		( m_WriterInfo.LabelSetType == LS_MXF_SMPTE ? "SMPTE 2067-5" : "Unknown" ),
 		type_string,
 		(m_Desc.ContainerDuration != 0 ? m_Desc.ContainerDuration : m_Reader.AS02IndexReader().GetDuration()),
-		(m_Desc.ContainerDuration == 1 ? "":"s"));
+		(m_Desc.ContainerDuration == (ui64_t)1 ? "":"s"));
 
 	if ( Options.showheader_flag )
 	  {
@@ -681,7 +681,7 @@ public:
 		total_frame_bytes += this_frame_size;
 
 		if ( this_frame_size > largest_frame )
-		  largest_frame = this_frame_size;
+		  largest_frame = (ui32_t)this_frame_size;
 	      }
 
 	    last_stream_offset = entry.StreamOffset;
@@ -694,7 +694,7 @@ public:
 	static const double mega_const = 1.0 / ( 1000000 / 8.0 );
 
 	// we did not accumulate the last, so duration -= 1
-	double avg_bytes_frame = total_frame_bytes / ( duration - 1 );
+	double avg_bytes_frame = (double)(total_frame_bytes / ( duration - 1 ));
 
 	m_MaxBitrate = largest_frame * mega_const * m_Desc.EditRate.Quotient();
 	m_AvgBitrate = avg_bytes_frame * mega_const * m_Desc.EditRate.Quotient();
@@ -811,7 +811,6 @@ int
 main(int argc, const char** argv)
 {
   Result_t result = RESULT_OK;
-  char     str_buf[64];
   CommandOptions Options(argc, argv);
 
   if ( Options.version_flag )
