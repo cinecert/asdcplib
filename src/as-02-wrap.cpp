@@ -282,7 +282,7 @@ public:
   ui32_t partition_space; //Shim parameter partition_spacing
 
   // ISXD
-  UL isxd_essence_coding;
+  std::string isxd_document_namespace;
   std::list<std::string> global_isxd_metadata;
 
   //
@@ -678,11 +678,7 @@ public:
 
 	      case 'U':
 		TEST_EXTRA_ARG(i, 'U');
-		if ( ! isxd_essence_coding.DecodeHex(argv[i]) )
-		  {
-		    fprintf(stderr, "Error decoding UL value: %s\n", argv[i]);
-		    return;
-		  }
+		isxd_document_namespace = argv[i];
 		break;
 
 	      case 'V': version_flag = true; break;
@@ -1355,47 +1351,71 @@ write_isxd_file(CommandOptions& Options)
 
     if ( ASDCP_SUCCESS(result) )
       {
-	result = Writer.OpenWrite(Options.out_file, Info, Options.isxd_essence_coding, Options.edit_rate);
+	if ( Options.isxd_document_namespace == "auto" )
+	  {
+	    // get ns of first item
+	    std::string ns_prefix, type_name, namespace_name;
+	    result = Parser.ReadFrame(FrameBuffer);
+
+	    if ( ASDCP_SUCCESS(result) )
+	      {
+		Kumu::AttributeList doc_attr_list;
+		result = GetXMLDocType(FrameBuffer.RoData(), FrameBuffer.Size(), ns_prefix, type_name,
+				       namespace_name, doc_attr_list) ? RESULT_OK : RESULT_FAIL;
+	      }
+
+	    if ( ASDCP_SUCCESS(result) && ! namespace_name.empty() )
+	      {
+		Options.isxd_document_namespace = namespace_name;
+	      }
+	    else
+	      {
+		fprintf(stderr, "Unable to parse an XML namespace name from the input document.\n");
+		return RESULT_FAIL;
+	      }
+	  }
+
+	result = Writer.OpenWrite(Options.out_file, Info, Options.isxd_document_namespace, Options.edit_rate);
       }
   }
 
   if ( ASDCP_SUCCESS(result) )
-  {
-    ui32_t duration = 0;
-    result = Parser.Reset();
+    {
+      ui32_t duration = 0;
+      result = Parser.Reset();
 
-    while ( ASDCP_SUCCESS(result) && duration++ < Options.duration )
-      {
-	result = Parser.ReadFrame(FrameBuffer);
+      while ( ASDCP_SUCCESS(result) && duration++ < Options.duration )
+	{
+	  result = Parser.ReadFrame(FrameBuffer);
 
-	if ( ASDCP_SUCCESS(result) )
-	  {
-	    if ( Options.verbose_flag )
-	      FrameBuffer.Dump(stderr, Options.fb_dump_size);
+	  if ( ASDCP_SUCCESS(result) )
+	    {
+	      if ( Options.verbose_flag )
+		FrameBuffer.Dump(stderr, Options.fb_dump_size);
 
-	    if ( Options.encrypt_header_flag )
-	      FrameBuffer.PlaintextOffset(0);
-	  }
+	      if ( Options.encrypt_header_flag )
+		FrameBuffer.PlaintextOffset(0);
+	    }
 
-	if ( ASDCP_SUCCESS(result) && ! Options.no_write_flag )
-	  {
-	    result = Writer.WriteFrame(FrameBuffer, Context, HMAC);
+	  if ( ASDCP_SUCCESS(result) && ! Options.no_write_flag )
+	    {
+	      result = Writer.WriteFrame(FrameBuffer, Context, HMAC);
 
-	    // The Writer class will forward the last block of ciphertext
-	    // to the encryption context for use as the IV for the next
-	    // frame. If you want to use non-sequitur IV values, un-comment
-	    // the following  line of code.
-	    // if ( ASDCP_SUCCESS(result) && Options.key_flag )
-	    //   Context->SetIVec(RNG.FillRandom(IV_buf, CBC_BLOCK_SIZE));
-	  }
-      }
+	      // The Writer class will forward the last block of ciphertext
+	      // to the encryption context for use as the IV for the next
+	      // frame. If you want to use non-sequitur IV values, un-comment
+	      // the following  line of code.
+	      // if ( ASDCP_SUCCESS(result) && Options.key_flag )
+	      //   Context->SetIVec(RNG.FillRandom(IV_buf, CBC_BLOCK_SIZE));
+	    }
+	}
 
-    if ( result == RESULT_ENDOFFILE )
-      {
-	result = RESULT_OK;
-      }
-  }
-
+      if ( result == RESULT_ENDOFFILE )
+	{
+	  result = RESULT_OK;
+	}
+    }
+  
   if ( KM_SUCCESS(result) && ! Options.no_write_flag )
     {
       ASDCP::FrameBuffer global_metadata;
@@ -1444,6 +1464,10 @@ write_isxd_file(CommandOptions& Options)
 		  assert(text_object);
 		  text_object->TextMIMEMediaType = "text/xml";
 		  text_object->TextDataDescription = namespace_name;
+
+		  // this is not really useful when inserting multiple objects because
+		  // it cannot be set per object without some other CLI syntax for
+		  // associating language codes with 2057 blobs, e.g., <filename>:<lang>
 		  text_object->RFC5646TextLanguageCode = Options.language;
 		}
 	    }
@@ -1510,7 +1534,7 @@ main(int argc, const char** argv)
 	  break;
 
 	case ESS_DCDATA_UNKNOWN:
-	  if ( Options.isxd_essence_coding.HasValue() )
+	  if ( ! Options.isxd_document_namespace.empty() )
 	    {
 	      result = write_isxd_file(Options);      
 	    }

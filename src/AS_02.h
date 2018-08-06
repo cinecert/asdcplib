@@ -520,7 +520,7 @@ namespace AS_02
       // the operation cannot be completed or if nonsensical data is discovered
       // in the essence descriptor.
       Result_t OpenWrite(const std::string& filename, const ASDCP::WriterInfo&,
-			 const ASDCP::UL& data_essence_coding,
+			 const std::string& isxd_document_namespace,
 			 const ASDCP::Rational& edit_rate, const ui32_t& header_size = 16384,
 			 const IndexStrategy_t& strategy = IS_FOLLOW, const ui32_t& partition_space = 10);
 
