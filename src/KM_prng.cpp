@@ -216,11 +216,16 @@ Kumu::Gen_FIPS_186_Value(const byte_t* key, ui32_t key_size, byte_t* out_buf, ui
     key_size = SHA_DIGEST_LENGTH; // pad short key ( b < 160 )
 
   // create the 2^b constant
-  BIGNUM c_2powb, c_2, c_b;
-  BN_init(&c_2powb);  BN_init(&c_2);  BN_init(&c_b);
-  BN_set_word(&c_2, 2);
-  BN_set_word(&c_b, key_size * 8);
-  BN_exp(&c_2powb, &c_2, &c_b, ctx1);
+  BIGNUM *c_2powb = BN_new();
+  BIGNUM * c_2 = BN_new();
+  BIGNUM * c_b = BN_new();
+  assert(c_2powb);
+  assert(c_2);
+  assert(c_b);
+
+  BN_set_word(c_2, 2);
+  BN_set_word(c_b, key_size * 8);
+  BN_exp(c_2powb, c_2, c_b, ctx1);
 
   for (;;)
     {
@@ -245,21 +250,31 @@ Kumu::Gen_FIPS_186_Value(const byte_t* key, ui32_t key_size, byte_t* out_buf, ui
       out_buf += SHA_DIGEST_LENGTH;
 
       // step d -- XKEY = (1 + XKEY + x) mod 2^b
-      BIGNUM bn_tmp, bn_xkey, bn_x_n;
-      BN_init(&bn_tmp);  BN_init(&bn_xkey);    BN_init(&bn_x_n);
+      BIGNUM *bn_tmp = BN_new();
+      BIGNUM *bn_xkey = BN_new();
+      BIGNUM *bn_x_n = BN_new();
+      assert(bn_tmp);
+      assert(bn_xkey);
+      assert(bn_x_n);
 
-      BN_bin2bn(xkey, key_size, &bn_xkey);
-      BN_bin2bn(sha_buf, SHA_DIGEST_LENGTH, &bn_x_n);
-      BN_add_word(&bn_xkey, 1);            // xkey += 1
-      BN_add(&bn_tmp, &bn_xkey, &bn_x_n);       // xkey += x
-      BN_mod(&bn_xkey, &bn_tmp, &c_2powb, ctx1);  // xkey = xkey mod (2^b)
+      BN_bin2bn(xkey, key_size, bn_xkey);
+      BN_bin2bn(sha_buf, SHA_DIGEST_LENGTH, bn_x_n);
+      BN_add_word(bn_xkey, 1);            // xkey += 1
+      BN_add(bn_tmp, bn_xkey, bn_x_n);       // xkey += x
+      BN_mod(bn_xkey, bn_tmp, c_2powb, ctx1);  // xkey = xkey mod (2^b)
 
       memset(xkey, 0, xkey_len);
-      ui32_t bn_buf_len = BN_num_bytes(&bn_xkey);
+      ui32_t bn_buf_len = BN_num_bytes(bn_xkey);
       ui32_t idx = ( bn_buf_len < key_size ) ? key_size - bn_buf_len : 0;
-      BN_bn2bin(&bn_xkey, &xkey[idx]);
+      BN_bn2bin(bn_xkey, &xkey[idx]);
+      BN_free(bn_tmp);
+      BN_free(bn_xkey);
+      BN_free(bn_x_n);
     }
 
+  BN_free(c_2powb);
+  BN_free(c_2);
+  BN_free(c_b);
   BN_CTX_free(ctx1);
 }
 
