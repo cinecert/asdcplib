@@ -151,6 +151,42 @@ command-line utilities all respond to -h.
 
 Change History
 
+2018-08-08 - 2.8.26
+ o Modified AS_02::ST2052_TextParser::OpenRead signature
+ o Fixed partition version error in AS-02 interior body partitions
+ o Changed StartTimecode to 0 (zero) in the Source Package
+ o Remove use of BN_init in OpenSSL API
+ o XML parser now works correctly with Xerces-c 3.x
+ o Improved MCA sound field expression parser
+ o Re-assigned asdcp-wrap option '-g' to '-x', added new option '-g' 
+ o Added TLM marker check to j2c-test
+ o Added to kmrandgen options '-C', '-w', '-W'
+ o Added support for SMPTE RDD 47 "ISXD Track File"
+ o Added generic support for SMPTE RP 2057 "Text-Based Metadata Carriage in MXF"
+ o Re-factored AS-02 frame-wrap index write to use a common implementation
+ o Re-factored support for SMPTE ST 410 to use a common implementation (affects
+     AS-DCP and AS-02 timed-text MXF (SMPTE 429-5)
+ o Patched several ambiguous integer casts.
+ o Added new essence type identifiers ESS_AS02_ISXD and ESS_AS02_ACES
+ o Fixed a bug wherein the Generic Container data track clip was instead being
+     written as a DM track
+ o Fixed UL values DCDataDescriptor and ContainerConstraintSubDescriptor to have
+     a byte 6 value of 0x53 (Tag Set) instead of 0x07 (coding sentinel)
+ o Added UL values 468 - 511 to the dictionary (including added ACES UL values)
+ o Added ApplicationSchemes and ConformsToSpecifications to the Preface set
+ o Added default initializer to MXF::LineMapPair
+ o Added sets DescriptiveFramework, DescriptiveObject, TextBasedDMFramework,
+     TextBasedObject, GenericStreamTextBasedSet and ISXDDataEssenceDescriptor,
+     ACESPictureSubDescriptor, TargetFrameSubDescriptor
+ o Added ISXD support, options '-c', '-g', '-G', '-v', '-q', '-u' to as-02-wrap
+ o Added ISXD support and option '-g' to as-02-unwrap
+ o Added CLI switches for MCAAudioContentKind and MCAAudioElementKind
+ o Cleaned up definition of UL WaveAudioDescriptor_PeakEnvelopeData (currently
+     unused)
+ o Moved ReferenceAudioAlignmentLevel from WaveAudioDescriptor to
+     GenericSoundEssenceDescriptor
+
+
 2016-12-10 - MDD bug fix 2.7.19
  o The previous version (2.7.18) contained incorrect MDD.cpp and MDD.h
    files which affect the PIMF and JP2KEssenceCompression labels.
