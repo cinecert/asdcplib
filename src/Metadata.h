@@ -422,6 +422,7 @@ namespace ASDCP
           ui32_t QuantizationBits;
           optional_property<ui8_t > DialNorm;
           UL SoundEssenceCoding;
+          Rational ReferenceImageEditRate;
 
       GenericSoundEssenceDescriptor(const Dictionary*& d);
       GenericSoundEssenceDescriptor(const GenericSoundEssenceDescriptor& rhs);

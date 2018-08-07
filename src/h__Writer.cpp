@@ -133,6 +133,7 @@ ASDCP::AddDmsTrackGenericPartUtf8Text(Kumu::FileWriter& file_writer, MXF::OP1aHe
       StaticTrack_obj = 0;
     }
 
+  // find the Sequence associated with this Track
   if ( StaticTrack_obj )
     {
       object_list.clear();
@@ -151,6 +152,7 @@ ASDCP::AddDmsTrackGenericPartUtf8Text(Kumu::FileWriter& file_writer, MXF::OP1aHe
 
   if ( Sequence_obj == 0 )
     {
+      // this is the first insertion, create the static track
       assert(Dict);
       StaticTrack* static_track = new StaticTrack(Dict);
       header_part.AddChildObject(static_track);
@@ -166,7 +168,7 @@ ASDCP::AddDmsTrackGenericPartUtf8Text(Kumu::FileWriter& file_writer, MXF::OP1aHe
     }
 
   assert(Sequence_obj);
-  // 
+  // Create the DM segment and framework packs
   DMSegment* Segment = new DMSegment(Dict);
   header_part.AddChildObject(Segment);
   Sequence_obj->StructuralComponents.push_back(Segment->InstanceUID);
@@ -180,8 +182,7 @@ ASDCP::AddDmsTrackGenericPartUtf8Text(Kumu::FileWriter& file_writer, MXF::OP1aHe
   Segment->DMFramework = dmf_obj->InstanceUID;
   GenRandomValue(dmf_obj->ObjectRef);
 
-
-  // Create new SID in DMF
+  // Create a new SID on the RIP, located at the current file position
   ui32_t max_sid = 0;
   ASDCP::MXF::RIP::pair_iterator i;
   for ( i = rip.PairArray.begin(); i != rip.PairArray.end(); ++i )
@@ -192,6 +193,7 @@ ASDCP::AddDmsTrackGenericPartUtf8Text(Kumu::FileWriter& file_writer, MXF::OP1aHe
 	}
     }
 
+  assert(max_sid>1);
   rip.PairArray.push_back(RIP::PartitionPair(max_sid + 1, file_writer.Tell()));
 
   // Add new GSTBS linked to DMF

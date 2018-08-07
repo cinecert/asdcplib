@@ -1402,6 +1402,7 @@ GenericSoundEssenceDescriptor::InitFromTLVSet(TLVReader& TLVSet)
     DialNorm.set_has_value( result == RESULT_OK );
   }
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(GenericSoundEssenceDescriptor, SoundEssenceCoding));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(GenericSoundEssenceDescriptor, ReferenceImageEditRate));
   return result;
 }
 
@@ -1419,6 +1420,7 @@ GenericSoundEssenceDescriptor::WriteToTLVSet(TLVWriter& TLVSet)
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi32(OBJ_WRITE_ARGS(GenericSoundEssenceDescriptor, QuantizationBits));
   if ( ASDCP_SUCCESS(result)  && ! DialNorm.empty() ) result = TLVSet.WriteUi8(OBJ_WRITE_ARGS_OPT(GenericSoundEssenceDescriptor, DialNorm));
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(GenericSoundEssenceDescriptor, SoundEssenceCoding));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(GenericSoundEssenceDescriptor, ReferenceImageEditRate));
   return result;
 }
 
@@ -1435,6 +1437,7 @@ GenericSoundEssenceDescriptor::Copy(const GenericSoundEssenceDescriptor& rhs)
   QuantizationBits = rhs.QuantizationBits;
   DialNorm = rhs.DialNorm;
   SoundEssenceCoding = rhs.SoundEssenceCoding;
+  ReferenceImageEditRate = rhs.ReferenceImageEditRate;
 }
 
 //
@@ -1462,6 +1465,7 @@ GenericSoundEssenceDescriptor::Dump(FILE* stream)
     fprintf(stream, "  %22s = %d\n",  "DialNorm", DialNorm.get());
   }
   fprintf(stream, "  %22s = %s\n",  "SoundEssenceCoding", SoundEssenceCoding.EncodeString(identbuf, IdentBufferLen));
+  fprintf(stream, "  %22s = %s\n",  "ReferenceImageEditRate", ReferenceImageEditRate.EncodeString(identbuf, IdentBufferLen));
 }
 
 //

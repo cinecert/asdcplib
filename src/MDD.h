@@ -547,6 +547,7 @@ namespace ASDCP {
 	MDD_Preface_ApplicationSchemes,  // 509
 	MDD_Preface_ConformsToSpecifications, // 510
 	MDD_MXFTextBasedFramework,  // 511
+	MDD_GenericSoundEssenceDescriptor_ReferenceImageEditRate, // 512
         MDD_Max
     }; // enum MDD_t
 
