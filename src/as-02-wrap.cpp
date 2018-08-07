@@ -170,7 +170,8 @@ Options:\n\
   -t <min>          - Set RGB component minimum code value (default: 0)\n\
   -T <max>          - Set RGB component maximum code value (default: 1023)\n\
   -u                - Print UL catalog to stdout\n\
-  -u <UL>           - ISXD (RDD47) essence coding label\n\
+  -u <URI>          - ISXD (RDD47) document URI (use 'auto' to read the\n\
+                      namespace name from the first edit unit\n\
   -v                - Verbose, prints informative messages to stderr\n\
   -W                - Read input file only, do not write source file\n\
   -x <int>          - Horizontal subsampling degree (default: 2)\n\
@@ -183,6 +184,11 @@ Options:\n\
                        940,64,897, indicating 10 bit standard Video Range\n\
   -z                - Fail if j2c inputs have unequal parameters (default)\n\
   -Z                - Ignore unequal parameters in j2c inputs\n\
+\n\
+  --mca-audio-content-kind <string>\n\
+                    - UL value for MCA descriptor MCAAudioContentKind property\n\
+  --mca-audio-element-kind <string>\n\
+                    - UL value for MCA descriptor MCAAudioElementKind property\n\
 \n\
   NOTES: o There is no option grouping, all options must be distinct arguments.\n\
          o All option arguments must be separated from the option by whitespace.\n\n");
@@ -252,7 +258,7 @@ public:
   bool   key_id_flag;    // true if a key ID was given
   byte_t key_id_value[UUIDlen];// value of given key ID (when key_id_flag is true)
   byte_t asset_id_value[UUIDlen];// value of asset ID (when asset_id_flag is true)
-  bool show_ul_values_flag;    /// if true, dump the UL table before going tp work.
+  bool show_ul_values_flag;    // if true, dump the UL table before going tp work.
   Kumu::PathList_t filenames;  // list of filenames to be processed
 
   UL channel_assignment, picture_coding, transfer_characteristic, color_primaries, coding_equations;
@@ -288,7 +294,8 @@ public:
   //
   MXF::LineMapPair line_map;
   std::string out_file, profile_name; //
-
+  std::string mca_audio_element_kind, mca_audio_content_kind;
+  
   //
   bool set_video_line_map(const std::string& arg)
   {
@@ -718,9 +725,36 @@ public:
 		return;
 	      }
 	  }
+	else if ( argv[i][0] == '-' && argv[i][1] == '-' && isalpha(argv[i][2]) )
+	  {
+	    if ( strcmp(argv[i]+2, "mca-audio-content-kind") == 0 )
+	      {
+		if ( ++i >= argc || argv[(i)][0] == '-' )
+		  {
+		    fprintf(stderr, "Argument not found for option -mca-audio-content-kind.\n");
+		    return;
+		  }
+		
+		mca_audio_content_kind = argv[i];
+	      }
+	    else if ( strcmp(argv[i]+2, "mca-audio-element-kind") == 0 )
+	      {
+		if ( ++i >= argc || argv[(i)][0] == '-' )
+		  {
+		    fprintf(stderr, "Argument not found for option -mca-audio-element-kind.\n");
+		    return;
+		  }
+
+		mca_audio_element_kind = argv[i];
+	      }
+	    else
+	      {
+		fprintf(stderr, "Unrecognized argument: %s\n", argv[i]);
+		return;
+	      }
+	  }
 	else
 	  {
-
 	    if ( argv[i][0] != '-' )
 	      {
 		filenames.push_back(argv[i]);
@@ -988,6 +1022,33 @@ write_JP2K_file(CommandOptions& Options)
 //------------------------------------------------------------------------------------------
 // PCM essence
 
+static bool
+set_mca_descriptor_properties(CommandOptions& Options)
+{
+  MXF::InterchangeObject_list_t::iterator i;
+  for ( i = Options.mca_config.begin(); i != Options.mca_config.end(); ++i )
+    {
+      MXF::AudioChannelLabelSubDescriptor * desc = dynamic_cast<MXF::AudioChannelLabelSubDescriptor*>(*i);
+      if ( desc != 0 )
+	{
+	  // for not only setting channels in any soundfield group
+	  if ( desc->SoundfieldGroupLinkID.get().HasValue() )
+	    {
+	      if ( ! Options.mca_audio_content_kind.empty() )
+		{
+		  desc->MCAAudioContentKind = Options.mca_audio_content_kind;
+		}
+	      if ( ! Options.mca_audio_element_kind.empty() )
+		{
+		  desc->MCAAudioElementKind = Options.mca_audio_element_kind;
+		}
+	    }
+	}
+    }
+
+  return true;
+}
+
 
 // Write one or more plaintext PCM audio streams to a plaintext AS-02 file
 // Write one or more plaintext PCM audio streams to a ciphertext AS-02 file
@@ -1044,7 +1105,11 @@ write_PCM_file(CommandOptions& Options)
 	      return RESULT_FAIL;
 	    }
 
-	  // this is the d-cinema MCA label, what is the one for IMF?
+	  if ( ! set_mca_descriptor_properties(Options) )
+	    {
+	      return RESULT_FAIL;
+	    }
+
 	  essence_descriptor->ChannelAssignment = g_dict->ul(MDD_IMFAudioChannelCfg_MCA);
 	}
     }
@@ -1301,14 +1366,14 @@ write_isxd_file(CommandOptions& Options)
 
   // set up MXF writer
   if ( ASDCP_SUCCESS(result) )
-  {
+    {
 
-    if ( Options.verbose_flag )
+      if ( Options.verbose_flag )
 	{
-	  fprintf(stderr, "Aux Data\n");
+	  fprintf(stderr, "ISXD Data\n");
 	  fprintf(stderr, "Frame Buffer size: %u\n", Options.fb_size);
 	}
-  }
+    }
 
   if ( ASDCP_SUCCESS(result) && ! Options.no_write_flag )
   {
