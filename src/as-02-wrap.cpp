@@ -1021,35 +1021,6 @@ write_JP2K_file(CommandOptions& Options)
 
 //------------------------------------------------------------------------------------------
 // PCM essence
-
-static bool
-set_mca_descriptor_properties(CommandOptions& Options)
-{
-  MXF::InterchangeObject_list_t::iterator i;
-  for ( i = Options.mca_config.begin(); i != Options.mca_config.end(); ++i )
-    {
-      MXF::AudioChannelLabelSubDescriptor * desc = dynamic_cast<MXF::AudioChannelLabelSubDescriptor*>(*i);
-      if ( desc != 0 )
-	{
-	  // for not only setting channels in any soundfield group
-	  if ( desc->SoundfieldGroupLinkID.get().HasValue() )
-	    {
-	      if ( ! Options.mca_audio_content_kind.empty() )
-		{
-		  desc->MCAAudioContentKind = Options.mca_audio_content_kind;
-		}
-	      if ( ! Options.mca_audio_element_kind.empty() )
-		{
-		  desc->MCAAudioElementKind = Options.mca_audio_element_kind;
-		}
-	    }
-	}
-    }
-
-  return true;
-}
-
-
 // Write one or more plaintext PCM audio streams to a plaintext AS-02 file
 // Write one or more plaintext PCM audio streams to a ciphertext AS-02 file
 //
@@ -1105,9 +1076,22 @@ write_PCM_file(CommandOptions& Options)
 	      return RESULT_FAIL;
 	    }
 
-	  if ( ! set_mca_descriptor_properties(Options) )
+	  // This marks all soundfield groups using the same MCA property values
+	  MXF::InterchangeObject_list_t::iterator i;
+	  for ( i = Options.mca_config.begin(); i != Options.mca_config.end(); ++i )
 	    {
-	      return RESULT_FAIL;
+	      MXF::SoundfieldGroupLabelSubDescriptor * desc = dynamic_cast<MXF::SoundfieldGroupLabelSubDescriptor*>(*i);
+	      if ( desc != 0 )
+		{
+		  if ( ! Options.mca_audio_content_kind.empty() )
+		    {
+		      desc->MCAAudioContentKind = Options.mca_audio_content_kind;
+		    }
+		  if ( ! Options.mca_audio_element_kind.empty() )
+		    {
+		      desc->MCAAudioElementKind = Options.mca_audio_element_kind;
+		    }
+		}
 	    }
 
 	  essence_descriptor->ChannelAssignment = g_dict->ul(MDD_IMFAudioChannelCfg_MCA);

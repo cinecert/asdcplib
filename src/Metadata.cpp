@@ -1402,7 +1402,14 @@ GenericSoundEssenceDescriptor::InitFromTLVSet(TLVReader& TLVSet)
     DialNorm.set_has_value( result == RESULT_OK );
   }
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(GenericSoundEssenceDescriptor, SoundEssenceCoding));
-  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(GenericSoundEssenceDescriptor, ReferenceImageEditRate));
+  if ( ASDCP_SUCCESS(result) ) { 
+    result = TLVSet.ReadUi8(OBJ_READ_ARGS_OPT(GenericSoundEssenceDescriptor, ReferenceAudioAlignmentLevel));
+    ReferenceAudioAlignmentLevel.set_has_value( result == RESULT_OK );
+  }
+  if ( ASDCP_SUCCESS(result) ) {
+    result = TLVSet.ReadObject(OBJ_READ_ARGS_OPT(GenericSoundEssenceDescriptor, ReferenceImageEditRate));
+    ReferenceImageEditRate.set_has_value( result == RESULT_OK );
+  }
   return result;
 }
 
@@ -1420,7 +1427,8 @@ GenericSoundEssenceDescriptor::WriteToTLVSet(TLVWriter& TLVSet)
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi32(OBJ_WRITE_ARGS(GenericSoundEssenceDescriptor, QuantizationBits));
   if ( ASDCP_SUCCESS(result)  && ! DialNorm.empty() ) result = TLVSet.WriteUi8(OBJ_WRITE_ARGS_OPT(GenericSoundEssenceDescriptor, DialNorm));
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(GenericSoundEssenceDescriptor, SoundEssenceCoding));
-  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(GenericSoundEssenceDescriptor, ReferenceImageEditRate));
+  if ( ASDCP_SUCCESS(result)  && ! ReferenceAudioAlignmentLevel.empty() ) result = TLVSet.WriteUi8(OBJ_WRITE_ARGS_OPT(GenericSoundEssenceDescriptor, ReferenceAudioAlignmentLevel));
+  if ( ASDCP_SUCCESS(result)  && ! ReferenceImageEditRate.empty() ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS_OPT(GenericSoundEssenceDescriptor, ReferenceImageEditRate));
   return result;
 }
 
@@ -1437,6 +1445,7 @@ GenericSoundEssenceDescriptor::Copy(const GenericSoundEssenceDescriptor& rhs)
   QuantizationBits = rhs.QuantizationBits;
   DialNorm = rhs.DialNorm;
   SoundEssenceCoding = rhs.SoundEssenceCoding;
+  ReferenceAudioAlignmentLevel = rhs.ReferenceAudioAlignmentLevel;
   ReferenceImageEditRate = rhs.ReferenceImageEditRate;
 }
 
@@ -1465,7 +1474,12 @@ GenericSoundEssenceDescriptor::Dump(FILE* stream)
     fprintf(stream, "  %22s = %d\n",  "DialNorm", DialNorm.get());
   }
   fprintf(stream, "  %22s = %s\n",  "SoundEssenceCoding", SoundEssenceCoding.EncodeString(identbuf, IdentBufferLen));
-  fprintf(stream, "  %22s = %s\n",  "ReferenceImageEditRate", ReferenceImageEditRate.EncodeString(identbuf, IdentBufferLen));
+  if ( ! ReferenceAudioAlignmentLevel.empty() ) {
+    fprintf(stream, "  %22s = %d\n",  "ReferenceAudioAlignmentLevel", ReferenceAudioAlignmentLevel.get());
+  }
+  if ( ! ReferenceImageEditRate.empty() ) {
+    fprintf(stream, "  %22s = %s\n",  "ReferenceImageEditRate", ReferenceImageEditRate.get().EncodeString(identbuf, IdentBufferLen));
+  }
 }
 
 //
@@ -1517,14 +1531,6 @@ WaveAudioDescriptor::InitFromTLVSet(TLVReader& TLVSet)
     result = TLVSet.ReadObject(OBJ_READ_ARGS_OPT(WaveAudioDescriptor, ChannelAssignment));
     ChannelAssignment.set_has_value( result == RESULT_OK );
   }
-  if ( ASDCP_SUCCESS(result) ) {
-    result = TLVSet.ReadObject(OBJ_READ_ARGS_OPT(WaveAudioDescriptor, ReferenceImageEditRate));
-    ReferenceImageEditRate.set_has_value( result == RESULT_OK );
-  }
-  if ( ASDCP_SUCCESS(result) ) { 
-    result = TLVSet.ReadUi8(OBJ_READ_ARGS_OPT(WaveAudioDescriptor, ReferenceAudioAlignmentLevel));
-    ReferenceAudioAlignmentLevel.set_has_value( result == RESULT_OK );
-  }
   return result;
 }
 
@@ -1538,8 +1544,6 @@ WaveAudioDescriptor::WriteToTLVSet(TLVWriter& TLVSet)
   if ( ASDCP_SUCCESS(result)  && ! SequenceOffset.empty() ) result = TLVSet.WriteUi8(OBJ_WRITE_ARGS_OPT(WaveAudioDescriptor, SequenceOffset));
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi32(OBJ_WRITE_ARGS(WaveAudioDescriptor, AvgBps));
   if ( ASDCP_SUCCESS(result)  && ! ChannelAssignment.empty() ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS_OPT(WaveAudioDescriptor, ChannelAssignment));
-  if ( ASDCP_SUCCESS(result)  && ! ReferenceImageEditRate.empty() ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS_OPT(WaveAudioDescriptor, ReferenceImageEditRate));
-  if ( ASDCP_SUCCESS(result)  && ! ReferenceAudioAlignmentLevel.empty() ) result = TLVSet.WriteUi8(OBJ_WRITE_ARGS_OPT(WaveAudioDescriptor, ReferenceAudioAlignmentLevel));
   return result;
 }
 
@@ -1552,8 +1556,6 @@ WaveAudioDescriptor::Copy(const WaveAudioDescriptor& rhs)
   SequenceOffset = rhs.SequenceOffset;
   AvgBps = rhs.AvgBps;
   ChannelAssignment = rhs.ChannelAssignment;
-  ReferenceImageEditRate = rhs.ReferenceImageEditRate;
-  ReferenceAudioAlignmentLevel = rhs.ReferenceAudioAlignmentLevel;
 }
 
 //
@@ -1574,12 +1576,6 @@ WaveAudioDescriptor::Dump(FILE* stream)
   fprintf(stream, "  %22s = %d\n",  "AvgBps", AvgBps);
   if ( ! ChannelAssignment.empty() ) {
     fprintf(stream, "  %22s = %s\n",  "ChannelAssignment", ChannelAssignment.get().EncodeString(identbuf, IdentBufferLen));
-  }
-  if ( ! ReferenceImageEditRate.empty() ) {
-    fprintf(stream, "  %22s = %s\n",  "ReferenceImageEditRate", ReferenceImageEditRate.get().EncodeString(identbuf, IdentBufferLen));
-  }
-  if ( ! ReferenceAudioAlignmentLevel.empty() ) {
-    fprintf(stream, "  %22s = %d\n",  "ReferenceAudioAlignmentLevel", ReferenceAudioAlignmentLevel.get());
   }
 }
 

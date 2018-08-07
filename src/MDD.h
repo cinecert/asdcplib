@@ -395,8 +395,8 @@ namespace ASDCP {
 	MDD_JP2KEssenceCompression_BroadcastProfile_5, // 357
 	MDD_JP2KEssenceCompression_BroadcastProfile_6, // 358
 	MDD_JP2KEssenceCompression_BroadcastProfile_7, // 359
-	MDD_WaveAudioDescriptor_ReferenceImageEditRate, // 360
-	MDD_WaveAudioDescriptor_ReferenceAudioAlignmentLevel, // 361
+	MDD_GenericSoundEssenceDescriptor_ReferenceImageEditRate, // 360
+	MDD_GenericSoundEssenceDescriptor_ReferenceAudioAlignmentLevel, // 361
 	MDD_GenericPictureEssenceDescriptor_AlternativeCenterCuts, // 362
 	MDD_GenericPictureEssenceDescriptor_ActiveHeight, // 363
 	MDD_GenericPictureEssenceDescriptor_ActiveWidth, // 364
@@ -547,7 +547,6 @@ namespace ASDCP {
 	MDD_Preface_ApplicationSchemes,  // 509
 	MDD_Preface_ConformsToSpecifications, // 510
 	MDD_MXFTextBasedFramework,  // 511
-	MDD_GenericSoundEssenceDescriptor_ReferenceImageEditRate, // 512
         MDD_Max
     }; // enum MDD_t
 

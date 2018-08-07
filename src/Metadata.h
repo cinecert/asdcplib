@@ -422,7 +422,8 @@ namespace ASDCP
           ui32_t QuantizationBits;
           optional_property<ui8_t > DialNorm;
           UL SoundEssenceCoding;
-          Rational ReferenceImageEditRate;
+          optional_property<ui8_t > ReferenceAudioAlignmentLevel;
+          optional_property<Rational > ReferenceImageEditRate;
 
       GenericSoundEssenceDescriptor(const Dictionary*& d);
       GenericSoundEssenceDescriptor(const GenericSoundEssenceDescriptor& rhs);
@@ -449,8 +450,6 @@ namespace ASDCP
           optional_property<ui8_t > SequenceOffset;
           ui32_t AvgBps;
           optional_property<UL > ChannelAssignment;
-          optional_property<Rational > ReferenceImageEditRate;
-          optional_property<ui8_t > ReferenceAudioAlignmentLevel;
 
       WaveAudioDescriptor(const Dictionary*& d);
       WaveAudioDescriptor(const WaveAudioDescriptor& rhs);
