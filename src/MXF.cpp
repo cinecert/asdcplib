@@ -1744,33 +1744,43 @@ ASDCP::MXF::ASDCP_MCAConfigParser::DecodeString(const std::string& s, const std:
   return decode_mca_string(s, m_LabelMap, m_Dict, language, *this, m_ChannelCount);
 }
 
-
-
+// ST(L,R),DNS(NSC001,NSC002),-,VIN
 ASDCP::MXF::AS02_MCAConfigParser::AS02_MCAConfigParser(const Dictionary*& d) : ASDCP::MXF::ASDCP_MCAConfigParser(d)
 {
   typedef mca_label_map_t::value_type pair;
-  m_LabelMap.insert(pair("M1",    label_traits("M1",  true,  m_Dict->ul(MDD_IMFAudioChannel_M1))));
-  m_LabelMap.insert(pair("M2",    label_traits("M2",  true,  m_Dict->ul(MDD_IMFAudioChannel_M2))));
-  m_LabelMap.insert(pair("Lt",    label_traits("Lt",  true,  m_Dict->ul(MDD_IMFAudioChannel_Lt))));
-  m_LabelMap.insert(pair("Rt",    label_traits("Rt",  true,  m_Dict->ul(MDD_IMFAudioChannel_Rt))));
-  m_LabelMap.insert(pair("Lst",   label_traits("Lst", true,  m_Dict->ul(MDD_IMFAudioChannel_Lst))));
-  m_LabelMap.insert(pair("Rst",   label_traits("Rst", true,  m_Dict->ul(MDD_IMFAudioChannel_Rst))));
-  m_LabelMap.insert(pair("S",     label_traits("S",   true,  m_Dict->ul(MDD_IMFAudioChannel_S))));
-  m_LabelMap.insert(pair("ST",    label_traits("ST",  true,  m_Dict->ul(MDD_IMFAudioSoundfield_ST))));
-  m_LabelMap.insert(pair("DM",    label_traits("DM",  true,  m_Dict->ul(MDD_IMFAudioSoundfield_DM))));
-  m_LabelMap.insert(pair("DNS",   label_traits("DNS", true,  m_Dict->ul(MDD_IMFAudioSoundfield_DNS))));
-  m_LabelMap.insert(pair("30",    label_traits("30",  true,  m_Dict->ul(MDD_IMFAudioSoundfield_30))));
-  m_LabelMap.insert(pair("40",    label_traits("40",  true,  m_Dict->ul(MDD_IMFAudioSoundfield_40))));
-  m_LabelMap.insert(pair("50",    label_traits("50",  true,  m_Dict->ul(MDD_IMFAudioSoundfield_50))));
-  m_LabelMap.insert(pair("60",    label_traits("60",  true,  m_Dict->ul(MDD_IMFAudioSoundfield_60))));
-  m_LabelMap.insert(pair("70",    label_traits("70",  true,  m_Dict->ul(MDD_IMFAudioSoundfield_70))));
-  m_LabelMap.insert(pair("LtRt",  label_traits("LtRt",true,  m_Dict->ul(MDD_IMFAudioSoundfield_LtRt))));
-  m_LabelMap.insert(pair("51Ex",  label_traits("51Ex",true,  m_Dict->ul(MDD_IMFAudioSoundfield_51Ex))));
-  m_LabelMap.insert(pair("HI",    label_traits("HI",  true,  m_Dict->ul(MDD_IMFAudioSoundfield_HI))));
-  m_LabelMap.insert(pair("VIN",   label_traits("VIN", true,  m_Dict->ul(MDD_IMFAudioSoundfield_VIN))));
+  m_LabelMap.insert(pair("M1",    label_traits("Mono One",  true,  m_Dict->ul(MDD_IMFAudioChannel_M1))));
+  m_LabelMap.insert(pair("M2",    label_traits("Mono Two",  true,  m_Dict->ul(MDD_IMFAudioChannel_M2))));
+  m_LabelMap.insert(pair("Lt",    label_traits("Left Total",  true,  m_Dict->ul(MDD_IMFAudioChannel_Lt))));
+  m_LabelMap.insert(pair("Rt",    label_traits("Right Total",  true,  m_Dict->ul(MDD_IMFAudioChannel_Rt))));
+  m_LabelMap.insert(pair("Lst",   label_traits("Left Surround Total", true,  m_Dict->ul(MDD_IMFAudioChannel_Lst))));
+  m_LabelMap.insert(pair("Rst",   label_traits("Right Surround Total", true,  m_Dict->ul(MDD_IMFAudioChannel_Rst))));
+  m_LabelMap.insert(pair("S",     label_traits("Surround",   true,  m_Dict->ul(MDD_IMFAudioChannel_S))));
+  m_LabelMap.insert(pair("ST",    label_traits("Standard Stereo",  true,  m_Dict->ul(MDD_IMFAudioSoundfield_ST))));
+  m_LabelMap.insert(pair("DM",    label_traits("Dual Mono",  true,  m_Dict->ul(MDD_IMFAudioSoundfield_DM))));
+  m_LabelMap.insert(pair("DNS",   label_traits("Discrete Numbered Sources", true,  m_Dict->ul(MDD_IMFAudioSoundfield_DNS))));
+  m_LabelMap.insert(pair("30",    label_traits("3.0",  true,  m_Dict->ul(MDD_IMFAudioSoundfield_30))));
+  m_LabelMap.insert(pair("40",    label_traits("4.0",  true,  m_Dict->ul(MDD_IMFAudioSoundfield_40))));
+  m_LabelMap.insert(pair("50",    label_traits("5.0",  true,  m_Dict->ul(MDD_IMFAudioSoundfield_50))));
+  m_LabelMap.insert(pair("60",    label_traits("6.0",  true,  m_Dict->ul(MDD_IMFAudioSoundfield_60))));
+  m_LabelMap.insert(pair("70",    label_traits("7.0DS",  true,  m_Dict->ul(MDD_IMFAudioSoundfield_70))));
+  m_LabelMap.insert(pair("LtRt",  label_traits("Lt-Rt",true,  m_Dict->ul(MDD_IMFAudioSoundfield_LtRt))));
+  m_LabelMap.insert(pair("51Ex",  label_traits("5.1EX",true,  m_Dict->ul(MDD_IMFAudioSoundfield_51Ex))));
+  m_LabelMap.insert(pair("HA",    label_traits("Hearing Accessibility",  true,  m_Dict->ul(MDD_IMFAudioSoundfield_HI))));
+  m_LabelMap.insert(pair("VA",   label_traits("Visual Accessibility", true,  m_Dict->ul(MDD_IMFAudioSoundfield_VIN))));
+
+  // assemble the  set of Numbered Source Channel labels
+  char name_buf[64], symbol_buf[64];
+  byte_t ul_buf[16];
+  memcpy(ul_buf, m_Dict->ul(MDD_IMFNumberedSourceChannel), 16);
+
+  for ( int i = 1; i < 128; ++i )
+    {
+      snprintf(name_buf, 64, "Numbered Source Channel %03d", i);
+      snprintf(symbol_buf, 64, "NSC%03d", i);
+      ul_buf[13] = i;
+      m_LabelMap.insert(pair(symbol_buf, label_traits(name_buf, true, UL(ul_buf))));
+    }
 }
-
-
 
 //
 bool
