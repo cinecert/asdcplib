@@ -151,7 +151,7 @@ command-line utilities all respond to -h.
 
 Change History
 
-2018-08-08 - 2.8.26
+2018-08-08 - 2.8.29
  o Modified AS_02::ST2052_TextParser::OpenRead signature
  o Fixed partition version error in AS-02 interior body partitions
  o Changed StartTimecode to 0 (zero) in the Source Package
