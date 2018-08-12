@@ -266,7 +266,7 @@ ASDCP::TimedText::MXFReader::h__Reader::ReadAncillaryResource(const byte_t* uuid
   if ( KM_SUCCESS(result) )
     {
       assert(desc_object);
-      result = ReadGenericStreamPartitionPayload(desc_object->EssenceStreamID, frame_buf);
+      result = ReadGenericStreamPartitionPayload(desc_object->EssenceStreamID, frame_buf, Ctx, HMAC);
     }
 
   if ( KM_SUCCESS(result) )

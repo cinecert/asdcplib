@@ -209,7 +209,7 @@ AS_02::ISXD::MXFReader::ReadGenericStreamPartitionPayload(const ui32_t SID, ASDC
 {
   if ( m_Reader && m_Reader->m_File.IsOpen() )
     {
-      return m_Reader->ReadGenericStreamPartitionPayload(SID, frame_buf);
+      return m_Reader->ReadGenericStreamPartitionPayload(SID, frame_buf, 0, 0 /*no encryption*/);
     }
 
   return RESULT_INIT;

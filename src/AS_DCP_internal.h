@@ -399,7 +399,8 @@ namespace ASDCP
 	// Reads a Generic Stream Partition payload. Returns RESULT_FORMAT if the SID is
 	// not present in the  RIP, or if the actual partition at ByteOffset does not have
 	// a matching BodySID value. Encryption is not currently supported.
-	Result_t ReadGenericStreamPartitionPayload(const ui32_t sid, ASDCP::FrameBuffer& frame_buf)
+	Result_t ReadGenericStreamPartitionPayload(const ui32_t sid, ASDCP::FrameBuffer& frame_buf,
+						   AESDecContext* Ctx, HMACContext* HMAC)
 	{
 	  Kumu::fpos_t start_offset = 0, end_offset = 0;
 	  ui32_t sequence = 0;
@@ -451,7 +452,7 @@ namespace ASDCP
 		    }
 		  else
 		    {
-		      result = ReadEKLVPacket(0, sequence, frame_buf, m_Dict->ul(MDD_GenericStream_DataElement), 0, 0);
+		      result = ReadEKLVPacket(0, sequence, frame_buf, m_Dict->ul(MDD_GenericStream_DataElement), Ctx, HMAC);
 		    }
 		}
 	    }

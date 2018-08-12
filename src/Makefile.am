@@ -73,6 +73,7 @@ include_HEADERS += \
 	SyncCommon.h \
 	SyncEncoder.h \
 	UUIDInformation.h \
+	WavFileWriter.h \
 	AS_DCP_internal.h \
 	AS_DCP_DCData_internal.h
 
