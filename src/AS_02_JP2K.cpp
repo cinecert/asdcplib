@@ -368,6 +368,7 @@ AS_02::JP2K::MXFWriter::h__Writer::SetSourceStream(const std::string& label, con
       if ( KM_SUCCESS(result) )
 	{
 	  this->m_IndexWriter.SetPrimerLookup(&this->m_HeaderPart.m_Primer);
+	  this->m_IndexWriter.SetEditRate(m_EssenceDescriptor->SampleRate);
 	}
     }
 

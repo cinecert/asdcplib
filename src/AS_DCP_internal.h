@@ -630,14 +630,14 @@ namespace ASDCP
 	  if ( mxf_ver == MXFVersion_2004 )
 	    {
 	      m_HeaderPart.MinorVersion = MXF_2004_MinorVersion;
-	      m_HeaderPart.m_Preface->Version = ((MXF_ObjectModelVersion < 8) | MXF_2004_MinorVersion);
+	      m_HeaderPart.m_Preface->Version = ((MXF_ObjectModelVersion << 8) | MXF_2004_MinorVersion);
 	      m_HeaderPart.m_Preface->ObjectModelVersion = MXF_ObjectModelVersion;
 	    }
 	  else
 	    {
 	      assert(mxf_ver == MXFVersion_2011);
 	      m_HeaderPart.MinorVersion = MXF_2011_MinorVersion;
-	      m_HeaderPart.m_Preface->Version = ((MXF_ObjectModelVersion < 8) | MXF_2011_MinorVersion);
+	      m_HeaderPart.m_Preface->Version = ((MXF_ObjectModelVersion << 8) | MXF_2011_MinorVersion);
 	      m_HeaderPart.m_Preface->ObjectModelVersion = MXF_ObjectModelVersion;
 	    }
 

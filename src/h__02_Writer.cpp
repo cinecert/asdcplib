@@ -47,6 +47,7 @@ AS_02::MXF::AS02IndexWriterVBR::AS02IndexWriterVBR(const ASDCP::Dictionary*& d) 
 {
   BodySID = 0;
   IndexSID = 129;
+  MinorVersion = 3;
 }
 
 AS_02::MXF::AS02IndexWriterVBR::~AS02IndexWriterVBR() {}
@@ -165,6 +166,11 @@ AS_02::MXF::AS02IndexWriterVBR::PushIndexEntry(const IndexTableSegment::IndexEnt
   m_CurrentSegment->IndexEntryArray.push_back(Entry);
 }
 
+void
+AS_02::MXF::AS02IndexWriterVBR::SetEditRate(const ASDCP::Rational& edit_rate)
+{
+  m_EditRate = edit_rate;
+}
 
 //------------------------------------------------------------------------------------------
 //
@@ -223,6 +229,7 @@ AS_02::MXF::AS02IndexWriterCBR::AS02IndexWriterCBR(const ASDCP::Dictionary*& d) 
 {
   BodySID = 0;
   IndexSID = 129;
+  MinorVersion = 3;
 }
 
 AS_02::MXF::AS02IndexWriterCBR::~AS02IndexWriterCBR() {}

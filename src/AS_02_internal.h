@@ -107,6 +107,7 @@ namespace AS_02
 
 	ui32_t GetDuration() const;
 	void PushIndexEntry(const ASDCP::MXF::IndexTableSegment::IndexEntry&);
+	void SetEditRate(const ASDCP::Rational& edit_rate);
       };
 
 

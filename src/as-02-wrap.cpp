@@ -151,8 +151,7 @@ Options:\n\
   -j <key-id-str>   - Write key ID instead of creating a random value\n\
   -k <key-string>   - Use key for ciphertext operations\n\
   -l <first>,<second>\n\
-                    - Integer values that set the VideoLineMap when creating\n\
-                      interlaced YCbCr files\n\
+                    - Integer values that set the VideoLineMap\n\
   -m <expr>         - Write MCA labels using <expr>.  Example:\n\
                         51(L,R,C,LFE,Ls,Rs,),HI,VIN\n\
   -M                - Do not create HMAC values when writing\n\
@@ -293,6 +292,7 @@ public:
 
   //
   MXF::LineMapPair line_map;
+  bool line_map_flag;
   std::string out_file, profile_name; //
   std::string mca_audio_element_kind, mca_audio_content_kind;
   
@@ -445,7 +445,7 @@ public:
     horizontal_subsampling(2), vertical_subsampling(2), component_depth(10),
     frame_layout(0), aspect_ratio(ASDCP::Rational(4,3)), field_dominance(0),
     mxf_header_size(16384), cdci_WhiteRefLevel(940), cdci_BlackRefLevel(64), cdci_ColorRange(897),
-    md_min_luminance(0), md_max_luminance(0), line_map(0,0)
+    md_min_luminance(0), md_max_luminance(0), line_map(0,0), line_map_flag(false)
   {
     memset(key_value, 0, KeyLen);
     memset(key_id_value, 0, UUIDlen);
@@ -594,6 +594,8 @@ public:
 		if ( ! set_video_line_map(argv[i]) )
 		  {
 		    return;
+		  } else {
+				line_map_flag = true;
 		  }
 		break;
 
@@ -879,7 +881,7 @@ write_JP2K_file(CommandOptions& Options)
 	      tmp_dscr->WhiteReflevel = Options.cdci_WhiteRefLevel;
 	      tmp_dscr->BlackRefLevel = Options.cdci_BlackRefLevel;
 	      tmp_dscr->ColorRange = Options.cdci_ColorRange;
-	      tmp_dscr->VideoLineMap = Options.line_map;
+	      if (Options.line_map_flag)  tmp_dscr->VideoLineMap = Options.line_map;
 
 	      if ( Options.md_min_luminance || Options.md_max_luminance )
 		{
@@ -914,6 +916,7 @@ write_JP2K_file(CommandOptions& Options)
 	      tmp_dscr->PictureEssenceCoding = Options.picture_coding;
 	      tmp_dscr->ComponentMaxRef = Options.rgba_MaxRef;
 	      tmp_dscr->ComponentMinRef = Options.rgba_MinRef;
+	      if (Options.line_map_flag)  tmp_dscr->VideoLineMap = Options.line_map;
 
 	      if ( Options.md_min_luminance || Options.md_max_luminance )
 		{

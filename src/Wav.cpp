@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2005-2015, John Hurst
+Copyright (c) 2005-2018, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -548,14 +548,17 @@ ASDCP::RF64::SimpleRF64Header::ReadFromBuffer(const byte_t* buf, ui32_t buf_len,
 
         if ( test_fcc == Wav::FCC_data )
         {
-            if ( chunk_size > RIFF_len )
-            {
-                DefaultLogSink().Error("Chunk size %u larger than file: %u\n", chunk_size, RIFF_len);
-                return RESULT_RAW_FORMAT;
-            }
+            if ( chunk_size != MAX_RIFF_LEN )
+	      {
+		if ( chunk_size > RIFF_len )
+		  {
+		    DefaultLogSink().Error("Chunk size %u larger than file: %u\n", chunk_size, RIFF_len);
+		    return RESULT_RAW_FORMAT;
+		  }
 
-            if (chunk_size != MAX_RIFF_LEN)
                 data_len = chunk_size;
+	      }
+ 
             *data_start = p - buf;
             break;
         }

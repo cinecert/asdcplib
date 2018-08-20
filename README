@@ -151,6 +151,21 @@ command-line utilities all respond to -h.
 
 Change History
 
+
+2018-08-xx - 2.9.30
+ o Fixes wrong MajorVersion in Preface
+ o Adds VideoLineMap also to RGBA essence descriptor
+ o Adds VideoLineMap to RGBA and CDCI descriptor only when option -l
+   is present (disputable - but distinguished value {0, 0} is not
+   allowed in closed and complete partitions)
+ o Fixes issue with IndexRate not set in AS-02 J2K files
+ o Additional fixes to minor version number in AS-02 partition packs
+ o CMake brought up to date
+ o Fixed erroneous WAV RF64 header interpretation
+
+
+
+
 2018-08-08 - 2.8.29
  o Modified AS_02::ST2052_TextParser::OpenRead signature
  o Fixed partition version error in AS-02 interior body partitions
