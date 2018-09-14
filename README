@@ -152,7 +152,7 @@ command-line utilities all respond to -h.
 Change History
 
 
-2018-08-xx - 2.9.30
+2018-09-14 - 2.9.30
  o Fixes wrong MajorVersion in Preface
  o Adds VideoLineMap also to RGBA essence descriptor
  o Adds VideoLineMap to RGBA and CDCI descriptor only when option -l
@@ -162,8 +162,16 @@ Change History
  o Additional fixes to minor version number in AS-02 partition packs
  o CMake brought up to date
  o Fixed erroneous WAV RF64 header interpretation
-
-
+ o ACES AS-02 ST 2065-5 wrapper
+ o ACES AS-02 ST 2065-5 unwrapper
+ o ST 2067-50 Subdescriptors support
+ o ST 2067-50 Target Frame wrapping support
+ o ST 2067-50 Target Frame unwrapping support
+ o Command line tools as-02-wrap, as-02-unwrap and as-02-info extended to
+   support ACES, App#5 subdescriptors and Target Frames
+ o Beta support for ST2065-5 AS_02 ACES wrapping and unwrapping including
+   ST 2067-50 Subdescriptors and Target Frame support
+ o Please report ACES-related issues to wolfgang.ruppel@hs-rm.de
 
 
 2018-08-08 - 2.8.29
