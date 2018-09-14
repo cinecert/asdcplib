@@ -38,6 +38,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <KM_fileio.h>
 #include <AS_02.h>
+#include "AS_02_ACES.h"
 #include <WavFileWriter.h>
 
 namespace ASDCP {
@@ -421,6 +422,190 @@ read_JP2K_file(CommandOptions& Options)
 
   return result;
 }
+
+
+//------------------------------------------------------------------------------------------
+// ACES essence
+
+//
+Result_t
+read_ACES_file(CommandOptions& Options)
+{
+  AESDecContext*     Context = 0;
+  HMACContext*       HMAC = 0;
+  AS_02::ACES::MXFReader Reader;
+  AS_02::ACES::FrameBuffer FrameBuffer(Options.fb_size);
+  ui64_t             frame_count = 0;
+  AS_02::ACES::ResourceList_t resource_list_t;
+
+  Result_t result = Reader.OpenRead(Options.input_filename);
+
+  if (ASDCP_SUCCESS(result))
+  {
+    if (Options.verbose_flag)
+    {
+      fprintf(stderr, "Frame Buffer size: %u\n", Options.fb_size);
+    }
+    ASDCP::MXF::RGBAEssenceDescriptor *aces_descriptor = 0;
+
+    result = Reader.OP1aHeader().GetMDObjectByType(DefaultCompositeDict().ul(MDD_RGBAEssenceDescriptor),
+      reinterpret_cast<MXF::InterchangeObject**>(&aces_descriptor));
+
+    if (KM_SUCCESS(result))
+    {
+      assert(aces_descriptor);
+      frame_count = aces_descriptor->ContainerDuration;
+
+      if (Options.verbose_flag)
+      {
+        aces_descriptor->Dump();
+      }
+    }
+    else
+    {
+      fprintf(stderr, "File does not contain an essence descriptor.\n");
+      frame_count = Reader.AS02IndexReader().GetDuration();
+    }
+
+    if (frame_count == 0)
+    {
+      frame_count = Reader.AS02IndexReader().GetDuration();
+    }
+
+    if (frame_count == 0)
+    {
+      fprintf(stderr, "Unable to determine file duration.\n");
+      return RESULT_FAIL;
+    }
+  }
+
+  if (ASDCP_SUCCESS(result) && Options.key_flag)
+  {
+    Context = new AESDecContext;
+    result = Context->InitKey(Options.key_value);
+
+    if (ASDCP_SUCCESS(result) && Options.read_hmac)
+    {
+      WriterInfo Info;
+      Reader.FillWriterInfo(Info);
+
+      if (Info.UsesHMAC)
+      {
+        HMAC = new HMACContext;
+        result = HMAC->InitKey(Options.key_value, Info.LabelSetType);
+      }
+      else
+      {
+        fputs("File does not contain HMAC values, ignoring -m option.\n", stderr);
+      }
+    }
+  }
+
+  ui32_t last_frame = Options.start_frame + (Options.duration ? Options.duration : frame_count);
+  if (last_frame > frame_count)
+    last_frame = frame_count;
+
+  char name_format[64];
+  snprintf(name_format, 64, "%%s%%0%du.exr", Options.number_width);
+
+  for (ui32_t i = Options.start_frame; ASDCP_SUCCESS(result) && i < last_frame; i++)
+  {
+    result = Reader.ReadFrame(i, FrameBuffer, Context, HMAC);
+
+    char filename[1024];
+    snprintf(filename, 1024, name_format, Options.file_prefix, i);
+
+    if (ASDCP_SUCCESS(result) && Options.verbose_flag)
+    {
+      printf("Frame %d, %d bytes", i, FrameBuffer.Size());
+
+      if (!Options.no_write_flag)
+      {
+        printf(" -> %s", filename);
+      }
+
+      printf("\n");
+    }
+
+    if (ASDCP_SUCCESS(result) && (!Options.no_write_flag))
+    {
+      Kumu::FileWriter OutFile;
+      ui32_t write_count;
+      result = OutFile.OpenWrite(filename);
+
+      if (ASDCP_SUCCESS(result))
+        result = OutFile.Write(FrameBuffer.Data(), FrameBuffer.Size(), &write_count);
+
+      if (ASDCP_SUCCESS(result) && Options.verbose_flag)
+      {
+        FrameBuffer.Dump(stderr, Options.fb_dump_size);
+      }
+    }
+  }
+
+  snprintf(name_format, 64, "TargetFrame_%%s.%%s");
+  result = Reader.FillAncillaryResourceList(resource_list_t);
+  if (ASDCP_SUCCESS(result))
+  {
+    AS_02::ACES::ResourceList_t::iterator it;
+    for (it = resource_list_t.begin(); it != resource_list_t.end(); it++)
+    {
+      UUID resource_id;
+      resource_id.Set(it->ResourceID);
+      result = Reader.ReadAncillaryResource(resource_id, FrameBuffer);
+
+      char filename[1024];
+      char buf[64];
+      resource_id.EncodeString(buf, 64);
+      std::string extension;
+      switch (it->Type)
+      {
+      case AS_02::ACES::MT_PNG:
+        extension = "png";
+        break;
+      case AS_02::ACES::MT_TIFF:
+        extension = "tif";
+        break;
+      default:
+        break;
+      }
+      snprintf(filename, 1024, name_format, buf, extension.c_str());
+
+      if (ASDCP_SUCCESS(result) && Options.verbose_flag)
+      {
+        printf("Read Anc resource, size: %d\n", FrameBuffer.Size() );
+
+        if (!Options.no_write_flag)
+        {
+          printf(" -> %s", filename);
+        }
+
+        printf("\n");
+      }
+
+      if (ASDCP_SUCCESS(result) && (!Options.no_write_flag))
+      {
+        Kumu::FileWriter OutFile;
+        ui32_t write_count;
+        result = OutFile.OpenWrite(filename);
+
+        if (ASDCP_SUCCESS(result))
+          result = OutFile.Write(FrameBuffer.Data(), FrameBuffer.Size(), &write_count);
+
+        if (ASDCP_SUCCESS(result) && Options.verbose_flag)
+        {
+          FrameBuffer.Dump(stderr, Options.fb_dump_size);
+        }
+      }
+    }
+
+  }
+
+
+  return result;
+}
+
+
 
 //------------------------------------------------------------------------------------------
 // PCM essence
@@ -815,7 +1000,11 @@ main(int argc, const char** argv)
 	case ESS_AS02_JPEG_2000:
 	  result = read_JP2K_file(Options);
 	  break;
-
+	//PB
+	case ESS_AS02_ACES:
+	  result = read_ACES_file(Options);
+	  break;
+	//--
 	case ESS_AS02_PCM_24b_48k:
 	case ESS_AS02_PCM_24b_96k:
 	  result = read_PCM_file(Options);

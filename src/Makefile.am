@@ -141,13 +141,19 @@ if USE_AS_02
 libas02_la_SOURCES	= \
 	AS_02.h \
 	AS_02_internal.h \
+	ACES.h \
+	AS_02_ACES.h \
 	h__02_Reader.cpp \
 	h__02_Writer.cpp \
 	AS_02_JP2K.cpp \
 	AS_02_PCM.cpp \
 	AS_02_ISXD.cpp \
 	ST2052_TextParser.cpp \
-	AS_02_TimedText.cpp
+	AS_02_TimedText.cpp \
+	ACES.cpp \
+	ACES_Codestream_Parser.cpp \
+	ACES_Sequence_Parser.cpp \
+	AS_02_ACES.cpp
 
 libas02_la_LDFLAGS = -release @VERSION@
 libas02_la_LIBADD = libasdcp.la libkumu.la

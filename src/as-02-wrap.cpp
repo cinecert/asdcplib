@@ -1,6 +1,6 @@
 /*
 Copyright (c) 2011-2018, Robert Scheler, Heiko Sparenberg Fraunhofer IIS,
-John Hurst
+John Hurst, Wolfgang Ruppel
 
 All rights reserved.
 
@@ -40,6 +40,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <KM_prng.h>
 #include <KM_xml.h>
 #include <AS_02.h>
+#include "AS_02_ACES.h"
 #include <PCMParserList.h>
 #include <Metadata.h>
 
@@ -87,6 +88,12 @@ public:
 #define TEST_EXTRA_ARG(i,c)						\
   if ( ++i >= argc || argv[(i)][0] == '-' ) {				\
     fprintf(stderr, "Argument not found for option -%c.\n", (c));	\
+    return;								\
+  }
+
+#define TEST_EXTRA_ARG_STRING(i,s)						\
+  if ( ++i >= argc || argv[(i)][0] == '-' ) {				\
+    fprintf(stderr, "Argument not found for option -%s.\n", (s));	\
     return;								\
   }
 
@@ -189,6 +196,23 @@ Options:\n\
   --mca-audio-element-kind <string>\n\
                     - UL value for MCA descriptor MCAAudioElementKind property\n\
 \n\
+\n\
+Options specific to ACES ST2067-50:\n\
+  -suba <string>    - Create ACES Picture SubDescriptor, set <string> as ACESAuthoringInformation,\n\
+                      uses values from -o and -O, if present\n\
+  -subt <directoryPath>  - \n\
+                      Create one Target Frame SubDescriptor per PNG or TIFF file in <directoryPath>,\n\
+                      and  wrap each PNG or TIFF file  as ancillariy resource\n\
+                      Requires additional options -tfi, -tft, -tfc, -tfr\n\
+  -tfi <int>[,<int>*]    - \n\
+                      List of TargetFrameIndex values in Target Frame SubDescriptor corresponding to the \n\
+                      list of Target Frame frame files in <directoryPath> as given by option -subt\n\
+  -tft <string>     - Target Frame Transfer Characteristics Symbol, e.g. TransferCharacteristics_709\n\
+  -tfc <string>     - Target Frame Color Primaries Symbol, e.g. ColorPrimaries_ITU709\n\
+  -tfr <min>,<max>  - Target Frame Component Min/Max Ref in Target Frame SubDescriptor\n\
+  -tfv <string>     - Target Frame Viewing Environment Symbol, e.g. HDTVReferenceViewingEnvironment\n\
+\n\
+\n\
   NOTES: o There is no option grouping, all options must be distinct arguments.\n\
          o All option arguments must be separated from the option by whitespace.\n\n");
 }
@@ -272,6 +296,7 @@ public:
   ui32_t component_depth;
   ui8_t frame_layout;
   ASDCP::Rational aspect_ratio;
+  bool aspect_ratio_flag;
   ui8_t field_dominance;
   ui32_t mxf_header_size;
   ui32_t cdci_BlackRefLevel; 
@@ -295,7 +320,16 @@ public:
   bool line_map_flag;
   std::string out_file, profile_name; //
   std::string mca_audio_element_kind, mca_audio_content_kind;
-  
+
+  //ST 2067-50 options
+  bool aces_authoring_information_flag, aces_picture_subdescriptor_flag, target_frame_subdescriptor_flag, target_frame_index_flag;
+  bool target_frame_transfer_characteristics_flag, target_frame_color_primaries_flag, target_frame_min_max_ref_flag;
+  bool target_frame_viewing_environment_flag;
+  std::string aces_authoring_information;
+  std::string target_frame_directory;
+  std::list <ui64_t> target_frame_index_list;
+  UL target_frame_transfer_characteristics, target_frame_color_primaries, target_frame_viewing_environment;
+  ui32_t target_frame_min_ref, target_frame_max_ref;  
   //
   bool set_video_line_map(const std::string& arg)
   {
@@ -392,37 +426,37 @@ public:
 	// Application 2 (ST 2067-20)
       case '1':
 	coding_equations = g_dict->ul(MDD_CodingEquations_601);
-	transfer_characteristic = g_dict->ul(MDD_TransferCharacteristics_709);
+	transfer_characteristic = g_dict->ul(MDD_TransferCharacteristic_ITU709);
 	color_primaries = g_dict->ul(MDD_ColorPrimaries_ITU470_PAL);
 	use_cdci_descriptor = true;
 	break;
 
       case '2':
 	coding_equations = g_dict->ul(MDD_CodingEquations_601);
-	transfer_characteristic = g_dict->ul(MDD_TransferCharacteristics_709);
+	transfer_characteristic = g_dict->ul(MDD_TransferCharacteristic_ITU709);
 	color_primaries = g_dict->ul(MDD_ColorPrimaries_SMPTE170M);
 	use_cdci_descriptor = true;
 	break;
 
       case '3':
 	coding_equations = g_dict->ul(MDD_CodingEquations_709);
-	transfer_characteristic = g_dict->ul(MDD_TransferCharacteristics_709);
-	color_primaries = g_dict->ul(MDD_ColorPrimaries_BT709);
+	transfer_characteristic = g_dict->ul(MDD_TransferCharacteristic_ITU709);
+	color_primaries = g_dict->ul(MDD_ColorPrimaries_ITU709);
 	use_cdci_descriptor = true;
 	break;
 
 	// Application 2e (ST 2067-21)
       case '4':
 	coding_equations = g_dict->ul(MDD_CodingEquations_709);
-	transfer_characteristic = g_dict->ul(MDD_TransferCharacteristics_xvYCC);
-	color_primaries = g_dict->ul(MDD_ColorPrimaries_BT709);
+	transfer_characteristic = g_dict->ul(MDD_TransferCharacteristic_IEC6196624_xvYCC);
+	color_primaries = g_dict->ul(MDD_ColorPrimaries_ITU709);
 	use_cdci_descriptor = true;
 	break;
 
       case '5':
 	coding_equations = g_dict->ul(MDD_CodingEquations_709);
-	transfer_characteristic = g_dict->ul(MDD_TransferCharacteristics_2020);
-	color_primaries = g_dict->ul(MDD_ColorPrimaries_BT2020);
+	transfer_characteristic = g_dict->ul(MDD_TransferCharacteristic_ITU2020);
+	color_primaries = g_dict->ul(MDD_ColorPrimaries_ITU2020);
 	use_cdci_descriptor = true;
 	break;
 
@@ -434,6 +468,40 @@ public:
     return true;
   }
 
+  bool set_target_frame_min_max_code_value(const std::string& arg)
+  {
+    std::list<std::string> range_tokens = Kumu::km_token_split(arg, ",");
+    if ( range_tokens.size() != 2 )
+      {
+	fprintf(stderr, "Expecting a luminance pair.\n");
+	return false;
+      }
+
+    if ( ! set_luminance_from_token(range_tokens.front(), target_frame_min_ref) ) return false;
+    if ( ! set_luminance_from_token(range_tokens.back(), target_frame_max_ref) ) return false;
+
+    return true;
+  }
+
+  bool set_target_frame_index_list(const std::string& arg, std::list<ui64_t>& r_target_frame_index_list)
+  {
+    std::list<std::string> index_tokens = Kumu::km_token_split(arg, ",");
+    if ( index_tokens.size() == 0 )
+      {
+	fprintf(stderr, "Expecting at least one Target Frame Index.\n");
+	return false;
+      }
+
+
+    std::list<std::string>::const_iterator i;
+    for (i = index_tokens.begin(); i != index_tokens.end(); i++) {
+    	r_target_frame_index_list.push_back(strtoll(i->c_str(), 0, 10));
+    }
+
+    return true;
+  }
+
+
   CommandOptions(int argc, const char** argv) :
     error_flag(true), key_flag(false), key_id_flag(false), asset_id_flag(false),
     encrypt_header_flag(true), write_hmac(true), verbose_flag(false), fb_dump_size(0),
@@ -443,16 +511,19 @@ public:
     show_ul_values_flag(false), index_strategy(AS_02::IS_FOLLOW), partition_space(60),
     mca_config(g_dict), rgba_MaxRef(1023), rgba_MinRef(0),
     horizontal_subsampling(2), vertical_subsampling(2), component_depth(10),
-    frame_layout(0), aspect_ratio(ASDCP::Rational(4,3)), field_dominance(0),
+    frame_layout(0), aspect_ratio(ASDCP::Rational(4,3)), aspect_ratio_flag(false), field_dominance(0),
     mxf_header_size(16384), cdci_WhiteRefLevel(940), cdci_BlackRefLevel(64), cdci_ColorRange(897),
-    md_min_luminance(0), md_max_luminance(0), line_map(0,0), line_map_flag(false)
+    md_min_luminance(0), md_max_luminance(0), line_map(0,0), line_map_flag(false),
+	aces_authoring_information_flag(false), aces_picture_subdescriptor_flag(false), target_frame_subdescriptor_flag(false),
+	target_frame_index_flag(false), target_frame_transfer_characteristics_flag(false), target_frame_color_primaries_flag(false),
+	target_frame_min_max_ref_flag(false), target_frame_viewing_environment_flag(false)
   {
     memset(key_value, 0, KeyLen);
     memset(key_id_value, 0, UUIDlen);
 
     coding_equations = g_dict->ul(MDD_CodingEquations_709);
-    color_primaries = g_dict->ul(MDD_ColorPrimaries_BT709);
-    transfer_characteristic = g_dict->ul(MDD_TransferCharacteristics_709);
+    color_primaries = g_dict->ul(MDD_ColorPrimaries_ITU709);
+    transfer_characteristic = g_dict->ul(MDD_TransferCharacteristic_ITU709);
     std::string mca_config_str;
 
     for ( int i = 1; i < argc; i++ )
@@ -464,6 +535,84 @@ public:
 	    continue;
 	  }
          
+	if ( (strcmp( argv[i], "-suba") == 0) )
+	  {
+	    aces_picture_subdescriptor_flag = true;
+	    if ((++i < argc) && (argv[i][0] != '-')) {
+	    	aces_authoring_information = argv[i];
+	    	aces_authoring_information_flag = true;
+	    } else i--;
+	    continue;
+	  }
+
+	if ( (strcmp( argv[i], "-subt") == 0) )
+	  {
+	    target_frame_subdescriptor_flag = true;
+	    TEST_EXTRA_ARG_STRING(i, "subt");
+	    target_frame_directory = argv[i];
+	    continue;
+	  }
+
+	if ( (strcmp( argv[i], "-tfi") == 0) )
+	  {
+		TEST_EXTRA_ARG_STRING(i, "tfi");
+	    if (set_target_frame_index_list(argv[i], target_frame_index_list)) {
+			target_frame_index_flag = true;
+	    }
+	    continue;
+	  }
+
+	if ( (strcmp( argv[i], "-tft") == 0) )
+	  {
+		TEST_EXTRA_ARG_STRING(i, "tft");
+		//
+		const ASDCP::MDDEntry* entry = g_dict->FindSymbol(std::string(argv[i]));
+		if (entry) {
+			target_frame_transfer_characteristics_flag = true;
+			target_frame_transfer_characteristics = entry->ul;
+			fprintf(stderr, "target_frame_transfer_characteristic %s\n", entry->name);
+		}
+	    continue;
+	  }
+
+	if ( (strcmp( argv[i], "-tfc") == 0) )
+	  {
+		TEST_EXTRA_ARG_STRING(i, "tfc");
+		//
+		const ASDCP::MDDEntry* entry = g_dict->FindSymbol(std::string(argv[i]));
+		if (entry) {
+			target_frame_color_primaries_flag = true;
+			target_frame_color_primaries = entry->ul;
+			fprintf(stderr, "target_frame_color_primaries %s\n", entry->name);
+		}
+	    continue;
+	  }
+
+	if ( (strcmp( argv[i], "-tfr") == 0) )
+	  {
+		TEST_EXTRA_ARG(i, 'o');
+		if ( ! set_target_frame_min_max_code_value(argv[i]) )
+		  {
+		    return;
+		  }
+		target_frame_min_max_ref_flag = true;
+	    continue;
+	  }
+
+	if ( (strcmp( argv[i], "-tfv") == 0) )
+	  {
+		TEST_EXTRA_ARG_STRING(i, "tfv");
+		//
+		const ASDCP::MDDEntry* entry = g_dict->FindSymbol(std::string(argv[i]));
+		if (entry) {
+			target_frame_viewing_environment_flag = true;
+			target_frame_viewing_environment = entry->ul;
+			fprintf(stderr, "target_frame_viewing_environment %s\n", entry->name);
+		}
+	    continue;
+	  }
+
+
 	if ( argv[i][0] == '-'
 	     && ( isalpha(argv[i][1]) || isdigit(argv[i][1]) )
 	     && argv[i][2] == 0 )
@@ -477,6 +626,10 @@ public:
 		    fprintf(stderr, "Error decoding aspect ratio value: %s\n", argv[i]);
 		    return;
 		  }
+		else
+		{
+			aspect_ratio_flag = true;
+		}
 		break;
 
 	      case 'a':
@@ -595,7 +748,7 @@ public:
 		  {
 		    return;
 		  } else {
-				line_map_flag = true;
+                    line_map_flag = true;
 		  }
 		break;
 
@@ -1021,6 +1174,250 @@ write_JP2K_file(CommandOptions& Options)
 
   return result;
 }
+
+
+//------------------------------------------------------------------------------------------
+// ACES essence
+
+
+// Write one or more plaintext ACES codestreams to a plaintext AS-02 file
+// Write one or more plaintext ACES codestreams to a ciphertext AS-02 file
+//
+Result_t
+write_ACES_file(CommandOptions& Options)
+{
+  AESEncContext*          Context = 0;
+  HMACContext*            HMAC = 0;
+  AS_02::ACES::MXFWriter  Writer;
+  AS_02::ACES::FrameBuffer       FrameBuffer(Options.fb_size);
+  AS_02::ACES::SequenceParser    Parser;
+  byte_t                  IV_buf[CBC_BLOCK_SIZE];
+  Kumu::FortunaRNG        RNG;
+  ASDCP::MXF::FileDescriptor *essence_descriptor = 0;
+  ASDCP::MXF::InterchangeObject_list_t essence_sub_descriptors;
+  AS_02::ACES::PictureDescriptor PDesc;
+  AS_02::ACES::ResourceList_t resource_list_t;
+
+  // set up essence parser
+  //Result_t result = Parser.OpenRead(Options.filenames.front().c_str(), Options.j2c_aces_pedantic);
+  // set up essence parser
+  std::list<std::string> target_frame_file_list;
+  if (Options.target_frame_subdescriptor_flag)
+  {
+    Kumu::DirScannerEx dir_reader;
+    Kumu::DirectoryEntryType_t ft;
+    std::string next_item;
+    Result_t result = dir_reader.Open(Options.target_frame_directory);
+    if ( KM_SUCCESS(result) )
+    {
+      while ( KM_SUCCESS(dir_reader.GetNext(next_item, ft)) )
+      {
+          if ( next_item[0] == '.' ) continue; // no hidden files
+          std::string tmp_path = Kumu::PathJoin(Options.target_frame_directory, next_item);
+          target_frame_file_list.push_back(tmp_path);
+      }
+    }
+  }
+  Result_t result = Parser.OpenRead(Options.filenames.front().c_str(), Options.j2c_pedantic, target_frame_file_list);
+
+  // set up MXF writer
+  if (ASDCP_SUCCESS(result))
+  {
+    Parser.FillPictureDescriptor(PDesc);
+    Parser.FillResourceList(resource_list_t);
+    PDesc.EditRate = Options.edit_rate;
+
+    if (Options.verbose_flag)
+    {
+      fprintf(stderr, "ACES pictures\n");
+      fputs("PictureDescriptor:\n", stderr);
+      fprintf(stderr, "Frame Buffer size: %u\n", Options.fb_size);
+      AS_02::ACES::PictureDescriptorDump(PDesc);
+    }
+
+    ASDCP::MXF::RGBAEssenceDescriptor* tmp_dscr = new ASDCP::MXF::RGBAEssenceDescriptor(g_dict);
+    Kumu::GenRandomValue(tmp_dscr->InstanceUID);
+    ASDCP::MXF::ACESPictureSubDescriptor* aces_picture_subdescriptor = new ASDCP::MXF::ACESPictureSubDescriptor(g_dict);
+    Kumu::GenRandomValue(aces_picture_subdescriptor->InstanceUID);
+    result = AS_02::ACES::ACES_PDesc_to_MD(PDesc, *g_dict, *tmp_dscr);
+
+    if (ASDCP_SUCCESS(result))
+    {
+      if (Options.aspect_ratio_flag) tmp_dscr->AspectRatio = Options.aspect_ratio;
+
+      if (Options.aces_picture_subdescriptor_flag)
+      {
+        if (Options.aces_authoring_information_flag) aces_picture_subdescriptor->ACESAuthoringInformation = Options.aces_authoring_information;
+        if (Options.md_primaries.HasValue())
+        {
+          aces_picture_subdescriptor->ACESMasteringDisplayPrimaries = Options.md_primaries;
+          aces_picture_subdescriptor->ACESMasteringDisplayWhitePointChromaticity = Options.md_white_point;
+        }
+        if (Options.md_min_luminance && Options.md_max_luminance)
+        {
+          aces_picture_subdescriptor->ACESMasteringDisplayMinimumLuminance = Options.md_min_luminance;
+          aces_picture_subdescriptor->ACESMasteringDisplayMaximumLuminance = Options.md_max_luminance;
+        }
+        essence_sub_descriptors.push_back(aces_picture_subdescriptor);
+      }
+
+      if (Options.target_frame_subdescriptor_flag)
+      {
+        AS_02::ACES::ResourceList_t::iterator it;
+        ui32_t EssenceStreamID = 10;  //start with 10, same value in AncillaryResourceWriter
+        for (it = resource_list_t.begin(); it != resource_list_t.end(); it++ )
+        {
+          ASDCP::MXF::TargetFrameSubDescriptor* target_frame_subdescriptor = new ASDCP::MXF::TargetFrameSubDescriptor(g_dict);
+          Kumu::GenRandomValue(target_frame_subdescriptor->InstanceUID);
+          target_frame_subdescriptor->TargetFrameAncillaryResourceID.Set(it->ResourceID);
+          target_frame_subdescriptor->MediaType.assign(AS_02::ACES::MIME2str(it->Type));
+          target_frame_subdescriptor->TargetFrameEssenceStreamID = EssenceStreamID++;
+          if (Options.target_frame_index_flag)
+          {
+            if (Options.target_frame_index_list.size() > 0)
+            {
+              target_frame_subdescriptor->TargetFrameIndex = Options.target_frame_index_list.front();
+              Options.target_frame_index_list.pop_front();
+            } else
+            {
+              fprintf(stderr, "Insufficient number of Target Frame Index values provided\n");
+              fprintf(stderr, "Number of Target Frames (%lu) should match number of Target Frame Index values\n", resource_list_t.size());
+            }
+          }
+          if (Options.target_frame_transfer_characteristics_flag) target_frame_subdescriptor->TargetFrameTransferCharacteristic = Options.target_frame_transfer_characteristics;
+          if (Options.target_frame_color_primaries_flag) target_frame_subdescriptor->TargetFrameColorPrimaries = Options.target_frame_color_primaries;
+          if (Options.target_frame_min_max_ref_flag)
+          {
+            target_frame_subdescriptor->TargetFrameComponentMinRef = Options.target_frame_min_ref;
+            target_frame_subdescriptor->TargetFrameComponentMaxRef = Options.target_frame_max_ref;
+          }
+          if (Options.aces_picture_subdescriptor_flag) target_frame_subdescriptor->ACESPictureSubDescriptorInstanceID = aces_picture_subdescriptor->InstanceUID;
+          essence_sub_descriptors.push_back(target_frame_subdescriptor);
+        }
+      }
+
+      essence_descriptor = static_cast<ASDCP::MXF::FileDescriptor*>(tmp_dscr);
+      if (Options.line_map_flag)  tmp_dscr->VideoLineMap = Options.line_map;
+    }
+  }
+
+  if (ASDCP_SUCCESS(result) && !Options.no_write_flag)
+  {
+    WriterInfo Info = s_MyInfo;  // fill in your favorite identifiers here
+    Info.LabelSetType = LS_MXF_SMPTE;
+
+    if (Options.asset_id_flag)
+      memcpy(Info.AssetUUID, Options.asset_id_value, UUIDlen);
+    else
+      Kumu::GenRandomUUID(Info.AssetUUID);
+
+    // configure encryption
+    if (Options.key_flag)
+    {
+      Kumu::GenRandomUUID(Info.ContextID);
+      Info.EncryptedEssence = true;
+
+      if (Options.key_id_flag)
+      {
+        memcpy(Info.CryptographicKeyID, Options.key_id_value, UUIDlen);
+      }
+      else
+      {
+        create_random_uuid(Info.CryptographicKeyID);
+      }
+
+      Context = new AESEncContext;
+      result = Context->InitKey(Options.key_value);
+
+      if (ASDCP_SUCCESS(result))
+        result = Context->SetIVec(RNG.FillRandom(IV_buf, CBC_BLOCK_SIZE));
+
+      if (ASDCP_SUCCESS(result) && Options.write_hmac)
+      {
+        Info.UsesHMAC = true;
+        HMAC = new HMACContext;
+        result = HMAC->InitKey(Options.key_value, Info.LabelSetType);
+      }
+    }
+
+    if (ASDCP_SUCCESS(result))
+    {
+      result = Writer.OpenWrite(Options.out_file, Info, essence_descriptor, essence_sub_descriptors,
+        Options.edit_rate, AS_02::ACES::ResourceList_t(), Options.mxf_header_size, Options.index_strategy, Options.partition_space);
+    }
+  }
+
+  if (ASDCP_SUCCESS(result))
+  {
+    ui32_t duration = 0;
+    result = Parser.Reset();
+
+    while (ASDCP_SUCCESS(result) && duration++ < Options.duration)
+    {
+      result = Parser.ReadFrame(FrameBuffer);
+
+      if (ASDCP_SUCCESS(result))
+      {
+        if (Options.verbose_flag)
+          FrameBuffer.Dump(stderr, Options.fb_dump_size);
+
+        if (Options.key_flag && Options.encrypt_header_flag)
+          FrameBuffer.PlaintextOffset(0);
+      }
+
+      if (ASDCP_SUCCESS(result) && !Options.no_write_flag)
+      {
+        result = Writer.WriteFrame(FrameBuffer, Context, HMAC);
+
+        // The Writer class will forward the last block of ciphertext
+        // to the encryption context for use as the IV for the next
+        // frame. If you want to use non-sequitur IV values, un-comment
+        // the following  line of code.
+        // if ( ASDCP_SUCCESS(result) && Options.key_flag )
+        //   Context->SetIVec(RNG.FillRandom(IV_buf, CBC_BLOCK_SIZE));
+      }
+    }
+
+    if (result == RESULT_ENDOFFILE)
+      result = RESULT_OK;
+  }
+    AS_02::ACES::ResourceList_t::const_iterator ri;
+    for ( ri = resource_list_t.begin() ; ri != resource_list_t.end() && ASDCP_SUCCESS(result); ri++ )
+    {
+      result = Parser.ReadAncillaryResource((*ri).filePath, FrameBuffer);
+
+      if ( ASDCP_SUCCESS(result) )
+      {
+        if ( Options.verbose_flag )
+          FrameBuffer.Dump(stderr, Options.fb_dump_size);
+
+        if ( ! Options.no_write_flag )
+        {
+          result = Writer.WriteAncillaryResource(FrameBuffer, Context, HMAC);
+
+          // The Writer class will forward the last block of ciphertext
+          // to the encryption context for use as the IV for the next
+          // frame. If you want to use non-sequitur IV values, un-comment
+          // the following  line of code.
+          // if ( ASDCP_SUCCESS(result) && Options.key_flag )
+          //   Context->SetIVec(RNG.FillRandom(IV_buf, CBC_BLOCK_SIZE));
+        }
+      }
+
+      if ( result == RESULT_ENDOFFILE )
+        result = RESULT_OK;
+    }
+
+
+
+  if (ASDCP_SUCCESS(result) && !Options.no_write_flag)
+    result = Writer.Finalize();
+
+  return result;
+}
+
+
+
 
 //------------------------------------------------------------------------------------------
 // PCM essence
@@ -1575,7 +1972,10 @@ main(int argc, const char** argv)
 	case ESS_JPEG_2000:
 	  result = write_JP2K_file(Options);
 	  break;
-
+	 // PB
+	case ::ESS_AS02_ACES:
+	  result = write_ACES_file(Options);
+	  break;
 	case ESS_PCM_24b_48k:
 	case ESS_PCM_24b_96k:
 	  result = write_PCM_file(Options);

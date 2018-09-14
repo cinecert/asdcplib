@@ -38,6 +38,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <AS_DCP.h>
 #include <AS_02.h>
 #include <JP2K.h>
+#include <AS_02_ACES.h>
+#include <ACES.h>
 #include <MXF.h>
 #include <Metadata.h>
 #include <cfloat>
@@ -356,6 +358,108 @@ class MyPictureDescriptor : public JP2K::PictureDescriptor
   }
 };
 
+class MyACESPictureDescriptor : public AS_02::ACES::PictureDescriptor
+{
+  RGBAEssenceDescriptor *m_RGBADescriptor;
+  std::list<ACESPictureSubDescriptor*> m_ACESPictureSubDescriptorList;
+  std::list<TargetFrameSubDescriptor*> m_TargetFrameSubDescriptorList;
+
+ public:
+  MyACESPictureDescriptor() :
+    m_RGBADescriptor(0) {}
+
+  void FillDescriptor(AS_02::ACES::MXFReader& Reader)
+  {
+    m_RGBADescriptor = get_descriptor_by_type<AS_02::ACES::MXFReader, RGBAEssenceDescriptor>
+      (Reader, DefaultCompositeDict().ul(MDD_RGBAEssenceDescriptor));
+
+    if ( m_RGBADescriptor != 0 )
+      {
+    	SampleRate = m_RGBADescriptor->SampleRate;
+    	ContainerDuration = m_RGBADescriptor->ContainerDuration;
+      }
+    else
+      {
+	DefaultLogSink().Error("Picture descriptor not found.\n");
+      }
+
+    std::list<InterchangeObject*> object_list;
+    Reader.OP1aHeader().GetMDObjectsByType(DefaultCompositeDict().ul(MDD_ACESPictureSubDescriptor), object_list);
+
+    std::list<InterchangeObject*>::iterator i = object_list.begin();
+    for ( ; i != object_list.end(); ++i )
+      {
+    	ACESPictureSubDescriptor *p = dynamic_cast<ACESPictureSubDescriptor*>(*i);
+
+	if ( p )
+	  {
+		m_ACESPictureSubDescriptorList.push_back(p);
+	  }
+	else
+	  {
+	    char buf[64];
+	    DefaultLogSink().Error("ACESPictureSubDescriptor type error.\n", (**i).InstanceUID.EncodeHex(buf, 64));
+	  }
+      }
+
+    object_list.clear();
+
+    Reader.OP1aHeader().GetMDObjectsByType(DefaultCompositeDict().ul(MDD_TargetFrameSubDescriptor), object_list);
+
+    i = object_list.begin();
+    for ( ; i != object_list.end(); ++i )
+      {
+    	TargetFrameSubDescriptor *p = dynamic_cast<TargetFrameSubDescriptor*>(*i);
+
+	if ( p )
+	  {
+		m_TargetFrameSubDescriptorList.push_back(p);
+	  }
+	else
+	  {
+	    char buf[64];
+	    DefaultLogSink().Error("TargetFrameSubDescriptor type error.\n", (**i).InstanceUID.EncodeHex(buf, 64));
+	  }
+      }
+
+    object_list.clear();
+
+    Reader.OP1aHeader().GetMDObjectsByType(DefaultCompositeDict().ul(MDD_Track), object_list);
+
+    if ( object_list.empty() )
+      {
+	DefaultLogSink().Error("MXF Metadata contains no Track Sets.\n");
+      }
+
+    EditRate = ((Track*)object_list.front())->EditRate;
+  }
+
+  void MyDump(FILE* stream) {
+    if ( stream == 0 )
+      {
+	stream = stderr;
+      }
+
+    if ( m_RGBADescriptor != 0 )
+      {
+	m_RGBADescriptor->Dump(stream);
+      }
+    else
+      {
+	return;
+      }
+
+	for ( std::list<ACESPictureSubDescriptor*>::iterator i = m_ACESPictureSubDescriptorList.begin(); i != m_ACESPictureSubDescriptorList.end(); ++i )
+	{
+	  (*i)->Dump(stream);
+	}
+	for ( std::list<TargetFrameSubDescriptor*>::iterator i = m_TargetFrameSubDescriptorList.begin(); i != m_TargetFrameSubDescriptorList.end(); ++i )
+	{
+	  (*i)->Dump(stream);
+	}
+  }
+};
+
 class MyAudioDescriptor : public PCM::AudioDescriptor
 {
   WaveAudioDescriptor *m_WaveAudioDescriptor;
@@ -487,6 +591,12 @@ init_rate_info()
 
   rate_ul = DefaultCompositeDict().ul(MDD_JP2KEssenceCompression_BroadcastProfile_7);
   g_rate_info.insert(rate_info_map::value_type(rate_ul, RateInfo(rate_ul, DBL_MAX, "ISO/IEC 15444-1 Amendment 3 Level 7")));
+
+  rate_ul = DefaultCompositeDict().ul(MDD_ACESUncompressedMonoscopicWithoutAlpha);
+  g_rate_info.insert(rate_info_map::value_type(rate_ul, RateInfo(rate_ul, DBL_MAX, "ST 2065-5")));
+
+  rate_ul = DefaultCompositeDict().ul(MDD_ACESUncompressedMonoscopicWithAlpha);
+  g_rate_info.insert(rate_info_map::value_type(rate_ul, RateInfo(rate_ul, DBL_MAX, "ST 2065-5")));
 }
 
 
@@ -743,6 +853,30 @@ show_file_info(CommandOptions& Options)
     {
 	  FileInfoWrapper<AS_02::JP2K::MXFReader, MyPictureDescriptor> wrapper;
 	  result = wrapper.file_info(Options, "JPEG 2000 pictures");
+
+	  if ( KM_SUCCESS(result) )
+	    {
+	      wrapper.get_PictureEssenceCoding();
+	      wrapper.calc_Bitrate(stdout);
+
+	      if ( Options.showcoding_flag )
+		{
+		  wrapper.dump_PictureEssenceCoding(stdout);
+		}
+
+	      if ( Options.showrate_flag )
+		{
+		  wrapper.dump_Bitrate(stdout);
+		}
+
+	      result = wrapper.test_rates(Options, stdout);
+	    }
+    }
+
+  else if ( EssenceType == ESS_AS02_ACES )
+    {
+	  FileInfoWrapper<AS_02::ACES::MXFReader, MyACESPictureDescriptor> wrapper;
+	  result = wrapper.file_info(Options, "ACES pictures");
 
 	  if ( KM_SUCCESS(result) )
 	    {

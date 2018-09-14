@@ -429,18 +429,18 @@ namespace ASDCP {
 	MDD_MCALabelSubDescriptor_MCAAudioElementKind, // 391
 	MDD_MXFGCI1FrameWrappedPictureElement, // 392
 	MDD_MXFGCP1FrameWrappedPictureElement, // 393
-	MDD_TransferCharacteristics_709, // 394
-	MDD_TransferCharacteristics_2020,  // 395
-	MDD_TransferCharacteristics_xvYCC, // 396
-	MDD_TransferCharacteristics_St2084, // 397
-	MDD_TransferCharacteristics_linear, // 398
+	MDD_TransferCharacteristic_ITU709, // 394
+	MDD_TransferCharacteristic_ITU2020,  // 395
+	MDD_TransferCharacteristic_IEC6196624_xvYCC, // 396
+	MDD_TransferCharacteristic_SMPTEST2084, // 397
+	MDD_TransferCharacteristic_linear, // 398
 	MDD_CodingEquations_601, // 399
 	MDD_CodingEquations_709, // 400
 	MDD_CodingEquations_Rec2020, // 401
-	MDD_ColorPrimaries_BT709, // 402
-	MDD_ColorPrimaries_BT2020, // 403
+	MDD_ColorPrimaries_ITU709, // 402
+	MDD_ColorPrimaries_ITU2020, // 403
 	MDD_ColorPrimaries_P3D65, // 404
-	MDD_ColorPrimaries_XYZ, // 405
+	MDD_ColorPrimaries_ACES, // 405
 	MDD_GenericPictureEssenceDescriptor_MasteringDisplayPrimaries, // 406
 	MDD_GenericPictureEssenceDescriptor_MasteringDisplayWhitePointChromaticity, // 407
 	MDD_GenericPictureEssenceDescriptor_MasteringDisplayMaximumLuminance, // 408
@@ -547,7 +547,13 @@ namespace ASDCP {
 	MDD_Preface_ApplicationSchemes,  // 509
 	MDD_Preface_ConformsToSpecifications, // 510
 	MDD_MXFTextBasedFramework,  // 511
-        MDD_Max
+	MDD_ColorPrimaries_SMPTE_DCDM, // 512
+	MDD_ColorPrimaries_CinemaMezzanine, // 513
+	MDD_MXFGCFrameWrappedACESPictures, // 514
+	MDD_ACESUncompressedMonoscopicWithoutAlpha, // 515
+	MDD_ACESUncompressedMonoscopicWithAlpha, // 516
+	MDD_ACESFrameWrappedEssence, // 517
+    MDD_Max
     }; // enum MDD_t
 
     //

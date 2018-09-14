@@ -33,6 +33,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <KM_xml.h>
 #include "AS_DCP_internal.h"
 #include "JP2K.h"
+#include "ACES.h"
 #include "MPEG.h"
 #include "Wav.h"
 #include <iostream>
@@ -228,38 +229,54 @@ ASDCP::EssenceType(const std::string& filename, EssenceType_t& type)
 	}
       else if (  TestHeader.OperationalPattern == UL(m_Dict->ul(MDD_OP1a)) )
 	{
-	  if ( ASDCP_SUCCESS(TestHeader.GetMDObjectByType(OBJ_TYPE_ARGS(JPEG2000PictureSubDescriptor))) )
+    	  // ST 2065-5 Picture Descriptor does not have a mandatory SubDescriptor, check EssenceContainer instead
+	  if (ASDCP_SUCCESS(TestHeader.GetMDObjectByType(OBJ_TYPE_ARGS(RGBAEssenceDescriptor))) )
+	  {
+	    MXF::RGBAEssenceDescriptor *rgba_descriptor = 0;
+	    char buf[64];
+
+	    if ASDCP_SUCCESS(TestHeader.GetMDObjectByType(m_Dict->ul(MDD_RGBAEssenceDescriptor), reinterpret_cast<MXF::InterchangeObject**>(&rgba_descriptor)))
 	    {
-	      type = ESS_AS02_JPEG_2000;
+	        if (rgba_descriptor->EssenceContainer == m_Dict->ul(MDD_MXFGCFrameWrappedACESPictures))
+	            type = ESS_AS02_ACES;
 	    }
-	  else if ( ASDCP_SUCCESS(TestHeader.GetMDObjectByType(OBJ_TYPE_ARGS(WaveAudioDescriptor), &md_object)) )
-	    {
-	      assert(md_object);
-	      if ( static_cast<ASDCP::MXF::WaveAudioDescriptor*>(md_object)->AudioSamplingRate == SampleRate_96k )
-		{
-		  type = ESS_AS02_PCM_24b_96k;
-		}
-	      else
-		{
-		  type = ESS_AS02_PCM_24b_48k;
-		}
-	    }
-	  else if ( ASDCP_SUCCESS(TestHeader.GetMDObjectByType(OBJ_TYPE_ARGS(TimedTextDescriptor))) )
-	    {
-	      type = ESS_AS02_TIMED_TEXT;
-	    }
-	  else if ( ASDCP_SUCCESS(TestHeader.GetMDObjectByType(OBJ_TYPE_ARGS(PIMFDynamicMetadataDescriptor))) )
-	    {
-	      type = ESS_DCDATA_UNKNOWN;
-	    }
-	  else if ( ASDCP_SUCCESS(TestHeader.GetMDObjectByType(OBJ_TYPE_ARGS(ISXDDataEssenceDescriptor))) )
-	    {
-	      type = ESS_AS02_ISXD;
-	    }
-	  else if ( ASDCP_SUCCESS(TestHeader.GetMDObjectByType(OBJ_TYPE_ARGS(ACESPictureSubDescriptor))) )
-	    {
-	      type = ESS_AS02_ACES;
-	    }
+	  }
+	  if (type == ESS_UNKNOWN)
+	  {
+
+	    if ( ASDCP_SUCCESS(TestHeader.GetMDObjectByType(OBJ_TYPE_ARGS(JPEG2000PictureSubDescriptor))) )
+	      {
+	        type = ESS_AS02_JPEG_2000;
+	      }
+	    else if ( ASDCP_SUCCESS(TestHeader.GetMDObjectByType(OBJ_TYPE_ARGS(WaveAudioDescriptor), &md_object)) )
+	      {
+	        assert(md_object);
+	        if ( static_cast<ASDCP::MXF::WaveAudioDescriptor*>(md_object)->AudioSamplingRate == SampleRate_96k )
+	          {
+	            type = ESS_AS02_PCM_24b_96k;
+	          }
+	        else
+	          {
+	            type = ESS_AS02_PCM_24b_48k;
+	          }
+	      }
+	    else if ( ASDCP_SUCCESS(TestHeader.GetMDObjectByType(OBJ_TYPE_ARGS(TimedTextDescriptor))) )
+	      {
+	        type = ESS_AS02_TIMED_TEXT;
+	      }
+	    else if ( ASDCP_SUCCESS(TestHeader.GetMDObjectByType(OBJ_TYPE_ARGS(PIMFDynamicMetadataDescriptor))) )
+	      {
+	        type = ESS_DCDATA_UNKNOWN;
+	      }
+	    else if ( ASDCP_SUCCESS(TestHeader.GetMDObjectByType(OBJ_TYPE_ARGS(ISXDDataEssenceDescriptor))) )
+	      {
+	        type = ESS_AS02_ISXD;
+	      }
+	    else if ( ASDCP_SUCCESS(TestHeader.GetMDObjectByType(OBJ_TYPE_ARGS(ACESPictureSubDescriptor))) )
+	      {
+	        type = ESS_AS02_ACES;
+	      }
+	  }
 	}
       else
 	{
@@ -322,6 +339,10 @@ ASDCP::RawEssenceType(const std::string& filename, EssenceType_t& type)
 	  else if ( memcmp(FB.RoData(), ASDCP::JP2K::Magic, sizeof(ASDCP::JP2K::Magic)) == 0 )
 	    {
 	      type = ESS_JPEG_2000;
+	    }
+	  else if(memcmp(FB.RoData(), AS_02::ACES::Magic, sizeof(AS_02::ACES::Magic)) == 0)
+	    {
+	      type = ESS_AS02_ACES;
 	    }
 	  else if ( std::string((const char*)FB.RoData() + 8, 4) == "WAVE" )
 	    {
@@ -399,6 +420,10 @@ ASDCP::RawEssenceType(const std::string& filename, EssenceType_t& type)
 		    {
 		      type = ESS_JPEG_2000;
 		    }
+	          else if(memcmp(FB.RoData(), AS_02::ACES::Magic, sizeof(AS_02::ACES::Magic)) == 0)
+	            {
+	                type = ESS_AS02_ACES;
+	            }
 		  else if ( ASDCP_SUCCESS(WavHeader.ReadFromBuffer(FB.RoData(), read_count, &data_offset)) )
 		    {
 		      switch ( WavHeader.samplespersec )
