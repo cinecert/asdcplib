@@ -202,12 +202,12 @@ Options specific to ACES ST2067-50:\n\
                       uses values from -o and -O, if present\n\
   -subt <directoryPath>  - \n\
                       Create one Target Frame SubDescriptor per PNG or TIFF file in <directoryPath>,\n\
-                      and  wrap each PNG or TIFF file  as ancillariy resource\n\
+                      and  wrap each PNG or TIFF file  as ancillary resource\n\
                       Requires additional options -tfi, -tft, -tfc, -tfr\n\
   -tfi <int>[,<int>*]    - \n\
                       List of TargetFrameIndex values in Target Frame SubDescriptor corresponding to the \n\
                       list of Target Frame frame files in <directoryPath> as given by option -subt\n\
-  -tft <string>     - Target Frame Transfer Characteristics Symbol, e.g. TransferCharacteristics_709\n\
+  -tft <string>     - Target Frame Transfer Characteristics Symbol, e.g. TransferCharacteristic_ITU709\n\
   -tfc <string>     - Target Frame Color Primaries Symbol, e.g. ColorPrimaries_ITU709\n\
   -tfr <min>,<max>  - Target Frame Component Min/Max Ref in Target Frame SubDescriptor\n\
   -tfv <string>     - Target Frame Viewing Environment Symbol, e.g. HDTVReferenceViewingEnvironment\n\
