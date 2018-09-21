@@ -561,11 +561,6 @@ namespace AS_02
       // operation cannot be completed.
       Result_t OpenRead(const std::string& filename) const;
 
-      // Open the file for reading. The file must exist. Returns error if the
-      // operation cannot be completed. If global metadata is available it will
-      // be placed into the buffer object passed as the second argument.
-      Result_t OpenRead(const std::string& filename, ASDCP::FrameBuffer& global_metadata) const;
-
       // Returns RESULT_INIT if the file is not open.
       Result_t Close() const;
 
