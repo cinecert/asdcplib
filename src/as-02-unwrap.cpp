@@ -872,6 +872,7 @@ read_isxd_file(CommandOptions& Options)
   if ( ASDCP_SUCCESS(result) )
     {
       result = FrameBuffer.Capacity(Options.fb_size);
+      frame_count = Reader.AS02IndexReader().GetDuration();
     }
 
   if ( ASDCP_SUCCESS(result) )

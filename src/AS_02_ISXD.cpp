@@ -330,7 +330,7 @@ AS_02::ISXD::MXFWriter::h__Writer::SetSourceStream(const std::string& label, con
 	return RESULT_STATE;
     }
 
-  memcpy(m_EssenceUL, m_Dict->ul(MDD_FrameWrappedISXDContainer), SMPTE_UL_LENGTH);
+  memcpy(m_EssenceUL, m_Dict->ul(MDD_FrameWrappedISXDData), SMPTE_UL_LENGTH);
   m_EssenceUL[SMPTE_UL_LENGTH-1] = 1; // first (and only) essence container
   Result_t result = m_State.Goto_READY();
 

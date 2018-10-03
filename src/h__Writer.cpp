@@ -193,7 +193,12 @@ ASDCP::AddDmsTrackGenericPartUtf8Text(Kumu::FileWriter& file_writer, MXF::OP1aHe
 	}
     }
 
-  assert(max_sid>1);
+  if ( max_sid == 0 )
+    {
+      DefaultLogSink().Error("Unable to add a GS Partition before the essence container has been established.\n");
+      return RESULT_FORMAT;
+    }
+
   rip.PairArray.push_back(RIP::PartitionPair(max_sid + 1, file_writer.Tell()));
 
   // Add new GSTBS linked to DMF
