@@ -1726,6 +1726,7 @@ ASDCP::MXF::ASDCP_MCAConfigParser::ASDCP_MCAConfigParser(const Dictionary*& d) :
   m_LabelMap.insert(pair("SDS",   label_traits("7.1SDS"                            , true,  m_Dict->ul(MDD_DCAudioSoundfield_SDS))));
   m_LabelMap.insert(pair("61",    label_traits("6.1"                               , true,  m_Dict->ul(MDD_DCAudioSoundfield_61))));
   m_LabelMap.insert(pair("M",     label_traits("1.0 Monaural"                      , true,  m_Dict->ul(MDD_DCAudioSoundfield_M))));
+  m_LabelMap.insert(pair("FSKSync",   label_traits("FSK Sync"                      , true,  m_Dict->ul(MDD_DCAudioChannel_FSKSyncSignalChannel))));
   m_LabelMap.insert(pair("DBOX",  label_traits("D-BOX Motion Code Primary Stream"  , false, m_Dict->ul(MDD_DBOXMotionCodePrimaryStream))));
   m_LabelMap.insert(pair("DBOX2", label_traits("D-BOX Motion Code Secondary Stream", false, m_Dict->ul(MDD_DBOXMotionCodeSecondaryStream))));
 }

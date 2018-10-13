@@ -553,7 +553,8 @@ namespace ASDCP {
 	MDD_ACESUncompressedMonoscopicWithoutAlpha, // 515
 	MDD_ACESUncompressedMonoscopicWithAlpha, // 516
 	MDD_ACESFrameWrappedEssence, // 517
-    MDD_Max
+	MDD_DCAudioChannel_FSKSyncSignalChannel, // 518
+	MDD_Max
     }; // enum MDD_t
 
     //
