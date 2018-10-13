@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2011-2014, John Hurst
+Copyright (c) 2011-2018, John Hurst
 
 All rights reserved.
 
@@ -60,7 +60,7 @@ banner(FILE* stream = stdout)
 {
   fprintf(stream, "\n\
 %s (asdcplib %s)\n\n\
-Copyright (c) 2011-2015, John Hurst\n\n\
+Copyright (c) 2011-2018, John Hurst\n\n\
 asdcplib may be copied only under the terms of the license found at\n\
 the top of every file in the asdcplib distribution kit.\n\n\
 Specify the -h (help) option for further information about %s\n\n",
@@ -389,109 +389,6 @@ read_JP2K_file(CommandOptions& Options)
   return result;
 }
 
-
-// Read one or more plaintext DCData bytestreams from a plaintext ASDCP file
-// Read one or more plaintext DCData bytestreams from a ciphertext ASDCP file
-// Read one or more ciphertext DCData byestreams from a ciphertext ASDCP file
-//
-Result_t
-read_aux_data_file(CommandOptions& Options)
-{
-  AESDecContext*     Context = 0;
-  HMACContext*       HMAC = 0;
-  AS_02::PIDM::MXFReader Reader;
-  DCData::FrameBuffer FrameBuffer(Options.fb_size);
-  ui32_t             frame_count = 0;
-
-  ASDCP::FrameBuffer global_metadata;
-  Result_t result = Reader.OpenRead(Options.input_filename, global_metadata);
-
-  if ( ASDCP_SUCCESS(result)
-       && global_metadata.Size()
-       && ! Options.global_metadata_filename.empty() )
-    {
-      ui32_t write_count = 0;
-      Kumu::FileWriter Writer;
-
-      result = Writer.OpenWrite(Options.global_metadata_filename);
-
-      if ( ASDCP_SUCCESS(result) )
-	{
-	  result = Writer.Write(global_metadata.RoData(), global_metadata.Size(), &write_count);
-	}
-
-      if ( ASDCP_SUCCESS(result) && global_metadata.Size() != write_count) 
-	{
-	  return RESULT_WRITEFAIL;
-	}
-    }
-
-  if ( ASDCP_SUCCESS(result) )
-    {
-      frame_count = Reader.AS02IndexReader().GetDuration();
-
-      if ( Options.verbose_flag )
-	{
-	  fprintf(stderr, "Frame Buffer size: %u\n", Options.fb_size);
-	}
-    }
-
-  if ( ASDCP_SUCCESS(result) && Options.key_flag )
-    {
-      Context = new AESDecContext;
-      result = Context->InitKey(Options.key_value);
-
-      if ( ASDCP_SUCCESS(result) && Options.read_hmac )
-	{
-	  WriterInfo Info;
-	  Reader.FillWriterInfo(Info);
-
-	  if ( Info.UsesHMAC )
-	    {
-	      HMAC = new HMACContext;
-	      result = HMAC->InitKey(Options.key_value, Info.LabelSetType);
-	    }
-	  else
-	    {
-	      fputs("File does not contain HMAC values, ignoring -m option.\n", stderr);
-	    }
-	}
-    }
-
-  ui32_t last_frame = Options.start_frame + ( Options.duration ? Options.duration : frame_count);
-  if ( last_frame > frame_count )
-    last_frame = frame_count;
-
-  char name_format[64];
-  snprintf(name_format,  64, "%%s%%0%du.%s", Options.number_width, Options.extension);
-
-  for ( ui32_t i = Options.start_frame; ASDCP_SUCCESS(result) && i < last_frame; i++ )
-    {
-      result = Reader.ReadFrame(i, FrameBuffer, Context, HMAC);
-
-      if ( ASDCP_SUCCESS(result) )
-	{
-	  if ( ! Options.no_write_flag )
-	    {
-	  Kumu::FileWriter OutFile;
-	  char filename[256];
-	  ui32_t write_count;
-	  snprintf(filename, 256, name_format, Options.file_prefix, i);
-	  result = OutFile.OpenWrite(filename);
-
-	  if ( ASDCP_SUCCESS(result) )
-	    result = OutFile.Write(FrameBuffer.Data(), FrameBuffer.Size(), &write_count);
-        }
-
-	  if ( Options.verbose_flag )
-	    FrameBuffer.Dump(stderr, Options.fb_dump_size);
-	}
-    }
-
-  return result;
-}
-
-
 //
 int
 main(int argc, const char** argv)
@@ -524,10 +421,6 @@ main(int argc, const char** argv)
 	case ESS_AS02_JPEG_2000:
 	  result = read_JP2K_file(Options);
 	  break;
-
-        case ESS_DCDATA_UNKNOWN:
-          result = read_aux_data_file(Options);
-          break;
 
 	default:
 	  fprintf(stderr, "%s: Unknown file type, not P-HDR essence.\n", Options.input_filename);

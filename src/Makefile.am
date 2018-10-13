@@ -166,8 +166,7 @@ if USE_PHDR
 libphdr_la_SOURCES	= \
 	AS_02_PHDR.h \
 	PHDR_Sequence_Parser.cpp \
-	AS_02_PHDR.cpp \
-	AS_02_PIDM.cpp
+	AS_02_PHDR.cpp
 
 libphdr_la_LDFLAGS = -release @VERSION@
 libphdr_la_LIBADD = libasdcp.la libkumu.la

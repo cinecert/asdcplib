@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2005-2016, John Hurst
+Copyright (c) 2005-2018, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -163,6 +163,7 @@ inline const char* ui64sz(ui64_t i, char* buf)
       const MDDEntry* FindULExact(const byte_t*) const;
       const MDDEntry* FindSymbol(const std::string&) const;
       const MDDEntry& Type(MDD_t type_id) const;
+      MDDEntry& MutableType(MDD_t type_id);
 
       inline const byte_t* ul(MDD_t type_id) const {
 	return Type(type_id).ul;
@@ -172,6 +173,7 @@ inline const char* ui64sz(ui64_t i, char* buf)
     };
 
 
+  const Dictionary& AtmosSMPTEDict();
   const Dictionary& DefaultSMPTEDict();
   const Dictionary& DefaultInteropDict();
   const Dictionary& DefaultCompositeDict();
