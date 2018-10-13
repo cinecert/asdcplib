@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2006-2016, John Hurst
+Copyright (c) 2006-2018, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -136,6 +136,38 @@ ASDCP::SMPTE_390_OPAtom_Entry() {
   return s_MDD_Table[MDD_OPAtom];
 }
 
+//
+//
+static ASDCP::Dictionary s_AtmosSMPTEDict;
+static Kumu::Mutex s_AtmosSMPTEDictLock;
+static bool s_AtmosSMPTEDictInit = false;
+
+//
+const ASDCP::Dictionary&
+ASDCP::AtmosSMPTEDict()
+{
+  if ( ! s_AtmosSMPTEDictInit )
+    {
+      Kumu::AutoMutex AL(s_AtmosSMPTEDictLock);
+
+      if ( ! s_AtmosSMPTEDictInit )
+	{
+	  s_AtmosSMPTEDict.Init();
+
+	  s_AtmosSMPTEDict.DeleteEntry(MDD_MXFInterop_OPAtom);
+	  s_AtmosSMPTEDict.DeleteEntry(MDD_MXFInterop_CryptEssence);
+	  s_AtmosSMPTEDict.DeleteEntry(MDD_MXFInterop_GenericDescriptor_SubDescriptors);
+
+	  // legacy Atmos files have the wrong version byte
+	  assert(s_AtmosSMPTEDict.Type(MDD_GenericDataEssenceDescriptor_DataEssenceCoding).ul[7] == 0x03);
+	  s_AtmosSMPTEDict.MutableType(MDD_GenericDataEssenceDescriptor_DataEssenceCoding).ul[7] = 0x05;
+	  
+	  s_AtmosSMPTEDictInit = true;
+	}
+    }
+
+  return s_AtmosSMPTEDict;
+}
 
 //------------------------------------------------------------------------------------------
 //
@@ -245,6 +277,19 @@ ASDCP::Dictionary::Type(MDD_t type_id) const
 {
   assert(m_MDD_Table[0].name[0]);
   std::map<ui32_t, ASDCP::UL>::const_iterator rii = m_md_rev_lookup.find(type_id);
+
+  if ( rii == m_md_rev_lookup.end() )
+    Kumu::DefaultLogSink().Warn("UL Dictionary: unknown UL type_id: %d\n", type_id);
+
+  return m_MDD_Table[type_id];
+}
+
+//
+ASDCP::MDDEntry&
+ASDCP::Dictionary::MutableType(MDD_t type_id)
+{
+  assert(m_MDD_Table[0].name[0]);
+  std::map<ui32_t, ASDCP::UL>::iterator rii = m_md_rev_lookup.find(type_id);
 
   if ( rii == m_md_rev_lookup.end() )
     Kumu::DefaultLogSink().Warn("UL Dictionary: unknown UL type_id: %d\n", type_id);

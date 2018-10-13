@@ -248,7 +248,7 @@ ASDCP::ATMOS::MXFReader::h__Reader::ReadFrame(ui32_t FrameNum, FrameBuffer& Fram
 
 ASDCP::ATMOS::MXFReader::MXFReader()
 {
-  m_Reader = new h__Reader(DefaultSMPTEDict());
+  m_Reader = new h__Reader(AtmosSMPTEDict());
 }
 
 
@@ -427,8 +427,7 @@ ASDCP::ATMOS::MXFWriter::h__Writer::DCData_DDesc_to_MD(ASDCP::DCData::DCDataDesc
 
   DDescObj->SampleRate = DDesc.EditRate;
   DDescObj->ContainerDuration = DDesc.ContainerDuration;
-  DDescObj->DataEssenceCoding.Set(DDesc.DataEssenceCoding);
-
+  DDescObj->DataEssenceCoding.Set(DDesc.DataEssenceCoding);  
   return RESULT_OK;
 }
 
@@ -554,7 +553,7 @@ ASDCP::ATMOS::MXFWriter::h__Writer::WriteFrame(const FrameBuffer& FrameBuf,
   ui64_t StreamOffset = m_StreamOffset;
 
   if ( ASDCP_SUCCESS(result) )
-    result = WriteEKLVPacket(FrameBuf, m_EssenceUL, Ctx, HMAC);
+    result = WriteEKLVPacket(FrameBuf, m_EssenceUL, MXF_BER_LENGTH, Ctx, HMAC);
 
   if ( ASDCP_SUCCESS(result) )
   {
@@ -648,7 +647,7 @@ ASDCP::ATMOS::MXFWriter::OpenWrite(const std::string& filename, const WriterInfo
     return RESULT_FORMAT;
   }
 
-  m_Writer = new h__Writer(DefaultSMPTEDict());
+  m_Writer = new h__Writer(AtmosSMPTEDict());
   m_Writer->m_Info = Info;
 
   Result_t result = m_Writer->OpenWrite(filename, HeaderSize, ADesc);
