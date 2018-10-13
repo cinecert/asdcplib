@@ -167,7 +167,7 @@ main(int argc, const char** argv)
       const byte_t* p = UUID.Value();
 
       printf("\
-byte_t uuid_buf[] = {\n\
+byte_t uuid_buf[16] = {\n\
   // %s\n ",
 	     UUID.EncodeHex(uuid_buf, 40));
 	  
