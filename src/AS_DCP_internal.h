@@ -47,6 +47,10 @@ using namespace ASDCP::MXF;
 #endif
 
 
+// uncomment to remove MXFGCGenericEssenceMultipleMappings from your AS-02 files
+// #define ASDCP_GCMULTI_PATCH
+
+
 #ifdef DEFAULT_MD_DECL
 ASDCP::MXF::OP1aHeader *g_OP1aHeader;
 ASDCP::MXF::OPAtomIndexFooter *g_OPAtomIndexFooter;
@@ -178,6 +182,7 @@ namespace ASDCP
   Result_t Write_EKLV_Packet(Kumu::FileWriter& File, const ASDCP::Dictionary& Dict, const MXF::OP1aHeader& HeaderPart,
 			     const ASDCP::WriterInfo& Info, ASDCP::FrameBuffer& CtFrameBuf, ui32_t& FramesWritten,
 			     ui64_t & StreamOffset, const ASDCP::FrameBuffer& FrameBuf, const byte_t* EssenceUL,
+			     const ui32_t& MinEssenceElementBerLength,
 			     AESEncContext* Ctx, HMACContext* HMAC);
 
   //
@@ -781,8 +786,10 @@ namespace ASDCP
 	  // Essence Descriptors
 	  //
 	  assert(m_Dict);
+#ifndef ASDCP_GCMULTI_PATCH
 	  UL GenericContainerUL(m_Dict->ul(MDD_GCMulti));
 	  m_HeaderPart.EssenceContainers.push_back(GenericContainerUL);
+#endif
 
 	  if ( m_Info.EncryptedEssence )
 	    {
@@ -841,7 +848,8 @@ namespace ASDCP
 	      if ( KM_SUCCESS(result) )
 		{
 		  result = Write_EKLV_Packet(m_File, *m_Dict, m_HeaderPart, m_Info, m_CtFrameBuf, m_FramesWritten,
-					     m_StreamOffset, frame_buffer, GenericStream_DataElement.Value(), enc, hmac);
+					     m_StreamOffset, frame_buffer, GenericStream_DataElement.Value(),
+					     MXF_BER_LENGTH, enc, hmac);
 		}
 	    }
 
@@ -901,6 +909,7 @@ namespace ASDCP
 
       Result_t CreateBodyPart(const MXF::Rational& EditRate, ui32_t BytesPerEditUnit = 0);
       Result_t WriteEKLVPacket(const ASDCP::FrameBuffer& FrameBuf,const byte_t* EssenceUL,
+			       const ui32_t& MinEssenceElementBerLength,
 			       AESEncContext* Ctx, HMACContext* HMAC);
       Result_t WriteASDCPFooter();
     };
