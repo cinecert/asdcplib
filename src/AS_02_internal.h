@@ -309,6 +309,7 @@ namespace AS_02
       virtual ~h__AS02WriterFrame();
 
       Result_t WriteEKLVPacket(const ASDCP::FrameBuffer& FrameBuf,const byte_t* EssenceUL,
+			       const ui32_t& MinEssenceElementBerLength,
 			       AESEncContext* Ctx, HMACContext* HMAC);
     };
 

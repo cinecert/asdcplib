@@ -373,7 +373,7 @@ AS_02::ISXD::MXFWriter::h__Writer::WriteFrame(const ASDCP::FrameBuffer& FrameBuf
 
   if ( KM_SUCCESS(result) )
     {
-      result = WriteEKLVPacket(FrameBuf, m_EssenceUL, Ctx, HMAC);
+      result = WriteEKLVPacket(FrameBuf, m_EssenceUL, MXF_BER_LENGTH, Ctx, HMAC);
       m_FramesWritten++;
     }
 

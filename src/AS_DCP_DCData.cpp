@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2004-2016, John Hurst
+Copyright (c) 2004-2018, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -495,7 +495,7 @@ ASDCP::DCData::MXFWriter::h__Writer::WriteFrame(const FrameBuffer& FrameBuf,
   ui64_t StreamOffset = m_StreamOffset;
 
   if ( ASDCP_SUCCESS(result) )
-    result = WriteEKLVPacket(FrameBuf, m_EssenceUL, Ctx, HMAC);
+    result = WriteEKLVPacket(FrameBuf, m_EssenceUL, MXF_BER_LENGTH, Ctx, HMAC);
 
   if ( ASDCP_SUCCESS(result) )
   {

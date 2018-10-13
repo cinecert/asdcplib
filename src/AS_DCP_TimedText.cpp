@@ -586,7 +586,7 @@ ASDCP::TimedText::MXFWriter::h__Writer::WriteTimedTextResource(const std::string
 
       IndexTableSegment::IndexEntry Entry;
       Entry.StreamOffset = m_StreamOffset;
-      result = WriteEKLVPacket(FrameBuf, m_EssenceUL, Ctx, HMAC);
+      result = WriteEKLVPacket(FrameBuf, m_EssenceUL, MXF_BER_LENGTH, Ctx, HMAC);
 
       if ( ASDCP_SUCCESS(result) )
 	{
@@ -625,7 +625,7 @@ ASDCP::TimedText::MXFWriter::h__Writer::WriteAncillaryResource(const ASDCP::Time
   Result_t result = GSPart.WriteToFile(m_File, TmpUL);
 
   if ( ASDCP_SUCCESS(result) )
-    result = WriteEKLVPacket(FrameBuf, GenericStream_DataElement.Value(), Ctx, HMAC);
+    result = WriteEKLVPacket(FrameBuf, GenericStream_DataElement.Value(), MXF_BER_LENGTH, Ctx, HMAC);
 
   m_FramesWritten++;
   return result;

@@ -1064,7 +1064,7 @@ lh__Writer::WriteFrame(const JP2K::FrameBuffer& FrameBuf, bool add_index,
   ui64_t StreamOffset = m_StreamOffset;
 
   if ( ASDCP_SUCCESS(result) )
-    result = WriteEKLVPacket(FrameBuf, m_EssenceUL, Ctx, HMAC);
+    result = WriteEKLVPacket(FrameBuf, m_EssenceUL, MXF_BER_LENGTH, Ctx, HMAC);
 
   if ( ASDCP_SUCCESS(result) && add_index )
     {  

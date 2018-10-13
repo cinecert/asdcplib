@@ -634,7 +634,7 @@ AS_02::Result_t AS_02::ACES::MXFWriter::h__Writer::WriteFrame(const AS_02::ACES:
 
   if(KM_SUCCESS(result))
   {
-    result = WriteEKLVPacket(FrameBuf, m_EssenceUL, Ctx, HMAC);
+    result = WriteEKLVPacket(FrameBuf, m_EssenceUL, MXF_BER_LENGTH, Ctx, HMAC);
     m_FramesWritten++;
   }
 
@@ -694,7 +694,9 @@ AS_02::Result_t AS_02::ACES::MXFWriter::h__Writer::WriteAncillaryResource(const 
   {
     ui64_t this_stream_offset = m_StreamOffset; // m_StreamOffset will be changed by the call to Write_EKLV_Packet
 
-    result = Write_EKLV_Packet(m_File, *m_Dict, m_HeaderPart, m_Info, m_CtFrameBuf, m_FramesWritten, m_StreamOffset, FrameBuf, GenericStream_DataElement.Value(), Ctx, HMAC);
+    result = Write_EKLV_Packet(m_File, *m_Dict, m_HeaderPart, m_Info, m_CtFrameBuf, m_FramesWritten,
+			       m_StreamOffset, FrameBuf, GenericStream_DataElement.Value(),
+			       MXF_BER_LENGTH, Ctx, HMAC);
   }
   return result;
 }

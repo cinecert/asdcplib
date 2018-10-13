@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2011-2016, Robert Scheler, Heiko Sparenberg Fraunhofer IIS,
+Copyright (c) 2011-2018, Robert Scheler, Heiko Sparenberg Fraunhofer IIS,
 John Hurst
 
 All rights reserved.
@@ -183,12 +183,14 @@ AS_02::h__AS02WriterFrame::~h__AS02WriterFrame() {}
 
 //
 Result_t
-AS_02::h__AS02WriterFrame::WriteEKLVPacket(const ASDCP::FrameBuffer& FrameBuf,const byte_t* EssenceUL, AESEncContext* Ctx, HMACContext* HMAC)
+AS_02::h__AS02WriterFrame::WriteEKLVPacket(const ASDCP::FrameBuffer& FrameBuf,const byte_t* EssenceUL,
+					   const ui32_t& MinEssenceElementBerLength,
+					   AESEncContext* Ctx, HMACContext* HMAC)
 {
   ui64_t this_stream_offset = m_StreamOffset; // m_StreamOffset will be changed by the call to Write_EKLV_Packet
 
   Result_t result = Write_EKLV_Packet(m_File, *m_Dict, m_HeaderPart, m_Info, m_CtFrameBuf, m_FramesWritten,
-				      m_StreamOffset, FrameBuf, EssenceUL, Ctx, HMAC);
+				      m_StreamOffset, FrameBuf, EssenceUL, MinEssenceElementBerLength, Ctx, HMAC);
 
   if ( KM_SUCCESS(result) )
     {  

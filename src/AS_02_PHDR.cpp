@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2011-2016, John Hurst
+Copyright (c) 2011-2018, John Hurst
 
 All rights reserved.
 
@@ -572,7 +572,7 @@ AS_02::PHDR::MXFWriter::h__Writer::WriteFrame(const AS_02::PHDR::FrameBuffer& Fr
       ui64_t this_stream_offset = m_StreamOffset; // m_StreamOffset will be changed by the call to Write_EKLV_Packet
 
       result = Write_EKLV_Packet(m_File, *m_Dict, m_HeaderPart, m_Info, m_CtFrameBuf, m_FramesWritten,
-				 m_StreamOffset, FrameBuf, m_EssenceUL, Ctx, HMAC);
+				 m_StreamOffset, FrameBuf, m_EssenceUL, MXF_BER_LENGTH, Ctx, HMAC);
       
       if ( KM_SUCCESS(result) )
 	{
@@ -582,7 +582,8 @@ AS_02::PHDR::MXFWriter::h__Writer::WriteFrame(const AS_02::PHDR::FrameBuffer& Fr
 	  
 	  
 	  result = Write_EKLV_Packet(m_File, *m_Dict, m_HeaderPart, m_Info, m_CtFrameBuf, m_FramesWritten,
-				     m_StreamOffset, metadata_buffer_wrapper, m_MetadataUL, Ctx, HMAC);
+				     m_StreamOffset, metadata_buffer_wrapper, m_MetadataUL,
+				     MXF_BER_LENGTH, Ctx, HMAC);
 	}
       
       if ( KM_SUCCESS(result) )
@@ -667,7 +668,8 @@ AS_02::PHDR::MXFWriter::h__Writer::Finalize(const std::string& PHDR_master_metad
 	      tmp_buf.Size(PHDR_master_metadata.size());
 
 	      result = Write_EKLV_Packet(m_File, *m_Dict, m_HeaderPart, m_Info, m_CtFrameBuf, m_FramesWritten,
-					 m_StreamOffset, tmp_buf, GenericStream_DataElement.Value(), 0, 0);
+					 m_StreamOffset, tmp_buf, GenericStream_DataElement.Value(),
+					 MXF_BER_LENGTH, 0, 0);
 	    }
 	}
 

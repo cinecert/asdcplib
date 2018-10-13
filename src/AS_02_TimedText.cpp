@@ -523,7 +523,7 @@ AS_02::TimedText::MXFWriter::h__Writer::WriteTimedTextResource(const std::string
       index_entry.StreamOffset = m_StreamOffset;
       
       result = Write_EKLV_Packet(m_File, *m_Dict, m_HeaderPart, m_Info, m_CtFrameBuf, m_FramesWritten,
-				 m_StreamOffset, FrameBuf, m_EssenceUL, Ctx, HMAC);
+				 m_StreamOffset, FrameBuf, m_EssenceUL, MXF_BER_LENGTH, Ctx, HMAC);
     }
 
   if ( KM_SUCCESS(result) )
@@ -620,7 +620,8 @@ AS_02::TimedText::MXFWriter::h__Writer::WriteAncillaryResource(const ASDCP::Time
   if ( KM_SUCCESS(result) )
     {
       result = Write_EKLV_Packet(m_File, *m_Dict, m_HeaderPart, m_Info, m_CtFrameBuf, m_FramesWritten,
-				 m_StreamOffset, FrameBuf, GenericStream_DataElement.Value(), Ctx, HMAC);
+				 m_StreamOffset, FrameBuf, GenericStream_DataElement.Value(),
+				 MXF_BER_LENGTH, Ctx, HMAC);
     }
 
   m_FramesWritten++;

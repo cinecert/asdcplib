@@ -627,7 +627,7 @@ ASDCP::PCM::MXFWriter::h__Writer::WriteFrame(const FrameBuffer& FrameBuf, AESEnc
     result = m_State.Goto_RUNNING(); // first time through
 
   if ( ASDCP_SUCCESS(result) )
-    result = WriteEKLVPacket(FrameBuf, m_EssenceUL, Ctx, HMAC);
+    result = WriteEKLVPacket(FrameBuf, m_EssenceUL, MXF_BER_LENGTH, Ctx, HMAC);
 
   if ( ASDCP_SUCCESS(result) )
     m_FramesWritten++;

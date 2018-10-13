@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2011-2016, Robert Scheler, Heiko Sparenberg Fraunhofer IIS,
+Copyright (c) 2011-2018, Robert Scheler, Heiko Sparenberg Fraunhofer IIS,
 John Hurst
 
 All rights reserved.
@@ -399,7 +399,7 @@ AS_02::JP2K::MXFWriter::h__Writer::WriteFrame(const ASDCP::JP2K::FrameBuffer& Fr
 
   if ( KM_SUCCESS(result) )
     {
-      result = WriteEKLVPacket(FrameBuf, m_EssenceUL, Ctx, HMAC);
+      result = WriteEKLVPacket(FrameBuf, m_EssenceUL, MXF_BER_LENGTH, Ctx, HMAC);
       m_FramesWritten++;
     }
 

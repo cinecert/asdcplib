@@ -285,6 +285,11 @@ ASDCP::h__ASDCPWriter::WriteASDCPHeader(const std::string& PackageLabel, const U
   AddSourceClip(EditRate, EditRate, TCFrameRate, TrackName, EssenceUL, DataDefinition, PackageLabel);
   AddEssenceDescriptor(WrappingUL);
 
+#ifdef ASDCP_GCMULTI_PATCH
+  UL GenericContainerUL(m_Dict->ul(MDD_GCMulti));
+  m_HeaderPart.EssenceContainers.push_back(GenericContainerUL);
+#endif
+
   Result_t result = m_HeaderPart.WriteToFile(m_File, m_HeaderSize);
 
   if ( KM_SUCCESS(result) )
@@ -296,10 +301,12 @@ ASDCP::h__ASDCPWriter::WriteASDCPHeader(const std::string& PackageLabel, const U
 //
 Result_t
 ASDCP::h__ASDCPWriter::WriteEKLVPacket(const ASDCP::FrameBuffer& FrameBuf,const byte_t* EssenceUL,
+				       const ui32_t& MinEssenceElementBerLength,	       
 				       AESEncContext* Ctx, HMACContext* HMAC)
 {
   return Write_EKLV_Packet(m_File, *m_Dict, m_HeaderPart, m_Info, m_CtFrameBuf, m_FramesWritten,
-			   m_StreamOffset, FrameBuf, EssenceUL, Ctx, HMAC);
+			   m_StreamOffset, FrameBuf, EssenceUL, MinEssenceElementBerLength,
+			   Ctx, HMAC);
 }
 
 // standard method of writing the header and footer of a completed MXF file
@@ -358,6 +365,7 @@ Result_t
 ASDCP::Write_EKLV_Packet(Kumu::FileWriter& File, const ASDCP::Dictionary& Dict, const MXF::OP1aHeader& HeaderPart,
 			 const ASDCP::WriterInfo& Info, ASDCP::FrameBuffer& CtFrameBuf, ui32_t& FramesWritten,
 			 ui64_t & StreamOffset, const ASDCP::FrameBuffer& FrameBuf, const byte_t* EssenceUL,
+			 const ui32_t& MinEssenceElementBerLength,
 			 AESEncContext* Ctx, HMACContext* HMAC)
 {
   Result_t result = RESULT_OK;
@@ -396,7 +404,7 @@ ASDCP::Write_EKLV_Packet(Kumu::FileWriter& File, const ASDCP::Dictionary& Dict, 
 
 	  // construct encrypted triplet header
 	  ui32_t ETLength = klv_cryptinfo_size + CtFrameBuf.Size();
-	  ui32_t BER_length = MXF_BER_LENGTH;
+	  ui32_t essence_element_BER_length = MinEssenceElementBerLength;
 
 	  if ( Info.UsesHMAC )
 	    ETLength += klv_intpack_size;
@@ -405,18 +413,18 @@ ASDCP::Write_EKLV_Packet(Kumu::FileWriter& File, const ASDCP::Dictionary& Dict, 
 
 	  if ( ETLength > 0x00ffffff ) // Need BER integer longer than MXF_BER_LENGTH bytes
 	    {
-	      BER_length = Kumu::get_BER_length_for_value(ETLength);
+	      essence_element_BER_length = Kumu::get_BER_length_for_value(ETLength);
 
 	      // the packet is longer by the difference in expected vs. actual BER length
-	      ETLength += BER_length - MXF_BER_LENGTH;
+	      ETLength += essence_element_BER_length - MXF_BER_LENGTH;
 
-	      if ( BER_length == 0 )
+	      if ( essence_element_BER_length == 0 )
 		result = RESULT_KLV_CODING;
 	    }
 
 	  if ( ASDCP_SUCCESS(result) )
 	    {
-	      if ( ! ( Overhead.WriteBER(ETLength, BER_length)                      // write encrypted triplet length
+	      if ( ! ( Overhead.WriteBER(ETLength, essence_element_BER_length)                      // write encrypted triplet length
 		       && Overhead.WriteBER(UUIDlen, MXF_BER_LENGTH)                // write ContextID length
 		       && Overhead.WriteRaw(Info.ContextID, UUIDlen)              // write ContextID
 		       && Overhead.WriteBER(sizeof(ui64_t), MXF_BER_LENGTH)         // write PlaintextOffset length
@@ -425,7 +433,7 @@ ASDCP::Write_EKLV_Packet(Kumu::FileWriter& File, const ASDCP::Dictionary& Dict, 
 		       && Overhead.WriteRaw((byte_t*)EssenceUL, SMPTE_UL_LENGTH)    // write the essence UL
 		       && Overhead.WriteBER(sizeof(ui64_t), MXF_BER_LENGTH)         // write SourceLength length
 		       && Overhead.WriteUi64BE(FrameBuf.Size())                     // write SourceLength
-		       && Overhead.WriteBER(CtFrameBuf.Size(), BER_length) ) )    // write ESV length
+		       && Overhead.WriteBER(CtFrameBuf.Size(), essence_element_BER_length) ) )    // write ESV length
 		{
 		  result = RESULT_KLV_CODING;
 		}
@@ -467,18 +475,18 @@ ASDCP::Write_EKLV_Packet(Kumu::FileWriter& File, const ASDCP::Dictionary& Dict, 
     }
   else
     {
-      ui32_t BER_length = MXF_BER_LENGTH;
+      ui32_t essence_element_BER_length = MinEssenceElementBerLength;
 
       if ( FrameBuf.Size() > 0x00ffffff ) // Need BER integer longer than MXF_BER_LENGTH bytes
 	{
-	  BER_length = Kumu::get_BER_length_for_value(FrameBuf.Size());
+	  essence_element_BER_length = Kumu::get_BER_length_for_value(FrameBuf.Size());
 
-	  if ( BER_length == 0 )
+	  if ( essence_element_BER_length == 0 )
 	    result = RESULT_KLV_CODING;
 	}
 
       Overhead.WriteRaw((byte_t*)EssenceUL, SMPTE_UL_LENGTH);
-      Overhead.WriteBER(FrameBuf.Size(), BER_length);
+      Overhead.WriteBER(FrameBuf.Size(), essence_element_BER_length);
 
       if ( ASDCP_SUCCESS(result) )
 	result = File.Writev(Overhead.Data(), Overhead.Length());
