@@ -151,6 +151,23 @@ command-line utilities all respond to -h.
 
 Change History
 
+2018-10-15 - 2.10.31
+ o NOTE: Use of MXFGCGenericEssenceMultipleMappings in AS-02 files is not
+   defined by standards and will soon be withdrawn from this library. If you
+   would like to experience this change now, define the macro
+   ASDCP_GCMULTI_PATCH
+ o Removed PIMD support (unused prototype)
+ o Returned the DataEssenceCoding UL version byte to "5" in Atmos files
+ o Fixed ColorPrimaries_ACES UL version byte
+ o Added "FSKSync" audio channel label to the MCA label generator
+ o SMPTE RDD 45 requires a minimum BER encoding length of five (5) bytes for
+   Content Element packets. The Write_EKLV_Packet() API has been modified to
+   allow the specification of this value. All existing wrapping modules have
+   been changed to conform to the new API, and all continue to use four (4)
+   as the minimum BER encoding length. Write_EKLV_Packet() will continue to
+   generate BER encodings with a length greater than the specified minimum for
+   payloads that are larger than values encoded using the specified minimum.
+
 
 2018-09-14 - 2.9.30
  o Fixes wrong MajorVersion in Preface
