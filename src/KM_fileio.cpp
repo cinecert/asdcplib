@@ -762,6 +762,55 @@ Kumu::FileWriter::Writev(const byte_t* buf, ui32_t buf_len)
 
 
 #ifdef KM_WIN32
+
+//
+Kumu::Result_t
+Kumu::wbstr_to_utf8(const Kumu::ByteString& in, std::string& out)
+{
+  out.erase();
+  assert(in.Length()%sizeof(wchar_t)==0);
+  const wchar_t* p = (const wchar_t*)in.RoData();
+
+  int stringLength = static_cast<int>( in.Length() );
+  int len = WideCharToMultiByte(CP_UTF8, 0, p, stringLength, NULL, 0, NULL, NULL);
+  char *mb_buf = new char[len];
+  WideCharToMultiByte(CP_UTF8, 0, p, stringLength, mb_buf, len, NULL, NULL);
+  out = mb_buf;
+  delete [] mb_buf;
+  return RESULT_OK;
+}
+
+//
+Kumu::Result_t
+Kumu::utf8_to_wbstr(const std::string& in, Kumu::ByteString& out)
+{
+  Result_t result = out.Capacity((in.size()+1)*sizeof(wchar_t));
+
+  if ( KM_FAILURE(result) )
+    {
+      return result;
+    }
+
+  assert(in.size()*sizeof(wchar_t)<=out.Capacity());
+  const char* read_pos = in.c_str();
+  wchar_t character, *write_pos = (wchar_t*)out.Data();
+
+  int stringLength = static_cast<int>( in.length() ) + 1;
+  int len = MultiByteToWideChar(CP_UTF8, 0, in.c_str(), stringLength, 0, 0);
+  result = out.Capacity(len*sizeof(wchar_t));
+  if ( KM_FAILURE(result) )
+    {
+      return result;
+    }
+  MultiByteToWideChar(CP_UTF8, 0, in.c_str(), stringLength, write_pos, len);
+  out.Length(len*sizeof(wchar_t));
+
+  return RESULT_OK;
+}
+
+#endif
+
+
 //------------------------------------------------------------------------------------------
 //
 
@@ -769,11 +818,19 @@ Kumu::Result_t
 Kumu::FileReader::OpenRead(const std::string& filename) const
 {
   const_cast<FileReader*>(this)->m_Filename = filename;
-  
+  ByteString wb_filename;
+  Result_t result = utf8_to_wbstr(m_Filename, wb_filename);
+
+  if ( KM_FAILURE(result) )
+    {
+      return result;
+    }
+
   // suppress popup window on error
   UINT prev = ::SetErrorMode(SEM_FAILCRITICALERRORS|SEM_NOOPENFILEERRORBOX);
 
-  const_cast<FileReader*>(this)->m_Handle = ::CreateFileA(filename.c_str(),
+  const_cast<FileReader*>(this)->m_Handle =
+            ::CreateFileW((wchar_t*)wb_filename.RoData(),
 			  (GENERIC_READ),                // open for reading
 			  FILE_SHARE_READ,               // share for reading
 			  NULL,                          // no security
@@ -888,16 +945,24 @@ Kumu::FileReader::Read(byte_t* buf, ui32_t buf_len, ui32_t* read_count) const
 //------------------------------------------------------------------------------------------
 //
 
+
 //
 Kumu::Result_t
 Kumu::FileWriter::OpenWrite(const std::string& filename)
 {
   m_Filename = filename;
-  
+  ByteString wb_filename;
+  Result_t result = utf8_to_wbstr(m_Filename, wb_filename);
+
+  if ( KM_FAILURE(result) )
+    {
+      return result;
+    }
+
   // suppress popup window on error
   UINT prev = ::SetErrorMode(SEM_FAILCRITICALERRORS|SEM_NOOPENFILEERRORBOX);
 
-  m_Handle = ::CreateFileA(filename.c_str(),
+  m_Handle = ::CreateFileW((wchar_t*)wb_filename.RoData(),
 			  (GENERIC_WRITE|GENERIC_READ),  // open for reading
 			  FILE_SHARE_READ,               // share for reading
 			  NULL,                          // no security

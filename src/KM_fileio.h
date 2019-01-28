@@ -300,6 +300,16 @@ namespace Kumu
   Result_t WriteBufferIntoFile(const Kumu::ByteString& Buffer, const std::string& Filename);
 
 
+#ifdef KM_WIN32
+  //------------------------------------------------------------------------------------------
+  // wide char support for win32 file I/O
+  //------------------------------------------------------------------------------------------
+
+  //
+  Result_t wbstr_to_utf8(const Kumu::ByteString& in, std::string& out);
+  Result_t utf8_to_wbstr(const std::string& in, Kumu::ByteString& out);
+#endif
+
   //------------------------------------------------------------------------------------------
   // File I/O
   //------------------------------------------------------------------------------------------
