@@ -279,11 +279,14 @@ ASDCP::MXF::UTF16String::Unarchive(Kumu::MemIOReader* Reader)
   erase();
   const ui16_t* p = (ui16_t*)Reader->CurrentData();
   ui32_t length = Reader->Remainder() / 2;
-  char mb_buf[MB_LEN_MAX+1];
+  char mb_buf[MB_LEN_MAX];
+
+  mbstate_t ps;
+  memset(&ps, 0, sizeof(mbstate_t));
 
   for ( ui32_t i = 0; i < length; i++ )
     {
-      int count = wctomb(mb_buf, KM_i16_BE(p[i]));
+      int count = wcrtomb(mb_buf, KM_i16_BE(p[i]), &ps);
 
       if ( count == -1 )
 	{
@@ -316,9 +319,12 @@ ASDCP::MXF::UTF16String::Archive(Kumu::MemIOWriter* Writer) const
   ui32_t length = size();
   ui32_t i = 0;
 
+  mbstate_t ps;
+  memset(&ps, 0, sizeof(mbstate_t));
+
   while ( i < length )
     {
-      int count = mbtowc(&wcp, mbp+i, remainder);
+      int count = mbrtowc(&wcp, mbp+i, remainder, &ps);
 
       if ( count == -1 )
 	{

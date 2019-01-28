@@ -68,3 +68,5 @@ src/kmrandgen
 src/kmuuidgen
 src/pinkwave
 src/wavesplit
+src/phdr-unwrap
+src/phdr-wrap
