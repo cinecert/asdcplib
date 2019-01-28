@@ -808,8 +808,6 @@ Kumu::utf8_to_wbstr(const std::string& in, Kumu::ByteString& out)
   return RESULT_OK;
 }
 
-#endif
-
 
 //------------------------------------------------------------------------------------------
 //
