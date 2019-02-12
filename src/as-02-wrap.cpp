@@ -176,8 +176,8 @@ Options:\n\
   -t <min>          - Set RGB component minimum code value (default: 0)\n\
   -T <max>          - Set RGB component maximum code value (default: 1023)\n\
   -u                - Print UL catalog to stdout\n\
-  -u <URI>          - ISXD (RDD47) document URI (use 'auto' to read the\n\
-                      namespace name from the first edit unit\n\
+  -U <URI>          - ISXD (RDD47) document URI (use 'auto' to read the\n\
+                      namespace name from the first edit unit)\n\
   -v                - Verbose, prints informative messages to stderr\n\
   -W                - Read input file only, do not write source file\n\
   -x <int>          - Horizontal subsampling degree (default: 2)\n\

@@ -762,6 +762,7 @@ Kumu::FileWriter::Writev(const byte_t* buf, ui32_t buf_len)
 
 
 #ifdef KM_WIN32
+#ifdef KM_WIN32_UTF8
 
 //
 Kumu::Result_t
@@ -808,6 +809,7 @@ Kumu::utf8_to_wbstr(const std::string& in, Kumu::ByteString& out)
   return RESULT_OK;
 }
 
+#endif // KM_WIN32_UTF8
 
 //------------------------------------------------------------------------------------------
 //
@@ -816,6 +818,7 @@ Kumu::Result_t
 Kumu::FileReader::OpenRead(const std::string& filename) const
 {
   const_cast<FileReader*>(this)->m_Filename = filename;
+#ifdef KM_WIN32_UTF8
   ByteString wb_filename;
   Result_t result = utf8_to_wbstr(m_Filename, wb_filename);
 
@@ -823,12 +826,17 @@ Kumu::FileReader::OpenRead(const std::string& filename) const
     {
       return result;
     }
+#endif
 
   // suppress popup window on error
   UINT prev = ::SetErrorMode(SEM_FAILCRITICALERRORS|SEM_NOOPENFILEERRORBOX);
 
+#ifdef KM_WIN32_UTF8
   const_cast<FileReader*>(this)->m_Handle =
             ::CreateFileW((wchar_t*)wb_filename.RoData(),
+#else
+  const_cast<FileReader*>(this)->m_Handle = ::CreateFileA(filename.c_str(),
+#endif
 			  (GENERIC_READ),                // open for reading
 			  FILE_SHARE_READ,               // share for reading
 			  NULL,                          // no security
@@ -949,6 +957,7 @@ Kumu::Result_t
 Kumu::FileWriter::OpenWrite(const std::string& filename)
 {
   m_Filename = filename;
+#ifdef KM_WIN32_UTF8
   ByteString wb_filename;
   Result_t result = utf8_to_wbstr(m_Filename, wb_filename);
 
@@ -956,11 +965,16 @@ Kumu::FileWriter::OpenWrite(const std::string& filename)
     {
       return result;
     }
+#endif
 
   // suppress popup window on error
   UINT prev = ::SetErrorMode(SEM_FAILCRITICALERRORS|SEM_NOOPENFILEERRORBOX);
 
+#ifdef KM_WIN32_UTF8
   m_Handle = ::CreateFileW((wchar_t*)wb_filename.RoData(),
+#else
+  m_Handle = ::CreateFileA(filename.c_str(),
+#endif
 			  (GENERIC_WRITE|GENERIC_READ),  // open for reading
 			  FILE_SHARE_READ,               // share for reading
 			  NULL,                          // no security

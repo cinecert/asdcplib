@@ -289,7 +289,7 @@ AS_02::ISXD::MXFWriter::h__Writer::OpenWrite(const std::string& filename, const 
 					     const ui32_t& PartitionSpace_sec, const ui32_t& HeaderSize)
 {
   m_DataEssenceDescriptor = new ISXDDataEssenceDescriptor(m_Dict);
-  m_DataEssenceDescriptor->DataEssenceCoding = m_Dict->ul(MDD_FrameWrappedISXDContainer);
+  m_DataEssenceDescriptor->DataEssenceCoding = m_Dict->ul(MDD_UTF_8_Text_DataEssenceCoding);
   m_DataEssenceDescriptor->SampleRate = edit_rate;
   m_DataEssenceDescriptor->NamespaceURI = isxd_document_namespace;
 
@@ -336,7 +336,7 @@ AS_02::ISXD::MXFWriter::h__Writer::SetSourceStream(const std::string& label, con
 
   if ( KM_SUCCESS(result) )
     {
-      result = WriteAS02Header(label, UL(m_Dict->ul(MDD_FrameWrappedISXDData)),
+      result = WriteAS02Header(label, UL(m_Dict->ul(MDD_FrameWrappedISXDContainer)),
 			       PICT_DEF_LABEL, UL(m_EssenceUL), UL(m_Dict->ul(MDD_DataDataDef)),
 			       edit_rate, derive_timecode_rate_from_edit_rate(edit_rate));
 
