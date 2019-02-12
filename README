@@ -151,6 +151,18 @@ command-line utilities all respond to -h.
 
 Change History
 
+2019-02-12 - 2.10.32 -- bug fixes
+ o Fixed parsing of as-02-wrap -tfr (ACES) option value
+ o Fixed ISXD bugs:
+    o Incorrect UTF_8_Text_DataEssenceCoding UL
+    o Incorrect ISXDDataEssenceDescriptor_NamespaceURI UL
+    o Incorrect use of FrameWrappedISXDData UL
+    o Incorrect use of FrameWrappedISXDContainer UL
+ o Added wide-char support for filenames on Win32, allows UTF-8 characters in
+   calls to Kumu::File*::Open*(). The macro KM_WIN32_UTF8 must be defined to
+   enable this feature.
+
+
 2018-10-15 - 2.10.31
  o NOTE: Use of MXFGCGenericEssenceMultipleMappings in AS-02 files is not
    defined by standards and will soon be withdrawn from this library. If you
