@@ -473,12 +473,12 @@ public:
     std::list<std::string> range_tokens = Kumu::km_token_split(arg, ",");
     if ( range_tokens.size() != 2 )
       {
-	fprintf(stderr, "Expecting a luminance pair.\n");
+	fprintf(stderr, "Expecting a code value pair.\n");
 	return false;
       }
 
-    if ( ! set_luminance_from_token(range_tokens.front(), target_frame_min_ref) ) return false;
-    if ( ! set_luminance_from_token(range_tokens.back(), target_frame_max_ref) ) return false;
+    target_frame_min_ref = strtol(range_tokens.front().c_str(), 0 , 10);
+    target_frame_max_ref = strtol(range_tokens.back().c_str(), 0 , 10);
 
     return true;
   }
