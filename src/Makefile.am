@@ -173,50 +173,6 @@ libphdr_la_LIBADD = libasdcp.la libkumu.la
 libphdr_la_CPPFLAGS = -DASDCP_PLATFORM=\"@host@\"
 endif
 
-# Python extension
-if PYTHON_USE
-lib_LTLIBRARIES += libpyasdcp.la
-
-nodist_libpyasdcp_la_SOURCES = \
-	kumu_python.cpp \
-	kumu_python_list.cpp \
-	kumu_python.h \
-	asdcp_python.cpp \
-	asdcp_python.h \
-	asdcp_python_descriptor.cpp \
-	asdcp_python_misc.cpp \
-	asdcp_python_writerinfo.h \
-	asdcp_wrappers.h \
-	asdcp_python_mxf.cpp \
-	asdcp_python_mxf.h \
-	asdcp_python_mxf_text.cpp \
-	asdcp_python_mxf_metadata.cpp
-
-
-libpyasdcp_la_CPPFLAGS = @PYTHON_CPPFLAGS@
-libpyasdcp_la_LDFLAGS = @PYTHON_LSPEC@  -release @VERSION@
-libpyasdcp_la_LIBADD = libkumu.la libasdcp.la
-
-if USE_AS_02
-libpyasdcp_la_LIBADD	+= libas02.la
-endif
-
-pyexecdir = @PYTHON_EXECDIR@
-pyexec_includedir = $(prefix)/include
-nodist_pyexec_include_HEADERS = kumu_python.h asdcp_python.h asdcp_wrappers.h
-pyexec_LTLIBRARIES = kumu.la asdcp.la
-
-nodist_kumu_la_SOURCES = pykumu.cpp kumu_python.h
-kumu_la_CPPFLAGS = @PYTHON_CPPFLAGS@
-kumu_la_LDFLAGS = @PYTHON_LSPEC@ -avoid-version -module
-kumu_la_LIBADD = libpyasdcp.la
-
-nodist_asdcp_la_SOURCES = pyasdcp.cpp kumu_python.h asdcp_python.h asdcp_wrappers.h
-asdcp_la_CPPFLAGS = @PYTHON_CPPFLAGS@
-asdcp_la_LDFLAGS = @PYTHON_LSPEC@ -avoid-version -module
-asdcp_la_LIBADD = libpyasdcp.la
-endif
-
 # list of programs to be built and installed
 bin_PROGRAMS = \
 	asdcp-wrap \
@@ -352,30 +308,9 @@ if !FREEDIST
 if DEV_HEADERS
 EXTRA_DIST += $(nodist_libasdcp_la_SOURCES) $(nodist_tt_xform_SOURCES)
 endif
-if PYTHON_USE
-EXTRA_DIST += $(nodist_pyexec_include_HEADERS) $(nodist_libpyasdcp_la_SOURCES) $(nodist_kumu_la_SOURCES) $(nodist_asdcp_la_SOURCES)
-endif
 endif
 
-# source files that are themselves built
-BUILT_SOURCES = Metadata.h Metadata.cpp MDD.h MDD.cpp
-# files to be removed with "make maintainer-clean"
-MAINTAINERCLEANFILES = Metadata.h Metadata.cpp MDD.h MDD.cpp
-
-# build commands for built sources
-# dependencies: $(srcdir)/ullist.pl $(srcdir)/ULList.xml $(srcdir)/dict.xml $(srcdir)/DMS_Crypto.xml
-MDD.h:
-	$(srcdir)/ullist.pl $(srcdir)/ULList.xml $(srcdir)/dict.xml $(srcdir)/DMS_Crypto.xml > MDD.h
-# dependencies: $(srcdir)/ullist.pl $(srcdir)/ULList.xml $(srcdir)/dict.xml $(srcdir)/DMS_Crypto.xml
-MDD.cpp:
-	$(srcdir)/ullist.pl -s $(srcdir)/ULList.xml $(srcdir)/dict.xml $(srcdir)/DMS_Crypto.xml > MDD.cpp
-# dependencies: $(srcdir)/Metadata_h.tt2 $(srcdir)/mxfgen.pl $(srcdir)/MXF_def.pl
-Metadata.h:
-	$(srcdir)/mxfgen.pl $(srcdir)/MXF_def.pl $(srcdir)/Metadata_h.tt2 > Metadata.h
-# dependencies:  Metadata.h $(srcdir)/Metadata_cpp.tt2
-Metadata.cpp:
-	$(srcdir)/mxfgen.pl $(srcdir)/MXF_def.pl $(srcdir)/Metadata_cpp.tt2 > Metadata.cpp
 
 #
-#
+# end Makefile.am
 #

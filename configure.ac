@@ -68,10 +68,7 @@ fi
 AX_LIB_OPENSSL([0.9.7])
 AX_LIB_EXPAT
 AX_LIB_XERCES
-#AM_PATH_PYTHON([2.3], , [:])
-AZ_PYTHON_DEFAULT
-AZ_PYTHON_WITH
-AM_CONDITIONAL([HAVE_PYTHON], [test "$PYTHON" != :])
+
 AC_ARG_ENABLE([freedist],
      [  --enable-freedist    ensure source distribution is of BSD-licensed code],
      [case "${enableval}" in
