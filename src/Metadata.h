@@ -658,9 +658,9 @@ namespace ASDCP
 	public:
 	  const Dictionary*& m_Dict;
           UL DataDefinition;
-          ui64_t EventStartPosition;
-          ui64_t Duration;
-          UTF16String EventComment;
+          optional_property<ui64_t > Duration;
+          optional_property<ui64_t > EventStartPosition;
+          optional_property<UTF16String > EventComment;
           UUID DMFramework;
 
       DMSegment(const Dictionary*& d);
