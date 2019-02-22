@@ -2538,7 +2538,7 @@ MPEG2VideoDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 
 //
 
-DMSegment::DMSegment(const Dictionary*& d) : InterchangeObject(d), m_Dict(d), EventStartPosition(0), Duration(0)
+DMSegment::DMSegment(const Dictionary*& d) : InterchangeObject(d), m_Dict(d)
 {
   assert(m_Dict);
   m_UL = m_Dict->ul(MDD_DMSegment);
@@ -2559,9 +2559,18 @@ DMSegment::InitFromTLVSet(TLVReader& TLVSet)
   assert(m_Dict);
   Result_t result = InterchangeObject::InitFromTLVSet(TLVSet);
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(DMSegment, DataDefinition));
-  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadUi64(OBJ_READ_ARGS(DMSegment, EventStartPosition));
-  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadUi64(OBJ_READ_ARGS(DMSegment, Duration));
-  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(DMSegment, EventComment));
+  if ( ASDCP_SUCCESS(result) ) { 
+    result = TLVSet.ReadUi64(OBJ_READ_ARGS_OPT(DMSegment, Duration));
+    Duration.set_has_value( result == RESULT_OK );
+  }
+  if ( ASDCP_SUCCESS(result) ) { 
+    result = TLVSet.ReadUi64(OBJ_READ_ARGS_OPT(DMSegment, EventStartPosition));
+    EventStartPosition.set_has_value( result == RESULT_OK );
+  }
+  if ( ASDCP_SUCCESS(result) ) {
+    result = TLVSet.ReadObject(OBJ_READ_ARGS_OPT(DMSegment, EventComment));
+    EventComment.set_has_value( result == RESULT_OK );
+  }
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(DMSegment, DMFramework));
   return result;
 }
@@ -2573,9 +2582,9 @@ DMSegment::WriteToTLVSet(TLVWriter& TLVSet)
   assert(m_Dict);
   Result_t result = InterchangeObject::WriteToTLVSet(TLVSet);
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(DMSegment, DataDefinition));
-  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi64(OBJ_WRITE_ARGS(DMSegment, EventStartPosition));
-  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi64(OBJ_WRITE_ARGS(DMSegment, Duration));
-  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(DMSegment, EventComment));
+  if ( ASDCP_SUCCESS(result)  && ! Duration.empty() ) result = TLVSet.WriteUi64(OBJ_WRITE_ARGS_OPT(DMSegment, Duration));
+  if ( ASDCP_SUCCESS(result)  && ! EventStartPosition.empty() ) result = TLVSet.WriteUi64(OBJ_WRITE_ARGS_OPT(DMSegment, EventStartPosition));
+  if ( ASDCP_SUCCESS(result)  && ! EventComment.empty() ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS_OPT(DMSegment, EventComment));
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(DMSegment, DMFramework));
   return result;
 }
@@ -2586,8 +2595,8 @@ DMSegment::Copy(const DMSegment& rhs)
 {
   InterchangeObject::Copy(rhs);
   DataDefinition = rhs.DataDefinition;
-  EventStartPosition = rhs.EventStartPosition;
   Duration = rhs.Duration;
+  EventStartPosition = rhs.EventStartPosition;
   EventComment = rhs.EventComment;
   DMFramework = rhs.DMFramework;
 }
@@ -2604,9 +2613,15 @@ DMSegment::Dump(FILE* stream)
 
   InterchangeObject::Dump(stream);
   fprintf(stream, "  %22s = %s\n",  "DataDefinition", DataDefinition.EncodeString(identbuf, IdentBufferLen));
-  fprintf(stream, "  %22s = %s\n",  "EventStartPosition", i64sz(EventStartPosition, identbuf));
-  fprintf(stream, "  %22s = %s\n",  "Duration", i64sz(Duration, identbuf));
-  fprintf(stream, "  %22s = %s\n",  "EventComment", EventComment.EncodeString(identbuf, IdentBufferLen));
+  if ( ! Duration.empty() ) {
+    fprintf(stream, "  %22s = %s\n",  "Duration", i64sz(Duration.get(), identbuf));
+  }
+  if ( ! EventStartPosition.empty() ) {
+    fprintf(stream, "  %22s = %s\n",  "EventStartPosition", i64sz(EventStartPosition.get(), identbuf));
+  }
+  if ( ! EventComment.empty() ) {
+    fprintf(stream, "  %22s = %s\n",  "EventComment", EventComment.get().EncodeString(identbuf, IdentBufferLen));
+  }
   fprintf(stream, "  %22s = %s\n",  "DMFramework", DMFramework.EncodeString(identbuf, IdentBufferLen));
 }
 
