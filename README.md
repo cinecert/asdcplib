@@ -43,6 +43,17 @@ anything, or, in some cases, understand what properties are required
 in a particular supported use case (e.g., selecting audio channel labels.)
 
 
+## Libraries
+
+`libkumu.dylib` - Platform compatibility layer.
+
+`libasdcp.dylib` - SMPTE ST 429 (DCP) and JPEG Interop DCP.
+
+`libas02.dylib` - SMPTE ST 2067 (IMF).
+
+`libphdr.dylib` - Dolby Vision track file. Deprecated but maintained.
+
+
 ## CLI Programs
 
 ### Standard Utilities
