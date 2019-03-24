@@ -42,6 +42,35 @@ of this work should be well understood if you want to tinker with
 anything, or, in some cases, understand what properties are required
 in a particular supported use case (e.g., selecting audio channel labels.)
 
+### Build Procedure Change for Auto Tools
+
+You can ignore this if you are using CMake or one of the win32 build
+methods.
+
+As of release 2.10.32 the release archive file will no longer contain
+the result of running `autoreconf`. This places a new requirement on
+the target platform, that `autoreconf` and friends are installed. This
+should not be an issue for most users. If it is, you can roll your own
+auto-tooled version by untarring the distribution and running
+`autoreconf` in its root directory as follows:
+
+```sh
+autoreconf -if
+./configure --enable-freedist --enable-as-02
+make
+make dist
+```
+
+## Libraries
+
+`libkumu.dylib` - Platform compatibility layer.
+
+`libasdcp.dylib` - SMPTE ST 429 (DCP) and JPEG Interop DCP.
+
+`libas02.dylib` - SMPTE ST 2067 (IMF).
+
+`libphdr.dylib` - Dolby Vision track file. Deprecated but maintained.
+
 
 ## CLI Programs
 
@@ -73,6 +102,7 @@ in a particular supported use case (e.g., selecting audio channel labels.)
 
 `j2c-test` - Displays information about JP2K codestreams.
 
+
 ### PHDR
 
 An experimental feature, Prototype for High Dynamic Range is a wrapper
@@ -99,7 +129,7 @@ on [SourceForge](https://sourceforge.net/projects/asdcplib) between
 [CineCert](https://www.cinecert.com/asdcplib/download). As of late
 February 2019, its new home is on [github](https://github.com/cinecert/asdcplib).
 
-In the eraliest days, the project depended upon the
+In the earliest days, the project depended upon the
 [mxflib](http://sourceforge.net/projects/mxflib) project. Because of
 its focus on covering the whole of the MXF specifications, mxflib is
 considerably larger and more complex that what was required for the
