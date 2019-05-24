@@ -319,7 +319,7 @@ AS_02::ISXD::MXFWriter::h__Writer::OpenWrite(const std::string& filename, const 
   return result;
 }
 
-// Automatically sets the MXF file's metadata from the first jpeg codestream stream.
+// Automatically sets the MXF file's metadata from the first ISXD data fragment stream.
 Result_t
 AS_02::ISXD::MXFWriter::h__Writer::SetSourceStream(const std::string& label, const ASDCP::Rational& edit_rate)
 {
