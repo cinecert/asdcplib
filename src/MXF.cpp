@@ -125,6 +125,11 @@ ASDCP::MXF::RIP::InitFromFile(const Kumu::FileReader& Reader)
 
   if ( ASDCP_SUCCESS(result) )
     {
+      if (m_ValueLength < 4)
+      {
+        DefaultLogSink().Error("RIP is too short.\n");
+        return RESULT_FAIL;
+      }
       Kumu::MemIOReader MemRDR(m_ValueStart, m_ValueLength - 4);
       result = PairArray.Unarchive(&MemRDR) ? RESULT_OK : RESULT_KLV_CODING(__LINE__, __FILE__);
     }
@@ -448,6 +453,11 @@ ASDCP::MXF::Primer::InitFromBuffer(const byte_t* p, ui32_t l)
 
   if ( ASDCP_SUCCESS(result) )
     {
+      if (m_ValueStart + m_ValueLength > p + l)
+      {
+        DefaultLogSink().Error("Primer entry too long.\n");
+        return RESULT_FAIL;
+      }
       Kumu::MemIOReader MemRDR(m_ValueStart, m_ValueLength);
       result = LocalTagEntryBatch.Unarchive(&MemRDR) ? RESULT_OK : RESULT_KLV_CODING(__LINE__, __FILE__);
     }
@@ -1380,6 +1390,11 @@ ASDCP::MXF::InterchangeObject::InitFromBuffer(const byte_t* p, ui32_t l)
 
       if ( ASDCP_SUCCESS(result) )
 	{
+    if (m_ValueStart + m_ValueLength > p  + l)
+    {
+      DefaultLogSink().Error("Interchange Object value extends past buffer length.\n");
+      return RESULT_FAIL;
+    }
 	  TLVReader MemRDR(m_ValueStart, m_ValueLength, m_Lookup);
 	  result = InitFromTLVSet(MemRDR);
 	}
@@ -1440,9 +1455,24 @@ ASDCP::MXF::InterchangeObject::IsA(const byte_t* label)
 
 
 //------------------------------------------------------------------------------------------
+struct FactoryCompareUL
+{
+    bool operator()(const ASDCP::UL& lhs, const ASDCP::UL& rhs) const
+    {
+        ui32_t test_size = lhs.Size() < rhs.Size() ? lhs.Size() : rhs.Size();
 
+        for (ui32_t i = 0; i < test_size; i++)
+        {
+            if (i == 7) continue; // skip version to be symmetrical with UL::operator==
+            if (lhs.Value()[i] != rhs.Value()[i])
+                return lhs.Value()[i] < rhs.Value()[i];
+        }
 
-typedef std::map<ASDCP::UL, ASDCP::MXF::MXFObjectFactory_t>FactoryMap_t;
+        return false;
+    }
+};
+
+typedef std::map<ASDCP::UL, ASDCP::MXF::MXFObjectFactory_t, FactoryCompareUL>FactoryMap_t;
 typedef FactoryMap_t::iterator FLi_t;
 
 //
@@ -1503,7 +1533,7 @@ ASDCP::MXF::CreateObject(const Dictionary*& Dict, const UL& label)
 	}
     }
 
-  FLi_t i = s_FactoryList.find(label.Value());
+  FLi_t i = s_FactoryList.find(label);
 
   if ( i == s_FactoryList.end() )
     return new InterchangeObject(Dict);
