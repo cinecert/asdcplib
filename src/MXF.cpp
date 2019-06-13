@@ -128,7 +128,7 @@ ASDCP::MXF::RIP::InitFromFile(const Kumu::FileReader& Reader)
       if (m_ValueLength < 4)
       {
         DefaultLogSink().Error("RIP is too short.\n");
-        return RESULT_FAIL;
+        return RESULT_KLV_CODING(__LINE__, __FILE__);
       }
       Kumu::MemIOReader MemRDR(m_ValueStart, m_ValueLength - 4);
       result = PairArray.Unarchive(&MemRDR) ? RESULT_OK : RESULT_KLV_CODING(__LINE__, __FILE__);
@@ -456,7 +456,7 @@ ASDCP::MXF::Primer::InitFromBuffer(const byte_t* p, ui32_t l)
       if (m_ValueStart + m_ValueLength > p + l)
       {
         DefaultLogSink().Error("Primer entry too long.\n");
-        return RESULT_FAIL;
+        return RESULT_KLV_CODING(__LINE__, __FILE__);
       }
       Kumu::MemIOReader MemRDR(m_ValueStart, m_ValueLength);
       result = LocalTagEntryBatch.Unarchive(&MemRDR) ? RESULT_OK : RESULT_KLV_CODING(__LINE__, __FILE__);
@@ -1390,11 +1390,12 @@ ASDCP::MXF::InterchangeObject::InitFromBuffer(const byte_t* p, ui32_t l)
 
       if ( ASDCP_SUCCESS(result) )
 	{
-    if (m_ValueStart + m_ValueLength > p  + l)
-    {
-      DefaultLogSink().Error("Interchange Object value extends past buffer length.\n");
-      return RESULT_FAIL;
-    }
+	  if ( ( m_ValueStart + m_ValueLength ) > ( p  + l ) )
+	    {
+	      DefaultLogSink().Error("Interchange Object value extends past buffer length.\n");
+	      return RESULT_KLV_CODING(__LINE__, __FILE__);
+	    }
+
 	  TLVReader MemRDR(m_ValueStart, m_ValueLength, m_Lookup);
 	  result = InitFromTLVSet(MemRDR);
 	}
