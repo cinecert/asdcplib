@@ -108,7 +108,7 @@ ASDCP::h__ASDCPReader::OpenMXFRead(const std::string& filename)
 	    }
 	}
 
-      if ( m_RIP.PairArray.front().ByteOffset != 0 )
+      if ( !m_RIP.PairArray.empty() && m_RIP.PairArray.front().ByteOffset != 0 )
 	{
 	  DefaultLogSink().Error("First Partition in RIP is not at offset 0.\n");
 	  result = RESULT_FORMAT;
