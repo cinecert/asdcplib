@@ -1255,8 +1255,8 @@ Kumu::ReadFileIntoString(const std::string& filename, std::string& outString, ui
 
       if ( fsize == 0 )
 	{
-	  DefaultLogSink().Error("%s: zero file size\n", filename.c_str());
-	  return RESULT_READFAIL;
+	  outString = "";
+	  return RESULT_OK;
 	}
 
       result = ReadBuf.Capacity((ui32_t)fsize);
