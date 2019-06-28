@@ -414,17 +414,23 @@ namespace ASDCP
 	  // Count the sequence length in because this is the sequence
 	  // value needed to  complete the HMAC.
 	  ASDCP::MXF::RIP::const_pair_iterator i;
-	  for ( i = m_RIP.PairArray.begin(); i != m_RIP.PairArray.end(); ++i, ++sequence )
+	  for ( i = m_RIP.PairArray.begin(); i != m_RIP.PairArray.end(); ++i)
 	    {
-	      if ( sid == i->BodySID )
-		{
-		  start_offset = i->ByteOffset;
-		}
-	      else if ( start_offset != 0 )
-		{
-		  end_offset = i->ByteOffset;
-		  break;
-		}
+              if ( sid == i->BodySID )
+                {
+                  assert( start_offset == 0);
+                  start_offset = i->ByteOffset;
+                }
+              else if ( start_offset != 0 )
+                {
+                  end_offset = i->ByteOffset;
+                  break;
+                }
+
+              if ( i->BodySID > 0 )
+                {
+                  ++sequence;
+                }
 	    }
 
 	  if ( start_offset == 0 || end_offset == 0 )
