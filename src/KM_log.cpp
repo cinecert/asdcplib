@@ -151,7 +151,8 @@ Kumu::StreamLogSink::WriteEntry(const LogEntry& Entry)
   if ( Entry.TestFilter(m_filter) )
     {
       Entry.CreateStringWithOptions(buf, m_options);
-      write(m_fd, buf.c_str(), buf.size());
+      ssize_t n = write(m_fd, buf.c_str(), buf.size());
+      assert(n==buf.size());
     }
 }
 
