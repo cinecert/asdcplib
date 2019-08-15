@@ -36,6 +36,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "ACES.h"
 #include "MPEG.h"
 #include "Wav.h"
+#include "KM_util.h"
 #include <iostream>
 #include <iomanip>
 
@@ -688,7 +689,33 @@ ASDCP::IntegrityPack::TestValues(const ASDCP::FrameBuffer& FB, const byte_t* Ass
   HMAC->Update(FB.RoData(), FB.Size() - HMAC_SIZE);
   HMAC->Finalize();
 
-  return HMAC->TestHMACValue(p);
+  Result_t result = RESULT_OK;
+  result = HMAC->TestHMACValue(p);
+
+  if (KM_FAILURE(result))
+    {
+      Result_t r = RESULT_OK;
+      char hmac_str[HMAC_SIZE*10];
+      char found_str[HMAC_SIZE*10];
+      byte_t hmac_buf[HMAC_SIZE];
+
+
+      Kumu::bin2hex(p, HMAC_SIZE, found_str, HMAC_SIZE*10);
+
+      r = HMAC->GetHMACValue(hmac_buf);
+      if ( KM_SUCCESS( r ) )
+        {
+          Kumu::bin2hex(hmac_buf, HMAC_SIZE, hmac_str, HMAC_SIZE*10);
+        }
+      else
+        {
+          snprintf(hmac_str, HMAC_SIZE*10, " - read error - ");
+        }
+
+      DefaultLogSink().Error("IntegrityPack failure: HMAC is %s, expecting %s.\n", found_str, hmac_str);
+    }
+
+  return result;
 }
 
 //
