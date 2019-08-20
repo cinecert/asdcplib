@@ -303,6 +303,18 @@ namespace Kumu
 	return false;
       }
 
+      inline bool operator>(const Identifier& rhs) const {
+	ui32_t test_size = xmin(rhs.Size(), SIZE);
+
+	for ( ui32_t i = 0; i < test_size; i++ )
+	  {
+	    if ( m_Value[i] != rhs.m_Value[i] )
+	      return m_Value[i] > rhs.m_Value[i];
+	  }
+	
+	return false;
+      }
+
       inline bool operator==(const Identifier& rhs) const {
 	if ( rhs.Size() != SIZE ) return false;
 	return ( memcmp(m_Value, rhs.m_Value, SIZE) == 0 );
