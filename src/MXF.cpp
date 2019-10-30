@@ -1760,6 +1760,7 @@ ASDCP::MXF::ASDCP_MCAConfigParser::ASDCP_MCAConfigParser(const Dictionary*& d) :
   m_LabelMap.insert(pair("FSKSync",   label_traits("FSK Sync"                      , true,  m_Dict->ul(MDD_DCAudioChannel_FSKSyncSignalChannel))));
   m_LabelMap.insert(pair("DBOX",  label_traits("D-BOX Motion Code Primary Stream"  , false, m_Dict->ul(MDD_DBOXMotionCodePrimaryStream))));
   m_LabelMap.insert(pair("DBOX2", label_traits("D-BOX Motion Code Secondary Stream", false, m_Dict->ul(MDD_DBOXMotionCodeSecondaryStream))));
+  m_LabelMap.insert(pair("SLVS",  label_traits("Sign Language Video Stream"        , false, m_Dict->ul(MDD_AudioChannelSLVS))));
 }
 
 //
