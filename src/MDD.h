@@ -554,6 +554,12 @@ namespace ASDCP {
 	MDD_ACESUncompressedMonoscopicWithAlpha, // 516
 	MDD_ACESFrameWrappedEssence, // 517
 	MDD_DCAudioChannel_FSKSyncSignalChannel, // 518
+	MDD_JPEG2000PictureSubDescriptor_J2KExtendedCapabilities, // 519
+	MDD_JPEG2000PictureSubDescriptor_J2KProfile, // 520
+	MDD_JPEG2000PictureSubDescriptor_J2KCorrespondingProfile, // 521
+	MDD_J2KExtendedCapabilities, // 522
+	MDD_HTJ2KPictureCodingScheme, // 523
+	MDD_HTJ2KPictureCodingSchemeGeneric, // 524
 	MDD_Max
     }; // enum MDD_t
 

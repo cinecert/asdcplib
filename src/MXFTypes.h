@@ -688,6 +688,31 @@ namespace ASDCP
 	  const char* EncodeString(char* str_buf, ui32_t buf_len) const;
 	};
 
+      class J2KExtendedCapabilities : public Kumu::IArchive
+        {
+        public:
+	  i8_t Pcap;
+	  i8_t Ccapi[16]; // this is certainly wrong, need the spec
+	
+	  bool HasValue() const { return true; }
+	  ui32_t ArchiveLength() const { return 0; }
+
+	  bool Archive(Kumu::MemIOWriter* Writer) const {
+	    return true;
+	  }
+
+	  bool Unarchive(Kumu::MemIOReader* Reader) {
+	    return true;
+	  }
+
+	  const char* EncodeString(char* str_buf, ui32_t buf_len) const
+	  {
+	    str_buf[0] = 0;
+	    return str_buf;
+	  }
+
+      };
+
     } // namespace MXF
 } // namespace ASDCP
 
