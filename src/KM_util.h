@@ -257,6 +257,35 @@ namespace Kumu
     };
 
   //
+  class ArchivableUi16 : public Kumu::IArchive
+    {
+      ui16_t m_Value;
+
+    public:
+      ArchivableUi16() : m_Value(0) {}
+      ArchivableUi16(const ui16_t& value) : m_Value(value) {}
+      virtual ~ArchivableUi16() {}
+
+      bool   HasValue() const { return true; }
+      ui32_t ArchiveLength() const { return sizeof(ui16_t); }
+
+      bool   Archive(MemIOWriter* Writer) const {
+	if ( Writer == 0 ) return false;
+	return Writer->WriteUi16BE(m_Value);
+      }
+
+      bool   Unarchive(MemIOReader* Reader) {
+	if ( Reader == 0 ) return false;
+	return Reader->ReadUi16BE(&m_Value);
+      }
+
+      const char* EncodeString(char* str_buf, ui32_t buf_len) const {
+	snprintf(str_buf, buf_len, "%hu", m_Value);
+	return str_buf;
+      }
+    };
+
+  //
   typedef Kumu::ArchivableList<ArchivableString> StringList;
 
   //
