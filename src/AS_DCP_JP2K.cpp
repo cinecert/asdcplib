@@ -106,6 +106,46 @@ ASDCP::JP2K::operator << (std::ostream& strm, const PictureDescriptor& PDesc)
   strm << "              SPqcd: " << Kumu::bin2hex(PDesc.QuantizationDefault.SPqcd, PDesc.QuantizationDefault.SPqcdLength, tmp_buf, MaxDefaults*2)
        << std::endl;
 
+  if (PDesc.Profile.N != 0) {
+	  strm << "Profile:" << std::endl;
+
+	  for (ui16_t i = 0; i < PDesc.Profile.N; i++) {
+		  strm << "              Pprf(" << (i + 1) << "): "
+			  << std::hex << std::showbase << PDesc.Profile.Pprf[i] << std::dec << std::noshowbase
+			  << std::endl;
+	  }
+  }
+
+  if (PDesc.CorrespondingProfile.N != 0) {
+	  strm << "Corresponding Profile:" << std::endl;
+
+	  for (ui16_t i = 0; i < PDesc.CorrespondingProfile.N; i++) {
+
+		  strm << "              Pcpf(" << (i + 1) << "): "
+			  << std::hex << std::showbase <<  PDesc.CorrespondingProfile.Pcpf[i] << std::dec << std::noshowbase
+			  << std::endl;
+	  }
+  }
+
+  if (PDesc.ExtendedCapabilities.Pcap != 0) {
+
+	  strm << "Extended Capabilities:" << std::endl;
+
+
+	  strm << "                     Pcap:" << PDesc.ExtendedCapabilities.Pcap << std::endl;
+
+	  for (i32_t b = 0; b < JP2K::MaxCapabilities; b++) {
+
+		  if ((PDesc.ExtendedCapabilities.Pcap >> b) & 0x1) {
+
+			  strm << "              Ccap(" << (JP2K::MaxCapabilities - b) << "): " <<
+				  std::hex << std::showbase << PDesc.ExtendedCapabilities.Ccap[JP2K::MaxCapabilities - b - 1] << std::dec << std::noshowbase
+				  << std::endl;
+
+		  }
+	  }
+  }
+
   return strm;
 }
 
@@ -197,6 +237,38 @@ ASDCP::JP2K::PictureDescriptorDump(const PictureDescriptor& PDesc, FILE* stream)
 	  Kumu::bin2hex(PDesc.QuantizationDefault.SPqcd, PDesc.QuantizationDefault.SPqcdLength,
 			tmp_buf, MaxDefaults*2)
 	  );
+
+
+  if (PDesc.Profile.N != 0) {
+	  fprintf(stream, "               Profile:\n");
+
+	  for (ui16_t i = 0; i < PDesc.Profile.N; i++) {
+
+		  fprintf(stream, "              Pprf(%d): %hx\n", i + 1, PDesc.Profile.Pprf[i]);
+
+	  }
+  }
+
+  if (PDesc.CorrespondingProfile.N != 0) {
+	  fprintf(stream, "Corresponding Profile:\n");
+
+	  for (ui16_t i = 0; i < PDesc.CorrespondingProfile.N; i++) {
+		  fprintf(stream, "              Pcpf(%d): %hx\n", i + 1, PDesc.CorrespondingProfile.Pcpf[i]);
+
+	  }
+  }
+
+  fprintf(stream, "Extended Capabilities: %x\n", PDesc.ExtendedCapabilities.Pcap);
+
+	for (i32_t b = 0; b < JP2K::MaxCapabilities; b++) {
+
+		if ((PDesc.ExtendedCapabilities.Pcap >> b) & 0x1) {
+
+			fprintf(stream, "           Ccap(%d): %hx\n", JP2K::MaxCapabilities - b, PDesc.ExtendedCapabilities.Ccap[JP2K::MaxCapabilities - b - 1]);
+
+		}
+	}
+  
 }
 
 

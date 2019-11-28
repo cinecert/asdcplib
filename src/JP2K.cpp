@@ -37,45 +37,17 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 using Kumu::DefaultLogSink;
 
 
-// when indexed with the second byte of a marker code, this table will procuce one of
-// two values:
-//   0 - the marker is a standalone marker
-//   1 - the marker designates a marker segment
-//
-const byte_t MarkerSegmentMap[] =
-  {
-    /*      0   1   2   3   4   5   6   7      8   9   a   b   c   d   e   f */
-    /* 0 */ 0,  0,  0,  0,  0,  0,  0,  0,     0,  0,  0,  0,  0,  0,  0,  0, // 0
-    /* 1 */ 0,  0,  0,  0,  0,  0,  0,  0,     0,  0,  0,  0,  0,  0,  0,  0, // 1
-    /* 2 */ 0,  0,  0,  0,  0,  0,  0,  0,     0,  0,  0,  0,  0,  0,  0,  0, // 2
-    /* 3 */ 0,  0,  0,  0,  0,  0,  0,  0,     0,  0,  0,  0,  0,  0,  0,  0, // 3
-    /* 4 */ 0,  0,  0,  0,  0,  0,  0,  0,     0,  0,  0,  0,  0,  0,  0,  0, // 4
-    /* 5 */ 0,  1,  1,  1,  1,  1,  0,  1,     1,  0,  0,  0,  1,  1,  1,  1, // 5
-    /* 6 */ 1,  1,  0,  1,  1,  0,  0,  0,     0,  0,  0,  0,  0,  0,  0,  0, // 6
-    /* 7 */ 0,  0,  0,  0,  0,  0,  0,  0,     0,  0,  0,  0,  0,  0,  0,  0, // 7
-    /* 8 */ 0,  0,  0,  0,  0,  0,  0,  0,     0,  0,  0,  0,  0,  0,  0,  0, // 8
-    /* 9 */ 1,  1,  0,  0,  0,  0,  0,  0,     0,  0,  0,  0,  0,  0,  0,  0, // 9
-    /* a */ 0,  0,  0,  0,  0,  0,  0,  0,     0,  0,  0,  0,  0,  0,  0,  0, // a
-    /* b */ 0,  0,  0,  0,  0,  0,  0,  0,     0,  0,  0,  0,  0,  0,  0,  0, // b
-    /* c */ 0,  0,  0,  0,  0,  0,  0,  0,     0,  0,  0,  0,  0,  0,  0,  0, // c
-    /* d */ 0,  0,  0,  0,  0,  0,  0,  0,     0,  0,  0,  0,  0,  0,  0,  0, // d
-    /* e */ 0,  0,  0,  0,  0,  0,  0,  0,     0,  0,  0,  0,  0,  0,  0,  0, // e
-    /* f */ 0,  0,  0,  0,  0,  0,  0,  0,     0,  0,  0,  0,  0,  0,  0,  0, // f
-    /*      0   1   2   3   4   5   6   7      8   9   a   b   c   d   e   f */
-  };
-
-
 //
 ASDCP::Result_t
 ASDCP::JP2K::GetNextMarker(const byte_t** buf, JP2K::Marker& Marker)
 {
   assert((buf != 0) && (*buf != 0 ));
   
-  if ( **buf != 0xff )
+  if (*(*buf)++ != 0xff )
     return ASDCP::RESULT_FAIL;
 
-  Marker.m_IsSegment = (MarkerSegmentMap[*(++(*buf))] == 1);
   Marker.m_Type = (Marker_t)(0xff00 | *(*buf)++);
+  Marker.m_IsSegment = Marker.m_Type != MRK_SOC && Marker.m_Type != MRK_SOD && Marker.m_Type != MRK_EOC;
 
   if ( Marker.m_IsSegment )
     {
@@ -86,13 +58,13 @@ ASDCP::JP2K::GetNextMarker(const byte_t** buf, JP2K::Marker& Marker)
       *buf += Marker.m_DataSize;
     }
 
-
+  /* TODO: why is this here?
   if ( Marker.m_DataSize != 0 && Marker.m_DataSize < 3 )
     {
       DefaultLogSink().Error("Illegal data size: %u\n", Marker.m_DataSize);
       return ASDCP::RESULT_FAIL;
     }
-
+	*/
   return ASDCP::RESULT_OK;
 }
 
@@ -227,6 +199,78 @@ ASDCP::JP2K::Accessor::COM::Dump(FILE* stream) const
     }
 }
 
+//
+void
+ASDCP::JP2K::Accessor::PRF::Dump(FILE* stream) const
+{
+  if ( stream == 0 )
+    stream = stderr;
+
+  fprintf(stream, "PRF: \n");
+
+  if (N() == 0) {
+
+	  fprintf(stream, "     N/A");
+
+  } else {
+
+	  for (ui16_t i = 1; i <= N(); i++) {
+		  fprintf(stream, "pprf(%d): %d\n", i, pprf(i));
+	  }
+
+  }
+}
+
+//
+void
+ASDCP::JP2K::Accessor::CPF::Dump(FILE* stream) const
+{
+  if ( stream == 0 )
+    stream = stderr;
+
+  fprintf(stream, "CPF: \n");
+
+  if (N() == 0) {
+
+	  fprintf(stream, "     N/A");
+
+  } else {
+
+	  for (ui16_t i = 1; i <= N(); i++) {
+		  fprintf(stream, "pcpf(%d): %d\n", i, pcpf(i));
+	  }
+
+  }
+}
+
+
+//
+void
+ASDCP::JP2K::Accessor::CAP::Dump(FILE* stream) const
+{
+  if ( stream == 0 )
+    stream = stderr;
+
+  fprintf(stream, "CAP: \n");
+
+  ui32_t pcap = this->pcap();
+
+  if (pcap == 0) {
+
+	  fprintf(stream, "     None");
+
+  } else {
+
+	  for (i32_t b = 32, i = 1; b > 0; b--) {
+
+		  if ((pcap >> (32 - b)) & 0x1) {
+
+			  fprintf(stream, "     ccap(%d): %d\n", b, this->ccap(i++));
+
+		  }
+	  }
+  }
+}
 
 //-------------------------------------------------------------------------------------------------------
 //
@@ -274,6 +318,9 @@ ASDCP::JP2K::GetMarkerString(Marker_t m)
     case MRK_EPH: return "EPH: End of packet header"; break;
     case MRK_CRG: return "CRG: Component registration"; break;
     case MRK_COM: return "COM: Comment"; break;
+    case MRK_CPF: return "CPF: Corresponding profile"; break;
+    case MRK_CAP: return "CAP: Capabilities"; break;
+    case MRK_PRF: return "PRF: Profile"; break;
     }
 
   return "Unknown marker code";

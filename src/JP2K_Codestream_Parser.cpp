@@ -178,6 +178,71 @@ ASDCP::JP2K::ParseMetadataIntoDesc(const FrameBuffer& FB, PictureDescriptor& PDe
 	  memcpy(&PDesc.QuantizationDefault, NextMarker.m_Data, NextMarker.m_DataSize);
 	  PDesc.QuantizationDefault.SPqcdLength = NextMarker.m_DataSize - 1;
 	  break;
+
+	case MRK_CAP:
+	  {
+	    Accessor::CAP CAP_(NextMarker);
+	    
+			PDesc.ExtendedCapabilities.Pcap = CAP_.pcap();
+
+			for(i32_t b = 32, i = 1; b > 0; b--) {
+
+				if ( (PDesc.ExtendedCapabilities.Pcap >> (b - 1)) & 0x1 ) {
+
+					PDesc.ExtendedCapabilities.Ccap[32 - b] = CAP_.ccap(i++);
+
+				} else {
+
+					PDesc.ExtendedCapabilities.Ccap[32 - b] = 0;
+
+				}
+
+			}
+	  }
+	  break;
+
+		case MRK_PRF:
+	  {
+	    Accessor::PRF PRF_(NextMarker);
+
+		ui16_t n = PRF_.N();
+
+		if ( n > MaxPRFN )
+	    {
+	      DefaultLogSink().Error("Number (%d) of Pprf^i exceeds maximum supported\n", n);
+	      return RESULT_RAW_FORMAT;
+	    }
+
+			PDesc.Profile.N = n;
+
+			for(i32_t i = 0; i < n ; i++) {
+
+				PDesc.Profile.Pprf[i] = PRF_.pprf(i+1);
+			}
+	  }
+	  break;
+
+		case MRK_CPF:
+	  {
+	    Accessor::CPF CPF_(NextMarker);
+
+		ui16_t n = CPF_.N();
+
+		if ( n > MaxCPFN )
+	    {
+	      DefaultLogSink().Error("Number (%d) of Pcpf^i exceeds maximum supported\n", n);
+	      return RESULT_RAW_FORMAT;
+	    }
+
+			PDesc.CorrespondingProfile.N = n;
+
+			for(i32_t i = 0; i < n; i++) {
+
+				PDesc.CorrespondingProfile.Pcpf[i] = CPF_.pcpf(i+1);
+			}
+	  }
+	  break;
+
 	}
     }
 

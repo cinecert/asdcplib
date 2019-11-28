@@ -246,6 +246,21 @@ main(int argc, const char** argv)
 		{
 		  has_tlm = true;
 		}
+	      else if ( current_marker.m_Type == MRK_CAP )
+		{
+			Accessor::CAP CAP_(current_marker);
+			CAP_.Dump(stdout);
+		}
+	      else if ( current_marker.m_Type == MRK_PRF )
+		{
+			Accessor::PRF PRF_(current_marker);
+			PRF_.Dump(stdout);
+		}
+	      else if ( current_marker.m_Type == MRK_CPF )
+		{
+			Accessor::CPF CPF_(current_marker);
+			CPF_.Dump(stdout);
+		}
 	      else
 		{
 		  fprintf(stderr, "Unprocessed marker - %s\n", GetMarkerString(current_marker.m_Type));

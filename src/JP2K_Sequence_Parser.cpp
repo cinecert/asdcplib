@@ -251,6 +251,51 @@ operator==(const ASDCP::JP2K::CodingStyleDefault_t& lhs, const ASDCP::JP2K::Codi
 
 //
 bool
+operator==(const ASDCP::JP2K::ExtendedCapabilities_t& lhs, const ASDCP::JP2K::ExtendedCapabilities_t& rhs)
+{
+	if (lhs.Pcap != rhs.Pcap) return false;
+
+	for (ui32_t i = 0; i < JP2K::MaxCapabilities; i++)
+	{
+		if (lhs.Ccap[i] != rhs.Ccap[i])
+			return false;
+	}
+
+	return true;
+}
+
+//
+bool
+operator==(const ASDCP::JP2K::CorrespondingProfile_t& lhs, const ASDCP::JP2K::CorrespondingProfile_t& rhs)
+{
+	if (lhs.N != rhs.N) return false;
+
+	for (ui32_t i = 0; i < lhs.N; i++)
+	{
+		if (lhs.Pcpf[i] != rhs.Pcpf[i])
+			return false;
+	}
+
+	return true;
+}
+
+//
+bool
+operator==(const ASDCP::JP2K::Profile_t& lhs, const ASDCP::JP2K::Profile_t& rhs)
+{
+	if (lhs.N != rhs.N) return false;
+
+	for (ui32_t i = 0; i < lhs.N; i++)
+	{
+		if (lhs.Pprf[i] != rhs.Pprf[i])
+			return false;
+	}
+
+	return true;
+}
+
+//
+bool
 operator==(const ASDCP::JP2K::PictureDescriptor& lhs, const ASDCP::JP2K::PictureDescriptor& rhs)
 {
   if ( lhs.EditRate != rhs.EditRate ) return false;
@@ -271,6 +316,9 @@ operator==(const ASDCP::JP2K::PictureDescriptor& lhs, const ASDCP::JP2K::Picture
   if ( lhs.Csize != rhs.Csize ) return false;
   if ( ! ( lhs.CodingStyleDefault == rhs.CodingStyleDefault ) ) return false;
   if ( ! ( lhs.QuantizationDefault == rhs.QuantizationDefault ) ) return false;
+  if (!(lhs.Profile == rhs.Profile)) return false;
+  if (!(lhs.CorrespondingProfile == rhs.CorrespondingProfile)) return false;
+  if (!(lhs.ExtendedCapabilities == rhs.ExtendedCapabilities)) return false;
   
   for ( ui32_t i = 0; i < JP2K::MaxComponents; i++ )
     {

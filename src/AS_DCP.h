@@ -1048,6 +1048,9 @@ namespace ASDCP {
       const ui32_t MaxComponents = 3;
       const ui32_t MaxPrecincts = 32; // ISO 15444-1 Annex A.6.1
       const ui32_t MaxDefaults = 256; // made up
+      const ui8_t  MaxCapabilities = 32;
+			const ui16_t MaxPRFN = 4;
+			const ui16_t MaxCPFN = 4;
 
 #pragma pack(1)
       struct ImageComponent_t  // ISO 15444-1 Annex A.5.1
@@ -1085,6 +1088,25 @@ namespace ASDCP {
 	ui8_t  SPqcd[MaxDefaults];
 	ui8_t  SPqcdLength;
       };
+
+      struct ExtendedCapabilities_t // ISO 15444-1 Annex A.5.2
+      {
+	ui32_t  Pcap; // Pcap = 0 means that no extended capabilities are required
+	ui16_t  Ccap[MaxCapabilities]; // Ccap^i in ISO/IEC 15444-1 corresponds to Ccap[i -1]
+      };
+
+			struct Profile_t // ISO 15444-1
+      {
+	ui16_t  N; // N = 0 means that the profile is signaled through Rsiz exclusively
+	ui16_t  Pprf[MaxPRFN]; // Pprf^i in ISO/IEC 15444-1 corresponds to Pprf[i -1]
+      };
+
+			struct CorrespondingProfile_t // ISO 15444-1
+      {
+	ui16_t  N; // N = 0 means that no corresponding profile is signaled
+	ui16_t  Pcpf[MaxCPFN]; // Pcpf^i in ISO/IEC 15444-1 corresponds to Pcpf[i -1]
+      };
+
 #pragma pack()
 
       struct PictureDescriptor
@@ -1108,6 +1130,9 @@ namespace ASDCP {
 	ImageComponent_t      ImageComponents[MaxComponents];
 	CodingStyleDefault_t  CodingStyleDefault;
 	QuantizationDefault_t QuantizationDefault;
+  ExtendedCapabilities_t ExtendedCapabilities;
+  Profile_t   Profile;
+	CorrespondingProfile_t   CorrespondingProfile;    
       };
 
       // Print debugging information to std::ostream
