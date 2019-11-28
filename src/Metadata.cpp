@@ -2129,8 +2129,8 @@ JPEG2000PictureSubDescriptor::InitFromTLVSet(TLVReader& TLVSet)
     result = TLVSet.ReadObject(OBJ_READ_ARGS_OPT(JPEG2000PictureSubDescriptor, J2KExtendedCapabilities));
     J2KExtendedCapabilities.set_has_value( result == RESULT_OK );
   }
-  if ( ASDCP_SUCCESS(result) ) { 
-    result = TLVSet.ReadUi16(OBJ_READ_ARGS_OPT(JPEG2000PictureSubDescriptor, J2KProfile));
+  if ( ASDCP_SUCCESS(result) ) {
+    result = TLVSet.ReadObject(OBJ_READ_ARGS_OPT(JPEG2000PictureSubDescriptor, J2KProfile));
     J2KProfile.set_has_value( result == RESULT_OK );
   }
   if ( ASDCP_SUCCESS(result) ) { 
@@ -2161,7 +2161,7 @@ JPEG2000PictureSubDescriptor::WriteToTLVSet(TLVWriter& TLVSet)
   if ( ASDCP_SUCCESS(result)  && ! QuantizationDefault.empty() ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS_OPT(JPEG2000PictureSubDescriptor, QuantizationDefault));
   if ( ASDCP_SUCCESS(result)  && ! J2CLayout.empty() ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS_OPT(JPEG2000PictureSubDescriptor, J2CLayout));
   if ( ASDCP_SUCCESS(result)  && ! J2KExtendedCapabilities.empty() ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS_OPT(JPEG2000PictureSubDescriptor, J2KExtendedCapabilities));
-  if ( ASDCP_SUCCESS(result)  && ! J2KProfile.empty() ) result = TLVSet.WriteUi16(OBJ_WRITE_ARGS_OPT(JPEG2000PictureSubDescriptor, J2KProfile));
+  if ( ASDCP_SUCCESS(result)  && ! J2KProfile.empty() ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS_OPT(JPEG2000PictureSubDescriptor, J2KProfile));
   if ( ASDCP_SUCCESS(result)  && ! J2KCorrespondingProfile.empty() ) result = TLVSet.WriteUi16(OBJ_WRITE_ARGS_OPT(JPEG2000PictureSubDescriptor, J2KCorrespondingProfile));
   return result;
 }
@@ -2227,7 +2227,8 @@ JPEG2000PictureSubDescriptor::Dump(FILE* stream)
     fprintf(stream, "  %22s = %s\n",  "J2KExtendedCapabilities", J2KExtendedCapabilities.get().EncodeString(identbuf, IdentBufferLen));
   }
   if ( ! J2KProfile.empty() ) {
-    fprintf(stream, "  %22s = %d\n",  "J2KProfile", J2KProfile.get());
+    fprintf(stream, "  %22s:\n",  "J2KProfile");
+    J2KProfile.get().Dump(stream);
   }
   if ( ! J2KCorrespondingProfile.empty() ) {
     fprintf(stream, "  %22s = %d\n",  "J2KCorrespondingProfile", J2KCorrespondingProfile.get());
