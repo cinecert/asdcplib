@@ -269,6 +269,8 @@ namespace Kumu
       bool   HasValue() const { return true; }
       ui32_t ArchiveLength() const { return sizeof(ui16_t); }
 
+	  operator ui16_t() const { return value; }
+
       bool   Archive(MemIOWriter* Writer) const {
 	if ( Writer == 0 ) return false;
 	return Writer->WriteUi16BE(value);

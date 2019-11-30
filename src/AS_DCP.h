@@ -1092,7 +1092,7 @@ namespace ASDCP {
       struct ExtendedCapabilities_t // ISO 15444-1 Annex A.5.2
       {
 	ui32_t  Pcap; // Pcap = 0 means that no extended capabilities are required
-	ui16_t  Ccap[MaxCapabilities]; // Ccap^i in ISO/IEC 15444-1 corresponds to Ccap[i -1]
+	ui16_t  Ccap[MaxCapabilities]; // Ccap^i in ISO/IEC 15444-1 corresponds to Ccap[i - 1]
       };
 
 			struct Profile_t // ISO 15444-1

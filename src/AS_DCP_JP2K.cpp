@@ -32,6 +32,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "AS_DCP_internal.h"
 #include <iostream>
 #include <iomanip>
+#include <algorithm>
 
 using namespace ASDCP::JP2K;
 using Kumu::GenRandomValue;
@@ -327,6 +328,54 @@ ASDCP::JP2K_PDesc_to_MD(const JP2K::PictureDescriptor& PDesc,
   EssenceSubDescriptor.QuantizationDefault.get().Length(qdflt_size);
   EssenceSubDescriptor.QuantizationDefault.set_has_value();
 
+  // Profile
+
+  if (PDesc.Profile.N == 0) {
+	  EssenceSubDescriptor.J2KProfile.set_has_value(false);
+  } else {
+	  EssenceSubDescriptor.J2KProfile.get().resize(PDesc.Profile.N);
+
+	  std::copy(PDesc.Profile.Pprf,
+		  PDesc.Profile.Pprf + PDesc.Profile.N,
+		   EssenceSubDescriptor.J2KProfile.get().begin());
+
+	  EssenceSubDescriptor.J2KProfile.set_has_value();
+  }
+
+  // Corresponding profile
+
+  if (PDesc.CorrespondingProfile.N == 0) {
+	
+	  EssenceSubDescriptor.J2KCorrespondingProfile.set_has_value(false);
+  
+  } else {
+	  EssenceSubDescriptor.J2KCorrespondingProfile.get().resize(PDesc.CorrespondingProfile.N);
+
+	  std::copy(PDesc.CorrespondingProfile.Pcpf,
+		  PDesc.CorrespondingProfile.Pcpf + PDesc.CorrespondingProfile.N,
+		  EssenceSubDescriptor.J2KCorrespondingProfile.get().begin());
+
+	  EssenceSubDescriptor.J2KCorrespondingProfile.set_has_value();
+  }
+
+  // Extended capabilities
+
+  if (PDesc.ExtendedCapabilities.Pcap == 0) {
+
+	  EssenceSubDescriptor.J2KExtendedCapabilities.set_has_value(false);
+
+  } else {
+
+	  EssenceSubDescriptor.J2KExtendedCapabilities.get().Pcap = PDesc.ExtendedCapabilities.Pcap;
+
+	  std::copy(PDesc.ExtendedCapabilities.Ccap,
+		  PDesc.ExtendedCapabilities.Ccap + JP2K::MaxCapabilities,
+		  EssenceSubDescriptor.J2KExtendedCapabilities.get().Ccap);
+
+	  EssenceSubDescriptor.J2KExtendedCapabilities.set_has_value(true);
+
+  }
+
   return RESULT_OK;
 }
 
@@ -384,6 +433,65 @@ ASDCP::MD_to_JP2K_PDesc(const ASDCP::MXF::GenericPictureEssenceDescriptor&  Esse
 	 EssenceSubDescriptor.QuantizationDefault.const_get().Length());
   
   PDesc.QuantizationDefault.SPqcdLength = EssenceSubDescriptor.QuantizationDefault.const_get().Length() - 1;
+
+  // Profile
+
+  std::fill(PDesc.Profile.Pprf, PDesc.Profile.Pprf + JP2K::MaxPRFN, 0);
+
+  if (EssenceSubDescriptor.J2KProfile.empty() ||
+	  EssenceSubDescriptor.J2KProfile.const_get().size() == 0) {
+
+	  PDesc.Profile.N = 0;
+
+  } else {
+
+	  PDesc.Profile.N = EssenceSubDescriptor.J2KProfile.const_get().size();
+
+	  std::copy(EssenceSubDescriptor.J2KProfile.const_get().begin(),
+		  EssenceSubDescriptor.J2KProfile.const_get().end(),
+		  PDesc.Profile.Pprf);
+
+  }
+
+  // Corresponding profile
+
+  std::fill(PDesc.CorrespondingProfile.Pcpf, PDesc.CorrespondingProfile.Pcpf + JP2K::MaxCPFN, 0);
+
+  if (EssenceSubDescriptor.J2KCorrespondingProfile.empty() ||
+	  EssenceSubDescriptor.J2KCorrespondingProfile.const_get().size() == 0) {
+
+	  PDesc.CorrespondingProfile.N = 0;
+
+  }
+  else {
+
+	  PDesc.CorrespondingProfile.N = EssenceSubDescriptor.J2KCorrespondingProfile.const_get().size();
+
+	  std::copy(EssenceSubDescriptor.J2KCorrespondingProfile.const_get().begin(),
+		  EssenceSubDescriptor.J2KCorrespondingProfile.const_get().end(),
+		  PDesc.CorrespondingProfile.Pcpf);
+
+  }
+
+  // Extended capabilities
+
+  std::fill(PDesc.ExtendedCapabilities.Ccap, PDesc.ExtendedCapabilities.Ccap + JP2K::MaxCapabilities, 0);
+
+  if (EssenceSubDescriptor.J2KExtendedCapabilities.empty()) {
+
+	  PDesc.ExtendedCapabilities.Pcap = 0;
+
+  }
+  else {
+
+	  PDesc.ExtendedCapabilities.Pcap = EssenceSubDescriptor.J2KExtendedCapabilities.const_get().Pcap;
+
+	  std::copy(EssenceSubDescriptor.J2KExtendedCapabilities.const_get().Ccap,
+		  EssenceSubDescriptor.J2KExtendedCapabilities.const_get().Ccap + JP2K::MaxCapabilities,
+		  PDesc.ExtendedCapabilities.Ccap);
+
+  }
+
   return RESULT_OK;
 }
 

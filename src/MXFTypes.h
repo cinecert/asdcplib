@@ -694,7 +694,7 @@ namespace ASDCP
         {
         public:
 	  ui32_t Pcap;
-	  ui16_t Ccapi[JP2K::MaxCapabilities];
+	  ui16_t Ccap[JP2K::MaxCapabilities];
 	
 	  bool HasValue() const { return true; }
 	  ui32_t ArchiveLength() const { return 0; }
