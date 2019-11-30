@@ -693,7 +693,7 @@ namespace ASDCP
       class J2KExtendedCapabilities : public Kumu::IArchive
         {
         public:
-	  ui8_t Pcap; // TODO: is this the right type?
+	  ui32_t Pcap;
 	  ui16_t Ccapi[JP2K::MaxCapabilities];
 	
 	  bool HasValue() const { return true; }

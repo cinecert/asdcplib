@@ -778,7 +778,7 @@ ASDCP::MXF::Raw::EncodeString(char* str_buf, ui32_t buf_len) const
 //
 bool
 ASDCP::MXF::J2KExtendedCapabilities::Archive(Kumu::MemIOWriter* Writer) const {
-  if ( ! Writer->WriteUi8(Pcap) )
+  if ( ! Writer->WriteUi32BE(Pcap) )
     {
       return false;
     }
@@ -797,7 +797,7 @@ ASDCP::MXF::J2KExtendedCapabilities::Archive(Kumu::MemIOWriter* Writer) const {
 //
 bool
 ASDCP::MXF::J2KExtendedCapabilities::Unarchive(Kumu::MemIOReader* Reader) {
-  if ( ! Reader->ReadUi8(&Pcap) )
+  if ( ! Reader->ReadUi32BE(&Pcap) )
     {
       return false;
     }
