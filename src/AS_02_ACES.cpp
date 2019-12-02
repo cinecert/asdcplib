@@ -559,7 +559,10 @@ AS_02::Result_t AS_02::ACES::MXFWriter::h__Writer::OpenWrite(const std::string &
     ASDCP::MXF::InterchangeObject_list_t::iterator i;
     for ( i = essence_sub_descriptor_list.begin(); i != essence_sub_descriptor_list.end(); ++i )
     {
-      if ( ( (*i)->GetUL() != UL(m_Dict->ul(MDD_ACESPictureSubDescriptor)) ) && ( (*i)->GetUL() != UL(m_Dict->ul(MDD_TargetFrameSubDescriptor)) ) )
+      if ( ( (*i)->GetUL() != UL(m_Dict->ul(MDD_ACESPictureSubDescriptor)) )
+               && ( (*i)->GetUL() != UL(m_Dict->ul(MDD_TargetFrameSubDescriptor)) )
+               && ( (*i)->GetUL() != UL(m_Dict->ul(MDD_ContainerConstraintsSubDescriptor)) )
+			  )
         {
           DefaultLogSink().Error("Essence sub-descriptor is not an ACESPictureSubDescriptor or a TargetFrameSubDescriptor.\n");
           (*i)->Dump();

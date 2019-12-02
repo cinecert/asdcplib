@@ -408,7 +408,7 @@ namespace ASDCP {
 	MDD_WAVWrappingClip, // 370
 	MDD_DBOXMotionCodePrimaryStream, // 371
 	MDD_DBOXMotionCodeSecondaryStream, // 372
-	MDD_ContainerConstraintSubDescriptor, // 373
+	MDD_ContainerConstraintsSubDescriptor, // 373
 	MDD_PHDRImageMetadataWrappingFrame, // 374
 	MDD_PHDRImageMetadataItem, // 375
 	MDD_PHDRMetadataTrackSubDescriptor, // 376
