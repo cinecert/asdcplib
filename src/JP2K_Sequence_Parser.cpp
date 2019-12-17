@@ -255,7 +255,9 @@ operator==(const ASDCP::JP2K::ExtendedCapabilities_t& lhs, const ASDCP::JP2K::Ex
 {
 	if (lhs.Pcap != rhs.Pcap) return false;
 
-	for (ui32_t i = 0; i < JP2K::MaxCapabilities; i++)
+	if (lhs.N != rhs.N) return false;
+
+	for (ui32_t i = 0; i < lhs.N; i++)
 	{
 		if (lhs.Ccap[i] != rhs.Ccap[i])
 			return false;

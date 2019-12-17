@@ -783,12 +783,9 @@ ASDCP::MXF::J2KExtendedCapabilities::Archive(Kumu::MemIOWriter* Writer) const {
       return false;
     }
 
-  for ( int i = 0; i < JP2K::MaxCapabilities; ++i )
+    if ( ! Ccap.Archive(Writer) )
     {
-      if ( ! Writer->WriteUi16BE(Ccap[i]) )
-        {
-          return false;
-        }
+        return false;
     }
 
   return true;
@@ -802,12 +799,9 @@ ASDCP::MXF::J2KExtendedCapabilities::Unarchive(Kumu::MemIOReader* Reader) {
       return false;
     }
 
-  for ( int i = 0; i < JP2K::MaxCapabilities; ++i )
+ if ( ! Ccap.Unarchive(Reader) )
     {
-      if ( ! Reader->ReadUi16BE(&Ccap[i]) )
-        {
-          return false;
-        }
+        return false;
     }
 
   return true;
@@ -821,7 +815,7 @@ ASDCP::MXF::J2KExtendedCapabilities::EncodeString(char* str_buf, ui32_t buf_len)
 
   if ( Pcap != 0 && buf_len > str_len )
     {
-      for ( int i = 0; i < JP2K::MaxCapabilities; ++i )
+      for ( int i = 0; i < Ccap.size(); ++i )
         {
 	  snprintf(str_buf+(i*3), 4, "%02hx.", Ccap[i]);
         }

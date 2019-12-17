@@ -128,19 +128,19 @@ ASDCP::JP2K::operator << (std::ostream& strm, const PictureDescriptor& PDesc)
 	  }
   }
 
-  if (PDesc.ExtendedCapabilities.Pcap != 0) {
+  if (PDesc.ExtendedCapabilities.N != JP2K::NoExtendedCapabilitiesSignaled && PDesc.ExtendedCapabilities.Pcap != 0) {
 
 	  strm << "Extended Capabilities:" << std::endl;
 
 
 	  strm << "                     Pcap:" << PDesc.ExtendedCapabilities.Pcap << std::endl;
 
-	  for (i32_t b = 0; b < JP2K::MaxCapabilities; b++) {
+	  for (i32_t b = 0, i = 0; b < JP2K::MaxCapabilities; b++) {
 
 		  if ((PDesc.ExtendedCapabilities.Pcap >> b) & 0x1) {
 
 			  strm << "              Ccap(" << (JP2K::MaxCapabilities - b) << "): " <<
-				  std::hex << std::showbase << PDesc.ExtendedCapabilities.Ccap[JP2K::MaxCapabilities - b - 1] << std::dec << std::noshowbase
+				  std::hex << std::showbase << PDesc.ExtendedCapabilities.Ccap[i++] << std::dec << std::noshowbase
 				  << std::endl;
 
 		  }
@@ -259,16 +259,20 @@ ASDCP::JP2K::PictureDescriptorDump(const PictureDescriptor& PDesc, FILE* stream)
 	  }
   }
 
-  fprintf(stream, "Extended Capabilities: %x\n", PDesc.ExtendedCapabilities.Pcap);
+  if (PDesc.ExtendedCapabilities.N != JP2K::NoExtendedCapabilitiesSignaled) {
 
-	for (i32_t b = 0; b < JP2K::MaxCapabilities; b++) {
+	  fprintf(stream, "Extended Capabilities: %x\n", PDesc.ExtendedCapabilities.Pcap);
 
-		if ((PDesc.ExtendedCapabilities.Pcap >> b) & 0x1) {
+	  for (i32_t b = 0, i = 0; b < JP2K::MaxCapabilities && i < PDesc.ExtendedCapabilities.N; b++) {
 
-			fprintf(stream, "           Ccap(%d): %hx\n", JP2K::MaxCapabilities - b, PDesc.ExtendedCapabilities.Ccap[JP2K::MaxCapabilities - b - 1]);
+		  if ((PDesc.ExtendedCapabilities.Pcap >> (JP2K::MaxCapabilities - b - 1)) & 0x1) {
 
-		}
-	}
+			  fprintf(stream, "           Ccap(%d): %hx\n", b + 1, PDesc.ExtendedCapabilities.Ccap[i++]);
+
+		  }
+	  }
+
+  }
   
 }
 
@@ -360,7 +364,9 @@ ASDCP::JP2K_PDesc_to_MD(const JP2K::PictureDescriptor& PDesc,
 
   // Extended capabilities
 
-  if (PDesc.ExtendedCapabilities.Pcap == 0) {
+  if (PDesc.ExtendedCapabilities.N == JP2K::NoExtendedCapabilitiesSignaled) {
+
+	  /* No extended capabilities are signaled */
 
 	  EssenceSubDescriptor.J2KExtendedCapabilities.set_has_value(false);
 
@@ -368,9 +374,11 @@ ASDCP::JP2K_PDesc_to_MD(const JP2K::PictureDescriptor& PDesc,
 
 	  EssenceSubDescriptor.J2KExtendedCapabilities.get().Pcap = PDesc.ExtendedCapabilities.Pcap;
 
+	  EssenceSubDescriptor.J2KExtendedCapabilities.get().Ccap.resize(PDesc.ExtendedCapabilities.N);
+
 	  std::copy(PDesc.ExtendedCapabilities.Ccap,
-		  PDesc.ExtendedCapabilities.Ccap + JP2K::MaxCapabilities,
-		  EssenceSubDescriptor.J2KExtendedCapabilities.get().Ccap);
+		  PDesc.ExtendedCapabilities.Ccap + PDesc.ExtendedCapabilities.N,
+		  EssenceSubDescriptor.J2KExtendedCapabilities.get().Ccap.begin());
 
 	  EssenceSubDescriptor.J2KExtendedCapabilities.set_has_value(true);
 
@@ -480,14 +488,16 @@ ASDCP::MD_to_JP2K_PDesc(const ASDCP::MXF::GenericPictureEssenceDescriptor&  Esse
   if (EssenceSubDescriptor.J2KExtendedCapabilities.empty()) {
 
 	  PDesc.ExtendedCapabilities.Pcap = 0;
+	  PDesc.ExtendedCapabilities.N = JP2K::NoExtendedCapabilitiesSignaled;
 
   }
   else {
 
 	  PDesc.ExtendedCapabilities.Pcap = EssenceSubDescriptor.J2KExtendedCapabilities.const_get().Pcap;
+	  PDesc.ExtendedCapabilities.N = EssenceSubDescriptor.J2KExtendedCapabilities.const_get().Ccap.size();
 
-	  std::copy(EssenceSubDescriptor.J2KExtendedCapabilities.const_get().Ccap,
-		  EssenceSubDescriptor.J2KExtendedCapabilities.const_get().Ccap + JP2K::MaxCapabilities,
+	  std::copy(EssenceSubDescriptor.J2KExtendedCapabilities.const_get().Ccap.begin(),
+		  EssenceSubDescriptor.J2KExtendedCapabilities.const_get().Ccap.end(),
 		  PDesc.ExtendedCapabilities.Ccap);
 
   }

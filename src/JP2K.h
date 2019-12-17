@@ -260,7 +260,7 @@ namespace JP2K
 
       public:
           PRF(const Marker& M) {
-              assert(M.m_Type == MRK_CPF);
+              assert(M.m_Type == MRK_PRF);
 
 			  m_Data = (ui16_t*) M.m_Data;
 			  m_N = M.m_DataSize >> 1;
@@ -282,6 +282,8 @@ namespace JP2K
 
 		  ui32_t m_Pcap;
 
+		  i8_t m_N;
+
           KM_NO_COPY_CONSTRUCT(CAP);
           CAP();
 
@@ -291,11 +293,14 @@ namespace JP2K
 
               m_Data = (ui16_t *) (M.m_Data + 4);
 			  m_Pcap = KM_i32_BE(*(ui32_t*)(M.m_Data));
+			  m_N = (M.m_DataSize - 4) >> 1;
           }
 
           ~CAP() {}
 
           inline ui32_t pcap() const { return m_Pcap; }
+
+		  inline i8_t N() const { return m_N; }
 
           inline ui16_t ccap(ui16_t i) const { return KM_i16_BE(m_Data[2 * (i - 1)]); }
 

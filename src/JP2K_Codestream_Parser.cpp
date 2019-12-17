@@ -101,6 +101,12 @@ ASDCP::JP2K::ParseMetadataIntoDesc(const FrameBuffer& FB, PictureDescriptor& PDe
   const byte_t* p = FB.RoData();
   const byte_t* end_p = p + FB.Size();
 
+  /* initialize optional items */
+
+  PDesc.ExtendedCapabilities.N = JP2K::NoExtendedCapabilitiesSignaled;
+  PDesc.Profile.N = 0;
+  PDesc.CorrespondingProfile.N = 0;
+
   while ( p < end_p && ASDCP_SUCCESS(result) )
     {
       result = GetNextMarker(&p, NextMarker);
@@ -185,19 +191,14 @@ ASDCP::JP2K::ParseMetadataIntoDesc(const FrameBuffer& FB, PictureDescriptor& PDe
 	    
 			PDesc.ExtendedCapabilities.Pcap = CAP_.pcap();
 
-			for(i32_t b = 32, i = 1; b > 0; b--) {
+			PDesc.ExtendedCapabilities.N = CAP_.N();
 
-				if ( (PDesc.ExtendedCapabilities.Pcap >> (b - 1)) & 0x1 ) {
+			for (i32_t i = 0; i < CAP_.N(); i++) {
 
-					PDesc.ExtendedCapabilities.Ccap[32 - b] = CAP_.ccap(i++);
-
-				} else {
-
-					PDesc.ExtendedCapabilities.Ccap[32 - b] = 0;
-
-				}
+				PDesc.ExtendedCapabilities.Ccap[i] = CAP_.ccap(i);
 
 			}
+
 	  }
 	  break;
 
