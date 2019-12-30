@@ -180,7 +180,8 @@ ASDCP::AddDmsTrackGenericPartUtf8Text(Kumu::FileWriter& file_writer, MXF::OP1aHe
   assert(dmf_obj);
   header_part.AddChildObject(dmf_obj);
   Segment->DMFramework = dmf_obj->InstanceUID;
-  GenRandomValue(dmf_obj->ObjectRef);
+  GenRandomValue(dmf_obj->ObjectRef.get());
+  dmf_obj->ObjectRef.set_has_value();
 
   // Create a new SID on the RIP, located at the current file position
   ui32_t max_sid = 0;
