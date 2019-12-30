@@ -872,21 +872,21 @@ namespace ASDCP
       virtual Result_t WriteToBuffer(ASDCP::FrameBuffer&);
 	};
 
-      //
-      class ContainerConstraintSubDescriptor : public InterchangeObject
+      // A ContainerConstraintsSubDescriptor is required to be present in the top level File Descriptor for the Constrained Generic Container per ST 379-2
+      class ContainerConstraintsSubDescriptor : public InterchangeObject
 	{
-	  ContainerConstraintSubDescriptor();
+	  ContainerConstraintsSubDescriptor();
 
 	public:
 	  const Dictionary*& m_Dict;
 
-      ContainerConstraintSubDescriptor(const Dictionary*& d);
-      ContainerConstraintSubDescriptor(const ContainerConstraintSubDescriptor& rhs);
-      virtual ~ContainerConstraintSubDescriptor() {}
+      ContainerConstraintsSubDescriptor(const Dictionary*& d);
+      ContainerConstraintsSubDescriptor(const ContainerConstraintsSubDescriptor& rhs);
+      virtual ~ContainerConstraintsSubDescriptor() {}
 
-      const ContainerConstraintSubDescriptor& operator=(const ContainerConstraintSubDescriptor& rhs) { Copy(rhs); return *this; }
-      virtual void Copy(const ContainerConstraintSubDescriptor& rhs);
-      virtual const char* HasName() { return "ContainerConstraintSubDescriptor"; }
+      const ContainerConstraintsSubDescriptor& operator=(const ContainerConstraintsSubDescriptor& rhs) { Copy(rhs); return *this; }
+      virtual void Copy(const ContainerConstraintsSubDescriptor& rhs);
+      virtual const char* HasName() { return "ContainerConstraintsSubDescriptor"; }
       virtual Result_t InitFromTLVSet(TLVReader& TLVSet);
       virtual Result_t WriteToTLVSet(TLVWriter& TLVSet);
       virtual void     Dump(FILE* = 0);
