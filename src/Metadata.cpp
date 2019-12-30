@@ -2125,6 +2125,18 @@ JPEG2000PictureSubDescriptor::InitFromTLVSet(TLVReader& TLVSet)
     result = TLVSet.ReadObject(OBJ_READ_ARGS_OPT(JPEG2000PictureSubDescriptor, J2CLayout));
     J2CLayout.set_has_value( result == RESULT_OK );
   }
+  if ( ASDCP_SUCCESS(result) ) {
+    result = TLVSet.ReadObject(OBJ_READ_ARGS_OPT(JPEG2000PictureSubDescriptor, J2KExtendedCapabilities));
+    J2KExtendedCapabilities.set_has_value( result == RESULT_OK );
+  }
+  if ( ASDCP_SUCCESS(result) ) {
+    result = TLVSet.ReadObject(OBJ_READ_ARGS_OPT(JPEG2000PictureSubDescriptor, J2KProfile));
+    J2KProfile.set_has_value( result == RESULT_OK );
+  }
+  if ( ASDCP_SUCCESS(result) ) {
+    result = TLVSet.ReadObject(OBJ_READ_ARGS_OPT(JPEG2000PictureSubDescriptor, J2KCorrespondingProfile));
+    J2KCorrespondingProfile.set_has_value( result == RESULT_OK );
+  }
   return result;
 }
 
@@ -2148,6 +2160,9 @@ JPEG2000PictureSubDescriptor::WriteToTLVSet(TLVWriter& TLVSet)
   if ( ASDCP_SUCCESS(result)  && ! CodingStyleDefault.empty() ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS_OPT(JPEG2000PictureSubDescriptor, CodingStyleDefault));
   if ( ASDCP_SUCCESS(result)  && ! QuantizationDefault.empty() ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS_OPT(JPEG2000PictureSubDescriptor, QuantizationDefault));
   if ( ASDCP_SUCCESS(result)  && ! J2CLayout.empty() ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS_OPT(JPEG2000PictureSubDescriptor, J2CLayout));
+  if ( ASDCP_SUCCESS(result)  && ! J2KExtendedCapabilities.empty() ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS_OPT(JPEG2000PictureSubDescriptor, J2KExtendedCapabilities));
+  if ( ASDCP_SUCCESS(result)  && ! J2KProfile.empty() ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS_OPT(JPEG2000PictureSubDescriptor, J2KProfile));
+  if ( ASDCP_SUCCESS(result)  && ! J2KCorrespondingProfile.empty() ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS_OPT(JPEG2000PictureSubDescriptor, J2KCorrespondingProfile));
   return result;
 }
 
@@ -2170,6 +2185,9 @@ JPEG2000PictureSubDescriptor::Copy(const JPEG2000PictureSubDescriptor& rhs)
   CodingStyleDefault = rhs.CodingStyleDefault;
   QuantizationDefault = rhs.QuantizationDefault;
   J2CLayout = rhs.J2CLayout;
+  J2KExtendedCapabilities = rhs.J2KExtendedCapabilities;
+  J2KProfile = rhs.J2KProfile;
+  J2KCorrespondingProfile = rhs.J2KCorrespondingProfile;
 }
 
 //
@@ -2204,6 +2222,17 @@ JPEG2000PictureSubDescriptor::Dump(FILE* stream)
   }
   if ( ! J2CLayout.empty() ) {
     fprintf(stream, "  %22s = %s\n",  "J2CLayout", J2CLayout.get().EncodeString(identbuf, IdentBufferLen));
+  }
+  if ( ! J2KExtendedCapabilities.empty() ) {
+    fprintf(stream, "  %22s = %s\n",  "J2KExtendedCapabilities", J2KExtendedCapabilities.get().EncodeString(identbuf, IdentBufferLen));
+  }
+  if ( ! J2KProfile.empty() ) {
+    fprintf(stream, "  %22s:\n",  "J2KProfile");
+  J2KProfile.get().Dump(stream);
+  }
+  if ( ! J2KCorrespondingProfile.empty() ) {
+    fprintf(stream, "  %22s:\n",  "J2KCorrespondingProfile");
+  J2KCorrespondingProfile.get().Dump(stream);
   }
 }
 

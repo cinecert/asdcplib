@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2005-2016, John Hurst
+Copyright (c) 2005-2019, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -33,6 +33,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define _MXFTYPES_H_
 
 #include "KLV.h"
+#include "AS_DCP.h"
 #include <list>
 #include <vector>
 #include <set>
@@ -687,6 +688,21 @@ namespace ASDCP
 	  virtual bool Archive(Kumu::MemIOWriter* Writer) const;
 	  const char* EncodeString(char* str_buf, ui32_t buf_len) const;
 	};
+
+      //
+      class J2KExtendedCapabilities : public Kumu::IArchive
+        {
+        public:
+	  ui32_t Pcap;
+	  Array<Kumu::ArchivableUi16> Ccap;
+	
+	  bool HasValue() const { return true; }
+	  ui32_t ArchiveLength() const { return 0; }
+
+	  bool Archive(Kumu::MemIOWriter* Writer) const;
+	  bool Unarchive(Kumu::MemIOReader* Reader);
+	  const char* EncodeString(char* str_buf, ui32_t buf_len) const;
+      };
 
     } // namespace MXF
 } // namespace ASDCP

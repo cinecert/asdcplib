@@ -571,6 +571,9 @@ namespace ASDCP
           optional_property<Raw > CodingStyleDefault;
           optional_property<Raw > QuantizationDefault;
           optional_property<RGBALayout > J2CLayout;
+          optional_property<J2KExtendedCapabilities > J2KExtendedCapabilities;
+          optional_property<Array<Kumu::ArchivableUi16> > J2KProfile;
+          optional_property<Array<Kumu::ArchivableUi16> > J2KCorrespondingProfile;
 
       JPEG2000PictureSubDescriptor(const Dictionary*& d);
       JPEG2000PictureSubDescriptor(const JPEG2000PictureSubDescriptor& rhs);

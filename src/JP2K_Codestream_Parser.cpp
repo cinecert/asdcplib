@@ -101,6 +101,12 @@ ASDCP::JP2K::ParseMetadataIntoDesc(const FrameBuffer& FB, PictureDescriptor& PDe
   const byte_t* p = FB.RoData();
   const byte_t* end_p = p + FB.Size();
 
+  /* initialize optional items */
+
+  PDesc.ExtendedCapabilities.N = JP2K::NoExtendedCapabilitiesSignaled;
+  PDesc.Profile.N = 0;
+  PDesc.CorrespondingProfile.N = 0;
+
   while ( p < end_p && ASDCP_SUCCESS(result) )
     {
       result = GetNextMarker(&p, NextMarker);
@@ -178,6 +184,66 @@ ASDCP::JP2K::ParseMetadataIntoDesc(const FrameBuffer& FB, PictureDescriptor& PDe
 	  memcpy(&PDesc.QuantizationDefault, NextMarker.m_Data, NextMarker.m_DataSize);
 	  PDesc.QuantizationDefault.SPqcdLength = NextMarker.m_DataSize - 1;
 	  break;
+
+	case MRK_CAP:
+	  {
+	    Accessor::CAP CAP_(NextMarker);
+	    
+			PDesc.ExtendedCapabilities.Pcap = CAP_.pcap();
+
+			PDesc.ExtendedCapabilities.N = CAP_.N();
+
+			for (i32_t i = 0; i < CAP_.N(); i++) {
+
+				PDesc.ExtendedCapabilities.Ccap[i] = CAP_.ccap(i);
+
+			}
+
+	  }
+	  break;
+
+		case MRK_PRF:
+	  {
+	    Accessor::PRF PRF_(NextMarker);
+
+		ui16_t n = PRF_.N();
+
+		if ( n > MaxPRFN )
+	    {
+	      DefaultLogSink().Error("Number (%d) of Pprf^i exceeds maximum supported\n", n);
+	      return RESULT_RAW_FORMAT;
+	    }
+
+			PDesc.Profile.N = n;
+
+			for(i32_t i = 0; i < n ; i++) {
+
+				PDesc.Profile.Pprf[i] = PRF_.pprf(i+1);
+			}
+	  }
+	  break;
+
+		case MRK_CPF:
+	  {
+	    Accessor::CPF CPF_(NextMarker);
+
+		ui16_t n = CPF_.N();
+
+		if ( n > MaxCPFN )
+	    {
+	      DefaultLogSink().Error("Number (%d) of Pcpf^i exceeds maximum supported\n", n);
+	      return RESULT_RAW_FORMAT;
+	    }
+
+			PDesc.CorrespondingProfile.N = n;
+
+			for(i32_t i = 0; i < n; i++) {
+
+				PDesc.CorrespondingProfile.Pcpf[i] = CPF_.pcpf(i+1);
+			}
+	  }
+	  break;
+
 	}
     }
 

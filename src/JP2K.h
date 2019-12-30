@@ -54,9 +54,12 @@ namespace JP2K
       MRK_SOT = 0xff90, // Start of tile-part
       MRK_SOD = 0xff93, // Start of data
       MRK_EOC = 0xffd9, // End of codestream
+      MRK_CAP = 0xff50,  // Extended capabilities
       MRK_SIZ = 0xff51, // Image and tile size
       MRK_COD = 0xff52, // Coding style default
       MRK_COC = 0xff53, // Coding style component
+      MRK_PRF = 0xff56, // Profile
+      MRK_CPF = 0xff59, // Corresponding profile
       MRK_RGN = 0xff5e, // Region of interest
       MRK_QCD = 0xff5c, // Quantization default
       MRK_QCC = 0xff5d, // Quantization component
@@ -219,6 +222,90 @@ namespace JP2K
 	  inline ui32_t CommentSize() const { return m_DataSize; }
 	  void Dump(FILE* stream = 0) const;
 	};
+
+      // Corresponding Profile
+      class CPF {
+
+          const ui16_t* m_Data;
+		  ui16_t m_N;
+
+          KM_NO_COPY_CONSTRUCT(CPF);
+          CPF();
+
+      public:
+          CPF(const Marker& M) {
+              assert(M.m_Type == MRK_CPF);
+
+              m_Data = (ui16_t*) M.m_Data;
+			  m_N = M.m_DataSize >> 1;
+          }
+
+          ~CPF() {}
+
+          inline ui16_t N() const { return m_N; }
+
+          inline ui16_t pcpf(ui16_t i) const { return KM_i16_BE(m_Data[2 * (i - 1)]); }
+
+          void Dump(FILE* stream = 0) const;
+      };
+
+      // Profile
+      class PRF {
+
+          const ui16_t* m_Data;
+		  ui16_t m_N;
+
+          KM_NO_COPY_CONSTRUCT(PRF);
+          PRF();
+
+      public:
+          PRF(const Marker& M) {
+              assert(M.m_Type == MRK_PRF);
+
+			  m_Data = (ui16_t*) M.m_Data;
+			  m_N = M.m_DataSize >> 1;
+		  }
+
+          ~PRF() {}
+
+          inline ui16_t N() const { return m_N; }
+
+          inline ui16_t pprf(ui16_t i) const { return KM_i16_BE(m_Data[2 * (i - 1)]); }
+
+          void Dump(FILE* stream = 0) const;
+      };
+
+      // Extended capabilities
+      class CAP {
+
+          const ui16_t* m_Data;
+
+		  ui32_t m_Pcap;
+
+		  i8_t m_N;
+
+          KM_NO_COPY_CONSTRUCT(CAP);
+          CAP();
+
+      public:
+          CAP(const Marker& M) {
+              assert(M.m_Type == MRK_CAP);
+
+              m_Data = (ui16_t *) (M.m_Data + 4);
+			  m_Pcap = KM_i32_BE(*(ui32_t*)(M.m_Data));
+			  m_N = (M.m_DataSize - 4) >> 1;
+          }
+
+          ~CAP() {}
+
+          inline ui32_t pcap() const { return m_Pcap; }
+
+		  inline i8_t N() const { return m_N; }
+
+          inline ui16_t ccap(ui16_t i) const { return KM_i16_BE(m_Data[2 * (i - 1)]); }
+
+          void Dump(FILE* stream = 0) const;
+      };
     } // namespace Accessor
 } // namespace JP2K
 } // namespace ASDCP

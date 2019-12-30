@@ -16,6 +16,13 @@
 #
 src/.deps
 src/.libs
+/build
+
+###
+# some tool dirs
+#
+
+/.vscode
 
 ###
 # autotools output

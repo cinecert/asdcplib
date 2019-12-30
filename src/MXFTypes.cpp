@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2005-2016, John Hurst
+Copyright (c) 2005-2019, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -773,6 +773,63 @@ ASDCP::MXF::Raw::EncodeString(char* str_buf, ui32_t buf_len) const
   Kumu::bin2hex(RoData(), Length(), str_buf, buf_len);
   return str_buf;
 }
+
+
+//
+bool
+ASDCP::MXF::J2KExtendedCapabilities::Archive(Kumu::MemIOWriter* Writer) const {
+  if ( ! Writer->WriteUi32BE(Pcap) )
+    {
+      return false;
+    }
+
+    if ( ! Ccap.Archive(Writer) )
+    {
+        return false;
+    }
+
+  return true;
+}
+
+//
+bool
+ASDCP::MXF::J2KExtendedCapabilities::Unarchive(Kumu::MemIOReader* Reader) {
+  if ( ! Reader->ReadUi32BE(&Pcap) )
+    {
+      return false;
+    }
+
+ if ( ! Ccap.Unarchive(Reader) )
+    {
+        return false;
+    }
+
+  return true;
+}
+
+//
+const char*
+ASDCP::MXF::J2KExtendedCapabilities::EncodeString(char* str_buf, ui32_t buf_len) const
+{
+  const int str_len = ( sizeof(ui16_t) + 1 ) * JP2K::MaxCapabilities;
+
+  if ( Pcap != 0 && buf_len > str_len )
+    {
+      for ( int i = 0; i < Ccap.size(); ++i )
+        {
+	  snprintf(str_buf+(i*3), 4, "%02hx.", Ccap[i]);
+        }
+
+      str_buf[str_len-1] = 0;
+    }
+  else
+    {
+      str_buf[0] = 0;
+    }
+
+  return str_buf;
+}
+
 
 //
 // end MXFTypes.cpp
