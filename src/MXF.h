@@ -385,7 +385,7 @@ namespace ASDCP
 	      //	      std::list<ui32_t>  SliceOffset;
 	      //	      Array<Rational>    PosTable;
 
-	      IndexEntry() : TemporalOffset(0), KeyFrameOffset(0), Flags(0), StreamOffset(0) {}
+	      IndexEntry() : TemporalOffset(0), KeyFrameOffset(0), Flags(0x80), StreamOffset(0) {}
 	      IndexEntry(i8_t t_ofst, i8_t k_ofst, ui8_t flags, ui64_t s_ofst) :
 	            TemporalOffset(t_ofst), KeyFrameOffset(k_ofst), Flags(flags), StreamOffset(s_ofst) {}
 	      inline bool HasValue() const { return true; }

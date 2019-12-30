@@ -1156,12 +1156,12 @@ static const ASDCP::MDDEntry s_MDD_Table[] = {
      {0}, false, "DBOXMotionCodeSecondaryStream" },
 
    //  379-2, Sec. 7: Encoders that conform to this specification shall add a
-   // ContainerConstraintSubDescriptor to the GenericDescriptor::SubDescriptors
+   // ContainerConstraintsSubDescriptor to the GenericDescriptor::SubDescriptors
    // property of the top-most File Descriptor that describes the essence
    // container.
    { { 0x06, 0x0e, 0x2b, 0x34, 0x02, 0x53, 0x01, 0x01, // 373
        0x0d, 0x01, 0x01, 0x01, 0x01, 0x01, 0x67, 0x00 },
-     {0}, false, "ContainerConstraintSubDescriptor" },
+     {0}, false, "ContainerConstraintsSubDescriptor" },
 
    // protype for high dynamic range, values recorded in Dolby registry
    { { 0x06, 0x0e, 0x2b, 0x34, 0x04, 0x01, 0x01, 0x05, // 374

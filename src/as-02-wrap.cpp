@@ -1240,6 +1240,9 @@ write_ACES_file(CommandOptions& Options)
     ASDCP::MXF::ACESPictureSubDescriptor* aces_picture_subdescriptor = new ASDCP::MXF::ACESPictureSubDescriptor(g_dict);
     Kumu::GenRandomValue(aces_picture_subdescriptor->InstanceUID);
     result = AS_02::ACES::ACES_PDesc_to_MD(PDesc, *g_dict, *tmp_dscr);
+    ASDCP::MXF::ContainerConstraintsSubDescriptor* gc_subdescriptor = new ASDCP::MXF::ContainerConstraintsSubDescriptor(g_dict);
+    Kumu::GenRandomValue(gc_subdescriptor->InstanceUID);
+    essence_sub_descriptors.push_back(gc_subdescriptor);
 
     if (ASDCP_SUCCESS(result))
     {

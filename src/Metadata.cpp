@@ -70,7 +70,7 @@ static InterchangeObject* GenericDataEssenceDescriptor_Factory(const Dictionary*
 static InterchangeObject* TimedTextDescriptor_Factory(const Dictionary*& Dict) { return new TimedTextDescriptor(Dict); }
 static InterchangeObject* TimedTextResourceSubDescriptor_Factory(const Dictionary*& Dict) { return new TimedTextResourceSubDescriptor(Dict); }
 static InterchangeObject* StereoscopicPictureSubDescriptor_Factory(const Dictionary*& Dict) { return new StereoscopicPictureSubDescriptor(Dict); }
-static InterchangeObject* ContainerConstraintSubDescriptor_Factory(const Dictionary*& Dict) { return new ContainerConstraintSubDescriptor(Dict); }
+static InterchangeObject* ContainerConstraintsSubDescriptor_Factory(const Dictionary*& Dict) { return new ContainerConstraintsSubDescriptor(Dict); }
 static InterchangeObject* NetworkLocator_Factory(const Dictionary*& Dict) { return new NetworkLocator(Dict); }
 static InterchangeObject* MCALabelSubDescriptor_Factory(const Dictionary*& Dict) { return new MCALabelSubDescriptor(Dict); }
 static InterchangeObject* AudioChannelLabelSubDescriptor_Factory(const Dictionary*& Dict) { return new AudioChannelLabelSubDescriptor(Dict); }
@@ -123,7 +123,7 @@ ASDCP::MXF::Metadata_InitTypes(const Dictionary*& Dict)
   SetObjectFactory(Dict->ul(MDD_TimedTextDescriptor), TimedTextDescriptor_Factory);
   SetObjectFactory(Dict->ul(MDD_TimedTextResourceSubDescriptor), TimedTextResourceSubDescriptor_Factory);
   SetObjectFactory(Dict->ul(MDD_StereoscopicPictureSubDescriptor), StereoscopicPictureSubDescriptor_Factory);
-  SetObjectFactory(Dict->ul(MDD_ContainerConstraintSubDescriptor), ContainerConstraintSubDescriptor_Factory);
+  SetObjectFactory(Dict->ul(MDD_ContainerConstraintsSubDescriptor), ContainerConstraintsSubDescriptor_Factory);
   SetObjectFactory(Dict->ul(MDD_NetworkLocator), NetworkLocator_Factory);
   SetObjectFactory(Dict->ul(MDD_MCALabelSubDescriptor), MCALabelSubDescriptor_Factory);
   SetObjectFactory(Dict->ul(MDD_AudioChannelLabelSubDescriptor), AudioChannelLabelSubDescriptor_Factory);
@@ -3287,27 +3287,27 @@ StereoscopicPictureSubDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 }
 
 //------------------------------------------------------------------------------------------
-// ContainerConstraintSubDescriptor
+// ContainerConstraintsSubDescriptor
 
 //
 
-ContainerConstraintSubDescriptor::ContainerConstraintSubDescriptor(const Dictionary*& d) : InterchangeObject(d), m_Dict(d)
+ContainerConstraintsSubDescriptor::ContainerConstraintsSubDescriptor(const Dictionary*& d) : InterchangeObject(d), m_Dict(d)
 {
   assert(m_Dict);
-  m_UL = m_Dict->ul(MDD_ContainerConstraintSubDescriptor);
+  m_UL = m_Dict->ul(MDD_ContainerConstraintsSubDescriptor);
 }
 
-ContainerConstraintSubDescriptor::ContainerConstraintSubDescriptor(const ContainerConstraintSubDescriptor& rhs) : InterchangeObject(rhs.m_Dict), m_Dict(rhs.m_Dict)
+ContainerConstraintsSubDescriptor::ContainerConstraintsSubDescriptor(const ContainerConstraintsSubDescriptor& rhs) : InterchangeObject(rhs.m_Dict), m_Dict(rhs.m_Dict)
 {
   assert(m_Dict);
-  m_UL = m_Dict->ul(MDD_ContainerConstraintSubDescriptor);
+  m_UL = m_Dict->ul(MDD_ContainerConstraintsSubDescriptor);
   Copy(rhs);
 }
 
 
 //
 ASDCP::Result_t
-ContainerConstraintSubDescriptor::InitFromTLVSet(TLVReader& TLVSet)
+ContainerConstraintsSubDescriptor::InitFromTLVSet(TLVReader& TLVSet)
 {
   assert(m_Dict);
   Result_t result = InterchangeObject::InitFromTLVSet(TLVSet);
@@ -3316,7 +3316,7 @@ ContainerConstraintSubDescriptor::InitFromTLVSet(TLVReader& TLVSet)
 
 //
 ASDCP::Result_t
-ContainerConstraintSubDescriptor::WriteToTLVSet(TLVWriter& TLVSet)
+ContainerConstraintsSubDescriptor::WriteToTLVSet(TLVWriter& TLVSet)
 {
   assert(m_Dict);
   Result_t result = InterchangeObject::WriteToTLVSet(TLVSet);
@@ -3325,14 +3325,14 @@ ContainerConstraintSubDescriptor::WriteToTLVSet(TLVWriter& TLVSet)
 
 //
 void
-ContainerConstraintSubDescriptor::Copy(const ContainerConstraintSubDescriptor& rhs)
+ContainerConstraintsSubDescriptor::Copy(const ContainerConstraintsSubDescriptor& rhs)
 {
   InterchangeObject::Copy(rhs);
 }
 
 //
 void
-ContainerConstraintSubDescriptor::Dump(FILE* stream)
+ContainerConstraintsSubDescriptor::Dump(FILE* stream)
 {
   char identbuf[IdentBufferLen];
   *identbuf = 0;
@@ -3345,14 +3345,14 @@ ContainerConstraintSubDescriptor::Dump(FILE* stream)
 
 //
 ASDCP::Result_t
-ContainerConstraintSubDescriptor::InitFromBuffer(const byte_t* p, ui32_t l)
+ContainerConstraintsSubDescriptor::InitFromBuffer(const byte_t* p, ui32_t l)
 {
   return InterchangeObject::InitFromBuffer(p, l);
 }
 
 //
 ASDCP::Result_t
-ContainerConstraintSubDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
+ContainerConstraintsSubDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 {
   return InterchangeObject::WriteToBuffer(Buffer);
 }
