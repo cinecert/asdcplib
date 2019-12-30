@@ -229,7 +229,7 @@ operator==(const ASDCP::JP2K::CodingStyleDefault_t& lhs, const ASDCP::JP2K::Codi
 
   for ( ui32_t i = 0; i < sizeof(ui16_t); i++ )
     {
-      if ( lhs.SGcod.NumberOfLayers[i] != lhs.SGcod.NumberOfLayers[i]  )
+      if ( lhs.SGcod.NumberOfLayers[i] != rhs.SGcod.NumberOfLayers[i]  )
 	return false;
     }
 
