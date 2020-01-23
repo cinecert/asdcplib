@@ -817,7 +817,7 @@ ASDCP::MXF::J2KExtendedCapabilities::EncodeString(char* str_buf, ui32_t buf_len)
     {
       for ( int i = 0; i < Ccap.size(); ++i )
         {
-	  snprintf(str_buf+(i*3), 4, "%02hx.", Ccap[i]);
+	  snprintf(str_buf+(i*3), 4, "%02hx.", Ccap[i].value);
         }
 
       str_buf[str_len-1] = 0;
