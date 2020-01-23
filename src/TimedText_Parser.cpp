@@ -396,7 +396,6 @@ ASDCP::TimedText::DCSubtitleParser::h__SubtitleParser::ReadAncillaryResource(con
     {
       DefaultLogSink().Error("Resource not found: %s (%s)\n", TmpID.EncodeHex(buf, 64), resourceType.c_str());
     }
-    
 
   return result;
 }
