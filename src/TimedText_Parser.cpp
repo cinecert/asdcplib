@@ -380,16 +380,21 @@ ASDCP::TimedText::DCSubtitleParser::h__SubtitleParser::ReadAncillaryResource(con
 
   Result_t result = Resolver.ResolveRID(uuid, FrameBuf);
 
+  std::string resourceType;
+  if ( (*rmi).second == MT_PNG )
+    resourceType = "image/png";
+  else if ( (*rmi).second == MT_OPENTYPE )
+    resourceType = "application/x-font-opentype";
+  else
+    resourceType = "application/octet-stream";
+
   if ( KM_SUCCESS(result) )
     {
-      if ( (*rmi).second == MT_PNG )
-	FrameBuf.MIMEType("image/png");
-	      
-      else if ( (*rmi).second == MT_OPENTYPE )
-	FrameBuf.MIMEType("application/x-font-opentype");
-
-      else
-	FrameBuf.MIMEType("application/octet-stream");
+      FrameBuf.MIMEType(resourceType);
+    }
+  else
+    {
+      DefaultLogSink().Error("Resource not found: %s (%s)\n", TmpID.EncodeHex(buf, 64), resourceType.c_str());
     }
 
   return result;
