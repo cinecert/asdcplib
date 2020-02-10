@@ -1,6 +1,16 @@
 
 Change History
 
+2020-02-10 - 2.10.35 -- HTJ2c support, minor extensions, bug fixes
+ o Support for wrapping High-Throughput j2c contrinuted by Pierre Lemieux.
+ o Added support for DisplayType, IntrinsicPictureResolution, ZPositionInUse
+   properties in timed text track files.
+ o Merged bug fixes and minor extensions from contibutors, see git log for detail.
+ o Updated to ACES writer to add a ContainerConstraintsSubDescriptor (mandatory
+   per ST 379-2)
+ o Add MCA labels for Sign Language Video Stream.
+
+
 2019-02-22 - 2.10.32 -- bug fixes
  o Fixed parsing of as-02-wrap -tfr (ACES) option value
  o Fixed ISXD bugs:
