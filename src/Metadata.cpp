@@ -3101,6 +3101,18 @@ TimedTextDescriptor::InitFromTLVSet(TLVReader& TLVSet)
     result = TLVSet.ReadObject(OBJ_READ_ARGS_OPT(TimedTextDescriptor, RFC5646LanguageTagList));
     RFC5646LanguageTagList.set_has_value( result == RESULT_OK );
   }
+  if ( ASDCP_SUCCESS(result) ) {
+    result = TLVSet.ReadObject(OBJ_READ_ARGS_OPT(TimedTextDescriptor, DisplayType));
+    DisplayType.set_has_value( result == RESULT_OK );
+  }
+  if ( ASDCP_SUCCESS(result) ) {
+    result = TLVSet.ReadObject(OBJ_READ_ARGS_OPT(TimedTextDescriptor, IntrinsicPictureResolution));
+    IntrinsicPictureResolution.set_has_value( result == RESULT_OK );
+  }
+  if ( ASDCP_SUCCESS(result) ) { 
+    result = TLVSet.ReadUi8(OBJ_READ_ARGS_OPT(TimedTextDescriptor, ZPositionInUse));
+    ZPositionInUse.set_has_value( result == RESULT_OK );
+  }
   return result;
 }
 
@@ -3114,6 +3126,9 @@ TimedTextDescriptor::WriteToTLVSet(TLVWriter& TLVSet)
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(TimedTextDescriptor, UCSEncoding));
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(TimedTextDescriptor, NamespaceURI));
   if ( ASDCP_SUCCESS(result)  && ! RFC5646LanguageTagList.empty() ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS_OPT(TimedTextDescriptor, RFC5646LanguageTagList));
+  if ( ASDCP_SUCCESS(result)  && ! DisplayType.empty() ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS_OPT(TimedTextDescriptor, DisplayType));
+  if ( ASDCP_SUCCESS(result)  && ! IntrinsicPictureResolution.empty() ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS_OPT(TimedTextDescriptor, IntrinsicPictureResolution));
+  if ( ASDCP_SUCCESS(result)  && ! ZPositionInUse.empty() ) result = TLVSet.WriteUi8(OBJ_WRITE_ARGS_OPT(TimedTextDescriptor, ZPositionInUse));
   return result;
 }
 
@@ -3126,6 +3141,9 @@ TimedTextDescriptor::Copy(const TimedTextDescriptor& rhs)
   UCSEncoding = rhs.UCSEncoding;
   NamespaceURI = rhs.NamespaceURI;
   RFC5646LanguageTagList = rhs.RFC5646LanguageTagList;
+  DisplayType = rhs.DisplayType;
+  IntrinsicPictureResolution = rhs.IntrinsicPictureResolution;
+  ZPositionInUse = rhs.ZPositionInUse;
 }
 
 //
@@ -3144,6 +3162,15 @@ TimedTextDescriptor::Dump(FILE* stream)
   fprintf(stream, "  %22s = %s\n",  "NamespaceURI", NamespaceURI.EncodeString(identbuf, IdentBufferLen));
   if ( ! RFC5646LanguageTagList.empty() ) {
     fprintf(stream, "  %22s = %s\n",  "RFC5646LanguageTagList", RFC5646LanguageTagList.get().EncodeString(identbuf, IdentBufferLen));
+  }
+  if ( ! DisplayType.empty() ) {
+    fprintf(stream, "  %22s = %s\n",  "DisplayType", DisplayType.get().EncodeString(identbuf, IdentBufferLen));
+  }
+  if ( ! IntrinsicPictureResolution.empty() ) {
+    fprintf(stream, "  %22s = %s\n",  "IntrinsicPictureResolution", IntrinsicPictureResolution.get().EncodeString(identbuf, IdentBufferLen));
+  }
+  if ( ! ZPositionInUse.empty() ) {
+    fprintf(stream, "  %22s = %d\n",  "ZPositionInUse", ZPositionInUse.get());
   }
 }
 

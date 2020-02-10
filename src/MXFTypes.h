@@ -690,7 +690,7 @@ namespace ASDCP
 	};
 
       //
-      class J2KExtendedCapabilities : public Kumu::IArchive
+      class J2KExtendedCapabilitiesType : public Kumu::IArchive
         {
         public:
 	  ui32_t Pcap;

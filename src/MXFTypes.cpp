@@ -777,7 +777,7 @@ ASDCP::MXF::Raw::EncodeString(char* str_buf, ui32_t buf_len) const
 
 //
 bool
-ASDCP::MXF::J2KExtendedCapabilities::Archive(Kumu::MemIOWriter* Writer) const {
+ASDCP::MXF::J2KExtendedCapabilitiesType::Archive(Kumu::MemIOWriter* Writer) const {
   if ( ! Writer->WriteUi32BE(Pcap) )
     {
       return false;
@@ -793,7 +793,7 @@ ASDCP::MXF::J2KExtendedCapabilities::Archive(Kumu::MemIOWriter* Writer) const {
 
 //
 bool
-ASDCP::MXF::J2KExtendedCapabilities::Unarchive(Kumu::MemIOReader* Reader) {
+ASDCP::MXF::J2KExtendedCapabilitiesType::Unarchive(Kumu::MemIOReader* Reader) {
   if ( ! Reader->ReadUi32BE(&Pcap) )
     {
       return false;
@@ -809,7 +809,7 @@ ASDCP::MXF::J2KExtendedCapabilities::Unarchive(Kumu::MemIOReader* Reader) {
 
 //
 const char*
-ASDCP::MXF::J2KExtendedCapabilities::EncodeString(char* str_buf, ui32_t buf_len) const
+ASDCP::MXF::J2KExtendedCapabilitiesType::EncodeString(char* str_buf, ui32_t buf_len) const
 {
   const int str_len = ( sizeof(ui16_t) + 1 ) * JP2K::MaxCapabilities;
 

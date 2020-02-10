@@ -561,6 +561,9 @@ namespace ASDCP {
 	MDD_HTJ2KPictureCodingScheme, // 523
 	MDD_HTJ2KPictureCodingSchemeGeneric, // 524
 	MDD_AudioChannelSLVS, // 525
+	MDD_TimedTextDescriptor_DisplayType, // 526
+	MDD_TimedTextDescriptor_IntrinsicPictureResolution, // 527
+	MDD_TimedTextDescriptor_ZPositionInUse, // 528
 	MDD_Max
     }; // enum MDD_t
 

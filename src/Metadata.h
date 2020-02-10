@@ -571,7 +571,7 @@ namespace ASDCP
           optional_property<Raw > CodingStyleDefault;
           optional_property<Raw > QuantizationDefault;
           optional_property<RGBALayout > J2CLayout;
-          optional_property<J2KExtendedCapabilities > J2KExtendedCapabilities;
+          optional_property<J2KExtendedCapabilitiesType > J2KExtendedCapabilities;
           optional_property<Array<Kumu::ArchivableUi16> > J2KProfile;
           optional_property<Array<Kumu::ArchivableUi16> > J2KCorrespondingProfile;
 
@@ -810,6 +810,9 @@ namespace ASDCP
           UTF16String UCSEncoding;
           UTF16String NamespaceURI;
           optional_property<UTF16String > RFC5646LanguageTagList;
+          optional_property<UTF16String > DisplayType;
+          optional_property<UTF16String > IntrinsicPictureResolution;
+          optional_property<ui8_t > ZPositionInUse;
 
       TimedTextDescriptor(const Dictionary*& d);
       TimedTextDescriptor(const TimedTextDescriptor& rhs);
@@ -872,7 +875,7 @@ namespace ASDCP
       virtual Result_t WriteToBuffer(ASDCP::FrameBuffer&);
 	};
 
-      // A ContainerConstraintsSubDescriptor is required to be present in the top level File Descriptor for the Constrained Generic Container per ST 379-2
+      //
       class ContainerConstraintsSubDescriptor : public InterchangeObject
 	{
 	  ContainerConstraintsSubDescriptor();
