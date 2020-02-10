@@ -530,7 +530,7 @@ namespace AS_02
       // error occurs.
       Result_t WriteFrame(const ASDCP::FrameBuffer&, ASDCP::AESEncContext* = 0, ASDCP::HMACContext* = 0);
 
-      // Writes an XML text document to the MXF file as per RP 2067. If the
+      // Writes an XML text document to the MXF file as per RP 2057. If the
       // optional AESEncContext argument is present, the document is encrypted
       // prior to writing. Fails if the file is not open, is finalized, or an
       // operating system error occurs.
