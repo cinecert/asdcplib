@@ -253,7 +253,7 @@ namespace ASDCP
 	  }
 	  bool operator==(const PropertyType& rhs) const { return this->m_property == rhs; }
 	  bool operator==(const optional_property<PropertyType>& rhs) const { return this->m_property == rhs.m_property; }
-	  operator const PropertyType&() const { return this->m_property; }
+	  operator PropertyType&() { return this->m_property; }
 	  void set(const PropertyType& rhs) { this->m_property = rhs; this->m_has_value = true; }
 	  void set_has_value(bool has_value = true) { this->m_has_value = has_value; }
 	  void reset(const PropertyType& rhs) { this->m_has_value = false; }

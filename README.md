@@ -63,13 +63,13 @@ make dist
 
 ## Libraries
 
-`libkumu.dylib` - Platform compatibility layer.
+`libkumu` - Platform compatibility layer.
 
-`libasdcp.dylib` - SMPTE ST 429 (DCP) and JPEG Interop DCP.
+`libasdcp` - SMPTE ST 429 (DCP) and JPEG Interop DCP.
 
-`libas02.dylib` - SMPTE ST 2067 (IMF).
+`libas02` - SMPTE ST 2067 (IMF).
 
-`libphdr.dylib` - Dolby Vision track file. Deprecated but maintained.
+`libphdr` - Dolby Vision track file. Deprecated but maintained.
 
 
 ## CLI Programs
