@@ -349,8 +349,7 @@ class AS_02::PHDR::MXFWriter::h__Writer : public AS_02::h__AS02WriterFrame
 
   Result_t WritePHDRHeader(const std::string& PackageLabel, const ASDCP::UL& WrappingUL,
 			   const std::string& TrackName, const ASDCP::UL& EssenceUL,
-			   const ASDCP::UL& DataDefinition, const ASDCP::Rational& EditRate,
-			   const ui32_t& TCFrameRate);
+			   const ASDCP::UL& DataDefinition, const ASDCP::Rational& EditRate);
 
 public:
   byte_t            m_EssenceUL[SMPTE_UL_LENGTH];
@@ -436,8 +435,7 @@ AS_02::PHDR::MXFWriter::h__Writer::OpenWrite(const std::string& filename,
 Result_t
 AS_02::PHDR::MXFWriter::h__Writer::WritePHDRHeader(const std::string& PackageLabel, const ASDCP::UL& WrappingUL,
 						   const std::string& TrackName, const ASDCP::UL& EssenceUL,
-						   const ASDCP::UL& DataDefinition, const ASDCP::Rational& EditRate,
-						   const ui32_t& TCFrameRate)
+						   const ASDCP::UL& DataDefinition, const ASDCP::Rational& EditRate)
 {
   if ( EditRate.Numerator == 0 || EditRate.Denominator == 0 )
     {
@@ -447,7 +445,7 @@ AS_02::PHDR::MXFWriter::h__Writer::WritePHDRHeader(const std::string& PackageLab
   
   InitHeader(MXFVersion_2011);
   
-  AddSourceClip(EditRate, EditRate/*TODO: for a moment*/, TCFrameRate, TrackName, EssenceUL, DataDefinition, PackageLabel);
+  AddSourceClip(EditRate, EditRate/*TODO: for a moment*/, 0 /*no timecode track*/, TrackName, EssenceUL, DataDefinition, PackageLabel);
 
   // add metadata track
   TrackSet<SourceClip> metdata_track =
@@ -534,7 +532,7 @@ AS_02::PHDR::MXFWriter::h__Writer::SetSourceStream(const std::string& label, con
     {
       result = WritePHDRHeader(label, UL(m_Dict->ul(MDD_MXFGCFUFrameWrappedPictureElement)),
 			       PICT_DEF_LABEL, UL(m_EssenceUL), UL(m_Dict->ul(MDD_PictureDataDef)),
-			       edit_rate, derive_timecode_rate_from_edit_rate(edit_rate));
+			       edit_rate);
 
       if ( KM_SUCCESS(result) )
 	{

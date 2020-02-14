@@ -338,7 +338,7 @@ AS_02::ISXD::MXFWriter::h__Writer::SetSourceStream(const std::string& label, con
     {
       result = WriteAS02Header(label, UL(m_Dict->ul(MDD_FrameWrappedISXDContainer)),
 			       PICT_DEF_LABEL, UL(m_EssenceUL), UL(m_Dict->ul(MDD_DataDataDef)),
-			       edit_rate, derive_timecode_rate_from_edit_rate(edit_rate));
+			       edit_rate);
 
       if ( KM_SUCCESS(result) )
 	{

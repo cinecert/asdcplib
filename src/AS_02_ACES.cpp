@@ -603,7 +603,7 @@ AS_02::Result_t AS_02::ACES::MXFWriter::h__Writer::SetSourceStream(const std::st
   {
     result = WriteAS02Header(label, UL(m_Dict->ul(MDD_MXFGCFrameWrappedACESPictures)), //Essence Container Label per 2065-5 section 8.1 (frame wrapping)
                              PICT_DEF_LABEL, UL(m_EssenceUL), UL(m_Dict->ul(MDD_PictureDataDef)),
-                             edit_rate, derive_timecode_rate_from_edit_rate(edit_rate));
+                             edit_rate);
 
     if(KM_SUCCESS(result))
     {
