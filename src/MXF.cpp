@@ -1546,6 +1546,35 @@ ASDCP::MXF::CreateObject(const Dictionary*& Dict, const UL& label)
 //------------------------------------------------------------------------------------------
 
 //
+static bool
+ul_is_an_mca_group(const ASDCP::UL& ul)
+{
+  if ( ul.Value()[10] == 2 ) // magic depends on UL "Essence Facet" byte (see ST 428-12)
+    {
+      return true;
+    }
+
+  return false;
+}
+
+//
+static bool
+ul_is_an_mca_channel(const ASDCP::UL& ul)
+{
+  if ( ul.Value()[10] == 1 ) // magic depends on UL "Essence Facet" byte (see ST 428-12)
+    {
+      return true;
+    }
+
+  if ( ul == ASDCP::DefaultSMPTEDict().ul(ASDCP::MDD_AudioChannelSLVS) ) // not all ULs obey ST 428-12!
+    {
+      return true;
+    }
+
+  return false;
+}
+
+//
 bool
 ASDCP::MXF::decode_mca_string(const std::string& s, const mca_label_map_t& labels, const Dictionary*& dict, const std::string& language,
 			      InterchangeObject_list_t& descriptor_list, ui32_t& channel_count)
@@ -1592,7 +1621,7 @@ ASDCP::MXF::decode_mca_string(const std::string& s, const mca_label_map_t& label
 	      return false;
 	    }
       
-	  if ( i->second.ul.Value()[10] != 2 ) // magic depends on UL "Essence Facet" byte (see ST 428-12)
+	  if ( ! ul_is_an_mca_group(i->second.ul) )
 	    {
 	      DefaultLogSink().Error("Not a soundfield group symbol: '%s'\n", symbol_buf.c_str());
 	      return false;
@@ -1664,7 +1693,7 @@ ASDCP::MXF::decode_mca_string(const std::string& s, const mca_label_map_t& label
 		  return false;
 		}
 
-	      if ( i->second.ul.Value()[10] != 1 ) // magic depends on UL "Essence Facet" byte (see ST 428-12)
+	      if ( ! ul_is_an_mca_channel(i->second.ul) )
 		{
 		  DefaultLogSink().Error("Not a channel symbol: '%s'\n", symbol_buf.c_str());
 		  return false;
