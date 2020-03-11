@@ -24,19 +24,19 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-/*! \file    AtmosSyncChannel_Generator.cpp
+/*! \file    FSKSyncChannel_Generator.cpp
     \version $Id$
-    \brief   Dolby Atmos sync channel generator implementation
+    \brief   SMPTE ST 430-12 sync channel generator implementation
 */
 
-#include <AtmosSyncChannel_Generator.h>
+#include <FSKSyncChannel_Generator.h>
 
 #include <AS_DCP.h>
 
 using namespace ASDCP;
 
 //
-ASDCP::PCM::AtmosSyncChannelGenerator::AtmosSyncChannelGenerator(ui16_t bitsPerSample, ui32_t sampleRate,
+ASDCP::PCM::FSKSyncChannelGenerator::FSKSyncChannelGenerator(ui16_t bitsPerSample, ui32_t sampleRate,
                                                                  const ASDCP::Rational& editRate, const byte_t* uuid)
     : m_syncEncoder(),
       m_audioTrackUUID(),
@@ -71,13 +71,13 @@ ASDCP::PCM::AtmosSyncChannelGenerator::AtmosSyncChannelGenerator(ui16_t bitsPerS
     }
 }
 
-ASDCP::PCM::AtmosSyncChannelGenerator::~AtmosSyncChannelGenerator()
+ASDCP::PCM::FSKSyncChannelGenerator::~FSKSyncChannelGenerator()
 {
     delete [] m_syncSignalBuffer;
 }
 
 ASDCP::Result_t
-ASDCP::PCM::AtmosSyncChannelGenerator::ReadFrame(FrameBuffer& OutFB)
+ASDCP::PCM::FSKSyncChannelGenerator::ReadFrame(FrameBuffer& OutFB)
 {
     if (OutFB.Capacity() < m_numBytesPerFrame)
     {
@@ -134,14 +134,14 @@ ASDCP::PCM::AtmosSyncChannelGenerator::ReadFrame(FrameBuffer& OutFB)
 }
 
 ASDCP::Result_t
-ASDCP::PCM::AtmosSyncChannelGenerator::Reset()
+ASDCP::PCM::FSKSyncChannelGenerator::Reset()
 {
   m_currentFrameNumber = 0;
   return RESULT_OK;
 }
 
 Result_t
-ASDCP::PCM::AtmosSyncChannelGenerator::FillAudioDescriptor(AudioDescriptor& ADesc) const
+ASDCP::PCM::FSKSyncChannelGenerator::FillAudioDescriptor(AudioDescriptor& ADesc) const
 {
   ADesc = m_ADesc;
   return RESULT_OK;

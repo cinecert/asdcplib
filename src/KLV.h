@@ -173,7 +173,7 @@ inline const char* ui64sz(ui64_t i, char* buf)
     };
 
 
-  const Dictionary& AtmosSMPTEDict();
+  const Dictionary& IABSMPTEDict();
   const Dictionary& DefaultSMPTEDict();
   const Dictionary& DefaultInteropDict();
   const Dictionary& DefaultCompositeDict();

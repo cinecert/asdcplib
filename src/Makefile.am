@@ -67,8 +67,8 @@ include_HEADERS += \
 	MXF.h \
 	Wav.h \
 	PCMParserList.h \
-	AtmosSyncChannel_Mixer.h \
-	AtmosSyncChannel_Generator.h \
+	FSKSyncChannel_Mixer.h \
+	FSKSyncChannel_Generator.h \
 	PCMDataProviders.h \
 	SyncCommon.h \
 	SyncEncoder.h \
@@ -121,10 +121,10 @@ libasdcp_la_SOURCES = MPEG2_Parser.cpp MPEG.cpp JP2K_Codestream_Parser.cpp \
 	Wav.h WavFileWriter.h MXF.h Metadata.h \
 	JP2K.h AS_DCP.h AS_DCP_internal.h KLV.h MPEG.h MXFTypes.h MDD.h \
 	PCMParserList.h S12MTimecode.h MDD.cpp \
-	AS_DCP_ATMOS.cpp  AS_DCP_DCData.cpp info.in \
+	AS_DCP_IAB.cpp  AS_DCP_DCData.cpp info.in \
 	DCData_ByteStream_Parser.cpp DCData_Sequence_Parser.cpp \
-	AtmosSyncChannel_Generator.cpp AtmosSyncChannel_Generator.h \
-	AtmosSyncChannel_Mixer.cpp AtmosSyncChannel_Mixer.h \
+	FSKSyncChannel_Generator.cpp FSKSyncChannel_Generator.h \
+	FSKSyncChannel_Mixer.cpp FSKSyncChannel_Mixer.h \
 	PCMDataProviders.cpp PCMDataProviders.h \
 	SyncEncoder.c SyncEncoder.h SyncCommon.h CRC16.c CRC16.h \
 	UUIDInformation.c UUIDInformation.h \

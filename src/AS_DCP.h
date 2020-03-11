@@ -214,7 +214,7 @@ namespace ASDCP {
     ESS_TIMED_TEXT,           // the file contains an XML timed text document and one or more resources
     ESS_JPEG_2000_S,          // the file contains one or more JPEG 2000 codestream pairs (stereoscopic)
     ESS_DCDATA_UNKNOWN,       // the file contains one or more D-Cinema Data bytestreams
-    ESS_DCDATA_DOLBY_ATMOS,   // the file contains one or more DolbyATMOS bytestreams
+    ESS_DCDATA_IAB,   // the file contains one or more IAB bytestreams
 
     // IMF essence types
     ESS_AS02_JPEG_2000,       // the file contains one or more JPEG 2000 codestreams
@@ -1848,23 +1848,23 @@ namespace ASDCP {
 
   //---------------------------------------------------------------------------------
   //
-  namespace ATMOS
+  namespace IAB
   {
-    struct AtmosDescriptor : public DCData::DCDataDescriptor
+    struct IABDescriptor : public DCData::DCDataDescriptor
     {
       ui32_t FirstFrame;       // Frame number of the frame to align with the FFOA of the picture track
       ui16_t MaxChannelCount;  // Max number of channels in bitstream
       ui16_t MaxObjectCount;   // Max number of objects in bitstream
-      byte_t AtmosID[UUIDlen]; // UUID of Atmos Project
-      ui8_t  AtmosVersion;     // ATMOS Coder Version used to create bitstream
+      byte_t ImmersiveAudioID[UUIDlen]; // UUID of IAB Project
+      ui8_t  ImmersiveAudioVersion;     // IAB Coder Version used to create bitstream
     };
 
-    // Print AtmosDescriptor to std::ostream
-    std::ostream& operator << (std::ostream& strm, const AtmosDescriptor& adesc);
+    // Print IABDescriptor to std::ostream
+    std::ostream& operator << (std::ostream& strm, const IABDescriptor& adesc);
     // Print debugging information to stream (stderr default)
-    void AtmosDescriptorDump(const AtmosDescriptor&, FILE* = 0);
-    // Determine if a file is a raw atmos file
-    bool IsDolbyAtmos(const std::string& filename);
+    void IADataEssenceSubDescriptorDump(const IABDescriptor&, FILE* = 0);
+    // Determine if a file is a raw IAB file
+    bool IsIAB(const std::string& filename);
 
     //
     class MXFWriter
@@ -1888,7 +1888,7 @@ namespace ASDCP {
 	  // the operation cannot be completed or if nonsensical data is discovered
 	  // in the essence descriptor.
 	  Result_t OpenWrite(const std::string& filename, const WriterInfo&,
-			     const AtmosDescriptor&, ui32_t HeaderSize = 16384);
+			     const IABDescriptor&, ui32_t HeaderSize = 16384);
 
 	  // Writes a frame of essence to the MXF file. If the optional AESEncContext
 	  // argument is present, the essence is encrypted prior to writing.
@@ -1924,9 +1924,9 @@ namespace ASDCP {
 	  // Returns RESULT_INIT if the file is not open.
 	  Result_t Close() const;
 
-	  // Fill an AtmosDescriptor struct with the values from the file's header.
+	  // Fill an IABDescriptor struct with the values from the file's header.
 	  // Returns RESULT_INIT if the file is not open.
-	  Result_t FillAtmosDescriptor(AtmosDescriptor&) const;
+	  Result_t FillIABDescriptor(IABDescriptor&) const;
 
 	  // Fill a WriterInfo struct with the values from the file's header.
 	  // Returns RESULT_INIT if the file is not open.
@@ -1952,7 +1952,7 @@ namespace ASDCP {
 	  void     DumpIndex(FILE* = 0) const;
 	};
 
-  } // namespace ATMOS
+  } // namespace IAB
 
 
 

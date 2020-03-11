@@ -1000,7 +1000,7 @@ main(int argc, const char** argv)
           result = read_DCData_file(Options);
           break;
 
-        case ESS_DCDATA_DOLBY_ATMOS:
+        case ESS_DCDATA_IAB:
           Options.extension = "atmos";
           result = read_DCData_file(Options);
           break;

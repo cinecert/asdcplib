@@ -49,7 +49,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <KM_fileio.h>
 #include <KM_prng.h>
-#include <AtmosSyncChannel_Mixer.h>
+#include <FSKSyncChannel_Mixer.h>
 #include <AS_DCP.h>
 #include <PCMParserList.h>
 #include <Metadata.h>
@@ -168,7 +168,7 @@ Options:\n\
   -p <rate>         - fps of picture when wrapping PCM or JP2K:\n\
                       Use one of [23|24|25|30|48|50|60], 24 is default\n\
   -P <UL>           - Set PictureEssenceCoding UL value in a JP2K file\n\
-  -s                - Insert a Dolby Atmos synchronization channel when\n\
+  -s                - Insert a SMPTE ST 430-12 synchronization channel when\n\
                       wrapping PCM. This implies a -L option(SMPTE ULs) and \n\
                       will overide -C and -l options with Configuration 4 \n\
                       Channel Assigment and no format label respectively. \n\
@@ -246,10 +246,10 @@ public:
   UL channel_assignment;
   UL picture_coding;
   UL aux_data_coding;
-  bool dolby_atmos_sync_flag;  // if true, insert a Dolby Atmos Synchronization channel.
-  ui32_t ffoa;                 // first frame of action for atmos wrapping
-  ui32_t max_channel_count;    // max channel count for atmos wrapping
-  ui32_t max_object_count;     // max object count for atmos wrapping
+  bool fsk_sync_flag;  // if true, insert a SMPTE ST 430-12 Synchronization channel.
+  ui32_t ffoa;                 // first frame of action for IAB wrapping
+  ui32_t max_channel_count;    // max channel count for IAB wrapping
+  ui32_t max_object_count;     // max object count for IAB wrapping
   bool use_interop_sound_wtf;  // make true to force WTF assignment label instead of MCA
   ASDCP::MXF::ASDCP_MCAConfigParser mca_config;
   std::string mca_language;
@@ -310,8 +310,8 @@ public:
     duration(0xffffffff), use_smpte_labels(false), j2c_pedantic(true),
     fb_size(FRAME_BUFFER_SIZE),
     channel_fmt(PCM::CF_NONE),
-    ffoa(0), max_channel_count(10), max_object_count(118), // hard-coded sample atmos properties
-    dolby_atmos_sync_flag(false),
+    ffoa(0), max_channel_count(10), max_object_count(118), // hard-coded sample IAB properties
+    fsk_sync_flag(false),
     show_ul_values_flag(false),
     mca_config(g_dict),
     use_interop_sound_wtf(false)
@@ -454,7 +454,7 @@ public:
 		picture_rate = Kumu::xabs(strtol(argv[i], 0, 10));
 		break;
 
-	      case 's': dolby_atmos_sync_flag = true; break;
+	      case 's': fsk_sync_flag = true; break;
 	      case 'u': show_ul_values_flag = true; break;
 	      case 'V': version_flag = true; break;
 	      case 'v': verbose_flag = true; break;
@@ -1158,11 +1158,11 @@ write_PCM_file(CommandOptions& Options)
   return result;
 }
 
-// Mix one or more plaintext PCM audio streams with a Dolby Atmos Synchronization channel and write them to a plaintext ASDCP file
-// Mix one or more plaintext PCM audio streams with a Dolby Atmos Synchronization channel and write them to a ciphertext ASDCP file
+// Mix one or more plaintext PCM audio streams with a ST 430-12 Synchronization channel and write them to a plaintext ASDCP file
+// Mix one or more plaintext PCM audio streams with a ST 430-12 Synchronization channel and write them to a ciphertext ASDCP file
 //
 Result_t
-write_PCM_with_ATMOS_sync_file(CommandOptions& Options)
+write_PCM_with_FSK_sync_file(CommandOptions& Options)
 {
   AESEncContext*        Context = 0;
   HMACContext*          HMAC = 0;
@@ -1178,7 +1178,7 @@ write_PCM_with_ATMOS_sync_file(CommandOptions& Options)
 	memcpy(Info.AssetUUID, Options.asset_id_value, UUIDlen);
   else
 	Kumu::GenRandomUUID(Info.AssetUUID);
-  AtmosSyncChannelMixer Mixer(Info.AssetUUID);
+  FSKSyncChannelMixer Mixer(Info.AssetUUID);
 
   // set up essence parser
   Result_t result = Mixer.OpenRead(Options.filenames, PictureRate);
@@ -1420,17 +1420,17 @@ write_timed_text_file(CommandOptions& Options)
   return result;
 }
 
-// Write one or more plaintext Dolby ATMOS bytestreams to a plaintext ASDCP file
-// Write one or more plaintext Dolby ATMOS bytestreams to a ciphertext ASDCP file
+// Write one or more plaintext IAB bytestreams to a plaintext ASDCP file
+// Write one or more plaintext IAB bytestreams to a ciphertext ASDCP file
 //
 Result_t
-write_dolby_atmos_file(CommandOptions& Options)
+write_IAB_file(CommandOptions& Options)
 {
   AESEncContext*          Context = 0;
   HMACContext*            HMAC = 0;
-  ATMOS::MXFWriter         Writer;
+  IAB::MXFWriter         Writer;
   DCData::FrameBuffer       FrameBuffer(Options.fb_size);
-  ATMOS::AtmosDescriptor ADesc;
+  IAB::IABDescriptor ADesc;
   DCData::SequenceParser    Parser;
   byte_t                  IV_buf[CBC_BLOCK_SIZE];
   Kumu::FortunaRNG        RNG;
@@ -1443,18 +1443,18 @@ write_dolby_atmos_file(CommandOptions& Options)
   {
     Parser.FillDCDataDescriptor(ADesc);
     ADesc.EditRate = Options.PictureRate();
-    // TODO: fill AtmosDescriptor
+    // TODO: fill IABDescriptor
     ADesc.FirstFrame = Options.ffoa;
     ADesc.MaxChannelCount = Options.max_channel_count;
     ADesc.MaxObjectCount = Options.max_object_count;
-    Kumu::GenRandomUUID(ADesc.AtmosID);
-    ADesc.AtmosVersion = 1;
+    Kumu::GenRandomUUID(ADesc.ImmersiveAudioID);
+    ADesc.ImmersiveAudioVersion = 1;
     if ( Options.verbose_flag )
 	{
-	  fprintf(stderr, "Dolby ATMOS Data\n");
-	  fputs("AtmosDescriptor:\n", stderr);
+	  fprintf(stderr, "IAB Data\n");
+	  fputs("IABDescriptor:\n", stderr);
       fprintf(stderr, "Frame Buffer size: %u\n", Options.fb_size);
-      ATMOS::AtmosDescriptorDump(ADesc);
+      IAB::IADataEssenceSubDescriptorDump(ADesc);
 	}
   }
 
@@ -1716,9 +1716,9 @@ main(int argc, const char** argv)
 
 	case ESS_PCM_24b_48k:
 	case ESS_PCM_24b_96k:
-	  if ( Options.dolby_atmos_sync_flag )
+	  if ( Options.fsk_sync_flag )
 	    {
-	      result = write_PCM_with_ATMOS_sync_file(Options);
+	      result = write_PCM_with_FSK_sync_file(Options);
 	    }
 	  else
 	    {
@@ -1730,8 +1730,8 @@ main(int argc, const char** argv)
 	  result = write_timed_text_file(Options);
 	  break;
 
-	case ESS_DCDATA_DOLBY_ATMOS:
-	  result = write_dolby_atmos_file(Options);
+	case ESS_DCDATA_IAB:
+	  result = write_IAB_file(Options);
 	  break;
 
 	case ESS_DCDATA_UNKNOWN:

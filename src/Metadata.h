@@ -1047,20 +1047,20 @@ namespace ASDCP
 	};
 
       //
-      class PrivateDCDataDescriptor : public GenericDataEssenceDescriptor
+      class IADataEssenceDescriptor : public GenericDataEssenceDescriptor
 	{
-	  PrivateDCDataDescriptor();
+	  IADataEssenceDescriptor();
 
 	public:
 	  const Dictionary*& m_Dict;
 
-      PrivateDCDataDescriptor(const Dictionary*& d);
-      PrivateDCDataDescriptor(const PrivateDCDataDescriptor& rhs);
-      virtual ~PrivateDCDataDescriptor() {}
+      IADataEssenceDescriptor(const Dictionary*& d);
+      IADataEssenceDescriptor(const IADataEssenceDescriptor& rhs);
+      virtual ~IADataEssenceDescriptor() {}
 
-      const PrivateDCDataDescriptor& operator=(const PrivateDCDataDescriptor& rhs) { Copy(rhs); return *this; }
-      virtual void Copy(const PrivateDCDataDescriptor& rhs);
-      virtual const char* HasName() { return "PrivateDCDataDescriptor"; }
+      const IADataEssenceDescriptor& operator=(const IADataEssenceDescriptor& rhs) { Copy(rhs); return *this; }
+      virtual void Copy(const IADataEssenceDescriptor& rhs);
+      virtual const char* HasName() { return "IADataEssenceDescriptor"; }
       virtual Result_t InitFromTLVSet(TLVReader& TLVSet);
       virtual Result_t WriteToTLVSet(TLVWriter& TLVSet);
       virtual void     Dump(FILE* = 0);
@@ -1069,25 +1069,25 @@ namespace ASDCP
 	};
 
       //
-      class DolbyAtmosSubDescriptor : public InterchangeObject
+      class IADataEssenceSubDescriptor : public InterchangeObject
 	{
-	  DolbyAtmosSubDescriptor();
+	  IADataEssenceSubDescriptor();
 
 	public:
 	  const Dictionary*& m_Dict;
-          UUID AtmosID;
+          UUID ImmersiveAudioID;
           ui32_t FirstFrame;
           ui16_t MaxChannelCount;
           ui16_t MaxObjectCount;
-          ui8_t AtmosVersion;
+          ui8_t ImmersiveAudioVersion;
 
-      DolbyAtmosSubDescriptor(const Dictionary*& d);
-      DolbyAtmosSubDescriptor(const DolbyAtmosSubDescriptor& rhs);
-      virtual ~DolbyAtmosSubDescriptor() {}
+      IADataEssenceSubDescriptor(const Dictionary*& d);
+      IADataEssenceSubDescriptor(const IADataEssenceSubDescriptor& rhs);
+      virtual ~IADataEssenceSubDescriptor() {}
 
-      const DolbyAtmosSubDescriptor& operator=(const DolbyAtmosSubDescriptor& rhs) { Copy(rhs); return *this; }
-      virtual void Copy(const DolbyAtmosSubDescriptor& rhs);
-      virtual const char* HasName() { return "DolbyAtmosSubDescriptor"; }
+      const IADataEssenceSubDescriptor& operator=(const IADataEssenceSubDescriptor& rhs) { Copy(rhs); return *this; }
+      virtual void Copy(const IADataEssenceSubDescriptor& rhs);
+      virtual const char* HasName() { return "IADataEssenceSubDescriptor"; }
       virtual Result_t InitFromTLVSet(TLVReader& TLVSet);
       virtual Result_t WriteToTLVSet(TLVWriter& TLVSet);
       virtual void     Dump(FILE* = 0);

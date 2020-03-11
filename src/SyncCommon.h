@@ -26,7 +26,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 /*! \file    SyncCommon.h
     \version $Id$
-    \brief   Common elements for ATMOS Sync Channel generation
+    \brief   Common elements for FSK Sync Channel generation
 */
 
 #ifndef _SYNC_COMMON_H_

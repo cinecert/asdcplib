@@ -332,12 +332,12 @@ namespace ASDCP {
         MDD_DCDataWrappingFrame, // 294
         MDD_DCDataEssence, // 295
         MDD_DCDataDescriptor, // 296
-        MDD_DolbyAtmosSubDescriptor, // 297
-        MDD_DolbyAtmosSubDescriptor_AtmosVersion, // 298
-        MDD_DolbyAtmosSubDescriptor_MaxChannelCount, // 299
-        MDD_DolbyAtmosSubDescriptor_MaxObjectCount, // 300
-        MDD_DolbyAtmosSubDescriptor_AtmosID, // 301
-        MDD_DolbyAtmosSubDescriptor_FirstFrame, // 302
+        MDD_IADataEssenceSubDescriptor, // 297
+        MDD_IADataEssenceSubDescriptor_ImmersiveAudioVersion, // 298
+        MDD_IADataEssenceSubDescriptor_MaxChannelCount, // 299
+        MDD_IADataEssenceSubDescriptor_MaxObjectCount, // 300
+        MDD_IADataEssenceSubDescriptor_ImmersiveAudioID, // 301
+        MDD_IADataEssenceSubDescriptor_FirstFrame, // 302
         MDD_DataDataDef, // 303
 	MDD_DCAudioChannelCfg_MCA, // 304
 	MDD_DCAudioChannel_L, // 305
@@ -416,9 +416,9 @@ namespace ASDCP {
 	MDD_PHDRMetadataTrackSubDescriptor_SourceTrackID, // 378
 	MDD_PHDRMetadataTrackSubDescriptor_SimplePayloadSID, // 379
 	MDD_JPEG2000PictureSubDescriptor_J2CLayout, // 380
-	MDD_PrivateDCDataWrappingFrame, // 381
-	MDD_PrivateDCDataEssence,  // 382
-	MDD_PrivateDCDataDescriptor, // 383
+	MDD_MXF_GC_IAData_Frame_Wrapped, // 381
+	MDD_IADataElement,  // 382
+	MDD_IADataEssenceDescriptor, // 383
 	MDD_MCALabelSubDescriptor_MCATitle, // 384
 	MDD_MCALabelSubDescriptor_MCATitleVersion, // 385
 	MDD_MCALabelSubDescriptor_MCATitleSubVersion, // 386

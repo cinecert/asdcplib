@@ -24,9 +24,9 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-/*! \file    AS_DCP_ATMOS.cpp
+/*! \file    AS_DCP_IAB.cpp
     \version $Id$
-    \brief   AS-DCP library, Dolby Atmos essence reader and writer implementation
+    \brief   AS-DCP library, IAB essence reader and writer implementation
 */
 
 
@@ -37,37 +37,37 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 namespace ASDCP
 {
-namespace ATMOS
+namespace IAB
 {
-  static std::string ATMOS_PACKAGE_LABEL = "File Package: SMPTE-GC frame wrapping of Dolby ATMOS data";
-  static std::string ATMOS_DEF_LABEL = "Dolby ATMOS Data Track";
-  static byte_t ATMOS_ESSENCE_CODING[SMPTE_UL_LENGTH] = { 0x06, 0x0e, 0x2b, 0x34, 0x04, 0x01, 0x01, 0x05,
+  static std::string IAB_PACKAGE_LABEL = "File Package: SMPTE-GC frame wrapping of IAB data";
+  static std::string IAB_DEF_LABEL = "IAB Data Track";
+  static byte_t IAB_ESSENCE_CODING[SMPTE_UL_LENGTH] = { 0x06, 0x0e, 0x2b, 0x34, 0x04, 0x01, 0x01, 0x05,
                                                           0x0e, 0x09, 0x06, 0x04, 0x00, 0x00, 0x00, 0x00 };
-} // namespace ATMOS
+} // namespace IAB
 } // namespace ASDCP
 
 //
 std::ostream&
-ASDCP::ATMOS::operator << (std::ostream& strm, const AtmosDescriptor& ADesc)
+ASDCP::IAB::operator << (std::ostream& strm, const IABDescriptor& ADesc)
 {
   char str_buf[40];
   strm << "        EditRate: " << ADesc.EditRate.Numerator << "/" << ADesc.EditRate.Denominator << std::endl;
   strm << " ContainerDuration: " << (unsigned) ADesc.ContainerDuration << std::endl;
   strm << " DataEssenceCoding: " << UL(ADesc.DataEssenceCoding).EncodeString(str_buf, 40) << std::endl;
-  strm << "      AtmosVersion: " << (unsigned) ADesc.AtmosVersion << std::endl;
+  strm << "      ImmersiveAudioVersion: " << (unsigned) ADesc.ImmersiveAudioVersion << std::endl;
   strm << "   MaxChannelCount: " << (unsigned) ADesc.MaxChannelCount << std::endl;
   strm << "    MaxObjectCount: " << (unsigned) ADesc.MaxObjectCount << std::endl;
-  strm << "           AtmosID: " << UUID(ADesc.AtmosID).EncodeString(str_buf, 40) << std::endl;
+  strm << "           ImmersiveAudioID: " << UUID(ADesc.ImmersiveAudioID).EncodeString(str_buf, 40) << std::endl;
   strm << "        FirstFrame: " << (unsigned) ADesc.FirstFrame << std::endl;
   return strm;
 }
 
 //
 void
-ASDCP::ATMOS::AtmosDescriptorDump(const AtmosDescriptor& ADesc, FILE* stream)
+ASDCP::IAB::IADataEssenceSubDescriptorDump(const IABDescriptor& ADesc, FILE* stream)
 {
   char str_buf[40];
-  char atmosID_buf[40];
+  char ImmersiveAudioID_buf[40];
   if ( stream == 0 )
     stream = stderr;
 
@@ -75,27 +75,27 @@ ASDCP::ATMOS::AtmosDescriptorDump(const AtmosDescriptor& ADesc, FILE* stream)
           EditRate: %d/%d\n\
    ContainerDuration: %u\n\
    DataEssenceCoding: %s\n\
-        AtmosVersion: %u\n\
+        ImmersiveAudioVersion: %u\n\
      MaxChannelCount: %u\n\
       MaxObjectCount: %u\n\
-             AtmosID: %s\n\
+             ImmersiveAudioID: %s\n\
            FirsFrame: %u\n",
           ADesc.EditRate.Numerator, ADesc.EditRate.Denominator,
           ADesc.ContainerDuration,
           UL(ADesc.DataEssenceCoding).EncodeString(str_buf, 40),
-          ADesc.AtmosVersion,
+          ADesc.ImmersiveAudioVersion,
           ADesc.MaxChannelCount,
           ADesc.MaxObjectCount,
-          UUID(ADesc.AtmosID).EncodeString(atmosID_buf, 40),
+          UUID(ADesc.ImmersiveAudioID).EncodeString(ImmersiveAudioID_buf, 40),
           ADesc.FirstFrame);
 }
 
 //
 bool
-ASDCP::ATMOS::IsDolbyAtmos(const std::string& filename)
+ASDCP::IAB::IsIAB(const std::string& filename)
 {
     // TODO
-    // For now use an atmos extension
+    // For now use an IAB extension
     bool result = ( 0 == (std::string("atmos").compare(Kumu::PathGetExtension(filename))) );
     return result;
 }
@@ -105,17 +105,17 @@ ASDCP::ATMOS::IsDolbyAtmos(const std::string& filename)
 
 typedef std::list<MXF::InterchangeObject*> SubDescriptorList_t;
 
-class ASDCP::ATMOS::MXFReader::h__Reader : public ASDCP::h__ASDCPReader
+class ASDCP::IAB::MXFReader::h__Reader : public ASDCP::h__ASDCPReader
 {
-  MXF::PrivateDCDataDescriptor* m_EssenceDescriptor;
-  MXF::DolbyAtmosSubDescriptor* m_EssenceSubDescriptor;
+  MXF::IADataEssenceDescriptor* m_EssenceDescriptor;
+  MXF::IADataEssenceSubDescriptor* m_EssenceSubDescriptor;
 
   KM_NO_COPY_CONSTRUCT(h__Reader);
   h__Reader();
 
  public:
   ASDCP::DCData::DCDataDescriptor m_DDesc;
-  AtmosDescriptor m_ADesc;
+  IABDescriptor m_ADesc;
 
   h__Reader(const Dictionary& d) :
     ASDCP::h__ASDCPReader(d),  m_EssenceDescriptor(0), m_EssenceSubDescriptor(0) {}
@@ -123,14 +123,14 @@ class ASDCP::ATMOS::MXFReader::h__Reader : public ASDCP::h__ASDCPReader
   Result_t    OpenRead(const std::string&);
   Result_t    ReadFrame(ui32_t, FrameBuffer&, AESDecContext*, HMACContext*);
   Result_t    MD_to_DCData_DDesc(ASDCP::DCData::DCDataDescriptor& DDesc);
-  Result_t    MD_to_Atmos_ADesc(ATMOS::AtmosDescriptor& ADesc);
+  Result_t    MD_to_IAB_ADesc(IAB::IABDescriptor& ADesc);
 };
 
 ASDCP::Result_t
-ASDCP::ATMOS::MXFReader::h__Reader::MD_to_DCData_DDesc(ASDCP::DCData::DCDataDescriptor& DDesc)
+ASDCP::IAB::MXFReader::h__Reader::MD_to_DCData_DDesc(ASDCP::DCData::DCDataDescriptor& DDesc)
 {
   ASDCP_TEST_NULL(m_EssenceDescriptor);
-  MXF::PrivateDCDataDescriptor* DDescObj = m_EssenceDescriptor;
+  MXF::IADataEssenceDescriptor* DDescObj = m_EssenceDescriptor;
   DDesc.EditRate = DDescObj->SampleRate;
   assert(DDescObj->ContainerDuration <= 0xFFFFFFFFL);
   DDesc.ContainerDuration = static_cast<ui32_t>(DDescObj->ContainerDuration);
@@ -139,17 +139,17 @@ ASDCP::ATMOS::MXFReader::h__Reader::MD_to_DCData_DDesc(ASDCP::DCData::DCDataDesc
 }
 
 ASDCP::Result_t
-ASDCP::ATMOS::MXFReader::h__Reader::MD_to_Atmos_ADesc(ATMOS::AtmosDescriptor& ADesc)
+ASDCP::IAB::MXFReader::h__Reader::MD_to_IAB_ADesc(IAB::IABDescriptor& ADesc)
 {
   ASDCP_TEST_NULL(m_EssenceSubDescriptor);
   Result_t result = MD_to_DCData_DDesc(ADesc);
   if( ASDCP_SUCCESS(result) )
   {
-    MXF::DolbyAtmosSubDescriptor* ADescObj = m_EssenceSubDescriptor;
+    MXF::IADataEssenceSubDescriptor* ADescObj = m_EssenceSubDescriptor;
     ADesc.MaxChannelCount = ADescObj->MaxChannelCount;
     ADesc.MaxObjectCount = ADescObj->MaxObjectCount;
-    ::memcpy(ADesc.AtmosID, ADescObj->AtmosID.Value(), UUIDlen);
-    ADesc.AtmosVersion = ADescObj->AtmosVersion;
+    ::memcpy(ADesc.ImmersiveAudioID, ADescObj->ImmersiveAudioID.Value(), UUIDlen);
+    ADesc.ImmersiveAudioVersion = ADescObj->ImmersiveAudioVersion;
     ADesc.FirstFrame = ADescObj->FirstFrame;
   }
   return result;
@@ -158,7 +158,7 @@ ASDCP::ATMOS::MXFReader::h__Reader::MD_to_Atmos_ADesc(ATMOS::AtmosDescriptor& AD
 //
 //
 ASDCP::Result_t
-ASDCP::ATMOS::MXFReader::h__Reader::OpenRead(const std::string& filename)
+ASDCP::IAB::MXFReader::h__Reader::OpenRead(const std::string& filename)
 {
   Result_t result = OpenMXFRead(filename);
   m_EssenceDescriptor = 0;
@@ -166,17 +166,17 @@ ASDCP::ATMOS::MXFReader::h__Reader::OpenRead(const std::string& filename)
   if ( KM_SUCCESS(result) )
     {
       InterchangeObject* iObj = 0;
-      result = m_HeaderPart.GetMDObjectByType(OBJ_TYPE_ARGS(PrivateDCDataDescriptor), &iObj);
+      result = m_HeaderPart.GetMDObjectByType(OBJ_TYPE_ARGS(IADataEssenceDescriptor), &iObj);
 
       if ( KM_SUCCESS(result) )
 	{
-	  m_EssenceDescriptor = static_cast<MXF::PrivateDCDataDescriptor*>(iObj);
+	  m_EssenceDescriptor = static_cast<MXF::IADataEssenceDescriptor*>(iObj);
 	}
     }
 
   if ( m_EssenceDescriptor == 0 )
     {
-      DefaultLogSink().Error("DCDataDescriptor object not found in Atmos file.\n");
+      DefaultLogSink().Error("DCDataDescriptor object not found in IAB file.\n");
       result = RESULT_FORMAT;
     }
 
@@ -212,19 +212,19 @@ ASDCP::ATMOS::MXFReader::h__Reader::OpenRead(const std::string& filename)
       if (NULL == m_EssenceSubDescriptor)
 	{
 	  InterchangeObject* iObj = NULL;
-	  result = m_HeaderPart.GetMDObjectByType(OBJ_TYPE_ARGS(DolbyAtmosSubDescriptor), &iObj);
-	  m_EssenceSubDescriptor = static_cast<MXF::DolbyAtmosSubDescriptor*>(iObj);
+	  result = m_HeaderPart.GetMDObjectByType(OBJ_TYPE_ARGS(IADataEssenceSubDescriptor), &iObj);
+	  m_EssenceSubDescriptor = static_cast<MXF::IADataEssenceSubDescriptor*>(iObj);
 	  
 	  if ( iObj == 0 )
 	    {
-	      DefaultLogSink().Error("DolbyAtmosSubDescriptor object not found.\n");
+	      DefaultLogSink().Error("IADataEssenceSubDescriptor object not found.\n");
 	      return RESULT_FORMAT;
 	    }
 	}
 
       if ( ASDCP_SUCCESS(result) )
 	{
-	  result = MD_to_Atmos_ADesc(m_ADesc);
+	  result = MD_to_IAB_ADesc(m_ADesc);
 	}
     }
 
@@ -233,26 +233,26 @@ ASDCP::ATMOS::MXFReader::h__Reader::OpenRead(const std::string& filename)
 
 //
 ASDCP::Result_t
-ASDCP::ATMOS::MXFReader::h__Reader::ReadFrame(ui32_t FrameNum, FrameBuffer& FrameBuf,
+ASDCP::IAB::MXFReader::h__Reader::ReadFrame(ui32_t FrameNum, FrameBuffer& FrameBuf,
 					      AESDecContext* Ctx, HMACContext* HMAC)
 {
   if ( ! m_File.IsOpen() )
     return RESULT_INIT;
 
   assert(m_Dict);
-  return ReadEKLVFrame(FrameNum, FrameBuf, m_Dict->ul(MDD_PrivateDCDataEssence), Ctx, HMAC);
+  return ReadEKLVFrame(FrameNum, FrameBuf, m_Dict->ul(MDD_IADataElement), Ctx, HMAC);
 }
 
 
 //------------------------------------------------------------------------------------------
 
-ASDCP::ATMOS::MXFReader::MXFReader()
+ASDCP::IAB::MXFReader::MXFReader()
 {
-  m_Reader = new h__Reader(AtmosSMPTEDict());
+  m_Reader = new h__Reader(IABSMPTEDict());
 }
 
 
-ASDCP::ATMOS::MXFReader::~MXFReader()
+ASDCP::IAB::MXFReader::~MXFReader()
 {
   if ( m_Reader && m_Reader->m_File.IsOpen() )
     m_Reader->Close();
@@ -262,7 +262,7 @@ ASDCP::ATMOS::MXFReader::~MXFReader()
 // with the normal operation of the wrapper.  Caveat emptor!
 //
 ASDCP::MXF::OP1aHeader&
-ASDCP::ATMOS::MXFReader::OP1aHeader()
+ASDCP::IAB::MXFReader::OP1aHeader()
 {
   if ( m_Reader.empty() )
   {
@@ -277,7 +277,7 @@ ASDCP::ATMOS::MXFReader::OP1aHeader()
 // with the normal operation of the wrapper.  Caveat emptor!
 //
 ASDCP::MXF::OPAtomIndexFooter&
-ASDCP::ATMOS::MXFReader::OPAtomIndexFooter()
+ASDCP::IAB::MXFReader::OPAtomIndexFooter()
 {
   if ( m_Reader.empty() )
   {
@@ -292,7 +292,7 @@ ASDCP::ATMOS::MXFReader::OPAtomIndexFooter()
 // with the normal operation of the wrapper.  Caveat emptor!
 //
 ASDCP::MXF::RIP&
-ASDCP::ATMOS::MXFReader::RIP()
+ASDCP::IAB::MXFReader::RIP()
 {
   if ( m_Reader.empty() )
     {
@@ -306,14 +306,14 @@ ASDCP::ATMOS::MXFReader::RIP()
 // Open the file for reading. The file must exist. Returns error if the
 // operation cannot be completed.
 ASDCP::Result_t
-ASDCP::ATMOS::MXFReader::OpenRead(const std::string& filename) const
+ASDCP::IAB::MXFReader::OpenRead(const std::string& filename) const
 {
   return m_Reader->OpenRead(filename);
 }
 
 //
 ASDCP::Result_t
-ASDCP::ATMOS::MXFReader::ReadFrame(ui32_t FrameNum, DCData::FrameBuffer& FrameBuf,
+ASDCP::IAB::MXFReader::ReadFrame(ui32_t FrameNum, DCData::FrameBuffer& FrameBuf,
                                     AESDecContext* Ctx, HMACContext* HMAC) const
 {
   if ( m_Reader && m_Reader->m_File.IsOpen() )
@@ -323,7 +323,7 @@ ASDCP::ATMOS::MXFReader::ReadFrame(ui32_t FrameNum, DCData::FrameBuffer& FrameBu
 }
 
 ASDCP::Result_t
-ASDCP::ATMOS::MXFReader::LocateFrame(ui32_t FrameNum, Kumu::fpos_t& streamOffset, i8_t& temporalOffset, i8_t& keyFrameOffset) const
+ASDCP::IAB::MXFReader::LocateFrame(ui32_t FrameNum, Kumu::fpos_t& streamOffset, i8_t& temporalOffset, i8_t& keyFrameOffset) const
 {
     return m_Reader->LocateFrame(FrameNum, streamOffset, temporalOffset, keyFrameOffset);
 }
@@ -332,7 +332,7 @@ ASDCP::ATMOS::MXFReader::LocateFrame(ui32_t FrameNum, Kumu::fpos_t& streamOffset
 // Fill the struct with the values from the file's header.
 // Returns RESULT_INIT if the file is not open.
 ASDCP::Result_t
-ASDCP::ATMOS::MXFReader::FillAtmosDescriptor(AtmosDescriptor& ADesc) const
+ASDCP::IAB::MXFReader::FillIABDescriptor(IABDescriptor& ADesc) const
 {
   if ( m_Reader && m_Reader->m_File.IsOpen() )
   {
@@ -347,7 +347,7 @@ ASDCP::ATMOS::MXFReader::FillAtmosDescriptor(AtmosDescriptor& ADesc) const
 // Fill the struct with the values from the file's header.
 // Returns RESULT_INIT if the file is not open.
 ASDCP::Result_t
-ASDCP::ATMOS::MXFReader::FillWriterInfo(WriterInfo& Info) const
+ASDCP::IAB::MXFReader::FillWriterInfo(WriterInfo& Info) const
 {
   if ( m_Reader && m_Reader->m_File.IsOpen() )
   {
@@ -360,7 +360,7 @@ ASDCP::ATMOS::MXFReader::FillWriterInfo(WriterInfo& Info) const
 
 //
 void
-ASDCP::ATMOS::MXFReader::DumpHeaderMetadata(FILE* stream) const
+ASDCP::IAB::MXFReader::DumpHeaderMetadata(FILE* stream) const
 {
   if ( m_Reader->m_File.IsOpen() )
     m_Reader->m_HeaderPart.Dump(stream);
@@ -368,7 +368,7 @@ ASDCP::ATMOS::MXFReader::DumpHeaderMetadata(FILE* stream) const
 
 //
 void
-ASDCP::ATMOS::MXFReader::DumpIndex(FILE* stream) const
+ASDCP::IAB::MXFReader::DumpIndex(FILE* stream) const
 {
   if ( m_Reader->m_File.IsOpen() )
     m_Reader->m_IndexAccess.Dump(stream);
@@ -376,7 +376,7 @@ ASDCP::ATMOS::MXFReader::DumpIndex(FILE* stream) const
 
 //
 ASDCP::Result_t
-ASDCP::ATMOS::MXFReader::Close() const
+ASDCP::IAB::MXFReader::Close() const
 {
   if ( m_Reader && m_Reader->m_File.IsOpen() )
     {
@@ -391,17 +391,17 @@ ASDCP::ATMOS::MXFReader::Close() const
 //------------------------------------------------------------------------------------------
 
 //
-class ASDCP::ATMOS::MXFWriter::h__Writer : public ASDCP::h__ASDCPWriter
+class ASDCP::IAB::MXFWriter::h__Writer : public ASDCP::h__ASDCPWriter
 {
   ASDCP::DCData::DCDataDescriptor m_DDesc;
   byte_t  m_EssenceUL[SMPTE_UL_LENGTH];
-  MXF::DolbyAtmosSubDescriptor* m_EssenceSubDescriptor;
+  MXF::IADataEssenceSubDescriptor* m_EssenceSubDescriptor;
 
   ASDCP_NO_COPY_CONSTRUCT(h__Writer);
   h__Writer();
 
  public:
-  AtmosDescriptor m_ADesc;
+  IABDescriptor m_ADesc;
 
   h__Writer(const Dictionary& d) : ASDCP::h__ASDCPWriter(d),
 				   m_EssenceSubDescriptor(0), m_ADesc() {
@@ -410,20 +410,20 @@ class ASDCP::ATMOS::MXFWriter::h__Writer : public ASDCP::h__ASDCPWriter
 
   virtual ~h__Writer(){}
 
-  Result_t OpenWrite(const std::string&, ui32_t HeaderSize, const AtmosDescriptor& ADesc);
+  Result_t OpenWrite(const std::string&, ui32_t HeaderSize, const IABDescriptor& ADesc);
   Result_t SetSourceStream(const DCData::DCDataDescriptor&, const byte_t*, const std::string&, const std::string&);
   Result_t WriteFrame(const FrameBuffer&, AESEncContext* = 0, HMACContext* = 0);
   Result_t Finalize();
   Result_t DCData_DDesc_to_MD(ASDCP::DCData::DCDataDescriptor& DDesc);
-  Result_t Atmos_ADesc_to_MD(const AtmosDescriptor& ADesc);
+  Result_t IAB_ADesc_to_MD(const IABDescriptor& ADesc);
 };
 
 //
 ASDCP::Result_t
-ASDCP::ATMOS::MXFWriter::h__Writer::DCData_DDesc_to_MD(ASDCP::DCData::DCDataDescriptor& DDesc)
+ASDCP::IAB::MXFWriter::h__Writer::DCData_DDesc_to_MD(ASDCP::DCData::DCDataDescriptor& DDesc)
 {
   ASDCP_TEST_NULL(m_EssenceDescriptor);
-  MXF::PrivateDCDataDescriptor* DDescObj = static_cast<MXF::PrivateDCDataDescriptor *>(m_EssenceDescriptor);
+  MXF::IADataEssenceDescriptor* DDescObj = static_cast<MXF::IADataEssenceDescriptor *>(m_EssenceDescriptor);
 
   DDescObj->SampleRate = DDesc.EditRate;
   DDescObj->ContainerDuration = DDesc.ContainerDuration;
@@ -433,22 +433,22 @@ ASDCP::ATMOS::MXFWriter::h__Writer::DCData_DDesc_to_MD(ASDCP::DCData::DCDataDesc
 
 //
 ASDCP::Result_t
-ASDCP::ATMOS::MXFWriter::h__Writer::Atmos_ADesc_to_MD(const AtmosDescriptor& ADesc)
+ASDCP::IAB::MXFWriter::h__Writer::IAB_ADesc_to_MD(const IABDescriptor& ADesc)
 {
   ASDCP_TEST_NULL(m_EssenceDescriptor);
   ASDCP_TEST_NULL(m_EssenceSubDescriptor);
-  MXF::DolbyAtmosSubDescriptor * ADescObj = m_EssenceSubDescriptor;
+  MXF::IADataEssenceSubDescriptor * ADescObj = m_EssenceSubDescriptor;
   ADescObj->MaxChannelCount = ADesc.MaxChannelCount;
   ADescObj->MaxObjectCount = ADesc.MaxObjectCount;
-  ADescObj->AtmosID.Set(ADesc.AtmosID);
-  ADescObj->AtmosVersion = ADesc.AtmosVersion;
+  ADescObj->ImmersiveAudioID.Set(ADesc.ImmersiveAudioID);
+  ADescObj->ImmersiveAudioVersion = ADesc.ImmersiveAudioVersion;
   ADescObj->FirstFrame = ADesc.FirstFrame;
   return RESULT_OK;
 }
 
 //
 ASDCP::Result_t
-ASDCP::ATMOS::MXFWriter::h__Writer::OpenWrite(const std::string& filename, ui32_t HeaderSize, const AtmosDescriptor& ADesc)
+ASDCP::IAB::MXFWriter::h__Writer::OpenWrite(const std::string& filename, ui32_t HeaderSize, const IABDescriptor& ADesc)
 {
   if ( ! m_State.Test_BEGIN() )
     return RESULT_STATE;
@@ -458,8 +458,8 @@ ASDCP::ATMOS::MXFWriter::h__Writer::OpenWrite(const std::string& filename, ui32_
   if ( ASDCP_SUCCESS(result) )
     {
       m_HeaderSize = HeaderSize;
-      m_EssenceDescriptor = new MXF::PrivateDCDataDescriptor(m_Dict);
-      m_EssenceSubDescriptor = new DolbyAtmosSubDescriptor(m_Dict);
+      m_EssenceDescriptor = new MXF::IADataEssenceDescriptor(m_Dict);
+      m_EssenceSubDescriptor = new IADataEssenceSubDescriptor(m_Dict);
       SubDescriptorList_t subDescriptors;
       subDescriptors.push_back(m_EssenceSubDescriptor);
 
@@ -480,8 +480,8 @@ ASDCP::ATMOS::MXFWriter::h__Writer::OpenWrite(const std::string& filename, ui32_
   if ( ASDCP_SUCCESS(result) )
   {
       m_ADesc = ADesc;
-      memcpy(m_ADesc.DataEssenceCoding, ATMOS_ESSENCE_CODING, SMPTE_UL_LENGTH);
-      result = Atmos_ADesc_to_MD(m_ADesc);
+      memcpy(m_ADesc.DataEssenceCoding, IAB_ESSENCE_CODING, SMPTE_UL_LENGTH);
+      result = IAB_ADesc_to_MD(m_ADesc);
   }
 
   return result;
@@ -489,7 +489,7 @@ ASDCP::ATMOS::MXFWriter::h__Writer::OpenWrite(const std::string& filename, ui32_
 
 //
 ASDCP::Result_t
-ASDCP::ATMOS::MXFWriter::h__Writer::SetSourceStream(ASDCP::DCData::DCDataDescriptor const& DDesc,
+ASDCP::IAB::MXFWriter::h__Writer::SetSourceStream(ASDCP::DCData::DCDataDescriptor const& DDesc,
 						    const byte_t * essenceCoding,
 						    const std::string& packageLabel,
 						    const std::string& defLabel)
@@ -523,7 +523,7 @@ ASDCP::ATMOS::MXFWriter::h__Writer::SetSourceStream(ASDCP::DCData::DCDataDescrip
 
   if ( ASDCP_SUCCESS(result) )
   {
-    memcpy(m_EssenceUL, m_Dict->ul(MDD_PrivateDCDataEssence), SMPTE_UL_LENGTH);
+    memcpy(m_EssenceUL, m_Dict->ul(MDD_IADataElement), SMPTE_UL_LENGTH);
     m_EssenceUL[SMPTE_UL_LENGTH-1] = 1; // first (and only) essence container
     result = m_State.Goto_READY();
   }
@@ -532,7 +532,7 @@ ASDCP::ATMOS::MXFWriter::h__Writer::SetSourceStream(ASDCP::DCData::DCDataDescrip
   {
     ui32_t TCFrameRate = m_DDesc.EditRate.Numerator;
 
-    result = WriteASDCPHeader(packageLabel, UL(m_Dict->ul(MDD_PrivateDCDataWrappingFrame)),
+    result = WriteASDCPHeader(packageLabel, UL(m_Dict->ul(MDD_MXF_GC_IAData_Frame_Wrapped)),
 			      defLabel, UL(m_EssenceUL), UL(m_Dict->ul(MDD_DataDataDef)),
 			      m_DDesc.EditRate, TCFrameRate);
   }
@@ -542,7 +542,7 @@ ASDCP::ATMOS::MXFWriter::h__Writer::SetSourceStream(ASDCP::DCData::DCDataDescrip
 
 //
 ASDCP::Result_t
-ASDCP::ATMOS::MXFWriter::h__Writer::WriteFrame(const FrameBuffer& FrameBuf,
+ASDCP::IAB::MXFWriter::h__Writer::WriteFrame(const FrameBuffer& FrameBuf,
 					       ASDCP::AESEncContext* Ctx, ASDCP::HMACContext* HMAC)
 {
   Result_t result = RESULT_OK;
@@ -568,7 +568,7 @@ ASDCP::ATMOS::MXFWriter::h__Writer::WriteFrame(const FrameBuffer& FrameBuf,
 // Closes the MXF file, writing the index and other closing information.
 //
 ASDCP::Result_t
-ASDCP::ATMOS::MXFWriter::h__Writer::Finalize()
+ASDCP::IAB::MXFWriter::h__Writer::Finalize()
 {
   if ( ! m_State.Test_RUNNING() )
     return RESULT_STATE;
@@ -582,11 +582,11 @@ ASDCP::ATMOS::MXFWriter::h__Writer::Finalize()
 
 //------------------------------------------------------------------------------------------
 
-ASDCP::ATMOS::MXFWriter::MXFWriter()
+ASDCP::IAB::MXFWriter::MXFWriter()
 {
 }
 
-ASDCP::ATMOS::MXFWriter::~MXFWriter()
+ASDCP::IAB::MXFWriter::~MXFWriter()
 {
 }
 
@@ -594,7 +594,7 @@ ASDCP::ATMOS::MXFWriter::~MXFWriter()
 // with the normal operation of the wrapper.  Caveat emptor!
 //
 ASDCP::MXF::OP1aHeader&
-ASDCP::ATMOS::MXFWriter::OP1aHeader()
+ASDCP::IAB::MXFWriter::OP1aHeader()
 {
   if ( m_Writer.empty() )
   {
@@ -609,7 +609,7 @@ ASDCP::ATMOS::MXFWriter::OP1aHeader()
 // with the normal operation of the wrapper.  Caveat emptor!
 //
 ASDCP::MXF::OPAtomIndexFooter&
-ASDCP::ATMOS::MXFWriter::OPAtomIndexFooter()
+ASDCP::IAB::MXFWriter::OPAtomIndexFooter()
 {
   if ( m_Writer.empty() )
   {
@@ -624,7 +624,7 @@ ASDCP::ATMOS::MXFWriter::OPAtomIndexFooter()
 // with the normal operation of the wrapper.  Caveat emptor!
 //
 ASDCP::MXF::RIP&
-ASDCP::ATMOS::MXFWriter::RIP()
+ASDCP::IAB::MXFWriter::RIP()
 {
   if ( m_Writer.empty() )
     {
@@ -638,23 +638,23 @@ ASDCP::ATMOS::MXFWriter::RIP()
 // Open the file for writing. The file must not exist. Returns error if
 // the operation cannot be completed.
 ASDCP::Result_t
-ASDCP::ATMOS::MXFWriter::OpenWrite(const std::string& filename, const WriterInfo& Info,
-				       const AtmosDescriptor& ADesc, ui32_t HeaderSize)
+ASDCP::IAB::MXFWriter::OpenWrite(const std::string& filename, const WriterInfo& Info,
+				       const IABDescriptor& ADesc, ui32_t HeaderSize)
 {
   if ( Info.LabelSetType != LS_MXF_SMPTE )
   {
-    DefaultLogSink().Error("Atmos support requires LS_MXF_SMPTE\n");
+    DefaultLogSink().Error("IAB support requires LS_MXF_SMPTE\n");
     return RESULT_FORMAT;
   }
 
-  m_Writer = new h__Writer(AtmosSMPTEDict());
+  m_Writer = new h__Writer(IABSMPTEDict());
   m_Writer->m_Info = Info;
 
   Result_t result = m_Writer->OpenWrite(filename, HeaderSize, ADesc);
 
   if ( ASDCP_SUCCESS(result) )
-      result = m_Writer->SetSourceStream(ADesc, ATMOS_ESSENCE_CODING, ATMOS_PACKAGE_LABEL,
-                                         ATMOS_DEF_LABEL);
+      result = m_Writer->SetSourceStream(ADesc, IAB_ESSENCE_CODING, IAB_PACKAGE_LABEL,
+                                         IAB_DEF_LABEL);
   
   if ( ASDCP_FAILURE(result) )
     m_Writer.release();
@@ -667,7 +667,7 @@ ASDCP::ATMOS::MXFWriter::OpenWrite(const std::string& filename, const WriterInfo
 // Fails if the file is not open, is finalized, or an operating system
 // error occurs.
 ASDCP::Result_t
-ASDCP::ATMOS::MXFWriter::WriteFrame(const DCData::FrameBuffer& FrameBuf, AESEncContext* Ctx, HMACContext* HMAC)
+ASDCP::IAB::MXFWriter::WriteFrame(const DCData::FrameBuffer& FrameBuf, AESEncContext* Ctx, HMACContext* HMAC)
 {
   if ( m_Writer.empty() )
     return RESULT_INIT;
@@ -677,7 +677,7 @@ ASDCP::ATMOS::MXFWriter::WriteFrame(const DCData::FrameBuffer& FrameBuf, AESEncC
 
 // Closes the MXF file, writing the index and other closing information.
 ASDCP::Result_t
-ASDCP::ATMOS::MXFWriter::Finalize()
+ASDCP::IAB::MXFWriter::Finalize()
 {
   if ( m_Writer.empty() )
     return RESULT_INIT;
@@ -687,7 +687,7 @@ ASDCP::ATMOS::MXFWriter::Finalize()
 
 
 //
-// end AS_DCP_ATMOS.cpp
+// end AS_DCP_IAB.cpp
 //
 
 

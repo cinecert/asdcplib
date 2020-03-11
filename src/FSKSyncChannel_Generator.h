@@ -24,13 +24,13 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-/*! \file    AtmosSyncChannel_Generator.h
+/*! \file    FSKSyncChannel_Generator.h
     \version $Id$
-    \brief   Dolby Atmos sync channel generator
+    \brief   SMPTE ST 430-12 sync channel generator
 */
 
-#ifndef _ATMOSSYNCCHANNEL_GENERATOR_H_
-#define _ATMOSSYNCCHANNEL_GENERATOR_H_
+#ifndef _FSKSyncChannel_GENERATOR_H_
+#define _FSKSyncChannel_GENERATOR_H_
 
 #include <AS_DCP.h>
 #include "SyncEncoder.h"
@@ -41,7 +41,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 namespace ASDCP
 {
-    namespace ATMOS
+    namespace IAB
     {
         static const ui32_t SYNC_CHANNEL = 14;
     }
@@ -51,7 +51,7 @@ namespace ASDCP
 
         static const ui16_t NUM_BYTES_PER_INT24 = 3;
 
-        class AtmosSyncChannelGenerator
+        class FSKSyncChannelGenerator
         {
             SYNCENCODER  m_syncEncoder;
             UUIDINFORMATION m_audioTrackUUID;
@@ -62,7 +62,7 @@ namespace ASDCP
             ui32_t m_numBytesPerFrame;
             bool m_isSyncEncoderInitialized;
 
-            ASDCP_NO_COPY_CONSTRUCT(AtmosSyncChannelGenerator);
+            ASDCP_NO_COPY_CONSTRUCT(FSKSyncChannelGenerator);
 
         public:
             /**
@@ -71,12 +71,12 @@ namespace ASDCP
              * @param bitsPerSample the number of bits in each sample of pcm data
              * @param sampleRate the sampling rate
              * @param editRate the edit rate of the associated picture track.
-             * @param atmosUUID the UUID of the associated ATMOS track file.
+             * @param uuid the UUID of the associated IAB track file.
              *
              */
-            AtmosSyncChannelGenerator(ui16_t bitsPerSample, ui32_t sampleRate,
+            FSKSyncChannelGenerator(ui16_t bitsPerSample, ui32_t sampleRate,
                                const ASDCP::Rational& editRate, const byte_t* uuid);
-            ~AtmosSyncChannelGenerator();
+            ~FSKSyncChannelGenerator();
 
             /**
              * Set the frame number when seeking
@@ -144,8 +144,8 @@ namespace ASDCP
     } // namespace PCM
 } // namespace ASDCP
 
-#endif // _ATMOSSYNCCHANNEL_GENERATOR_H_
+#endif // _FSKSyncChannel_GENERATOR_H_
 
 //
-// end AtmosSyncChannel_Generator.h
+// end FSKSyncChannel_Generator.h
 //

@@ -26,7 +26,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 /*! \file    PCMDataProviders.cpp
     \version $Id$
-    \brief   Implementation of PCM sample data providers for WAV, AtmosSync and Silence.
+    \brief   Implementation of PCM sample data providers for WAV, FSK sync and Silence.
 */
 
 #include <PCMDataProviders.h>
@@ -105,7 +105,7 @@ ASDCP::WAVDataProvider::OpenRead(const char* filename, const Rational& PictureRa
 }
 
 //
-ASDCP::AtmosSyncDataProvider::AtmosSyncDataProvider(const ui16_t bitsPerSample, const ui32_t sampleRate,
+ASDCP::FSKSyncDataProvider::FSKSyncDataProvider(const ui16_t bitsPerSample, const ui32_t sampleRate,
                                                     const ASDCP::Rational& editRate, const byte_t* uuid)
     : m_Generator(bitsPerSample, sampleRate, editRate, uuid), m_FB(), m_ADesc(), m_SampleSize()
 {
@@ -114,11 +114,11 @@ ASDCP::AtmosSyncDataProvider::AtmosSyncDataProvider(const ui16_t bitsPerSample, 
     m_FB.Capacity(PCM::CalcFrameBufferSize(m_ADesc));
 }
 
-ASDCP::AtmosSyncDataProvider::~AtmosSyncDataProvider()
+ASDCP::FSKSyncDataProvider::~FSKSyncDataProvider()
 {}
 
 Result_t
-ASDCP::AtmosSyncDataProvider::PutSample(const ui32_t numChannels, byte_t* buf, ui32_t* bytesWritten)
+ASDCP::FSKSyncDataProvider::PutSample(const ui32_t numChannels, byte_t* buf, ui32_t* bytesWritten)
 {
   ASDCP_TEST_NULL(buf);
   ASDCP_TEST_NULL(m_ptr);
@@ -136,7 +136,7 @@ ASDCP::AtmosSyncDataProvider::PutSample(const ui32_t numChannels, byte_t* buf, u
 }
 
 Result_t
-ASDCP::AtmosSyncDataProvider::ReadFrame()
+ASDCP::FSKSyncDataProvider::ReadFrame()
 {
   Result_t result = m_Generator.ReadFrame(m_FB);
   m_ptr = ASDCP_SUCCESS(result) ? m_FB.RoData() : NULL;
@@ -144,14 +144,14 @@ ASDCP::AtmosSyncDataProvider::ReadFrame()
 }
 
 Result_t
-ASDCP::AtmosSyncDataProvider::FillAudioDescriptor(PCM::AudioDescriptor& ADesc) const
+ASDCP::FSKSyncDataProvider::FillAudioDescriptor(PCM::AudioDescriptor& ADesc) const
 {
   ADesc = m_ADesc;
   return RESULT_OK;
 }
 
 Result_t
-ASDCP::AtmosSyncDataProvider::Reset()
+ASDCP::FSKSyncDataProvider::Reset()
 {
     return m_Generator.Reset();
 }

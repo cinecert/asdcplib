@@ -138,35 +138,35 @@ ASDCP::SMPTE_390_OPAtom_Entry() {
 
 //
 //
-static ASDCP::Dictionary s_AtmosSMPTEDict;
-static Kumu::Mutex s_AtmosSMPTEDictLock;
-static bool s_AtmosSMPTEDictInit = false;
+static ASDCP::Dictionary s_IABSMPTEDict;
+static Kumu::Mutex s_IABSMPTEDictLock;
+static bool s_IABSMPTEDictInit = false;
 
 //
 const ASDCP::Dictionary&
-ASDCP::AtmosSMPTEDict()
+ASDCP::IABSMPTEDict()
 {
-  if ( ! s_AtmosSMPTEDictInit )
+  if ( ! s_IABSMPTEDictInit )
     {
-      Kumu::AutoMutex AL(s_AtmosSMPTEDictLock);
+      Kumu::AutoMutex AL(s_IABSMPTEDictLock);
 
-      if ( ! s_AtmosSMPTEDictInit )
+      if ( ! s_IABSMPTEDictInit )
 	{
-	  s_AtmosSMPTEDict.Init();
+	  s_IABSMPTEDict.Init();
 
-	  s_AtmosSMPTEDict.DeleteEntry(MDD_MXFInterop_OPAtom);
-	  s_AtmosSMPTEDict.DeleteEntry(MDD_MXFInterop_CryptEssence);
-	  s_AtmosSMPTEDict.DeleteEntry(MDD_MXFInterop_GenericDescriptor_SubDescriptors);
+	  s_IABSMPTEDict.DeleteEntry(MDD_MXFInterop_OPAtom);
+	  s_IABSMPTEDict.DeleteEntry(MDD_MXFInterop_CryptEssence);
+	  s_IABSMPTEDict.DeleteEntry(MDD_MXFInterop_GenericDescriptor_SubDescriptors);
 
 	  // legacy Atmos files have the wrong version byte
-	  assert(s_AtmosSMPTEDict.Type(MDD_GenericDataEssenceDescriptor_DataEssenceCoding).ul[7] == 0x03);
-	  s_AtmosSMPTEDict.MutableType(MDD_GenericDataEssenceDescriptor_DataEssenceCoding).ul[7] = 0x05;
+	  assert(s_IABSMPTEDict.Type(MDD_GenericDataEssenceDescriptor_DataEssenceCoding).ul[7] == 0x03);
+	  s_IABSMPTEDict.MutableType(MDD_GenericDataEssenceDescriptor_DataEssenceCoding).ul[7] = 0x05;
 	  
-	  s_AtmosSMPTEDictInit = true;
+	  s_IABSMPTEDictInit = true;
 	}
     }
 
-  return s_AtmosSMPTEDict;
+  return s_IABSMPTEDict;
 }
 
 //------------------------------------------------------------------------------------------

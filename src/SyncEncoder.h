@@ -26,7 +26,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 /*! \file    SyncEncoder.h
     \version $Id$
-    \brief   Declaration of Atmos Sync Frame Encoder
+    \brief   Declaration of FSK Sync Frame Encoder
 */
 
 #ifndef _SYNC_ENCODER_H_

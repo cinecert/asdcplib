@@ -26,14 +26,14 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 /*! \file    PCMDataProviders.h
     \version $Id$
-    \brief   PCM sample data providers for WAV, AtmosSync and Silence.
+    \brief   PCM sample data providers for WAV, FSK Sync and Silence.
 */
 
 #ifndef _PCMDATAPROVIDERS_H_
 #define _PCMDATAPROVIDERS_H_
 
 #include <AS_DCP.h>
-#include <AtmosSyncChannel_Generator.h>
+#include <FSKSyncChannel_Generator.h>
 
 namespace ASDCP
 {
@@ -73,20 +73,21 @@ namespace ASDCP
 
   };
 
-  // Atmos Sync Channel implementation of the PCM Data Provider Interface
-  class AtmosSyncDataProvider : public PCMDataProviderInterface
+  // 
+  //Sync Channel implementation of the PCM Data Provider Interface
+  class FSKSyncDataProvider : public PCMDataProviderInterface
   {
-      ASDCP_NO_COPY_CONSTRUCT(AtmosSyncDataProvider);
-      PCM::AtmosSyncChannelGenerator m_Generator;
+      ASDCP_NO_COPY_CONSTRUCT(FSKSyncDataProvider);
+      PCM::FSKSyncChannelGenerator m_Generator;
       PCM::FrameBuffer                m_FB;
       PCM::AudioDescriptor            m_ADesc;
       const byte_t*                   m_ptr;
       ui32_t                          m_SampleSize;
 
   public:
-      AtmosSyncDataProvider(const ui16_t bitsPerSample, const ui32_t sampleRate,
+      FSKSyncDataProvider(const ui16_t bitsPerSample, const ui32_t sampleRate,
                             const ASDCP::Rational& PictureRate, const byte_t* uuid);
-      virtual ~AtmosSyncDataProvider();
+      virtual ~FSKSyncDataProvider();
       virtual Result_t PutSample(const ui32_t numChannels, byte_t* buf, ui32_t* bytesWritten);
       virtual Result_t ReadFrame();
       virtual Result_t FillAudioDescriptor(PCM::AudioDescriptor& ADesc) const;

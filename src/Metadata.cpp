@@ -77,8 +77,8 @@ static InterchangeObject* AudioChannelLabelSubDescriptor_Factory(const Dictionar
 static InterchangeObject* SoundfieldGroupLabelSubDescriptor_Factory(const Dictionary*& Dict) { return new SoundfieldGroupLabelSubDescriptor(Dict); }
 static InterchangeObject* GroupOfSoundfieldGroupsLabelSubDescriptor_Factory(const Dictionary*& Dict) { return new GroupOfSoundfieldGroupsLabelSubDescriptor(Dict); }
 static InterchangeObject* DCDataDescriptor_Factory(const Dictionary*& Dict) { return new DCDataDescriptor(Dict); }
-static InterchangeObject* PrivateDCDataDescriptor_Factory(const Dictionary*& Dict) { return new PrivateDCDataDescriptor(Dict); }
-static InterchangeObject* DolbyAtmosSubDescriptor_Factory(const Dictionary*& Dict) { return new DolbyAtmosSubDescriptor(Dict); }
+static InterchangeObject* IADataEssenceDescriptor_Factory(const Dictionary*& Dict) { return new IADataEssenceDescriptor(Dict); }
+static InterchangeObject* IADataEssenceSubDescriptor_Factory(const Dictionary*& Dict) { return new IADataEssenceSubDescriptor(Dict); }
 static InterchangeObject* ACESPictureSubDescriptor_Factory(const Dictionary*& Dict) { return new ACESPictureSubDescriptor(Dict); }
 static InterchangeObject* TargetFrameSubDescriptor_Factory(const Dictionary*& Dict) { return new TargetFrameSubDescriptor(Dict); }
 static InterchangeObject* TextBasedDMFramework_Factory(const Dictionary*& Dict) { return new TextBasedDMFramework(Dict); }
@@ -130,8 +130,8 @@ ASDCP::MXF::Metadata_InitTypes(const Dictionary*& Dict)
   SetObjectFactory(Dict->ul(MDD_SoundfieldGroupLabelSubDescriptor), SoundfieldGroupLabelSubDescriptor_Factory);
   SetObjectFactory(Dict->ul(MDD_GroupOfSoundfieldGroupsLabelSubDescriptor), GroupOfSoundfieldGroupsLabelSubDescriptor_Factory);
   SetObjectFactory(Dict->ul(MDD_DCDataDescriptor), DCDataDescriptor_Factory);
-  SetObjectFactory(Dict->ul(MDD_PrivateDCDataDescriptor), PrivateDCDataDescriptor_Factory);
-  SetObjectFactory(Dict->ul(MDD_DolbyAtmosSubDescriptor), DolbyAtmosSubDescriptor_Factory);
+  SetObjectFactory(Dict->ul(MDD_IADataEssenceDescriptor), IADataEssenceDescriptor_Factory);
+  SetObjectFactory(Dict->ul(MDD_IADataEssenceSubDescriptor), IADataEssenceSubDescriptor_Factory);
   SetObjectFactory(Dict->ul(MDD_ACESPictureSubDescriptor), ACESPictureSubDescriptor_Factory);
   SetObjectFactory(Dict->ul(MDD_TargetFrameSubDescriptor), TargetFrameSubDescriptor_Factory);
   SetObjectFactory(Dict->ul(MDD_TextBasedDMFramework), TextBasedDMFramework_Factory);
@@ -3973,27 +3973,27 @@ DCDataDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 }
 
 //------------------------------------------------------------------------------------------
-// PrivateDCDataDescriptor
+// IADataEssenceDescriptor
 
 //
 
-PrivateDCDataDescriptor::PrivateDCDataDescriptor(const Dictionary*& d) : GenericDataEssenceDescriptor(d), m_Dict(d)
+IADataEssenceDescriptor::IADataEssenceDescriptor(const Dictionary*& d) : GenericDataEssenceDescriptor(d), m_Dict(d)
 {
   assert(m_Dict);
-  m_UL = m_Dict->ul(MDD_PrivateDCDataDescriptor);
+  m_UL = m_Dict->ul(MDD_IADataEssenceDescriptor);
 }
 
-PrivateDCDataDescriptor::PrivateDCDataDescriptor(const PrivateDCDataDescriptor& rhs) : GenericDataEssenceDescriptor(rhs.m_Dict), m_Dict(rhs.m_Dict)
+IADataEssenceDescriptor::IADataEssenceDescriptor(const IADataEssenceDescriptor& rhs) : GenericDataEssenceDescriptor(rhs.m_Dict), m_Dict(rhs.m_Dict)
 {
   assert(m_Dict);
-  m_UL = m_Dict->ul(MDD_PrivateDCDataDescriptor);
+  m_UL = m_Dict->ul(MDD_IADataEssenceDescriptor);
   Copy(rhs);
 }
 
 
 //
 ASDCP::Result_t
-PrivateDCDataDescriptor::InitFromTLVSet(TLVReader& TLVSet)
+IADataEssenceDescriptor::InitFromTLVSet(TLVReader& TLVSet)
 {
   assert(m_Dict);
   Result_t result = GenericDataEssenceDescriptor::InitFromTLVSet(TLVSet);
@@ -4002,7 +4002,7 @@ PrivateDCDataDescriptor::InitFromTLVSet(TLVReader& TLVSet)
 
 //
 ASDCP::Result_t
-PrivateDCDataDescriptor::WriteToTLVSet(TLVWriter& TLVSet)
+IADataEssenceDescriptor::WriteToTLVSet(TLVWriter& TLVSet)
 {
   assert(m_Dict);
   Result_t result = GenericDataEssenceDescriptor::WriteToTLVSet(TLVSet);
@@ -4011,14 +4011,14 @@ PrivateDCDataDescriptor::WriteToTLVSet(TLVWriter& TLVSet)
 
 //
 void
-PrivateDCDataDescriptor::Copy(const PrivateDCDataDescriptor& rhs)
+IADataEssenceDescriptor::Copy(const IADataEssenceDescriptor& rhs)
 {
   GenericDataEssenceDescriptor::Copy(rhs);
 }
 
 //
 void
-PrivateDCDataDescriptor::Dump(FILE* stream)
+IADataEssenceDescriptor::Dump(FILE* stream)
 {
   char identbuf[IdentBufferLen];
   *identbuf = 0;
@@ -4031,80 +4031,80 @@ PrivateDCDataDescriptor::Dump(FILE* stream)
 
 //
 ASDCP::Result_t
-PrivateDCDataDescriptor::InitFromBuffer(const byte_t* p, ui32_t l)
+IADataEssenceDescriptor::InitFromBuffer(const byte_t* p, ui32_t l)
 {
   return InterchangeObject::InitFromBuffer(p, l);
 }
 
 //
 ASDCP::Result_t
-PrivateDCDataDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
+IADataEssenceDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 {
   return InterchangeObject::WriteToBuffer(Buffer);
 }
 
 //------------------------------------------------------------------------------------------
-// DolbyAtmosSubDescriptor
+// IADataEssenceSubDescriptor
 
 //
 
-DolbyAtmosSubDescriptor::DolbyAtmosSubDescriptor(const Dictionary*& d) : InterchangeObject(d), m_Dict(d), FirstFrame(0), MaxChannelCount(0), MaxObjectCount(0), AtmosVersion(0)
+IADataEssenceSubDescriptor::IADataEssenceSubDescriptor(const Dictionary*& d) : InterchangeObject(d), m_Dict(d), FirstFrame(0), MaxChannelCount(0), MaxObjectCount(0), ImmersiveAudioVersion(0)
 {
   assert(m_Dict);
-  m_UL = m_Dict->ul(MDD_DolbyAtmosSubDescriptor);
+  m_UL = m_Dict->ul(MDD_IADataEssenceSubDescriptor);
 }
 
-DolbyAtmosSubDescriptor::DolbyAtmosSubDescriptor(const DolbyAtmosSubDescriptor& rhs) : InterchangeObject(rhs.m_Dict), m_Dict(rhs.m_Dict)
+IADataEssenceSubDescriptor::IADataEssenceSubDescriptor(const IADataEssenceSubDescriptor& rhs) : InterchangeObject(rhs.m_Dict), m_Dict(rhs.m_Dict)
 {
   assert(m_Dict);
-  m_UL = m_Dict->ul(MDD_DolbyAtmosSubDescriptor);
+  m_UL = m_Dict->ul(MDD_IADataEssenceSubDescriptor);
   Copy(rhs);
 }
 
 
 //
 ASDCP::Result_t
-DolbyAtmosSubDescriptor::InitFromTLVSet(TLVReader& TLVSet)
+IADataEssenceSubDescriptor::InitFromTLVSet(TLVReader& TLVSet)
 {
   assert(m_Dict);
   Result_t result = InterchangeObject::InitFromTLVSet(TLVSet);
-  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(DolbyAtmosSubDescriptor, AtmosID));
-  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadUi32(OBJ_READ_ARGS(DolbyAtmosSubDescriptor, FirstFrame));
-  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadUi16(OBJ_READ_ARGS(DolbyAtmosSubDescriptor, MaxChannelCount));
-  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadUi16(OBJ_READ_ARGS(DolbyAtmosSubDescriptor, MaxObjectCount));
-  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadUi8(OBJ_READ_ARGS(DolbyAtmosSubDescriptor, AtmosVersion));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(IADataEssenceSubDescriptor, ImmersiveAudioID));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadUi32(OBJ_READ_ARGS(IADataEssenceSubDescriptor, FirstFrame));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadUi16(OBJ_READ_ARGS(IADataEssenceSubDescriptor, MaxChannelCount));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadUi16(OBJ_READ_ARGS(IADataEssenceSubDescriptor, MaxObjectCount));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadUi8(OBJ_READ_ARGS(IADataEssenceSubDescriptor, ImmersiveAudioVersion));
   return result;
 }
 
 //
 ASDCP::Result_t
-DolbyAtmosSubDescriptor::WriteToTLVSet(TLVWriter& TLVSet)
+IADataEssenceSubDescriptor::WriteToTLVSet(TLVWriter& TLVSet)
 {
   assert(m_Dict);
   Result_t result = InterchangeObject::WriteToTLVSet(TLVSet);
-  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(DolbyAtmosSubDescriptor, AtmosID));
-  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi32(OBJ_WRITE_ARGS(DolbyAtmosSubDescriptor, FirstFrame));
-  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi16(OBJ_WRITE_ARGS(DolbyAtmosSubDescriptor, MaxChannelCount));
-  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi16(OBJ_WRITE_ARGS(DolbyAtmosSubDescriptor, MaxObjectCount));
-  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi8(OBJ_WRITE_ARGS(DolbyAtmosSubDescriptor, AtmosVersion));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(IADataEssenceSubDescriptor, ImmersiveAudioID));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi32(OBJ_WRITE_ARGS(IADataEssenceSubDescriptor, FirstFrame));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi16(OBJ_WRITE_ARGS(IADataEssenceSubDescriptor, MaxChannelCount));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi16(OBJ_WRITE_ARGS(IADataEssenceSubDescriptor, MaxObjectCount));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi8(OBJ_WRITE_ARGS(IADataEssenceSubDescriptor, ImmersiveAudioVersion));
   return result;
 }
 
 //
 void
-DolbyAtmosSubDescriptor::Copy(const DolbyAtmosSubDescriptor& rhs)
+IADataEssenceSubDescriptor::Copy(const IADataEssenceSubDescriptor& rhs)
 {
   InterchangeObject::Copy(rhs);
-  AtmosID = rhs.AtmosID;
+  ImmersiveAudioID = rhs.ImmersiveAudioID;
   FirstFrame = rhs.FirstFrame;
   MaxChannelCount = rhs.MaxChannelCount;
   MaxObjectCount = rhs.MaxObjectCount;
-  AtmosVersion = rhs.AtmosVersion;
+  ImmersiveAudioVersion = rhs.ImmersiveAudioVersion;
 }
 
 //
 void
-DolbyAtmosSubDescriptor::Dump(FILE* stream)
+IADataEssenceSubDescriptor::Dump(FILE* stream)
 {
   char identbuf[IdentBufferLen];
   *identbuf = 0;
@@ -4113,23 +4113,23 @@ DolbyAtmosSubDescriptor::Dump(FILE* stream)
     stream = stderr;
 
   InterchangeObject::Dump(stream);
-  fprintf(stream, "  %22s = %s\n",  "AtmosID", AtmosID.EncodeString(identbuf, IdentBufferLen));
+  fprintf(stream, "  %22s = %s\n",  "ImmersiveAudioID", ImmersiveAudioID.EncodeString(identbuf, IdentBufferLen));
   fprintf(stream, "  %22s = %d\n",  "FirstFrame", FirstFrame);
   fprintf(stream, "  %22s = %d\n",  "MaxChannelCount", MaxChannelCount);
   fprintf(stream, "  %22s = %d\n",  "MaxObjectCount", MaxObjectCount);
-  fprintf(stream, "  %22s = %d\n",  "AtmosVersion", AtmosVersion);
+  fprintf(stream, "  %22s = %d\n",  "ImmersiveAudioVersion", ImmersiveAudioVersion);
 }
 
 //
 ASDCP::Result_t
-DolbyAtmosSubDescriptor::InitFromBuffer(const byte_t* p, ui32_t l)
+IADataEssenceSubDescriptor::InitFromBuffer(const byte_t* p, ui32_t l)
 {
   return InterchangeObject::InitFromBuffer(p, l);
 }
 
 //
 ASDCP::Result_t
-DolbyAtmosSubDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
+IADataEssenceSubDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 {
   return InterchangeObject::WriteToBuffer(Buffer);
 }

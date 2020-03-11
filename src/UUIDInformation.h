@@ -26,7 +26,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 /*! \file    SyncEncoder.h
     \version $Id$
-    \brief   Declaration of Atmos Sync UUID
+    \brief   Declaration of FSK Sync UUID
 */
 
 #ifndef _UUID_INFORMATION_H_

@@ -283,15 +283,15 @@ class MyDCDataDescriptor : public DCData::DCDataDescriptor
   }
 };
 
-class MyAtmosDescriptor : public ATMOS::AtmosDescriptor
+class MyIABDescriptor : public IAB::IABDescriptor
 {
  public:
-  void FillDescriptor(ATMOS::MXFReader& Reader) {
-    Reader.FillAtmosDescriptor(*this);
+  void FillDescriptor(IAB::MXFReader& Reader) {
+    Reader.FillIABDescriptor(*this);
   }
 
   void Dump(FILE* stream) {
-      ATMOS::AtmosDescriptorDump(*this, stream);
+      IAB::IADataEssenceSubDescriptorDump(*this, stream);
   }
 };
 
@@ -626,10 +626,10 @@ show_file_info(CommandOptions& Options)
       FileInfoWrapper<ASDCP::DCData::MXFReader, MyDCDataDescriptor> wrapper;
       result = wrapper.file_info(Options, "D-Cinema Generic Data");
     }
-  else if ( EssenceType == ESS_DCDATA_DOLBY_ATMOS )
+  else if ( EssenceType == ESS_DCDATA_IAB )
     {
-      FileInfoWrapper<ASDCP::ATMOS::MXFReader, MyAtmosDescriptor> wrapper;
-      result = wrapper.file_info(Options, "Dolby ATMOS");
+      FileInfoWrapper<ASDCP::IAB::MXFReader, MyIABDescriptor> wrapper;
+      result = wrapper.file_info(Options, "IAB");
     }
   else if ( EssenceType == ESS_AS02_PCM_24b_48k
 	    || EssenceType == ESS_AS02_PCM_24b_96k

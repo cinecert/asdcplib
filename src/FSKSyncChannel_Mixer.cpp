@@ -24,12 +24,12 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-/*! \file    AtmosSyncChannel_Mixer.cpp
+/*! \file    FSKSyncChannel_Mixer.cpp
     \version $Id$
-    \brief   Read WAV files(s), multiplex multiple PCM frame buffers including Atmos Sync into one
+    \brief   Read WAV files(s), multiplex multiple PCM frame buffers including FSK Sync into one
 */
 
-#include <AtmosSyncChannel_Mixer.h>
+#include <FSKSyncChannel_Mixer.h>
 
 #include <algorithm>
 
@@ -41,19 +41,19 @@ using namespace ASDCP;
 using namespace Kumu;
 
 //
-ASDCP::AtmosSyncChannelMixer::AtmosSyncChannelMixer(const byte_t * trackUUID)
+ASDCP::FSKSyncChannelMixer::FSKSyncChannelMixer(const byte_t * trackUUID)
     : m_inputs(), m_outputs(), m_trackUUID(), m_ADesc(), m_ChannelCount(0), m_FramesRead(0)
 {
   ::memcpy(m_trackUUID, trackUUID, UUIDlen);
 }
 
-ASDCP::AtmosSyncChannelMixer::~AtmosSyncChannelMixer()
+ASDCP::FSKSyncChannelMixer::~FSKSyncChannelMixer()
 {
   clear();
 }
 
 void
-ASDCP::AtmosSyncChannelMixer::clear()
+ASDCP::FSKSyncChannelMixer::clear()
 {
   m_outputs.clear();
   std::for_each(m_inputs.begin(), m_inputs.end(), delete_input());
@@ -62,7 +62,7 @@ ASDCP::AtmosSyncChannelMixer::clear()
 
 //
 Result_t
-ASDCP::AtmosSyncChannelMixer::OpenRead(ui32_t argc, const char** argv, const Rational& PictureRate)
+ASDCP::FSKSyncChannelMixer::OpenRead(ui32_t argc, const char** argv, const Rational& PictureRate)
 {
   ASDCP_TEST_NULL(argv);
   PathList_t TmpFileList;
@@ -78,7 +78,7 @@ ASDCP::AtmosSyncChannelMixer::OpenRead(ui32_t argc, const char** argv, const Rat
 
 //
 Result_t
-ASDCP::AtmosSyncChannelMixer::OpenRead(const Kumu::PathList_t& argv, const Rational& PictureRate)
+ASDCP::FSKSyncChannelMixer::OpenRead(const Kumu::PathList_t& argv, const Rational& PictureRate)
 {
   Result_t result = RESULT_OK;
   PathList_t::iterator fi;
@@ -121,12 +121,12 @@ ASDCP::AtmosSyncChannelMixer::OpenRead(const Kumu::PathList_t& argv, const Ratio
     result = OpenRead(*fi, PictureRate);
   }
 
-  if ( ASDCP_SUCCESS(result) && (m_ChannelCount < ATMOS::SYNC_CHANNEL))
+  if ( ASDCP_SUCCESS(result) && (m_ChannelCount < IAB::SYNC_CHANNEL))
   {
-    // atmos sync channel has not been added
+    // fsk sync channel has not been added
     result = MixInSilenceChannels();
     if ( ASDCP_SUCCESS(result) )
-      result = MixInAtmosSyncChannel();
+      result = MixInFSKSyncChannel();
   }
 
   if ( ASDCP_SUCCESS(result) )
@@ -144,7 +144,7 @@ ASDCP::AtmosSyncChannelMixer::OpenRead(const Kumu::PathList_t& argv, const Ratio
 
 //
 Result_t
-ASDCP::AtmosSyncChannelMixer::OpenRead(const std::string& file, const Rational& PictureRate)
+ASDCP::FSKSyncChannelMixer::OpenRead(const std::string& file, const Rational& PictureRate)
 {
   Result_t result = RESULT_OK;
   PCM::AudioDescriptor tmpDesc;
@@ -190,13 +190,13 @@ ASDCP::AtmosSyncChannelMixer::OpenRead(const std::string& file, const Rational& 
   if ( ASDCP_SUCCESS(result) )
   {
     numChannels = tmpDesc.ChannelCount; // default to all channels
-    if ((m_ChannelCount < ATMOS::SYNC_CHANNEL) && (m_ChannelCount + numChannels) > (ATMOS::SYNC_CHANNEL - 1))
+    if ((m_ChannelCount < IAB::SYNC_CHANNEL) && (m_ChannelCount + numChannels) > (IAB::SYNC_CHANNEL - 1))
     {
-      // need to insert an atmos channel between the channels of this file.
-      numChannels = ATMOS::SYNC_CHANNEL - m_ChannelCount - 1;
+      // need to insert an fsk channel between the channels of this file.
+      numChannels = IAB::SYNC_CHANNEL - m_ChannelCount - 1;
       m_outputs.push_back(std::make_pair(numChannels, I.get()));
       m_ChannelCount += numChannels;
-      MixInAtmosSyncChannel();
+      MixInFSKSyncChannel();
       numChannels = tmpDesc.ChannelCount - numChannels;
     }
     m_outputs.push_back(std::make_pair(numChannels, I.get()));
@@ -208,11 +208,11 @@ ASDCP::AtmosSyncChannelMixer::OpenRead(const std::string& file, const Rational& 
 }
 
 Result_t
-ASDCP::AtmosSyncChannelMixer::MixInSilenceChannels()
+ASDCP::FSKSyncChannelMixer::MixInSilenceChannels()
 {
   Result_t result = RESULT_OK;
   PCM::AudioDescriptor tmpDesc;
-  ui32_t numSilenceChannels = ATMOS::SYNC_CHANNEL - m_ChannelCount - 1;
+  ui32_t numSilenceChannels = IAB::SYNC_CHANNEL - m_ChannelCount - 1;
   if (numSilenceChannels > 0)
   {
     mem_ptr<SilenceDataProvider> I = new SilenceDataProvider(numSilenceChannels,
@@ -227,7 +227,7 @@ ASDCP::AtmosSyncChannelMixer::MixInSilenceChannels()
       m_outputs.push_back(std::make_pair(numSilenceChannels, I.get()));
       m_inputs.push_back(I);
       I.release();
-      assert(m_ChannelCount == (ATMOS::SYNC_CHANNEL - 1));
+      assert(m_ChannelCount == (IAB::SYNC_CHANNEL - 1));
     }
   }
   return result;
@@ -235,11 +235,11 @@ ASDCP::AtmosSyncChannelMixer::MixInSilenceChannels()
 
 //
 Result_t
-ASDCP::AtmosSyncChannelMixer::MixInAtmosSyncChannel()
+ASDCP::FSKSyncChannelMixer::MixInFSKSyncChannel()
 {
   Result_t result = RESULT_OK;
   PCM::AudioDescriptor tmpDesc;
-  mem_ptr<AtmosSyncDataProvider> I = new AtmosSyncDataProvider(m_ADesc.QuantizationBits,
+  mem_ptr<FSKSyncDataProvider> I = new FSKSyncDataProvider(m_ADesc.QuantizationBits,
                                                                m_ADesc.AudioSamplingRate.Numerator,
                                                                m_ADesc.EditRate, m_trackUUID);
   result = I->FillAudioDescriptor(tmpDesc);
@@ -250,14 +250,14 @@ ASDCP::AtmosSyncChannelMixer::MixInAtmosSyncChannel()
     m_outputs.push_back(std::make_pair(tmpDesc.ChannelCount, I.get()));
     m_inputs.push_back(I);
     I.release();
-    assert(m_ChannelCount == ATMOS::SYNC_CHANNEL);
+    assert(m_ChannelCount == IAB::SYNC_CHANNEL);
   }
   return result;
 }
 
 //
 Result_t
-ASDCP::AtmosSyncChannelMixer::AppendSilenceChannels(const ui32_t& channel_count)
+ASDCP::FSKSyncChannelMixer::AppendSilenceChannels(const ui32_t& channel_count)
 {
   if ( m_ADesc.QuantizationBits == 0 )
     {
@@ -296,7 +296,7 @@ ASDCP::AtmosSyncChannelMixer::AppendSilenceChannels(const ui32_t& channel_count)
 
 //
 Result_t
-ASDCP::AtmosSyncChannelMixer::FillAudioDescriptor(PCM::AudioDescriptor& ADesc) const
+ASDCP::FSKSyncChannelMixer::FillAudioDescriptor(PCM::AudioDescriptor& ADesc) const
 {
   ADesc = m_ADesc;
   return RESULT_OK;
@@ -304,7 +304,7 @@ ASDCP::AtmosSyncChannelMixer::FillAudioDescriptor(PCM::AudioDescriptor& ADesc) c
 
 //
 Result_t
-ASDCP::AtmosSyncChannelMixer::Reset()
+ASDCP::FSKSyncChannelMixer::Reset()
 {
   Result_t result = RESULT_OK;
   SourceList::iterator it;
@@ -319,7 +319,7 @@ ASDCP::AtmosSyncChannelMixer::Reset()
 
 //2
 Result_t
-ASDCP::AtmosSyncChannelMixer::ReadFrame(PCM::FrameBuffer& OutFB)
+ASDCP::FSKSyncChannelMixer::ReadFrame(PCM::FrameBuffer& OutFB)
 {
 
 
@@ -364,5 +364,5 @@ ASDCP::AtmosSyncChannelMixer::ReadFrame(PCM::FrameBuffer& OutFB)
 
 
 //
-// end AtmosSyncChannel_Mixer.cpp
+// end FSKSyncChannel_Mixer.cpp
 //

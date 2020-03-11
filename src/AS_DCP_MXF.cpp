@@ -216,11 +216,11 @@ ASDCP::EssenceType(const std::string& filename, EssenceType_t& type)
 	      type = ESS_TIMED_TEXT;
 	    }
 	  else if ( ASDCP_SUCCESS(TestHeader.GetMDObjectByType(OBJ_TYPE_ARGS(DCDataDescriptor)))
-		    || ASDCP_SUCCESS(TestHeader.GetMDObjectByType(OBJ_TYPE_ARGS(PrivateDCDataDescriptor))) )
+		    || ASDCP_SUCCESS(TestHeader.GetMDObjectByType(OBJ_TYPE_ARGS(IADataEssenceDescriptor))) )
 	    {
-	      if ( ASDCP_SUCCESS(TestHeader.GetMDObjectByType(OBJ_TYPE_ARGS(DolbyAtmosSubDescriptor))) )
+	      if ( ASDCP_SUCCESS(TestHeader.GetMDObjectByType(OBJ_TYPE_ARGS(IADataEssenceSubDescriptor))) )
 		{
-		  type = ESS_DCDATA_DOLBY_ATMOS;
+		  type = ESS_DCDATA_IAB;
 		}
 	      else
 		{
@@ -388,9 +388,9 @@ ASDCP::RawEssenceType(const std::string& filename, EssenceType_t& type)
 	    {
 	      type = ESS_TIMED_TEXT;
 	    }
-	  else if ( ASDCP::ATMOS::IsDolbyAtmos(filename) )
+	  else if ( ASDCP::IAB::IsIAB(filename) )
 	    {
-	      type = ESS_DCDATA_DOLBY_ATMOS;
+	      type = ESS_DCDATA_IAB;
 	    }
 	}
     }
@@ -445,9 +445,9 @@ ASDCP::RawEssenceType(const std::string& filename, EssenceType_t& type)
 			  return RESULT_FORMAT;
 			}
 		    }
-		  else if ( ASDCP::ATMOS::IsDolbyAtmos(Kumu::PathJoin(filename, next_file)) )
+		  else if ( ASDCP::IAB::IsIAB(Kumu::PathJoin(filename, next_file)) )
 		    {
-		      type = ESS_DCDATA_DOLBY_ATMOS;
+		      type = ESS_DCDATA_IAB;
 		    }
 		  else
 		    {

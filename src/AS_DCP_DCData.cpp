@@ -90,7 +90,7 @@ class ASDCP::DCData::MXFReader::h__Reader : public ASDCP::h__ASDCPReader
   Result_t    OpenRead(const std::string&);
   Result_t    ReadFrame(ui32_t, FrameBuffer&, AESDecContext*, HMACContext*);
   Result_t    MD_to_DCData_DDesc(const MXF::DCDataDescriptor& descriptor_object, DCData::DCDataDescriptor& DDesc);
-  Result_t    MD_to_DCData_DDesc(const MXF::PrivateDCDataDescriptor& descriptor_object, DCData::DCDataDescriptor& DDesc);
+  Result_t    MD_to_DCData_DDesc(const MXF::IADataEssenceDescriptor& descriptor_object, DCData::DCDataDescriptor& DDesc);
 };
 
 //
@@ -107,7 +107,7 @@ ASDCP::DCData::MXFReader::h__Reader::MD_to_DCData_DDesc(const MXF::DCDataDescrip
 
 //
 ASDCP::Result_t
-ASDCP::DCData::MXFReader::h__Reader::MD_to_DCData_DDesc(const MXF::PrivateDCDataDescriptor& descriptor_object,
+ASDCP::DCData::MXFReader::h__Reader::MD_to_DCData_DDesc(const MXF::IADataEssenceDescriptor& descriptor_object,
 							DCData::DCDataDescriptor& DDesc)
 {
   DDesc.EditRate = descriptor_object.SampleRate;
@@ -137,12 +137,12 @@ ASDCP::DCData::MXFReader::h__Reader::OpenRead(const std::string& filename)
 	}
       else
 	{
-	  result = m_HeaderPart.GetMDObjectByType(OBJ_TYPE_ARGS(PrivateDCDataDescriptor), &iObj);
+	  result = m_HeaderPart.GetMDObjectByType(OBJ_TYPE_ARGS(IADataEssenceDescriptor), &iObj);
 	  
 	  if ( KM_SUCCESS(result) )
 	    {
 	      m_PrivateLabelCompatibilityMode = true;
-	      const MXF::PrivateDCDataDescriptor* p = dynamic_cast<const MXF::PrivateDCDataDescriptor*>(iObj);
+	      const MXF::IADataEssenceDescriptor* p = dynamic_cast<const MXF::IADataEssenceDescriptor*>(iObj);
 	      assert(p);
 	      result = MD_to_DCData_DDesc(*p, m_DDesc);
 	    }
@@ -191,7 +191,7 @@ ASDCP::DCData::MXFReader::h__Reader::ReadFrame(ui32_t FrameNum, FrameBuffer& Fra
   assert(m_Dict);
   if ( m_PrivateLabelCompatibilityMode )
     {
-      return ReadEKLVFrame(FrameNum, FrameBuf, m_Dict->ul(MDD_PrivateDCDataEssence), Ctx, HMAC);
+      return ReadEKLVFrame(FrameNum, FrameBuf, m_Dict->ul(MDD_IADataElement), Ctx, HMAC);
     }
 
   return ReadEKLVFrame(FrameNum, FrameBuf, m_Dict->ul(MDD_DCDataEssence), Ctx, HMAC);

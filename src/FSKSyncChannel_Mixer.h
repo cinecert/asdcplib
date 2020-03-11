@@ -24,13 +24,13 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-/*! \file    AtmosSyncChannel_Mixer.h
+/*! \file    FSKSyncChannel_Mixer.h
     \version $Id$
-    \brief   Read WAV files(s), multiplex multiple PCM frame buffers including Atmos Sync into one
+    \brief   Read WAV files(s), multiplex multiple PCM frame buffers including FSK Sync into one
 */
 
-#ifndef _ATMOSSYNCCHANNEL_MIXER_H_
-#define _ATMOSSYNCCHANNEL_MIXER_H_
+#ifndef _FSKSyncChannel_MIXER_H_
+#define _FSKSyncChannel_MIXER_H_
 
 #include <AS_DCP.h>
 #include <KM_error.h>
@@ -41,7 +41,7 @@ namespace ASDCP
 {
 
   //
-  class AtmosSyncChannelMixer
+  class FSKSyncChannelMixer
   {
     typedef std::pair<ui32_t, PCMDataProviderInterface*> InputBus;
     typedef std::vector<InputBus> OutputList;
@@ -53,7 +53,7 @@ namespace ASDCP
 
     Result_t OpenRead(const std::string& file, const Rational& PictureRate);
     Result_t MixInSilenceChannels();
-    Result_t MixInAtmosSyncChannel();
+    Result_t MixInFSKSyncChannel();
     void clear();
 
     // functor for deleting
@@ -65,7 +65,7 @@ namespace ASDCP
         }
     };
 
-    ASDCP_NO_COPY_CONSTRUCT(AtmosSyncChannelMixer);
+    ASDCP_NO_COPY_CONSTRUCT(FSKSyncChannelMixer);
 
     protected:
       PCM::AudioDescriptor m_ADesc;
@@ -73,8 +73,8 @@ namespace ASDCP
       ui32_t m_FramesRead;
 
     public:
-      AtmosSyncChannelMixer(const byte_t * trackUUID);
-      virtual ~AtmosSyncChannelMixer();
+      FSKSyncChannelMixer(const byte_t * trackUUID);
+      virtual ~FSKSyncChannelMixer();
 
       const ui32_t& ChannelCount() const { return m_ChannelCount; }
 
@@ -87,8 +87,8 @@ namespace ASDCP
     };
 } // namespace ASDCP
 
-#endif // _ATMOSSYNCCHANNEL_MIXER_H_
+#endif // _FSKSyncChannel_MIXER_H_
 
 //
-// end AtmosSyncChannel_Mixer.h
+// end FSKSyncChannel_Mixer.h
 //
