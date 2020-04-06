@@ -1420,17 +1420,22 @@ Kumu::DirScanner::Open(const std::string& dirname)
 	case ENOENT:
 	case ENOTDIR:
 	  result = RESULT_NOTAFILE;
+	  break;
 	case EACCES:
 	  result = RESULT_NO_PERM;
+	  break;
 	case ELOOP:
 	case ENAMETOOLONG:
 	  result = RESULT_PARAM;
+	  break;
 	case EMFILE:
 	case ENFILE:
 	  result = RESULT_STATE;
+	  break;
 	default:
 	  DefaultLogSink().Error("DirScanner::Open(%s): %s\n", dirname.c_str(), strerror(errno));
 	  result = RESULT_FAIL;
+	  break;
 	}
     }
 
@@ -1503,17 +1508,22 @@ Kumu::DirScannerEx::Open(const std::string& dirname)
 	case ENOENT:
 	case ENOTDIR:
 	  result = RESULT_NOTAFILE;
+	  break;
 	case EACCES:
 	  result = RESULT_NO_PERM;
+	  break;
 	case ELOOP:
 	case ENAMETOOLONG:
 	  result = RESULT_PARAM;
+	  break;
 	case EMFILE:
 	case ENFILE:
 	  result = RESULT_STATE;
+	  break;
 	default:
 	  DefaultLogSink().Error("DirScanner::Open(%s): %s\n", dirname.c_str(), strerror(errno));
 	  result = RESULT_FAIL;
+	  break;
 	}
     }
 
