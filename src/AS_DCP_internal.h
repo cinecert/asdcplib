@@ -226,7 +226,7 @@ namespace ASDCP
 	Kumu::fpos_t       m_LastPosition;
 
       TrackFileReader(const Dictionary& d) :
-	m_HeaderPart(m_Dict), m_IndexAccess(m_Dict), m_RIP(m_Dict), m_Dict(&d)
+	m_Dict(&d), m_HeaderPart(m_Dict), m_IndexAccess(m_Dict), m_RIP(m_Dict)
 	  {
 	    default_md_object_init();
 	  }

@@ -355,7 +355,7 @@ public:
   byte_t            m_EssenceUL[SMPTE_UL_LENGTH];
   byte_t            m_MetadataUL[SMPTE_UL_LENGTH];
 
-  h__Writer(const Dictionary& d) : h__AS02WriterFrame(d), m_EssenceSubDescriptor(0), m_MetadataTrackSubDescriptor(0) {
+  h__Writer(const Dictionary& d) : h__AS02WriterFrame(d), m_MetadataTrackSubDescriptor(0), m_EssenceSubDescriptor(0) {
     memset(m_EssenceUL, 0, SMPTE_UL_LENGTH);
     memset(m_MetadataUL, 0, SMPTE_UL_LENGTH);
   }

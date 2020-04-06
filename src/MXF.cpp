@@ -1026,8 +1026,8 @@ ASDCP::MXF::OP1aHeader::Dump(FILE* stream)
 //
 
 ASDCP::MXF::OPAtomIndexFooter::OPAtomIndexFooter(const Dictionary*& d) :
-  Partition(d), m_Dict(d),
-  m_CurrentSegment(0), m_BytesPerEditUnit(0), m_BodySID(0),
+  Partition(d), m_CurrentSegment(0), m_BytesPerEditUnit(0),
+  m_BodySID(0), m_Dict(d),
   m_ECOffset(0), m_Lookup(0)
 {
   BodySID = 0;
@@ -1769,7 +1769,7 @@ ASDCP::MXF::decode_mca_string(const std::string& s, const mca_label_map_t& label
 }
 
 //
-ASDCP::MXF::ASDCP_MCAConfigParser::ASDCP_MCAConfigParser(const Dictionary*& d) : m_Dict(d), m_ChannelCount(0)
+ASDCP::MXF::ASDCP_MCAConfigParser::ASDCP_MCAConfigParser(const Dictionary*& d) : m_ChannelCount(0), m_Dict(d)
 {
   typedef mca_label_map_t::value_type pair;
   m_LabelMap.insert(pair("L",     label_traits("Left"                              , true,  m_Dict->ul(MDD_DCAudioChannel_L))));
