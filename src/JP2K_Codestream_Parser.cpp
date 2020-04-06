@@ -243,6 +243,8 @@ ASDCP::JP2K::ParseMetadataIntoDesc(const FrameBuffer& FB, PictureDescriptor& PDe
 			}
 	  }
 	  break;
+		default:
+	  break;
 
 	}
     }

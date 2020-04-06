@@ -94,6 +94,8 @@ class h__ParserState
 	case ST_EXT:
 	  m_State = ST_SEQ;
 	  return RESULT_OK;
+	default:
+	  break;
 	}
       
       DefaultLogSink().Error("SEQ follows %s\n", StringParserState(m_State));
@@ -110,6 +112,8 @@ class h__ParserState
 	case ST_EXT:
 	  m_State = ST_SLICE;
 	  return RESULT_OK;
+	default:
+	  break;
 	}
       
       DefaultLogSink().Error("Slice follows %s\n", StringParserState(m_State));
@@ -128,6 +132,8 @@ class h__ParserState
 	case ST_EXT:
 	  m_State = ST_PIC;
 	  return RESULT_OK;
+	default:
+	  break;
 	}
       
       DefaultLogSink().Error("PIC follows %s\n", StringParserState(m_State));
@@ -144,6 +150,8 @@ class h__ParserState
       case ST_SEQ:
 	m_State = ST_GOP;
 	return RESULT_OK;
+      default:
+	break;
       }
     
     DefaultLogSink().Error("GOP follows %s\n", StringParserState(m_State));
@@ -161,6 +169,8 @@ class h__ParserState
 	case ST_GOP:
 	  m_State = ST_EXT;
 	  return RESULT_OK;
+	default:
+	  break;
       }
 
     DefaultLogSink().Error("EXT follows %s\n", StringParserState(m_State));
