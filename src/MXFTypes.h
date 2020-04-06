@@ -158,6 +158,7 @@ namespace ASDCP
 	  }
 
 	  void Dump(FILE* stream = 0, ui32_t depth = 0) {
+	    (void) depth;
 	    char identbuf[IdentBufferLen];
 
 	    if ( stream == 0 )
@@ -253,6 +254,7 @@ namespace ASDCP
 	  //
 	  void Dump(FILE* stream = 0, ui32_t depth = 0)
 	    {
+	      (void) depth;
 	      char identbuf[IdentBufferLen];
 
 	      if ( stream == 0 )

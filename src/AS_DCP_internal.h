@@ -249,7 +249,6 @@ namespace ASDCP
 	  if ( ASDCP_SUCCESS(result) )
 	    {
 	      result = m_RIP.InitFromFile(m_File);
-	      ui32_t test_s = (ui32_t)m_RIP.PairArray.size();
 
 	      if ( ASDCP_FAILURE(result) )
 		{

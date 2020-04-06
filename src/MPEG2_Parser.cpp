@@ -192,7 +192,7 @@ public:
   ~StreamParams() {}
 
   //
-  Result_t Sequence(VESParser*, const byte_t* b, ui32_t s)
+  Result_t Sequence(VESParser*, const byte_t* b, ui32_t)
   {
     Result_t result = m_State.Goto_SEQ();
 
@@ -211,7 +211,7 @@ public:
   }
 
   //
-  Result_t Extension(VESParser*, const byte_t* b, ui32_t s)
+  Result_t Extension(VESParser*, const byte_t* b, ui32_t)
   {
     Result_t result = m_State.Goto_EXT();
 
@@ -286,7 +286,7 @@ public:
     m_State.Reset();
  }
 
-  Result_t Sequence(VESParser*, const byte_t* b, ui32_t s)
+  Result_t Sequence(VESParser*, const byte_t*, ui32_t s)
   {
     if ( m_State.Test_SLICE() )
       {
@@ -324,7 +324,7 @@ public:
     return m_State.Test_SLICE() ? RESULT_OK : RESULT_FAIL;
   }
 
-  Result_t Extension(VESParser*, const byte_t* b, ui32_t s)
+  Result_t Extension(VESParser*, const byte_t*, ui32_t s)
   {
     m_FrameSize += s;
     return m_State.Goto_EXT();
@@ -339,7 +339,7 @@ public:
     return m_State.Goto_GOP();
   }
 
-  Result_t Data(VESParser*, const byte_t* b, i32_t s)
+  Result_t Data(VESParser*, const byte_t*, i32_t s)
   {
     m_FrameSize += s;
     return RESULT_OK;

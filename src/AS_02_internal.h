@@ -263,7 +263,6 @@ namespace AS_02
 	if ( KM_SUCCESS(result) )
 	  {
 	    ASDCP::MXF::RIP::const_pair_iterator i = this->m_RIP.PairArray.begin();
-	    ui64_t header_byte_count = this->m_HeaderPart.HeaderByteCount;
 	    ui64_t previous_partition = 0;
 
 	    for ( i = this->m_RIP.PairArray.begin(); KM_SUCCESS(result) && i != this->m_RIP.PairArray.end(); ++i )

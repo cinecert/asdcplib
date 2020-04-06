@@ -234,7 +234,6 @@ ASDCP::EssenceType(const std::string& filename, EssenceType_t& type)
 	  if (ASDCP_SUCCESS(TestHeader.GetMDObjectByType(OBJ_TYPE_ARGS(RGBAEssenceDescriptor))) )
 	  {
 	    MXF::RGBAEssenceDescriptor *rgba_descriptor = 0;
-	    char buf[64];
 
 	    if ASDCP_SUCCESS(TestHeader.GetMDObjectByType(m_Dict->ul(MDD_RGBAEssenceDescriptor), reinterpret_cast<MXF::InterchangeObject**>(&rgba_descriptor)))
 	    {
