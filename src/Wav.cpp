@@ -122,7 +122,7 @@ ASDCP::Wav::SimpleWaveHeader::ReadFromFile(const Kumu::FileReader& InFile, ui32_
   if ( ASDCP_SUCCESS(result) )
     result = ReadFromBuffer(TmpBuffer.RoData(), read_count, data_start);
 
-    return result;
+  return result;
 }
 
 ASDCP::Result_t
@@ -288,7 +288,7 @@ ASDCP::AIFF::SimpleAIFFHeader::ReadFromFile(const Kumu::FileReader& InFile, ui32
   if ( ASDCP_SUCCESS(result) )
     result = ReadFromBuffer(TmpBuffer.RoData(), read_count, data_start);
 
-    return result;
+  return result;
 }
 
 //
@@ -499,7 +499,7 @@ ASDCP::RF64::SimpleRF64Header::ReadFromFile(const Kumu::FileReader& InFile, ui32
   else
     DefaultLogSink().Error("Failed to read %d bytes from file\n", Wav::MaxWavHeader);
 
-    return result;
+  return result;
 }
 
 ASDCP::Result_t
