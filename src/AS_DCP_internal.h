@@ -357,7 +357,7 @@ namespace ASDCP
 	  // get absolute frame position and go read the frame's key and length
 	  Result_t result = RESULT_OK;
 
-	  if ( TmpEntry.StreamOffset != m_LastPosition )
+	  if ( static_cast<Kumu::fpos_t>(TmpEntry.StreamOffset) != m_LastPosition )
 	    {
 	      m_LastPosition = TmpEntry.StreamOffset;
 	      result = m_File.Seek(TmpEntry.StreamOffset);

@@ -152,7 +152,7 @@ Kumu::StreamLogSink::WriteEntry(const LogEntry& Entry)
     {
       Entry.CreateStringWithOptions(buf, m_options);
       ssize_t n = write(m_fd, buf.c_str(), buf.size());
-      assert(n==buf.size());
+      assert(n==static_cast<ssize_t>(buf.size()));
     }
 }
 
