@@ -1656,7 +1656,7 @@ static const ASDCP::MDDEntry s_MDD_Table[] = {
      {0}, false, "IABSoundfield" },
    { { 0x06, 0x0e, 0x2b, 0x34, 0x01, 0x02, 0x01, 0x01, // 534
        0x0d, 0x01, 0x03, 0x01, 0x16, 0x7f, 0x0d, 0x7f },
-     {0}, false, "IMFIABEssenceClipWrappedElement" },
+     {0}, false, "IMF_IABEssenceClipWrappedElement" },
    { {0}, {0}, false, 0 },
 
 };
