@@ -1297,6 +1297,50 @@ namespace ASDCP
       virtual Result_t WriteToBuffer(ASDCP::FrameBuffer&);
 	};
 
+      //
+      class IABEssenceDescriptor : public FileDescriptor
+	{
+	  IABEssenceDescriptor();
+
+	public:
+	  const Dictionary*& m_Dict;
+
+      IABEssenceDescriptor(const Dictionary*& d);
+      IABEssenceDescriptor(const IABEssenceDescriptor& rhs);
+      virtual ~IABEssenceDescriptor() {}
+
+      const IABEssenceDescriptor& operator=(const IABEssenceDescriptor& rhs) { Copy(rhs); return *this; }
+      virtual void Copy(const IABEssenceDescriptor& rhs);
+      virtual const char* HasName() { return "IABEssenceDescriptor"; }
+      virtual Result_t InitFromTLVSet(TLVReader& TLVSet);
+      virtual Result_t WriteToTLVSet(TLVWriter& TLVSet);
+      virtual void     Dump(FILE* = 0);
+      virtual Result_t InitFromBuffer(const byte_t* p, ui32_t l);
+      virtual Result_t WriteToBuffer(ASDCP::FrameBuffer&);
+	};
+
+      //
+      class IABSoundfieldLabelSubDescriptor : public MCALabelSubDescriptor
+	{
+	  IABSoundfieldLabelSubDescriptor();
+
+	public:
+	  const Dictionary*& m_Dict;
+
+      IABSoundfieldLabelSubDescriptor(const Dictionary*& d);
+      IABSoundfieldLabelSubDescriptor(const IABSoundfieldLabelSubDescriptor& rhs);
+      virtual ~IABSoundfieldLabelSubDescriptor() {}
+
+      const IABSoundfieldLabelSubDescriptor& operator=(const IABSoundfieldLabelSubDescriptor& rhs) { Copy(rhs); return *this; }
+      virtual void Copy(const IABSoundfieldLabelSubDescriptor& rhs);
+      virtual const char* HasName() { return "IABSoundfieldLabelSubDescriptor"; }
+      virtual Result_t InitFromTLVSet(TLVReader& TLVSet);
+      virtual Result_t WriteToTLVSet(TLVWriter& TLVSet);
+      virtual void     Dump(FILE* = 0);
+      virtual Result_t InitFromBuffer(const byte_t* p, ui32_t l);
+      virtual Result_t WriteToBuffer(ASDCP::FrameBuffer&);
+	};
+
     } // namespace MXF
 } // namespace ASDCP
 
