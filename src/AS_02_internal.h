@@ -165,7 +165,8 @@ namespace AS_02
       Result_t WriteAS02Header(const std::string& PackageLabel, const ASDCP::UL& WrappingUL,
 			       const std::string& TrackName, const ASDCP::UL& EssenceUL,
 			       const ASDCP::UL& DataDefinition, const ASDCP::Rational& EditRate,
-			       const ui32_t& TCFrameRate)
+			       const ui32_t& TCFrameRate,
+							const std::vector<ASDCP::UL>* conformsToSpecifications = NULL)
       {
 	if ( EditRate.Numerator == 0 || EditRate.Denominator == 0 )
 	  {
@@ -173,7 +174,7 @@ namespace AS_02
 	    return RESULT_PARAM;
 	  }
 
-	InitHeader(MXFVersion_2011);
+	InitHeader(MXFVersion_2011, conformsToSpecifications);
 
 	AddSourceClip(EditRate, EditRate/*TODO: for a moment*/, TCFrameRate, TrackName, EssenceUL, DataDefinition, PackageLabel);
 	AddEssenceDescriptor(WrappingUL);
