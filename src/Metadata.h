@@ -1298,7 +1298,7 @@ namespace ASDCP
 	};
 
       //
-      class IABEssenceDescriptor : public FileDescriptor
+      class IABEssenceDescriptor : public GenericSoundEssenceDescriptor
 	{
 	  IABEssenceDescriptor();
 
