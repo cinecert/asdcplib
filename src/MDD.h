@@ -570,6 +570,7 @@ namespace ASDCP {
 	MDD_IMF_IABEssenceClipWrappedContainer, // 532
 	MDD_IABSoundfield, // 533
 	MDD_IMF_IABEssenceClipWrappedElement, // 534
+	MDD_ImmersiveAudioCoding, // 535
 	MDD_Max
     }; // enum MDD_t
 
