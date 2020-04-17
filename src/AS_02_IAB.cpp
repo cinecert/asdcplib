@@ -32,29 +32,29 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <iostream>
 #include <iomanip>
-#include <array>
 
 namespace Kumu {
   class RuntimeError : public std::runtime_error {
     Kumu::Result_t m_Result;
-    RuntimeError(); /* deleted constructor */
+    RuntimeError();
   public:
     RuntimeError(const Kumu::Result_t& result) : std::runtime_error(result.Message()), m_Result(result) {}
     Kumu::Result_t GetResult() { return this->m_Result; }
+    ~RuntimeError() throw() {}
   };
 }
 
 //------------------------------------------------------------------------------------------
 
 
-AS_02::IAB::MXFWriter::MXFWriter() : m_ClipStart(0), m_State(WriterState_t::ST_BEGIN) {
+AS_02::IAB::MXFWriter::MXFWriter() : m_ClipStart(0), m_State(ST_BEGIN) {
 }
 
 AS_02::IAB::MXFWriter::~MXFWriter() {}
 
 const ASDCP::MXF::OP1aHeader&
 AS_02::IAB::MXFWriter::OP1aHeader() const {
-  if (this->m_State == WriterState_t::ST_BEGIN) {
+  if (this->m_State == ST_BEGIN) {
     throw Kumu::RuntimeError(Kumu::RESULT_INIT);
   }
 
@@ -63,7 +63,7 @@ AS_02::IAB::MXFWriter::OP1aHeader() const {
 
 const ASDCP::MXF::RIP&
 AS_02::IAB::MXFWriter::RIP() const {
-  if (this->m_State == WriterState_t::ST_BEGIN) {
+  if (this->m_State == ST_BEGIN) {
     throw Kumu::RuntimeError(Kumu::RESULT_INIT);
   }
 
@@ -81,7 +81,7 @@ AS_02::IAB::MXFWriter::OpenWrite(
 
   /* are we already running */
 
-  if (this->m_State != WriterState_t::ST_BEGIN) {
+  if (this->m_State != ST_BEGIN) {
     return Kumu::RESULT_STATE;
   }
 
@@ -137,11 +137,11 @@ AS_02::IAB::MXFWriter::OpenWrite(
 
     /* Essence Element UL */
 
-    std::array<byte_t, ASDCP::SMPTE_UL_LENGTH> element_ul_bytes;
+    byte_t element_ul_bytes[ASDCP::SMPTE_UL_LENGTH];
 
     const ASDCP::MDDEntry& element_ul_entry = this->m_Writer->m_Dict->Type(MDD_IMF_IABEssenceClipWrappedElement);
 
-    std::copy(std::begin(element_ul_entry.ul), std::end(element_ul_entry.ul), std::begin(element_ul_bytes));
+    std::copy(element_ul_entry.ul, element_ul_entry.ul + ASDCP::SMPTE_UL_LENGTH, element_ul_bytes);
 
     /* only a single track */
 
@@ -154,7 +154,7 @@ AS_02::IAB::MXFWriter::OpenWrite(
       "Clip wrapping of IA bitstreams as specified in SMPTE ST 2067-201",
       UL(this->m_Writer->m_Dict->ul(MDD_IMF_IABEssenceClipWrappedContainer)),
       "IA Bitstream",
-      UL(element_ul_bytes.data()),
+      UL(element_ul_bytes),
       UL(this->m_Writer->m_Dict->ul(MDD_SoundDataDef)),
       edit_rate,
       derive_timecode_rate_from_edit_rate(edit_rate),
@@ -185,7 +185,7 @@ AS_02::IAB::MXFWriter::OpenWrite(
       throw Kumu::RuntimeError(result);
     }
 
-    this->m_State = WriterState_t::ST_READY;
+    this->m_State = ST_READY;
 
   } catch (Kumu::RuntimeError e) {
 
@@ -204,7 +204,7 @@ AS_02::IAB::MXFWriter::WriteFrame(const ui8_t* frame, ui32_t sz) {
 
   /* are we running */
 
-  if (this->m_State == WriterState_t::ST_BEGIN) {
+  if (this->m_State == ST_BEGIN) {
     return Kumu::RESULT_INIT;
   }
 
@@ -238,7 +238,7 @@ AS_02::IAB::MXFWriter::WriteFrame(const ui8_t* frame, ui32_t sz) {
 
     /* we are running now */
 
-    this->m_State = WriterState_t::ST_RUNNING;
+    this->m_State = ST_RUNNING;
 
   } catch (Kumu::RuntimeError e) {
 
@@ -256,7 +256,7 @@ AS_02::IAB::MXFWriter::Finalize() {
 
   /* are we running */
 
-  if (this->m_State == WriterState_t::ST_BEGIN) {
+  if (this->m_State == ST_BEGIN) {
     return Kumu::RESULT_INIT;
   }
 
@@ -318,20 +318,20 @@ AS_02::IAB::MXFWriter::Finalize() {
 void
 AS_02::IAB::MXFWriter::Reset() {
   this->m_Writer.set(NULL);
-  this->m_State = WriterState_t::ST_BEGIN;
+  this->m_State = ST_BEGIN;
 }
 
 
 //------------------------------------------------------------------------------------------
 
 
-AS_02::IAB::MXFReader::MXFReader() : m_State(ReaderState_t::ST_BEGIN) {}
+AS_02::IAB::MXFReader::MXFReader() : m_State(ST_READER_BEGIN) {}
 
 AS_02::IAB::MXFReader::~MXFReader() {}
 
 const ASDCP::MXF::OP1aHeader&
 AS_02::IAB::MXFReader::OP1aHeader() const {
-  if (this->m_State == ReaderState_t::ST_BEGIN) {
+  if (this->m_State == ST_READER_BEGIN) {
     throw Kumu::RuntimeError(Kumu::RESULT_INIT);
   }
 
@@ -340,7 +340,7 @@ AS_02::IAB::MXFReader::OP1aHeader() const {
 
 const ASDCP::MXF::RIP&
 AS_02::IAB::MXFReader::RIP() const {
-  if (this->m_State == ReaderState_t::ST_BEGIN) {
+  if (this->m_State == ST_READER_BEGIN) {
     throw Kumu::RuntimeError(Kumu::RESULT_INIT);
   }
 
@@ -352,7 +352,7 @@ AS_02::IAB::MXFReader::OpenRead(const std::string& filename) {
 
   /* are we already running */
 
-  if (this->m_State != ReaderState_t::ST_BEGIN) {
+  if (this->m_State != ST_READER_BEGIN) {
     return Kumu::RESULT_STATE;
   }
 
@@ -407,7 +407,7 @@ AS_02::IAB::MXFReader::OpenRead(const std::string& filename) {
 
     /* we are ready */
 
-    this->m_State = ReaderState_t::ST_READY;
+    this->m_State = ST_READER_READY;
 
   } catch (Kumu::RuntimeError e) {
 
@@ -425,7 +425,7 @@ AS_02::IAB::MXFReader::Close() {
 
   /* are we already running */
 
-  if (this->m_State == ReaderState_t::ST_BEGIN) {
+  if (this->m_State == ST_READER_BEGIN) {
     return Kumu::RESULT_INIT;
   }
 
@@ -439,7 +439,7 @@ Result_t AS_02::IAB::MXFReader::GetFrameCount(ui32_t& frameCount) const {
 
   /* are we already running */
 
-  if (this->m_State == ReaderState_t::ST_BEGIN) {
+  if (this->m_State == ST_READER_BEGIN) {
     return Kumu::RESULT_INIT;
   }
 
@@ -453,7 +453,7 @@ AS_02::IAB::MXFReader::ReadFrame(ui32_t frame_number, AS_02::IAB::MXFReader::Fra
 
   /* are we already running */
 
-  if (this->m_State == ReaderState_t::ST_BEGIN) {
+  if (this->m_State == ST_READER_BEGIN) {
     return Kumu::RESULT_INIT;
   }
 
@@ -573,7 +573,7 @@ AS_02::IAB::MXFReader::ReadFrame(ui32_t frame_number, AS_02::IAB::MXFReader::Fra
 
   frame = std::pair<size_t, const ui8_t*>(this->m_CurrentFrameBuffer.size(), &this->m_CurrentFrameBuffer[0]);
 
-  this->m_State = ReaderState_t::ST_RUNNING;
+  this->m_State = ST_READER_RUNNING;
 
   return result;
 }
@@ -582,7 +582,7 @@ Result_t
 AS_02::IAB::MXFReader::FillWriterInfo(WriterInfo& Info) const {
   /* are we already running */
 
-  if (this->m_State == ReaderState_t::ST_BEGIN) {
+  if (this->m_State == ST_READER_BEGIN) {
     return Kumu::RESULT_FAIL;
   }
 
@@ -593,7 +593,7 @@ AS_02::IAB::MXFReader::FillWriterInfo(WriterInfo& Info) const {
 
 void
 AS_02::IAB::MXFReader::DumpHeaderMetadata(FILE* stream) const {
-  if (this->m_State != ReaderState_t::ST_BEGIN) {
+  if (this->m_State != ST_READER_BEGIN) {
     this->m_Reader->m_HeaderPart.Dump(stream);
   }
 }
@@ -601,7 +601,7 @@ AS_02::IAB::MXFReader::DumpHeaderMetadata(FILE* stream) const {
 
 void
 AS_02::IAB::MXFReader::DumpIndex(FILE* stream) const {
-  if (this->m_State != ReaderState_t::ST_BEGIN) {
+  if (this->m_State != ST_READER_BEGIN) {
     this->m_Reader->m_IndexAccess.Dump(stream);
   }
 }
@@ -609,7 +609,7 @@ AS_02::IAB::MXFReader::DumpIndex(FILE* stream) const {
 void
 AS_02::IAB::MXFReader::Reset() {
   this->m_Reader.set(NULL);
-  this->m_State = ReaderState_t::ST_BEGIN;
+  this->m_State = ST_READER_BEGIN;
 }
 
 //

@@ -887,9 +887,9 @@ namespace ASDCP
 
 // state machine for mxf reader
 	enum ReaderState_t {
-		ST_BEGIN,   // waiting for Open()
-		ST_READY,   // ready to read frames
-		ST_RUNNING, // one or more frames read
+		ST_READER_BEGIN,   // waiting for Open()
+		ST_READER_READY,   // ready to read frames
+		ST_READER_RUNNING, // one or more frames read
 	};
 
   //
