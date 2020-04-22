@@ -329,7 +329,7 @@ AS_02::IAB::MXFReader::MXFReader() : m_State(ST_READER_BEGIN) {}
 
 AS_02::IAB::MXFReader::~MXFReader() {}
 
-const ASDCP::MXF::OP1aHeader&
+ASDCP::MXF::OP1aHeader&
 AS_02::IAB::MXFReader::OP1aHeader() const {
   if (this->m_State == ST_READER_BEGIN) {
     throw Kumu::RuntimeError(Kumu::RESULT_INIT);

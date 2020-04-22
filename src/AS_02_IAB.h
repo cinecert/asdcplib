@@ -172,7 +172,7 @@ namespace AS_02 {
        *
        * @throws std::runtime_error if the Track File is not open
        */
-      virtual const ASDCP::MXF::OP1aHeader& OP1aHeader() const;
+      virtual ASDCP::MXF::OP1aHeader& OP1aHeader() const;
 
       /**
        * Warning: direct manipulation of MXF structures can interfere
