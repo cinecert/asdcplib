@@ -564,6 +564,13 @@ ASDCP_NAMESPACE_BEGIN
 	MDD_TimedTextDescriptor_DisplayType, // 526
 	MDD_TimedTextDescriptor_IntrinsicPictureResolution, // 527
 	MDD_TimedTextDescriptor_ZPositionInUse, // 528
+    	MDD_IMF_IABTrackFileLevel0, // 529
+    	MDD_IMF_IABEssenceClipWrappedElement, // 530
+    	MDD_IABEssenceDescriptor, // 531
+    	MDD_IMF_IABEssenceClipWrappedContainer, // 532
+    	MDD_IMF_IABV1SoundCoding, // 533
+    	MDD_IABSoundfieldLabelSubDescriptor, // 534
+    	MDD_IABSoundfield, // 535
 	MDD_Max
     }; // enum MDD_t
 

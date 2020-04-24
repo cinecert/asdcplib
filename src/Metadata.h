@@ -956,6 +956,28 @@ ASDCP_NAMESPACE_BEGIN
 	};
 
       //
+      class IABSoundfieldLabelSubDescriptor : public MCALabelSubDescriptor
+	{
+	  IABSoundfieldLabelSubDescriptor();
+
+	public:
+
+      IABSoundfieldLabelSubDescriptor(const Dictionary*& d);
+      IABSoundfieldLabelSubDescriptor(const IABSoundfieldLabelSubDescriptor& rhs);
+      virtual ~IABSoundfieldLabelSubDescriptor() {}
+
+      const IABSoundfieldLabelSubDescriptor& operator=(const IABSoundfieldLabelSubDescriptor& rhs) { Copy(rhs); return *this; }
+      virtual void Copy(const IABSoundfieldLabelSubDescriptor& rhs);
+      virtual const char* HasName() { return "IABSoundfieldLabelSubDescriptor"; }
+      virtual Result_t InitFromTLVSet(TLVReader& TLVSet);
+      virtual Result_t WriteToTLVSet(TLVWriter& TLVSet);
+      virtual void     Dump(FILE* = 0);
+      virtual Result_t InitFromBuffer(const byte_t* p, ui32_t l);
+      virtual Result_t WriteToBuffer(ASDCP::FrameBuffer&);
+	};
+
+
+      //
       class AudioChannelLabelSubDescriptor : public MCALabelSubDescriptor
 	{
 	  AudioChannelLabelSubDescriptor();
@@ -1295,6 +1317,26 @@ ASDCP_NAMESPACE_BEGIN
       virtual Result_t InitFromBuffer(const byte_t* p, ui32_t l);
       virtual Result_t WriteToBuffer(ASDCP::FrameBuffer&);
 	};
+
+    class IABEssenceDescriptor : public ASDCP::MXF::GenericSoundEssenceDescriptor
+    {
+        IABEssenceDescriptor();
+    public:
+        IABEssenceDescriptor(const ASDCP::Dictionary*& d);
+        IABEssenceDescriptor(const IABEssenceDescriptor& rhs);
+        virtual ~IABEssenceDescriptor() {}
+
+        const IABEssenceDescriptor& operator=(const IABEssenceDescriptor& rhs) { Copy(rhs); return *this; }
+        virtual void Copy(const IABEssenceDescriptor& rhs) { GenericSoundEssenceDescriptor::Copy(rhs); }
+        virtual const char* HasName() { return "IABEssenceDescriptor"; }
+        virtual Result_t InitFromTLVSet(ASDCP::MXF::TLVReader& TLVSet);
+        virtual Result_t WriteToTLVSet(ASDCP::MXF::TLVWriter& TLVSet);
+        virtual void     Dump(FILE* = 0);
+        virtual Result_t InitFromBuffer(const byte_t* p, ui32_t l);
+        virtual Result_t WriteToBuffer(ASDCP::FrameBuffer&);
+
+    };
+
 
     } // namespace MXF
 ASDCP_NAMESPACE_END

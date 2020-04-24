@@ -30,9 +30,11 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include "MXF.h"
+#include "KM_log.h"
+
 const ui32_t kl_length = ASDCP::SMPTE_UL_LENGTH + ASDCP::MXF_BER_LENGTH;
 
-
+using Kumu::DefaultLogSink;
 //
 ASDCP::MXF::IndexTableSegment::IndexTableSegment(const Dictionary*& d) :
   InterchangeObject(d), m_Dict(d), RtFileOffset(0), RtEntryOffset(0),
@@ -104,10 +106,15 @@ ASDCP::MXF::IndexTableSegment::InitFromTLVSet(TLVReader& TLVSet)
 
 			  if ( decoder_item_size < item_size )
 			    {
-			      TLVSet.SkipOffset(item_size - decoder_item_size);
+			      rc = TLVSet.SkipOffset(item_size - decoder_item_size);
 			    }
 			}
 		    }
+          if (IndexEntryArray.size() != item_count)
+          {
+              DefaultLogSink().Error("Malformed index table segment, could not decode all IndexEntries.\n");
+              return RESULT_FAIL;
+          }
 		}
 	    }
 	}
@@ -182,7 +189,7 @@ ASDCP::MXF::IndexTableSegment::Dump(FILE* stream)
     }
   else
     {
-      fprintf(stream, "  IndexEntryArray: %zu entries\n", IndexEntryArray.size());
+      fprintf(stream, "  IndexEntryArray: %lu entries\n", IndexEntryArray.size());
     }
 }
 

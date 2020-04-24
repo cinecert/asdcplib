@@ -551,8 +551,8 @@ ASDCP::MXF::Primer::InsertTag(const MDDEntry& Entry, ASDCP::TagValue& Tag)
 ASDCP::Result_t
 ASDCP::MXF::Primer::TagForKey(const ASDCP::UL& Key, ASDCP::TagValue& Tag)
 {
-  assert(m_Lookup);
-  if ( m_Lookup.empty() )
+  
+  if ( !m_Lookup || m_Lookup.empty() )
     {
       DefaultLogSink().Error("Primer lookup is empty\n");
       return RESULT_FAIL;

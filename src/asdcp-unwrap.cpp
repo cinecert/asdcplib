@@ -941,7 +941,6 @@ int
 main(int argc, const char** argv)
 {
   Result_t result = RESULT_OK;
-  char     str_buf[64];
   CommandOptions Options(argc, argv);
 
   if ( Options.version_flag )

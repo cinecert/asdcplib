@@ -234,7 +234,6 @@ ASDCP::EssenceType(const std::string& filename, EssenceType_t& type)
 	  if (ASDCP_SUCCESS(TestHeader.GetMDObjectByType(OBJ_TYPE_ARGS(RGBAEssenceDescriptor))) )
 	  {
 	    MXF::RGBAEssenceDescriptor *rgba_descriptor = 0;
-	    char buf[64];
 
 	    if ASDCP_SUCCESS(TestHeader.GetMDObjectByType(m_Dict->ul(MDD_RGBAEssenceDescriptor), reinterpret_cast<MXF::InterchangeObject**>(&rgba_descriptor)))
 	    {
@@ -277,6 +276,10 @@ ASDCP::EssenceType(const std::string& filename, EssenceType_t& type)
 	      {
 	        type = ESS_AS02_ACES;
 	      }
+	    else if ( ASDCP_SUCCESS(TestHeader.GetMDObjectByType(OBJ_TYPE_ARGS(IABEssenceDescriptor))) )
+	      {
+	        type = ESS_AS02_IAB;
+	      }
 	  }
 	}
       else
@@ -309,7 +312,6 @@ ASDCP::RawEssenceType(const std::string& filename, EssenceType_t& type)
   ASDCP::Wav::SimpleWaveHeader WavHeader;
   ASDCP::RF64::SimpleRF64Header RF64Header;
   ASDCP::AIFF::SimpleAIFFHeader AIFFHeader;
-  Kumu::XMLElement TmpElement("Tmp");
 
   ui32_t data_offset;
   ui32_t read_count;

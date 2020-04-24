@@ -430,13 +430,10 @@ AS_02::h__AS02Reader::OpenMXFRead(const std::string& filename)
 	}
 
       //
-      if ( ! m_RIP.PairArray.empty() )
-	{
-	  if ( m_RIP.PairArray.front().ByteOffset != 0 )
+      if ( !m_RIP.PairArray.empty() && m_RIP.PairArray.front().ByteOffset != 0 )
 	    {
 	      DefaultLogSink().Error("First Partition in RIP is not at offset 0.\n");
 	      return RESULT_AS02_FORMAT;
-	    }
 	}
 
       Kumu::fpos_t first_partition_after_header = 0;

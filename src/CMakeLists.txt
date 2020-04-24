@@ -52,13 +52,13 @@ set(asdcp_src ${asdcp_src} Wav.h WavFileWriter.h MXF.h Metadata.h JP2K.h AS_DCP.
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/AS_02_namespace.h.template ${CMAKE_CURRENT_BINARY_DIR}/AS_02_namespace.h @ONLY)
 
 # source
-set(as02_src h__02_Reader.cpp h__02_Writer.cpp AS_02_ISXD.cpp AS_02_JP2K.cpp AS_02_PCM.cpp ST2052_TextParser.cpp AS_02_TimedText.cpp AS_02_ACES.cpp ACES_Codestream_Parser.cpp ACES_Sequence_Parser.cpp ACES.cpp)
+set(as02_src h__02_Reader.cpp h__02_Writer.cpp AS_02_ISXD.cpp AS_02_JP2K.cpp AS_02_PCM.cpp ST2052_TextParser.cpp AS_02_TimedText.cpp AS_02_ACES.cpp ACES_Codestream_Parser.cpp ACES_Sequence_Parser.cpp ACES.cpp AS_02_IAB.cpp)
 
 # header for deployment (install target)
-set(as02_deploy_header AS_02.h Metadata.h MXF.h MXFTypes.h KLV.h MDD.h AS_02_ACES.h ACES.h ${CMAKE_CURRENT_BINARY_DIR}/AS_02_namespace.h)
+set(as02_deploy_header AS_02.h  AS_02_IAB.h Metadata.h MXF.h MXFTypes.h KLV.h MDD.h AS_02_ACES.h ACES.h ${CMAKE_CURRENT_BINARY_DIR}/AS_02_namespace.h)
 
 # header
-set(as02_src ${as02_src} AS_02.h AS_02_internal.h AS_02_ACES.h ACES.h AS_02_PHDR.h)
+set(as02_src ${as02_src} AS_02.h AS_02_internal.h AS_02_ACES.h ACES.h AS_02_PHDR.h AS_02_IAB.h)
 
 
 include_directories("${PROJECT_SOURCE_DIR}/src" "${OpenSSLLib_include_DIR}" "${XercescppLib_include_DIR}")

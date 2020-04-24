@@ -73,6 +73,7 @@ static InterchangeObject* StereoscopicPictureSubDescriptor_Factory(const Diction
 static InterchangeObject* ContainerConstraintsSubDescriptor_Factory(const Dictionary*& Dict) { return new ContainerConstraintsSubDescriptor(Dict); }
 static InterchangeObject* NetworkLocator_Factory(const Dictionary*& Dict) { return new NetworkLocator(Dict); }
 static InterchangeObject* MCALabelSubDescriptor_Factory(const Dictionary*& Dict) { return new MCALabelSubDescriptor(Dict); }
+static InterchangeObject* IABSoundfieldLabelSubDescriptor_Factory(const Dictionary*& Dict) { return new IABSoundfieldLabelSubDescriptor(Dict); }
 static InterchangeObject* AudioChannelLabelSubDescriptor_Factory(const Dictionary*& Dict) { return new AudioChannelLabelSubDescriptor(Dict); }
 static InterchangeObject* SoundfieldGroupLabelSubDescriptor_Factory(const Dictionary*& Dict) { return new SoundfieldGroupLabelSubDescriptor(Dict); }
 static InterchangeObject* GroupOfSoundfieldGroupsLabelSubDescriptor_Factory(const Dictionary*& Dict) { return new GroupOfSoundfieldGroupsLabelSubDescriptor(Dict); }
@@ -87,6 +88,7 @@ static InterchangeObject* GenericStreamTextBasedSet_Factory(const Dictionary*& D
 static InterchangeObject* ISXDDataEssenceDescriptor_Factory(const Dictionary*& Dict) { return new ISXDDataEssenceDescriptor(Dict); }
 static InterchangeObject* PHDRMetadataTrackSubDescriptor_Factory(const Dictionary*& Dict) { return new PHDRMetadataTrackSubDescriptor(Dict); }
 static InterchangeObject* PIMFDynamicMetadataDescriptor_Factory(const Dictionary*& Dict) { return new PIMFDynamicMetadataDescriptor(Dict); }
+static InterchangeObject* IABEssenceDescriptor_Factory(const Dictionary*& Dict) { return new IABEssenceDescriptor(Dict); }
 
 
 void
@@ -126,6 +128,7 @@ ASDCP::MXF::Metadata_InitTypes(const Dictionary*& Dict)
   SetObjectFactory(Dict->ul(MDD_ContainerConstraintsSubDescriptor), ContainerConstraintsSubDescriptor_Factory);
   SetObjectFactory(Dict->ul(MDD_NetworkLocator), NetworkLocator_Factory);
   SetObjectFactory(Dict->ul(MDD_MCALabelSubDescriptor), MCALabelSubDescriptor_Factory);
+  SetObjectFactory(Dict->ul(MDD_IABSoundfieldLabelSubDescriptor), IABSoundfieldLabelSubDescriptor_Factory);
   SetObjectFactory(Dict->ul(MDD_AudioChannelLabelSubDescriptor), AudioChannelLabelSubDescriptor_Factory);
   SetObjectFactory(Dict->ul(MDD_SoundfieldGroupLabelSubDescriptor), SoundfieldGroupLabelSubDescriptor_Factory);
   SetObjectFactory(Dict->ul(MDD_GroupOfSoundfieldGroupsLabelSubDescriptor), GroupOfSoundfieldGroupsLabelSubDescriptor_Factory);
@@ -140,6 +143,7 @@ ASDCP::MXF::Metadata_InitTypes(const Dictionary*& Dict)
   SetObjectFactory(Dict->ul(MDD_ISXDDataEssenceDescriptor), ISXDDataEssenceDescriptor_Factory);
   SetObjectFactory(Dict->ul(MDD_PHDRMetadataTrackSubDescriptor), PHDRMetadataTrackSubDescriptor_Factory);
   SetObjectFactory(Dict->ul(MDD_PIMFDynamicMetadataDescriptor), PIMFDynamicMetadataDescriptor_Factory);
+  SetObjectFactory(Dict->ul(MDD_IABEssenceDescriptor), IABEssenceDescriptor_Factory);
 }
 
 //------------------------------------------------------------------------------------------
@@ -1402,7 +1406,7 @@ GenericSoundEssenceDescriptor::InitFromTLVSet(TLVReader& TLVSet)
     DialNorm.set_has_value( result == RESULT_OK );
   }
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(GenericSoundEssenceDescriptor, SoundEssenceCoding));
-  if ( ASDCP_SUCCESS(result) ) { 
+  if ( ASDCP_SUCCESS(result) ) {
     result = TLVSet.ReadUi8(OBJ_READ_ARGS_OPT(GenericSoundEssenceDescriptor, ReferenceAudioAlignmentLevel));
     ReferenceAudioAlignmentLevel.set_has_value( result == RESULT_OK );
   }
@@ -3670,6 +3674,78 @@ MCALabelSubDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
   return InterchangeObject::WriteToBuffer(Buffer);
 }
 
+
+//------------------------------------------------------------------------------------------
+// IABSoundfieldLabelSubDescriptor
+
+//
+
+IABSoundfieldLabelSubDescriptor::IABSoundfieldLabelSubDescriptor(const Dictionary*& d) : MCALabelSubDescriptor(d)
+{
+  assert(m_Dict);
+  m_UL = m_Dict->ul(MDD_IABSoundfieldLabelSubDescriptor);
+}
+
+IABSoundfieldLabelSubDescriptor::IABSoundfieldLabelSubDescriptor(const IABSoundfieldLabelSubDescriptor& rhs) : MCALabelSubDescriptor(rhs.m_Dict)
+{
+  assert(m_Dict);
+  m_UL = m_Dict->ul(MDD_IABSoundfieldLabelSubDescriptor);
+  Copy(rhs);
+}
+
+
+//
+ASDCP::Result_t
+IABSoundfieldLabelSubDescriptor::InitFromTLVSet(TLVReader& TLVSet)
+{
+  assert(m_Dict);
+  Result_t result = MCALabelSubDescriptor::InitFromTLVSet(TLVSet);
+  return result;
+}
+
+//
+ASDCP::Result_t
+IABSoundfieldLabelSubDescriptor::WriteToTLVSet(TLVWriter& TLVSet)
+{
+  assert(m_Dict);
+  Result_t result = MCALabelSubDescriptor::WriteToTLVSet(TLVSet);
+  return result;
+}
+
+//
+void
+IABSoundfieldLabelSubDescriptor::Copy(const IABSoundfieldLabelSubDescriptor& rhs)
+{
+  MCALabelSubDescriptor::Copy(rhs);
+}
+
+//
+void
+IABSoundfieldLabelSubDescriptor::Dump(FILE* stream)
+{
+  char identbuf[IdentBufferLen];
+  *identbuf = 0;
+
+  if ( stream == 0 )
+    stream = stderr;
+
+  MCALabelSubDescriptor::Dump(stream);
+}
+
+//
+ASDCP::Result_t
+IABSoundfieldLabelSubDescriptor::InitFromBuffer(const byte_t* p, ui32_t l)
+{
+  return MCALabelSubDescriptor::InitFromBuffer(p, l);
+}
+
+//
+ASDCP::Result_t
+IABSoundfieldLabelSubDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
+{
+  return MCALabelSubDescriptor::WriteToBuffer(Buffer);
+}
+
 //------------------------------------------------------------------------------------------
 // AudioChannelLabelSubDescriptor
 
@@ -4849,6 +4925,52 @@ ASDCP::Result_t
 PIMFDynamicMetadataDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 {
   return InterchangeObject::WriteToBuffer(Buffer);
+}
+
+IABEssenceDescriptor::IABEssenceDescriptor(const Dictionary*& d) : GenericSoundEssenceDescriptor(d)
+{
+    m_UL = m_Dict->ul(MDD_IABEssenceDescriptor);
+    EssenceContainer = m_Dict->ul(MDD_IMF_IABEssenceClipWrappedContainer);
+}
+
+IABEssenceDescriptor::IABEssenceDescriptor(const IABEssenceDescriptor& rhs) : GenericSoundEssenceDescriptor(rhs.m_Dict)
+{
+    Copy(rhs);
+    m_UL = m_Dict->ul(MDD_IABEssenceDescriptor);
+    EssenceContainer = m_Dict->ul(MDD_IMF_IABEssenceClipWrappedContainer);
+}
+
+ASDCP::Result_t IABEssenceDescriptor::InitFromTLVSet(TLVReader& TLVSet)
+{
+    assert(m_Dict);
+    return GenericSoundEssenceDescriptor::InitFromTLVSet(TLVSet);
+}
+
+//
+ASDCP::Result_t IABEssenceDescriptor::WriteToTLVSet(TLVWriter& TLVSet)
+{
+    assert(m_Dict);
+    return GenericSoundEssenceDescriptor::WriteToTLVSet(TLVSet);
+}
+
+void IABEssenceDescriptor::Dump(FILE* stream)
+{
+    if ( stream == 0 )
+        stream = stderr;
+
+    GenericSoundEssenceDescriptor::Dump(stream);
+}
+
+//
+ASDCP::Result_t IABEssenceDescriptor::InitFromBuffer(const byte_t* p, ui32_t l)
+{
+    return InterchangeObject::InitFromBuffer(p, l);
+}
+
+//
+ASDCP::Result_t IABEssenceDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
+{
+    return InterchangeObject::WriteToBuffer(Buffer);
 }
 
 //
