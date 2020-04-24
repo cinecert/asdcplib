@@ -356,6 +356,7 @@ read_MPEG2_file(CommandOptions& Options)
       result = OutFile.OpenWrite(filename);
     }
 
+#ifdef HAVE_SSL
   if ( ASDCP_SUCCESS(result) && Options.key_flag )
     {
       Context = new AESDecContext;
@@ -377,6 +378,7 @@ read_MPEG2_file(CommandOptions& Options)
 	    }
 	}
     }
+#endif //HAVE_SSL
 
   ui32_t last_frame = Options.start_frame + ( Options.duration ? Options.duration : frame_count);
   if ( last_frame > frame_count )
@@ -483,6 +485,7 @@ read_JP2K_S_file(CommandOptions& Options)
 	}
     }
 
+#ifdef HAVE_SSL
   if ( ASDCP_SUCCESS(result) && Options.key_flag )
     {
       Context = new AESDecContext;
@@ -504,6 +507,7 @@ read_JP2K_S_file(CommandOptions& Options)
 	    }
 	}
     }
+#endif //HAVE_SSL
 
   const int filename_max = 1024;
   char filename[filename_max];
@@ -589,6 +593,7 @@ read_JP2K_file(CommandOptions& Options)
 	}
     }
 
+#ifdef HAVE_SSL
   if ( ASDCP_SUCCESS(result) && Options.key_flag )
     {
       Context = new AESDecContext;
@@ -610,6 +615,7 @@ read_JP2K_file(CommandOptions& Options)
 	    }
 	}
     }
+#endif //HAVE_SSL
 
   ui32_t last_frame = Options.start_frame + ( Options.duration ? Options.duration : frame_count);
   if ( last_frame > frame_count )
@@ -721,6 +727,7 @@ read_PCM_file(CommandOptions& Options)
     }
     }
 
+#ifdef HAVE_SSL
   if ( ASDCP_SUCCESS(result) && Options.key_flag )
     {
       Context = new AESDecContext;
@@ -742,6 +749,7 @@ read_PCM_file(CommandOptions& Options)
 	    }
 	}
     }
+#endif //HAVE_SSL
 
   for ( ui32_t i = Options.start_frame; ASDCP_SUCCESS(result) && i < last_frame; i++ )
     {
@@ -790,6 +798,7 @@ read_timed_text_file(CommandOptions& Options)
 	TimedText::DescriptorDump(TDesc);
     }
 
+#ifdef HAVE_SSL
   if ( ASDCP_SUCCESS(result) && Options.key_flag )
     {
       Context = new AESDecContext;
@@ -811,6 +820,7 @@ read_timed_text_file(CommandOptions& Options)
 	    }
 	}
     }
+#endif //HAVE_SSL
 
   if ( ASDCP_FAILURE(result) )
     return result;
@@ -881,6 +891,7 @@ read_DCData_file(CommandOptions& Options)
 	}
     }
 
+#ifdef HAVE_SSL
   if ( ASDCP_SUCCESS(result) && Options.key_flag )
     {
       Context = new AESDecContext;
@@ -902,6 +913,7 @@ read_DCData_file(CommandOptions& Options)
 	    }
 	}
     }
+#endif //HAVE_SSL
 
   ui32_t last_frame = Options.start_frame + ( Options.duration ? Options.duration : frame_count);
   if ( last_frame > frame_count )

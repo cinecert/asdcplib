@@ -33,7 +33,12 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "AS_02_internal.h"
 #include <limits>
 #include <iostream>
+#ifdef HAVE_SSL
 #include <openssl/sha.h>
+#else
+#include "KM_util.h"
+#endif
+
 
 #ifdef min
 #undef min
@@ -256,6 +261,7 @@ AS_02::ACES::CreateTargetFrameAssetId(Kumu::UUID& rID, const std::string& target
 static Kumu::UUID
 AS_02::ACES::create_4122_type5_id(const byte_t* subject_name, Kumu::fsize_t size, const byte_t* ns_id)
 {
+#ifdef HAVE_SSL
   SHA_CTX ctx;
   SHA1_Init(&ctx);
   SHA1_Update(&ctx, ns_id, NS_ID_LENGTH);
@@ -268,6 +274,12 @@ AS_02::ACES::create_4122_type5_id(const byte_t* subject_name, Kumu::fsize_t size
   // Derive the asset ID from the digest. Make it a type-5 UUID
   byte_t buf[Kumu::UUID_Length];
   memcpy(buf, bin_buf, Kumu::UUID_Length);
+#else
+  byte_t buf[Kumu::UUID_Length];
+  Kumu::GenRandomUUID(buf);
+#endif
+
+  // Derive the asset ID from the digest. Make it a type-5 UUID
   buf[6] &= 0x0f; // clear bits 4-7
   buf[6] |= 0x50; // set UUID version 'digest'
   buf[8] &= 0x3f; // clear bits 6&7

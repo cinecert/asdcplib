@@ -40,6 +40,12 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <map>
 #include <string>
 
+#ifndef HAVE_SSL
+// Includes for the rand()-based RNG
+#include <cstdlib>
+#include <time.h>
+#endif //HAVE_SSL
+
 const char*
 Kumu::Version()
 {
@@ -580,6 +586,38 @@ Kumu::bin2UUIDhex(const byte_t* bin_buf, ui32_t bin_len, char* str_buf, ui32_t s
   return str_buf;
 }
 
+#ifdef HAVE_SSL
+
+//
+static void
+GenRandomBuffer(byte_t* buf, size_t len)
+{
+    Kumu::FortunaRNG RNG;
+    RNG.FillRandom(buf, len);
+}
+
+#else //HAVE_SSL
+
+static bool randSeeded = false;
+
+//
+static void
+GenRandomBuffer(byte_t* buf, size_t len)
+{
+    if (!randSeeded)
+    {
+        srand(time(NULL));
+        randSeeded = true;
+    }
+
+    for (int i = 0; i < len; i++)
+    {
+        buf[i] = (byte_t)(rand() % 0xFF);
+    }
+}
+
+#endif //HAVE_SSL
+
 //
 void
 Kumu::GenRandomValue(UUID& ID)
@@ -593,8 +631,8 @@ Kumu::GenRandomValue(UUID& ID)
 void
 Kumu::GenRandomUUID(byte_t* buf)
 {
-  FortunaRNG RNG;
-  RNG.FillRandom(buf, UUID_Length);
+  GenRandomBuffer(buf, UUID_Length);
+
   buf[6] &= 0x0f; // clear bits 4-7
   buf[6] |= 0x40; // set UUID version
   buf[8] &= 0x3f; // clear bits 6&7
@@ -606,8 +644,7 @@ void
 Kumu::GenRandomValue(SymmetricKey& Key)
 {
   byte_t tmp_buf[SymmetricKey_Length];
-  FortunaRNG RNG;
-  RNG.FillRandom(tmp_buf, SymmetricKey_Length);
+  GenRandomBuffer(tmp_buf, SymmetricKey_Length);
   Key.Set(tmp_buf);
 }
 

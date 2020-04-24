@@ -359,6 +359,7 @@ ASDCP::Read_EKLV_Packet(Kumu::FileReader& File, const ASDCP::Dictionary& Dict,
 	  return RESULT_FORMAT;
 	}
 
+#ifdef HAVE_SSL
       if ( Ctx )
 	{
 	  // wrap the pointer and length as a FrameBuffer for use by
@@ -380,6 +381,7 @@ ASDCP::Read_EKLV_Packet(Kumu::FileReader& File, const ASDCP::Dictionary& Dict,
 	    }
 	}
       else // return ciphertext to caller
+#endif //HAVE_SSL
 	{
 	  if ( FrameBuf.Capacity() < tmp_len )
 	    {

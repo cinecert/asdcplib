@@ -149,8 +149,10 @@ namespace ASDCP
   Result_t MD_to_WriterInfo(MXF::Identification*, WriterInfo&);
   Result_t MD_to_CryptoInfo(MXF::CryptographicContext*, WriterInfo&, const Dictionary&);
 
+#ifdef HAVE_SSL
   Result_t EncryptFrameBuffer(const ASDCP::FrameBuffer&, ASDCP::FrameBuffer&, AESEncContext*);
   Result_t DecryptFrameBuffer(const ASDCP::FrameBuffer&, ASDCP::FrameBuffer&, AESDecContext*);
+#endif
 
   Result_t MD_to_JP2K_PDesc(const ASDCP::MXF::GenericPictureEssenceDescriptor&  EssenceDescriptor,
 			    const ASDCP::MXF::JPEG2000PictureSubDescriptor& EssenceSubDescriptor,
@@ -921,6 +923,7 @@ namespace ASDCP
     };
 
 
+#ifdef HAVE_SSL
   // helper class for calculating Integrity Packs, used by WriteEKLVPacket() below.
   //
   class IntegrityPack
@@ -938,6 +941,7 @@ namespace ASDCP
       Result_t TestValues(const ASDCP::FrameBuffer&, const byte_t* AssetID, ui32_t sequence, HMACContext* HMAC);
     };
 
+#endif //HAVE_SSL
 
 } // namespace ASDCP
 

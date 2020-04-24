@@ -32,6 +32,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef _KM_PRNG_H_
 #define _KM_PRNG_H_
 
+#ifdef HAVE_SSL
+
 #include <KM_util.h>
 
 namespace Kumu
@@ -54,6 +56,7 @@ namespace Kumu
 } // namespace Kumu
 
 
+#endif // HAVE_SSL
 
 #endif // _KM_PRNG_H_
 

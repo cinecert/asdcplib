@@ -356,6 +356,7 @@ read_JP2K_file(CommandOptions& Options)
 	}
     }
 
+#ifdef HAVE_SSL
   if ( ASDCP_SUCCESS(result) && Options.key_flag )
     {
       Context = new AESDecContext;
@@ -377,6 +378,7 @@ read_JP2K_file(CommandOptions& Options)
 	    }
 	}
     }
+#endif
 
   ui32_t last_frame = Options.start_frame + ( Options.duration ? Options.duration : frame_count);
   if ( last_frame > frame_count )
@@ -479,6 +481,7 @@ read_ACES_file(CommandOptions& Options)
     }
   }
 
+#ifdef HAVE_SSL
   if (ASDCP_SUCCESS(result) && Options.key_flag)
   {
     Context = new AESDecContext;
@@ -500,6 +503,7 @@ read_ACES_file(CommandOptions& Options)
       }
     }
   }
+#endif
 
   ui32_t last_frame = Options.start_frame + (Options.duration ? Options.duration : frame_count);
   if (last_frame > frame_count)
@@ -727,6 +731,7 @@ read_PCM_file(CommandOptions& Options)
 	}
     }
 
+#ifdef HAVE_SSL
   if ( ASDCP_SUCCESS(result) && Options.key_flag )
     {
       Context = new AESDecContext;
@@ -748,6 +753,7 @@ read_PCM_file(CommandOptions& Options)
 	    }
 	}
     }
+#endif //HAVE_SSL
 
   for ( ui32_t i = Options.start_frame; ASDCP_SUCCESS(result) && i < last_frame; i++ )
     {
@@ -889,6 +895,7 @@ read_isxd_file(CommandOptions& Options)
 	}
     }
 
+#ifdef HAVE_SSL
   if ( ASDCP_SUCCESS(result) && Options.key_flag )
     {
       Context = new AESDecContext;
@@ -910,6 +917,7 @@ read_isxd_file(CommandOptions& Options)
 	    }
 	}
     }
+#endif
 
   ui32_t last_frame = Options.start_frame + ( Options.duration ? Options.duration : frame_count);
   if ( last_frame > frame_count )

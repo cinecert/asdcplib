@@ -421,6 +421,8 @@ namespace ASDCP {
   const ui32_t CBC_BLOCK_SIZE = 16;
   const ui32_t HMAC_SIZE = 20;
 
+#ifdef HAVE_SSL
+
   //
   class AESEncContext
     {
@@ -508,6 +510,49 @@ namespace ASDCP {
       // Returns error if the buf argument is NULL or if the values do ot match.
       Result_t TestHMACValue(const byte_t* buf) const;
     };
+
+#else //HAVE_SSL
+
+  // Stub unconstructable AES encode, decode and HMAC context classes for environments without encryption support
+
+  //
+  class AESEncContext
+    {
+      class h__AESContext;
+      mem_ptr<h__AESContext> m_Context;
+      ASDCP_NO_COPY_CONSTRUCT(AESEncContext);
+
+      AESEncContext();
+
+    public:
+      ~AESEncContext();
+    };
+
+  //
+  class AESDecContext
+    {
+      ASDCP_NO_COPY_CONSTRUCT(AESDecContext);
+
+      AESDecContext();
+
+    public:
+      ~AESDecContext();
+    };
+
+  //
+  class HMACContext
+    {
+      class h__HMACContext;
+      mem_ptr<h__HMACContext> m_Context;
+      ASDCP_NO_COPY_CONSTRUCT(HMACContext);
+
+      HMACContext();
+
+    public:
+      ~HMACContext();
+    };
+
+#endif //HAVE_SSL
 
   //---------------------------------------------------------------------------------
   // frame buffer base class
@@ -1525,6 +1570,7 @@ namespace ASDCP {
 	  Result_t ResolveRID(const byte_t* uuid, FrameBuffer& FrameBuf) const;
 	};
 
+#ifdef HAVE_XERCES_C
       //
       class DCSubtitleParser
 	{
@@ -1562,6 +1608,7 @@ namespace ASDCP {
 	  Result_t ReadAncillaryResource(const byte_t* uuid, FrameBuffer&,
 					 const IResourceResolver* Resolver = 0) const;
 	};
+#endif //HAVE_XERCES_C
 
       //
       class MXFWriter

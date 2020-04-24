@@ -350,6 +350,8 @@ namespace AS_02
 	};
       
 
+#ifdef HAVE_SSL // The ST2052_Parser implementation relies on OpenSSL for SHA-1 hashing
+
       // Generate UUID asset ID values from file contents
       Kumu::UUID CreatePNGNameId(const std::string& image_name);
       Kumu::UUID CreateFontNameId(const std::string& font_name);
@@ -394,6 +396,7 @@ namespace AS_02
 	  Result_t ReadAncillaryResource(const Kumu::UUID&, ASDCP::TimedText::FrameBuffer&,
 					 const ASDCP::TimedText::IResourceResolver* Resolver = 0) const;
 	};
+#endif //HAVE_SSL
 
       //
       class MXFWriter

@@ -36,7 +36,10 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <KM_fileio.h>
 #include <KM_prng.h>
 #include <AS_DCP.h>
+
+#ifdef HAVE_SSL
 #include <openssl/sha.h>
+#endif
 
 using namespace Kumu;
 
@@ -177,6 +180,8 @@ public:
   }
 };
 
+#ifdef HAVE_SSL
+
 //
 Result_t
 digest_file(const std::string& filename)
@@ -218,6 +223,8 @@ digest_file(const std::string& filename)
   return result;
 }
 
+#endif //HAVE_SSL
+
 //
 int
 main(int argc, const char** argv)
@@ -242,6 +249,7 @@ main(int argc, const char** argv)
       return 3;
     }
 
+#ifdef HAVE_SSL
   if ( Options.mode == MMT_GEN_KEY )
     {
       Kumu::FortunaRNG RNG;
@@ -250,13 +258,24 @@ main(int argc, const char** argv)
       RNG.FillRandom(bin_buf, ASDCP::KeyLen);
       printf("%s\n", Kumu::bin2hex(bin_buf, ASDCP::KeyLen, str_buf, 64));
     }
+  else
+#endif //HAVE_SSL
+  if ( Options.mode == MMT_GEN_KEY )
+    {
+      byte_t bin_buf[ASDCP::KeyLen];
+
+      Kumu::GenRandomUUID(bin_buf);
+      printf("%s\n", Kumu::bin2hex(bin_buf, ASDCP::KeyLen, str_buf, 64));
+    }
   else if ( Options.mode == MMT_GEN_ID )
     {
       UUID TmpID;
       Kumu::GenRandomValue(TmpID);
       printf("%s\n", TmpID.EncodeHex(str_buf, 64));
     }
-  else if ( Options.mode == MMT_DIGEST )
+  else
+#ifdef HAVE_SSL
+    if ( Options.mode == MMT_DIGEST )
     {
       PathList_t::iterator i;
 
@@ -265,6 +284,7 @@ main(int argc, const char** argv)
 	result = digest_file(*i);
     }
   else
+#endif //HAVE_SSL
     {
       fprintf(stderr, "Unhandled mode: %d.\n", Options.mode);
       return 6;

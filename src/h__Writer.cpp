@@ -370,7 +370,6 @@ ASDCP::Write_EKLV_Packet(Kumu::FileWriter& File, const ASDCP::Dictionary& Dict, 
 			 AESEncContext* Ctx, HMACContext* HMAC)
 {
   Result_t result = RESULT_OK;
-  IntegrityPack IntPack;
 
   byte_t overhead[128];
   Kumu::MemIOWriter Overhead(overhead, 128);
@@ -383,6 +382,11 @@ ASDCP::Write_EKLV_Packet(Kumu::FileWriter& File, const ASDCP::Dictionary& Dict, 
 
   if ( Info.EncryptedEssence )
     {
+#ifndef HAVE_SSL
+      return RESULT_CRYPT_CTX;
+#else
+      IntegrityPack IntPack;
+
       if ( ! Ctx )
 	return RESULT_CRYPT_CTX;
 
@@ -473,6 +477,7 @@ ASDCP::Write_EKLV_Packet(Kumu::FileWriter& File, const ASDCP::Dictionary& Dict, 
 	  result = File.Writev(HMACOverhead.Data(), HMACOverhead.Length());
 	  StreamOffset += HMACOverhead.Length();
 	}
+#endif //HAVE_SSL
     }
   else
     {
