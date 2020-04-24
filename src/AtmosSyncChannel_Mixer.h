@@ -37,8 +37,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <PCMDataProviders.h>
 #include <vector>
 
-namespace ASDCP
-{
+ASDCP_NAMESPACE_BEGIN
 
   //
   class AtmosSyncChannelMixer
@@ -85,7 +84,7 @@ namespace ASDCP
       Result_t Reset();
       Result_t ReadFrame(PCM::FrameBuffer& OutFB);
     };
-} // namespace ASDCP
+ASDCP_NAMESPACE_END
 
 #endif // _ATMOSSYNCCHANNEL_MIXER_H_
 

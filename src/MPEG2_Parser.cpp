@@ -44,6 +44,11 @@ const ui32_t VESReadSize = 4 * Kumu::Kilobyte;
 
 //------------------------------------------------------------------------------------------
 
+ASDCP_NAMESPACE_BEGIN
+
+namespace MPEG2
+{
+
 //
 enum ParserState_t {
     ST_INIT,
@@ -355,7 +360,7 @@ public:
 // - any frame that begins with a picture header is either an I, B or P frame
 //   and is assumed to contain a complete picture header and picture data
 
-class ASDCP::MPEG2::Parser::h__Parser
+class Parser::h__Parser
 {
   StreamParams     m_ParamsDelegate;
   FrameParser      m_ParserDelegate;
@@ -378,6 +383,8 @@ public:
   Result_t FillVideoDescriptor(VideoDescriptor&);
 };
 
+} // namespace MPEG2
+ASDCP_NAMESPACE_END
 
 //
 Result_t

@@ -34,8 +34,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "MXF.h"
 
-namespace ASDCP
-{
+ASDCP_NAMESPACE_BEGIN
   namespace MXF
     {
       void Metadata_InitTypes(const Dictionary*& Dict);
@@ -1298,7 +1297,7 @@ namespace ASDCP
 	};
 
     } // namespace MXF
-} // namespace ASDCP
+ASDCP_NAMESPACE_END
 
 
 #endif // _Metadata_H_

@@ -41,7 +41,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "KM_util.h"
 #include "KM_memio.h"
 
-namespace ASDCP {
+ASDCP_NAMESPACE_BEGIN
 
  class S12MTimecode : public Kumu::IArchive
 {
@@ -149,7 +149,7 @@ public:
 };
 
 
-} // namespace ASDCP
+ASDCP_NAMESPACE_END
 
 #endif // _S12MTIMECODE_H_
 

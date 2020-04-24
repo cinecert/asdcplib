@@ -29,6 +29,17 @@ endif("${isSystemDir}" STREQUAL "-1")
 # Configure a header file to pass some of the CMake settings to the source code.
 configure_file("${PROJECT_SOURCE_DIR}/src/info.in" "${PROJECT_BINARY_DIR}/src/info.h")
 
+# Custom namespaces:
+#
+# Use these definitions to override the default library namespaces. This can be
+# useful when including asdclib's objects in another static library in order to
+# avoid symbol clashes in applications that link to both asdcplib and the
+# library including asdcplib.
+#
+# - define KUMU_NAMESPACE to override default 'Kumu'
+# - define ASDCP_NAMESPACE to override default 'ASDCP'
+# - define AS_02_NAMESPACE to override default 'AS_02'
+
 # Add the binary tree to the search path for include files so that we will find info.h.
 include_directories("${PROJECT_BINARY_DIR}/src")
 add_subdirectory(src)

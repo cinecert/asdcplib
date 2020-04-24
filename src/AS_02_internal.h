@@ -40,6 +40,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 using Kumu::DefaultLogSink;
 
+AS_02_NAMESPACE_BEGIN
+
 #ifdef DEFAULT_02_MD_DECL
 AS_02::MXF::AS02IndexReader *g_AS02IndexReader;
 #else
@@ -47,8 +49,7 @@ extern AS_02::MXF::AS02IndexReader *g_AS02IndexReader;
 #endif
 
 
-namespace AS_02
-{
+
 
   void default_md_object_init();
 
@@ -333,7 +334,7 @@ namespace AS_02
       Result_t FinalizeClip(ui32_t bytes_per_frame);
     };
 
-} // namespace AS_02
+AS_02_NAMESPACE_END
 
 #endif // _AS_02_INTERNAL_H_
 

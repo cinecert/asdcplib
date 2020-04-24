@@ -34,12 +34,13 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef _KM_ERROR_H_
 #define _KM_ERROR_H_
 
+#include <KM_namespace.h>
+
 #include <string>
 
-#define KM_DECLARE_RESULT(sym, i, l) const Result_t RESULT_##sym = Result_t(i, #sym, l);
+#define KM_DECLARE_RESULT(sym, i, l) const Result_t RESULT_##sym = Result_t(i, #sym, l)
 
-namespace Kumu
-{
+KUMU_NAMESPACE_BEGIN
   // Result code container. Both a signed integer and a text string are stored in the object.
   // When defining your own codes your choice of integer values is mostly unconstrained, but pay
   // attention to the numbering in the other libraries that use Kumu. Values between -99 and 99
@@ -114,7 +115,7 @@ namespace Kumu
   KM_DECLARE_RESULT(NOT_EMPTY,  -22,  "Unable to delete non-empty directory.");
   // 23-100 are reserved
  
-} // namespace Kumu
+KUMU_NAMESPACE_END
 
 //--------------------------------------------------------------------------------
 // convenience macros
@@ -158,8 +159,7 @@ namespace Kumu
 
 
 
-namespace Kumu
-{
+KUMU_NAMESPACE_BEGIN
   // simple tracing mechanism
   class DTrace_t
   {
@@ -176,7 +176,7 @@ namespace Kumu
     DTrace_t(const char* Label, Result_t* Watch, int Line, const char* File);
     ~DTrace_t();
   };
-}
+KUMU_NAMESPACE_END
 
 #ifdef KM_TRACE
 #define WDTRACE(l) DTrace_t __wl__Trace__((l), 0, __LINE__, __FILE__)

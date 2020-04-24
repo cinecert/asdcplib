@@ -29,6 +29,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     \brief   AS-DCP library, MPEG2 essence reader and writer implementation
 */
 
+#include "AS_DCP_namespace.h"
 #include "AS_DCP_internal.h"
 #include <iostream>
 #include <iomanip>
@@ -39,6 +40,10 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 static std::string MPEG_PACKAGE_LABEL = "File Package: SMPTE 381M frame wrapping of MPEG2 video elementary stream";
 static std::string PICT_DEF_LABEL = "Picture Track";
 
+ASDCP_NAMESPACE_BEGIN
+
+namespace MPEG2
+{
 //
 ASDCP::Result_t
 MD_to_MPEG2_VDesc(MXF::MPEG2VideoDescriptor* VDescObj, MPEG2::VideoDescriptor& VDesc)
@@ -94,6 +99,8 @@ MPEG2_VDesc_to_MD(MPEG2::VideoDescriptor& VDesc, MXF::MPEG2VideoDescriptor* VDes
   VDescObj->ProfileAndLevel = VDesc.ProfileAndLevel;
   return RESULT_OK;
 }
+} // namespace MPEG2
+ASDCP_NAMESPACE_END
 
 //
 std::ostream&

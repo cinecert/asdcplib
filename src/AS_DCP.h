@@ -84,6 +84,8 @@ This project depends upon the following libraries:
 #ifndef _AS_DCP_H_
 #define _AS_DCP_H_
 
+#include <AS_DCP_namespace.h>
+
 #include <KM_error.h>
 #include <KM_fileio.h>
 #include <stdio.h>
@@ -145,7 +147,7 @@ typedef unsigned int   ui32_t;
 //--------------------------------------------------------------------------------
 // All library components are defined in the namespace ASDCP
 //
-namespace ASDCP {
+ASDCP_NAMESPACE_BEGIN
   //
   // The version number declaration and explanation have moved to ../configure.ac
   const char* Version();
@@ -598,7 +600,7 @@ namespace ASDCP {
     class OP1aHeader;
     class OPAtomIndexFooter;
     class RIP;
-  };
+  }
 
   //---------------------------------------------------------------------------------
   // MPEG2 video elementary stream support
@@ -654,7 +656,7 @@ namespace ASDCP {
       void VideoDescriptorDump(const VideoDescriptor&, FILE* = 0);
 
       // A container for MPEG frame data.
-      class FrameBuffer : public ASDCP::FrameBuffer
+      class FrameBuffer : public ASDCP_NAMESPACE::FrameBuffer
 	{
 	  ASDCP_NO_COPY_CONSTRUCT(FrameBuffer); // TODO: should have copy construct
 
@@ -910,7 +912,7 @@ namespace ASDCP {
 	}
 
       //
-      class FrameBuffer : public ASDCP::FrameBuffer
+      class FrameBuffer : public ASDCP_NAMESPACE::FrameBuffer
 	{
 	public:
 	  FrameBuffer() {}
@@ -1145,7 +1147,7 @@ namespace ASDCP {
       void   PictureDescriptorDump(const PictureDescriptor&, FILE* = 0);
 
       //
-      class FrameBuffer : public ASDCP::FrameBuffer
+      class FrameBuffer : public ASDCP_NAMESPACE::FrameBuffer
 	{
 	public:
 	  FrameBuffer() {}
@@ -1478,7 +1480,7 @@ namespace ASDCP {
       void   DescriptorDump(const TimedTextDescriptor&, FILE* = 0);
 
       //
-      class FrameBuffer : public ASDCP::FrameBuffer
+      class FrameBuffer : public ASDCP_NAMESPACE::FrameBuffer
       {
 	ASDCP_NO_COPY_CONSTRUCT(FrameBuffer); // TODO: should have copy construct
 
@@ -1513,7 +1515,7 @@ namespace ASDCP {
       // Resolves resource references by testing the named directory for file names containing
       // the respective UUID.
       //
-      class LocalFilenameResolver : public ASDCP::TimedText::IResourceResolver
+      class LocalFilenameResolver : public ASDCP_NAMESPACE::TimedText::IResourceResolver
 	{
 	  std::string m_Dirname;
 	  ASDCP_NO_COPY_CONSTRUCT(LocalFilenameResolver);
@@ -1685,7 +1687,7 @@ namespace ASDCP {
     void DCDataDescriptorDump(const DCDataDescriptor&, FILE* = 0);
 
     //
-    class FrameBuffer : public ASDCP::FrameBuffer
+    class FrameBuffer : public ASDCP_NAMESPACE::FrameBuffer
 	{
      public:
 	  FrameBuffer() {}
@@ -1956,7 +1958,7 @@ namespace ASDCP {
 
 
 
-} // namespace ASDCP
+ASDCP_NAMESPACE_END
 
 
 #endif // _AS_DCP_H_

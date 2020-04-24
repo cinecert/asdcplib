@@ -55,6 +55,9 @@ The libtai source code is in the public domain.
 #include <sys/time.h>
 #endif
 
+KUMU_NAMESPACE_BEGIN
+
+
 //
 void
 caldate_frommjd(Kumu::TAI::caldate* cd, i32_t day)
@@ -216,6 +219,7 @@ Kumu::TAI::caltime::operator=(const Kumu::TAI::tai& rhs)
   return *this;
 }
 
+KUMU_NAMESPACE_END
 
 //
 // end KM_tai.cpp

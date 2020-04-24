@@ -41,9 +41,9 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "AS_02_ACES.h"
 #include <WavFileWriter.h>
 
-namespace ASDCP {
+ASDCP_NAMESPACE_BEGIN
   Result_t MD_to_PCM_ADesc(ASDCP::MXF::WaveAudioDescriptor* ADescObj, ASDCP::PCM::AudioDescriptor& ADesc);
-}
+ASDCP_NAMESPACE_END
 
 using namespace ASDCP;
 

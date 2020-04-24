@@ -35,8 +35,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <AS_DCP.h>
 #include <AtmosSyncChannel_Generator.h>
 
-namespace ASDCP
-{
+ASDCP_NAMESPACE_BEGIN
 
   // PCM Data Provider Interface
   class PCMDataProviderInterface
@@ -110,7 +109,7 @@ namespace ASDCP
       virtual Result_t Reset();
   };
 
-} // namespace ASDCP
+ASDCP_NAMESPACE_END
 
 #endif // _PCMDATAPROVIDERS_H_
 

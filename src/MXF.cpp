@@ -1456,26 +1456,35 @@ ASDCP::MXF::InterchangeObject::IsA(const byte_t* label)
 
 
 //------------------------------------------------------------------------------------------
-struct FactoryCompareUL
+ASDCP_NAMESPACE_BEGIN
+namespace MXF
 {
-    bool operator()(const ASDCP::UL& lhs, const ASDCP::UL& rhs) const
+    struct FactoryCompareUL
     {
-        ui32_t test_size = lhs.Size() < rhs.Size() ? lhs.Size() : rhs.Size();
-
-        for (ui32_t i = 0; i < test_size; i++)
+        bool operator()(const ASDCP::UL& lhs, const ASDCP::UL& rhs) const
         {
-            if (i == 7) continue; // skip version to be symmetrical with UL::operator==
-            if (lhs.Value()[i] != rhs.Value()[i])
-                return lhs.Value()[i] < rhs.Value()[i];
+            ui32_t test_size = lhs.Size() < rhs.Size() ? lhs.Size() : rhs.Size();
+
+            for (ui32_t i = 0; i < test_size; i++)
+            {
+                if (i == 7) continue; // skip version to be symmetrical with UL::operator==
+                if (lhs.Value()[i] != rhs.Value()[i])
+                    return lhs.Value()[i] < rhs.Value()[i];
+            }
+
+            return false;
         }
+    };
+}
+ASDCP_NAMESPACE_END
 
-        return false;
-    }
-};
-
-typedef std::map<ASDCP::UL, ASDCP::MXF::MXFObjectFactory_t, FactoryCompareUL>FactoryMap_t;
+typedef std::map<ASDCP::UL, ASDCP::MXF::MXFObjectFactory_t, ASDCP::MXF::FactoryCompareUL>FactoryMap_t;
 typedef FactoryMap_t::iterator FLi_t;
 
+ASDCP_NAMESPACE_BEGIN
+
+namespace MXF
+{
 //
 class FactoryList : public FactoryMap_t
 {
@@ -1506,8 +1515,11 @@ public:
   }
 };
 
+} // namespace MXF
+ASDCP_NAMESPACE_END
+
 //
-static FactoryList s_FactoryList;
+static ASDCP::MXF::FactoryList s_FactoryList;
 static Kumu::Mutex s_InitLock;
 static bool        s_TypesInit = false;
 

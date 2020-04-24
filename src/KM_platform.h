@@ -32,6 +32,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef _KM_PLATFORM_H_
 # define _KM_PLATFORM_H_
 
+#include <KM_namespace.h>
+
 #if defined(__APPLE__) && defined(__MACH__)
 #  define KM_MACOSX
 #  ifdef __BIG_ENDIAN__
@@ -77,8 +79,8 @@ typedef int            i32_t;
 typedef unsigned int   ui32_t;
 
 
-namespace Kumu
-{
+KUMU_NAMESPACE_BEGIN
+
   inline ui16_t Swap2(ui16_t i)
     {
       return ( (i << 8) | (( i & 0xff00) >> 8) );
@@ -183,7 +185,7 @@ namespace Kumu
       inline bool empty()      const { return m_p == 0; }
     };
 
-} // namespace Kumu
+KUMU_NAMESPACE_END
 
 // Produces copy constructor boilerplate. Allows convenient private
 // declatarion of copy constructors to prevent the compiler from
