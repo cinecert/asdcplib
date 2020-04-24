@@ -5,6 +5,10 @@ find_library(XercescppLib_Debug_PATH NAMES xerces-cD xerces-c_3D xerces-c PATHS 
 find_path(XercescppLib_include_DIR NAMES xercesc/dom/DOM.hpp PATHS "${PROJECT_SOURCE_DIR}/../xercescpp" "${PROJECT_SOURCE_DIR}/../lib/xercescpp" "$ENV{CMAKE_HINT}/xercescpp" ENV CMAKE_HINT PATH_SUFFIXES "include")
 set(UseRandomUUID OFF CACHE BOOL "")
 
+if (WIN32)
+    add_definitions(/DKM_WIN32_UTF8)
+endif (WIN32)
+
 # This lib. doesn't export from dll with __declspec(dllexport). So this lib. must be built statically on Windows.
 if(NOT WIN32)
 	set(BUILD_SHARED_LIBS true CACHE BOOL "Build shared or static libs?" FORCE)
