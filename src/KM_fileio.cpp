@@ -719,7 +719,9 @@ Kumu::fsize_t
 Kumu::FileReader::Size() const
 {
 #ifdef KM_WIN32
-  return FileSize(m_Filename.c_str());
+    LARGE_INTEGER size;
+    GetFileSizeEx(m_Handle, &size);
+    return size.QuadPart;
 #else
   fstat_t info;
 
