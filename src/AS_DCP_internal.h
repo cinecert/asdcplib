@@ -637,6 +637,8 @@ namespace ASDCP
 
 		if (conformsToSpecifications && conformsToSpecifications->size() > 0) {
 
+			m_HeaderPart.m_Preface->ConformsToSpecifications.set_has_value();
+
 			m_HeaderPart.m_Preface->ConformsToSpecifications.get().insert(
 				conformsToSpecifications->begin(),
 				conformsToSpecifications->end()
