@@ -29,17 +29,31 @@ endif("${isSystemDir}" STREQUAL "-1")
 # Configure a header file to pass some of the CMake settings to the source code.
 configure_file("${PROJECT_SOURCE_DIR}/src/info.in" "${PROJECT_BINARY_DIR}/src/info.h")
 
+if(CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND BUILD_ASAN)
+	add_compile_options("-fsanitize=address")
+	add_compile_options("-O1")
+	add_compile_options("-fno-omit-frame-pointer")
+	SET(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=address")
+	SET(CMAKE_SHARED_LINKER_FLAGS  "${CMAKE_SHARED_LINKER_FLAGS} -fsanitize=address")
+endif()
+
 # Add the binary tree to the search path for include files so that we will find info.h.
 include_directories("${PROJECT_BINARY_DIR}/src")
 add_subdirectory(src)
 
-set(CPACK_GENERATOR ZIP)
+set(CPACK_DEFAULT_GENERATOR ZIP)
 if(UNIX)
-	set(CPACK_GENERATOR ${CPACK_GENERATOR};STGZ;TGZ)
+	set(CPACK_DEFAULT_GENERATOR "${CPACK_DEFAULT_GENERATOR};STGZ;TGZ")
 endif(UNIX)
 if(UNIX AND NOT APPLE)
-	set(CPACK_GENERATOR ${CPACK_GENERATOR};DEB;RPM)
+	set(CPACK_DEFAULT_GENERATOR "${CPACK_DEFAULT_GENERATOR};DEB;RPM")
 endif(UNIX AND NOT APPLE)
+
+# Allow the CPack generator list to be defined on the CMake command-line
+if (NOT CPACK_GENERATOR)
+    set(CPACK_GENERATOR ${CPACK_DEFAULT_GENERATOR})
+endif()
+
 set(CPACK_PACKAGE_NAME ${PROJECT_NAME})
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "asdcplib from cinecert.com")
 set(CPACK_PACKAGE_VENDOR "CineCert LLC")

@@ -6,9 +6,28 @@ find_path(XercescppLib_include_DIR NAMES xercesc/dom/DOM.hpp PATHS "${PROJECT_SO
 set(UseRandomUUID OFF CACHE BOOL "")
 
 # This lib. doesn't export from dll with __declspec(dllexport). So this lib. must be built statically on Windows.
-if(NOT WIN32)
+if(NOT WIN32 AND NOT BUILD_STATIC_LIBS)
 	set(BUILD_SHARED_LIBS true CACHE BOOL "Build shared or static libs?" FORCE)
-endif(NOT WIN32)
+endif()
+
+if (LINUX_LARGE_FILE_SUPPORT)
+	add_definitions(/D_FILE_OFFSET_BITS=64)
+endif()
+
+if(WIN32 AND MSVC_USE_STATIC_RUNTIME)
+	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MTd")
+	set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MT")
+	set(CMAKE_CXX_FLAGS_MINSIZEREL "${CMAKE_CXX_FLAGS_MINSIZEREL} /MT")
+	set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} /MT")
+endif()
+
+if(CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND BUILD_ASAN)
+	add_compile_options("-fsanitize=address")
+	add_compile_options("-O1")
+	add_compile_options("-fno-omit-frame-pointer")
+	SET(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=address")
+	SET(CMAKE_SHARED_LINKER_FLAGS  "${CMAKE_SHARED_LINKER_FLAGS} -fsanitize=address")
+endif()
 
 # ----------libkumu----------
 # source
