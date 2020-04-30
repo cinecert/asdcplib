@@ -32,7 +32,7 @@ configure_file("${PROJECT_SOURCE_DIR}/src/info.in" "${PROJECT_BINARY_DIR}/src/in
 # Custom namespaces:
 #
 # Use these definitions to override the default library namespaces. This can be
-# useful when including asdclib's objects in another static library in order to
+# useful when including asdcplib's objects in another static library in order to
 # avoid symbol clashes in applications that link to both asdcplib and the
 # library including asdcplib.
 #
