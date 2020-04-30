@@ -309,7 +309,6 @@ ASDCP::RawEssenceType(const std::string& filename, EssenceType_t& type)
   ASDCP::Wav::SimpleWaveHeader WavHeader;
   ASDCP::RF64::SimpleRF64Header RF64Header;
   ASDCP::AIFF::SimpleAIFFHeader AIFFHeader;
-  Kumu::XMLElement TmpElement("Tmp");
 
   ui32_t data_offset;
   ui32_t read_count;
