@@ -957,24 +957,24 @@ ASDCP_NAMESPACE_BEGIN
 
       //
       class IABSoundfieldLabelSubDescriptor : public MCALabelSubDescriptor
-	{
-	  IABSoundfieldLabelSubDescriptor();
+        {
+          IABSoundfieldLabelSubDescriptor();
 
-	public:
+          public:
 
-      IABSoundfieldLabelSubDescriptor(const Dictionary*& d);
-      IABSoundfieldLabelSubDescriptor(const IABSoundfieldLabelSubDescriptor& rhs);
-      virtual ~IABSoundfieldLabelSubDescriptor() {}
+          IABSoundfieldLabelSubDescriptor(const Dictionary*& d);
+          IABSoundfieldLabelSubDescriptor(const IABSoundfieldLabelSubDescriptor& rhs);
+          virtual ~IABSoundfieldLabelSubDescriptor() {}
 
-      const IABSoundfieldLabelSubDescriptor& operator=(const IABSoundfieldLabelSubDescriptor& rhs) { Copy(rhs); return *this; }
-      virtual void Copy(const IABSoundfieldLabelSubDescriptor& rhs);
-      virtual const char* HasName() { return "IABSoundfieldLabelSubDescriptor"; }
-      virtual Result_t InitFromTLVSet(TLVReader& TLVSet);
-      virtual Result_t WriteToTLVSet(TLVWriter& TLVSet);
-      virtual void     Dump(FILE* = 0);
-      virtual Result_t InitFromBuffer(const byte_t* p, ui32_t l);
-      virtual Result_t WriteToBuffer(ASDCP::FrameBuffer&);
-	};
+          const IABSoundfieldLabelSubDescriptor& operator=(const IABSoundfieldLabelSubDescriptor& rhs) { Copy(rhs); return *this; }
+          virtual void Copy(const IABSoundfieldLabelSubDescriptor& rhs);
+          virtual const char* HasName() { return "IABSoundfieldLabelSubDescriptor"; }
+          virtual Result_t InitFromTLVSet(TLVReader& TLVSet);
+          virtual Result_t WriteToTLVSet(TLVWriter& TLVSet);
+          virtual void     Dump(FILE* = 0);
+          virtual Result_t InitFromBuffer(const byte_t* p, ui32_t l);
+          virtual Result_t WriteToBuffer(ASDCP::FrameBuffer&);
+        };
 
 
       //
