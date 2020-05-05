@@ -553,8 +553,6 @@ class MyTextDescriptor : public TimedText::TimedTextDescriptor
 
 class MyIABDescriptor : public AS_02::IAB::IABDescriptor
 {
-private:
-
 public:
     MyIABDescriptor()
     {
