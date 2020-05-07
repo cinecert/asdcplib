@@ -32,6 +32,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <iostream>
 #include <iomanip>
+#include <stdexcept>
 
 namespace Kumu {
   class RuntimeError : public std::runtime_error {
