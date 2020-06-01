@@ -34,14 +34,14 @@ OBJDIR = .
 !ifdef ENABLE_RANDOM_UUID
 CXXFLAGS1 = /nologo /W3 /GR /EHsc /DWIN32 /DKM_WIN32 /D_CONSOLE /I. /I$(SRCDIR) /DASDCP_PLATFORM=\"win32\" \
 	/D_CRT_SECURE_NO_WARNINGS /D_CRT_NONSTDC_NO_WARNINGS /DPACKAGE_VERSION=\"@PACKAGE_VERSION@\" \
-	/I"$(WITH_OPENSSL)"\inc32 /DCONFIG_RANDOM_UUID=1
+	/I"$(WITH_OPENSSL)"\include /DCONFIG_RANDOM_UUID=1
 !else
 CXXFLAGS1 = /nologo /W3 /GR /EHsc /DWIN32 /DKM_WIN32 /D_CONSOLE /I. /I$(SRCDIR) /DASDCP_PLATFORM=\"win32\" \
 	/D_CRT_SECURE_NO_WARNINGS /D_CRT_NONSTDC_NO_WARNINGS /DPACKAGE_VERSION=\"@PACKAGE_VERSION@\" \
-	/I"$(WITH_OPENSSL)"\inc32
+	/I"$(WITH_OPENSSL)"\include
 !endif
 LIB_EXE = lib.exe
-LIBFLAGS1 = /NOLOGO /LIBPATH:"$(WITH_OPENSSL)"\out32dll
+LIBFLAGS1 = /NOLOGO /LIBPATH:"$(WITH_OPENSSL)"\lib
 
 LINK = link.exe
 LINKFLAGS1 = /NOLOGO /SUBSYSTEM:console /MACHINE:I386 /LIBPATH:. /DEBUG
@@ -110,14 +110,14 @@ clean:
 libkumu.lib : $(KUMU_OBJS)
 !IFDEF WITH_XERCES
 !IFDEF DEBUG
-	$(LIB_EXE) $(LIBFLAGS) /OUT:libkumu.lib $** libeay32.lib xerces-c_2D.lib
+	$(LIB_EXE) $(LIBFLAGS) /OUT:libkumu.lib $** libcrypto.lib xerces-c_3D.lib
 !ELSE
-	$(LIB_EXE) $(LIBFLAGS) /OUT:libkumu.lib $** libeay32.lib xerces-c_2.lib
+	$(LIB_EXE) $(LIBFLAGS) /OUT:libkumu.lib $** libcrypto.lib xerces-c_3.lib
 !ENDIF
 !ELSEIFDEF WITH_XML_PARSER
-	$(LIB_EXE) $(LIBFLAGS) /OUT:libkumu.lib $** libeay32.lib libexpatMT.lib
+	$(LIB_EXE) $(LIBFLAGS) /OUT:libkumu.lib $** libcrypto.lib libexpatMT.lib
 !ELSE
-	$(LIB_EXE) $(LIBFLAGS) /OUT:libkumu.lib $** libeay32.lib
+	$(LIB_EXE) $(LIBFLAGS) /OUT:libkumu.lib $** libcrypto.lib
 !ENDIF 
 
 libasdcp.lib: libkumu.lib $(ASDCP_OBJS)
