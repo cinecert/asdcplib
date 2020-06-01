@@ -675,7 +675,7 @@ namespace ASDCP
 
 	//
 	void AddSourceClip(const MXF::Rational& clip_edit_rate,
-			   const MXF::Rational& tc_edit_rate, ui32_t TCFrameRate,
+			   const MXF::Rational& tc_edit_rate, ui32_t tc_frame_rate,
 			   const std::string& TrackName, const UL& EssenceUL,
 			   const UL& DataDefinition, const std::string& PackageLabel)
 	{
@@ -706,14 +706,17 @@ namespace ASDCP
 	  m_HeaderPart.AddChildObject(m_MaterialPackage);
 	  m_ContentStorage->Packages.push_back(m_MaterialPackage->InstanceUID);
 
-	  TrackSet<TimecodeComponent> MPTCTrack =
-	    CreateTimecodeTrack<MaterialPackage>(m_HeaderPart, *m_MaterialPackage,
-						 tc_edit_rate, TCFrameRate, 0, m_Dict);
+	  if ( tc_frame_rate )
+	    {
+	      TrackSet<TimecodeComponent> MPTCTrack =
+		CreateTimecodeTrack<MaterialPackage>(m_HeaderPart, *m_MaterialPackage,
+						     tc_edit_rate, tc_frame_rate, 0, m_Dict);
 
-	  MPTCTrack.Sequence->Duration.set_has_value();
-	  m_DurationUpdateList.push_back(&(MPTCTrack.Sequence->Duration.get()));
-	  MPTCTrack.Clip->Duration.set_has_value();
-	  m_DurationUpdateList.push_back(&(MPTCTrack.Clip->Duration.get()));
+	      MPTCTrack.Sequence->Duration.set_has_value();
+	      m_DurationUpdateList.push_back(&(MPTCTrack.Sequence->Duration.get()));
+	      MPTCTrack.Clip->Duration.set_has_value();
+	      m_DurationUpdateList.push_back(&(MPTCTrack.Clip->Duration.get()));
+	    }
 
 	  TrackSet<SourceClip> MPTrack =
 	    CreateTrackAndSequence<MaterialPackage, SourceClip>(m_HeaderPart, *m_MaterialPackage,
@@ -744,14 +747,17 @@ namespace ASDCP
 	  m_HeaderPart.AddChildObject(m_FilePackage);
 	  m_ContentStorage->Packages.push_back(m_FilePackage->InstanceUID);
 
-	  TrackSet<TimecodeComponent> FPTCTrack =
-	    CreateTimecodeTrack<SourcePackage>(m_HeaderPart, *m_FilePackage,
-					       tc_edit_rate, TCFrameRate, 0, m_Dict);
+	  if ( tc_frame_rate )
+	    {
+	      TrackSet<TimecodeComponent> FPTCTrack =
+		CreateTimecodeTrack<SourcePackage>(m_HeaderPart, *m_FilePackage,
+						   tc_edit_rate, tc_frame_rate, 0, m_Dict);
 
-	  FPTCTrack.Sequence->Duration.set_has_value();
-	  m_DurationUpdateList.push_back(&(FPTCTrack.Sequence->Duration.get()));
-	  FPTCTrack.Clip->Duration.set_has_value();
-	  m_DurationUpdateList.push_back(&(FPTCTrack.Clip->Duration.get()));
+	      FPTCTrack.Sequence->Duration.set_has_value();
+	      m_DurationUpdateList.push_back(&(FPTCTrack.Sequence->Duration.get()));
+	      FPTCTrack.Clip->Duration.set_has_value();
+	      m_DurationUpdateList.push_back(&(FPTCTrack.Clip->Duration.get()));
+	    }
 
 	  TrackSet<SourceClip> FPTrack =
 	    CreateTrackAndSequence<SourcePackage, SourceClip>(m_HeaderPart, *m_FilePackage,
