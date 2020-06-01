@@ -1455,7 +1455,7 @@ namespace ASDCP {
 	byte_t      ResourceID[UUIDlen];
           MIMEType_t  Type;
 
-        TimedTextResourceDescriptor() : Type(MT_BIN) {}
+        TimedTextResourceDescriptor() : Type(MT_BIN) { memset(ResourceID, 0, UUIDlen); }
       };
 
       typedef std::list<TimedTextResourceDescriptor> ResourceList_t;
@@ -1469,7 +1469,7 @@ namespace ASDCP {
 	std::string    EncodingName;
 	ResourceList_t ResourceList;
 
-      TimedTextDescriptor() : ContainerDuration(0), EncodingName("UTF-8") {} // D-Cinema format is always UTF-8
+      TimedTextDescriptor() : ContainerDuration(0), EncodingName("UTF-8") { memset(AssetID, 0, UUIDlen); } // D-Cinema format is always UTF-8
       };
 
       // Print debugging information to std::ostream
