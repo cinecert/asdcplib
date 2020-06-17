@@ -223,6 +223,7 @@ namespace ASDCP {
     ESS_AS02_TIMED_TEXT,      // the file contains a TTML document and zero or more resources
     ESS_AS02_ISXD,            // the file contains an ISXD document stream (per SMPTE RDD 47)
     ESS_AS02_ACES,            // the file contains two or more ACES codestreams (per SMPTE ST 2067-50)
+    ESS_AS02_IAB,             // the file contains an IAB stream (per SMPTE ST 2067-201)
     ESS_MAX
   };
 

@@ -4860,13 +4860,13 @@ PIMFDynamicMetadataDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 
 //
 
-IABEssenceDescriptor::IABEssenceDescriptor(const Dictionary*& d) : FileDescriptor(d), m_Dict(d)
+IABEssenceDescriptor::IABEssenceDescriptor(const Dictionary*& d) : GenericSoundEssenceDescriptor(d), m_Dict(d)
 {
   assert(m_Dict);
   m_UL = m_Dict->ul(MDD_IABEssenceDescriptor);
 }
 
-IABEssenceDescriptor::IABEssenceDescriptor(const IABEssenceDescriptor& rhs) : FileDescriptor(rhs.m_Dict), m_Dict(rhs.m_Dict)
+IABEssenceDescriptor::IABEssenceDescriptor(const IABEssenceDescriptor& rhs) : GenericSoundEssenceDescriptor(rhs.m_Dict), m_Dict(rhs.m_Dict)
 {
   assert(m_Dict);
   m_UL = m_Dict->ul(MDD_IABEssenceDescriptor);
@@ -4879,7 +4879,7 @@ ASDCP::Result_t
 IABEssenceDescriptor::InitFromTLVSet(TLVReader& TLVSet)
 {
   assert(m_Dict);
-  Result_t result = FileDescriptor::InitFromTLVSet(TLVSet);
+  Result_t result = GenericSoundEssenceDescriptor::InitFromTLVSet(TLVSet);
   return result;
 }
 
@@ -4888,7 +4888,7 @@ ASDCP::Result_t
 IABEssenceDescriptor::WriteToTLVSet(TLVWriter& TLVSet)
 {
   assert(m_Dict);
-  Result_t result = FileDescriptor::WriteToTLVSet(TLVSet);
+  Result_t result = GenericSoundEssenceDescriptor::WriteToTLVSet(TLVSet);
   return result;
 }
 
@@ -4896,7 +4896,7 @@ IABEssenceDescriptor::WriteToTLVSet(TLVWriter& TLVSet)
 void
 IABEssenceDescriptor::Copy(const IABEssenceDescriptor& rhs)
 {
-  FileDescriptor::Copy(rhs);
+  GenericSoundEssenceDescriptor::Copy(rhs);
 }
 
 //
@@ -4909,7 +4909,7 @@ IABEssenceDescriptor::Dump(FILE* stream)
   if ( stream == 0 )
     stream = stderr;
 
-  FileDescriptor::Dump(stream);
+  GenericSoundEssenceDescriptor::Dump(stream);
 }
 
 //
