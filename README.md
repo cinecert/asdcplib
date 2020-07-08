@@ -59,6 +59,7 @@ autoreconf -if
 ./configure --enable-freedist --enable-as-02
 make
 make dist
+make install
 ```
 
 ## Libraries
