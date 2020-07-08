@@ -158,7 +158,6 @@ AS_02::IAB::MXFWriter::OpenWrite(
       UL(element_ul_bytes),
       UL(this->m_Writer->m_Dict->ul(MDD_SoundDataDef)),
       edit_rate,
-      derive_timecode_rate_from_edit_rate(edit_rate),
       &conformsToSpecs
     );
 
