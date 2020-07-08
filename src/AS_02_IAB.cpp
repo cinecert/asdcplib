@@ -272,7 +272,7 @@ AS_02::IAB::MXFWriter::Finalize() {
 
     byte_t clip_buffer[8] = { 0 };
 
-    ui64_t size = static_cast<ui64_t>(this->m_Writer->m_StreamOffset);
+    ui64_t size = static_cast<ui64_t>(this->m_Writer->m_StreamOffset) /* total size of the KLV */ - 24 /* K and L length */;
 
     bool check = Kumu::write_BER(clip_buffer, size, 8);
 
