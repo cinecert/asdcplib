@@ -50,8 +50,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 
-namespace Kumu
-{
+KUMU_NAMESPACE_BEGIN
+
   //
   class DirScanner
     {
@@ -378,7 +378,7 @@ namespace Kumu
   Result_t DeleteFile(const std::string& filename);
   Result_t DeletePath(const std::string& pathname);
 
-} // namespace Kumu
+KUMU_NAMESPACE_END
 
 
 #endif // _KM_FILEIO_H_

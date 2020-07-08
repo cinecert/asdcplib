@@ -36,8 +36,8 @@ This module implements ACES header parser.
 #include "AS_02_ACES.h"
 
 
-namespace AS_02
-{
+AS_02_NAMESPACE_BEGIN
+
 
 namespace ACES
 {
@@ -132,6 +132,6 @@ public:
 
 } // namespace ACES
 
-} // namespace AS_02
+AS_02_NAMESPACE_END
 
 #endif // ACES_h__

@@ -36,8 +36,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "AS_DCP_internal.h"
 
-namespace ASDCP
-{
+ASDCP_NAMESPACE_BEGIN
+
 
 namespace MXF
 {
@@ -89,6 +89,6 @@ namespace DCData
 
 
 } // namespace DCData
-} // namespace ASDCP
+ASDCP_NAMESPACE_END
 
 #endif // _AS_DCP_DCDATA_INTERNAL_H_

@@ -34,9 +34,10 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <memory.h>
 
-void ConstructFrame(LPSYNCENCODER	pSyncEncoder,
+static
+void ConstructFrame(ASDCP::LPSYNCENCODER	pSyncEncoder,
 					INT				iFrameIndex);
-
+static
 FLOAT SEWriteBits(	INT			iSampleRate,		/* In:	Sample rate of signal */
 					FLOAT		*pfAudioBuffer,		/* Out: Audio buffer containing signal */
 					INT			iBits,				/* In:	Number of bits to write */
@@ -45,7 +46,7 @@ FLOAT SEWriteBits(	INT			iSampleRate,		/* In:	Sample rate of signal */
 
 
 
-INT SyncEncoderInit(LPSYNCENCODER		pSyncEncoder,	/* Out: SYNCENCODER structure to be initialized */
+INT ASDCP::SyncEncoderInit(LPSYNCENCODER		pSyncEncoder,	/* Out: SYNCENCODER structure to be initialized */
 					INT					iSampleRate,	/* In:	Signal sample rate */
 					INT					iFrameRate,		/* In:	frame rate */
 					LPUUIDINFORMATION	pUUID)			/* In:	UUID */
@@ -142,7 +143,7 @@ INT SyncEncoderInit(LPSYNCENCODER		pSyncEncoder,	/* Out: SYNCENCODER structure t
 	return pSyncEncoder->iError;
 }
 
-INT GetSyncEncoderAudioBufferLength(LPSYNCENCODER pSyncEncoder)	/* In: Sync encoder structure */
+INT ASDCP::GetSyncEncoderAudioBufferLength(LPSYNCENCODER pSyncEncoder)	/* In: Sync encoder structure */
 {
 	if(pSyncEncoder->iError != SYNC_ENCODER_ERROR_NONE){
 		return pSyncEncoder->iError;
@@ -153,7 +154,7 @@ INT GetSyncEncoderAudioBufferLength(LPSYNCENCODER pSyncEncoder)	/* In: Sync enco
 
 
 
-INT EncodeSync(	LPSYNCENCODER	pSyncEncoder,	/* In:	Sync encoder structure */
+INT ASDCP::EncodeSync(	LPSYNCENCODER	pSyncEncoder,	/* In:	Sync encoder structure */
 				INT				iBufferLength,	/* In:	Length of audio buffer */
 				FLOAT			*pfAudioBuffer,	/* Out: Audio buffer with signal */
 				INT				iFrameIndex)	/* In:	Frame Index */
@@ -188,7 +189,7 @@ INT EncodeSync(	LPSYNCENCODER	pSyncEncoder,	/* In:	Sync encoder structure */
 	return pSyncEncoder->iError;
 }
 
-void ConstructFrame(LPSYNCENCODER	pSyncEncoder,
+void ConstructFrame(ASDCP::LPSYNCENCODER	pSyncEncoder,
 					INT				iFrameIndex)
 {
 	USHORT	ushCRC;
@@ -231,7 +232,7 @@ void ConstructFrame(LPSYNCENCODER	pSyncEncoder,
 	pSyncEncoder->abyPacket[9] = byByte;
 
 	/* calculate CRC */
-	ushCRC = CRC16(&pSyncEncoder->abyPacket[2],MESSAGE_TOTAL_BYTES - 4);
+	ushCRC = ASDCP::CRC16(&pSyncEncoder->abyPacket[2],MESSAGE_TOTAL_BYTES - 4);
 
 	/* Insert CRC */
 	byByte = (unsigned char)((ushCRC >> 8) & 0XFF);

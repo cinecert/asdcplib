@@ -43,8 +43,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
 
-namespace ASDCP
-{
+ASDCP_NAMESPACE_BEGIN
+
   // A source of pseudo-random numbers suitable for use in generating
   // noise signals.  NOT TO BE USED FOR CRYPTOGRAPHIC FUNCTIONS as its
   // output is 100% deterministic.
@@ -101,7 +101,7 @@ namespace ASDCP
   void ScalePackSample(float sample, byte_t* p, ui32_t word_size);
 
 
-} // namespace ASDCP
+ASDCP_NAMESPACE_END
 
 
 

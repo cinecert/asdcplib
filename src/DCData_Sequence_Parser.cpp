@@ -41,13 +41,13 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 using ASDCP::Result_t;
 
 //------------------------------------------------------------------------------------------
-namespace ASDCP
-{
+ASDCP_NAMESPACE_BEGIN
+
 namespace DCData
 {
 class FileList;
 } // namespace DCData
-} // namespace ASDCP
+ASDCP_NAMESPACE_END
 
 
 class ASDCP::DCData::FileList : public std::list<std::string>

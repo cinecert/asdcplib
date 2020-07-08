@@ -39,8 +39,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define INT24_MAX 8388607.0
 #define INT24_MIN -8388608.0
 
-namespace ASDCP
-{
+ASDCP_NAMESPACE_BEGIN
+
     namespace ATMOS
     {
         static const ui32_t SYNC_CHANNEL = 14;
@@ -142,7 +142,7 @@ namespace ASDCP
         };
 
     } // namespace PCM
-} // namespace ASDCP
+ASDCP_NAMESPACE_END
 
 #endif // _ATMOSSYNCCHANNEL_GENERATOR_H_
 

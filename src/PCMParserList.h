@@ -36,8 +36,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <AS_DCP.h>
 #include <vector>
 
-namespace ASDCP
-{
+ASDCP_NAMESPACE_BEGIN
+
   //
   class ParserInstance
     {
@@ -80,8 +80,7 @@ namespace ASDCP
       Result_t ReadFrame(PCM::FrameBuffer& OutFB);
       Result_t Seek(ui32_t frame_number);
     };
-}
-
+ASDCP_NAMESPACE_END
 
 #endif // _PCMPARSERLIST_H_
 

@@ -84,6 +84,8 @@ This project depends upon the following libraries:
 #ifndef _AS_DCP_H_
 #define _AS_DCP_H_
 
+#include "AS_DCP_namespace.h"
+
 #include <KM_error.h>
 #include <KM_fileio.h>
 #include <stdio.h>
@@ -145,7 +147,7 @@ typedef unsigned int   ui32_t;
 //--------------------------------------------------------------------------------
 // All library components are defined in the namespace ASDCP
 //
-namespace ASDCP {
+ASDCP_NAMESPACE_BEGIN
   //
   // The version number declaration and explanation have moved to ../configure.ac
   const char* Version();
@@ -1957,7 +1959,7 @@ namespace ASDCP {
 
 
 
-} // namespace ASDCP
+ASDCP_NAMESPACE_END
 
 
 #endif // _AS_DCP_H_

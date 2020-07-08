@@ -34,14 +34,14 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "AS_DCP.h"
 #include "AS_DCP_internal.h"
 
-namespace ASDCP
-{
+ASDCP_NAMESPACE_BEGIN
+
   namespace DCData
   {
     static std::string DC_DATA_PACKAGE_LABEL = "File Package: SMPTE-GC frame wrapping of D-Cinema Generic data";
     static std::string DC_DATA_DEF_LABEL = "D-Cinema Generic Data Track";
   } // namespace DCData
-} // namespace ASDCP
+ASDCP_NAMESPACE_END
 
 //
 std::ostream&

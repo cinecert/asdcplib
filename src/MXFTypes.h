@@ -50,8 +50,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define OBJ_TYPE_ARGS(t) m_Dict->Type(MDD_##t).ul
 
 
-namespace ASDCP
-{
+ASDCP_NAMESPACE_BEGIN
+
   namespace MXF
     {
       typedef std::pair<ui32_t, ui32_t> ItemInfo;
@@ -705,8 +705,7 @@ namespace ASDCP
       };
 
     } // namespace MXF
-} // namespace ASDCP
-
+ASDCP_NAMESPACE_END
 
 #endif //_MXFTYPES_H_
 

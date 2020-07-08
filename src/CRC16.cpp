@@ -66,7 +66,7 @@ static const unsigned short g_aushCRC16tab[256]= {
 	0x6e17,0x7e36,0x4e55,0x5e74,0x2e93,0x3eb2,0x0ed1,0x1ef0
 };
 
-unsigned short CRC16(const void *pData, int ilength)
+unsigned short ASDCP::CRC16(const void *pData, int ilength)
 {
 	int n;
 	unsigned short ushCRC;

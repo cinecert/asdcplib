@@ -66,8 +66,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   }
 
 
-namespace Kumu
-{
+KUMU_NAMESPACE_BEGIN
+
   // no log message will exceed this length
   const ui32_t MaxLogLength = 512;
 
@@ -319,7 +319,7 @@ namespace Kumu
 #endif
 
 
-} // namespace Kumu
+KUMU_NAMESPACE_END
 
 #endif // _KM_LOG_H_
 

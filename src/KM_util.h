@@ -38,8 +38,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <string.h>
 #include <list>
 
-namespace Kumu
-{
+KUMU_NAMESPACE_BEGIN
+
   // The version number declaration and explanation are in ../configure.ac
   const char* Version();
 
@@ -607,7 +607,7 @@ namespace Kumu
       return result;
     }
 
-} // namespace Kumu
+KUMU_NAMESPACE_END
 
 
 #endif // _KM_UTIL_H_

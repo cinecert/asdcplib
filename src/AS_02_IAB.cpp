@@ -34,7 +34,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <iomanip>
 #include <stdexcept>
 
-namespace Kumu {
+KUMU_NAMESPACE_BEGIN
   class RuntimeError : public std::runtime_error {
     Kumu::Result_t m_Result;
     RuntimeError();
@@ -43,7 +43,7 @@ namespace Kumu {
     Kumu::Result_t GetResult() { return this->m_Result; }
     ~RuntimeError() throw() {}
   };
-}
+KUMU_NAMESPACE_END
 
 //------------------------------------------------------------------------------------------
 

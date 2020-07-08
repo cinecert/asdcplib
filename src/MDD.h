@@ -33,7 +33,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define _MDD_H_
 
 //
-namespace ASDCP {
+ASDCP_NAMESPACE_BEGIN
     enum MDD_t {
         MDD_MICAlgorithm_NONE,  // 0
         MDD_MXFInterop_OPAtom,  // 1
@@ -584,7 +584,7 @@ namespace ASDCP {
     const MDD_t MDD_Preface_OperationalPattern = MDD_Core_OperationalPattern;
     const MDD_t MDD_TimedTextResourceSubDescriptor_EssenceStreamID = MDD_Core_BodySID;
 
-} // namespaceASDCP
+ASDCP_NAMESPACE_END
 
 
 #endif // _MDD_H_

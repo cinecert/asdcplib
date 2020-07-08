@@ -38,8 +38,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <set>
 #include <string>
 
-namespace Kumu
-{
+KUMU_NAMESPACE_BEGIN
+
   class XMLElement;
 
   //
@@ -215,7 +215,7 @@ namespace Kumu
     }
   };
 
-} // namespace Kumu
+KUMU_NAMESPACE_END
 
 #endif // _KM_XML_H_
 

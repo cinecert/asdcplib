@@ -40,7 +40,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "AS_02_internal.h"
 #include "Metadata.h"
 
-namespace AS_02 {
+AS_02_NAMESPACE_BEGIN
 
   namespace IAB {
 
@@ -234,6 +234,6 @@ namespace AS_02 {
 
   } //namespace IAB
 
-} // namespace AS_02
+AS_02_NAMESPACE_END
 
 #endif // AS_02_IAB_h__

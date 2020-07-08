@@ -50,6 +50,7 @@ using namespace ASDCP::MXF;
 // uncomment to remove MXFGCGenericEssenceMultipleMappings from your AS-02 files
 // #define ASDCP_GCMULTI_PATCH
 
+ASDCP_NAMESPACE_BEGIN
 
 #ifdef DEFAULT_MD_DECL
 ASDCP::MXF::OP1aHeader *g_OP1aHeader;
@@ -62,8 +63,7 @@ extern MXF::RIP *g_RIP;
 #endif
 
 
-namespace ASDCP
-{
+
 
   //
   static std::vector<int>
@@ -964,7 +964,7 @@ namespace ASDCP
     };
 
 
-} // namespace ASDCP
+ASDCP_NAMESPACE_END
 
 #endif // _AS_DCP_INTERNAL_H_
 

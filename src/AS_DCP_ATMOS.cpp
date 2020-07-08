@@ -35,8 +35,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "AS_DCP.h"
 #include "AS_DCP_internal.h"
 
-namespace ASDCP
-{
+ASDCP_NAMESPACE_BEGIN
+
 namespace ATMOS
 {
   static std::string ATMOS_PACKAGE_LABEL = "File Package: SMPTE-GC frame wrapping of Dolby ATMOS data";
@@ -44,7 +44,7 @@ namespace ATMOS
   static byte_t ATMOS_ESSENCE_CODING[SMPTE_UL_LENGTH] = { 0x06, 0x0e, 0x2b, 0x34, 0x04, 0x01, 0x01, 0x05,
                                                           0x0e, 0x09, 0x06, 0x04, 0x00, 0x00, 0x00, 0x00 };
 } // namespace ATMOS
-} // namespace ASDCP
+ASDCP_NAMESPACE_END
 
 //
 std::ostream&

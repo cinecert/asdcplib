@@ -967,14 +967,14 @@ public:
 //------------------------------------------------------------------------------------------
 // JPEG 2000 essence
 
-namespace ASDCP {
+ASDCP_NAMESPACE_BEGIN
   Result_t JP2K_PDesc_to_MD(const ASDCP::JP2K::PictureDescriptor& PDesc,
 			    const ASDCP::Dictionary& dict,
 			    ASDCP::MXF::GenericPictureEssenceDescriptor& GenericPictureEssenceDescriptor,
 			    ASDCP::MXF::JPEG2000PictureSubDescriptor& EssenceSubDescriptor);
 
   Result_t PCM_ADesc_to_MD(ASDCP::PCM::AudioDescriptor& ADesc, ASDCP::MXF::WaveAudioDescriptor* ADescObj);
-}
+ASDCP_NAMESPACE_END
 
 // Write one or more plaintext JPEG 2000 codestreams to a plaintext AS-02 file
 // Write one or more plaintext JPEG 2000 codestreams to a ciphertext AS-02 file

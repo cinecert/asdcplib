@@ -38,8 +38,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 # include <pthread.h>
 #endif
 
-namespace Kumu
-{
+KUMU_NAMESPACE_BEGIN
+
 #ifdef KM_WIN32
   class Mutex
     {
@@ -80,7 +80,7 @@ namespace Kumu
       ~AutoMutex() { m_Mutex.Unlock(); }
     };
 
-} // namespace Kumu
+KUMU_NAMESPACE_END
 
 #endif // _KM_MUTEX_H_
 

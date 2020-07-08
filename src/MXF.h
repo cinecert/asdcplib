@@ -35,8 +35,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "MXFTypes.h"
 #include <algorithm>
 
-namespace ASDCP
-{
+ASDCP_NAMESPACE_BEGIN
+
   namespace MXF
     {
       class InterchangeObject;
@@ -556,8 +556,7 @@ namespace ASDCP
 	};
 
     } // namespace MXF
-} // namespace ASDCP
-
+ASDCP_NAMESPACE_END
 
 #endif // _MXF_H_
 

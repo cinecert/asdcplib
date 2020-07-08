@@ -36,8 +36,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <string>
 #include <cstring>
 
-namespace Kumu
-{
+KUMU_NAMESPACE_BEGIN
+
   class ByteString;
 
   //
@@ -245,7 +245,7 @@ namespace Kumu
   }
 
 
-} // namespace Kumu
+KUMU_NAMESPACE_END
 
 #endif // _KM_MEMIO_H_
 

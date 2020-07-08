@@ -58,8 +58,8 @@ typedef ui16_t      real16_t;
 typedef float       real32_t;
 typedef double      real64_t;
 
-namespace AS_02
-{
+AS_02_NAMESPACE_BEGIN
+
 
 using Kumu::Result_t;
 using Kumu::RESULT_FALSE;
@@ -491,6 +491,6 @@ public:
 };
 } // namespace ACES
 
-} // namespace AS_02
+AS_02_NAMESPACE_END
 
 #endif // AS_02_ACES_h__

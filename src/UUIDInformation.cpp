@@ -33,7 +33,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <stdlib.h>
 
 
-void UUIDSynthesize(LPUUIDINFORMATION pUUID)
+void ASDCP::UUIDSynthesize(LPUUIDINFORMATION pUUID)
 {
 	INT n;
 
@@ -48,7 +48,7 @@ void UUIDSynthesize(LPUUIDINFORMATION pUUID)
 	pUUID->abyUUIDBytes[8] |= 0xA0;
 }
 
-void UUIDPrint(	FILE				*pFilePtr,
+void ASDCP::UUIDPrint(	FILE				*pFilePtr,
 				LPUUIDINFORMATION	pUUID)
 {
 	if(pFilePtr != NULL){
@@ -67,7 +67,7 @@ void UUIDPrint(	FILE				*pFilePtr,
 	}
 }
 
-void UUIDPrintFormated(	FILE				*pFilePtr,
+void ASDCP::UUIDPrintFormated(	FILE				*pFilePtr,
 						LPUUIDINFORMATION	pUUID)
 {
 	if(pFilePtr != NULL){

@@ -35,8 +35,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <KM_fileio.h>
 #include <AS_DCP.h>
 
-namespace ASDCP
-{
+ASDCP_NAMESPACE_BEGIN
+
   //
   class fourcc
     {
@@ -158,7 +158,7 @@ namespace ASDCP
 	};
 
     } // namespace RF64
-} // namespace ASDCP
+ASDCP_NAMESPACE_END
 
 #endif // _WAV_H_
 

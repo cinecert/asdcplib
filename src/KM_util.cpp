@@ -593,7 +593,7 @@ Kumu::GenRandomValue(UUID& ID)
 void
 Kumu::GenRandomUUID(byte_t* buf)
 {
-  FortunaRNG RNG;
+  Kumu::FortunaRNG RNG;
   RNG.FillRandom(buf, UUID_Length);
   buf[6] &= 0x0f; // clear bits 4-7
   buf[6] |= 0x40; // set UUID version
@@ -606,7 +606,7 @@ void
 Kumu::GenRandomValue(SymmetricKey& Key)
 {
   byte_t tmp_buf[SymmetricKey_Length];
-  FortunaRNG RNG;
+  Kumu::FortunaRNG RNG;
   RNG.FillRandom(tmp_buf, SymmetricKey_Length);
   Key.Set(tmp_buf);
 }
