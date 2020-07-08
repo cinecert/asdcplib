@@ -56,9 +56,8 @@ auto-tooled version by untarring the distribution and running
 
 ```sh
 autoreconf -if
-./configure --enable-freedist --enable-as-02
+./configure --enable-as-02
 make
-make dist
 make install
 ```
 
