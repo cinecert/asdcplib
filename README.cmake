@@ -6,6 +6,10 @@ Note: Cmake 2.8.12 or higher is required.
 **Options**
 The following options can be defined on the cmake command line with the -D switch:
 
+Use these definitions to override the default library namespaces.
+This can be useful when including asdcplib's objects in another static library in order to avoid
+symbol clashes in applications that link to both asdcplib and the library including asdcplib.
+
 KUMU_NAMESPACE - Sets the C++ namespace for the Kumu library (default "Kumu")
 ASDCP_NAMESPACE - Sets the C++ namespace for the ASDCP library (default "ASDCP")
 AS_02_NAMESPACE - Sets the C++ namespace for the AS-02 library (default "AS_02")
