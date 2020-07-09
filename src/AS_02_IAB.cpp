@@ -47,6 +47,12 @@ namespace Kumu {
 
 //------------------------------------------------------------------------------------------
 
+/* Size of the BER Length of the clip */
+static const int CLIP_BER_LENGTH_SIZE = 8;
+
+/* Combined size of the Key and Length of the clip */
+static const int RESERVED_KL_SIZE = ASDCP::SMPTE_UL_LENGTH + CLIP_BER_LENGTH_SIZE;
+
 
 AS_02::IAB::MXFWriter::MXFWriter() : m_ClipStart(0), m_State(ST_BEGIN) {
 }
@@ -169,21 +175,23 @@ AS_02::IAB::MXFWriter::OpenWrite(
 
     this->m_ClipStart = this->m_Writer->m_File.Tell();
 
-    byte_t clip_buffer[24] = { 0 };
+    /* reserve space for the KL of the KLV, which will be written later during finalization */
 
-    memcpy(clip_buffer, this->m_Writer->m_Dict->ul(MDD_IMF_IABEssenceClipWrappedElement), 16);
+    byte_t clip_buffer[RESERVED_KL_SIZE] = { 0 };
 
-    if (!Kumu::write_BER(clip_buffer + 16, 0, 8)) {
+    memcpy(clip_buffer, this->m_Writer->m_Dict->ul(MDD_IMF_IABEssenceClipWrappedElement), ASDCP::SMPTE_UL_LENGTH);
+
+    if (!Kumu::write_BER(clip_buffer + ASDCP::SMPTE_UL_LENGTH, 0, CLIP_BER_LENGTH_SIZE)) {
       throw Kumu::RuntimeError(Kumu::RESULT_FAIL);
     }
 
-    this->m_Writer->m_StreamOffset = 24;
-
-    result = this->m_Writer->m_File.Write(clip_buffer, 24);
+    result = this->m_Writer->m_File.Write(clip_buffer, RESERVED_KL_SIZE);
 
     if (result.Failure()) {
       throw Kumu::RuntimeError(result);
     }
+
+    this->m_Writer->m_StreamOffset = RESERVED_KL_SIZE;
 
     this->m_State = ST_READY;
 
@@ -268,19 +276,19 @@ AS_02::IAB::MXFWriter::Finalize() {
 
     ui64_t current_position = this->m_Writer->m_File.Tell();
 
-    result = this->m_Writer->m_File.Seek(m_ClipStart + 16);
+    result = this->m_Writer->m_File.Seek(m_ClipStart + ASDCP::SMPTE_UL_LENGTH);
 
-    byte_t clip_buffer[8] = { 0 };
+    byte_t clip_buffer[CLIP_BER_LENGTH_SIZE] = { 0 };
 
-    ui64_t size = static_cast<ui64_t>(this->m_Writer->m_StreamOffset);
+    ui64_t size = static_cast<ui64_t>(this->m_Writer->m_StreamOffset) /* total size of the KLV */ - RESERVED_KL_SIZE;
 
-    bool check = Kumu::write_BER(clip_buffer, size, 8);
+    bool check = Kumu::write_BER(clip_buffer, size, CLIP_BER_LENGTH_SIZE);
 
     if (!check) {
       throw Kumu::RuntimeError(Kumu::RESULT_FAIL);
     }
 
-    result = this->m_Writer->m_File.Write(clip_buffer, 8);
+    result = this->m_Writer->m_File.Write(clip_buffer, CLIP_BER_LENGTH_SIZE);
 
     if (result.Failure()) {
       throw Kumu::RuntimeError(result);
