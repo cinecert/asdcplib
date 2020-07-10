@@ -136,5 +136,5 @@ AC_CHECK_LIB([pthread], [pthread_create])
 AC_CONFIG_FILES([Makefile
                  src/Makefile
 		 win32/Makefile
-		 win32/Makefile.mak:win32/Makefile.wmk])
+		 win32/Makefile.mak:win32/Makefile32.wmk])
 AC_OUTPUT
