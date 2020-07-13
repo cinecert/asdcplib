@@ -1,0 +1,39 @@
+name: CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build_ubuntu_autoconf:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: autoreconf
+      run: autoreconf -if
+    - name: configure
+      run: ./configure --enable-as-02
+    - name: make
+      run: make
+
+  build_ubuntu_cmake:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: dependencies
+      run: sudo apt-get update && sudo apt-get install -y
+        libxerces-c-dev
+    - name: Create build dir
+      run: mkdir build
+    - name: cmake
+      working-directory: build
+      run: cmake ..
+    - name: make
+      working-directory: build
+      run: make
