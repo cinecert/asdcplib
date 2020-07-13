@@ -32,12 +32,11 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef _UUID_INFORMATION_H_
 #define _UUID_INFORMATION_H_
 
+#include "AS_DCP_namespace.h"
 #include "SyncCommon.h"
 #include <stdio.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+ASDCP_NAMESPACE_BEGIN
 
 typedef struct UUIInformation{
 	BYTE abyUUIDBytes[16];
@@ -51,8 +50,6 @@ void UUIDPrint(	FILE				*pFilePtr,
 void UUIDPrintFormated(	FILE				*pFilePtr,
 						LPUUIDINFORMATION	pUUID);
 
-#ifdef __cplusplus
-} /* extern "C" */
-#endif
+ASDCP_NAMESPACE_END
 
 #endif

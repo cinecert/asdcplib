@@ -56,11 +56,12 @@ NOTE: ciphertext support for clip-wrapped PCM is not yet complete.
 #ifndef _AS_02_H_
 #define _AS_02_H_
 
+#include <AS_02_namespace.h>
 #include "Metadata.h"
 
 
-namespace AS_02
-{
+AS_02_NAMESPACE_BEGIN
+
   using Kumu::Result_t;
 
   KM_DECLARE_RESULT(AS02_FORMAT,        -116, "The file format is not proper OP-1a/AS-02.");
@@ -591,7 +592,7 @@ namespace AS_02
     
   }
 
-} // namespace AS_02
+AS_02_NAMESPACE_END
 
 #endif // _AS_02_H_
 

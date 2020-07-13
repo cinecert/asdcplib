@@ -39,8 +39,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <map>
 
 
-namespace ASDCP
-{
+ASDCP_NAMESPACE_BEGIN
+
   const ui32_t MXF_BER_LENGTH = 4;
   const ui32_t MXF_TAG_LENGTH = 2;
   const ui32_t SMPTE_UL_LENGTH = 16;
@@ -254,7 +254,7 @@ inline const char* ui64sz(ui64_t i, char* buf)
       virtual Result_t WriteKLToFile(Kumu::FileWriter& Writer, const UL& label, ui32_t length);
     };
 
-} // namespace ASDCP
+ASDCP_NAMESPACE_END
 
 #endif // _KLV_H_
 

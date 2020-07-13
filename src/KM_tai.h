@@ -51,11 +51,12 @@ The libtai source code is in the public domain.
 #ifndef _KUMU_TAI_H_
 #define _KUMU_TAI_H_
 
+#include <KM_namespace.h>
 #include <KM_platform.h>
 
 //
-namespace Kumu
-{
+KUMU_NAMESPACE_BEGIN
+
   namespace TAI
   {
     class caltime;
@@ -97,7 +98,7 @@ namespace Kumu
 
   } // namespace TAI
 
-} // namespace Kumu
+KUMU_NAMESPACE_END
 
 
 #endif // _KUMU_TAI_H_

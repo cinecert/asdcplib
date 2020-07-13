@@ -38,12 +38,13 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <KM_fileio.h>
 #include <AS_02.h>
+#include <AS_02_IAB.h>
 #include "AS_02_ACES.h"
 #include <WavFileWriter.h>
 
-namespace ASDCP {
+ASDCP_NAMESPACE_BEGIN
   Result_t MD_to_PCM_ADesc(ASDCP::MXF::WaveAudioDescriptor* ADescObj, ASDCP::PCM::AudioDescriptor& ADesc);
-}
+ASDCP_NAMESPACE_END
 
 using namespace ASDCP;
 
@@ -969,6 +970,119 @@ extract_generic_stream_partition_payload(const std::string& in_filename, const u
   return result;
 }
 
+Result_t read_iab_file(CommandOptions& Options)
+{
+    AESDecContext*     Context = 0;
+    HMACContext*       HMAC = 0;
+    AS_02::IAB::MXFReader Reader;
+    ASDCP::FrameBuffer   FrameBuffer;
+
+    ui32_t last_frame = 0;
+    ASDCP::MXF::IABEssenceDescriptor *iab_descriptor = 0;
+
+    Result_t result = Reader.OpenRead(Options.input_filename);
+
+    if ( KM_SUCCESS(result) )
+    {
+        if ( Options.verbose_flag )
+        {
+            fprintf(stderr, "Frame Buffer size: %u\n", Options.fb_size);
+        }
+
+        ASDCP::MXF::InterchangeObject* tmp_obj = 0;
+
+        result = Reader.OP1aHeader().GetMDObjectByType(DefaultCompositeDict().ul(MDD_IABEssenceDescriptor), &tmp_obj);
+
+        if ( KM_SUCCESS(result) )
+        {
+            iab_descriptor = dynamic_cast<ASDCP::MXF::IABEssenceDescriptor*>(tmp_obj);
+
+            if ( iab_descriptor == 0 )
+            {
+                fprintf(stderr, "File does not contain an essence descriptor.\n");
+                return RESULT_FAIL;
+            }
+
+            if ( Options.verbose_flag )
+            {
+                iab_descriptor->Dump();
+            }
+
+            if ( iab_descriptor->ContainerDuration.get() == 0 )
+            {
+                fprintf(stderr, "ContainerDuration not set in file descriptor, attempting to use index duration.\n");
+                last_frame = Reader.AS02IndexReader().GetDuration();
+            }
+            else
+            {
+                last_frame = (ui32_t)iab_descriptor->ContainerDuration;
+            }
+
+            if ( last_frame == 0 )
+            {
+                fprintf(stderr, "ContainerDuration not set in index, attempting to use Duration from SourceClip.\n");
+                result = Reader.OP1aHeader().GetMDObjectByType(DefaultCompositeDict().ul(MDD_SourceClip), &tmp_obj);
+                if ( KM_SUCCESS(result))
+                {
+                    ASDCP::MXF::SourceClip *sourceClip = dynamic_cast<ASDCP::MXF::SourceClip*>(tmp_obj);
+                    if ( ! sourceClip->Duration.empty() )
+                    {
+                        last_frame = (ui32_t)sourceClip->Duration;
+                    }
+                }
+            }
+
+            if ( last_frame == 0 )
+            {
+                fprintf(stderr, "Unable to determine file duration.\n");
+                return RESULT_FAIL;
+            }
+
+            assert(iab_descriptor);
+            FrameBuffer.Capacity(24000); // TODO what size?
+            last_frame = (ui32_t)iab_descriptor->ContainerDuration;
+        }
+    }
+
+    if ( ASDCP_SUCCESS(result) )
+    {
+        if ( Options.duration > 0 && Options.duration < last_frame )
+            last_frame = Options.duration;
+
+        if ( Options.start_frame > 0 )
+        {
+            if ( Options.start_frame > last_frame )
+            {
+                fprintf(stderr, "Start value greater than file duration.\n");
+                return RESULT_FAIL;
+            }
+
+            last_frame = Kumu::xmin(Options.start_frame + last_frame, last_frame);
+        }
+
+        last_frame = last_frame - Options.start_frame;
+
+
+    }
+
+    for ( ui32_t i = Options.start_frame; ASDCP_SUCCESS(result) && i < last_frame; i++ )
+    {
+        result = Reader.ReadFrame(i, FrameBuffer, Context, HMAC);
+
+        if ( ASDCP_SUCCESS(result) )
+        {
+            if ( Options.verbose_flag )
+            {
+                FrameBuffer.FrameNumber(i);
+                fprintf(stdout, "Frame(%d):\n", i);
+                Kumu::hexdump(FrameBuffer.RoData(), Kumu::xmin(FrameBuffer.Size(), (ui32_t)Options.fb_dump_size), stdout);
+            }
+        }
+    }
+
+    return result;
+}
+
 
 //
 int
@@ -1013,6 +1127,10 @@ main(int argc, const char** argv)
 
 	case ESS_AS02_TIMED_TEXT:
 	  result = read_timed_text_file(Options);
+	  break;
+
+    case ESS_AS02_IAB:
+        result = read_iab_file(Options);
 	  break;
 
 	case ESS_AS02_ISXD:

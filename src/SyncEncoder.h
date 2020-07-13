@@ -32,12 +32,12 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef _SYNC_ENCODER_H_
 #define _SYNC_ENCODER_H_
 
+#include "AS_DCP_namespace.h"
 #include "SyncCommon.h"
 #include "UUIDInformation.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+ASDCP_NAMESPACE_BEGIN
+
 
 typedef struct SyncEncoder{
 	INT				iSampleRate;			/* Signal sample rate */
@@ -78,9 +78,7 @@ INT EncodeSync(	LPSYNCENCODER	pSyncEncoder,	/* In:	Sync encoder structure */
 				FLOAT			*pfAudioBuffer,	/* Out: Audio buffer with signal */
 				INT				iFrameIndex);	/* In:	Frame Index */
 
-#ifdef __cplusplus
-} /* extern "C" */
-#endif
+ASDCP_NAMESPACE_END
 
 #endif
 

@@ -29,11 +29,13 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     \brief   Implementation of Atmos Sync UUID
 */
 
+#include "AS_DCP_namespace.h"
 #include "UUIDInformation.h"
 #include <stdlib.h>
 
+using namespace ASDCP;
 
-void UUIDSynthesize(LPUUIDINFORMATION pUUID)
+void ASDCP::UUIDSynthesize(LPUUIDINFORMATION pUUID)
 {
 	INT n;
 
@@ -48,8 +50,8 @@ void UUIDSynthesize(LPUUIDINFORMATION pUUID)
 	pUUID->abyUUIDBytes[8] |= 0xA0;
 }
 
-void UUIDPrint(	FILE				*pFilePtr,
-				LPUUIDINFORMATION	pUUID)
+void ASDCP::UUIDPrint(	FILE				*pFilePtr,
+                        LPUUIDINFORMATION	pUUID)
 {
 	if(pFilePtr != NULL){
 		INT n;
@@ -67,8 +69,8 @@ void UUIDPrint(	FILE				*pFilePtr,
 	}
 }
 
-void UUIDPrintFormated(	FILE				*pFilePtr,
-						LPUUIDINFORMATION	pUUID)
+void ASDCP::UUIDPrintFormated(	FILE				*pFilePtr,
+                                LPUUIDINFORMATION	pUUID)
 {
 	if(pFilePtr != NULL){
 		INT n;

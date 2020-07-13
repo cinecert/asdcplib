@@ -37,8 +37,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "AS_02.h"
 
-namespace AS_02
-{
+AS_02_NAMESPACE_BEGIN
 
   namespace PHDR
   { 
@@ -182,7 +181,7 @@ namespace AS_02
     
   } // end namespace PHDR
 
-} // end namespace AS_02
+AS_02_NAMESPACE_END
 
 #endif // _AS_02_PHDR_H_
 

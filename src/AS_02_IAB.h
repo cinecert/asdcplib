@@ -1,6 +1,5 @@
 /*
-Copyright (c), Bjoern Stresing, Patrick Bichiou, Wolfgang Ruppel,
-John Hurst, Pierre-Anthony Lemieux
+Copyright (c) 2018, Dolby Laboratories
 
 All rights reserved.
 
@@ -25,215 +24,173 @@ DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
 THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/ 
+
+/*! \file    AS_02_IAB.h
+    \brief   AS-02 library, IAB essence reader and writer implementation (ST 2067-201)
 */
 
-/** 
- * Reader and writer classes for IAB Track Files, as defined in SMPTE ST 2067-201
- * 
- * @file
- */
 
-#ifndef AS_02_IAB_h__
-#define AS_02_IAB_h__
+#ifndef _AS_02_ATMOS_H_
+#define _AS_02_ATMOS_H_
 
-#include "AS_02.h"
-#include "AS_02_internal.h"
-#include "Metadata.h"
+#include "AS_02_namespace.h"
+#include "AS_DCP.h"
+#include "KM_error.h"
 
-namespace AS_02 {
+ASDCP_NAMESPACE_BEGIN
 
-  namespace IAB {
+namespace MXF {
+    // #include<Metadata.h> to use these
+    class OP1aHeader;
+    class RIP;
+}
 
-    /** 
-     * Writes IAB Track Files as specified in ST SMPTE 2067-201
-     * 
-     */
-    class MXFWriter {
+ASDCP_NAMESPACE_END
 
-      typedef h__AS02Writer<AS_02::MXF::AS02IndexWriterVBR> h__Writer;
 
-      ASDCP::mem_ptr<h__Writer> m_Writer;
-      ui64_t m_ClipStart;
-      WriterState_t m_State;
+AS_02_NAMESPACE_BEGIN
 
-      void Reset();
+namespace MXF
+{
+    class AS02IndexReader;
+}
 
-      ASDCP_NO_COPY_CONSTRUCT(MXFWriter);
 
+
+namespace IAB
+{ 
+    template<typename T>
+    class optional
+    {
+    private:
+        bool m_has_value;
+        T    m_value;
     public:
-      MXFWriter();
-      virtual ~MXFWriter();
+        optional() : m_has_value(false) {}
+        optional(const T& value) : m_has_value(true), m_value(value) {}
 
-      /**
-       * Must be preceded by a succesful OpenWrite() call followed by zero or more WriteFrame() calls
-       *
-       * Warning: direct manipulation of MXF structures can interfere
-       * with the normal operation of the wrapper.  Caveat emptor!
-       *
-       * @return Header of the Track File
-       *
-       * @throws std::runtime_error if the Track File is not open
-       */
-      virtual const ASDCP::MXF::OP1aHeader& OP1aHeader() const;
-
-      /**
-       * Must be preceded by a succesful OpenWrite() call followed by zero or more WriteFrame() calls
-       * 
-       * Warning: direct manipulation of MXF structures can interfere 
-       * with the normal operation of the wrapper.  Caveat emptor!
-       * 
-       * @return RIP of the Track File
-       * 
-       * @throws std::runtime_error if the Track File is not open
-       */
-      virtual const ASDCP::MXF::RIP& RIP() const;
-
-      /**
-       * Creates and prepares an IAB Track File for writing.
-       * 
-       * Must be called following instantiation or after Finalize() call
-       * 
-       * @param filename Path to the file. The file must no exist.
-       * @param Info MXF file metadata to be written.
-       * @param sub IAB Soundfield Subdescritor items to be written. MCATagName, MCATagSymbol, MCALabelDictionaryID, MCALinkID are ignored.
-       * @param conformsToSpecs Value of the ConformsToSpecifications preface item
-       * @param edit_rate Frame rate of the IA Bitstream
-       * @param sampling_rate Sampling rate of the audio essence within the IA Bitstream
-       * 
-       * @return RESULT_OK indicates that frames are ready to be written,
-       * otherwise the reader is reset and the file is left is an undermined state.
-       */
-      Result_t OpenWrite(
-        const std::string& filename,
-        const ASDCP::WriterInfo& Info,
-        const ASDCP::MXF::IABSoundfieldLabelSubDescriptor& sub,
-        const std::vector<ASDCP::UL>& conformsToSpecs,
-        const ASDCP::Rational& edit_rate,
-        const ASDCP::Rational& sampling_rate = ASDCP::SampleRate_48k
-      );
-
-      /**
-       * Writes a single frame.
-       * 
-       * Must be preceded by a succesful OpenWrite() call followed by zero or more WriteFrame() calls
-       * 
-       * @param frame Pointer to a complete IA Frame 
-       * @param sz Size in bytes of the IA Frame
-       * @return RESULT_OK indicates that the frame is written and additional frames can be written, 
-       * otherwise the reader is reset and the file is left is an undermined state.
-       */
-      Result_t WriteFrame(const ui8_t* frame, ui32_t sz);
-
-      /**
-       * Writes the Track File footer and closes the file.
-       * 
-       * Must be preceded by a succesful OpenWrite() call followed by zero or more WriteFrame() calls
-       * 
-       * @return RESULT_OK indicates that the frame is written and additional frames can be written, 
-       * otherwise the reader is reset and the file is left is an undermined state.
-       */
-      Result_t Finalize();
+        const T& get() const { return m_value; }
+        void set(const T& v) { m_value = v; m_has_value = true; }
+        bool empty() const { return !m_has_value; }
     };
 
-    /**
-     * Reads IAB Track Files as specified in ST SMPTE 2067-201
-     *
-     */
-    class MXFReader {
-
-      typedef h__AS02Reader h__Reader;
-
-      ASDCP::mem_ptr<h__Reader> m_Reader;
-
-      i64_t m_CurrentFrameIndex;
-      std::vector<ui8_t> m_CurrentFrameBuffer;
-      ReaderState_t m_State;
-
-      void Reset();
-
-      ASDCP_NO_COPY_CONSTRUCT(MXFReader);
-
+    struct IABDescriptor
+    {
     public:
-
-      /* typedefs*/
-
-      typedef std::pair<size_t, const ui8_t*> Frame;
-
-      /* methods */
-
-      MXFReader();
-      virtual ~MXFReader();
-
-      /**
-       * Warning: direct manipulation of MXF structures can interfere
-       * with the normal operation of the wrapper.  Caveat emptor!
-       *
-       * @return Header of the Track File
-       *
-       * @throws std::runtime_error if the Track File is not open
-       */
-      virtual ASDCP::MXF::OP1aHeader& OP1aHeader() const;
-
-      /**
-       * Warning: direct manipulation of MXF structures can interfere
-       * with the normal operation of the wrapper.  Caveat emptor!
-       *
-       * @return RIP of the Track File
-       *
-       * @throws std::runtime_error if the Track File is not open
-       */
-      virtual const ASDCP::MXF::RIP& RIP() const;
-
-      /**
-       * Creates and prepares an IAB Track File for reading.
-       *
-       * @param filename Path to the file. The file must no exist.
-       *
-       * @return RESULT_OK indicates that frames are ready to be read,
-       * otherwise the reader is reset
-       */
-      Result_t OpenRead(const std::string& filename);
-
-      /**
-       * Closes the IAB Track File.
-       *
-       * @return RESULT_OK indicates that the Track File was successfully closed.
-       */
-      Result_t Close();
-
-      /**
-       * Fill a WriterInfo struct with the values from the Track File's header.
-       *
-       * @param  writer_info Struct to be filled
-       * @return RESULT_OK indicates that writer_info was successfully filled.
-       */
-      Result_t FillWriterInfo(ASDCP::WriterInfo& writer_info) const;
-
-      /**
-       * Reads an IA Frame.
-       * 
-       * @param frame_number Index of the frame to be read. Must be in the range [0, GetFrameCount()).
-       * @param frame Frame data. Must not be modified. Remains valid until the next call to ReadFrame().
-       * @return RESULT_OK indicates that more frames are ready to be read,
-       * otherwise the file is closed and the reader reset
-       */
-      Result_t ReadFrame(ui32_t frame_number, Frame& frame);
-
-      /**
-       * Returns the number of IA Frame in the Track File.
-       *
-       * @param frameCount Number of IA Frames
-       * @return RESULT_OK unless the file is not open
-       */
-      Result_t GetFrameCount(ui32_t& frameCount) const;
-
-      // Print debugging information to stream
-      void     DumpHeaderMetadata(FILE* = 0) const;
-      void     DumpIndex(FILE* = 0) const;
+        IABDescriptor() : FrameRate(24, 1), SampleRate(48000, 1), BitDepth(24), ContainerDuration(0)
+        {
+        }
+        ASDCP::Rational FrameRate; 
+        ASDCP::Rational SampleRate;
+        ui32_t          BitDepth;
+        ui32_t          ContainerDuration; // set on read; does not need to be set on create/write
+        optional<ASDCP::Rational> ImageFrameRate; 
+        optional<ui8_t>           AudioAlignmentLevel;
+        std::string               RFC5646SpokenLanguage;
+        optional<std::string>     AudioContentKind;
+        optional<std::string>     AudioElementKind;
+        optional<std::string>     Title;
+        optional<std::string>     TitleVersion;
     };
 
-  } //namespace IAB
+     void   DescriptorDump(const IABDescriptor&, FILE* = 0);
+     std::ostream& operator << (std::ostream& strm, const IABDescriptor&);
 
-} // namespace AS_02
+    //
+    class MXFWriter
+    {
+        class h__Writer;
+        ASDCP::mem_ptr<h__Writer> m_Writer;
+        ASDCP_NO_COPY_CONSTRUCT(MXFWriter);
 
-#endif // AS_02_IAB_h__
+    public:
+        MXFWriter();
+        virtual ~MXFWriter();
+
+        // Warning: direct manipulation of MXF structures can interfere
+        // with the normal operation of the wrapper.  Caveat emptor!
+        virtual ASDCP::MXF::OP1aHeader& OP1aHeader();
+        virtual ASDCP::MXF::RIP& RIP();
+
+        // Open the file for writing. The file must not exist. Returns error if
+        // the operation cannot be completed or if nonsensical data is discovered
+        // in the essence descriptor.
+        Kumu::Result_t OpenWrite(const std::string& filename, const ASDCP::WriterInfo& Info,
+				       const IABDescriptor& Desc, ui32_t HeaderSize = 16384);
+
+        // Writes a frame of essence to the MXF file. If the optional AESEncContext
+        // argument is present, the essence is encrypted prior to writing.
+        // Fails if the file is not open, is finalized, or an operating system
+        // error occurs.
+        Kumu::Result_t WriteFrame(const ASDCP_NAMESPACE::FrameBuffer&, ASDCP::AESEncContext* = 0, ASDCP::HMACContext* = 0);
+
+        // Writes ST RP 2057 text-based program-level metadata stored in a Generic Stream Partition
+        // trackLabel provides description of track content
+        // mimeType identifies the data type of the text: https://www.iana.org/assignments/media-types/media-types.xhtml
+        // dataDescription can refer to the XML namespace identifying the text metadata passed in as argument
+        Kumu::Result_t WriteMetadata(const std::string &trackLabel, const std::string &mimeType, const std::string &dataDescription, const ASDCP::FrameBuffer&);
+
+        // Closes the MXF file, writing the final index, the PHDR master metadata and the revised header.
+        Kumu::Result_t Finalize();
+    };
+
+    //
+    class MXFReader
+    {
+        class h__Reader;
+        ASDCP::mem_ptr<h__Reader> m_Reader;
+        ASDCP_NO_COPY_CONSTRUCT(MXFReader);
+
+    public:
+        MXFReader();
+        virtual ~MXFReader();
+
+        // Warning: direct manipulation of MXF structures can interfere
+        // with the normal operation of the wrapper.  Caveat emptor!
+        virtual ASDCP::MXF::OP1aHeader& OP1aHeader();
+        virtual AS_02::MXF::AS02IndexReader& AS02IndexReader();
+        virtual ASDCP::MXF::RIP& RIP();
+
+        // Open the file for reading. The file must exist. Returns error if the
+        // operation cannot be completed. If master metadata is available it will
+        // be placed into the string object passed as the second argument.
+        Kumu::Result_t OpenRead(const std::string& filename) const;
+
+        // Returns RESULT_INIT if the file is not open.
+        Kumu::Result_t Close() const;
+
+        // Fill an IABDescriptor struct with the values from the file's header.
+        // Returns RESULT_INIT if the file is not open.
+        Kumu::Result_t FillDescriptor(IABDescriptor&) const;
+
+        // Fill a WriterInfo struct with the values from the file's header.
+        // Returns RESULT_INIT if the file is not open.
+        Kumu::Result_t FillWriterInfo(ASDCP::WriterInfo&) const;
+
+        // Reads a frame of essence from the MXF file. If the optional AESEncContext
+        // argument is present, the essence is decrypted after reading. If the MXF
+        // file is encrypted and the AESDecContext argument is NULL, the frame buffer
+        // will contain the ciphertext frame data. If the HMACContext argument is
+        // not NULL, the HMAC will be calculated (if the file supports it).
+        // Returns RESULT_INIT if the file is not open, failure if the frame number is
+        // out of range, or if optional decrypt or HAMC operations fail.
+        Kumu::Result_t ReadFrame(ui32_t frame_number, ASDCP_NAMESPACE::FrameBuffer&, ASDCP::AESDecContext* = 0, ASDCP::HMACContext* = 0) const;
+
+        // Reads ST RP 2057 text-based program-level metadata stored in a Generic Stream Partition
+        // mimeType identifies the data type of the text: https://www.iana.org/assignments/media-types/media-types.xhtml
+        // dataDescription can refer to the XML namespace
+        Kumu::Result_t ReadMetadata(const std::string &dataDescription, std::string &mimeType, ASDCP::FrameBuffer&);
+
+
+        // Print debugging information to stream
+        void     DumpHeaderMetadata(FILE* = 0) const;
+        void     DumpIndex(FILE* = 0) const;
+    };
+
+} // end namespace ATMOS
+
+
+AS_02_NAMESPACE_END
+
+#endif // _AS_02_ATMOS_H_

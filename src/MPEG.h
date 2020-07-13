@@ -38,8 +38,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <assert.h>
 
 
-namespace ASDCP
-{
+ASDCP_NAMESPACE_BEGIN
   namespace MPEG2
     {
       //
@@ -235,7 +234,7 @@ namespace ASDCP
 
     } // namespace MPEG2
 
-} // namespace ASDCP
+ASDCP_NAMESPACE_END
 
 #endif // _MPEG_H_
 

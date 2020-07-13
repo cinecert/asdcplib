@@ -32,9 +32,10 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <assert.h>
 #include <KM_log.h>
 
-
 using Kumu::DefaultLogSink;
 
+
+AS_02_NAMESPACE_BEGIN
 
 class FileList : public std::list<std::string>
 {
@@ -349,3 +350,5 @@ AS_02::Result_t AS_02::ACES::SequenceParser::ReadAncillaryResource(const std::st
   }
   return result;
 }
+
+AS_02_NAMESPACE_END

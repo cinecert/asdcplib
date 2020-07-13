@@ -33,7 +33,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define _MDD_H_
 
 //
-namespace ASDCP {
+ASDCP_NAMESPACE_BEGIN
     enum MDD_t {
         MDD_MICAlgorithm_NONE,  // 0
         MDD_MXFInterop_OPAtom,  // 1
@@ -564,13 +564,13 @@ namespace ASDCP {
 	MDD_TimedTextDescriptor_DisplayType, // 526
 	MDD_TimedTextDescriptor_IntrinsicPictureResolution, // 527
 	MDD_TimedTextDescriptor_ZPositionInUse, // 528
-	MDD_IABEssenceDescriptor, // 529
-	MDD_IABSoundfieldLabelSubDescriptor, // 530
-	MDD_IMF_IABTrackFileLevel0, // 531
-	MDD_IMF_IABEssenceClipWrappedContainer, // 532
-	MDD_IABSoundfield, // 533
-	MDD_IMF_IABEssenceClipWrappedElement, // 534
-	MDD_ImmersiveAudioCoding, // 535
+    	MDD_IMF_IABTrackFileLevel0, // 529
+    	MDD_IMF_IABEssenceClipWrappedElement, // 530
+    	MDD_IABEssenceDescriptor, // 531
+    	MDD_IMF_IABEssenceClipWrappedContainer, // 532
+    	MDD_IMF_IABV1SoundCoding, // 533
+    	MDD_IABSoundfieldLabelSubDescriptor, // 534
+    	MDD_IABSoundfield, // 535
 	MDD_Max
     }; // enum MDD_t
 
@@ -584,7 +584,7 @@ namespace ASDCP {
     const MDD_t MDD_Preface_OperationalPattern = MDD_Core_OperationalPattern;
     const MDD_t MDD_TimedTextResourceSubDescriptor_EssenceStreamID = MDD_Core_BodySID;
 
-} // namespaceASDCP
+ASDCP_NAMESPACE_END
 
 
 #endif // _MDD_H_

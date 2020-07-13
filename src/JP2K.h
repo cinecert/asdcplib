@@ -41,8 +41,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <AS_DCP.h>
 #include <assert.h>
 
-namespace ASDCP
-{
+ASDCP_NAMESPACE_BEGIN
 namespace JP2K
 {
   const byte_t Magic[] = {0xff, 0x4f, 0xff};
@@ -308,7 +307,7 @@ namespace JP2K
       };
     } // namespace Accessor
 } // namespace JP2K
-} // namespace ASDCP
+ASDCP_NAMESPACE_END
 
 #endif // _JP2K_H_
 

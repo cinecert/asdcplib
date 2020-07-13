@@ -34,8 +34,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "MXF.h"
 
-namespace ASDCP
-{
+ASDCP_NAMESPACE_BEGIN
   namespace MXF
     {
       void Metadata_InitTypes(const Dictionary*& Dict);
@@ -957,6 +956,28 @@ namespace ASDCP
 	};
 
       //
+      class IABSoundfieldLabelSubDescriptor : public MCALabelSubDescriptor
+        {
+          IABSoundfieldLabelSubDescriptor();
+
+          public:
+
+          IABSoundfieldLabelSubDescriptor(const Dictionary*& d);
+          IABSoundfieldLabelSubDescriptor(const IABSoundfieldLabelSubDescriptor& rhs);
+          virtual ~IABSoundfieldLabelSubDescriptor() {}
+
+          const IABSoundfieldLabelSubDescriptor& operator=(const IABSoundfieldLabelSubDescriptor& rhs) { Copy(rhs); return *this; }
+          virtual void Copy(const IABSoundfieldLabelSubDescriptor& rhs);
+          virtual const char* HasName() { return "IABSoundfieldLabelSubDescriptor"; }
+          virtual Result_t InitFromTLVSet(TLVReader& TLVSet);
+          virtual Result_t WriteToTLVSet(TLVWriter& TLVSet);
+          virtual void     Dump(FILE* = 0);
+          virtual Result_t InitFromBuffer(const byte_t* p, ui32_t l);
+          virtual Result_t WriteToBuffer(ASDCP::FrameBuffer&);
+        };
+
+
+      //
       class AudioChannelLabelSubDescriptor : public MCALabelSubDescriptor
 	{
 	  AudioChannelLabelSubDescriptor();
@@ -1297,52 +1318,27 @@ namespace ASDCP
       virtual Result_t WriteToBuffer(ASDCP::FrameBuffer&);
 	};
 
-      //
-      class IABEssenceDescriptor : public GenericSoundEssenceDescriptor
-	{
-	  IABEssenceDescriptor();
+    class IABEssenceDescriptor : public ASDCP::MXF::GenericSoundEssenceDescriptor
+    {
+        IABEssenceDescriptor();
+    public:
+        IABEssenceDescriptor(const ASDCP::Dictionary*& d);
+        IABEssenceDescriptor(const IABEssenceDescriptor& rhs);
+        virtual ~IABEssenceDescriptor() {}
 
-	public:
-	  const Dictionary*& m_Dict;
+        const IABEssenceDescriptor& operator=(const IABEssenceDescriptor& rhs) { Copy(rhs); return *this; }
+        virtual void Copy(const IABEssenceDescriptor& rhs) { GenericSoundEssenceDescriptor::Copy(rhs); }
+        virtual const char* HasName() { return "IABEssenceDescriptor"; }
+        virtual Result_t InitFromTLVSet(ASDCP::MXF::TLVReader& TLVSet);
+        virtual Result_t WriteToTLVSet(ASDCP::MXF::TLVWriter& TLVSet);
+        virtual void     Dump(FILE* = 0);
+        virtual Result_t InitFromBuffer(const byte_t* p, ui32_t l);
+        virtual Result_t WriteToBuffer(ASDCP::FrameBuffer&);
 
-      IABEssenceDescriptor(const Dictionary*& d);
-      IABEssenceDescriptor(const IABEssenceDescriptor& rhs);
-      virtual ~IABEssenceDescriptor() {}
-
-      const IABEssenceDescriptor& operator=(const IABEssenceDescriptor& rhs) { Copy(rhs); return *this; }
-      virtual void Copy(const IABEssenceDescriptor& rhs);
-      virtual const char* HasName() { return "IABEssenceDescriptor"; }
-      virtual Result_t InitFromTLVSet(TLVReader& TLVSet);
-      virtual Result_t WriteToTLVSet(TLVWriter& TLVSet);
-      virtual void     Dump(FILE* = 0);
-      virtual Result_t InitFromBuffer(const byte_t* p, ui32_t l);
-      virtual Result_t WriteToBuffer(ASDCP::FrameBuffer&);
-	};
-
-      //
-      class IABSoundfieldLabelSubDescriptor : public MCALabelSubDescriptor
-	{
-	  IABSoundfieldLabelSubDescriptor();
-
-	public:
-	  const Dictionary*& m_Dict;
-
-      IABSoundfieldLabelSubDescriptor(const Dictionary*& d);
-      IABSoundfieldLabelSubDescriptor(const IABSoundfieldLabelSubDescriptor& rhs);
-      virtual ~IABSoundfieldLabelSubDescriptor() {}
-
-      const IABSoundfieldLabelSubDescriptor& operator=(const IABSoundfieldLabelSubDescriptor& rhs) { Copy(rhs); return *this; }
-      virtual void Copy(const IABSoundfieldLabelSubDescriptor& rhs);
-      virtual const char* HasName() { return "IABSoundfieldLabelSubDescriptor"; }
-      virtual Result_t InitFromTLVSet(TLVReader& TLVSet);
-      virtual Result_t WriteToTLVSet(TLVWriter& TLVSet);
-      virtual void     Dump(FILE* = 0);
-      virtual Result_t InitFromBuffer(const byte_t* p, ui32_t l);
-      virtual Result_t WriteToBuffer(ASDCP::FrameBuffer&);
-	};
+    };
 
     } // namespace MXF
-} // namespace ASDCP
+ASDCP_NAMESPACE_END
 
 
 #endif // _Metadata_H_

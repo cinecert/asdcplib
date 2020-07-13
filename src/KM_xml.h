@@ -33,13 +33,14 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef _KM_XML_H_
 #define _KM_XML_H_
 
+#include <KM_namespace.h>
 #include <KM_util.h>
 #include <list>
 #include <set>
 #include <string>
 
-namespace Kumu
-{
+KUMU_NAMESPACE_BEGIN
+
   class XMLElement;
 
   //
@@ -215,7 +216,7 @@ namespace Kumu
     }
   };
 
-} // namespace Kumu
+KUMU_NAMESPACE_END
 
 #endif // _KM_XML_H_
 

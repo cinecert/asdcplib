@@ -32,10 +32,11 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef _KM_PRNG_H_
 #define _KM_PRNG_H_
 
+#include <KM_namespace.h>
 #include <KM_util.h>
 
-namespace Kumu
-{
+KUMU_NAMESPACE_BEGIN
+
   class FortunaRNG
     {
       KM_NO_COPY_CONSTRUCT(FortunaRNG);
@@ -51,8 +52,7 @@ namespace Kumu
   // key_len must be <= 64 (larger values will be truncated)
   void Gen_FIPS_186_Value(const byte_t* key_in, ui32_t key_len, byte_t* buf, ui32_t buf_len);
 
-} // namespace Kumu
-
+KUMU_NAMESPACE_END
 
 
 #endif // _KM_PRNG_H_

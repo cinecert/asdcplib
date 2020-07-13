@@ -29,6 +29,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     \brief   AS-DCP library, JPEG 2000 essence reader and writer implementation
 */
 
+#include <AS_DCP_namespace.h>
 #include "AS_DCP_internal.h"
 #include <iostream>
 #include <iomanip>
@@ -510,7 +511,10 @@ ASDCP::MD_to_JP2K_PDesc(const ASDCP::MXF::GenericPictureEssenceDescriptor&  Esse
 //
 // hidden, internal implementation of JPEG 2000 reader
 
+ASDCP_NAMESPACE_BEGIN
 
+namespace JP2K
+{
 class lh__Reader : public ASDCP::h__ASDCPReader
 {
   RGBAEssenceDescriptor*        m_EssenceDescriptor;
@@ -532,6 +536,8 @@ public:
   Result_t    OpenRead(const std::string&, EssenceType_t);
   Result_t    ReadFrame(ui32_t, JP2K::FrameBuffer&, AESDecContext*, HMACContext*);
 };
+} // namespace JP2K
+ASDCP_NAMESPACE_END
 
 
 //
@@ -1128,6 +1134,10 @@ ASDCP::JP2K::MXFSReader::Close() const
 
 
 //
+ASDCP_NAMESPACE_BEGIN
+
+namespace JP2K
+{
 class lh__Writer : public ASDCP::h__ASDCPWriter
 {
   ASDCP_NO_COPY_CONSTRUCT(lh__Writer);
@@ -1151,6 +1161,8 @@ public:
   Result_t WriteFrame(const JP2K::FrameBuffer&, bool add_index, AESEncContext*, HMACContext*);
   Result_t Finalize();
 };
+} // namespace JP2K
+ASDCP_NAMESPACE_END
 
 // Open the file for writing. The file must not exist. Returns error if
 // the operation cannot be completed.

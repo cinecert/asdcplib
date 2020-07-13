@@ -37,6 +37,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <KM_log.h>
 #include <AS_DCP.h>
 #include <AS_02.h>
+#include <AS_02_IAB.h>
 #include <JP2K.h>
 #include <AS_02_ACES.h>
 #include <ACES.h>
@@ -550,6 +551,25 @@ class MyTextDescriptor : public TimedText::TimedTextDescriptor
   }
 };
 
+class MyIABDescriptor : public AS_02::IAB::IABDescriptor
+{
+public:
+    MyIABDescriptor()
+    {
+    }
+
+    void FillDescriptor(AS_02::IAB::MXFReader& Reader)
+    {
+        Reader.FillDescriptor(*this);
+    }
+
+    void MyDump(FILE* stream)
+    {
+        AS_02::IAB::DescriptorDump(*this, stream);
+    }
+
+};
+
 struct RateInfo
 {
   UL ul;
@@ -904,6 +924,14 @@ show_file_info(CommandOptions& Options)
 
       if ( ASDCP_SUCCESS(result) && Options.showcoding_flag )
 	wrapper.dump_WaveAudioDescriptor(stdout);
+    }
+    else if ( EssenceType == ESS_AS02_IAB )
+    {
+        FileInfoWrapper<AS_02::IAB::MXFReader, MyIABDescriptor> wrapper;
+        result = wrapper.file_info(Options, "IAB audio");
+
+        if ( ASDCP_SUCCESS(result) && Options.showcoding_flag )
+            wrapper.dump_WaveAudioDescriptor(stdout);
     }
   else
     {

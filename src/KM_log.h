@@ -33,6 +33,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef _KM_LOG_H_
 #define _KM_LOG_H_
 
+#include <KM_namespace.h>
 #include <KM_platform.h>
 #include <KM_mutex.h>
 #include <KM_util.h>
@@ -66,8 +67,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   }
 
 
-namespace Kumu
-{
+KUMU_NAMESPACE_BEGIN
   // no log message will exceed this length
   const ui32_t MaxLogLength = 512;
 
@@ -319,7 +319,7 @@ namespace Kumu
 #endif
 
 
-} // namespace Kumu
+KUMU_NAMESPACE_END
 
 #endif // _KM_LOG_H_
 

@@ -634,7 +634,8 @@ show_file_info(CommandOptions& Options)
   else if ( EssenceType == ESS_AS02_PCM_24b_48k
 	    || EssenceType == ESS_AS02_PCM_24b_96k
 	    || EssenceType == ESS_AS02_JPEG_2000
-	    || EssenceType == ESS_AS02_TIMED_TEXT )
+        || EssenceType == ESS_AS02_TIMED_TEXT
+        || EssenceType == ESS_AS02_IAB)
     {
       fprintf(stderr, "File is AS-02. Inspection in not supported by this command.\n");
     }

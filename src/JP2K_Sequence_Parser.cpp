@@ -29,6 +29,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     \brief   AS-DCP library, JPEG 2000 codestream essence reader implementation
 */
 
+#include "AS_DCP_namespace.h"
 #include <AS_DCP.h>
 #include <KM_fileio.h>
 #include <KM_log.h>
@@ -42,7 +43,9 @@ using namespace ASDCP;
 
 
 //------------------------------------------------------------------------------------------
-  
+
+ASDCP_NAMESPACE_BEGIN
+
 class FileList : public std::list<std::string>
 {
   std::string m_DirName;
@@ -89,6 +92,7 @@ public:
     return result;
   }
 };
+ASDCP_NAMESPACE_END
 
 //------------------------------------------------------------------------------------------
 
@@ -190,6 +194,8 @@ ASDCP::JP2K::SequenceParser::h__SequenceParser::OpenRead(const std::list<std::st
   return OpenRead();
 }
 
+
+ASDCP_NAMESPACE_BEGIN
 
 //
 bool
@@ -334,6 +340,7 @@ operator==(const ASDCP::JP2K::PictureDescriptor& lhs, const ASDCP::JP2K::Picture
 
   return true;
 }
+ASDCP_NAMESPACE_END
 
 //
 ASDCP::Result_t

@@ -47,6 +47,8 @@ using namespace ASDCP::MXF;
 #endif
 
 
+ASDCP_NAMESPACE_BEGIN
+
 // uncomment to remove MXFGCGenericEssenceMultipleMappings from your AS-02 files
 // #define ASDCP_GCMULTI_PATCH
 
@@ -60,10 +62,6 @@ extern MXF::OP1aHeader *g_OP1aHeader;
 extern MXF::OPAtomIndexFooter *g_OPAtomIndexFooter;
 extern MXF::RIP *g_RIP;
 #endif
-
-
-namespace ASDCP
-{
 
   //
   static std::vector<int>
@@ -610,10 +608,12 @@ namespace ASDCP
 	typedef std::list<ui64_t*> DurationElementList_t;
 	DurationElementList_t m_DurationUpdateList;
 
+    ui8_t               m_UseTimecodes;
+
       TrackFileWriter(const Dictionary& d) :
 	m_Dict(&d), m_HeaderSize(0), m_HeaderPart(m_Dict), m_RIP(m_Dict),
 	  m_MaterialPackage(0), m_FilePackage(0), m_ContentStorage(0),
-	  m_EssenceDescriptor(0), m_FramesWritten(0), m_StreamOffset(0)
+	  m_EssenceDescriptor(0), m_FramesWritten(0), m_StreamOffset(0), m_UseTimecodes(1)
 	  {
 	    default_md_object_init();
 	  }
@@ -624,7 +624,10 @@ namespace ASDCP
 
 	const MXF::RIP& GetRIP() const { return m_RIP; }
 
-	void InitHeader(const MXFVersion& mxf_ver, const std::vector<ASDCP::UL>* conformsToSpecifications = NULL)
+    ui8_t GetUseTimecodes() const { return m_UseTimecodes; }
+    void  SetUseTimecodes(ui8_t v) { m_UseTimecodes = v;  }
+
+	void InitHeader(const MXFVersion& mxf_ver)
 	{
 	  assert(m_Dict);
 	  assert(m_EssenceDescriptor);
@@ -718,22 +721,24 @@ namespace ASDCP
 	  m_HeaderPart.AddChildObject(m_MaterialPackage);
 	  m_ContentStorage->Packages.push_back(m_MaterialPackage->InstanceUID);
 
-	  if ( tc_frame_rate )
-	    {
-	      TrackSet<TimecodeComponent> MPTCTrack =
-		CreateTimecodeTrack<MaterialPackage>(m_HeaderPart, *m_MaterialPackage,
-						     tc_edit_rate, tc_frame_rate, 0, m_Dict);
+      ui32_t trackID = 1;
+      if (GetUseTimecodes())
+      {
+          TrackSet<TimecodeComponent> MPTCTrack =
+              CreateTimecodeTrack<MaterialPackage>(m_HeaderPart, *m_MaterialPackage,
+              tc_edit_rate, TCFrameRate, 0, m_Dict);
 
-	      MPTCTrack.Sequence->Duration.set_has_value();
-	      m_DurationUpdateList.push_back(&(MPTCTrack.Sequence->Duration.get()));
-	      MPTCTrack.Clip->Duration.set_has_value();
-	      m_DurationUpdateList.push_back(&(MPTCTrack.Clip->Duration.get()));
-	    }
+          MPTCTrack.Sequence->Duration.set_has_value();
+          m_DurationUpdateList.push_back(&(MPTCTrack.Sequence->Duration.get()));
+          MPTCTrack.Clip->Duration.set_has_value();
+          m_DurationUpdateList.push_back(&(MPTCTrack.Clip->Duration.get()));
+          trackID++;
+      }
 
 	  TrackSet<SourceClip> MPTrack =
 	    CreateTrackAndSequence<MaterialPackage, SourceClip>(m_HeaderPart, *m_MaterialPackage,
 								TrackName, clip_edit_rate, DataDefinition,
-								2, m_Dict);
+								trackID, m_Dict);
 	  MPTrack.Sequence->Duration.set_has_value();
 	  m_DurationUpdateList.push_back(&(MPTrack.Sequence->Duration.get()));
 
@@ -742,7 +747,7 @@ namespace ASDCP
 	  MPTrack.Sequence->StructuralComponents.push_back(MPTrack.Clip->InstanceUID);
 	  MPTrack.Clip->DataDefinition = DataDefinition;
 	  MPTrack.Clip->SourcePackageID = SourcePackageUMID;
-	  MPTrack.Clip->SourceTrackID = 2;
+	  MPTrack.Clip->SourceTrackID = trackID;
 
 	  MPTrack.Clip->Duration.set_has_value();
 	  m_DurationUpdateList.push_back(&(MPTrack.Clip->Duration.get()));
@@ -759,22 +764,25 @@ namespace ASDCP
 	  m_HeaderPart.AddChildObject(m_FilePackage);
 	  m_ContentStorage->Packages.push_back(m_FilePackage->InstanceUID);
 
-	  if ( tc_frame_rate )
-	    {
-	      TrackSet<TimecodeComponent> FPTCTrack =
-		CreateTimecodeTrack<SourcePackage>(m_HeaderPart, *m_FilePackage,
-						   tc_edit_rate, tc_frame_rate, 0, m_Dict);
+      trackID = 1;
+      if (GetUseTimecodes())
+      {
+          TrackSet<TimecodeComponent> FPTCTrack =
+              CreateTimecodeTrack<SourcePackage>(m_HeaderPart, *m_FilePackage,
+              tc_edit_rate, TCFrameRate,
+              0, m_Dict);
 
-	      FPTCTrack.Sequence->Duration.set_has_value();
-	      m_DurationUpdateList.push_back(&(FPTCTrack.Sequence->Duration.get()));
-	      FPTCTrack.Clip->Duration.set_has_value();
-	      m_DurationUpdateList.push_back(&(FPTCTrack.Clip->Duration.get()));
-	    }
+          FPTCTrack.Sequence->Duration.set_has_value();
+          m_DurationUpdateList.push_back(&(FPTCTrack.Sequence->Duration.get()));
+          FPTCTrack.Clip->Duration.set_has_value();
+          m_DurationUpdateList.push_back(&(FPTCTrack.Clip->Duration.get()));
+          trackID++;
+      }
 
 	  TrackSet<SourceClip> FPTrack =
 	    CreateTrackAndSequence<SourcePackage, SourceClip>(m_HeaderPart, *m_FilePackage,
 							      TrackName, clip_edit_rate, DataDefinition,
-							      2, m_Dict);
+							      trackID, m_Dict);
 
 	  FPTrack.Sequence->Duration.set_has_value();
 	  m_DurationUpdateList.push_back(&(FPTrack.Sequence->Duration.get()));
@@ -964,7 +972,8 @@ namespace ASDCP
     };
 
 
-} // namespace ASDCP
+
+ASDCP_NAMESPACE_END
 
 #endif // _AS_DCP_INTERNAL_H_
 
