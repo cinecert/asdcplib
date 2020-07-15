@@ -1,0 +1,55 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!-- Metadata tags to support XML file editing -->
+<!-- author= Raymond Yeung (raymond.yeung@dolby.com) -->
+<!-- summary_of_edit= Elements Register for asdcplib-phdr -->
+<!--  -->
+<!-- DO NOT EDIT THIS TAG -->
+<!-- master_commit_tag=v000000081 -->
+<!-- DO NOT EDIT THIS TAG -->
+<!--  -->
+<ElementsRegister xmlns="http://www.smpte-ra.org/schemas/335/2012">
+  <Entries>
+    <Entry>
+      <Register>Elements</Register>
+      <NamespaceName>http://www.smpte-ra.org/reg/335/2012/14/9</NamespaceName>
+      <Symbol>DataDefinition</Symbol>
+      <UL>urn:smpte:ul:060e2b34.01010105.0e090607.01010104</UL>
+      <Kind>LEAF</Kind>
+      <Name>Data Definition</Name>
+      <Definition>Identifies the value of PHDR Data Definition</Definition>
+      <DefiningDocument>ASDCP</DefiningDocument>
+      <IsDeprecated>false</IsDeprecated>
+      <ContextScope>UnknownContext</ContextScope>
+      <Type>urn:smpte:ul:060e2b34.01040101.04011100.00000000</Type>
+      <ValueLength>16 bytes</ValueLength>
+    </Entry>
+    <Entry>
+      <Register>Elements</Register>
+      <NamespaceName>http://www.smpte-ra.org/reg/335/2012/14/9</NamespaceName>
+      <Symbol>SourceTrackID</Symbol>
+      <UL>urn:smpte:ul:060e2b34.01010105.0e090607.01010105</UL>
+      <Kind>LEAF</Kind>
+      <Name>Source Track ID</Name>
+      <Definition>Identifies the Source Track ID of the PHDR Data Items</Definition>
+      <DefiningDocument>ASDCP</DefiningDocument>
+      <IsDeprecated>false</IsDeprecated>
+      <ContextScope>UnknownContext</ContextScope>
+      <Type>urn:smpte:ul:060e2b34.01040101.01010300.00000000</Type>
+      <ValueLength>4 bytes</ValueLength>
+    </Entry>
+    <Entry>
+      <Register>Elements</Register>
+      <NamespaceName>http://www.smpte-ra.org/reg/335/2012/14/9</NamespaceName>
+      <Symbol>SimplePayloadSID</Symbol>
+      <UL>urn:smpte:ul:060e2b34.01010105.0e090607.01010106</UL>
+      <Kind>LEAF</Kind>
+      <Name>Simple Payload SID</Name>
+      <Definition>Identifies the Source Track ID of the ST 410 GSP as static data</Definition>
+      <DefiningDocument>ASDCP</DefiningDocument>
+      <IsDeprecated>false</IsDeprecated>
+      <ContextScope>UnknownContext</ContextScope>
+      <Type>urn:smpte:ul:060e2b34.01040101.01010300.00000000</Type>
+      <ValueLength>4 bytes</ValueLength>
+    </Entry>
+  </Entries>
+</ElementsRegister>

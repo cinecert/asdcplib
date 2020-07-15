@@ -1,0 +1,24 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!-- Metadata tags to support XML file editing -->
+<!-- author= Raymond Yeung (raymond.yeung@dolby.com) -->
+<!-- summary_of_edit= Labels Register for asdcplib-phdr -->
+<!--  -->
+<!-- DO NOT EDIT THIS TAG -->
+<!-- master_commit_tag=v000000081 -->
+<!-- DO NOT EDIT THIS TAG -->
+<!--  -->
+<LabelsRegister xmlns="http://www.smpte-ra.org/schemas/400/2012">
+  <Entries>
+    <Entry>
+      <Register>Labels</Register>
+      <NamespaceName>http://www.smpte-ra.org/reg/400/2012/14/9</NamespaceName>
+      <Symbol>PHDRImageMetadataWrappingFrame</Symbol>
+      <UL>urn:smpte:ul:060e2b34.04010105.0e090607.01010101</UL>
+      <Kind>LEAF</Kind>
+      <Name>PHDR Image Metadata Wrapping Frame</Name>
+      <Definition>Identifies a frame of wrapped PHDR image metadata</Definition>
+      <DefiningDocument>ASDCP</DefiningDocument>
+      <IsDeprecated>false</IsDeprecated>
+    </Entry>
+  </Entries>
+</LabelsRegister>

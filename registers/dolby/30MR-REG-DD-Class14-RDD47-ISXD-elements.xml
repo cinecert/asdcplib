@@ -1,0 +1,27 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!-- Metadata tags to support XML file editing -->
+<!-- author= Raymond Yeung (raymond.yeung@dolby.com) -->
+<!-- summary_of_edit= Elements Register for RDD47 ISXD -->
+<!--  -->
+<!-- DO NOT EDIT THIS TAG -->
+<!-- master_commit_tag=v000000081 -->
+<!-- DO NOT EDIT THIS TAG -->
+<!--  -->
+<ElementsRegister xmlns="http://www.smpte-ra.org/schemas/335/2012">
+  <Entries>
+    <Entry>
+      <Register>Elements</Register>
+      <NamespaceName>http://www.smpte-ra.org/reg/335/2012/14/9</NamespaceName>
+      <Symbol>NamespaceURI</Symbol>
+      <UL>urn:smpte:ul:060e2b34.01010105.0e090400.00000000</UL>
+      <Kind>LEAF</Kind>
+      <Name>Namespace URI</Name>
+      <Definition>Identifies the default namespace of the essence XML documents</Definition>
+      <DefiningDocument>RDD47</DefiningDocument>
+      <IsDeprecated>false</IsDeprecated>
+      <ContextScope>UnknownContext</ContextScope>
+      <Type>urn:smpte:ul:060e2b34.01040101.01100600.00000000</Type>
+      <ValueLength>variable</ValueLength>
+    </Entry>
+  </Entries>
+</ElementsRegister>

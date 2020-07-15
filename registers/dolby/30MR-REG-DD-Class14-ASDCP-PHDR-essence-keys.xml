@@ -1,0 +1,22 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!-- Metadata tags to support XML file editing -->
+<!-- author= Raymond Yeung (raymond.yeung@dolby.com) -->
+<!-- summary_of_edit= Essence Key Register for asdcplib-phdr -->
+<!--  -->
+<!--  -->
+<EssenceRegister xmlns="http://www.smpte-ra.org/schemas/2088/2019">
+  <Entries>
+    <Entry>
+      <Register>Essence</Register>
+      <NamespaceName>http://www.smpte-ra.org/reg/2088/2019/14/9</NamespaceName>
+      <Symbol>PHDRImageMetadataItem</Symbol>
+      <UL>urn:smpte:ul:060e2b34.01020105.0e090607.01010100</UL>
+      <Kind>LEAF</Kind>
+      <Name>PHDR Image Metadata Item</Name>
+      <Definition>Identifies a PHDR image metadata item</Definition>
+      <Notes>**PROPOSED**</Notes>
+      <DefiningDocument>ASDCP</DefiningDocument>
+      <IsDeprecated>false</IsDeprecated>
+    </Entry>
+  </Entries>
+</EssenceRegister>

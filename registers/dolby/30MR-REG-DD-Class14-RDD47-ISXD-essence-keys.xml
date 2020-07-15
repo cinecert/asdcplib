@@ -1,0 +1,22 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!-- Metadata tags to support XML file editing -->
+<!-- author= Raymond Yeung (raymond.yeung@dolby.com) -->
+<!-- summary_of_edit= Essence Key Register for SMPTE RDD 47 ISXD -->
+<!--  -->
+<!--  -->
+<EssenceRegister xmlns="http://www.smpte-ra.org/schemas/2088/2019">
+  <Entries>
+    <Entry>
+      <Register>Essence</Register>
+      <NamespaceName>http://www.smpte-ra.org/reg/2088/2019/14/9</NamespaceName>
+      <Symbol>FrameWrappedISXDData</Symbol>
+      <UL>urn:smpte:ul:060e2b34.01020105.0e090502.017f017f</UL>
+      <Kind>LEAF</Kind>
+      <Name>Frame Wrapped ISXD Data</Name>
+      <Definition>Identifies Frame Wrapped ISXD Data Essence</Definition>
+      <Notes>**PROPOSED**</Notes>
+      <DefiningDocument>SMPTE RDD 47</DefiningDocument>
+      <IsDeprecated>false</IsDeprecated>
+    </Entry>
+  </Entries>
+</EssenceRegister>
