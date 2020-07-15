@@ -49,11 +49,11 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <KM_fileio.h>
 #include <KM_prng.h>
+#include <KM_sha1.h>
 #include <PCMParserList.h>
 #include <WavFileWriter.h>
 #include <MXF.h>
 #include <Metadata.h>
-#include <openssl/sha.h>
 
 #include <iostream>
 #include <assert.h>
@@ -1889,7 +1889,7 @@ digest_file(const char* filename)
 
   ASDCP_TEST_NULL_STR(filename);
   FileReader Reader;
-  SHA_CTX Ctx;
+  SHA1_CTX Ctx;
   SHA1_Init(&Ctx);
   ByteString Buf(8192);
 

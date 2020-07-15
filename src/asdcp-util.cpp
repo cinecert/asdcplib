@@ -35,8 +35,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <KM_fileio.h>
 #include <KM_prng.h>
+#include <KM_sha1.h>
 #include <AS_DCP.h>
-#include <openssl/sha.h>
 
 using namespace Kumu;
 
@@ -182,7 +182,7 @@ Result_t
 digest_file(const std::string& filename)
 {
   FileReader Reader;
-  SHA_CTX Ctx;
+  SHA1_CTX Ctx;
   SHA1_Init(&Ctx);
   ByteString Buf(8192);
 

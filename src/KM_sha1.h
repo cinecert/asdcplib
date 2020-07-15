@@ -50,5 +50,5 @@ namespace Kumu {
 #endif // _KM_SHA1_H_
 
 //
-// end
+// end KM_sha1.h
 //

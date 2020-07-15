@@ -50,6 +50,7 @@ include_HEADERS = \
 	KM_mutex.h \
 	KM_platform.h \
 	KM_prng.h \
+	KM_sha1.h \
 	KM_util.h \
 	KM_tai.h \
 	KM_xml.h \
@@ -102,7 +103,8 @@ endif
 # sources for kumu library
 libkumu_la_SOURCES = KM_error.h KM_fileio.cpp KM_fileio.h KM_log.cpp KM_log.h \
 		KM_memio.h KM_mutex.h KM_platform.h KM_prng.cpp KM_prng.h KM_util.cpp \
-		KM_util.h KM_xml.cpp KM_xml.h KM_tai.h KM_tai.cpp
+		KM_util.h KM_xml.cpp KM_xml.h KM_tai.h KM_tai.cpp \
+		KM_sha1.cpp KM_sha1.h
 
 # linker flags (*not* including libraries to link against) for a library
 libkumu_la_LDFLAGS = -release @VERSION@

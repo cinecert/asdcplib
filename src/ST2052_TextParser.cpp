@@ -31,7 +31,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "AS_02_internal.h"
 #include "KM_xml.h"
-#include <openssl/sha.h>
+#include "KM_sha1.h"
 
 using namespace Kumu;
 using namespace ASDCP;
@@ -66,7 +66,7 @@ static byte_t s_font_id_prefix[NS_ID_LENGTH] = {
 static Kumu::UUID
 create_4122_type5_id(const std::string& subject_name, const byte_t* ns_id)
 {
-  SHA_CTX ctx;
+  SHA1_CTX ctx;
   SHA1_Init(&ctx);
   SHA1_Update(&ctx, ns_id, NS_ID_LENGTH);
   SHA1_Update(&ctx, (byte_t*)subject_name.c_str(), subject_name.size());
