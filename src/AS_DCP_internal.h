@@ -624,7 +624,7 @@ namespace ASDCP
 
 	const MXF::RIP& GetRIP() const { return m_RIP; }
 
-	void InitHeader(const MXFVersion& mxf_ver)
+	void InitHeader(const MXFVersion& mxf_ver, const std::vector<ASDCP::UL>* conformsToSpecifications = NULL)
 	{
 	  assert(m_Dict);
 	  assert(m_EssenceDescriptor);
@@ -632,6 +632,18 @@ namespace ASDCP
 	  m_HeaderPart.m_Primer.ClearTagList();
 	  m_HeaderPart.m_Preface = new Preface(m_Dict);
 	  m_HeaderPart.AddChildObject(m_HeaderPart.m_Preface);
+
+		// add conformsToSpecifications, if it exists
+
+		if (conformsToSpecifications && conformsToSpecifications->size() > 0) {
+
+			m_HeaderPart.m_Preface->ConformsToSpecifications.set_has_value();
+
+			m_HeaderPart.m_Preface->ConformsToSpecifications.get().insert(
+				conformsToSpecifications->begin(),
+				conformsToSpecifications->end()
+			);
+		}
 
 	  // Set the Operational Pattern label -- we're just starting and have no RIP or index,
 	  // so we tell the world by using OP1a
@@ -880,6 +892,13 @@ namespace ASDCP
 
   //------------------------------------------------------------------------------------------
   //
+
+// state machine for mxf reader
+	enum ReaderState_t {
+		ST_READER_BEGIN,   // waiting for Open()
+		ST_READER_READY,   // ready to read frames
+		ST_READER_RUNNING, // one or more frames read
+	};
 
   //
   class h__ASDCPReader : public MXF::TrackFileReader<OP1aHeader, OPAtomIndexFooter>

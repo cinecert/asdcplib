@@ -277,6 +277,10 @@ ASDCP::EssenceType(const std::string& filename, EssenceType_t& type)
 	      {
 	        type = ESS_AS02_ACES;
 	      }
+	    else if ( ASDCP_SUCCESS(TestHeader.GetMDObjectByType(OBJ_TYPE_ARGS(IABEssenceDescriptor))) )
+	      {
+	        type = ESS_AS02_IAB;
+	      }
 	  }
 	}
       else

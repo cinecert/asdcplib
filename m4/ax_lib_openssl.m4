@@ -237,7 +237,7 @@ SSLeay();
                 if test -f "$openssl_include_dir/openssl/opensslv.h"; then
 
                     OPENSSL_VERSION=`grep OPENSSL_VERSION_TEXT $openssl_include_dir/openssl/opensslv.h \
-                                    | grep -v fips | grep -v PTEXT | cut -f 2 | tr -d \"`
+                                    | grep -v fips | grep -v PTEXT | sed -e 's/[ ][ ][ ]*/\t/g' | cut -f 2 | tr -d \"`
                     AC_SUBST([OPENSSL_VERSION])
 
                     dnl Decompose required version string and calculate numerical representation
@@ -259,7 +259,7 @@ SSLeay();
                                                \+ $((0xf))`
 
                     dnl Calculate numerical representation of detected version
-                    openssl_version_number=`expr $(($(grep OPENSSL_VERSION_NUMBER $openssl_include_dir/openssl/opensslv.h | cut -f 2 | tr -d L)))`
+                    openssl_version_number=`expr $(($(grep OPENSSL_VERSION_NUMBER $openssl_include_dir/openssl/opensslv.h | sed -e 's/[ ][ ][ ]*/\t/g' | cut -f 2 | tr -d L)))`
 
                     openssl_version_check=`expr $openssl_version_number \>\= $openssl_version_req_number`
                     if test "$openssl_version_check" = "1"; then
