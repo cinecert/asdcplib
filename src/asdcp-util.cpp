@@ -244,17 +244,15 @@ main(int argc, const char** argv)
 
   if ( Options.mode == MMT_GEN_KEY )
     {
-      Kumu::FortunaRNG RNG;
-      byte_t bin_buf[ASDCP::KeyLen];
-
-      RNG.FillRandom(bin_buf, ASDCP::KeyLen);
-      printf("%s\n", Kumu::bin2hex(bin_buf, ASDCP::KeyLen, str_buf, 64));
+      SymmetricKey key_value;
+      Kumu::GenRandomValue(key_value);
+      printf("%s\n", key_value.EncodeHex(str_buf, 64));
     }
   else if ( Options.mode == MMT_GEN_ID )
     {
-      UUID TmpID;
-      Kumu::GenRandomValue(TmpID);
-      printf("%s\n", TmpID.EncodeHex(str_buf, 64));
+      UUID id_value;
+      Kumu::GenRandomValue(id_value);
+      printf("%s\n", id_value.EncodeHex(str_buf, 64));
     }
   else if ( Options.mode == MMT_DIGEST )
     {
