@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2006-2020, John Hurst
+Copyright (c) 2020, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -32,13 +32,14 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef _KM_SHA1_H_
 #define _KM_SHA1_H_
 
-#include <KM_util.h>
+#include <KM_platform.h>
 
 namespace Kumu {
+  int const SHA1_DIGEST_LENGTH = 20;
 
   typedef struct {
-    uint32_t state[5];
-    uint32_t count[2];
+    ui32_t state[5];
+    ui32_t count[2];
     byte_t buffer[64];
   } SHA1_CTX;
 

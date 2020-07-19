@@ -1,6 +1,6 @@
 /*
 SHA-1 in C
-By Steve Reid <steve@edmweb.com>
+By Steve Reid <email redacted>
 100% Public Domain
 
 Test Vectors (from FIPS PUB 180-1)
@@ -13,6 +13,7 @@ A million repetitions of "a"
 */
 
 #include <KM_sha1.h>
+#include <string.h>
 
 using namespace Kumu;
 
@@ -41,17 +42,17 @@ using namespace Kumu;
 
 static void
 SHA1Transform(
-    uint32_t state[5],
-    const unsigned char buffer[64])
+    ui32_t state[5],
+    const byte_t buffer[64])
 {
     typedef union
     {
-        unsigned char c[64];
-        uint32_t l[16];
-        uint64_t q[8];
+        byte_t c[64];
+        ui32_t l[16];
+        ui64_t q[8];
     } CHAR64LONG16;
 
-    uint32_t a, b, c, d, e;
+    ui32_t a, b, c, d, e;
     size_t i;
     CHAR64LONG16 block[1];      /* use array to appear as a pointer */
 
@@ -185,11 +186,11 @@ Kumu::SHA1_Init(
 void
 Kumu::SHA1_Update(
     SHA1_CTX * context,
-    const unsigned char *data,
-    uint32_t len
+    const byte_t *data,
+    ui32_t len
 )
 {
-  uint32_t i, j;
+  ui32_t i, j;
 
     j = context->count[0];
     if ((context->count[0] += len << 3) < j)
@@ -219,16 +220,16 @@ Kumu::SHA1_Update(
 
 void
 Kumu::SHA1_Final(
-    unsigned char digest[20],
+    byte_t digest[20],
     SHA1_CTX * context)
 {
-    unsigned i;
-    unsigned char finalcount[8];
-    unsigned char c;
+    size_t i;
+    byte_t finalcount[8];
+    byte_t c;
 
     for (i = 0; i < 8; i++)
     {
-        finalcount[i] = (unsigned char) ((context->count[(i >= 4 ? 0 : 1)] >> ((3 - (i & 3)) * 8)) & 255); /* Endian independent */
+        finalcount[i] = (byte_t) ((context->count[(i >= 4 ? 0 : 1)] >> ((3 - (i & 3)) * 8)) & 255); /* Endian independent */
     }
 
     c = 0200;
@@ -241,8 +242,7 @@ Kumu::SHA1_Final(
     SHA1_Update(context, finalcount, 8); /* Should cause a SHA1Transform() */
     for (i = 0; i < 20; i++)
     {
-        digest[i] = (unsigned char)
-            ((context->state[i >> 2] >> ((3 - (i & 3)) * 8)) & 255);
+        digest[i] = (byte_t)((context->state[i >> 2] >> ((3 - (i & 3)) * 8)) & 255);
     }
 }
 
