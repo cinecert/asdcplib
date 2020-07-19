@@ -1,4 +1,6 @@
 /*
+public domain code distributed with asdcplib
+
 SHA-1 in C
 By Steve Reid <email redacted>
 100% Public Domain
