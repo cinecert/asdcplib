@@ -51,6 +51,7 @@ include_HEADERS = \
 	KM_platform.h \
 	KM_prng.h \
 	KM_sha1.h \
+	KM_aes.h \
 	KM_util.h \
 	KM_tai.h \
 	KM_xml.h \
@@ -104,7 +105,7 @@ endif
 libkumu_la_SOURCES = KM_error.h KM_fileio.cpp KM_fileio.h KM_log.cpp KM_log.h \
 		KM_memio.h KM_mutex.h KM_platform.h KM_prng.cpp KM_prng.h KM_util.cpp \
 		KM_util.h KM_xml.cpp KM_xml.h KM_tai.h KM_tai.cpp \
-		KM_sha1.cpp KM_sha1.h
+		KM_sha1.cpp KM_sha1.h KM_aes.h KM_aes.cpp
 
 # linker flags (*not* including libraries to link against) for a library
 libkumu_la_LDFLAGS = -release @VERSION@
@@ -145,7 +146,7 @@ libas02_la_SOURCES	= \
 	AS_02_internal.h \
 	ACES.h \
 	AS_02_ACES.h \
-  AS_02_IAB.h \
+	AS_02_IAB.h \
 	h__02_Reader.cpp \
 	h__02_Writer.cpp \
 	AS_02_JP2K.cpp \
@@ -154,7 +155,7 @@ libas02_la_SOURCES	= \
 	ST2052_TextParser.cpp \
 	AS_02_TimedText.cpp \
 	ACES.cpp \
-  AS_02_IAB.cpp \
+	AS_02_IAB.cpp \
 	ACES_Codestream_Parser.cpp \
 	ACES_Sequence_Parser.cpp \
 	AS_02_ACES.cpp
