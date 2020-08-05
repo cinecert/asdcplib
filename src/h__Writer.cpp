@@ -374,6 +374,15 @@ ASDCP::Write_EKLV_Packet(Kumu::FileWriter& File, const ASDCP::Dictionary& Dict, 
 
   byte_t overhead[128];
   Kumu::MemIOWriter Overhead(overhead, 128);
+  // We declare HMACOverhead and its buffer in the outer scope, even though it is not used on
+  // unencrypted content: the reason is that File.Writev(const byte_t* buf, ui32_t buf_len) doesn't
+  // write data right away but saves a pointer on the buffer. And we write all the buffers at the end
+  // when calling File.writev().
+  // Declaring the buffer variable in an inner scope means the buffer will go out of scope
+  // before the data it contains has been actually written, which means its content could be
+  // overwritten/get corrupted.
+  byte_t hmoverhead[512];
+  Kumu::MemIOWriter HMACOverhead(hmoverhead, 512);
 
   if ( FrameBuf.Size() == 0 )
     {
@@ -454,9 +463,6 @@ ASDCP::Write_EKLV_Packet(Kumu::FileWriter& File, const ASDCP::Dictionary& Dict, 
       if ( ASDCP_SUCCESS(result) )
 	{
 	  StreamOffset += CtFrameBuf.Size();
-
-	  byte_t hmoverhead[512];
-	  Kumu::MemIOWriter HMACOverhead(hmoverhead, 512);
 
 	  // write the HMAC
 	  if ( Info.UsesHMAC )
