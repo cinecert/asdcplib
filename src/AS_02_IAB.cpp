@@ -154,6 +154,10 @@ AS_02::IAB::MXFWriter::OpenWrite(
 
     element_ul_bytes[15] = 1;
 
+    /* only a single element */
+
+    element_ul_bytes[13] = 1;
+
     /* write the file header*/
     /* WriteAS02Header() takes ownership of desc and subdesc */
 
@@ -179,7 +183,7 @@ AS_02::IAB::MXFWriter::OpenWrite(
 
     byte_t clip_buffer[RESERVED_KL_SIZE] = { 0 };
 
-    memcpy(clip_buffer, this->m_Writer->m_Dict->ul(MDD_IMF_IABEssenceClipWrappedElement), ASDCP::SMPTE_UL_LENGTH);
+    memcpy(clip_buffer, element_ul_bytes, ASDCP::SMPTE_UL_LENGTH);
 
     if (!Kumu::write_BER(clip_buffer + ASDCP::SMPTE_UL_LENGTH, 0, CLIP_BER_LENGTH_SIZE)) {
       throw Kumu::RuntimeError(Kumu::RESULT_FAIL);
