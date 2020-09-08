@@ -322,6 +322,7 @@ read_JP2K_file(CommandOptions& Options)
 	}
     }
 
+#ifdef HAVE_OPENSSL
   if ( ASDCP_SUCCESS(result) && Options.key_flag )
     {
       Context = new AESDecContext;
@@ -343,6 +344,7 @@ read_JP2K_file(CommandOptions& Options)
 	    }
 	}
     }
+#endif // HAVE_OPENSSL
 
   ui32_t last_frame = Options.start_frame + ( Options.duration ? Options.duration : frame_count);
   if ( last_frame > frame_count )

@@ -471,9 +471,6 @@ write_JP2K_file(CommandOptions& Options)
 
   AESEncContext* Context = 0;
   HMACContext* HMAC = 0;
-  byte_t IV_buf[CBC_BLOCK_SIZE];
-  Kumu::FortunaRNG RNG;
-
   ASDCP::MXF::FileDescriptor *essence_descriptor = 0;
   ASDCP::MXF::InterchangeObject_list_t essence_sub_descriptors;
 
@@ -545,9 +542,12 @@ write_JP2K_file(CommandOptions& Options)
       else
 	Kumu::GenRandomUUID(Info.AssetUUID);
 
+#ifdef HAVE_OPENSSL
       // configure encryption
       if( Options.key_flag )
 	{
+	  byte_t IV_buf[CBC_BLOCK_SIZE];
+	  Kumu::FortunaRNG RNG;
 	  Kumu::GenRandomUUID(Info.ContextID);
 	  Info.EncryptedEssence = true;
 
@@ -569,6 +569,7 @@ write_JP2K_file(CommandOptions& Options)
 	      result = HMAC->InitKey(Options.key_value, Info.LabelSetType);
 	    }
 	}
+#endif // HAVE_OPENSSL
 
       if ( ASDCP_SUCCESS(result) )
 	{

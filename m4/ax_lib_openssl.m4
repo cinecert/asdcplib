@@ -286,5 +286,7 @@ SSLeay();
     if test "$HAVE_OPENSSL" = "yes"; then
         CPPFLAGS="$CPPFLAGS $OPENSSL_CPPFLAGS -DHAVE_SSL=1"
         LDFLAGS="$LDFLAGS $OPENSSL_LDFLAGS $OPENSSL_LIBS"
+    else
+        HAVE_OPENSSL="no"
     fi
 ])

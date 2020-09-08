@@ -24,9 +24,9 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-  /*! \file    KM_sha1.h
+  /*! \file    KM_aes.h
     \version $Id$
-    \brief   SHA-1 message digest
+    \brief   AES (Rijndael) encryption
   */
 
 #ifndef _KM_AES_H_

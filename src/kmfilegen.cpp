@@ -34,7 +34,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <iostream>
 #include <KM_fileio.h>
 #include <KM_prng.h>
-#include <openssl/aes.h>
+#include <KM_aes.h>
 #include <assert.h>
 
 using namespace Kumu;
@@ -43,7 +43,7 @@ using namespace Kumu;
 static const char* PROGRAM_NAME = "kmfilegen";  // program name for messages
 const ui32_t RNG_KEY_SIZE = 16;
 const ui32_t RNG_KEY_SIZE_BITS = 128;
-const ui32_t RNG_BLOCK_SIZE = 16;
+const ui32_t RNG_BLOCK_SIZE = AES_BLOCKLEN;
 
 // globals
 ui32_t      s_Nonce = 0;
@@ -239,7 +239,7 @@ public:
 #pragma pack(4)
 class CTR_Setup
 {
-  AES_KEY  m_Context;
+  AES_ctx  m_Context;
   byte_t   m_key[RNG_KEY_SIZE];
   byte_t   m_preamble[8];
   ui32_t   m_nonce;
@@ -264,7 +264,7 @@ public:
     m_nonce = KM_i32_LE(s_Nonce--);
     m_ctr &= KM_i32_LE(0x7fffffff); // make sure we have 2GB headroom
     memcpy(buf, m_key, WriteSize());
-    AES_set_encrypt_key(m_key, RNG_KEY_SIZE_BITS, &m_Context);
+    AES_init_ctx(&m_Context, m_key);
   }
 
   //
@@ -272,7 +272,7 @@ public:
   {
     assert(buf);
     memcpy(m_key, buf, WriteSize());
-    AES_set_encrypt_key(m_key, RNG_KEY_SIZE_BITS, &m_Context);
+    AES_init_ctx(&m_Context, m_key);
   }
 
   //
@@ -281,7 +281,8 @@ public:
     ui32_t gen_count = 0;
     while ( gen_count + RNG_BLOCK_SIZE <= buf_len )
       {
-	AES_encrypt(m_preamble, buf + gen_count, &m_Context);
+	memcpy(buf + gen_count, m_preamble, RNG_BLOCK_SIZE); 
+	AES_encrypt(&m_Context, buf + gen_count);
 	m_ctr = KM_i32_LE(KM_i32_LE(m_ctr) + 1);
 	gen_count += RNG_BLOCK_SIZE;
       }
@@ -308,9 +309,9 @@ CreateLargeFile(CommandOptions& Options)
     {
       if ( KM_SUCCESS(result))
 	{
-	  CTR_Setup CTR;
-	  CTR.SetupWrite(FB.Data());
-	  CTR.FillRandom(FB.Data() + CTR.WriteSize(), Megabyte - CTR.WriteSize());
+	  CTR_Setup counter;
+	  counter.SetupWrite(FB.Data());
+	  counter.FillRandom(FB.Data() + counter.WriteSize(), Megabyte - counter.WriteSize());
 	  result = Writer.Write(FB.RoData(), Megabyte, &write_count);
 	  assert(write_count == Megabyte);
 	  fprintf(stderr, "\r%8u ", ++write_total);
@@ -327,21 +328,21 @@ Result_t
 validate_chunk(ByteString& FB, ByteString& CB, ui32_t* nonce_value)
 {
   assert(nonce_value);
-  CTR_Setup CTR;
-  CTR.SetupRead(FB.RoData());
+  CTR_Setup counter;
+  counter.SetupRead(FB.RoData());
 
-  CTR.FillRandom(CB.Data() + CTR.WriteSize(),
-		 Megabyte - CTR.WriteSize());
+  counter.FillRandom(CB.Data() + counter.WriteSize(),
+		     Megabyte - counter.WriteSize());
 
-  if ( memcmp(FB.RoData() + CTR.WriteSize(),
-	      CB.RoData() + CTR.WriteSize(),
-	      Megabyte - CTR.WriteSize()) != 0 )
+  if ( memcmp(FB.RoData() + counter.WriteSize(),
+	      CB.RoData() + counter.WriteSize(),
+	      Megabyte - counter.WriteSize()) != 0 )
     {
       fprintf(stderr, "Check data mismatched in chunk\n");
       return RESULT_FAIL;
     }
 
-  *nonce_value = CTR.Nonce();
+  *nonce_value = counter.Nonce();
 
   return RESULT_OK;
 }
