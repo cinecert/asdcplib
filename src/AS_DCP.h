@@ -508,6 +508,11 @@ namespace ASDCP {
       // point to a readable area of memory that is at least HMAC_SIZE bytes in length.
       // Returns error if the buf argument is NULL or if the values do ot match.
       Result_t TestHMACValue(const byte_t* buf) const;
+
+      // Writes MIC key to given buffer. buf must point to a writable area of
+      // memory that is at least KeyLen bytes in length. Returns error if the
+      // buf argument is NULL.
+      Result_t GetMICKey(byte_t* buf) const;
     };
 
   //---------------------------------------------------------------------------------
