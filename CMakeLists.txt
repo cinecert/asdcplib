@@ -9,8 +9,11 @@ STRING(REGEX REPLACE "([0-9]+)[.].*" "\\1" VERSION_MAJOR ${VERSION_STRING})
 STRING(REGEX REPLACE ".*[.]([0-9]+)[.].*" "\\1" VERSION_MINOR ${VERSION_STRING})
 STRING(REGEX REPLACE ".*[.]+([0-9]+)" "\\1" VERSION_PATCH ${VERSION_STRING})
 message(STATUS "Version Number is ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}")
+
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 set_property(GLOBAL PROPERTY PREDEFINED_TARGETS_FOLDER "Default Targets")
+option(BUILD_STATIC_LIBS "Enable building static asdcp libraries" OFF) 
+
 # use, i.e. don't skip the full RPATH for the build tree
 set(CMAKE_SKIP_BUILD_RPATH  OFF)
 # when building, don't use the install RPATH already

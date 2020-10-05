@@ -62,15 +62,21 @@ endif(UseRandomUUID)
 
 set(CMAKE_DEBUG_POSTFIX _d) # Append "_d" if debug lib.
 
-add_library(libkumu ${kumu_src})
+if (BUILD_STATIC_LIBS)
+    set(BUILD_TYPE "STATIC")
+else()
+    set(BUILD_TYPE "SHARED")
+endif()
+
+add_library(libkumu ${BUILD_TYPE} ${kumu_src})
 target_link_libraries(libkumu general "${OpenSSLLib_PATH}" debug "${XercescppLib_Debug_PATH}" optimized "${XercescppLib_PATH}")
 set_target_properties(libkumu PROPERTIES PREFIX "" VERSION ${VERSION_STRING} SOVERSION ${VERSION_MAJOR})
 
-add_library(libasdcp ${asdcp_src})
+add_library(libasdcp ${BUILD_TYPE} ${asdcp_src})
 target_link_libraries(libasdcp general libkumu)
 set_target_properties(libasdcp PROPERTIES PREFIX "" VERSION ${VERSION_STRING} SOVERSION ${VERSION_MAJOR})
 
-add_library(libas02 ${as02_src})
+add_library(libas02 ${BUILD_TYPE} ${as02_src})
 target_link_libraries(libas02 general libasdcp)
 set_target_properties(libas02 PROPERTIES PREFIX "" VERSION ${VERSION_STRING} SOVERSION ${VERSION_MAJOR})
 
