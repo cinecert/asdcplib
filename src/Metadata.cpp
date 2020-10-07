@@ -366,7 +366,7 @@ EssenceContainerData::InitFromTLVSet(TLVReader& TLVSet)
   assert(m_Dict);
   Result_t result = InterchangeObject::InitFromTLVSet(TLVSet);
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(EssenceContainerData, LinkedPackageUID));
-  if ( ASDCP_SUCCESS(result) ) { 
+  if ( ASDCP_SUCCESS(result) && ! IndexSID.empty() ) {
     result = TLVSet.ReadUi32(OBJ_READ_ARGS_OPT(EssenceContainerData, IndexSID));
     IndexSID.set_has_value( result == RESULT_OK );
   }
