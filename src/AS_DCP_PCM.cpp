@@ -51,7 +51,10 @@ ASDCP::PCM_ADesc_to_MD(PCM::AudioDescriptor& ADesc, MXF::WaveAudioDescriptor* AD
   ADescObj->QuantizationBits = ADesc.QuantizationBits;
   ADescObj->BlockAlign = ADesc.BlockAlign;
   ADescObj->AvgBps = ADesc.AvgBps;
-  ADescObj->LinkedTrackID = ADesc.LinkedTrackID;
+  if ( ! ADesc.LinkedTrackID.empty() )
+    {
+      ADescObj->LinkedTrackID = ADesc.LinkedTrackID;
+    }
   ADescObj->ContainerDuration = ADesc.ContainerDuration;
 
   ADescObj->ChannelAssignment.get().Reset();
@@ -98,7 +101,10 @@ ASDCP::MD_to_PCM_ADesc(MXF::WaveAudioDescriptor* ADescObj, PCM::AudioDescriptor&
   ADesc.QuantizationBits = ADescObj->QuantizationBits;
   ADesc.BlockAlign = ADescObj->BlockAlign;
   ADesc.AvgBps = ADescObj->AvgBps;
-  ADesc.LinkedTrackID = ADescObj->LinkedTrackID;
+  if ( ! ADescObj.LinkedTrackID.empty() )
+    {
+      ADesc.LinkedTrackID = ADescObj->LinkedTrackID;
+    }
   assert(ADescObj->ContainerDuration <= 0xFFFFFFFFL);
   ADesc.ContainerDuration = (ui32_t) ADescObj->ContainerDuration;
 
