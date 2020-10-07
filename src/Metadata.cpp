@@ -1279,7 +1279,7 @@ FileDescriptor::InitFromTLVSet(TLVReader& TLVSet)
 {
   assert(m_Dict);
   Result_t result = GenericDescriptor::InitFromTLVSet(TLVSet);
-  if ( ASDCP_SUCCESS(result) && ( ! LinkedTrackID.empty() ) {
+  if ( ASDCP_SUCCESS(result) && ! LinkedTrackID.empty() ) {
     result = TLVSet.ReadUi32(OBJ_READ_ARGS_OPT(FileDescriptor, LinkedTrackID));
     LinkedTrackID.set_has_value( result == RESULT_OK );
   }
