@@ -906,7 +906,7 @@ StructuralComponent::InitFromTLVSet(TLVReader& TLVSet)
   assert(m_Dict);
   Result_t result = InterchangeObject::InitFromTLVSet(TLVSet);
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(StructuralComponent, DataDefinition));
-  if ( ASDCP_SUCCESS(result) ) { 
+  if ( ASDCP_SUCCESS(result) && ! Duration.empty() ) {
     result = TLVSet.ReadUi64(OBJ_READ_ARGS_OPT(StructuralComponent, Duration));
     Duration.set_has_value( result == RESULT_OK );
   }
@@ -2588,7 +2588,7 @@ DMSegment::InitFromTLVSet(TLVReader& TLVSet)
   assert(m_Dict);
   Result_t result = InterchangeObject::InitFromTLVSet(TLVSet);
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(DMSegment, DataDefinition));
-  if ( ASDCP_SUCCESS(result) ) { 
+  if ( ASDCP_SUCCESS(result) && ! Duration.empty() ) {
     result = TLVSet.ReadUi64(OBJ_READ_ARGS_OPT(DMSegment, Duration));
     Duration.set_has_value( result == RESULT_OK );
   }
