@@ -35,16 +35,12 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   For more information about AS-02, please refer to the header file AS_02.h
   For more information about asdcplib, please refer to the header file AS_DCP.h
 */
-
 #include <KM_fileio.h>
+#include <KM_xml.h>
 #include <AS_02.h>
 #include "AS_02_ACES.h"
 #include <PCMParserList.h>
 #include <Metadata.h>
-
-#ifdef HAVE_XERCES_C
-#include <KM_xml.h>
-#endif
 
 using namespace ASDCP;
 
@@ -1595,8 +1591,6 @@ write_PCM_file(CommandOptions& Options)
 }
 
 
-
-#ifdef HAVE_XERCES_C
 //------------------------------------------------------------------------------------------
 // TimedText essence
 
@@ -1726,7 +1720,6 @@ write_timed_text_file(CommandOptions& Options)
 
   return result;
 }
-#endif // HAVE_XERCES_C
 
 //
 bool
@@ -1817,7 +1810,6 @@ write_isxd_file(CommandOptions& Options)
 
     if ( ASDCP_SUCCESS(result) )
       {
-#ifdef HAVE_XERCES_C
 	if ( Options.isxd_document_namespace == "auto" )
 	  {
 	    // get ns of first item
@@ -1841,7 +1833,6 @@ write_isxd_file(CommandOptions& Options)
 		return RESULT_FAIL;
 	      }
 	  }
-#endif
 
 	result = Writer.OpenWrite(Options.out_file, Info, Options.isxd_document_namespace, Options.edit_rate);
       }
@@ -1913,12 +1904,10 @@ write_isxd_file(CommandOptions& Options)
 		    return RESULT_READFAIL;
 
 		  global_metadata.Size(read_count);
-#ifdef HAVE_XERCES_C
 		  std::string ns_prefix, type_name;
 		  Kumu::AttributeList doc_attr_list;
 		  result = GetXMLDocType(global_metadata.RoData(), global_metadata.Size(), ns_prefix, type_name,
 					 namespace_name, doc_attr_list) ? RESULT_OK : RESULT_FAIL;
-#endif
 		}
 
 	      if ( KM_SUCCESS(result) )
@@ -2001,11 +1990,9 @@ main(int argc, const char** argv)
 	  result = write_PCM_file(Options);
 	  break;
 
-#ifdef HAVE_XERCES_C
 	case ESS_TIMED_TEXT:
 	  result = write_timed_text_file(Options);
 	  break;
-#endif //HAVE_XERCES_C
 
 	case ESS_DCDATA_UNKNOWN:
 	  if ( ! Options.isxd_document_namespace.empty() )

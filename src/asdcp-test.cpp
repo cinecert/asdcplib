@@ -1478,7 +1478,6 @@ read_PCM_file(CommandOptions& Options)
 }
 
 
-#ifdef HAVE_XERCES_C
 //------------------------------------------------------------------------------------------
 // TimedText essence
 
@@ -1601,7 +1600,6 @@ write_timed_text_file(CommandOptions& Options)
 
   return result;
 }
-#endif //HAVE_XERCES_C
 
 
 // Read one or more timed text streams from a plaintext ASDCP file
@@ -2079,11 +2077,9 @@ main(int argc, const char** argv)
 	      result = write_PCM_file(Options);
 	      break;
 
-#ifdef HAVE_XERCES_C
 	    case ESS_TIMED_TEXT:
 	      result = write_timed_text_file(Options);
 	      break;
-#endif //HAVE_XERCES_C
 
 	    default:
 	      fprintf(stderr, "%s: Unknown file type, not ASDCP-compatible essence.\n",

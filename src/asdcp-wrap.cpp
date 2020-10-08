@@ -1306,9 +1306,6 @@ write_PCM_with_ATMOS_sync_file(CommandOptions& Options)
   return result;
 }
 
-
-#ifdef HAVE_XERCES_C
-
 //------------------------------------------------------------------------------------------
 // TimedText essence
 
@@ -1433,8 +1430,6 @@ write_timed_text_file(CommandOptions& Options)
 
   return result;
 }
-
-#endif //HAVE_XERCES_C
 
 // Write one or more plaintext Dolby ATMOS bytestreams to a plaintext ASDCP file
 // Write one or more plaintext Dolby ATMOS bytestreams to a ciphertext ASDCP file
@@ -1746,11 +1741,9 @@ main(int argc, const char** argv)
 	    }
 	  break;
 	  
-#ifdef HAVE_XERCES_C
 	case ESS_TIMED_TEXT:
 	  result = write_timed_text_file(Options);
 	  break;
-#endif //HAVE_XERCES_C
 
 	case ESS_DCDATA_DOLBY_ATMOS:
 	  result = write_dolby_atmos_file(Options);
