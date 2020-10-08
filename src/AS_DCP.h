@@ -223,6 +223,7 @@ namespace ASDCP {
     ESS_AS02_TIMED_TEXT,      // the file contains a TTML document and zero or more resources
     ESS_AS02_ISXD,            // the file contains an ISXD document stream (per SMPTE RDD 47)
     ESS_AS02_ACES,            // the file contains two or more ACES codestreams (per SMPTE ST 2067-50)
+    ESS_AS02_IAB,             // the file contains an IAB stream (per SMPTE ST 2067-201)
     ESS_MAX
   };
 
@@ -507,6 +508,11 @@ namespace ASDCP {
       // point to a readable area of memory that is at least HMAC_SIZE bytes in length.
       // Returns error if the buf argument is NULL or if the values do ot match.
       Result_t TestHMACValue(const byte_t* buf) const;
+
+      // Writes MIC key to given buffer. buf must point to a writable area of
+      // memory that is at least KeyLen bytes in length. Returns error if the
+      // buf argument is NULL.
+      Result_t GetMICKey(byte_t* buf) const;
     };
 
   //---------------------------------------------------------------------------------
@@ -1455,7 +1461,7 @@ namespace ASDCP {
 	byte_t      ResourceID[UUIDlen];
           MIMEType_t  Type;
 
-        TimedTextResourceDescriptor() : Type(MT_BIN) {}
+        TimedTextResourceDescriptor() : Type(MT_BIN) { memset(ResourceID, 0, UUIDlen); }
       };
 
       typedef std::list<TimedTextResourceDescriptor> ResourceList_t;
@@ -1469,7 +1475,7 @@ namespace ASDCP {
 	std::string    EncodingName;
 	ResourceList_t ResourceList;
 
-      TimedTextDescriptor() : ContainerDuration(0), EncodingName("UTF-8") {} // D-Cinema format is always UTF-8
+      TimedTextDescriptor() : ContainerDuration(0), EncodingName("UTF-8") { memset(AssetID, 0, UUIDlen); } // D-Cinema format is always UTF-8
       };
 
       // Print debugging information to std::ostream

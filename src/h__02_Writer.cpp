@@ -161,7 +161,17 @@ AS_02::MXF::AS02IndexWriterVBR::PushIndexEntry(const IndexTableSegment::IndexEnt
       m_CurrentSegment->DeltaEntryArray.push_back(IndexTableSegment::DeltaEntry());
       m_CurrentSegment->IndexEditRate = m_EditRate;
       m_CurrentSegment->IndexStartPosition = 0;
-    }
+    } else if (m_CurrentSegment->IndexEntryArray.size() >= CBRIndexEntriesPerSegment) { // no, this one is full, start another
+      m_CurrentSegment->IndexDuration = m_CurrentSegment->IndexEntryArray.size();
+      ui64_t StartPosition = m_CurrentSegment->IndexStartPosition + m_CurrentSegment->IndexDuration;
+
+      m_CurrentSegment = new IndexTableSegment(m_Dict);
+      assert(m_CurrentSegment);
+      AddChildObject(m_CurrentSegment);
+      m_CurrentSegment->DeltaEntryArray.push_back(IndexTableSegment::DeltaEntry());
+      m_CurrentSegment->IndexEditRate = m_EditRate;
+      m_CurrentSegment->IndexStartPosition = StartPosition;
+  }
 
   m_CurrentSegment->IndexEntryArray.push_back(Entry);
 }

@@ -496,7 +496,7 @@ AS_02::TimedText::MXFWriter::h__Writer::SetSourceStream(ASDCP::TimedText::TimedT
       m_EditRate = TDesc.EditRate;
       result = WriteAS02Header(TIMED_TEXT_PACKAGE_LABEL, UL(m_Dict->ul(MDD_TimedTextWrappingClip)),
 			       "Data Track", UL(m_EssenceUL), UL(m_Dict->ul(MDD_DataDataDef)),
-			       TDesc.EditRate, derive_timecode_rate_from_edit_rate(TDesc.EditRate));
+			       TDesc.EditRate);
     }
 
   return result;

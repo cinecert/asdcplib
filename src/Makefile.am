@@ -143,6 +143,7 @@ libas02_la_SOURCES	= \
 	AS_02_internal.h \
 	ACES.h \
 	AS_02_ACES.h \
+  AS_02_IAB.h \
 	h__02_Reader.cpp \
 	h__02_Writer.cpp \
 	AS_02_JP2K.cpp \
@@ -151,6 +152,7 @@ libas02_la_SOURCES	= \
 	ST2052_TextParser.cpp \
 	AS_02_TimedText.cpp \
 	ACES.cpp \
+  AS_02_IAB.cpp \
 	ACES_Codestream_Parser.cpp \
 	ACES_Sequence_Parser.cpp \
 	AS_02_ACES.cpp

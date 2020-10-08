@@ -1742,6 +1742,12 @@ ASDCP::MXF::decode_mca_string(const std::string& s, const mca_label_map_t& label
 	  return false;
 	}
 
+      if ( ! ul_is_an_mca_channel(i->second.ul) )
+	{
+	  DefaultLogSink().Error("Not a channel symbol: '%s'\n", symbol_buf.c_str());
+	  return false;
+	}
+
       ASDCP::MXF::AudioChannelLabelSubDescriptor *channel_descr =
 	new ASDCP::MXF::AudioChannelLabelSubDescriptor(dict);
       GenRandomValue(channel_descr->MCALinkID);

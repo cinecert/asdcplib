@@ -349,6 +349,13 @@ public:
     SHA1_Final(m_SHAValue, &SHA);
     m_Final = true;
   }
+
+  //
+  void
+  GetMICKey(byte_t* buf) const
+  {
+    memcpy(buf, m_key, KeyLen);
+  }
 };
 
 
@@ -441,6 +448,20 @@ HMACContext::TestHMACValue(const byte_t* buf) const
     return RESULT_INIT;
   
   return ( memcmp(buf, m_Context->m_SHAValue, HMAC_SIZE) == 0 ) ? RESULT_OK : RESULT_HMACFAIL;
+}
+
+
+//
+Result_t
+HMACContext::GetMICKey(byte_t* buf) const
+{
+  KM_TEST_NULL_L(buf);
+
+  if ( m_Context.empty() )
+    return RESULT_INIT;
+
+  m_Context->GetMICKey(buf);
+  return RESULT_OK;
 }
 
 
