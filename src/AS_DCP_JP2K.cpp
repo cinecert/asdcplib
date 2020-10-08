@@ -319,7 +319,7 @@ ASDCP::JP2K_PDesc_to_MD(const JP2K::PictureDescriptor& PDesc,
   EssenceSubDescriptor.PictureComponentSizing.set_has_value();
 
   ui32_t precinct_set_size = 0;
-  for ( ui32_t i = 0; PDesc.CodingStyleDefault.SPcod.PrecinctSize[i] != 0 && i < MaxPrecincts; ++i )
+  for ( ui32_t i = 0; i < MaxPrecincts && PDesc.CodingStyleDefault.SPcod.PrecinctSize[i] != 0; ++i )
     precinct_set_size++;
 
   ui32_t csd_size = sizeof(CodingStyleDefault_t) - MaxPrecincts + precinct_set_size;

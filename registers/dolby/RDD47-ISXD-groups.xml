@@ -1,12 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <!-- Metadata tags to support XML file editing -->
 <!-- author= Raymond Yeung (raymond.yeung@dolby.com) -->
-<!-- summary_of_edit= Groups Register for RDD47 ISXD -->
-<!--  -->
-<!-- DO NOT EDIT THIS TAG -->
-<!-- master_commit_tag=v000000081 -->
-<!-- DO NOT EDIT THIS TAG -->
-<!--  -->
 <GroupsRegister xmlns="http://www.smpte-ra.org/ns/395/2016">
   <Entries>
     <Entry>
