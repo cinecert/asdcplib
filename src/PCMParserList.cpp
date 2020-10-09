@@ -193,7 +193,9 @@ ASDCP::PCMParserList::OpenRead(const Kumu::PathList_t& argv, const Rational& Pic
 		  return RESULT_FORMAT;
 		}
 
-	      m_ADesc.ContainerDuration = I->ADesc.ContainerDuration;
+              if ( I->ADesc.ContainerDuration < m_ADesc.ContainerDuration )
+	        m_ADesc.ContainerDuration = I->ADesc.ContainerDuration;
+
 	      m_ADesc.BlockAlign += I->ADesc.BlockAlign;
 	    }
 
