@@ -281,8 +281,10 @@ read_JP2K_file(CommandOptions& Options)
       if ( KM_SUCCESS(result) )
 	{
 	  assert(rgba_descriptor);
-	  frame_count = rgba_descriptor->ContainerDuration;
-
+          if ( ! rgba_descriptor->ContainerDuration.empty() )
+            {
+	      frame_count = rgba_descriptor->ContainerDuration;
+            }
 	  if ( Options.verbose_flag )
 	    {
 	      rgba_descriptor->Dump();
@@ -296,8 +298,10 @@ read_JP2K_file(CommandOptions& Options)
 	  if ( KM_SUCCESS(result) )
 	    {
 	      assert(cdci_descriptor);
-	      frame_count = cdci_descriptor->ContainerDuration;
-
+              if ( ! cdci_descriptor->ContainerDuration.empty() )
+                {
+	          frame_count = cdci_descriptor->ContainerDuration;
+                }
 	      if ( Options.verbose_flag )
 		{
 		  cdci_descriptor->Dump();

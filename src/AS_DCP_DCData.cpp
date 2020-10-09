@@ -99,8 +99,11 @@ ASDCP::DCData::MXFReader::h__Reader::MD_to_DCData_DDesc(const MXF::DCDataDescrip
 							DCData::DCDataDescriptor& DDesc)
 {
   DDesc.EditRate = descriptor_object.SampleRate;
-  assert(descriptor_object.ContainerDuration.const_get() <= 0xFFFFFFFFL);
-  DDesc.ContainerDuration = static_cast<ui32_t>(descriptor_object.ContainerDuration.const_get());
+  if ( ! descriptor_object.ContainerDuration.empty() )
+    {
+      assert(descriptor_object.ContainerDuration.const_get() <= 0xFFFFFFFFL);
+      DDesc.ContainerDuration = static_cast<ui32_t>(descriptor_object.ContainerDuration.const_get());
+    }
   memcpy(DDesc.DataEssenceCoding, descriptor_object.DataEssenceCoding.Value(), SMPTE_UL_LENGTH);
   return RESULT_OK;
 }
@@ -111,8 +114,11 @@ ASDCP::DCData::MXFReader::h__Reader::MD_to_DCData_DDesc(const MXF::PrivateDCData
 							DCData::DCDataDescriptor& DDesc)
 {
   DDesc.EditRate = descriptor_object.SampleRate;
-  assert(descriptor_object.ContainerDuration.const_get() <= 0xFFFFFFFFL);
-  DDesc.ContainerDuration = static_cast<ui32_t>(descriptor_object.ContainerDuration.const_get());
+  if ( ! descriptor_object.ContainerDuration.empty() )
+    {
+      assert(descriptor_object.ContainerDuration.const_get() <= 0xFFFFFFFFL);
+      DDesc.ContainerDuration = static_cast<ui32_t>(descriptor_object.ContainerDuration.const_get());
+    }
   memcpy(DDesc.DataEssenceCoding, descriptor_object.DataEssenceCoding.Value(), SMPTE_UL_LENGTH);
   return RESULT_OK;
 }

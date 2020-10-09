@@ -48,9 +48,11 @@ MD_to_MPEG2_VDesc(MXF::MPEG2VideoDescriptor* VDescObj, MPEG2::VideoDescriptor& V
   VDesc.SampleRate             = VDescObj->SampleRate;
   VDesc.EditRate               = VDescObj->SampleRate;
   VDesc.FrameRate              = VDescObj->SampleRate.Numerator;
-  assert(VDescObj->ContainerDuration <= 0xFFFFFFFFL);
-  VDesc.ContainerDuration      = (ui32_t) VDescObj->ContainerDuration;
-
+  if ( ! VDescObj->ContainerDuration.empty() )
+    {
+      assert(VDescObj->ContainerDuration <= 0xFFFFFFFFL);
+      VDesc.ContainerDuration      = (ui32_t) VDescObj->ContainerDuration;
+    }
   VDesc.FrameLayout            = VDescObj->FrameLayout;
   VDesc.StoredWidth            = VDescObj->StoredWidth;
   VDesc.StoredHeight           = VDescObj->StoredHeight;
@@ -77,7 +79,6 @@ MPEG2_VDesc_to_MD(MPEG2::VideoDescriptor& VDesc, MXF::MPEG2VideoDescriptor* VDes
 
   VDescObj->SampleRate = VDesc.SampleRate;
   VDescObj->ContainerDuration = VDesc.ContainerDuration;
-
   VDescObj->FrameLayout = VDesc.FrameLayout;
   VDescObj->StoredWidth = VDesc.StoredWidth;
   VDescObj->StoredHeight = VDesc.StoredHeight;

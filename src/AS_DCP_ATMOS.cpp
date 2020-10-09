@@ -132,8 +132,11 @@ ASDCP::ATMOS::MXFReader::h__Reader::MD_to_DCData_DDesc(ASDCP::DCData::DCDataDesc
   ASDCP_TEST_NULL(m_EssenceDescriptor);
   MXF::PrivateDCDataDescriptor* DDescObj = m_EssenceDescriptor;
   DDesc.EditRate = DDescObj->SampleRate;
-  assert(DDescObj->ContainerDuration <= 0xFFFFFFFFL);
-  DDesc.ContainerDuration = static_cast<ui32_t>(DDescObj->ContainerDuration);
+  if ( ! DDescObj->ContainerDuration.empty() )
+    {
+      assert(DDescObj->ContainerDuration <= 0xFFFFFFFFL);
+      DDesc.ContainerDuration = static_cast<ui32_t>(DDescObj->ContainerDuration);
+    }
   memcpy(DDesc.DataEssenceCoding, DDescObj->DataEssenceCoding.Value(), SMPTE_UL_LENGTH);
   return RESULT_OK;
 }
