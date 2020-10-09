@@ -1231,6 +1231,25 @@ ASDCP::MXF::OPAtomIndexFooter::GetMDObjectsByType(const byte_t* ObjectID, std::l
 }
 
 //
+ui64_t
+ASDCP::MXF::OPAtomIndexFooter::ContainerDuration() const
+{
+  ui64_t container_duration = 0;
+  std::list<InterchangeObject*>::iterator li;
+  for ( li = m_PacketList->m_List.begin(); li != m_PacketList->m_List.end(); li++ )
+    {
+      IndexTableSegment *segment = dynamic_cast<IndexTableSegment*>(*li);
+
+      if ( segment != 0 )
+        {
+          container_duration += segment->IndexDuration;
+        }
+    }
+
+  return container_duration;
+}
+
+//
 ASDCP::Result_t
 ASDCP::MXF::OPAtomIndexFooter::Lookup(ui32_t frame_num, IndexTableSegment::IndexEntry& Entry) const
 {
