@@ -370,7 +370,7 @@ EssenceContainerData::InitFromTLVSet(TLVReader& TLVSet)
   assert(m_Dict);
   Result_t result = InterchangeObject::InitFromTLVSet(TLVSet);
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(EssenceContainerData, LinkedPackageUID));
-  if ( ASDCP_SUCCESS(result) && ! IndexSID.empty() ) {
+  if ( ASDCP_SUCCESS(result) ) { 
     result = TLVSet.ReadUi32(OBJ_READ_ARGS_OPT(EssenceContainerData, IndexSID));
     IndexSID.set_has_value( result == RESULT_OK );
   }
@@ -910,7 +910,7 @@ StructuralComponent::InitFromTLVSet(TLVReader& TLVSet)
   assert(m_Dict);
   Result_t result = InterchangeObject::InitFromTLVSet(TLVSet);
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(StructuralComponent, DataDefinition));
-  if ( ASDCP_SUCCESS(result) && ! Duration.empty() ) {
+  if ( ASDCP_SUCCESS(result) ) { 
     result = TLVSet.ReadUi64(OBJ_READ_ARGS_OPT(StructuralComponent, Duration));
     Duration.set_has_value( result == RESULT_OK );
   }
@@ -1283,7 +1283,7 @@ FileDescriptor::InitFromTLVSet(TLVReader& TLVSet)
 {
   assert(m_Dict);
   Result_t result = GenericDescriptor::InitFromTLVSet(TLVSet);
-  if ( ASDCP_SUCCESS(result) && ! LinkedTrackID.empty() ) {
+  if ( ASDCP_SUCCESS(result) ) { 
     result = TLVSet.ReadUi32(OBJ_READ_ARGS_OPT(FileDescriptor, LinkedTrackID));
     LinkedTrackID.set_has_value( result == RESULT_OK );
   }
@@ -2592,7 +2592,7 @@ DMSegment::InitFromTLVSet(TLVReader& TLVSet)
   assert(m_Dict);
   Result_t result = InterchangeObject::InitFromTLVSet(TLVSet);
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(DMSegment, DataDefinition));
-  if ( ASDCP_SUCCESS(result) && ! Duration.empty() ) {
+  if ( ASDCP_SUCCESS(result) ) { 
     result = TLVSet.ReadUi64(OBJ_READ_ARGS_OPT(DMSegment, Duration));
     Duration.set_has_value( result == RESULT_OK );
   }
