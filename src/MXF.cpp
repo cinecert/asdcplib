@@ -629,7 +629,7 @@ ASDCP::MXF::Preface::InitFromTLVSet(TLVReader& TLVSet)
   Result_t result = InterchangeObject::InitFromTLVSet(TLVSet);
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(Preface, LastModifiedDate));
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadUi16(OBJ_READ_ARGS(Preface, Version));
-  if ( ASDCP_SUCCESS(result) && ! ObjectModelVersion.empty() ) result = TLVSet.ReadUi32(OBJ_READ_ARGS_OPT(Preface, ObjectModelVersion));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadUi32(OBJ_READ_ARGS_OPT(Preface, ObjectModelVersion));
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS_OPT(Preface, PrimaryPackage));
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(Preface, Identifications));
   if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(Preface, ContentStorage));
