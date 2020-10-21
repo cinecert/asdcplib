@@ -90,8 +90,11 @@ AS_02::TimedText::MXFReader::h__Reader::MD_to_TimedText_TDesc(TimedTextDescripto
   ASDCP::MXF::TimedTextDescriptor* TDescObj = (ASDCP::MXF::TimedTextDescriptor*)m_EssenceDescriptor;
 
   TDesc.EditRate = TDescObj->SampleRate;
-  assert(TDescObj->ContainerDuration <= 0xFFFFFFFFL);
-  TDesc.ContainerDuration = (ui32_t) TDescObj->ContainerDuration;
+  if ( ! TDescObj->ContainerDuration.empty() )
+    {
+      assert(TDescObj->ContainerDuration <= 0xFFFFFFFFL);
+      TDesc.ContainerDuration = (ui32_t) TDescObj->ContainerDuration;
+    }
   memcpy(TDesc.AssetID, TDescObj->ResourceID.Value(), UUIDlen);
   TDesc.NamespaceName = TDescObj->NamespaceURI;
   TDesc.EncodingName = TDescObj->UCSEncoding;
@@ -637,7 +640,6 @@ AS_02::TimedText::MXFWriter::h__Writer::Finalize()
       DefaultLogSink().Error("Cannot finalize file, the primary essence resource has not been written.\n");
       return RESULT_STATE;
     }
-
   m_FramesWritten = m_TDesc.ContainerDuration;
 
   Result_t result = m_State.Goto_FINAL();
