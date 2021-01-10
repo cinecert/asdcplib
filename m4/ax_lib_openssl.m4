@@ -289,4 +289,5 @@ SSLeay();
     else
         HAVE_OPENSSL="no"
     fi
+    AM_CONDITIONAL([HAVE_OPENSSL], [test x$HAVE_OPENSSL = xyes])
 ])
