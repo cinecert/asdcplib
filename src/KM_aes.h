@@ -44,9 +44,9 @@ namespace Kumu {
     ui8_t RoundKey[AES_keyExpSize];
   };
 
-  void AES_init_ctx(struct AES_ctx* ctx, const uint8_t* key);
-  void AES_encrypt(const struct AES_ctx* ctx, uint8_t* buf);
-  void AES_decrypt(const struct AES_ctx* ctx, uint8_t* buf);
+  void AES_init_ctx(struct AES_ctx* ctx, const ui8_t* key);
+  void AES_encrypt(const struct AES_ctx* ctx, ui8_t* buf);
+  void AES_decrypt(const struct AES_ctx* ctx, ui8_t* buf);
 
 }; // end namespace
 
