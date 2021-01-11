@@ -36,27 +36,15 @@ endif(NOT WIN32)
 
 # ----------libkumu----------
 # source
-set(kumu_src KM_fileio.cpp KM_log.cpp KM_util.cpp KM_tai.cpp)
-
-if (HAVE_OPENSSL)
-	list(APPEND kumu_src KM_prng.cpp)
-endif()
-
-if (HAVE_XERCES_C)
-	list(APPEND kumu_src KM_xml.cpp)
-endif()
+set(kumu_src KM_fileio.cpp KM_log.cpp KM_util.cpp KM_tai.cpp KM_prng.cpp KM_aes.cpp KM_xml.cpp)
 
 # header
-set(kumu_src ${kumu_src} KM_fileio.h KM_log.h KM_prng.h KM_util.h KM_tai.h KM_error.h KM_memio.h KM_mutex.h KM_platform.h dirent_win.h)
-
-if (HAVE_XERCES_C)
-	list(APPEND kumu_src KM_xml.h)
-endif()
+set(kumu_src ${kumu_src} KM_fileio.h KM_log.h KM_prng.h KM_util.h KM_tai.h KM_error.h KM_memio.h KM_mutex.h KM_platform.h dirent_win.h KM_aes.h KM_xml.h)
 
 # ----------libasdcp----------
 # source
 set(asdcp_src MPEG2_Parser.cpp MPEG.cpp JP2K_Codestream_Parser.cpp JP2K_Sequence_Parser.cpp JP2K.cpp PCM_Parser.cpp Wav.cpp
-	KLV.cpp Dict.cpp MXFTypes.cpp MXF.cpp Index.cpp Metadata.cpp AS_DCP.cpp AS_DCP_MXF.cpp
+	KLV.cpp Dict.cpp MXFTypes.cpp MXF.cpp Index.cpp Metadata.cpp AS_DCP.cpp AS_DCP_MXF.cpp TimedText_Parser.cpp
 	h__Reader.cpp h__Writer.cpp AS_DCP_MPEG2.cpp AS_DCP_JP2K.cpp AS_DCP_PCM.cpp AS_DCP_TimedText.cpp PCMParserList.cpp MDD.cpp
 	AS_DCP_ATMOS.cpp AS_DCP_DCData.cpp DCData_ByteStream_Parser.cpp DCData_Sequence_Parser.cpp AtmosSyncChannel_Generator.cpp
 	AtmosSyncChannel_Mixer.cpp PCMDataProviders.cpp SyncEncoder.c CRC16.c UUIDInformation.c
@@ -64,10 +52,6 @@ set(asdcp_src MPEG2_Parser.cpp MPEG.cpp JP2K_Codestream_Parser.cpp JP2K_Sequence
 
 if (HAVE_OPENSSL)
 	list(APPEND asdcp_src AS_DCP_AES.cpp)
-endif()
-
-if (HAVE_XERCES_C)
-	list(APPEND asdcp_src TimedText_Parser.cpp)
 endif()
 
 # header for deployment (install target)
@@ -81,11 +65,7 @@ set(asdcp_src ${asdcp_src} Wav.h WavFileWriter.h MXF.h Metadata.h JP2K.h AS_DCP.
 
 # ----------as02----------
 # source
-set(as02_src h__02_Reader.cpp h__02_Writer.cpp AS_02_ISXD.cpp AS_02_JP2K.cpp AS_02_PCM.cpp ST2052_TextParser.cpp AS_02_TimedText.cpp AS_02_ACES.cpp ACES_Codestream_Parser.cpp ACES_Sequence_Parser.cpp ACES.cpp AS_02_IAB.cpp)
-
-if (HAVE_XERCES_C)
-	list(APPEND as02_src ST2052_TextParser.cpp)
-endif (HAVE_XERCES_C)
+set(as02_src h__02_Reader.cpp h__02_Writer.cpp AS_02_ISXD.cpp AS_02_JP2K.cpp AS_02_PCM.cpp ST2052_TextParser.cpp AS_02_TimedText.cpp AS_02_ACES.cpp ACES_Codestream_Parser.cpp ACES_Sequence_Parser.cpp ACES.cpp AS_02_IAB.cpp ST2052_TextParser.cpp)
 
 # header for deployment (install target)
 set(as02_deploy_header AS_02.h Metadata.h MXF.h MXFTypes.h KLV.h MDD.h AS_02_ACES.h ACES.h AS_02_IAB.h AS_02_internal.h)
