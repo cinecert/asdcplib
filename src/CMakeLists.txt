@@ -36,10 +36,10 @@ endif(NOT WIN32)
 
 # ----------libkumu----------
 # source
-set(kumu_src KM_fileio.cpp KM_log.cpp KM_util.cpp KM_tai.cpp KM_prng.cpp KM_aes.cpp KM_xml.cpp)
+set(kumu_src KM_fileio.cpp KM_log.cpp KM_util.cpp KM_tai.cpp KM_prng.cpp KM_aes.cpp KM_xml.cpp KM_sha1.cpp)
 
 # header
-set(kumu_src ${kumu_src} KM_fileio.h KM_log.h KM_prng.h KM_util.h KM_tai.h KM_error.h KM_memio.h KM_mutex.h KM_platform.h dirent_win.h KM_aes.h KM_xml.h)
+set(kumu_src ${kumu_src} KM_fileio.h KM_log.h KM_prng.h KM_util.h KM_tai.h KM_error.h KM_memio.h KM_mutex.h KM_platform.h dirent_win.h KM_aes.h KM_xml.h KM_sha1.h)
 
 # ----------libasdcp----------
 # source
@@ -131,25 +131,23 @@ if(WIN32)
 	target_link_libraries(wavesplit general Advapi32.lib)
 endif(WIN32)
 
-if (HAVE_OPENSSL)
-	add_executable(kmuuidgen "kmuuidgen.cpp")
-	target_link_libraries(kmuuidgen general libkumu)
-	if(WIN32)
-		target_link_libraries(kmuuidgen general Advapi32.lib)
-	endif(WIN32)
+add_executable(kmuuidgen "kmuuidgen.cpp")
+target_link_libraries(kmuuidgen general libkumu)
+if(WIN32)
+	target_link_libraries(kmuuidgen general Advapi32.lib)
+endif(WIN32)
 
-	add_executable(kmrandgen "kmrandgen.cpp")
-	target_link_libraries(kmrandgen general libkumu)
-	if(WIN32)
-		target_link_libraries(kmrandgen general Advapi32.lib)
-	endif(WIN32)
+add_executable(kmrandgen "kmrandgen.cpp")
+target_link_libraries(kmrandgen general libkumu)
+if(WIN32)
+	target_link_libraries(kmrandgen general Advapi32.lib)
+endif(WIN32)
 
-	add_executable(kmfilegen "kmfilegen.cpp")
-	target_link_libraries(kmfilegen general libkumu)
-	if(WIN32)
-		target_link_libraries(kmfilegen general Advapi32.lib)
-	endif(WIN32)
-endif(HAVE_OPENSSL)
+add_executable(kmfilegen "kmfilegen.cpp")
+target_link_libraries(kmfilegen general libkumu)
+if(WIN32)
+	target_link_libraries(kmfilegen general Advapi32.lib)
+endif(WIN32)
 
 add_executable(klvwalk "klvwalk.cpp")
 target_link_libraries(klvwalk general libasdcp)
@@ -214,10 +212,7 @@ endif(WIN32)
 # add the install target
 install(TARGETS libkumu libasdcp libas02 EXPORT asdcplibtargets RUNTIME DESTINATION bin LIBRARY DESTINATION lib ARCHIVE DESTINATION lib INCLUDES DESTINATION "${OpenSSLLib_include_DIR}" "${XercescppLib_include_DIR}")
 
-set(install_targets blackwave wavesplit klvwalk asdcp-test asdcp-wrap asdcp-unwrap asdcp-info asdcp-util j2c-test as-02-wrap as-02-unwrap as-02-info)
-if (HAVE_OPENSSL)
-	list(APPEND install_targets kmfilegen kmuuidgen kmrandgen)
-endif(HAVE_OPENSSL)
+set(install_targets blackwave wavesplit klvwalk asdcp-test asdcp-wrap asdcp-unwrap asdcp-info asdcp-util j2c-test as-02-wrap as-02-unwrap as-02-info kmfilegen kmuuidgen kmrandgen)
 
 install(TARGETS ${install_targets} RUNTIME DESTINATION bin)
 install(FILES ${as02_deploy_header} ${asdcp_deploy_header} DESTINATION include)
