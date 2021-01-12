@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2011-2018, Robert Scheler, Heiko Sparenberg Fraunhofer IIS,
+Copyright (c) 2011-2020, Robert Scheler, Heiko Sparenberg Fraunhofer IIS,
 John Hurst, Wolfgang Ruppel
 
 All rights reserved.
@@ -37,6 +37,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #include <KM_fileio.h>
 #include <KM_xml.h>
+#include <KM_prng.h>
 #include <AS_02.h>
 #include "AS_02_ACES.h"
 #include <PCMParserList.h>
