@@ -399,8 +399,11 @@ ASDCP::MD_to_JP2K_PDesc(const ASDCP::MXF::GenericPictureEssenceDescriptor&  Esse
 
   PDesc.EditRate           = EditRate;
   PDesc.SampleRate         = SampleRate;
-  assert(EssenceDescriptor.ContainerDuration.const_get() <= 0xFFFFFFFFL);
-  PDesc.ContainerDuration  = static_cast<ui32_t>(EssenceDescriptor.ContainerDuration.const_get());
+  if ( ! EssenceDescriptor.ContainerDuration.empty() )
+    {
+      assert(EssenceDescriptor.ContainerDuration.const_get() <= 0xFFFFFFFFL);
+      PDesc.ContainerDuration  = static_cast<ui32_t>(EssenceDescriptor.ContainerDuration.const_get());
+    }
   PDesc.StoredWidth        = EssenceDescriptor.StoredWidth;
   PDesc.StoredHeight       = EssenceDescriptor.StoredHeight;
   PDesc.AspectRatio        = EssenceDescriptor.AspectRatio;

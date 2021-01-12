@@ -315,8 +315,10 @@ read_JP2K_file(CommandOptions& Options)
       if ( KM_SUCCESS(result) )
 	{
 	  assert(rgba_descriptor);
-	  frame_count = (ui32_t)rgba_descriptor->ContainerDuration;
-
+          if ( ! rgba_descriptor->ContainerDuration.empty() )
+            {
+	      frame_count = (ui32_t)rgba_descriptor->ContainerDuration;
+            }
 	  if ( Options.verbose_flag )
 	    {
 	      rgba_descriptor->Dump();
@@ -330,8 +332,10 @@ read_JP2K_file(CommandOptions& Options)
 	  if ( KM_SUCCESS(result) )
 	    {
 	      assert(cdci_descriptor);
-	      frame_count = (ui32_t)cdci_descriptor->ContainerDuration;
-
+              if ( ! cdci_descriptor->ContainerDuration.empty() )
+                {
+	          frame_count = (ui32_t)cdci_descriptor->ContainerDuration;
+                }
 	      if ( Options.verbose_flag )
 		{
 		  cdci_descriptor->Dump();
@@ -456,8 +460,10 @@ read_ACES_file(CommandOptions& Options)
     if (KM_SUCCESS(result))
     {
       assert(aces_descriptor);
-      frame_count = aces_descriptor->ContainerDuration;
-
+      if ( ! aces_descriptor->ContainerDuration.empty() )
+        {
+          frame_count = aces_descriptor->ContainerDuration;
+        }
       if (Options.verbose_flag)
       {
         aces_descriptor->Dump();
@@ -669,7 +675,10 @@ read_PCM_file(CommandOptions& Options)
 	    }
 	  else
 	    {
-	      last_frame = (ui32_t)wave_descriptor->ContainerDuration;
+              if ( ! wave_descriptor->ContainerDuration.empty() )
+                {
+	          last_frame = (ui32_t)wave_descriptor->ContainerDuration;
+                }
 	    }
 
 	  if ( last_frame == 0 )

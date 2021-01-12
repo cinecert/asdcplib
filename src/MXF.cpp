@@ -656,7 +656,7 @@ ASDCP::MXF::Preface::WriteToTLVSet(TLVWriter& TLVSet)
   Result_t result = InterchangeObject::WriteToTLVSet(TLVSet);
   if ( ASDCP_SUCCESS(result) )  result = TLVSet.WriteObject(OBJ_WRITE_ARGS(Preface, LastModifiedDate));
   if ( ASDCP_SUCCESS(result) )  result = TLVSet.WriteUi16(OBJ_WRITE_ARGS(Preface, Version));
-  if ( ASDCP_SUCCESS(result) )  result = TLVSet.WriteUi32(OBJ_WRITE_ARGS_OPT(Preface, ObjectModelVersion));
+  if ( ASDCP_SUCCESS(result) && ! ObjectModelVersion.empty() )  result = TLVSet.WriteUi32(OBJ_WRITE_ARGS_OPT(Preface, ObjectModelVersion));
   if ( ASDCP_SUCCESS(result) )  result = TLVSet.WriteObject(OBJ_WRITE_ARGS_OPT(Preface, PrimaryPackage));
   if ( ASDCP_SUCCESS(result) )  result = TLVSet.WriteObject(OBJ_WRITE_ARGS(Preface, Identifications));
   if ( ASDCP_SUCCESS(result) )  result = TLVSet.WriteObject(OBJ_WRITE_ARGS(Preface, ContentStorage));
@@ -1228,6 +1228,25 @@ ASDCP::Result_t
 ASDCP::MXF::OPAtomIndexFooter::GetMDObjectsByType(const byte_t* ObjectID, std::list<InterchangeObject*>& ObjectList)
 {
   return m_PacketList->GetMDObjectsByType(ObjectID, ObjectList);
+}
+
+//
+ui64_t
+ASDCP::MXF::OPAtomIndexFooter::ContainerDuration() const
+{
+  ui64_t container_duration = 0;
+  std::list<InterchangeObject*>::iterator li;
+  for ( li = m_PacketList->m_List.begin(); li != m_PacketList->m_List.end(); li++ )
+    {
+      IndexTableSegment *segment = dynamic_cast<IndexTableSegment*>(*li);
+
+      if ( segment != 0 )
+        {
+          container_duration += segment->IndexDuration;
+        }
+    }
+
+  return container_duration;
 }
 
 //

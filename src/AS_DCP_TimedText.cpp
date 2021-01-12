@@ -155,8 +155,11 @@ ASDCP::TimedText::MXFReader::h__Reader::MD_to_TimedText_TDesc(TimedText::TimedTe
   MXF::TimedTextDescriptor* TDescObj = (MXF::TimedTextDescriptor*)m_EssenceDescriptor;
 
   TDesc.EditRate = TDescObj->SampleRate;
-  assert(TDescObj->ContainerDuration <= 0xFFFFFFFFL);
-  TDesc.ContainerDuration = (ui32_t) TDescObj->ContainerDuration;
+  if ( ! TDescObj->ContainerDuration.empty() )
+    {
+      assert(TDescObj->ContainerDuration <= 0xFFFFFFFFL);
+      TDesc.ContainerDuration = (ui32_t) TDescObj->ContainerDuration;
+    }
   memcpy(TDesc.AssetID, TDescObj->ResourceID.Value(), UUIDlen);
   TDesc.NamespaceName = TDescObj->NamespaceURI;
   TDesc.EncodingName = TDescObj->UCSEncoding;
@@ -638,7 +641,6 @@ ASDCP::TimedText::MXFWriter::h__Writer::Finalize()
 {
   if ( ! m_State.Test_RUNNING() )
     return RESULT_STATE;
-
   m_FramesWritten = m_TDesc.ContainerDuration;
   m_State.Goto_FINAL();
 

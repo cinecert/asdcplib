@@ -48,9 +48,11 @@ MD_to_MPEG2_VDesc(MXF::MPEG2VideoDescriptor* VDescObj, MPEG2::VideoDescriptor& V
   VDesc.SampleRate             = VDescObj->SampleRate;
   VDesc.EditRate               = VDescObj->SampleRate;
   VDesc.FrameRate              = VDescObj->SampleRate.Numerator;
-  assert(VDescObj->ContainerDuration <= 0xFFFFFFFFL);
-  VDesc.ContainerDuration      = (ui32_t) VDescObj->ContainerDuration;
-
+  if ( ! VDescObj->ContainerDuration.empty() )
+    {
+      assert(VDescObj->ContainerDuration <= 0xFFFFFFFFL);
+      VDesc.ContainerDuration      = (ui32_t) VDescObj->ContainerDuration;
+    }
   VDesc.FrameLayout            = VDescObj->FrameLayout;
   VDesc.StoredWidth            = VDescObj->StoredWidth;
   VDesc.StoredHeight           = VDescObj->StoredHeight;
@@ -58,13 +60,29 @@ MD_to_MPEG2_VDesc(MXF::MPEG2VideoDescriptor* VDescObj, MPEG2::VideoDescriptor& V
 
   VDesc.ComponentDepth         = VDescObj->ComponentDepth;
   VDesc.HorizontalSubsampling  = VDescObj->HorizontalSubsampling;
-  VDesc.VerticalSubsampling    = VDescObj->VerticalSubsampling;
-  VDesc.ColorSiting            = VDescObj->ColorSiting;
-  VDesc.CodedContentType       = VDescObj->CodedContentType;
+  if ( ! VDescObj->VerticalSubsampling.empty() )
+    {
+      VDesc.VerticalSubsampling    = VDescObj->VerticalSubsampling;
+    }
+  if ( ! VDescObj->ColorSiting.empty() )
+    {
+      VDesc.ColorSiting            = VDescObj->ColorSiting;
+    }
+  if ( ! VDescObj->CodedContentType.empty() )
+    {
+      VDesc.CodedContentType       = VDescObj->CodedContentType;
+    }
 
   VDesc.LowDelay               = VDescObj->LowDelay.get() == 0 ? false : true;
-  VDesc.BitRate                = VDescObj->BitRate;
-  VDesc.ProfileAndLevel        = VDescObj->ProfileAndLevel;
+  if ( ! VDescObj->BitRate.empty() )
+    {
+      VDesc.BitRate                = VDescObj->BitRate;
+    }
+  if ( ! VDescObj->ProfileAndLevel.empty() )
+    {
+      VDesc.ProfileAndLevel        = VDescObj->ProfileAndLevel;
+    }
+
   return RESULT_OK;
 }
 
@@ -77,7 +95,6 @@ MPEG2_VDesc_to_MD(MPEG2::VideoDescriptor& VDesc, MXF::MPEG2VideoDescriptor* VDes
 
   VDescObj->SampleRate = VDesc.SampleRate;
   VDescObj->ContainerDuration = VDesc.ContainerDuration;
-
   VDescObj->FrameLayout = VDesc.FrameLayout;
   VDescObj->StoredWidth = VDesc.StoredWidth;
   VDescObj->StoredHeight = VDesc.StoredHeight;

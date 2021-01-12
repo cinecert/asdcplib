@@ -1,5 +1,7 @@
 /*
 Copyright (c) 2003-2016, John Hurst, Wolfgang Ruppel
+
+
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -238,12 +240,18 @@ class MyPictureDescriptor : public JP2K::PictureDescriptor
     if ( m_RGBADescriptor != 0 )
       {
     	SampleRate = m_RGBADescriptor->SampleRate;
-    	ContainerDuration = m_RGBADescriptor->ContainerDuration;
+        if ( ! m_RGBADescriptor->ContainerDuration.empty() )
+          {
+            ContainerDuration = m_RGBADescriptor->ContainerDuration;
+          }
       }
     else if ( m_CDCIDescriptor != 0 )
       {
     	SampleRate = m_CDCIDescriptor->SampleRate;
-    	ContainerDuration = m_CDCIDescriptor->ContainerDuration;
+        if ( ! m_CDCIDescriptor->ContainerDuration.empty() )
+          {
+            ContainerDuration = m_CDCIDescriptor->ContainerDuration;
+          }
       }
     else
       {
@@ -376,7 +384,10 @@ class MyACESPictureDescriptor : public AS_02::ACES::PictureDescriptor
     if ( m_RGBADescriptor != 0 )
       {
     	SampleRate = m_RGBADescriptor->SampleRate;
-    	ContainerDuration = m_RGBADescriptor->ContainerDuration;
+        if ( ! m_RGBADescriptor->ContainerDuration.empty() )
+          {
+            ContainerDuration = m_RGBADescriptor->ContainerDuration;
+          }
       }
     else
       {
@@ -475,7 +486,10 @@ class MyAudioDescriptor : public PCM::AudioDescriptor
     if ( m_WaveAudioDescriptor != 0 )
       {
 	AudioSamplingRate = m_WaveAudioDescriptor->SampleRate;
-	ContainerDuration = m_WaveAudioDescriptor->ContainerDuration;
+        if ( ! m_WaveAudioDescriptor->ContainerDuration.empty() )
+          {
+            ContainerDuration = m_WaveAudioDescriptor->ContainerDuration;
+          }
       }
     else
       {
