@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2006-2009, John Hurst
+Copyright (c) 2006-2021, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -37,11 +37,11 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <string.h>
 #include <assert.h>
 
-#define ENABLE_FIPS_186
-#ifdef ENABLE_FIPS_186
-#include <openssl/sha.h>
-#include <openssl/bn.h>
-#endif // ENABLE_FIPS_186
+#ifdef HAVE_OPENSSL
+# define ENABLE_FIPS_186
+# include <openssl/sha.h>
+# include <openssl/bn.h>
+#endif // HAVE_OPENSSL
 
 using namespace Kumu;
 
