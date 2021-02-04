@@ -164,7 +164,7 @@ AS_02::PCM::MXFReader::h__Reader::ReadFrame(ui32_t FrameNum, ASDCP::PCM::FrameBu
     }
 
   assert(m_ClipEssenceBegin);
-  ui64_t offset = FrameNum * m_BytesPerFrame;
+  ui64_t offset = static_cast<ui64_t>(FrameNum) * static_cast<ui64_t>(m_BytesPerFrame);
   ui64_t position = m_ClipEssenceBegin + offset;
   Result_t result = RESULT_OK;
 
