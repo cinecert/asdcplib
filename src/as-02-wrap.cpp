@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2011-2018, Robert Scheler, Heiko Sparenberg Fraunhofer IIS,
+Copyright (c) 2011-2020, Robert Scheler, Heiko Sparenberg Fraunhofer IIS,
 John Hurst, Wolfgang Ruppel
 
 All rights reserved.
@@ -35,10 +35,9 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   For more information about AS-02, please refer to the header file AS_02.h
   For more information about asdcplib, please refer to the header file AS_DCP.h
 */
-
 #include <KM_fileio.h>
-#include <KM_prng.h>
 #include <KM_xml.h>
+#include <KM_prng.h>
 #include <AS_02.h>
 #include "AS_02_ACES.h"
 #include <PCMParserList.h>
@@ -987,8 +986,6 @@ write_JP2K_file(CommandOptions& Options)
   AS_02::JP2K::MXFWriter  Writer;
   JP2K::FrameBuffer       FrameBuffer(Options.fb_size);
   JP2K::SequenceParser    Parser;
-  byte_t                  IV_buf[CBC_BLOCK_SIZE];
-  Kumu::FortunaRNG        RNG;
   ASDCP::MXF::FileDescriptor *essence_descriptor = 0;
   ASDCP::MXF::InterchangeObject_list_t essence_sub_descriptors;
 
@@ -1098,9 +1095,12 @@ write_JP2K_file(CommandOptions& Options)
       else
 	Kumu::GenRandomUUID(Info.AssetUUID);
 
+#ifdef HAVE_OPENSSL
       // configure encryption
       if( Options.key_flag )
 	{
+      byte_t                  IV_buf[CBC_BLOCK_SIZE];
+      Kumu::FortunaRNG        RNG;
 	  Kumu::GenRandomUUID(Info.ContextID);
 	  Info.EncryptedEssence = true;
 
@@ -1126,6 +1126,7 @@ write_JP2K_file(CommandOptions& Options)
 	      result = HMAC->InitKey(Options.key_value, Info.LabelSetType);
 	    }
 	}
+#endif // HAVE_OPENSSL
 
       if ( ASDCP_SUCCESS(result) )
 	{
@@ -1191,8 +1192,6 @@ write_ACES_file(CommandOptions& Options)
   AS_02::ACES::MXFWriter  Writer;
   AS_02::ACES::FrameBuffer       FrameBuffer(Options.fb_size);
   AS_02::ACES::SequenceParser    Parser;
-  byte_t                  IV_buf[CBC_BLOCK_SIZE];
-  Kumu::FortunaRNG        RNG;
   ASDCP::MXF::FileDescriptor *essence_descriptor = 0;
   ASDCP::MXF::InterchangeObject_list_t essence_sub_descriptors;
   AS_02::ACES::PictureDescriptor PDesc;
@@ -1314,6 +1313,10 @@ write_ACES_file(CommandOptions& Options)
     else
       Kumu::GenRandomUUID(Info.AssetUUID);
 
+#ifdef HAVE_OPENSSL
+    byte_t                  IV_buf[CBC_BLOCK_SIZE];
+    Kumu::FortunaRNG        RNG;
+
     // configure encryption
     if (Options.key_flag)
     {
@@ -1342,6 +1345,7 @@ write_ACES_file(CommandOptions& Options)
         result = HMAC->InitKey(Options.key_value, Info.LabelSetType);
       }
     }
+#endif
 
     if (ASDCP_SUCCESS(result))
     {
@@ -1435,8 +1439,6 @@ write_PCM_file(CommandOptions& Options)
   PCMParserList     Parser;
   AS_02::PCM::MXFWriter    Writer;
   PCM::FrameBuffer  FrameBuffer;
-  byte_t            IV_buf[CBC_BLOCK_SIZE];
-  Kumu::FortunaRNG  RNG;
   ASDCP::MXF::WaveAudioDescriptor *essence_descriptor = 0;
 
   // set up essence parser
@@ -1511,9 +1513,12 @@ write_PCM_file(CommandOptions& Options)
       else
 	Kumu::GenRandomUUID(Info.AssetUUID);
 
+#ifdef HAVE_OPENSSL
       // configure encryption
       if( Options.key_flag )
 	{
+      byte_t            IV_buf[CBC_BLOCK_SIZE];
+      Kumu::FortunaRNG  RNG;
 	  Kumu::GenRandomUUID(Info.ContextID);
 	  Info.EncryptedEssence = true;
 
@@ -1539,6 +1544,7 @@ write_PCM_file(CommandOptions& Options)
 	      result = HMAC->InitKey(Options.key_value, Info.LabelSetType);
 	    }
 	}
+#endif // HAVE_OPENSSL
 
       if ( ASDCP_SUCCESS(result) )
 	{
@@ -1586,8 +1592,6 @@ write_PCM_file(CommandOptions& Options)
 }
 
 
-
-
 //------------------------------------------------------------------------------------------
 // TimedText essence
 
@@ -1605,7 +1609,6 @@ write_timed_text_file(CommandOptions& Options)
   TimedText::FrameBuffer  FrameBuffer;
   TimedText::TimedTextDescriptor TDesc;
   byte_t            IV_buf[CBC_BLOCK_SIZE];
-  Kumu::FortunaRNG  RNG;
 
   // set up essence parser
   Result_t result = Parser.OpenRead(Options.filenames.front());
@@ -1640,9 +1643,11 @@ write_timed_text_file(CommandOptions& Options)
       else
 	Kumu::GenRandomUUID(Info.AssetUUID);
 
+#ifdef HAVE_OPENSSL
       // configure encryption
       if( Options.key_flag )
 	{
+      Kumu::FortunaRNG  RNG;
 	  Kumu::GenRandomUUID(Info.ContextID);
 	  Info.EncryptedEssence = true;
 
@@ -1668,6 +1673,7 @@ write_timed_text_file(CommandOptions& Options)
 	      result = HMAC->InitKey(Options.key_value, Info.LabelSetType);
 	    }
 	}
+#endif // HAVE_OPENSSL
 
       if ( ASDCP_SUCCESS(result) )
 	result = Writer.OpenWrite(Options.out_file.c_str(), Info, TDesc);
@@ -1745,8 +1751,6 @@ write_isxd_file(CommandOptions& Options)
   AS_02::ISXD::MXFWriter Writer;
   DCData::FrameBuffer     FrameBuffer(Options.fb_size);
   DCData::SequenceParser  Parser;
-  byte_t                  IV_buf[CBC_BLOCK_SIZE];
-  Kumu::FortunaRNG        RNG;
 
   // set up essence parser
   Result_t result = Parser.OpenRead(Options.filenames.front());
@@ -1772,9 +1776,12 @@ write_isxd_file(CommandOptions& Options)
 
     Info.LabelSetType = LS_MXF_SMPTE;
 
+#ifdef HAVE_OPENSSL
       // configure encryption
     if( Options.key_flag )
 	{
+      byte_t                  IV_buf[CBC_BLOCK_SIZE];
+      Kumu::FortunaRNG        RNG;
 	  Kumu::GenRandomUUID(Info.ContextID);
 	  Info.EncryptedEssence = true;
 
@@ -1800,6 +1807,7 @@ write_isxd_file(CommandOptions& Options)
         result = HMAC->InitKey(Options.key_value, Info.LabelSetType);
       }
 	}
+#endif // HAVE_OPENSSL
 
     if ( ASDCP_SUCCESS(result) )
       {
@@ -1897,7 +1905,6 @@ write_isxd_file(CommandOptions& Options)
 		    return RESULT_READFAIL;
 
 		  global_metadata.Size(read_count);
-
 		  std::string ns_prefix, type_name;
 		  Kumu::AttributeList doc_attr_list;
 		  result = GetXMLDocType(global_metadata.RoData(), global_metadata.Size(), ns_prefix, type_name,

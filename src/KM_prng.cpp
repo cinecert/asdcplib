@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2006-2009, John Hurst
+Copyright (c) 2006-2021, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -31,12 +31,17 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <KM_prng.h>
 #include <KM_log.h>
+#include <KM_aes.h>
+#include <KM_sha1.h>
 #include <KM_mutex.h>
 #include <string.h>
 #include <assert.h>
-#include <openssl/aes.h>
-#include <openssl/sha.h>
-#include <openssl/bn.h>
+
+#ifdef HAVE_OPENSSL
+# define ENABLE_FIPS_186
+# include <openssl/sha.h>
+# include <openssl/bn.h>
+#endif // HAVE_OPENSSL
 
 using namespace Kumu;
 
@@ -51,7 +56,7 @@ const char* DEV_URANDOM = "/dev/urandom";
 
 const ui32_t RNG_KEY_SIZE = 512UL;
 const ui32_t RNG_KEY_SIZE_BITS = 256UL;
-const ui32_t RNG_BLOCK_SIZE = 16UL;
+const ui32_t RNG_BLOCK_SIZE = AES_BLOCKLEN;
 const ui32_t MAX_SEQUENCE_LEN = 0x00040000UL;
 
 
@@ -61,7 +66,7 @@ class h__RNG
   KM_NO_COPY_CONSTRUCT(h__RNG);
 
 public:
-  AES_KEY   m_Context;
+  AES_ctx   m_Context;
   byte_t    m_ctr_buf[RNG_BLOCK_SIZE];
   Mutex     m_Lock;
 
@@ -105,7 +110,7 @@ public:
   {
     assert(key_fodder);
     byte_t sha_buf[20];
-    SHA_CTX SHA;
+    SHA1_CTX SHA;
     SHA1_Init(&SHA);
 
     SHA1_Update(&SHA, (byte_t*)&m_Context, sizeof(m_Context));
@@ -113,7 +118,7 @@ public:
     SHA1_Final(sha_buf, &SHA);
 
     AutoMutex Lock(m_Lock);
-    AES_set_encrypt_key(sha_buf, RNG_KEY_SIZE_BITS, &m_Context);
+    AES_init_ctx(&m_Context, sha_buf);
     *(ui32_t*)(m_ctr_buf + 12) = 1;
   }
 	
@@ -127,7 +132,8 @@ public:
 
     while ( gen_count + RNG_BLOCK_SIZE <= len )
       {
-	AES_encrypt(m_ctr_buf, buf + gen_count, &m_Context);
+	memcpy(buf + gen_count, m_ctr_buf, RNG_BLOCK_SIZE);
+	AES_encrypt(&m_Context, buf + gen_count);
 	*(ui32_t*)(m_ctr_buf + 12) += 1;
 	gen_count += RNG_BLOCK_SIZE;
       }
@@ -135,7 +141,8 @@ public:
     if ( len != gen_count ) // partial count needed?
       {
 	byte_t tmp[RNG_BLOCK_SIZE];
-	AES_encrypt(m_ctr_buf, tmp, &m_Context);
+	memcpy(tmp, m_ctr_buf, RNG_BLOCK_SIZE);
+	AES_encrypt(&m_Context, tmp);
 	memcpy(buf + gen_count, tmp, len - gen_count);
       }
   }
@@ -192,7 +199,10 @@ Kumu::FortunaRNG::FillRandom(Kumu::ByteString& Buffer)
   return Buffer.Data();
 }
 
+
 //------------------------------------------------------------------------------------------
+
+#ifdef ENABLE_FIPS_186
 
 //
 // FIPS 186-2 Sec. 3.1 as modified by Change 1, section entitled "General Purpose Random Number Generation"
@@ -277,6 +287,8 @@ Kumu::Gen_FIPS_186_Value(const byte_t* key, ui32_t key_size, byte_t* out_buf, ui
   BN_free(c_b);
   BN_CTX_free(ctx1);
 }
+
+#endif // ENABLE_FIPS_186
 
 //
 // end KM_prng.cpp

@@ -534,8 +534,6 @@ write_MPEG2_file(CommandOptions& Options)
   MPEG2::Parser      Parser;
   MPEG2::MXFWriter   Writer;
   MPEG2::VideoDescriptor VDesc;
-  byte_t             IV_buf[CBC_BLOCK_SIZE];
-  Kumu::FortunaRNG   RNG;
 
   // set up essence parser
   Result_t result = Parser.OpenRead(Options.filenames.front());
@@ -568,9 +566,12 @@ write_MPEG2_file(CommandOptions& Options)
 	  fprintf(stderr, "ATTENTION! Writing SMPTE Universal Labels\n");
 	}
 
+#ifdef HAVE_OPENSSL
       // configure encryption
       if( Options.key_flag )
 	{
+      byte_t             IV_buf[CBC_BLOCK_SIZE];
+      Kumu::FortunaRNG   RNG;
 	  Kumu::GenRandomUUID(Info.ContextID);
 	  Info.EncryptedEssence = true;
 
@@ -596,6 +597,7 @@ write_MPEG2_file(CommandOptions& Options)
 	      result = HMAC->InitKey(Options.key_value, Info.LabelSetType);
 	    }
 	}
+#endif // HAVE_OPENSSL
 
       if ( ASDCP_SUCCESS(result) )
 	result = Writer.OpenWrite(Options.out_file, Info, VDesc);
@@ -690,7 +692,6 @@ write_JP2K_S_file(CommandOptions& Options)
   JP2K::PictureDescriptor PDesc;
   JP2K::SequenceParser    ParserLeft, ParserRight;
   byte_t                  IV_buf[CBC_BLOCK_SIZE];
-  Kumu::FortunaRNG        RNG;
 
   if ( Options.filenames.size() != 2 )
     {
@@ -738,9 +739,11 @@ write_JP2K_S_file(CommandOptions& Options)
 	  fprintf(stderr, "ATTENTION! Writing SMPTE Universal Labels\n");
 	}
 
+#ifdef HAVE_OPENSSL
       // configure encryption
       if( Options.key_flag )
 	{
+      Kumu::FortunaRNG        RNG;
 	  Kumu::GenRandomUUID(Info.ContextID);
 	  Info.EncryptedEssence = true;
 
@@ -766,6 +769,7 @@ write_JP2K_S_file(CommandOptions& Options)
 	      result = HMAC->InitKey(Options.key_value, Info.LabelSetType);
 	    }
 	}
+#endif // HAVE_OPENSSL
 
       if ( ASDCP_SUCCESS(result) )
 	result = Writer.OpenWrite(Options.out_file, Info, PDesc);
@@ -840,7 +844,6 @@ write_JP2K_file(CommandOptions& Options)
   JP2K::PictureDescriptor PDesc;
   JP2K::SequenceParser    Parser;
   byte_t                  IV_buf[CBC_BLOCK_SIZE];
-  Kumu::FortunaRNG        RNG;
 
   // set up essence parser
   Result_t result = Parser.OpenRead(Options.filenames.front(), Options.j2c_pedantic);
@@ -877,9 +880,11 @@ write_JP2K_file(CommandOptions& Options)
 	  fprintf(stderr, "ATTENTION! Writing SMPTE Universal Labels\n");
 	}
 
+#ifdef HAVE_OPENSSL
       // configure encryption
       if( Options.key_flag )
 	{
+      Kumu::FortunaRNG        RNG;
 	  Kumu::GenRandomUUID(Info.ContextID);
 	  Info.EncryptedEssence = true;
 
@@ -905,6 +910,7 @@ write_JP2K_file(CommandOptions& Options)
 	      result = HMAC->InitKey(Options.key_value, Info.LabelSetType);
 	    }
 	}
+#endif // HAVE_OPENSSL
 
       if ( ASDCP_SUCCESS(result) )
 	result = Writer.OpenWrite(Options.out_file, Info, PDesc);
@@ -977,7 +983,6 @@ write_PCM_file(CommandOptions& Options)
   PCM::AudioDescriptor ADesc;
   Rational          PictureRate = Options.PictureRate();
   byte_t            IV_buf[CBC_BLOCK_SIZE];
-  Kumu::FortunaRNG  RNG;
 
   // set up essence parser
   Result_t result = Parser.OpenRead(Options.filenames, PictureRate);
@@ -1021,9 +1026,11 @@ write_PCM_file(CommandOptions& Options)
 	  fprintf(stderr, "ATTENTION! Writing SMPTE Universal Labels\n");
 	}
 
+#ifdef HAVE_OPENSSL
       // configure encryption
       if( Options.key_flag )
 	{
+      Kumu::FortunaRNG  RNG;
 	  Kumu::GenRandomUUID(Info.ContextID);
 	  Info.EncryptedEssence = true;
 
@@ -1049,6 +1056,7 @@ write_PCM_file(CommandOptions& Options)
 	      result = HMAC->InitKey(Options.key_value, Info.LabelSetType);
 	    }
 	}
+#endif // HAVE_OPENSSL
 
       if ( ASDCP_SUCCESS(result) )
 	result = Writer.OpenWrite(Options.out_file, Info, ADesc);
@@ -1171,7 +1179,6 @@ write_PCM_with_ATMOS_sync_file(CommandOptions& Options)
   PCM::AudioDescriptor  ADesc;
   Rational              PictureRate = Options.PictureRate();
   byte_t                IV_buf[CBC_BLOCK_SIZE];
-  Kumu::FortunaRNG      RNG;
 
   WriterInfo Info = s_MyInfo;  // fill in your favorite identifiers here
   if ( Options.asset_id_flag )
@@ -1213,9 +1220,11 @@ write_PCM_with_ATMOS_sync_file(CommandOptions& Options)
     Info.LabelSetType = LS_MXF_SMPTE;
     fprintf(stderr, "ATTENTION! Writing SMPTE Universal Labels\n");
 
+#ifdef HAVE_OPENSSL
     // configure encryption
     if( Options.key_flag )
 	{
+      Kumu::FortunaRNG      RNG;
 	  Kumu::GenRandomUUID(Info.ContextID);
 	  Info.EncryptedEssence = true;
 
@@ -1241,6 +1250,7 @@ write_PCM_with_ATMOS_sync_file(CommandOptions& Options)
         result = HMAC->InitKey(Options.key_value, Info.LabelSetType);
       }
 	}
+#endif // HAVE_OPENSSL
 
     if ( ASDCP_SUCCESS(result) )
       result = Writer.OpenWrite(Options.out_file, Info, ADesc);
@@ -1296,7 +1306,6 @@ write_PCM_with_ATMOS_sync_file(CommandOptions& Options)
   return result;
 }
 
-
 //------------------------------------------------------------------------------------------
 // TimedText essence
 
@@ -1314,7 +1323,6 @@ write_timed_text_file(CommandOptions& Options)
   TimedText::FrameBuffer  FrameBuffer;
   TimedText::TimedTextDescriptor TDesc;
   byte_t            IV_buf[CBC_BLOCK_SIZE];
-  Kumu::FortunaRNG  RNG;
 
   // set up essence parser
   Result_t result = Parser.OpenRead(Options.filenames.front());
@@ -1344,9 +1352,11 @@ write_timed_text_file(CommandOptions& Options)
       Info.LabelSetType = LS_MXF_SMPTE;
       fprintf(stderr, "ATTENTION! Writing SMPTE Universal Labels\n");
 
+#ifdef HAVE_OPENSSL
       // configure encryption
       if( Options.key_flag )
 	{
+      Kumu::FortunaRNG  RNG;
 	  Kumu::GenRandomUUID(Info.ContextID);
 	  Info.EncryptedEssence = true;
 
@@ -1372,6 +1382,7 @@ write_timed_text_file(CommandOptions& Options)
 	      result = HMAC->InitKey(Options.key_value, Info.LabelSetType);
 	    }
 	}
+#endif // HAVE_OPENSSL
 
       if ( ASDCP_SUCCESS(result) )
 	result = Writer.OpenWrite(Options.out_file, Info, TDesc);
@@ -1433,7 +1444,6 @@ write_dolby_atmos_file(CommandOptions& Options)
   ATMOS::AtmosDescriptor ADesc;
   DCData::SequenceParser    Parser;
   byte_t                  IV_buf[CBC_BLOCK_SIZE];
-  Kumu::FortunaRNG        RNG;
 
   // set up essence parser
   Result_t result = Parser.OpenRead(Options.filenames.front());
@@ -1468,9 +1478,11 @@ write_dolby_atmos_file(CommandOptions& Options)
 
     Info.LabelSetType = LS_MXF_SMPTE;
 
+#ifdef HAVE_OPENSSL
       // configure encryption
     if( Options.key_flag )
 	{
+      Kumu::FortunaRNG        RNG;
 	  Kumu::GenRandomUUID(Info.ContextID);
 	  Info.EncryptedEssence = true;
 
@@ -1496,6 +1508,7 @@ write_dolby_atmos_file(CommandOptions& Options)
         result = HMAC->InitKey(Options.key_value, Info.LabelSetType);
       }
 	}
+#endif
 
     if ( ASDCP_SUCCESS(result) )
       result = Writer.OpenWrite(Options.out_file, Info, ADesc);
@@ -1555,7 +1568,6 @@ write_aux_data_file(CommandOptions& Options)
   DCData::DCDataDescriptor DDesc;
   DCData::SequenceParser  Parser;
   byte_t                  IV_buf[CBC_BLOCK_SIZE];
-  Kumu::FortunaRNG        RNG;
 
   // set up essence parser
   Result_t result = Parser.OpenRead(Options.filenames.front());
@@ -1585,9 +1597,11 @@ write_aux_data_file(CommandOptions& Options)
 
     Info.LabelSetType = LS_MXF_SMPTE;
 
+#ifdef HAVE_OPENSSL
       // configure encryption
     if( Options.key_flag )
 	{
+      Kumu::FortunaRNG        RNG;
 	  Kumu::GenRandomUUID(Info.ContextID);
 	  Info.EncryptedEssence = true;
 
@@ -1613,6 +1627,7 @@ write_aux_data_file(CommandOptions& Options)
         result = HMAC->InitKey(Options.key_value, Info.LabelSetType);
       }
 	}
+#endif // HAVE_OPENSSL
 
     if ( ASDCP_SUCCESS(result) )
       result = Writer.OpenWrite(Options.out_file, Info, DDesc);

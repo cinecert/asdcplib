@@ -50,6 +50,8 @@ include_HEADERS = \
 	KM_mutex.h \
 	KM_platform.h \
 	KM_prng.h \
+	KM_sha1.h \
+	KM_aes.h \
 	KM_util.h \
 	KM_tai.h \
 	KM_xml.h \
@@ -102,7 +104,8 @@ endif
 # sources for kumu library
 libkumu_la_SOURCES = KM_error.h KM_fileio.cpp KM_fileio.h KM_log.cpp KM_log.h \
 		KM_memio.h KM_mutex.h KM_platform.h KM_prng.cpp KM_prng.h KM_util.cpp \
-		KM_util.h KM_xml.cpp KM_xml.h KM_tai.h KM_tai.cpp
+		KM_util.h KM_tai.h KM_tai.cpp KM_xml.cpp KM_xml.h \
+		KM_sha1.cpp KM_sha1.h KM_aes.h KM_aes.cpp
 
 # linker flags (*not* including libraries to link against) for a library
 libkumu_la_LDFLAGS = -release @VERSION@
@@ -111,11 +114,12 @@ libkumu_la_LDFLAGS = -release @VERSION@
 # sources for asdcp library that don't get added to a distribution
 nodist_libasdcp_la_SOURCES = Metadata_h.tt2 Metadata_cpp.tt2 \
 		mxfgen.pl MXF_def.pl ullist.pl ULList.xml dict.xml DMS_Crypto.xml
+
 # sources for asdcp library
 libasdcp_la_SOURCES = MPEG2_Parser.cpp MPEG.cpp JP2K_Codestream_Parser.cpp \
 	JP2K_Sequence_Parser.cpp JP2K.cpp PCM_Parser.cpp Wav.cpp \
 	TimedText_Parser.cpp KLV.cpp Dict.cpp MXFTypes.cpp MXF.cpp \
-	Index.cpp Metadata.cpp AS_DCP.cpp AS_DCP_MXF.cpp AS_DCP_AES.cpp \
+	Index.cpp Metadata.cpp AS_DCP.cpp AS_DCP_MXF.cpp \
 	h__Reader.cpp h__Writer.cpp AS_DCP_MPEG2.cpp AS_DCP_JP2K.cpp \
 	AS_DCP_PCM.cpp AS_DCP_TimedText.cpp PCMParserList.cpp \
 	Wav.h WavFileWriter.h MXF.h Metadata.h \
@@ -130,6 +134,9 @@ libasdcp_la_SOURCES = MPEG2_Parser.cpp MPEG.cpp JP2K_Codestream_Parser.cpp \
 	UUIDInformation.c UUIDInformation.h \
 	ST2095_PinkNoise.cpp
 
+if HAVE_OPENSSL
+libasdcp_la_SOURCES += AS_DCP_AES.cpp
+endif
 
 libasdcp_la_LDFLAGS = -release @VERSION@
 # additional libraries to link against for a library
@@ -143,7 +150,7 @@ libas02_la_SOURCES	= \
 	AS_02_internal.h \
 	ACES.h \
 	AS_02_ACES.h \
-  AS_02_IAB.h \
+	AS_02_IAB.h \
 	h__02_Reader.cpp \
 	h__02_Writer.cpp \
 	AS_02_JP2K.cpp \
@@ -152,7 +159,7 @@ libas02_la_SOURCES	= \
 	ST2052_TextParser.cpp \
 	AS_02_TimedText.cpp \
 	ACES.cpp \
-  AS_02_IAB.cpp \
+	AS_02_IAB.cpp \
 	ACES_Codestream_Parser.cpp \
 	ACES_Sequence_Parser.cpp \
 	AS_02_ACES.cpp

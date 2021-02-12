@@ -28,12 +28,11 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 
+#include <KM_sha1.h>
 #include "AS_02_ACES.h"
-//#include "info.h"
 #include "AS_02_internal.h"
 #include <limits>
 #include <iostream>
-#include <openssl/sha.h>
 
 #ifdef min
 #undef min
@@ -256,7 +255,7 @@ AS_02::ACES::CreateTargetFrameAssetId(Kumu::UUID& rID, const std::string& target
 static Kumu::UUID
 AS_02::ACES::create_4122_type5_id(const byte_t* subject_name, Kumu::fsize_t size, const byte_t* ns_id)
 {
-  SHA_CTX ctx;
+  SHA1_CTX ctx;
   SHA1_Init(&ctx);
   SHA1_Update(&ctx, ns_id, NS_ID_LENGTH);
   SHA1_Update(&ctx, subject_name, size);
