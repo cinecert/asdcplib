@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2005-2014, John Hurst
+Copyright (c) 2005-2021, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -163,24 +163,27 @@ main(int argc, const char** argv)
       return 3;
     }
 
-  ASDCP::JP2K::FrameBuffer FB;
-  Marker        current_marker;
-  CodestreamParser Parser;
-  std::list<std::string>::iterator i;
-  bool has_soc = false;
-  bool has_tlm = false;
-  int marker_count = 0;
-
-  Result_t result = FB.Capacity(1024*1024*4);
+  std::list<std::string>::iterator filename;
+  ASDCP::JP2K::FrameBuffer frame_buffer;
+  Result_t result = frame_buffer.Capacity(1024*1024*4);
   
-  for ( i = Options.filename_list.begin(); ASDCP_SUCCESS(result) && i != Options.filename_list.end(); i++ )
+  for ( filename = Options.filename_list.begin();
+	ASDCP_SUCCESS(result) && filename != Options.filename_list.end();
+	++filename )
     {
-      result = Parser.OpenReadFrame(i->c_str(), FB);
+      CodestreamParser parser;
+      bool has_soc = false;
+      bool has_tlm = false;
+      int marker_count = 0;
+
+      printf("Filename: %s\n", filename->c_str());
+      result = parser.OpenReadFrame(*filename, frame_buffer);
 
       if ( ASDCP_SUCCESS(result) )
 	{
-	  const byte_t* p = FB.RoData();
-	  const byte_t* end_p = p + FB.Size();
+	  const byte_t* p = frame_buffer.RoData();
+	  const byte_t* end_p = p + frame_buffer.Size();
+	  Marker current_marker;
 
 	  while ( p < end_p && ASDCP_SUCCESS(GetNextMarker(&p, current_marker)) )
 	    {
@@ -282,21 +285,21 @@ main(int argc, const char** argv)
 	    }
 	  */
 	}
-    }
 
-  if ( marker_count == 0 )
-    {
-      fprintf(stderr, "No JPEG 2000 marker items found.\n");
-      result = RESULT_FAIL;
-    }
-  else
-    {
-      fprintf(stderr, "Processed %d JPEG 2000 marker item%s.\n", marker_count, (marker_count==1?"":"s"));
-
-      if  ( ! has_tlm )
+      if ( marker_count == 0 )
 	{
-	  fprintf(stderr, "No TLM marker found.\n");
+	  fprintf(stderr, "No JPEG 2000 marker items found.\n");
 	  result = RESULT_FAIL;
+	}
+      else
+	{
+	  fprintf(stderr, "Processed %d JPEG 2000 marker item%s.\n", marker_count, (marker_count==1?"":"s"));
+
+	  if  ( ! has_tlm )
+	    {
+	      fprintf(stderr, "No TLM marker found.\n");
+	      result = RESULT_FAIL;
+	    }
 	}
     }
 
