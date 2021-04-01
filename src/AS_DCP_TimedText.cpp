@@ -518,6 +518,15 @@ ASDCP::TimedText::MXFWriter::h__Writer::SetSourceStream(ASDCP::TimedText::TimedT
   ResourceList_t::const_iterator ri;
   Result_t result = TimedText_TDesc_to_MD(m_TDesc);
 
+
+  /* this method will grow the requested header buffer, m_HeaderSize,
+      to accommodate the space needed for the timed text subdescriptors
+
+     m_HeaderSize is already set to something, but the default of 16384
+      is not enough for large sets of PNG subtitles
+  */
+
+  bool sd_array_init = false;
   for ( ri = m_TDesc.ResourceList.begin() ; ri != m_TDesc.ResourceList.end() && ASDCP_SUCCESS(result); ri++ )
     {
       TimedTextResourceSubDescriptor* resourceSubdescriptor = new TimedTextResourceSubDescriptor(m_Dict);
@@ -528,8 +537,55 @@ ASDCP::TimedText::MXFWriter::h__Writer::SetSourceStream(ASDCP::TimedText::TimedT
       m_EssenceSubDescriptorList.push_back((FileDescriptor*)resourceSubdescriptor);
       m_EssenceDescriptor->SubDescriptors.push_back(resourceSubdescriptor->InstanceUID);
 
-      // 72 == sizeof K, L, instanceuid, uuid + sizeof int32 + tag/len * 4
-      m_HeaderSize += ( resourceSubdescriptor->MIMEMediaType.ArchiveLength() * 2 /*ArchiveLength is broken*/ ) + 72;
+      /* the first subdescriptor requires 12 bytes to initialize
+           the sub-descriptor UUID array
+
+            4 - tag/len
+            4 - item count
+            4 - each item len
+          ----
+           12 - total
+
+      */
+      if ( ! sd_array_init )
+        {
+          sd_array_init = true;
+          m_HeaderSize += 12;
+        }
+
+
+      /* each subdescriptor requires 88 bytes + MIMEMediaType.archiveLength()
+           of extra header space
+
+         TimedTextDescriptor (array of sub-descriptors)
+           16 - uuid in the TimedTextDescriptor sub-descriptor array
+
+         TimedTextSubDescriptor
+           16 - key
+            4 - len (fixed 4 byte long length type)
+            4 - tag/len
+           16 - instance uuid
+            4 - tag/len
+           16 - ancillary resource uuid
+            4 - tag/len
+            n - MIMEMediaType UTF16 length
+            4 - tag/len
+            4 - id
+        --------------
+         88+n - total
+
+      */
+
+      /* MIMEMediaType.ArchiveLength:
+          - includes sizeof(ui32_t) for an internal length representation
+          - returns half of what it should for UTF16 representation of
+            pure ASCII bytes
+          - ( MXFTypes.h UTF16String::ArchiveLength )
+
+         fix up the return value before using it
+      */
+      int n = (resourceSubdescriptor->MIMEMediaType.ArchiveLength() - sizeof(ui32_t)) * 2;
+      m_HeaderSize += (88 + n);
     }
 
   m_EssenceStreamID = 10;
