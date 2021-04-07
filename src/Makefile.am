@@ -78,11 +78,12 @@ include_HEADERS += \
 	WavFileWriter.h \
 	AS_DCP_internal.h \
 	AS_DCP_DCData_internal.h
-
 endif
 
 if USE_AS_02
-include_HEADERS		+= AS_02.h
+include_HEADERS		+= \
+	AS_02.h \
+	AS_02_ACES.h
 endif
 
 if USE_PHDR
