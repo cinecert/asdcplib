@@ -82,10 +82,9 @@ namespace AS_02
       AS02IndexReader();
 	  
     public:
-      const ASDCP::Dictionary*&   m_Dict;
       ASDCP::IPrimerLookup *m_Lookup;
     
-      AS02IndexReader(const ASDCP::Dictionary*&);
+      AS02IndexReader(const ASDCP::Dictionary*);
       virtual ~AS02IndexReader();
     
       Result_t InitFromFile(const Kumu::FileReader& reader, const ASDCP::MXF::RIP& rip, const bool has_header_essence);

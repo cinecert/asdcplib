@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2011-2018, Robert Scheler, Heiko Sparenberg Fraunhofer IIS,
+Copyright (c) 2011-2021, Robert Scheler, Heiko Sparenberg Fraunhofer IIS,
 John Hurst
 
 All rights reserved.
@@ -63,9 +63,10 @@ AS_02::default_md_object_init()
 //
 
     
-AS_02::MXF::AS02IndexReader::AS02IndexReader(const ASDCP::Dictionary*& d) :
-  m_Duration(0), m_BytesPerEditUnit(0),
-  ASDCP::MXF::Partition(d), m_Dict(d) {}
+AS_02::MXF::AS02IndexReader::AS02IndexReader(const ASDCP::Dictionary* d) :
+  ASDCP::MXF::Partition(d), m_Duration(0), m_BytesPerEditUnit(0) {
+  assert(d);
+}
 
 AS_02::MXF::AS02IndexReader::~AS02IndexReader() {}
 
@@ -251,6 +252,7 @@ AS_02::MXF::AS02IndexReader::InitFromFile(const Kumu::FileReader& reader, const 
 ASDCP::Result_t
 AS_02::MXF::AS02IndexReader::InitFromBuffer(const byte_t* p, ui32_t l, const ui64_t& body_offset, const ui64_t& essence_container_offset)
 {
+  assert(m_Dict);
   Result_t result = RESULT_OK;
   const byte_t* end_p = p + l;
 
@@ -393,7 +395,8 @@ AS_02::MXF::AS02IndexReader::Lookup(ui32_t frame_num, ASDCP::MXF::IndexTableSegm
 //
 
 
-AS_02::h__AS02Reader::h__AS02Reader(const ASDCP::Dictionary& d) : ASDCP::MXF::TrackFileReader<ASDCP::MXF::OP1aHeader, AS_02::MXF::AS02IndexReader>(d) {}
+AS_02::h__AS02Reader::h__AS02Reader(const ASDCP::Dictionary *d) :
+  ASDCP::MXF::TrackFileReader<ASDCP::MXF::OP1aHeader, AS_02::MXF::AS02IndexReader>(d) {}
 AS_02::h__AS02Reader::~h__AS02Reader() {}
 
 

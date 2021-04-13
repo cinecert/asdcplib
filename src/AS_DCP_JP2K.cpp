@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2004-2016, John Hurst
+Copyright (c) 2004-2021, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -527,7 +527,7 @@ class lh__Reader : public ASDCP::h__ASDCPReader
 public:
   PictureDescriptor m_PDesc;        // codestream parameter list
 
-  lh__Reader(const Dictionary& d) :
+  lh__Reader(const Dictionary *d) :
     ASDCP::h__ASDCPReader(d), m_EssenceDescriptor(0), m_EssenceSubDescriptor(0), m_Format(ESS_UNKNOWN) {}
 
   virtual ~lh__Reader() {}
@@ -716,7 +716,7 @@ class ASDCP::JP2K::MXFReader::h__Reader : public lh__Reader
   h__Reader();
 
 public:
-  h__Reader(const Dictionary& d) : lh__Reader(d) {}
+  h__Reader(const Dictionary *d) : lh__Reader(d) {}
 };
 
 
@@ -744,7 +744,7 @@ ASDCP::JP2K::FrameBuffer::Dump(FILE* stream, ui32_t dump_len) const
 
 ASDCP::JP2K::MXFReader::MXFReader()
 {
-  m_Reader = new h__Reader(DefaultCompositeDict());
+  m_Reader = new h__Reader(&DefaultCompositeDict());
 }
 
 
@@ -893,7 +893,7 @@ class ASDCP::JP2K::MXFSReader::h__SReader : public lh__Reader
   ui32_t m_StereoFrameReady;
 
 public:
-  h__SReader(const Dictionary& d) : lh__Reader(d), m_StereoFrameReady(0xffffffff) {}
+  h__SReader(const Dictionary *d) : lh__Reader(d), m_StereoFrameReady(0xffffffff) {}
 
   //
   Result_t ReadFrame(ui32_t FrameNum, StereoscopicPhase_t phase, FrameBuffer& FrameBuf,
@@ -970,7 +970,7 @@ public:
 
 ASDCP::JP2K::MXFSReader::MXFSReader()
 {
-  m_Reader = new h__SReader(DefaultCompositeDict());
+  m_Reader = new h__SReader(&DefaultCompositeDict());
 }
 
 
@@ -1142,7 +1142,7 @@ public:
   PictureDescriptor m_PDesc;
   byte_t            m_EssenceUL[SMPTE_UL_LENGTH];
 
-  lh__Writer(const Dictionary& d) : ASDCP::h__ASDCPWriter(d), m_EssenceSubDescriptor(0) {
+  lh__Writer(const Dictionary *d) : ASDCP::h__ASDCPWriter(d), m_EssenceSubDescriptor(0) {
     memset(m_EssenceUL, 0, SMPTE_UL_LENGTH);
   }
 
@@ -1292,7 +1292,7 @@ class ASDCP::JP2K::MXFWriter::h__Writer : public lh__Writer
   h__Writer();
 
 public:
-  h__Writer(const Dictionary& d) : lh__Writer(d) {}
+  h__Writer(const Dictionary *d) : lh__Writer(d) {}
 };
 
 
@@ -1360,9 +1360,9 @@ ASDCP::JP2K::MXFWriter::OpenWrite(const std::string& filename, const WriterInfo&
 				  const PictureDescriptor& PDesc, ui32_t HeaderSize)
 {
   if ( Info.LabelSetType == LS_MXF_SMPTE )
-    m_Writer = new h__Writer(DefaultSMPTEDict());
+    m_Writer = new h__Writer(&DefaultSMPTEDict());
   else
-    m_Writer = new h__Writer(DefaultInteropDict());
+    m_Writer = new h__Writer(&DefaultInteropDict());
 
   m_Writer->m_Info = Info;
 
@@ -1413,7 +1413,7 @@ class ASDCP::JP2K::MXFSWriter::h__SWriter : public lh__Writer
   StereoscopicPhase_t m_NextPhase;
 
 public:
-  h__SWriter(const Dictionary& d) : lh__Writer(d), m_NextPhase(SP_LEFT) {}
+  h__SWriter(const Dictionary *d) : lh__Writer(d), m_NextPhase(SP_LEFT) {}
 
   //
   Result_t WriteFrame(const FrameBuffer& FrameBuf, StereoscopicPhase_t phase,
@@ -1506,9 +1506,9 @@ ASDCP::JP2K::MXFSWriter::OpenWrite(const std::string& filename, const WriterInfo
 				   const PictureDescriptor& PDesc, ui32_t HeaderSize)
 {
   if ( Info.LabelSetType == LS_MXF_SMPTE )
-    m_Writer = new h__SWriter(DefaultSMPTEDict());
+    m_Writer = new h__SWriter(&DefaultSMPTEDict());
   else
-    m_Writer = new h__SWriter(DefaultInteropDict());
+    m_Writer = new h__SWriter(&DefaultInteropDict());
 
   if ( PDesc.EditRate != ASDCP::EditRate_24
        && PDesc.EditRate != ASDCP::EditRate_25

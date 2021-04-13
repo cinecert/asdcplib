@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2004-2018, John Hurst
+Copyright (c) 2004-2021, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -85,7 +85,7 @@ class ASDCP::DCData::MXFReader::h__Reader : public ASDCP::h__ASDCPReader
  public:
   DCDataDescriptor m_DDesc;
 
-  h__Reader(const Dictionary& d) : ASDCP::h__ASDCPReader(d), m_PrivateLabelCompatibilityMode(false), m_DDesc() {}
+  h__Reader(const Dictionary *d) : ASDCP::h__ASDCPReader(d), m_PrivateLabelCompatibilityMode(false), m_DDesc() {}
   ~h__Reader() {}
   Result_t    OpenRead(const std::string&);
   Result_t    ReadFrame(ui32_t, FrameBuffer&, AESDecContext*, HMACContext*);
@@ -226,7 +226,7 @@ ASDCP::DCData::FrameBuffer::Dump(FILE* stream, ui32_t dump_len) const
 
 ASDCP::DCData::MXFReader::MXFReader()
 {
-  m_Reader = new h__Reader(DefaultSMPTEDict());
+  m_Reader = new h__Reader(&DefaultSMPTEDict());
 }
 
 
@@ -379,7 +379,7 @@ public:
   DCDataDescriptor m_DDesc;
   byte_t           m_EssenceUL[SMPTE_UL_LENGTH];
 
-  h__Writer(const Dictionary& d) : ASDCP::h__ASDCPWriter(d) {
+  h__Writer(const Dictionary *d) : ASDCP::h__ASDCPWriter(d) {
     memset(m_EssenceUL, 0, SMPTE_UL_LENGTH);
   }
 
@@ -595,7 +595,7 @@ ASDCP::DCData::MXFWriter::OpenWrite(const std::string& filename, const WriterInf
     return RESULT_FORMAT;
   }
 
-  m_Writer = new h__Writer(DefaultSMPTEDict());
+  m_Writer = new h__Writer(&DefaultSMPTEDict());
   m_Writer->m_Info = Info;
 
   Result_t result = m_Writer->OpenWrite(filename, HeaderSize, SubDescriptorList_t());

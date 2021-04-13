@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2004-2018, John Hurst
+Copyright (c) 2004-2021, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -166,12 +166,12 @@ namespace ASDCP
   Result_t MD_to_PCM_ADesc(ASDCP::MXF::WaveAudioDescriptor* ADescObj, PCM::AudioDescriptor& ADesc);
 
   void     AddDmsCrypt(Partition& HeaderPart, SourcePackage& Package,
-		       WriterInfo& Descr, const UL& WrappingUL, const Dictionary*& Dict);
+		       WriterInfo& Descr, const UL& WrappingUL, const Dictionary *Dict);
 
   Result_t AddDmsTrackGenericPartUtf8Text(Kumu::FileWriter&, ASDCP::MXF::OP1aHeader&, SourcePackage&,
-					  ASDCP::MXF::RIP&, const Dictionary*&);
+					  ASDCP::MXF::RIP&, const Dictionary*);
   //
-  Result_t WriteGenericStreamPartition(Kumu::FileWriter&, ASDCP::MXF::OP1aHeader&, ASDCP::MXF::RIP&, const Dictionary*&,
+  Result_t WriteGenericStreamPartition(Kumu::FileWriter&, ASDCP::MXF::OP1aHeader&, ASDCP::MXF::RIP&, const Dictionary*,
 				       const ASDCP::FrameBuffer&, ASDCP::AESEncContext* = 0, ASDCP::HMACContext* = 0);
   
   Result_t Read_EKLV_Packet(Kumu::FileReader& File, const ASDCP::Dictionary& Dict,
@@ -216,7 +216,7 @@ namespace ASDCP
 	TrackFileReader();
 
       public:
-	const Dictionary*  m_Dict;
+	const Dictionary  *m_Dict;
 	Kumu::FileReader   m_File;
 	HeaderType         m_HeaderPart;
 	IndexAccessType    m_IndexAccess;
@@ -225,8 +225,8 @@ namespace ASDCP
 	ASDCP::FrameBuffer m_CtFrameBuf;
 	Kumu::fpos_t       m_LastPosition;
 
-      TrackFileReader(const Dictionary& d) :
-	m_HeaderPart(m_Dict), m_IndexAccess(m_Dict), m_RIP(m_Dict), m_Dict(&d)
+      TrackFileReader(const Dictionary *d) :
+	m_HeaderPart(d), m_IndexAccess(d), m_RIP(d), m_Dict(d)
 	  {
 	    default_md_object_init();
 	  }
@@ -496,7 +496,7 @@ namespace ASDCP
       template <class PackageT, class ClipT>
 	TrackSet<ClipT>
 	CreateTrackAndSequence(OP1aHeader& Header, PackageT& Package, const std::string TrackName,
-			       const MXF::Rational& clip_edit_rate, const UL& Definition, ui32_t TrackID, const Dictionary*& Dict)
+			       const MXF::Rational& clip_edit_rate, const UL& Definition, ui32_t TrackID, const Dictionary *Dict)
 	{
 	  TrackSet<ClipT> NewTrack;
 
@@ -519,7 +519,7 @@ namespace ASDCP
       template <class PackageT>
 	TrackSet<TimecodeComponent>
 	CreateTimecodeTrack(OP1aHeader& Header, PackageT& Package,
-			    const MXF::Rational& tc_edit_rate, ui32_t tc_frame_rate, ui64_t TCStart, const Dictionary*& Dict)
+			    const MXF::Rational& tc_edit_rate, ui32_t tc_frame_rate, ui64_t TCStart, const Dictionary *Dict)
 	{
 	  assert(Dict);
 	  UL TCUL(Dict->ul(MDD_TimecodeDataDef));
@@ -610,8 +610,8 @@ namespace ASDCP
 	typedef std::list<ui64_t*> DurationElementList_t;
 	DurationElementList_t m_DurationUpdateList;
 
-      TrackFileWriter(const Dictionary& d) :
-	m_Dict(&d), m_HeaderSize(0), m_HeaderPart(m_Dict), m_RIP(m_Dict),
+      TrackFileWriter(const Dictionary *d) :
+	m_Dict(d), m_HeaderSize(0), m_HeaderPart(m_Dict), m_RIP(m_Dict),
 	  m_MaterialPackage(0), m_FilePackage(0), m_ContentStorage(0),
 	  m_EssenceDescriptor(0), m_FramesWritten(0), m_StreamOffset(0)
 	  {
@@ -909,7 +909,7 @@ namespace ASDCP
     public:
       Partition m_BodyPart;
 
-      h__ASDCPReader(const Dictionary&);
+      h__ASDCPReader(const Dictionary*);
       virtual ~h__ASDCPReader();
 
       Result_t OpenMXFRead(const std::string& filename);
@@ -929,7 +929,7 @@ namespace ASDCP
       Partition          m_BodyPart;
       OPAtomIndexFooter  m_FooterPart;
 
-      h__ASDCPWriter(const Dictionary&);
+      h__ASDCPWriter(const Dictionary*);
       virtual ~h__ASDCPWriter();
 
       // all the above for a single source clip

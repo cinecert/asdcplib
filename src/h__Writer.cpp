@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2004-2018, John Hurst
+Copyright (c) 2004-2021, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -46,7 +46,7 @@ ASDCP::derive_timecode_rate_from_edit_rate(const ASDCP::Rational& edit_rate)
 // add DMS CryptographicFramework entry to source package
 void
 ASDCP::AddDmsCrypt(Partition& HeaderPart, SourcePackage& Package,
-		   WriterInfo& Descr, const UL& WrappingUL, const Dictionary*& Dict)
+		   WriterInfo& Descr, const UL& WrappingUL, const Dictionary* Dict)
 {
   assert(Dict);
   // Essence Track
@@ -102,7 +102,7 @@ id_batch_contains(const Array<Kumu::UUID>& batch, const Kumu::UUID& value)
 //
 Result_t
 ASDCP::AddDmsTrackGenericPartUtf8Text(Kumu::FileWriter& file_writer, MXF::OP1aHeader& header_part,
-				      SourcePackage& source_package, MXF::RIP& rip, const Dictionary*& Dict)
+				      SourcePackage& source_package, MXF::RIP& rip, const Dictionary* Dict)
 {
   Sequence* Sequence_obj = 0;
   InterchangeObject* tmp_iobj = 0;
@@ -213,8 +213,8 @@ ASDCP::AddDmsTrackGenericPartUtf8Text(Kumu::FileWriter& file_writer, MXF::OP1aHe
 }
 
 //
-ASDCP::h__ASDCPWriter::h__ASDCPWriter(const Dictionary& d) :
-  MXF::TrackFileWriter<OP1aHeader>(d), m_BodyPart(m_Dict), m_FooterPart(m_Dict) {}
+ASDCP::h__ASDCPWriter::h__ASDCPWriter(const Dictionary* d) :
+  MXF::TrackFileWriter<OP1aHeader>(d), m_BodyPart(d), m_FooterPart(d) {}
 
 ASDCP::h__ASDCPWriter::~h__ASDCPWriter() {}
 

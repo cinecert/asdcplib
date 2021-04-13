@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2011-2015, Robert Scheler, Heiko Sparenberg Fraunhofer IIS,
+Copyright (c) 2011-2021, Robert Scheler, Heiko Sparenberg Fraunhofer IIS,
 John Hurst
 
 All rights reserved.
@@ -56,7 +56,7 @@ class AS_02::PCM::MXFReader::h__Reader : public AS_02::h__AS02Reader
   h__Reader();
 
 public:
-  h__Reader(const Dictionary& d) : AS_02::h__AS02Reader(d), m_ClipEssenceBegin(0), m_ClipSize(0),
+  h__Reader(const Dictionary *d) : AS_02::h__AS02Reader(d), m_ClipEssenceBegin(0), m_ClipSize(0),
 				   m_ClipDurationFrames(0) {}
   virtual ~h__Reader() {}
 
@@ -200,7 +200,7 @@ AS_02::PCM::MXFReader::h__Reader::ReadFrame(ui32_t FrameNum, ASDCP::PCM::FrameBu
 
 AS_02::PCM::MXFReader::MXFReader()
 {
-  m_Reader = new h__Reader(DefaultCompositeDict());
+  m_Reader = new h__Reader(&DefaultCompositeDict());
 }
 
 AS_02::PCM::MXFReader::~MXFReader()
@@ -336,7 +336,7 @@ public:
   byte_t m_EssenceUL[SMPTE_UL_LENGTH];
   ui32_t m_BytesPerSample;
   
-  h__Writer(const Dictionary& d) : AS_02::h__AS02WriterClip(d), m_WaveAudioDescriptor(0), m_BytesPerSample(0)
+  h__Writer(const Dictionary *d) : AS_02::h__AS02WriterClip(d), m_WaveAudioDescriptor(0), m_BytesPerSample(0)
   {
     memset(m_EssenceUL, 0, SMPTE_UL_LENGTH);
   }
@@ -558,7 +558,7 @@ AS_02::PCM::MXFWriter::OpenWrite(const std::string& filename, const WriterInfo& 
       return Kumu::RESULT_NOTIMPL;
     }
 
-  m_Writer = new h__Writer(DefaultSMPTEDict());
+  m_Writer = new h__Writer(&DefaultSMPTEDict());
   m_Writer->m_Info = Info;
 
   Result_t result = m_Writer->OpenWrite(filename, essence_descriptor, essence_sub_descriptor_list, header_size);

@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2005-2012, John Hurst
+Copyright (c) 2005-2021, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -34,8 +34,8 @@ const ui32_t kl_length = ASDCP::SMPTE_UL_LENGTH + ASDCP::MXF_BER_LENGTH;
 
 
 //
-ASDCP::MXF::IndexTableSegment::IndexTableSegment(const Dictionary*& d) :
-  InterchangeObject(d), m_Dict(d), RtFileOffset(0), RtEntryOffset(0),
+ASDCP::MXF::IndexTableSegment::IndexTableSegment(const Dictionary* d) :
+  InterchangeObject(d), RtFileOffset(0), RtEntryOffset(0),
   IndexStartPosition(0), IndexDuration(0), EditUnitByteCount(0),
   IndexSID(129), BodySID(1), SliceCount(0), PosTableCount(0)
 {
@@ -46,6 +46,13 @@ ASDCP::MXF::IndexTableSegment::IndexTableSegment(const Dictionary*& d) :
 //
 ASDCP::MXF::IndexTableSegment::~IndexTableSegment()
 {
+}
+
+ASDCP::MXF::IndexTableSegment::IndexTableSegment(const IndexTableSegment& rhs) : InterchangeObject(rhs.m_Dict)
+{
+  assert(m_Dict);
+  m_UL = m_Dict->ul(MDD_IndexTableSegment);
+  Copy(rhs);
 }
 
 //
@@ -63,6 +70,13 @@ ASDCP::MXF::IndexTableSegment::Copy(const IndexTableSegment& rhs)
   PosTableCount = rhs.PosTableCount;
   DeltaEntryArray = rhs.DeltaEntryArray;
   IndexEntryArray = rhs.IndexEntryArray;
+}
+
+//
+ASDCP::MXF::InterchangeObject*
+ASDCP::MXF::IndexTableSegment::Clone() const
+{
+  return new IndexTableSegment(*this);
 }
 
 //

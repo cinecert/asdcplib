@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2005-2015, John Hurst
+Copyright (c) 2005-2021, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -262,13 +262,14 @@ ASDCP::MXF::Partition::PacketList::GetMDObjectsByType(const byte_t* ObjectID, st
 //
 
 
-ASDCP::MXF::Partition::Partition(const Dictionary*& d) :
+ASDCP::MXF::Partition::Partition(const Dictionary* d) :
   m_Dict(d),
   MajorVersion(1), MinorVersion(2),
   KAGSize(1), ThisPartition(0), PreviousPartition(0),
   FooterPartition(0), HeaderByteCount(0), IndexByteCount(0), IndexSID(0),
   BodyOffset(0), BodySID(0)
 {
+  assert(d);
   m_PacketList = new PacketList;
 }
 
@@ -429,7 +430,7 @@ public:
 
 
 //
-ASDCP::MXF::Primer::Primer(const Dictionary*& d) : m_LocalTag(0xff), m_Dict(d) {
+ASDCP::MXF::Primer::Primer(const Dictionary* d) : m_LocalTag(0xff), m_Dict(d) {
   m_UL = m_Dict->ul(MDD_Primer);
 }
 
@@ -595,12 +596,19 @@ ASDCP::MXF::Primer::Dump(FILE* stream)
 //
 
 //
-ASDCP::MXF::Preface::Preface(const Dictionary*& d) :
-  InterchangeObject(d), m_Dict(d), Version(258)
+ASDCP::MXF::Preface::Preface(const Dictionary* d) :
+  InterchangeObject(d), Version(258)
 {
   assert(m_Dict);
   m_UL = m_Dict->Type(MDD_Preface).ul;
   ObjectModelVersion = 0;
+}
+
+ASDCP::MXF::Preface::Preface(const Preface& rhs) : InterchangeObject(rhs.m_Dict)
+{
+  assert(m_Dict);
+  m_UL = rhs.m_UL;
+  Copy(rhs);
 }
 
 //
@@ -620,6 +628,13 @@ ASDCP::MXF::Preface::Copy(const Preface& rhs)
   DMSchemes = rhs.DMSchemes;
   ApplicationSchemes = rhs.ApplicationSchemes;
   ConformsToSpecifications = rhs.ConformsToSpecifications;
+}
+
+//
+ASDCP::MXF::InterchangeObject*
+ASDCP::MXF::Preface::Clone() const
+{
+  return new Preface(*this);
 }
 
 //
@@ -725,7 +740,12 @@ ASDCP::MXF::Preface::Dump(FILE* stream)
 //------------------------------------------------------------------------------------------
 //
 
-ASDCP::MXF::OP1aHeader::OP1aHeader(const Dictionary*& d) : Partition(d), m_Dict(d), m_Primer(d), m_Preface(0) {}
+ASDCP::MXF::OP1aHeader::OP1aHeader(const Dictionary* d) :
+  Partition(d), m_Primer(d), m_Preface(0)
+{
+  assert(m_Dict);
+}
+
 ASDCP::MXF::OP1aHeader::~OP1aHeader() {}
 
 //
@@ -1025,8 +1045,8 @@ ASDCP::MXF::OP1aHeader::Dump(FILE* stream)
 //------------------------------------------------------------------------------------------
 //
 
-ASDCP::MXF::OPAtomIndexFooter::OPAtomIndexFooter(const Dictionary*& d) :
-  Partition(d), m_Dict(d),
+ASDCP::MXF::OPAtomIndexFooter::OPAtomIndexFooter(const Dictionary* d) :
+  Partition(d),
   m_CurrentSegment(0), m_BytesPerEditUnit(0), m_BodySID(0),
   m_ECOffset(0), m_Lookup(0)
 {
@@ -1367,6 +1387,11 @@ ASDCP::MXF::OPAtomIndexFooter::PushIndexEntry(const IndexTableSegment::IndexEntr
 //------------------------------------------------------------------------------------------
 //
 
+ASDCP::MXF::InterchangeObject::InterchangeObject(const Dictionary* d) :
+  KLVPacket(), m_Dict(d), m_Lookup(0) {}
+
+ASDCP::MXF::InterchangeObject::~InterchangeObject() {}
+
 //
 void
 ASDCP::MXF::InterchangeObject::Copy(const InterchangeObject& rhs)
@@ -1374,6 +1399,15 @@ ASDCP::MXF::InterchangeObject::Copy(const InterchangeObject& rhs)
   m_UL = rhs.m_UL;
   InstanceUID = rhs.InstanceUID;
   GenerationUID = rhs.GenerationUID;
+}
+
+//
+ASDCP::MXF::InterchangeObject*
+ASDCP::MXF::InterchangeObject::Clone() const
+{
+  ASDCP::MXF::InterchangeObject* obj = new ASDCP::MXF::InterchangeObject(m_Dict);
+  obj->Copy(*this);
+  return obj;
 }
 
 //
@@ -1540,7 +1574,7 @@ ASDCP::MXF::SetObjectFactory(const ASDCP::UL& label, ASDCP::MXF::MXFObjectFactor
 
 //
 ASDCP::MXF::InterchangeObject*
-ASDCP::MXF::CreateObject(const Dictionary*& Dict, const UL& label)
+ASDCP::MXF::CreateObject(const Dictionary* Dict, const UL& label)
 {
   if ( ! s_TypesInit )
     {
@@ -1595,7 +1629,7 @@ ul_is_an_mca_channel(const ASDCP::UL& ul)
 
 //
 bool
-ASDCP::MXF::decode_mca_string(const std::string& s, const mca_label_map_t& labels, const Dictionary*& dict, const std::string& language,
+ASDCP::MXF::decode_mca_string(const std::string& s, const mca_label_map_t& labels, const Dictionary* dict, const std::string& language,
 			      InterchangeObject_list_t& descriptor_list, ui32_t& channel_count)
 {
   std::string symbol_buf;
@@ -1788,7 +1822,7 @@ ASDCP::MXF::decode_mca_string(const std::string& s, const mca_label_map_t& label
 }
 
 //
-ASDCP::MXF::ASDCP_MCAConfigParser::ASDCP_MCAConfigParser(const Dictionary*& d) : m_Dict(d), m_ChannelCount(0)
+ASDCP::MXF::ASDCP_MCAConfigParser::ASDCP_MCAConfigParser(const Dictionary* d) : m_Dict(d), m_ChannelCount(0)
 {
   typedef mca_label_map_t::value_type pair;
   m_LabelMap.insert(pair("L",     label_traits("Left"                              , true,  m_Dict->ul(MDD_DCAudioChannel_L))));
@@ -1832,7 +1866,7 @@ ASDCP::MXF::ASDCP_MCAConfigParser::DecodeString(const std::string& s, const std:
 }
 
 // ST(L,R),DNS(NSC001,NSC002),-,VIN
-ASDCP::MXF::AS02_MCAConfigParser::AS02_MCAConfigParser(const Dictionary*& d) : ASDCP::MXF::ASDCP_MCAConfigParser(d)
+ASDCP::MXF::AS02_MCAConfigParser::AS02_MCAConfigParser(const Dictionary* d) : ASDCP::MXF::ASDCP_MCAConfigParser(d)
 {
   typedef mca_label_map_t::value_type pair;
   m_LabelMap.insert(pair("M1",    label_traits("Mono One",  true,  m_Dict->ul(MDD_IMFAudioChannel_M1))));

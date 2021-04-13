@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2011-2018, Robert Scheler, Heiko Sparenberg Fraunhofer IIS,
+Copyright (c) 2011-2021, Robert Scheler, Heiko Sparenberg Fraunhofer IIS,
 John Hurst
 
 All rights reserved.
@@ -42,7 +42,7 @@ static const ui32_t CBRIndexEntriesPerSegment = 5000;
 //------------------------------------------------------------------------------------------
 //
 
-AS_02::MXF::AS02IndexWriterVBR::AS02IndexWriterVBR(const ASDCP::Dictionary*& d) :
+AS_02::MXF::AS02IndexWriterVBR::AS02IndexWriterVBR(const ASDCP::Dictionary* d) :
   Partition(d), m_CurrentSegment(0), m_Dict(d), m_Lookup(0)
 {
   BodySID = 0;
@@ -186,7 +186,7 @@ AS_02::MXF::AS02IndexWriterVBR::SetEditRate(const ASDCP::Rational& edit_rate)
 //
 
 //
-AS_02::h__AS02WriterFrame::h__AS02WriterFrame(const ASDCP::Dictionary& d) :
+AS_02::h__AS02WriterFrame::h__AS02WriterFrame(const ASDCP::Dictionary *d) :
   h__AS02Writer<AS_02::MXF::AS02IndexWriterVBR>(d), m_IndexStrategy(AS_02::IS_FOLLOW) {}
 
 AS_02::h__AS02WriterFrame::~h__AS02WriterFrame() {}
@@ -236,7 +236,7 @@ AS_02::h__AS02WriterFrame::WriteEKLVPacket(const ASDCP::FrameBuffer& FrameBuf,co
 //
 
 
-AS_02::MXF::AS02IndexWriterCBR::AS02IndexWriterCBR(const ASDCP::Dictionary*& d) :
+AS_02::MXF::AS02IndexWriterCBR::AS02IndexWriterCBR(const ASDCP::Dictionary *d) :
   Partition(d), m_CurrentSegment(0), m_Dict(d), m_Lookup(0), m_Duration(0), m_SampleSize(0)
 {
   BodySID = 0;
@@ -311,7 +311,7 @@ AS_02::MXF::AS02IndexWriterCBR::SetEditRate(const ASDCP::Rational& edit_rate, co
 //
 
 //
-AS_02::h__AS02WriterClip::h__AS02WriterClip(const ASDCP::Dictionary& d) :
+AS_02::h__AS02WriterClip::h__AS02WriterClip(const ASDCP::Dictionary* d) :
   h__AS02Writer<AS_02::MXF::AS02IndexWriterCBR>(d),
   m_ECStart(0), m_ClipStart(0), m_IndexStrategy(AS_02::IS_FOLLOW) {}
 

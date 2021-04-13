@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2008-2018, John Hurst
+Copyright (c) 2008-2021, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -69,7 +69,7 @@ class AS_02::TimedText::MXFReader::h__Reader : public AS_02::h__AS02Reader
 public:
   TimedTextDescriptor m_TDesc;    
 
-  h__Reader(const Dictionary& d) : AS_02::h__AS02Reader(d), m_EssenceDescriptor(0) {
+  h__Reader(const Dictionary *d) : AS_02::h__AS02Reader(d), m_EssenceDescriptor(0) {
     memset(&m_TDesc.AssetID, 0, UUIDlen);
   }
 
@@ -225,7 +225,7 @@ AS_02::TimedText::MXFReader::h__Reader::ReadAncillaryResource(const Kumu::UUID& 
 
 AS_02::TimedText::MXFReader::MXFReader()
 {
-  m_Reader = new h__Reader(DefaultSMPTEDict());
+  m_Reader = new h__Reader(&DefaultSMPTEDict());
 }
 
 
@@ -397,7 +397,7 @@ public:
   ui32_t m_EssenceStreamID;
   ASDCP::Rational m_EditRate;
 
-  h__Writer(const Dictionary& d) : AS_02::h__AS02WriterClip(d), m_EssenceStreamID(10)
+  h__Writer(const Dictionary *d) : AS_02::h__AS02WriterClip(d), m_EssenceStreamID(10)
   {
     memset(m_EssenceUL, 0, SMPTE_UL_LENGTH);
   }
@@ -705,7 +705,7 @@ AS_02::TimedText::MXFWriter::OpenWrite(const std::string& filename, const Writer
       return RESULT_FORMAT;
     }
 
-  m_Writer = new h__Writer(DefaultSMPTEDict());
+  m_Writer = new h__Writer(&DefaultSMPTEDict());
   m_Writer->m_Info = Info;
   
   Result_t result = m_Writer->OpenWrite(filename, HeaderSize);

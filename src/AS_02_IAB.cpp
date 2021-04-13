@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2011-2020, Robert Scheler, Heiko Sparenberg Fraunhofer IIS,
+Copyright (c) 2011-2021, Robert Scheler, Heiko Sparenberg Fraunhofer IIS,
 John Hurst, Pierre-Anthony Lemieux
 
 All rights reserved.
@@ -96,7 +96,7 @@ AS_02::IAB::MXFWriter::OpenWrite(
 
   /* initialize the writer */
 
-  this->m_Writer = new AS_02::IAB::MXFWriter::h__Writer(DefaultSMPTEDict());
+  this->m_Writer = new AS_02::IAB::MXFWriter::h__Writer(&DefaultSMPTEDict());
 
   this->m_Writer->m_Info = Info;
 
@@ -372,7 +372,7 @@ AS_02::IAB::MXFReader::OpenRead(const std::string& filename) {
 
   /* initialize the writer */
 
-  this->m_Reader = new h__Reader(DefaultCompositeDict());
+  this->m_Reader = new h__Reader(&DefaultCompositeDict());
 
   try {
 
