@@ -1,6 +1,6 @@
 /*
-Copyright (c) 2003-2018
-, John Hurst
+Copyright (c) 2003-2018, John Hurst,
+Copyright (c) 2020, Christian Minuth Fraunhofer IIS,
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -566,12 +566,12 @@ write_MPEG2_file(CommandOptions& Options)
 	  fprintf(stderr, "ATTENTION! Writing SMPTE Universal Labels\n");
 	}
 
-#ifdef HAVE_OPENSSL
+#idef HAVE_OPENSSL
+      byte_t             IV_buf[CBC_BLOCK_SIZE];
+      Kumu::FortunaRNG   RNG;
       // configure encryption
       if( Options.key_flag )
 	{
-      byte_t             IV_buf[CBC_BLOCK_SIZE];
-      Kumu::FortunaRNG   RNG;
 	  Kumu::GenRandomUUID(Info.ContextID);
 	  Info.EncryptedEssence = true;
 
@@ -691,7 +691,6 @@ write_JP2K_S_file(CommandOptions& Options)
   JP2K::FrameBuffer       FrameBuffer(Options.fb_size);
   JP2K::PictureDescriptor PDesc;
   JP2K::SequenceParser    ParserLeft, ParserRight;
-  byte_t                  IV_buf[CBC_BLOCK_SIZE];
 
   if ( Options.filenames.size() != 2 )
     {
@@ -741,9 +740,10 @@ write_JP2K_S_file(CommandOptions& Options)
 
 #ifdef HAVE_OPENSSL
       // configure encryption
+      byte_t                  IV_buf[CBC_BLOCK_SIZE];
+      Kumu::FortunaRNG        RNG;
       if( Options.key_flag )
 	{
-      Kumu::FortunaRNG        RNG;
 	  Kumu::GenRandomUUID(Info.ContextID);
 	  Info.EncryptedEssence = true;
 
@@ -843,7 +843,6 @@ write_JP2K_file(CommandOptions& Options)
   JP2K::FrameBuffer       FrameBuffer(Options.fb_size);
   JP2K::PictureDescriptor PDesc;
   JP2K::SequenceParser    Parser;
-  byte_t                  IV_buf[CBC_BLOCK_SIZE];
 
   // set up essence parser
   Result_t result = Parser.OpenRead(Options.filenames.front(), Options.j2c_pedantic);
@@ -882,9 +881,10 @@ write_JP2K_file(CommandOptions& Options)
 
 #ifdef HAVE_OPENSSL
       // configure encryption
+      byte_t                  IV_buf[CBC_BLOCK_SIZE];
+      Kumu::FortunaRNG        RNG;
       if( Options.key_flag )
 	{
-      Kumu::FortunaRNG        RNG;
 	  Kumu::GenRandomUUID(Info.ContextID);
 	  Info.EncryptedEssence = true;
 
@@ -910,7 +910,7 @@ write_JP2K_file(CommandOptions& Options)
 	      result = HMAC->InitKey(Options.key_value, Info.LabelSetType);
 	    }
 	}
-#endif // HAVE_OPENSSL
+#endif
 
       if ( ASDCP_SUCCESS(result) )
 	result = Writer.OpenWrite(Options.out_file, Info, PDesc);
@@ -966,6 +966,174 @@ write_JP2K_file(CommandOptions& Options)
 }
 
 //------------------------------------------------------------------------------------------
+
+// return false if an error is discovered
+bool
+check_phfr_jxs_params(CommandOptions& Options, JXS::PictureDescriptor& PDesc)
+{
+	Rational rate = Options.PictureRate();
+	if (rate != EditRate_96 && rate != EditRate_100 && rate != EditRate_120
+		&& rate != EditRate_192 && rate != EditRate_200 && rate != EditRate_240)
+		return true;
+
+	if (PDesc.StoredWidth > 7680)
+	{
+		fprintf(stderr, "P-HFR files currently limited to 8K.\n");
+		return false;
+	}
+
+	if (!Options.use_smpte_labels)
+	{
+		fprintf(stderr, "P-HFR files must be written using SMPTE labels. Use option '-L'.\n");
+		return false;
+	}
+
+	// do not set the label if the user has already done so
+	if (!Options.picture_coding.HasValue())
+		Options.picture_coding = UL(P_HFR_UL_2K);
+
+	return true;
+}
+
+//------------------------------------------------------------------------------------------
+// JPEG XS essence
+
+// Write one or more plaintext JPEG XS codestreams to a plaintext ASDCP file
+// Write one or more plaintext JPEG XS codestreams to a ciphertext ASDCP file
+//
+Result_t
+write_JXS_file(CommandOptions& Options)
+{
+	AESEncContext*         Context = 0;
+	HMACContext*           HMAC = 0;
+	JXS::MXFWriter         Writer;
+	JXS::FrameBuffer       FrameBuffer(Options.fb_size);
+	JXS::PictureDescriptor PDesc;
+	JXS::SequenceParser    Parser;
+
+	// set up essence parser
+	Result_t result = Parser.OpenRead(Options.filenames.front());
+
+	// set up MXF writer
+	if (ASDCP_SUCCESS(result))
+	{
+		Parser.FillPictureDescriptor(PDesc);
+		PDesc.EditRate = Options.PictureRate();
+
+		if (Options.verbose_flag)
+		{
+			fprintf(stderr, "JPEG XS pictures\n");
+			fputs("PictureDescriptor:\n", stderr);
+			fprintf(stderr, "Frame Buffer size: %u\n", Options.fb_size);
+			JXS::PictureDescriptorDump(PDesc);
+		}
+	}
+
+	if (!check_phfr_jxs_params(Options, PDesc))
+		return RESULT_FAIL;
+
+	if (ASDCP_SUCCESS(result) && !Options.no_write_flag)
+	{
+		WriterInfo Info = s_MyInfo;  // fill in your favorite identifiers here
+		if (Options.asset_id_flag)
+			memcpy(Info.AssetUUID, Options.asset_id_value, UUIDlen);
+		else
+			Kumu::GenRandomUUID(Info.AssetUUID);
+
+		if (Options.use_smpte_labels)
+		{
+			Info.LabelSetType = LS_MXF_SMPTE;
+			fprintf(stderr, "ATTENTION! Writing SMPTE Universal Labels\n");
+		}
+
+#ifdef HAVE_OPENSSL
+		// configure encryption
+		byte_t                 IV_buf[CBC_BLOCK_SIZE];
+		Kumu::FortunaRNG       RNG;
+		if (Options.key_flag)
+		{
+			Kumu::GenRandomUUID(Info.ContextID);
+			Info.EncryptedEssence = true;
+
+			if (Options.key_id_flag)
+			{
+				memcpy(Info.CryptographicKeyID, Options.key_id_value, UUIDlen);
+			}
+			else
+			{
+				create_random_uuid(Info.CryptographicKeyID);
+			}
+
+			Context = new AESEncContext;
+			result = Context->InitKey(Options.key_value);
+
+			if (ASDCP_SUCCESS(result))
+				result = Context->SetIVec(RNG.FillRandom(IV_buf, CBC_BLOCK_SIZE));
+
+			if (ASDCP_SUCCESS(result) && Options.write_hmac)
+			{
+				Info.UsesHMAC = true;
+				HMAC = new HMACContext;
+				result = HMAC->InitKey(Options.key_value, Info.LabelSetType);
+			}
+		}
+#endif // HAVE_OPENSSL
+
+		if (ASDCP_SUCCESS(result))
+			result = Writer.OpenWrite(Options.out_file, Info, PDesc);
+
+		if (ASDCP_SUCCESS(result) && Options.picture_coding.HasValue())
+		{
+			MXF::RGBAEssenceDescriptor *descriptor = 0;
+			Writer.OP1aHeader().GetMDObjectByType(g_dict->ul(MDD_RGBAEssenceDescriptor),
+				reinterpret_cast<MXF::InterchangeObject**>(&descriptor));
+			descriptor->PictureEssenceCoding = Options.picture_coding;
+		}
+
+	}
+	if (ASDCP_SUCCESS(result))
+	{
+		ui32_t duration = 0;
+		result = Parser.Reset();
+
+		while (ASDCP_SUCCESS(result) && duration++ < Options.duration)
+		{
+			result = Parser.ReadFrame(FrameBuffer);
+
+			if (ASDCP_SUCCESS(result))
+			{
+				if (Options.verbose_flag)
+					FrameBuffer.Dump(stderr, Options.fb_dump_size);
+
+				if (Options.encrypt_header_flag)
+					FrameBuffer.PlaintextOffset(0);
+			}
+
+			if (ASDCP_SUCCESS(result) && !Options.no_write_flag)
+			{
+				result = Writer.WriteFrame(FrameBuffer, Context, HMAC);
+
+				// The Writer class will forward the last block of ciphertext
+				// to the encryption context for use as the IV for the next
+				// frame. If you want to use non-sequitur IV values, un-comment
+				// the following  line of code.
+				// if ( ASDCP_SUCCESS(result) && Options.key_flag )
+				//   Context->SetIVec(RNG.FillRandom(IV_buf, CBC_BLOCK_SIZE));
+			}
+		}
+
+		if (result == RESULT_ENDOFFILE)
+			result = RESULT_OK;
+	}
+
+	if (ASDCP_SUCCESS(result) && !Options.no_write_flag)
+		result = Writer.Finalize();
+
+	//Result_t result = RESULT_OK;
+	return result;
+}
+
+//------------------------------------------------------------------------------------------
 // PCM essence
 
 
@@ -982,7 +1150,6 @@ write_PCM_file(CommandOptions& Options)
   PCM::FrameBuffer  FrameBuffer;
   PCM::AudioDescriptor ADesc;
   Rational          PictureRate = Options.PictureRate();
-  byte_t            IV_buf[CBC_BLOCK_SIZE];
 
   // set up essence parser
   Result_t result = Parser.OpenRead(Options.filenames, PictureRate);
@@ -1028,9 +1195,10 @@ write_PCM_file(CommandOptions& Options)
 
 #ifdef HAVE_OPENSSL
       // configure encryption
+      byte_t            IV_buf[CBC_BLOCK_SIZE];
+      Kumu::FortunaRNG  RNG;
       if( Options.key_flag )
 	{
-      Kumu::FortunaRNG  RNG;
 	  Kumu::GenRandomUUID(Info.ContextID);
 	  Info.EncryptedEssence = true;
 
@@ -1178,7 +1346,6 @@ write_PCM_with_ATMOS_sync_file(CommandOptions& Options)
   PCM::FrameBuffer      FrameBuffer;
   PCM::AudioDescriptor  ADesc;
   Rational              PictureRate = Options.PictureRate();
-  byte_t                IV_buf[CBC_BLOCK_SIZE];
 
   WriterInfo Info = s_MyInfo;  // fill in your favorite identifiers here
   if ( Options.asset_id_flag )
@@ -1222,9 +1389,10 @@ write_PCM_with_ATMOS_sync_file(CommandOptions& Options)
 
 #ifdef HAVE_OPENSSL
     // configure encryption
+    byte_t                IV_buf[CBC_BLOCK_SIZE];
+    Kumu::FortunaRNG      RNG;
     if( Options.key_flag )
 	{
-      Kumu::FortunaRNG      RNG;
 	  Kumu::GenRandomUUID(Info.ContextID);
 	  Info.EncryptedEssence = true;
 
@@ -1250,7 +1418,7 @@ write_PCM_with_ATMOS_sync_file(CommandOptions& Options)
         result = HMAC->InitKey(Options.key_value, Info.LabelSetType);
       }
 	}
-#endif // HAVE_OPENSSL
+#endif
 
     if ( ASDCP_SUCCESS(result) )
       result = Writer.OpenWrite(Options.out_file, Info, ADesc);
@@ -1306,6 +1474,7 @@ write_PCM_with_ATMOS_sync_file(CommandOptions& Options)
   return result;
 }
 
+
 //------------------------------------------------------------------------------------------
 // TimedText essence
 
@@ -1322,7 +1491,6 @@ write_timed_text_file(CommandOptions& Options)
   TimedText::MXFWriter    Writer;
   TimedText::FrameBuffer  FrameBuffer;
   TimedText::TimedTextDescriptor TDesc;
-  byte_t            IV_buf[CBC_BLOCK_SIZE];
 
   // set up essence parser
   Result_t result = Parser.OpenRead(Options.filenames.front());
@@ -1354,9 +1522,10 @@ write_timed_text_file(CommandOptions& Options)
 
 #ifdef HAVE_OPENSSL
       // configure encryption
+      byte_t            IV_buf[CBC_BLOCK_SIZE];
+      Kumu::FortunaRNG  RNG;
       if( Options.key_flag )
 	{
-      Kumu::FortunaRNG  RNG;
 	  Kumu::GenRandomUUID(Info.ContextID);
 	  Info.EncryptedEssence = true;
 
@@ -1382,7 +1551,7 @@ write_timed_text_file(CommandOptions& Options)
 	      result = HMAC->InitKey(Options.key_value, Info.LabelSetType);
 	    }
 	}
-#endif // HAVE_OPENSSL
+#endif
 
       if ( ASDCP_SUCCESS(result) )
 	result = Writer.OpenWrite(Options.out_file, Info, TDesc);
@@ -1443,7 +1612,6 @@ write_dolby_atmos_file(CommandOptions& Options)
   DCData::FrameBuffer       FrameBuffer(Options.fb_size);
   ATMOS::AtmosDescriptor ADesc;
   DCData::SequenceParser    Parser;
-  byte_t                  IV_buf[CBC_BLOCK_SIZE];
 
   // set up essence parser
   Result_t result = Parser.OpenRead(Options.filenames.front());
@@ -1479,10 +1647,11 @@ write_dolby_atmos_file(CommandOptions& Options)
     Info.LabelSetType = LS_MXF_SMPTE;
 
 #ifdef HAVE_OPENSSL
-      // configure encryption
+    // configure encryption
+    byte_t                  IV_buf[CBC_BLOCK_SIZE];
+    Kumu::FortunaRNG        RNG;
     if( Options.key_flag )
 	{
-      Kumu::FortunaRNG        RNG;
 	  Kumu::GenRandomUUID(Info.ContextID);
 	  Info.EncryptedEssence = true;
 
@@ -1567,7 +1736,6 @@ write_aux_data_file(CommandOptions& Options)
   DCData::FrameBuffer     FrameBuffer(Options.fb_size);
   DCData::DCDataDescriptor DDesc;
   DCData::SequenceParser  Parser;
-  byte_t                  IV_buf[CBC_BLOCK_SIZE];
 
   // set up essence parser
   Result_t result = Parser.OpenRead(Options.filenames.front());
@@ -1598,10 +1766,11 @@ write_aux_data_file(CommandOptions& Options)
     Info.LabelSetType = LS_MXF_SMPTE;
 
 #ifdef HAVE_OPENSSL
-      // configure encryption
+    // configure encryption
+    byte_t                  IV_buf[CBC_BLOCK_SIZE];
+    Kumu::FortunaRNG        RNG;
     if( Options.key_flag )
 	{
-      Kumu::FortunaRNG        RNG;
 	  Kumu::GenRandomUUID(Info.ContextID);
 	  Info.EncryptedEssence = true;
 
@@ -1729,6 +1898,9 @@ main(int argc, const char** argv)
 	    }
 	  break;
 
+	case ESS_JPEG_XS:
+		result = write_JXS_file(Options);
+		break;
 	case ESS_PCM_24b_48k:
 	case ESS_PCM_24b_96k:
 	  if ( Options.dolby_atmos_sync_flag )

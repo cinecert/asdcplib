@@ -1,6 +1,7 @@
 /*
-Copyright (c) 2011-2020, Robert Scheler, Heiko Sparenberg Fraunhofer IIS,
-John Hurst, Wolfgang Ruppel
+Copyright (c) 2011-2018, Robert Scheler, Heiko Sparenberg Fraunhofer IIS,
+John Hurst, Wolfgang Ruppel,
+Copyright (c) 2020, Christian Minuth Fraunhofer IIS,
 
 All rights reserved.
 
@@ -35,6 +36,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   For more information about AS-02, please refer to the header file AS_02.h
   For more information about asdcplib, please refer to the header file AS_DCP.h
 */
+
 #include <KM_fileio.h>
 #include <KM_xml.h>
 #include <KM_prng.h>
@@ -1097,10 +1099,10 @@ write_JP2K_file(CommandOptions& Options)
 
 #ifdef HAVE_OPENSSL
       // configure encryption
-      if( Options.key_flag )
-	{
       byte_t                  IV_buf[CBC_BLOCK_SIZE];
       Kumu::FortunaRNG        RNG;
+      if( Options.key_flag )
+	{
 	  Kumu::GenRandomUUID(Info.ContextID);
 	  Info.EncryptedEssence = true;
 
@@ -1174,6 +1176,219 @@ write_JP2K_file(CommandOptions& Options)
     result = Writer.Finalize();
 
   return result;
+}
+
+//------------------------------------------------------------------------------------------
+// JPEG XS essence
+
+namespace ASDCP {
+	Result_t JXS_PDesc_to_MD(const ASDCP::JXS::PictureDescriptor& PDesc,
+		const ASDCP::Dictionary& dict,
+		ASDCP::MXF::GenericPictureEssenceDescriptor& GenericPictureEssenceDescriptor,
+		ASDCP::MXF::JPEGXSPictureSubDescriptor& EssenceSubDescriptor);
+
+	Result_t PCM_ADesc_to_MD(ASDCP::PCM::AudioDescriptor& ADesc, ASDCP::MXF::WaveAudioDescriptor* ADescObj);
+}
+
+// Write one or more plaintext JPEG XS codestreams to a plaintext AS-02 file
+// Write one or more plaintext JPEG XS codestreams to a ciphertext AS-02 file
+//
+Result_t
+write_JXS_file(CommandOptions& Options)
+{
+	AESEncContext*         Context = 0;
+	HMACContext*           HMAC = 0;
+	AS_02::JXS::MXFWriter  Writer;
+	JXS::FrameBuffer       FrameBuffer(Options.fb_size);
+	JXS::SequenceParser    Parser;
+	ASDCP::MXF::FileDescriptor *essence_descriptor = 0;
+	ASDCP::MXF::InterchangeObject_list_t essence_sub_descriptors;
+
+	// set up essence parser
+	Result_t result = Parser.OpenRead(Options.filenames.front().c_str());
+
+	// set up MXF writer
+	if (ASDCP_SUCCESS(result))
+	{
+		ASDCP::JXS::PictureDescriptor PDesc;
+		Parser.FillPictureDescriptor(PDesc);
+		PDesc.EditRate = Options.edit_rate;
+
+		if (Options.verbose_flag)
+		{
+			fprintf(stderr, "JPEG 2000 pictures\n");
+			fputs("PictureDescriptor:\n", stderr);
+			fprintf(stderr, "Frame Buffer size: %u\n", Options.fb_size);
+			JXS::PictureDescriptorDump(PDesc);
+		}
+
+		if (Options.use_cdci_descriptor)
+		{
+			ASDCP::MXF::CDCIEssenceDescriptor* tmp_dscr = new ASDCP::MXF::CDCIEssenceDescriptor(g_dict);
+			essence_sub_descriptors.push_back(new ASDCP::MXF::JPEGXSPictureSubDescriptor(g_dict));
+
+			result = ASDCP::JXS_PDesc_to_MD(PDesc, *g_dict,
+				*static_cast<ASDCP::MXF::GenericPictureEssenceDescriptor*>(tmp_dscr),
+				*static_cast<ASDCP::MXF::JPEGXSPictureSubDescriptor*>(essence_sub_descriptors.back()));
+
+			if (ASDCP_SUCCESS(result))
+			{
+				tmp_dscr->CodingEquations = Options.coding_equations;
+				tmp_dscr->TransferCharacteristic = Options.transfer_characteristic;
+				tmp_dscr->ColorPrimaries = Options.color_primaries;
+				tmp_dscr->PictureEssenceCoding = Options.picture_coding;
+				tmp_dscr->HorizontalSubsampling = Options.horizontal_subsampling;
+				tmp_dscr->VerticalSubsampling = Options.vertical_subsampling;
+				tmp_dscr->ComponentDepth = Options.component_depth;
+				tmp_dscr->FrameLayout = Options.frame_layout;
+				tmp_dscr->AspectRatio = Options.aspect_ratio;
+				tmp_dscr->FieldDominance = Options.field_dominance;
+				tmp_dscr->WhiteReflevel = Options.cdci_WhiteRefLevel;
+				tmp_dscr->BlackRefLevel = Options.cdci_BlackRefLevel;
+				tmp_dscr->ColorRange = Options.cdci_ColorRange;
+				if (Options.line_map_flag)  tmp_dscr->VideoLineMap = Options.line_map;
+
+				if (Options.md_min_luminance || Options.md_max_luminance)
+				{
+					tmp_dscr->MasteringDisplayMinimumLuminance = Options.md_min_luminance;
+					tmp_dscr->MasteringDisplayMaximumLuminance = Options.md_max_luminance;
+				}
+
+				if (Options.md_primaries.HasValue())
+				{
+					tmp_dscr->MasteringDisplayPrimaries = Options.md_primaries;
+					tmp_dscr->MasteringDisplayWhitePointChromaticity = Options.md_white_point;
+				}
+
+				essence_descriptor = static_cast<ASDCP::MXF::FileDescriptor*>(tmp_dscr);
+			}
+		}
+		else
+		{ // use RGB
+			ASDCP::MXF::RGBAEssenceDescriptor* tmp_dscr = new ASDCP::MXF::RGBAEssenceDescriptor(g_dict);
+			essence_sub_descriptors.push_back(new ASDCP::MXF::JPEGXSPictureSubDescriptor(g_dict));
+
+			result = ASDCP::JXS_PDesc_to_MD(PDesc, *g_dict,
+				*static_cast<ASDCP::MXF::GenericPictureEssenceDescriptor*>(tmp_dscr),
+				*static_cast<ASDCP::MXF::JPEGXSPictureSubDescriptor*>(essence_sub_descriptors.back()));
+
+			if (ASDCP_SUCCESS(result))
+			{
+				tmp_dscr->CodingEquations = Options.coding_equations;
+				tmp_dscr->TransferCharacteristic = Options.transfer_characteristic;
+				tmp_dscr->ColorPrimaries = Options.color_primaries;
+				tmp_dscr->ScanningDirection = 0;
+				tmp_dscr->PictureEssenceCoding = Options.picture_coding;
+				tmp_dscr->ComponentMaxRef = Options.rgba_MaxRef;
+				tmp_dscr->ComponentMinRef = Options.rgba_MinRef;
+				if (Options.line_map_flag)  tmp_dscr->VideoLineMap = Options.line_map;
+
+				if (Options.md_min_luminance || Options.md_max_luminance)
+				{
+					tmp_dscr->MasteringDisplayMinimumLuminance = Options.md_min_luminance;
+					tmp_dscr->MasteringDisplayMaximumLuminance = Options.md_max_luminance;
+				}
+
+				if (Options.md_primaries.HasValue())
+				{
+					tmp_dscr->MasteringDisplayPrimaries = Options.md_primaries;
+					tmp_dscr->MasteringDisplayWhitePointChromaticity = Options.md_white_point;
+				}
+
+				essence_descriptor = static_cast<ASDCP::MXF::FileDescriptor*>(tmp_dscr);
+			}
+		}
+	}
+
+	if (ASDCP_SUCCESS(result) && !Options.no_write_flag)
+	{
+		WriterInfo Info = s_MyInfo;  // fill in your favorite identifiers here
+		Info.LabelSetType = LS_MXF_SMPTE;
+
+		if (Options.asset_id_flag)
+			memcpy(Info.AssetUUID, Options.asset_id_value, UUIDlen);
+		else
+			Kumu::GenRandomUUID(Info.AssetUUID);
+
+#ifdef HAVE_OPENSSL
+		// configure encryption
+		byte_t                 IV_buf[CBC_BLOCK_SIZE];
+		Kumu::FortunaRNG       RNG;
+		if (Options.key_flag)
+		{
+			Kumu::GenRandomUUID(Info.ContextID);
+			Info.EncryptedEssence = true;
+
+			if (Options.key_id_flag)
+			{
+				memcpy(Info.CryptographicKeyID, Options.key_id_value, UUIDlen);
+			}
+			else
+			{
+				create_random_uuid(Info.CryptographicKeyID);
+			}
+
+			Context = new AESEncContext;
+			result = Context->InitKey(Options.key_value);
+
+			if (ASDCP_SUCCESS(result))
+				result = Context->SetIVec(RNG.FillRandom(IV_buf, CBC_BLOCK_SIZE));
+
+			if (ASDCP_SUCCESS(result) && Options.write_hmac)
+			{
+				Info.UsesHMAC = true;
+				HMAC = new HMACContext;
+				result = HMAC->InitKey(Options.key_value, Info.LabelSetType);
+			}
+		}
+#endif // HAVE_OPENSLL
+
+		if (ASDCP_SUCCESS(result))
+		{
+			result = Writer.OpenWrite(Options.out_file, Info, essence_descriptor, essence_sub_descriptors,
+				Options.edit_rate, Options.mxf_header_size, Options.index_strategy, Options.partition_space);
+		}
+	}
+
+	if (ASDCP_SUCCESS(result))
+	{
+		ui32_t duration = 0;
+		result = Parser.Reset();
+
+		while (ASDCP_SUCCESS(result) && duration++ < Options.duration)
+		{
+			result = Parser.ReadFrame(FrameBuffer);
+
+			if (ASDCP_SUCCESS(result))
+			{
+				if (Options.verbose_flag)
+					FrameBuffer.Dump(stderr, Options.fb_dump_size);
+
+				if (Options.encrypt_header_flag)
+					FrameBuffer.PlaintextOffset(0);
+			}
+
+			if (ASDCP_SUCCESS(result) && !Options.no_write_flag)
+			{
+				result = Writer.WriteFrame(FrameBuffer, Context, HMAC);
+
+				// The Writer class will forward the last block of ciphertext
+				// to the encryption context for use as the IV for the next
+				// frame. If you want to use non-sequitur IV values, un-comment
+				// the following  line of code.
+				// if ( ASDCP_SUCCESS(result) && Options.key_flag )
+				//   Context->SetIVec(RNG.FillRandom(IV_buf, CBC_BLOCK_SIZE));
+			}
+		}
+
+		if (result == RESULT_ENDOFFILE)
+			result = RESULT_OK;
+	}
+
+	if (ASDCP_SUCCESS(result) && !Options.no_write_flag)
+		result = Writer.Finalize();
+
+	return result;
 }
 
 
@@ -1314,10 +1529,9 @@ write_ACES_file(CommandOptions& Options)
       Kumu::GenRandomUUID(Info.AssetUUID);
 
 #ifdef HAVE_OPENSSL
+    // configure encryption
     byte_t                  IV_buf[CBC_BLOCK_SIZE];
     Kumu::FortunaRNG        RNG;
-
-    // configure encryption
     if (Options.key_flag)
     {
       Kumu::GenRandomUUID(Info.ContextID);
@@ -1345,7 +1559,7 @@ write_ACES_file(CommandOptions& Options)
         result = HMAC->InitKey(Options.key_value, Info.LabelSetType);
       }
     }
-#endif
+#endif // HAVE_OPENSSL
 
     if (ASDCP_SUCCESS(result))
     {
@@ -1515,10 +1729,10 @@ write_PCM_file(CommandOptions& Options)
 
 #ifdef HAVE_OPENSSL
       // configure encryption
-      if( Options.key_flag )
-	{
       byte_t            IV_buf[CBC_BLOCK_SIZE];
       Kumu::FortunaRNG  RNG;
+      if( Options.key_flag )
+	{
 	  Kumu::GenRandomUUID(Info.ContextID);
 	  Info.EncryptedEssence = true;
 
@@ -1592,6 +1806,8 @@ write_PCM_file(CommandOptions& Options)
 }
 
 
+
+
 //------------------------------------------------------------------------------------------
 // TimedText essence
 
@@ -1608,7 +1824,6 @@ write_timed_text_file(CommandOptions& Options)
   AS_02::TimedText::MXFWriter    Writer;
   TimedText::FrameBuffer  FrameBuffer;
   TimedText::TimedTextDescriptor TDesc;
-  byte_t            IV_buf[CBC_BLOCK_SIZE];
 
   // set up essence parser
   Result_t result = Parser.OpenRead(Options.filenames.front());
@@ -1645,9 +1860,10 @@ write_timed_text_file(CommandOptions& Options)
 
 #ifdef HAVE_OPENSSL
       // configure encryption
+      byte_t            IV_buf[CBC_BLOCK_SIZE];
+      Kumu::FortunaRNG  RNG;
       if( Options.key_flag )
 	{
-      Kumu::FortunaRNG  RNG;
 	  Kumu::GenRandomUUID(Info.ContextID);
 	  Info.EncryptedEssence = true;
 
@@ -1777,11 +1993,11 @@ write_isxd_file(CommandOptions& Options)
     Info.LabelSetType = LS_MXF_SMPTE;
 
 #ifdef HAVE_OPENSSL
-      // configure encryption
+    // configure encryption
+    byte_t                  IV_buf[CBC_BLOCK_SIZE];
+    Kumu::FortunaRNG        RNG;
     if( Options.key_flag )
 	{
-      byte_t                  IV_buf[CBC_BLOCK_SIZE];
-      Kumu::FortunaRNG        RNG;
 	  Kumu::GenRandomUUID(Info.ContextID);
 	  Info.EncryptedEssence = true;
 
@@ -1905,6 +2121,7 @@ write_isxd_file(CommandOptions& Options)
 		    return RESULT_READFAIL;
 
 		  global_metadata.Size(read_count);
+
 		  std::string ns_prefix, type_name;
 		  Kumu::AttributeList doc_attr_list;
 		  result = GetXMLDocType(global_metadata.RoData(), global_metadata.Size(), ns_prefix, type_name,
@@ -1983,6 +2200,9 @@ main(int argc, const char** argv)
 	  result = write_JP2K_file(Options);
 	  break;
 	 // PB
+	case ESS_JPEG_XS:
+	  result = write_JXS_file(Options);
+	  break;
 	case ::ESS_AS02_ACES:
 	  result = write_ACES_file(Options);
 	  break;

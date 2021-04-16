@@ -247,6 +247,19 @@ class MyStereoPictureDescriptor : public JP2K::PictureDescriptor
   }
 };
 
+class MyJXSPictureDescriptor : public JXS::PictureDescriptor
+{
+public:
+	void FillDescriptor(JXS::MXFReader& Reader) {
+		Reader.FillPictureDescriptor(*this);
+	}
+
+	void Dump(FILE* stream) {
+		JXS::PictureDescriptorDump(*this, stream);
+	}
+};
+
+
 class MyAudioDescriptor : public PCM::AudioDescriptor
 {
  public:
@@ -597,6 +610,25 @@ show_file_info(CommandOptions& Options)
 	    }
 	}
     }
+  else if (EssenceType == ESS_JPEG_XS)
+	{
+	  FileInfoWrapper<ASDCP::JXS::MXFReader, MyJXSPictureDescriptor>wrapper;
+	  result = wrapper.file_info(Options, "JPEG XS pictures");
+
+	  if (KM_SUCCESS(result))
+	  {
+		  wrapper.get_PictureEssenceCoding();
+		  wrapper.calc_Bitrate();
+
+		  if (Options.showcoding_flag)
+			  wrapper.dump_PictureEssenceCoding(stdout);
+
+		  if (Options.showrate_flag)
+			  wrapper.dump_Bitrate(stdout);
+
+		  //result = wrapper.test_rates(Options, stdout); //mth unclear if needed
+	  }
+	}
   else if ( EssenceType == ESS_JPEG_2000_S )
     {
       FileInfoWrapper<ASDCP::JP2K::MXFSReader, MyStereoPictureDescriptor>wrapper;

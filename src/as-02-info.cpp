@@ -366,6 +366,114 @@ class MyPictureDescriptor : public JP2K::PictureDescriptor
   }
 };
 
+class MyJXSPictureDescriptor : public JXS::PictureDescriptor
+{
+	RGBAEssenceDescriptor *m_RGBADescriptor;
+	CDCIEssenceDescriptor *m_CDCIDescriptor;
+	JPEGXSPictureSubDescriptor *m_JXSSubDescriptor;
+
+public:
+	MyJXSPictureDescriptor() :
+		m_RGBADescriptor(0),
+		m_CDCIDescriptor(0),
+		m_JXSSubDescriptor(0) {}
+
+	void FillDescriptor(AS_02::JXS::MXFReader& Reader)
+	{
+		m_CDCIDescriptor = get_descriptor_by_type<AS_02::JXS::MXFReader, CDCIEssenceDescriptor>
+			(Reader, DefaultCompositeDict().ul(MDD_CDCIEssenceDescriptor));
+
+		m_RGBADescriptor = get_descriptor_by_type<AS_02::JXS::MXFReader, RGBAEssenceDescriptor>
+			(Reader, DefaultCompositeDict().ul(MDD_RGBAEssenceDescriptor));
+
+		if (m_RGBADescriptor != 0)
+		{
+			SampleRate = m_RGBADescriptor->SampleRate;
+			if (!m_RGBADescriptor->ContainerDuration.empty())
+			{
+				ContainerDuration = m_RGBADescriptor->ContainerDuration;
+			}
+		}
+		else if (m_CDCIDescriptor != 0)
+		{
+			SampleRate = m_CDCIDescriptor->SampleRate;
+			if (!m_CDCIDescriptor->ContainerDuration.empty())
+			{
+				ContainerDuration = m_CDCIDescriptor->ContainerDuration;
+			}
+		}
+		else
+		{
+			DefaultLogSink().Error("Picture descriptor not found.\n");
+		}
+
+		m_JXSSubDescriptor = get_descriptor_by_type<AS_02::JXS::MXFReader, JPEGXSPictureSubDescriptor>
+			(Reader, DefaultCompositeDict().ul(MDD_JPEGXSPictureSubDescriptor));
+
+		if (m_JXSSubDescriptor == 0)
+		{
+			DefaultLogSink().Error("JPEGXSPictureSubDescriptor not found.\n");
+		}
+
+		std::list<InterchangeObject*> ObjectList;
+		Reader.OP1aHeader().GetMDObjectsByType(DefaultCompositeDict().ul(MDD_Track), ObjectList);
+
+		if (ObjectList.empty())
+		{
+			DefaultLogSink().Error("MXF Metadata contains no Track Sets.\n");
+		}
+
+		EditRate = ((Track*)ObjectList.front())->EditRate;
+	}
+
+	void MyDump(FILE* stream) {
+		if (stream == 0)
+		{
+			stream = stderr;
+		}
+
+		if (m_CDCIDescriptor != 0)
+		{
+			m_CDCIDescriptor->Dump(stream);
+		}
+		else if (m_RGBADescriptor != 0)
+		{
+			m_RGBADescriptor->Dump(stream);
+		}
+		else
+		{
+			return;
+		}
+
+		if (m_JXSSubDescriptor != 0)
+		{
+			m_JXSSubDescriptor->Dump(stream);
+
+			fprintf(stream, "    ImageComponents: (max=%d)\n", JXS::MaxComponents);
+
+			//
+			ui32_t component_sizing = m_JXSSubDescriptor->JPEGXSComponentTable.Length();
+			byte_t image_components[JXS::MaxComponents << 1];
+
+			memcpy(&image_components,
+					m_JXSSubDescriptor->JPEGXSComponentTable.RoData() + 4,
+					component_sizing - 4);
+
+			fprintf(stream, "  bits  h-sep v-sep\n");
+
+			for (int i = 0; i < m_JXSSubDescriptor->JPEGXSNc && i < JXS::MaxComponents; i++)
+			{
+				fprintf(stream, "  %4d  %5d %5d\n",
+					image_components[(i << 1)],
+					image_components[(i << 1) + 1] >> 4,
+					image_components[(i << 1) + 1] & 0x0f
+				);
+			}
+
+		}
+	}
+};
+
 class MyACESPictureDescriptor : public AS_02::ACES::PictureDescriptor
 {
   RGBAEssenceDescriptor *m_RGBADescriptor;
@@ -611,6 +719,34 @@ init_rate_info()
 
   rate_ul = DefaultCompositeDict().ul(MDD_ACESUncompressedMonoscopicWithAlpha);
   g_rate_info.insert(rate_info_map::value_type(rate_ul, RateInfo(rate_ul, DBL_MAX, "ST 2065-5")));
+
+  //
+  // thor: There is probably a profile misconception here. The profile does not define a
+  // maximum bitrate for JPEG XS. The sublevel does. So maybe this is worth a defect report
+  // to SMPTE.
+  rate_ul = DefaultCompositeDict().ul(MDD_JPEGXSUnrestrictedCodestream);
+  g_rate_info.insert(rate_info_map::value_type(rate_ul, RateInfo(rate_ul, DBL_MAX, "ISO/IEC 21122-1 Unrestricted profile")));
+		     
+  rate_ul = DefaultCompositeDict().ul(MDD_JPEGXSMain422_10Profile);
+  g_rate_info.insert(rate_info_map::value_type(rate_ul, RateInfo(rate_ul, DBL_MAX, "ISO/IEC 21122-1 Main422 10 profile")));
+
+  rate_ul = DefaultCompositeDict().ul(MDD_JPEGXSMain444_12Profile);
+  g_rate_info.insert(rate_info_map::value_type(rate_ul, RateInfo(rate_ul, DBL_MAX, "ISO/IEC 21122-1 Main444 12 profile")));
+
+  rate_ul = DefaultCompositeDict().ul(MDD_JPEGXSMain4444_12Profile);
+  g_rate_info.insert(rate_info_map::value_type(rate_ul, RateInfo(rate_ul, DBL_MAX, "ISO/IEC 21122-1 Main4444 12 profile")));
+
+  rate_ul = DefaultCompositeDict().ul(MDD_JPEGXSLight422_10Profile);
+  g_rate_info.insert(rate_info_map::value_type(rate_ul, RateInfo(rate_ul, DBL_MAX, "ISO/IEC 21122-1 Light422 10 profile")));
+
+  rate_ul = DefaultCompositeDict().ul(MDD_JPEGXSLightSubline422_10Profile);
+  g_rate_info.insert(rate_info_map::value_type(rate_ul, RateInfo(rate_ul, DBL_MAX, "ISO/IEC 21122-1 Light subline profile")));
+
+  rate_ul = DefaultCompositeDict().ul(MDD_JPEGXSHigh444_12Profile);
+  g_rate_info.insert(rate_info_map::value_type(rate_ul, RateInfo(rate_ul, DBL_MAX, "ISO/IEC 21122-1 High444 12 profile")));
+
+  rate_ul = DefaultCompositeDict().ul(MDD_JPEGXSHigh4444_12Profile);
+  g_rate_info.insert(rate_info_map::value_type(rate_ul, RateInfo(rate_ul, DBL_MAX, "ISO/IEC 21122-1 High4444 12 profile")));
 }
 
 
@@ -750,7 +886,7 @@ public:
     rate_info_map::const_iterator rate_i = g_rate_info.find(m_PictureEssenceCoding);
     if ( rate_i == g_rate_info.end() )
       {
-	fprintf(stderr, "Unknown PictureEssenceCoding UL: %s\n", m_PictureEssenceCoding.EncodeString(buf, 64));
+	fprintf(stderr, "Did not find rate information UL: %s\n", m_PictureEssenceCoding.EncodeString(buf, 64));
       }
     else
       {
@@ -817,9 +953,10 @@ public:
 	// scale bytes to megabits
 	static const double mega_const = 1.0 / ( 1000000 / 8.0 );
 
+	double avg_bytes_frame = (double)(total_frame_bytes / duration);
 	// we did not accumulate the last, so duration -= 1
-	double avg_bytes_frame = (double)(total_frame_bytes / ( duration - 1 ));
-
+	if (duration > 1)
+		avg_bytes_frame = (double)(total_frame_bytes / (duration - 1));
 	m_MaxBitrate = largest_frame * mega_const * m_Desc.EditRate.Quotient();
 	m_AvgBitrate = avg_bytes_frame * mega_const * m_Desc.EditRate.Quotient();
       }
@@ -886,6 +1023,30 @@ show_file_info(CommandOptions& Options)
 	      result = wrapper.test_rates(Options, stdout);
 	    }
     }
+
+  else if (EssenceType == ESS_AS02_JPEG_XS)
+  {
+	  FileInfoWrapper<AS_02::JXS::MXFReader, MyJXSPictureDescriptor> wrapper;
+	  result = wrapper.file_info(Options, "JPEG XS pictures");
+
+	  if (KM_SUCCESS(result))
+	  {
+		  wrapper.get_PictureEssenceCoding();
+		  wrapper.calc_Bitrate(stdout);
+
+		  if (Options.showcoding_flag)
+		  {
+			  wrapper.dump_PictureEssenceCoding(stdout);
+		  }
+
+		  if (Options.showrate_flag)
+		  {
+			  wrapper.dump_Bitrate(stdout);
+		  }
+
+		  result = wrapper.test_rates(Options, stdout);
+	  }
+  }
 
   else if ( EssenceType == ESS_AS02_ACES )
     {

@@ -1,5 +1,6 @@
 /*
-Copyright (c) 2003-2016, John Hurst
+Copyright (c) 2003-2016, John Hurst,
+Copyright (c) 2020, Christian Minuth Fraunhofer IIS,
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -651,6 +652,96 @@ read_JP2K_file(CommandOptions& Options)
 }
 
 //------------------------------------------------------------------------------------------
+// JPEG XS essence
+
+// Read one or more plaintext JPEG XS codestreams from a plaintext ASDCP file
+// Read one or more plaintext JPEG XS codestreams from a ciphertext ASDCP file
+// Read one or more ciphertext JPEG XS codestreams from a ciphertext ASDCP file
+//
+Result_t
+read_JXS_file(CommandOptions& Options)
+{
+	AESDecContext*    Context = 0;
+	HMACContext*      HMAC = 0;
+	JXS::MXFReader    Reader;
+	JXS::FrameBuffer  FrameBuffer(Options.fb_size);
+	ui32_t            frame_count = 0;
+
+	Result_t result = Reader.OpenRead(Options.input_filename);
+
+	if (ASDCP_SUCCESS(result))
+	{
+		JXS::PictureDescriptor PDesc;
+		Reader.FillPictureDescriptor(PDesc);
+
+		frame_count = PDesc.ContainerDuration;
+
+		if (Options.verbose_flag)
+		{
+			fprintf(stderr, "Frame Buffer size: %u\n", Options.fb_size);
+			JXS::PictureDescriptorDump(PDesc);
+		}
+	}
+
+#ifdef HAVE_OPENSSL
+	if (ASDCP_SUCCESS(result) && Options.key_flag)
+	{
+		Context = new AESDecContext;
+		result = Context->InitKey(Options.key_value);
+
+		if (ASDCP_SUCCESS(result) && Options.read_hmac)
+		{
+			WriterInfo Info;
+			Reader.FillWriterInfo(Info);
+
+			if (Info.UsesHMAC)
+			{
+				HMAC = new HMACContext;
+				result = HMAC->InitKey(Options.key_value, Info.LabelSetType);
+			}
+			else
+			{
+				fputs("File does not contain HMAC values, ignoring -m option.\n", stderr);
+			}
+		}
+	}
+#endif // HAVE_OPENSSL
+
+	ui32_t last_frame = Options.start_frame + (Options.duration ? Options.duration : frame_count);
+	if (last_frame > frame_count)
+		last_frame = frame_count;
+
+	char name_format[64];
+	snprintf(name_format, 64, "%%s%%0%du.jxc", Options.number_width);
+
+	for (ui32_t i = Options.start_frame; ASDCP_SUCCESS(result) && i < last_frame; i++)
+	{
+		result = Reader.ReadFrame(i, FrameBuffer, Context, HMAC);
+
+		if (ASDCP_SUCCESS(result))
+		{
+			if (!Options.no_write_flag)
+			{
+				Kumu::FileWriter OutFile;
+				char filename[256];
+				ui32_t write_count;
+				snprintf(filename, 256, name_format, Options.file_prefix, i);
+				result = OutFile.OpenWrite(filename);
+
+				if (ASDCP_SUCCESS(result))
+					result = OutFile.Write(FrameBuffer.Data(), FrameBuffer.Size(), &write_count);
+			}
+
+			if (Options.verbose_flag)
+				FrameBuffer.Dump(stderr, Options.fb_dump_size);
+		}
+	}
+
+	return result;
+
+}
+
+//------------------------------------------------------------------------------------------
 // PCM essence
 
 // Read one or more plaintext PCM audio streams from a plaintext ASDCP file
@@ -998,7 +1089,9 @@ main(int argc, const char** argv)
 	    case ESS_JPEG_2000_S:
 	      result = read_JP2K_S_file(Options);
 	      break;
-
+		case ESS_JPEG_XS:
+		  result = read_JXS_file(Options);
+		  break;
 	    case ESS_PCM_24b_48k:
 	    case ESS_PCM_24b_96k:
 	      result = read_PCM_file(Options);

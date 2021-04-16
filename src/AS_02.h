@@ -233,6 +233,90 @@ namespace AS_02
     
   } //namespace JP2K
   
+  namespace JXS
+  {
+	  //
+	  class MXFWriter
+	  {
+		  class h__Writer;
+		  ASDCP::mem_ptr<h__Writer> m_Writer;
+		  ASDCP_NO_COPY_CONSTRUCT(MXFWriter);
+
+	  public:
+		  MXFWriter();
+		  virtual ~MXFWriter();
+
+		  // Warning: direct manipulation of MXF structures can interfere
+		  // with the normal operation of the wrapper.  Caveat emptor!
+		  virtual ASDCP::MXF::OP1aHeader& OP1aHeader();
+		  virtual ASDCP::MXF::RIP& RIP();
+
+		  // Open the file for writing. The file must not exist. Returns error if
+		  // the operation cannot be completed or if nonsensical data is discovered
+		  // in the essence descriptor.
+		  Result_t OpenWrite(const std::string& filename, const ASDCP::WriterInfo&,
+			  ASDCP::MXF::FileDescriptor* essence_descriptor,
+			  ASDCP::MXF::InterchangeObject_list_t& essence_sub_descriptor_list,
+			  const ASDCP::Rational& edit_rate, const ui32_t& header_size = 16384,
+			  const IndexStrategy_t& strategy = IS_FOLLOW, const ui32_t& partition_space = 10);
+
+		  // Writes a frame of essence to the MXF file. If the optional AESEncContext
+		  // argument is present, the essence is encrypted prior to writing.
+		  // Fails if the file is not open, is finalized, or an operating system
+		  // error occurs.
+		  Result_t WriteFrame(const ASDCP::JXS::FrameBuffer&, ASDCP::AESEncContext* = 0, ASDCP::HMACContext* = 0);
+
+		  // Closes the MXF file, writing the index and revised header.
+		  Result_t Finalize();
+	  };
+
+	  //
+	  class MXFReader
+	  {
+		  class h__Reader;
+		  ASDCP::mem_ptr<h__Reader> m_Reader;
+		  ASDCP_NO_COPY_CONSTRUCT(MXFReader);
+
+	  public:
+		  MXFReader();
+		  virtual ~MXFReader();
+
+		  // Warning: direct manipulation of MXF structures can interfere
+		  // with the normal operation of the wrapper.  Caveat emptor!
+		  virtual ASDCP::MXF::OP1aHeader& OP1aHeader();
+		  virtual AS_02::MXF::AS02IndexReader& AS02IndexReader();
+		  virtual ASDCP::MXF::RIP& RIP();
+
+		  // Open the file for reading. The file must exist. Returns error if the
+		  // operation cannot be completed.
+		  Result_t OpenRead(const std::string& filename) const;
+
+		  // Returns RESULT_INIT if the file is not open.
+		  Result_t Close() const;
+
+		  // Fill a WriterInfo struct with the values from the file's header.
+		  // Returns RESULT_INIT if the file is not open.
+		  Result_t FillWriterInfo(ASDCP::WriterInfo&) const;
+		  
+		  // Compute the necessary frame buffer size in bytes for CBR
+                  // codestreamss.
+                  Result_t CalcFrameBufferSize(ui64_t &size) const;
+
+		  // Reads a frame of essence from the MXF file. If the optional AESEncContext
+		  // argument is present, the essence is decrypted after reading. If the MXF
+		  // file is encrypted and the AESDecContext argument is NULL, the frame buffer
+		  // will contain the ciphertext frame data. If the HMACContext argument is
+		  // not NULL, the HMAC will be calculated (if the file supports it).
+		  // Returns RESULT_INIT if the file is not open, failure if the frame number is
+		  // out of range, or if optional decrypt or HAMC operations fail.
+		  Result_t ReadFrame(ui32_t frame_number, ASDCP::JXS::FrameBuffer&, ASDCP::AESDecContext* = 0, ASDCP::HMACContext* = 0) const;
+
+		  // Print debugging information to stream
+		  void     DumpHeaderMetadata(FILE* = 0) const;
+		  void     DumpIndex(FILE* = 0) const;
+	  };
+
+  } //namespace JXS
 
   //---------------------------------------------------------------------------------
   //
