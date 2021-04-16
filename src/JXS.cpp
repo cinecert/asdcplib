@@ -145,10 +145,10 @@ ASDCP::JXS::Accessor::CDT::Dump(FILE* stream) const
 
 	fprintf(stream, "CDT: \n");
 
-	for (ui32_t i = 0; i < 3; i += 2) {
-		fprintf(stream, " Component %u Bc: %hu\n", Bc(i >> 1));
-		fprintf(stream, " Component %u Sx: %hu\n", Sx(i >> 1));
-		fprintf(stream, " Component %u Sy: %hu\n", Sy(i >> 1));
+	for (ui32_t i = 0; i < 3; i++) {
+	  fprintf(stream, " Component %u Bc: %hu\n", i,Bc(i));
+	  fprintf(stream, " Component %u Sx: %hu\n", i,Sx(i));
+	  fprintf(stream, " Component %u Sy: %hu\n", i,Sy(i));
 	}
 }
 //
