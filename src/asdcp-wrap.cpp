@@ -566,7 +566,7 @@ write_MPEG2_file(CommandOptions& Options)
 	  fprintf(stderr, "ATTENTION! Writing SMPTE Universal Labels\n");
 	}
 
-#idef HAVE_OPENSSL
+#ifdef HAVE_OPENSSL
       byte_t             IV_buf[CBC_BLOCK_SIZE];
       Kumu::FortunaRNG   RNG;
       // configure encryption
