@@ -151,7 +151,7 @@ AS_02::PCM::MXFReader::h__Reader::OpenRead(const std::string& filename, const AS
 //
 ASDCP::Result_t
 AS_02::PCM::MXFReader::h__Reader::ReadFrame(ui32_t FrameNum, ASDCP::PCM::FrameBuffer& FrameBuf,
-					    ASDCP::AESDecContext* Ctx, ASDCP::HMACContext* HMAC)
+					    ASDCP::AESDecContext*, ASDCP::HMACContext*)
 {
   if ( ! m_File.IsOpen() )
     {
@@ -168,7 +168,7 @@ AS_02::PCM::MXFReader::h__Reader::ReadFrame(ui32_t FrameNum, ASDCP::PCM::FrameBu
   ui64_t position = m_ClipEssenceBegin + offset;
   Result_t result = RESULT_OK;
 
-  if ( m_File.Tell() != position )
+  if ( m_File.Tell() != static_cast<Kumu::fpos_t>(position) )
     {
       result = m_File.Seek(position);
     }

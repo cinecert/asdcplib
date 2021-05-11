@@ -284,7 +284,7 @@ static const byte_t s_PixelLayoutXYZ[PixelLayoutSize] = { 0xd8, 0x0c, 0xd9, 0x0c
 //
 ASDCP::Result_t
 ASDCP::JP2K_PDesc_to_MD(const JP2K::PictureDescriptor& PDesc,
-			const ASDCP::Dictionary& dict,
+			const ASDCP::Dictionary&,
 			ASDCP::MXF::GenericPictureEssenceDescriptor& EssenceDescriptor,
 			ASDCP::MXF::JPEG2000PictureSubDescriptor& EssenceSubDescriptor)
 {

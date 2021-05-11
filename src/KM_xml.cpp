@@ -1047,14 +1047,14 @@ Kumu::XMLElement::ParseFirstFromString(const char* document, ui32_t doc_len)
 
 //
 bool
-Kumu::XMLElement::ParseString(const char* document, ui32_t doc_len)
+Kumu::XMLElement::ParseString(const char*, ui32_t)
 {
   DefaultLogSink().Error("Kumu compiled without XML parser support.\n");
   return false;
 }
 
 bool
-Kumu::XMLElement::ParseFirstFromString(const char* document, ui32_t doc_len)
+Kumu::XMLElement::ParseFirstFromString(const char*, ui32_t)
 {
   DefaultLogSink().Error("Kumu compiled without XML parser support.\n");
   return false;

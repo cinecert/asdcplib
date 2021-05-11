@@ -1294,7 +1294,7 @@ Kumu::WriteStringIntoFile(const std::string& filename, const std::string& inStri
 
 //
 Kumu::Result_t
-Kumu::ReadFileIntoObject(const std::string& Filename, Kumu::IArchive& Object, ui32_t max_size)
+Kumu::ReadFileIntoObject(const std::string& Filename, Kumu::IArchive& Object, ui32_t)
 {
   ByteString Buffer;
   ui32_t file_size = static_cast<ui32_t>(FileSize(Filename));
@@ -1355,7 +1355,7 @@ Kumu::WriteObjectIntoFile(const Kumu::IArchive& Object, const std::string& Filen
 
 //
 Result_t
-Kumu::ReadFileIntoBuffer(const std::string& Filename, Kumu::ByteString& Buffer, ui32_t max_size)
+Kumu::ReadFileIntoBuffer(const std::string& Filename, Kumu::ByteString& Buffer, ui32_t)
 {
   ui32_t file_size = FileSize(Filename);
   Result_t result = Buffer.Capacity(file_size);
@@ -1420,17 +1420,22 @@ Kumu::DirScanner::Open(const std::string& dirname)
 	case ENOENT:
 	case ENOTDIR:
 	  result = RESULT_NOTAFILE;
+	  break;
 	case EACCES:
 	  result = RESULT_NO_PERM;
+	  break;
 	case ELOOP:
 	case ENAMETOOLONG:
 	  result = RESULT_PARAM;
+	  break;
 	case EMFILE:
 	case ENFILE:
 	  result = RESULT_STATE;
+	  break;
 	default:
 	  DefaultLogSink().Error("DirScanner::Open(%s): %s\n", dirname.c_str(), strerror(errno));
 	  result = RESULT_FAIL;
+	  break;
 	}
     }
 
@@ -1503,17 +1508,22 @@ Kumu::DirScannerEx::Open(const std::string& dirname)
 	case ENOENT:
 	case ENOTDIR:
 	  result = RESULT_NOTAFILE;
+	  break;
 	case EACCES:
 	  result = RESULT_NO_PERM;
+	  break;
 	case ELOOP:
 	case ENAMETOOLONG:
 	  result = RESULT_PARAM;
+	  break;
 	case EMFILE:
 	case ENFILE:
 	  result = RESULT_STATE;
+	  break;
 	default:
 	  DefaultLogSink().Error("DirScanner::Open(%s): %s\n", dirname.c_str(), strerror(errno));
 	  result = RESULT_FAIL;
+	  break;
 	}
     }
 

@@ -363,7 +363,7 @@ ASDCP::h__ASDCPWriter::WriteASDCPFooter()
 
 // standard method of writing a plaintext or encrypted frame
 Result_t
-ASDCP::Write_EKLV_Packet(Kumu::FileWriter& File, const ASDCP::Dictionary& Dict, const MXF::OP1aHeader& HeaderPart,
+ASDCP::Write_EKLV_Packet(Kumu::FileWriter& File, const ASDCP::Dictionary& Dict, const MXF::OP1aHeader&,
 			 const ASDCP::WriterInfo& Info, ASDCP::FrameBuffer& CtFrameBuf, ui32_t& FramesWritten,
 			 ui64_t & StreamOffset, const ASDCP::FrameBuffer& FrameBuf, const byte_t* EssenceUL,
 			 const ui32_t& MinEssenceElementBerLength,

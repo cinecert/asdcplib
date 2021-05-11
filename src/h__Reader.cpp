@@ -80,8 +80,6 @@ ASDCP::h__ASDCPReader::OpenMXFRead(const std::string& filename)
   if( KM_SUCCESS(result) )
     {
       //
-      InterchangeObject* Object;
-
       m_Info.LabelSetType = LS_MXF_UNKNOWN;
 
       if ( m_HeaderPart.OperationalPattern.MatchExact(MXFInterop_OPAtom_Entry().ul) )

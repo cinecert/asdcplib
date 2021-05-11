@@ -64,8 +64,8 @@ AS_02::default_md_object_init()
 
     
 AS_02::MXF::AS02IndexReader::AS02IndexReader(const ASDCP::Dictionary*& d) :
-  m_Duration(0), m_BytesPerEditUnit(0),
-  ASDCP::MXF::Partition(d), m_Dict(d) {}
+  ASDCP::MXF::Partition(d),
+  m_Duration(0), m_BytesPerEditUnit(0), m_Dict(d) {}
 
 AS_02::MXF::AS02IndexReader::~AS02IndexReader() {}
 

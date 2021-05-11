@@ -196,8 +196,8 @@ namespace ASDCP
       ~KLReader() {}
 
       inline const byte_t* Key() { return m_KeyBuf; }
-      inline const ui64_t  Length() { return m_ValueLength; }
-      inline const ui64_t  KLLength() { return m_KLLength; }
+      inline ui64_t  Length() { return m_ValueLength; }
+      inline ui64_t  KLLength() { return m_KLLength; }
 
       Result_t ReadKLFromFile(Kumu::FileReader& Reader);
     };
@@ -226,7 +226,7 @@ namespace ASDCP
 	Kumu::fpos_t       m_LastPosition;
 
       TrackFileReader(const Dictionary& d) :
-	m_HeaderPart(m_Dict), m_IndexAccess(m_Dict), m_RIP(m_Dict), m_Dict(&d)
+	m_Dict(&d), m_HeaderPart(m_Dict), m_IndexAccess(m_Dict), m_RIP(m_Dict)
 	  {
 	    default_md_object_init();
 	  }
@@ -249,7 +249,6 @@ namespace ASDCP
 	  if ( ASDCP_SUCCESS(result) )
 	    {
 	      result = m_RIP.InitFromFile(m_File);
-	      ui32_t test_s = (ui32_t)m_RIP.PairArray.size();
 
 	      if ( ASDCP_FAILURE(result) )
 		{
@@ -358,7 +357,7 @@ namespace ASDCP
 	  // get absolute frame position and go read the frame's key and length
 	  Result_t result = RESULT_OK;
 
-	  if ( TmpEntry.StreamOffset != m_LastPosition )
+	  if ( static_cast<Kumu::fpos_t>(TmpEntry.StreamOffset) != m_LastPosition )
 	    {
 	      m_LastPosition = TmpEntry.StreamOffset;
 	      result = m_File.Seek(TmpEntry.StreamOffset);

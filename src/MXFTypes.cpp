@@ -717,7 +717,7 @@ ASDCP::MXF::RGBALayout::EncodeString(char* buf, ui32_t buf_len) const
   std::string tmp_str;
   char tmp_buf[64];
 
-  for ( int i = 0; i < RGBAValueLength && m_value[i] != 0; i += 2 )
+  for ( size_t i = 0; i < RGBAValueLength && m_value[i] != 0; i += 2 )
     {
       snprintf(tmp_buf, 64, "%c(%d)", get_char_for_code(m_value[i]), m_value[i+1]);
 
@@ -817,7 +817,7 @@ ASDCP::MXF::J2KExtendedCapabilitiesType::EncodeString(char* str_buf, ui32_t buf_
 
   if ( Pcap != 0 && buf_len > str_len )
     {
-      for ( int i = 0; i < Ccap.size(); ++i )
+      for ( size_t i = 0; i < Ccap.size(); ++i )
         {
 	  snprintf(str_buf+(i*3), 4, "%02hx.", Ccap[i].value);
         }
