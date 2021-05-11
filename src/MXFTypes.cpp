@@ -286,7 +286,9 @@ ASDCP::MXF::UTF16String::Unarchive(Kumu::MemIOReader* Reader)
 
   for ( ui32_t i = 0; i < length; i++ )
     {
-      int count = wcrtomb(mb_buf, KM_i16_BE(p[i]), &ps);
+      ui16_t pi;
+      memcpy(&pi, &p[i], sizeof(ui16_t));
+      int count = wcrtomb(mb_buf, KM_i16_BE(pi), &ps);
 
       if ( count == -1 )
 	{

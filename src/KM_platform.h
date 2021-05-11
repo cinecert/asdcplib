@@ -64,6 +64,7 @@ typedef long long          i64_t;
 # endif // KM_WIN32
 
 # include <stdio.h>
+# include <string.h>
 # include <assert.h>
 # include <stdlib.h>
 # include <limits.h>
@@ -135,11 +136,17 @@ namespace Kumu
 
   // read an integer from byte-structured storage
   template<class T>
-  inline T    cp2i(const byte_t* p) { return *(T*)p; }
+  inline T    cp2i(const byte_t* p) {
+    T value;
+    memcpy(&value, p, sizeof(T));
+    return value;
+  }
 
   // write an integer to byte-structured storage
   template<class T>
-  inline void i2p(T i, byte_t* p) { *(T*)p = i; }
+  inline void i2p(T i, byte_t* p) {
+      memcpy(p, &i, sizeof(T));
+  }
 
 
 # ifdef KM_BIG_ENDIAN
