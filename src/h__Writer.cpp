@@ -66,6 +66,8 @@ ASDCP::AddDmsCrypt(Partition& HeaderPart, SourcePackage& Package,
   Seq->StructuralComponents.push_back(Segment->InstanceUID);
   Segment->EventComment = "AS-DCP KLV Encryption";
   Segment->DataDefinition = UL(Dict->ul(MDD_DescriptiveMetaDataDef));
+  Segment->Duration = 0;
+  Segment->EventStartPosition = 0;
 
   CryptographicFramework* CFW = new CryptographicFramework(Dict);
   HeaderPart.AddChildObject(CFW);
