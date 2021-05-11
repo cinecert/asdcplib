@@ -326,7 +326,7 @@ AS_02::h__AS02WriterClip::HasOpenClip() const
 
 //
 Result_t
-AS_02::h__AS02WriterClip::StartClip(const byte_t* EssenceUL, AESEncContext* Ctx, HMACContext* HMAC)
+AS_02::h__AS02WriterClip::StartClip(const byte_t* EssenceUL, AESEncContext* Ctx, HMACContext*)
 {
   if ( Ctx != 0 )
     {

@@ -158,6 +158,7 @@ namespace ASDCP
 	  }
 
 	  void Dump(FILE* stream = 0, ui32_t depth = 0) {
+	    (void) depth;
 	    char identbuf[IdentBufferLen];
 
 	    if ( stream == 0 )
@@ -253,6 +254,7 @@ namespace ASDCP
 	  //
 	  void Dump(FILE* stream = 0, ui32_t depth = 0)
 	    {
+	      (void) depth;
 	      char identbuf[IdentBufferLen];
 
 	      if ( stream == 0 )
@@ -672,16 +674,7 @@ namespace ASDCP
 	{
 	public:
 	  Raw();
-	  Raw(const Raw& rhs) { Copy(rhs); }
 	  virtual ~Raw();
-
-	  const Raw& operator=(const Raw& rhs) { Copy(rhs); return *this; }
-	  void Copy(const Raw& rhs) {
-	    if ( KM_SUCCESS(Capacity(rhs.Length())) )
-	      {
-		Set(rhs);
-	      }
-	  }
 
 	  //
           virtual bool Unarchive(Kumu::MemIOReader* Reader);

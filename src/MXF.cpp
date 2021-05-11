@@ -1633,6 +1633,7 @@ ASDCP::MXF::decode_mca_string(const std::string& s, const mca_label_map_t& label
 			      InterchangeObject_list_t& descriptor_list, ui32_t& channel_count)
 {
   std::string symbol_buf;
+  std::string current_language;
   channel_count = 0;
   ASDCP::MXF::SoundfieldGroupLabelSubDescriptor *current_soundfield = 0, *prev_soundfield = 0;
   std::string::const_iterator i;
@@ -1729,6 +1730,15 @@ ASDCP::MXF::decode_mca_string(const std::string& s, const mca_label_map_t& label
 	  symbol_buf.clear();
 	  current_soundfield = 0;
 	}
+      else if ( *i == ':' )
+        {
+          // Limits the usage to the SLVS channel, but can easily be extended to set individual languages, or soundfield group languages
+          if ( symbol_buf.compare("SLVS") != 0 ) {
+            DefaultLogSink().Error("Channel specific language may only be used with SLVS tag\n");
+            return false;
+          }
+          current_language += *i;
+        }
       else if ( *i == ',' )
 	{
 	  if ( ! symbol_buf.empty() && ! symbol_buf.compare("-") )
@@ -1764,15 +1774,35 @@ ASDCP::MXF::decode_mca_string(const std::string& s, const mca_label_map_t& label
 	      channel_descr->MCAChannelID = channel_count++ + 1;
 	      channel_descr->MCATagSymbol = (i->second.requires_prefix ? "ch" : "") + i->first;
 	      channel_descr->MCATagName = i->second.tag_name;
-	      channel_descr->RFC5646SpokenLanguage = language;
+              if ( current_language.empty() )
+                {
+        	  channel_descr->RFC5646SpokenLanguage = language;
+                }
+              else
+                {
+                  channel_descr->RFC5646SpokenLanguage = current_language;
+                }
+              current_language.empty();
 	      channel_descr->MCALabelDictionaryID = i->second.ul;
 	      descriptor_list.push_back(reinterpret_cast<ASDCP::MXF::InterchangeObject*>(channel_descr));
 	      symbol_buf.clear();
+              current_language.clear();
 	    }
 	}
       else if ( *i == '-' || isalnum(*i) )
 	{
-	  symbol_buf += *i;
+          if ( ! current_language.empty() ) 
+            {
+              if ( current_language.compare(":") == 0)
+                {
+                  current_language.clear();
+                }
+              current_language += *i;
+            }
+          else
+            {
+	      symbol_buf += *i;
+            }
 	}
       else if ( ! isspace(*i) )
 	{

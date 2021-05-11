@@ -512,8 +512,6 @@ namespace Kumu
   //
   class ByteString : public IArchive
     {
-      KM_NO_COPY_CONSTRUCT(ByteString);
-	
     protected:
       byte_t* m_Data;          // pointer to memory area containing frame data
       ui32_t  m_Capacity;      // size of memory area pointed to by m_Data
@@ -521,8 +519,18 @@ namespace Kumu
 	
     public:
       ByteString();
+      ByteString(const ByteString& rhs) { Copy(rhs); }
       ByteString(ui32_t cap);
       virtual ~ByteString();
+
+      const ByteString& operator=(const ByteString& rhs) { Copy(rhs); return *this; }
+
+      void Copy(const ByteString& rhs) {
+        if ( KM_SUCCESS(Capacity(rhs.Length())) )
+	  {
+	    Set(rhs);
+	  }
+      }
 
       // Sets or resets the size of the internally allocated buffer.
       Result_t Capacity(ui32_t cap);

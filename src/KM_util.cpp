@@ -129,7 +129,7 @@ Kumu::Result_t::Get(unsigned int i)
 }
 
 //
-Kumu::Result_t::Result_t(int v, const std::string& s, const std::string& l) : value(v), symbol(s), label(l)
+Kumu::Result_t::Result_t(int v, const std::string& s, const std::string& l) : value(v), label(l), symbol(s)
 {
   assert(!l.empty());
   assert(!s.empty());

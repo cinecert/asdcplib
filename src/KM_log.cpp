@@ -152,7 +152,7 @@ Kumu::StreamLogSink::WriteEntry(const LogEntry& Entry)
     {
       Entry.CreateStringWithOptions(buf, m_options);
       ssize_t n = write(m_fd, buf.c_str(), buf.size());
-      assert(n==buf.size());
+      assert(n==static_cast<ssize_t>(buf.size()));
     }
 }
 
@@ -203,6 +203,7 @@ Kumu::SyslogLogSink::WriteEntry(const LogEntry& Entry)
     case Kumu::LOG_NOTICE:  priority = SYSLOG_NOTICE; break;
     case Kumu::LOG_INFO:    priority = SYSLOG_INFO; break;
     case Kumu::LOG_DEBUG:   priority = SYSLOG_DEBUG; break;
+    case Kumu::LOG_MAX:	    break;
     }
 
   AutoMutex L(m_lock);
@@ -295,6 +296,8 @@ Kumu::LogEntry::TestFilter(i32_t filter) const
 	return false;
       break;
 
+    case LOG_MAX:
+      break;
     }
 
  return true;
