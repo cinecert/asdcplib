@@ -21,7 +21,7 @@ else()
 	message(STATUS "Building without encryption support")
 endif()
 
-if (XercescppLib_PATH AND XercescppLib_Debug_PATH AND XercescppLib_include_DIR)
+if (NOT WITHOUT_XML AND XercescppLib_PATH AND XercescppLib_Debug_PATH AND XercescppLib_include_DIR)
 	set (HAVE_XERCES_C 1)
 	message(STATUS "Building with XML parse support")
 	add_definitions(/DHAVE_XERCES_C=1)
