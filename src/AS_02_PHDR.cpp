@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2011-2018, John Hurst
+Copyright (c) 2011-2021, John Hurst
 
 All rights reserved.
 
@@ -76,7 +76,7 @@ class AS_02::PHDR::MXFReader::h__Reader : public AS_02::h__AS02Reader
   ASDCP_NO_COPY_CONSTRUCT(h__Reader);
 
 public:
-  h__Reader(const Dictionary& d) :
+  h__Reader(const Dictionary *d) :
     AS_02::h__AS02Reader(d) {}
 
   virtual ~h__Reader() {}
@@ -235,7 +235,7 @@ AS_02::PHDR::MXFReader::h__Reader::ReadFrame(ui32_t FrameNum, AS_02::PHDR::Frame
 
 AS_02::PHDR::MXFReader::MXFReader()
 {
-  m_Reader = new h__Reader(DefaultCompositeDict());
+  m_Reader = new h__Reader(&DefaultCompositeDict());
 }
 
 
@@ -355,7 +355,7 @@ public:
   byte_t            m_EssenceUL[SMPTE_UL_LENGTH];
   byte_t            m_MetadataUL[SMPTE_UL_LENGTH];
 
-  h__Writer(const Dictionary& d) : h__AS02WriterFrame(d), m_MetadataTrackSubDescriptor(0), m_EssenceSubDescriptor(0) {
+  h__Writer(const Dictionary *d) : h__AS02WriterFrame(d), m_EssenceSubDescriptor(0), m_MetadataTrackSubDescriptor(0) {
     memset(m_EssenceUL, 0, SMPTE_UL_LENGTH);
     memset(m_MetadataUL, 0, SMPTE_UL_LENGTH);
   }
@@ -735,7 +735,7 @@ AS_02::PHDR::MXFWriter::OpenWrite(const std::string& filename, const ASDCP::Writ
       return RESULT_PARAM;
     }
 
-  m_Writer = new AS_02::PHDR::MXFWriter::h__Writer(DefaultSMPTEDict());
+  m_Writer = new AS_02::PHDR::MXFWriter::h__Writer(&DefaultSMPTEDict());
   m_Writer->m_Info = Info;
 
   Result_t result = m_Writer->OpenWrite(filename, essence_descriptor, essence_sub_descriptor_list,

@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2004-2013, John Hurst
+Copyright (c) 2004-2021, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -57,7 +57,7 @@ namespace DCData
    public:
     DCDataDescriptor m_DDesc;
 
-    h__Reader(const Dictionary& d) : ASDCP::h__ASDCPReader(d), m_EssenceDescriptor(0),
+    h__Reader(const Dictionary *d) : ASDCP::h__ASDCPReader(d), m_EssenceDescriptor(0),
                                      m_DDesc() {}
     ~h__Reader() {}
     Result_t    OpenRead(const std::string&);
@@ -74,7 +74,7 @@ namespace DCData
     DCDataDescriptor m_DDesc;
     byte_t           m_EssenceUL[SMPTE_UL_LENGTH];
 
-    h__Writer(const Dictionary& d) : ASDCP::h__ASDCPWriter(d) {
+    h__Writer(const Dictionary *d) : ASDCP::h__ASDCPWriter(d) {
       memset(m_EssenceUL, 0, SMPTE_UL_LENGTH);
     }
 

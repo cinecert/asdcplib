@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2018, John Hurst
+Copyright (c) 2018-2021, John Hurst
 
 All rights reserved.
 
@@ -54,7 +54,7 @@ class AS_02::ISXD::MXFReader::h__Reader : public AS_02::h__AS02Reader
   ASDCP_NO_COPY_CONSTRUCT(h__Reader);
 
 public:
-  h__Reader(const Dictionary& d) :
+  h__Reader(const Dictionary *d) :
     AS_02::h__AS02Reader(d) {}
 
   virtual ~h__Reader() {}
@@ -115,7 +115,7 @@ AS_02::ISXD::MXFReader::h__Reader::ReadFrame(ui32_t FrameNum, ASDCP::FrameBuffer
 
 AS_02::ISXD::MXFReader::MXFReader()
 {
-  m_Reader = new h__Reader(DefaultCompositeDict());
+  m_Reader = new h__Reader(&DefaultCompositeDict());
 }
 
 
@@ -262,7 +262,7 @@ public:
   byte_t m_EssenceUL[SMPTE_UL_LENGTH];
   ISXDDataEssenceDescriptor *m_DataEssenceDescriptor;
 
-  h__Writer(const Dictionary& d) : h__AS02WriterFrame(d) {
+  h__Writer(const Dictionary *d) : h__AS02WriterFrame(d) {
     memset(m_EssenceUL, 0, SMPTE_UL_LENGTH);
   }
 
@@ -451,7 +451,7 @@ AS_02::ISXD::MXFWriter::OpenWrite(const std::string& filename, const ASDCP::Writ
 				     const ASDCP::Rational& edit_rate, const ui32_t& header_size,
 				     const IndexStrategy_t& strategy, const ui32_t& partition_space)
 {
-  m_Writer = new AS_02::ISXD::MXFWriter::h__Writer(DefaultSMPTEDict());
+  m_Writer = new AS_02::ISXD::MXFWriter::h__Writer(&DefaultSMPTEDict());
   m_Writer->m_Info = Info;
 
   Result_t result = m_Writer->OpenWrite(filename, Info, isxd_document_namespace, edit_rate,

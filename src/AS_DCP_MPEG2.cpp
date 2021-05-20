@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2004-2013, John Hurst
+Copyright (c) 2004-2021, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -185,7 +185,7 @@ class ASDCP::MPEG2::MXFReader::h__Reader : public ASDCP::h__ASDCPReader
 public:
   VideoDescriptor m_VDesc;        // video parameter list
 
-  h__Reader(const Dictionary& d) : ASDCP::h__ASDCPReader(d) {}
+  h__Reader(const Dictionary *d) : ASDCP::h__ASDCPReader(d) {}
   virtual ~h__Reader() {}
   Result_t    OpenRead(const std::string&);
   Result_t    ReadFrame(ui32_t, FrameBuffer&, AESDecContext*, HMACContext*);
@@ -342,7 +342,7 @@ ASDCP::MPEG2::FrameBuffer::Dump(FILE* stream, ui32_t dump_len) const
 
 ASDCP::MPEG2::MXFReader::MXFReader()
 {
-  m_Reader = new h__Reader(DefaultCompositeDict());
+  m_Reader = new h__Reader(&DefaultCompositeDict());
 }
 
 
@@ -530,7 +530,7 @@ public:
   ui32_t          m_GOPOffset;
   byte_t          m_EssenceUL[SMPTE_UL_LENGTH];
 
-  h__Writer(const Dictionary& d) : ASDCP::h__ASDCPWriter(d), m_GOPOffset(0) {
+  h__Writer(const Dictionary *d) : ASDCP::h__ASDCPWriter(d), m_GOPOffset(0) {
     memset(m_EssenceUL, 0, SMPTE_UL_LENGTH);
   }
 
@@ -733,9 +733,9 @@ ASDCP::MPEG2::MXFWriter::OpenWrite(const std::string& filename, const WriterInfo
 				   const VideoDescriptor& VDesc, ui32_t HeaderSize)
 {
   if ( Info.LabelSetType == LS_MXF_SMPTE )
-    m_Writer = new h__Writer(DefaultSMPTEDict());
+    m_Writer = new h__Writer(&DefaultSMPTEDict());
   else
-    m_Writer = new h__Writer(DefaultInteropDict());
+    m_Writer = new h__Writer(&DefaultInteropDict());
 
   m_Writer->m_Info = Info;
   

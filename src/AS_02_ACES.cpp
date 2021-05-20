@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2018, Bjoern Stresing, Patrick Bichiou, Wolfgang Ruppel,
+Copyright (c) 2018-2021, Bjoern Stresing, Patrick Bichiou, Wolfgang Ruppel,
 John Hurst
 
 All rights reserved.
@@ -290,7 +290,7 @@ class AS_02::ACES::MXFReader::h__Reader : public AS_02::h__AS02Reader
   ASDCP::MXF::RGBAEssenceDescriptor *m_EssenceDescriptor;
 
 public:
-  h__Reader(const Dictionary& d) :
+  h__Reader(const Dictionary *d) :
     AS_02::h__AS02Reader(d), m_EssenceDescriptor(NULL) {}
 
   AS_02::ACES::ResourceList_t m_Anc_Resources;
@@ -501,7 +501,7 @@ public:
   byte_t m_EssenceUL[SMPTE_UL_LENGTH];
   ui32_t m_EssenceStreamID;
 
-  h__Writer(const Dictionary& d) : h__AS02WriterFrame(d), m_EssenceStreamID(10)
+  h__Writer(const Dictionary *d) : h__AS02WriterFrame(d), m_EssenceStreamID(10)
   {
 
     memset(m_EssenceUL, 0, SMPTE_UL_LENGTH);
@@ -747,7 +747,7 @@ AS_02::Result_t AS_02::ACES::MXFWriter::OpenWrite(const std::string &filename, c
     return RESULT_PARAM;
   }
 
-  m_Writer = new AS_02::ACES::MXFWriter::h__Writer(DefaultSMPTEDict());
+  m_Writer = new AS_02::ACES::MXFWriter::h__Writer(&DefaultSMPTEDict());
   m_Writer->m_Info = Info;
 
   Result_t result = m_Writer->OpenWrite(filename, essence_descriptor, essence_sub_descriptor_list, strategy, partition_space, header_size);
@@ -785,7 +785,7 @@ AS_02::Result_t AS_02::ACES::MXFWriter::WriteAncillaryResource(const AS_02::ACES
 AS_02::ACES::MXFReader::MXFReader()
 {
 
-  m_Reader = new h__Reader(DefaultCompositeDict());
+  m_Reader = new h__Reader(&DefaultCompositeDict());
 }
 
 AS_02::ACES::MXFReader::~MXFReader()

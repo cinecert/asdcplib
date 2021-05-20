@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2011-2018, Robert Scheler, Heiko Sparenberg Fraunhofer IIS,
+Copyright (c) 2011-2021, Robert Scheler, Heiko Sparenberg Fraunhofer IIS,
 John Hurst
 
 All rights reserved.
@@ -55,7 +55,7 @@ class AS_02::JP2K::MXFReader::h__Reader : public AS_02::h__AS02Reader
   ASDCP_NO_COPY_CONSTRUCT(h__Reader);
 
 public:
-  h__Reader(const Dictionary& d) :
+  h__Reader(const Dictionary *d) :
     AS_02::h__AS02Reader(d) {}
 
   virtual ~h__Reader() {}
@@ -124,7 +124,7 @@ AS_02::JP2K::MXFReader::h__Reader::ReadFrame(ui32_t FrameNum, ASDCP::JP2K::Frame
 
 AS_02::JP2K::MXFReader::MXFReader()
 {
-  m_Reader = new h__Reader(DefaultCompositeDict());
+  m_Reader = new h__Reader(&DefaultCompositeDict());
 }
 
 
@@ -257,7 +257,7 @@ class AS_02::JP2K::MXFWriter::h__Writer : public AS_02::h__AS02WriterFrame
 public:
   byte_t            m_EssenceUL[SMPTE_UL_LENGTH];
 
-  h__Writer(const Dictionary& d) : h__AS02WriterFrame(d), m_EssenceSubDescriptor(0) {
+  h__Writer(const Dictionary *d) : h__AS02WriterFrame(d), m_EssenceSubDescriptor(0) {
     memset(m_EssenceUL, 0, SMPTE_UL_LENGTH);
   }
 
@@ -485,7 +485,7 @@ AS_02::JP2K::MXFWriter::OpenWrite(const std::string& filename, const ASDCP::Writ
       return RESULT_PARAM;
     }
 
-  m_Writer = new AS_02::JP2K::MXFWriter::h__Writer(DefaultSMPTEDict());
+  m_Writer = new AS_02::JP2K::MXFWriter::h__Writer(&DefaultSMPTEDict());
   m_Writer->m_Info = Info;
 
   Result_t result = m_Writer->OpenWrite(filename, essence_descriptor, essence_sub_descriptor_list,

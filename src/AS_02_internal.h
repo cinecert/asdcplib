@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2011-2018, Robert Scheler, Heiko Sparenberg Fraunhofer IIS,
+Copyright (c) 2011-2021, Robert Scheler, Heiko Sparenberg Fraunhofer IIS,
 John Hurst
 
 All rights reserved.
@@ -60,7 +60,7 @@ namespace AS_02
       h__AS02Reader();
 
     public:
-      h__AS02Reader(const ASDCP::Dictionary&);
+      h__AS02Reader(const ASDCP::Dictionary*);
       virtual ~h__AS02Reader();
 
       Result_t OpenMXFRead(const std::string& filename);
@@ -90,10 +90,10 @@ namespace AS_02
 	AS02IndexWriterVBR();
 
       public:
-	const ASDCP::Dictionary*&  m_Dict;
+	const ASDCP::Dictionary*  m_Dict;
 	ASDCP::IPrimerLookup*      m_Lookup;
       
-	AS02IndexWriterVBR(const ASDCP::Dictionary*&);
+	AS02IndexWriterVBR(const ASDCP::Dictionary*);
 	virtual ~AS02IndexWriterVBR();
 
 	//
@@ -121,12 +121,12 @@ namespace AS_02
 	AS02IndexWriterCBR();
 
       public:
-	const ASDCP::Dictionary*&  m_Dict;
+	const ASDCP::Dictionary*  m_Dict;
 	ASDCP::IPrimerLookup* m_Lookup;
 	ui32_t m_Duration;
 	ui32_t m_SampleSize;
       
-	AS02IndexWriterCBR(const ASDCP::Dictionary*&);
+	AS02IndexWriterCBR(const ASDCP::Dictionary*);
 	virtual ~AS02IndexWriterCBR();
 
 	//
@@ -154,8 +154,8 @@ namespace AS_02
       ui64_t  m_ECStart; // offset of the first essence element
 
       //
-      h__AS02Writer(const ASDCP::Dictionary& d) :
-          ASDCP::MXF::TrackFileWriter<ASDCP::MXF::OP1aHeader>(d), m_IndexWriter(m_Dict), m_ECStart(0) {}
+      h__AS02Writer(const ASDCP::Dictionary *d) :
+          ASDCP::MXF::TrackFileWriter<ASDCP::MXF::OP1aHeader>(d), m_IndexWriter(d), m_ECStart(0) {}
 
       ~h__AS02Writer() {}
 
@@ -304,7 +304,7 @@ namespace AS_02
     public:
       IndexStrategy_t m_IndexStrategy; // per SMPTE ST 2067-5
 
-      h__AS02WriterFrame(const Dictionary&);
+      h__AS02WriterFrame(const Dictionary*);
       virtual ~h__AS02WriterFrame();
 
       Result_t WriteEKLVPacket(const ASDCP::FrameBuffer& FrameBuf,const byte_t* EssenceUL,
@@ -323,7 +323,7 @@ namespace AS_02
       ui64_t  m_ClipStart;  // state variable for clip-wrap-in-progress
       IndexStrategy_t m_IndexStrategy; // per SMPTE ST 2067-5
 
-      h__AS02WriterClip(const Dictionary&);
+      h__AS02WriterClip(const Dictionary*);
       virtual ~h__AS02WriterClip();
 
       bool HasOpenClip() const;

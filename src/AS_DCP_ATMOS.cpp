@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2004-2016, John Hurst
+Copyright (c) 2004-2021, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -117,7 +117,7 @@ class ASDCP::ATMOS::MXFReader::h__Reader : public ASDCP::h__ASDCPReader
   ASDCP::DCData::DCDataDescriptor m_DDesc;
   AtmosDescriptor m_ADesc;
 
-  h__Reader(const Dictionary& d) :
+  h__Reader(const Dictionary *d) :
     ASDCP::h__ASDCPReader(d),  m_EssenceDescriptor(0), m_EssenceSubDescriptor(0) {}
   virtual ~h__Reader() {}
   Result_t    OpenRead(const std::string&);
@@ -251,7 +251,7 @@ ASDCP::ATMOS::MXFReader::h__Reader::ReadFrame(ui32_t FrameNum, FrameBuffer& Fram
 
 ASDCP::ATMOS::MXFReader::MXFReader()
 {
-  m_Reader = new h__Reader(AtmosSMPTEDict());
+  m_Reader = new h__Reader(&AtmosSMPTEDict());
 }
 
 
@@ -406,7 +406,7 @@ class ASDCP::ATMOS::MXFWriter::h__Writer : public ASDCP::h__ASDCPWriter
  public:
   AtmosDescriptor m_ADesc;
 
-  h__Writer(const Dictionary& d) : ASDCP::h__ASDCPWriter(d),
+  h__Writer(const Dictionary *d) : ASDCP::h__ASDCPWriter(d),
 				   m_EssenceSubDescriptor(0), m_ADesc() {
     memset(m_EssenceUL, 0, SMPTE_UL_LENGTH);
   }
@@ -650,7 +650,7 @@ ASDCP::ATMOS::MXFWriter::OpenWrite(const std::string& filename, const WriterInfo
     return RESULT_FORMAT;
   }
 
-  m_Writer = new h__Writer(AtmosSMPTEDict());
+  m_Writer = new h__Writer(&AtmosSMPTEDict());
   m_Writer->m_Info = Info;
 
   Result_t result = m_Writer->OpenWrite(filename, HeaderSize, ADesc);

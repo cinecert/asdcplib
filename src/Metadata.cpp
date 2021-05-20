@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2005-2017, John Hurst
+Copyright (c) 2005-2021, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -40,59 +40,59 @@ const ui32_t kl_length = ASDCP::SMPTE_UL_LENGTH + ASDCP::MXF_BER_LENGTH;
 
 //------------------------------------------------------------------------------------------
 
-static InterchangeObject* Preface_Factory(const Dictionary*& Dict) { return new Preface(Dict); }
-static InterchangeObject* IndexTableSegment_Factory(const Dictionary*& Dict) { return new IndexTableSegment(Dict); }
+static InterchangeObject* Preface_Factory(const Dictionary* Dict) { return new Preface(Dict); }
+static InterchangeObject* IndexTableSegment_Factory(const Dictionary* Dict) { return new IndexTableSegment(Dict); }
 
-static InterchangeObject* Identification_Factory(const Dictionary*& Dict) { return new Identification(Dict); }
-static InterchangeObject* ContentStorage_Factory(const Dictionary*& Dict) { return new ContentStorage(Dict); }
-static InterchangeObject* EssenceContainerData_Factory(const Dictionary*& Dict) { return new EssenceContainerData(Dict); }
-static InterchangeObject* MaterialPackage_Factory(const Dictionary*& Dict) { return new MaterialPackage(Dict); }
-static InterchangeObject* SourcePackage_Factory(const Dictionary*& Dict) { return new SourcePackage(Dict); }
-static InterchangeObject* StaticTrack_Factory(const Dictionary*& Dict) { return new StaticTrack(Dict); }
-static InterchangeObject* Track_Factory(const Dictionary*& Dict) { return new Track(Dict); }
-static InterchangeObject* Sequence_Factory(const Dictionary*& Dict) { return new Sequence(Dict); }
-static InterchangeObject* SourceClip_Factory(const Dictionary*& Dict) { return new SourceClip(Dict); }
-static InterchangeObject* TimecodeComponent_Factory(const Dictionary*& Dict) { return new TimecodeComponent(Dict); }
-static InterchangeObject* FileDescriptor_Factory(const Dictionary*& Dict) { return new FileDescriptor(Dict); }
-static InterchangeObject* GenericSoundEssenceDescriptor_Factory(const Dictionary*& Dict) { return new GenericSoundEssenceDescriptor(Dict); }
-static InterchangeObject* WaveAudioDescriptor_Factory(const Dictionary*& Dict) { return new WaveAudioDescriptor(Dict); }
-static InterchangeObject* GenericPictureEssenceDescriptor_Factory(const Dictionary*& Dict) { return new GenericPictureEssenceDescriptor(Dict); }
-static InterchangeObject* RGBAEssenceDescriptor_Factory(const Dictionary*& Dict) { return new RGBAEssenceDescriptor(Dict); }
-static InterchangeObject* JPEG2000PictureSubDescriptor_Factory(const Dictionary*& Dict) { return new JPEG2000PictureSubDescriptor(Dict); }
-static InterchangeObject* CDCIEssenceDescriptor_Factory(const Dictionary*& Dict) { return new CDCIEssenceDescriptor(Dict); }
-static InterchangeObject* MPEG2VideoDescriptor_Factory(const Dictionary*& Dict) { return new MPEG2VideoDescriptor(Dict); }
-static InterchangeObject* DMSegment_Factory(const Dictionary*& Dict) { return new DMSegment(Dict); }
-static InterchangeObject* CryptographicFramework_Factory(const Dictionary*& Dict) { return new CryptographicFramework(Dict); }
-static InterchangeObject* CryptographicContext_Factory(const Dictionary*& Dict) { return new CryptographicContext(Dict); }
-static InterchangeObject* DescriptiveFramework_Factory(const Dictionary*& Dict) { return new DescriptiveFramework(Dict); }
-static InterchangeObject* DescriptiveObject_Factory(const Dictionary*& Dict) { return new DescriptiveObject(Dict); }
-static InterchangeObject* GenericDataEssenceDescriptor_Factory(const Dictionary*& Dict) { return new GenericDataEssenceDescriptor(Dict); }
-static InterchangeObject* TimedTextDescriptor_Factory(const Dictionary*& Dict) { return new TimedTextDescriptor(Dict); }
-static InterchangeObject* TimedTextResourceSubDescriptor_Factory(const Dictionary*& Dict) { return new TimedTextResourceSubDescriptor(Dict); }
-static InterchangeObject* StereoscopicPictureSubDescriptor_Factory(const Dictionary*& Dict) { return new StereoscopicPictureSubDescriptor(Dict); }
-static InterchangeObject* ContainerConstraintsSubDescriptor_Factory(const Dictionary*& Dict) { return new ContainerConstraintsSubDescriptor(Dict); }
-static InterchangeObject* NetworkLocator_Factory(const Dictionary*& Dict) { return new NetworkLocator(Dict); }
-static InterchangeObject* MCALabelSubDescriptor_Factory(const Dictionary*& Dict) { return new MCALabelSubDescriptor(Dict); }
-static InterchangeObject* AudioChannelLabelSubDescriptor_Factory(const Dictionary*& Dict) { return new AudioChannelLabelSubDescriptor(Dict); }
-static InterchangeObject* SoundfieldGroupLabelSubDescriptor_Factory(const Dictionary*& Dict) { return new SoundfieldGroupLabelSubDescriptor(Dict); }
-static InterchangeObject* GroupOfSoundfieldGroupsLabelSubDescriptor_Factory(const Dictionary*& Dict) { return new GroupOfSoundfieldGroupsLabelSubDescriptor(Dict); }
-static InterchangeObject* DCDataDescriptor_Factory(const Dictionary*& Dict) { return new DCDataDescriptor(Dict); }
-static InterchangeObject* PrivateDCDataDescriptor_Factory(const Dictionary*& Dict) { return new PrivateDCDataDescriptor(Dict); }
-static InterchangeObject* DolbyAtmosSubDescriptor_Factory(const Dictionary*& Dict) { return new DolbyAtmosSubDescriptor(Dict); }
-static InterchangeObject* ACESPictureSubDescriptor_Factory(const Dictionary*& Dict) { return new ACESPictureSubDescriptor(Dict); }
-static InterchangeObject* TargetFrameSubDescriptor_Factory(const Dictionary*& Dict) { return new TargetFrameSubDescriptor(Dict); }
-static InterchangeObject* TextBasedDMFramework_Factory(const Dictionary*& Dict) { return new TextBasedDMFramework(Dict); }
-static InterchangeObject* TextBasedObject_Factory(const Dictionary*& Dict) { return new TextBasedObject(Dict); }
-static InterchangeObject* GenericStreamTextBasedSet_Factory(const Dictionary*& Dict) { return new GenericStreamTextBasedSet(Dict); }
-static InterchangeObject* ISXDDataEssenceDescriptor_Factory(const Dictionary*& Dict) { return new ISXDDataEssenceDescriptor(Dict); }
-static InterchangeObject* PHDRMetadataTrackSubDescriptor_Factory(const Dictionary*& Dict) { return new PHDRMetadataTrackSubDescriptor(Dict); }
-static InterchangeObject* PIMFDynamicMetadataDescriptor_Factory(const Dictionary*& Dict) { return new PIMFDynamicMetadataDescriptor(Dict); }
-static InterchangeObject* IABEssenceDescriptor_Factory(const Dictionary*& Dict) { return new IABEssenceDescriptor(Dict); }
-static InterchangeObject* IABSoundfieldLabelSubDescriptor_Factory(const Dictionary*& Dict) { return new IABSoundfieldLabelSubDescriptor(Dict); }
+static InterchangeObject* Identification_Factory(const Dictionary* Dict) { return new Identification(Dict); }
+static InterchangeObject* ContentStorage_Factory(const Dictionary* Dict) { return new ContentStorage(Dict); }
+static InterchangeObject* EssenceContainerData_Factory(const Dictionary* Dict) { return new EssenceContainerData(Dict); }
+static InterchangeObject* MaterialPackage_Factory(const Dictionary* Dict) { return new MaterialPackage(Dict); }
+static InterchangeObject* SourcePackage_Factory(const Dictionary* Dict) { return new SourcePackage(Dict); }
+static InterchangeObject* StaticTrack_Factory(const Dictionary* Dict) { return new StaticTrack(Dict); }
+static InterchangeObject* Track_Factory(const Dictionary* Dict) { return new Track(Dict); }
+static InterchangeObject* Sequence_Factory(const Dictionary* Dict) { return new Sequence(Dict); }
+static InterchangeObject* SourceClip_Factory(const Dictionary* Dict) { return new SourceClip(Dict); }
+static InterchangeObject* TimecodeComponent_Factory(const Dictionary* Dict) { return new TimecodeComponent(Dict); }
+static InterchangeObject* FileDescriptor_Factory(const Dictionary* Dict) { return new FileDescriptor(Dict); }
+static InterchangeObject* GenericSoundEssenceDescriptor_Factory(const Dictionary* Dict) { return new GenericSoundEssenceDescriptor(Dict); }
+static InterchangeObject* WaveAudioDescriptor_Factory(const Dictionary* Dict) { return new WaveAudioDescriptor(Dict); }
+static InterchangeObject* GenericPictureEssenceDescriptor_Factory(const Dictionary* Dict) { return new GenericPictureEssenceDescriptor(Dict); }
+static InterchangeObject* RGBAEssenceDescriptor_Factory(const Dictionary* Dict) { return new RGBAEssenceDescriptor(Dict); }
+static InterchangeObject* JPEG2000PictureSubDescriptor_Factory(const Dictionary* Dict) { return new JPEG2000PictureSubDescriptor(Dict); }
+static InterchangeObject* CDCIEssenceDescriptor_Factory(const Dictionary* Dict) { return new CDCIEssenceDescriptor(Dict); }
+static InterchangeObject* MPEG2VideoDescriptor_Factory(const Dictionary* Dict) { return new MPEG2VideoDescriptor(Dict); }
+static InterchangeObject* DMSegment_Factory(const Dictionary* Dict) { return new DMSegment(Dict); }
+static InterchangeObject* CryptographicFramework_Factory(const Dictionary* Dict) { return new CryptographicFramework(Dict); }
+static InterchangeObject* CryptographicContext_Factory(const Dictionary* Dict) { return new CryptographicContext(Dict); }
+static InterchangeObject* DescriptiveFramework_Factory(const Dictionary* Dict) { return new DescriptiveFramework(Dict); }
+static InterchangeObject* DescriptiveObject_Factory(const Dictionary* Dict) { return new DescriptiveObject(Dict); }
+static InterchangeObject* GenericDataEssenceDescriptor_Factory(const Dictionary* Dict) { return new GenericDataEssenceDescriptor(Dict); }
+static InterchangeObject* TimedTextDescriptor_Factory(const Dictionary* Dict) { return new TimedTextDescriptor(Dict); }
+static InterchangeObject* TimedTextResourceSubDescriptor_Factory(const Dictionary* Dict) { return new TimedTextResourceSubDescriptor(Dict); }
+static InterchangeObject* StereoscopicPictureSubDescriptor_Factory(const Dictionary* Dict) { return new StereoscopicPictureSubDescriptor(Dict); }
+static InterchangeObject* ContainerConstraintsSubDescriptor_Factory(const Dictionary* Dict) { return new ContainerConstraintsSubDescriptor(Dict); }
+static InterchangeObject* NetworkLocator_Factory(const Dictionary* Dict) { return new NetworkLocator(Dict); }
+static InterchangeObject* MCALabelSubDescriptor_Factory(const Dictionary* Dict) { return new MCALabelSubDescriptor(Dict); }
+static InterchangeObject* AudioChannelLabelSubDescriptor_Factory(const Dictionary* Dict) { return new AudioChannelLabelSubDescriptor(Dict); }
+static InterchangeObject* SoundfieldGroupLabelSubDescriptor_Factory(const Dictionary* Dict) { return new SoundfieldGroupLabelSubDescriptor(Dict); }
+static InterchangeObject* GroupOfSoundfieldGroupsLabelSubDescriptor_Factory(const Dictionary* Dict) { return new GroupOfSoundfieldGroupsLabelSubDescriptor(Dict); }
+static InterchangeObject* DCDataDescriptor_Factory(const Dictionary* Dict) { return new DCDataDescriptor(Dict); }
+static InterchangeObject* PrivateDCDataDescriptor_Factory(const Dictionary* Dict) { return new PrivateDCDataDescriptor(Dict); }
+static InterchangeObject* DolbyAtmosSubDescriptor_Factory(const Dictionary* Dict) { return new DolbyAtmosSubDescriptor(Dict); }
+static InterchangeObject* ACESPictureSubDescriptor_Factory(const Dictionary* Dict) { return new ACESPictureSubDescriptor(Dict); }
+static InterchangeObject* TargetFrameSubDescriptor_Factory(const Dictionary* Dict) { return new TargetFrameSubDescriptor(Dict); }
+static InterchangeObject* TextBasedDMFramework_Factory(const Dictionary* Dict) { return new TextBasedDMFramework(Dict); }
+static InterchangeObject* TextBasedObject_Factory(const Dictionary* Dict) { return new TextBasedObject(Dict); }
+static InterchangeObject* GenericStreamTextBasedSet_Factory(const Dictionary* Dict) { return new GenericStreamTextBasedSet(Dict); }
+static InterchangeObject* ISXDDataEssenceDescriptor_Factory(const Dictionary* Dict) { return new ISXDDataEssenceDescriptor(Dict); }
+static InterchangeObject* PHDRMetadataTrackSubDescriptor_Factory(const Dictionary* Dict) { return new PHDRMetadataTrackSubDescriptor(Dict); }
+static InterchangeObject* PIMFDynamicMetadataDescriptor_Factory(const Dictionary* Dict) { return new PIMFDynamicMetadataDescriptor(Dict); }
+static InterchangeObject* IABEssenceDescriptor_Factory(const Dictionary* Dict) { return new IABEssenceDescriptor(Dict); }
+static InterchangeObject* IABSoundfieldLabelSubDescriptor_Factory(const Dictionary* Dict) { return new IABSoundfieldLabelSubDescriptor(Dict); }
 
 
 void
-ASDCP::MXF::Metadata_InitTypes(const Dictionary*& Dict)
+ASDCP::MXF::Metadata_InitTypes(const Dictionary* Dict)
 {
   assert(Dict);
   SetObjectFactory(Dict->ul(MDD_Preface), Preface_Factory);
@@ -156,13 +156,13 @@ ASDCP::MXF::Metadata_InitTypes(const Dictionary*& Dict)
 
 //
 
-Identification::Identification(const Dictionary*& d) : InterchangeObject(d), m_Dict(d)
+Identification::Identification(const Dictionary* d) : InterchangeObject(d)
 {
   assert(m_Dict);
   m_UL = m_Dict->ul(MDD_Identification);
 }
 
-Identification::Identification(const Identification& rhs) : InterchangeObject(rhs.m_Dict), m_Dict(rhs.m_Dict)
+Identification::Identification(const Identification& rhs) : InterchangeObject(rhs.m_Dict)
 {
   assert(m_Dict);
   m_UL = m_Dict->ul(MDD_Identification);
@@ -226,6 +226,13 @@ Identification::Copy(const Identification& rhs)
 }
 
 //
+InterchangeObject*
+Identification::Clone() const
+{
+  return new Identification(*this);
+}
+
+//
 void
 Identification::Dump(FILE* stream)
 {
@@ -268,13 +275,13 @@ Identification::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 
 //
 
-ContentStorage::ContentStorage(const Dictionary*& d) : InterchangeObject(d), m_Dict(d)
+ContentStorage::ContentStorage(const Dictionary* d) : InterchangeObject(d)
 {
   assert(m_Dict);
   m_UL = m_Dict->ul(MDD_ContentStorage);
 }
 
-ContentStorage::ContentStorage(const ContentStorage& rhs) : InterchangeObject(rhs.m_Dict), m_Dict(rhs.m_Dict)
+ContentStorage::ContentStorage(const ContentStorage& rhs) : InterchangeObject(rhs.m_Dict)
 {
   assert(m_Dict);
   m_UL = m_Dict->ul(MDD_ContentStorage);
@@ -314,6 +321,13 @@ ContentStorage::Copy(const ContentStorage& rhs)
 }
 
 //
+InterchangeObject*
+ContentStorage::Clone() const
+{
+  return new ContentStorage(*this);
+}
+
+//
 void
 ContentStorage::Dump(FILE* stream)
 {
@@ -349,13 +363,13 @@ ContentStorage::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 
 //
 
-EssenceContainerData::EssenceContainerData(const Dictionary*& d) : InterchangeObject(d), m_Dict(d), BodySID(0)
+EssenceContainerData::EssenceContainerData(const Dictionary* d) : InterchangeObject(d), BodySID(0)
 {
   assert(m_Dict);
   m_UL = m_Dict->ul(MDD_EssenceContainerData);
 }
 
-EssenceContainerData::EssenceContainerData(const EssenceContainerData& rhs) : InterchangeObject(rhs.m_Dict), m_Dict(rhs.m_Dict)
+EssenceContainerData::EssenceContainerData(const EssenceContainerData& rhs) : InterchangeObject(rhs.m_Dict)
 {
   assert(m_Dict);
   m_UL = m_Dict->ul(MDD_EssenceContainerData);
@@ -401,6 +415,13 @@ EssenceContainerData::Copy(const EssenceContainerData& rhs)
 }
 
 //
+InterchangeObject*
+EssenceContainerData::Clone() const
+{
+  return new EssenceContainerData(*this);
+}
+
+//
 void
 EssenceContainerData::Dump(FILE* stream)
 {
@@ -436,9 +457,9 @@ EssenceContainerData::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 // GenericPackage
 
 //
-GenericPackage::GenericPackage(const Dictionary*& d) : InterchangeObject(d), m_Dict(d) {}
+GenericPackage::GenericPackage(const Dictionary* d) : InterchangeObject(d) {}
 
-GenericPackage::GenericPackage(const GenericPackage& rhs) : InterchangeObject(rhs.m_Dict), m_Dict(rhs.m_Dict)
+GenericPackage::GenericPackage(const GenericPackage& rhs) : InterchangeObject(rhs.m_Dict)
 {
   Copy(rhs);
 }
@@ -488,6 +509,13 @@ GenericPackage::Copy(const GenericPackage& rhs)
 }
 
 //
+InterchangeObject*
+GenericPackage::Clone() const
+{
+  return new GenericPackage(*this);
+}
+
+//
 void
 GenericPackage::Dump(FILE* stream)
 {
@@ -514,13 +542,13 @@ GenericPackage::Dump(FILE* stream)
 
 //
 
-MaterialPackage::MaterialPackage(const Dictionary*& d) : GenericPackage(d), m_Dict(d)
+MaterialPackage::MaterialPackage(const Dictionary* d) : GenericPackage(d)
 {
   assert(m_Dict);
   m_UL = m_Dict->ul(MDD_MaterialPackage);
 }
 
-MaterialPackage::MaterialPackage(const MaterialPackage& rhs) : GenericPackage(rhs.m_Dict), m_Dict(rhs.m_Dict)
+MaterialPackage::MaterialPackage(const MaterialPackage& rhs) : GenericPackage(rhs.m_Dict)
 {
   assert(m_Dict);
   m_UL = m_Dict->ul(MDD_MaterialPackage);
@@ -560,6 +588,13 @@ MaterialPackage::Copy(const MaterialPackage& rhs)
 }
 
 //
+InterchangeObject*
+MaterialPackage::Clone() const
+{
+  return new MaterialPackage(*this);
+}
+
+//
 void
 MaterialPackage::Dump(FILE* stream)
 {
@@ -594,13 +629,13 @@ MaterialPackage::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 
 //
 
-SourcePackage::SourcePackage(const Dictionary*& d) : GenericPackage(d), m_Dict(d)
+SourcePackage::SourcePackage(const Dictionary* d) : GenericPackage(d)
 {
   assert(m_Dict);
   m_UL = m_Dict->ul(MDD_SourcePackage);
 }
 
-SourcePackage::SourcePackage(const SourcePackage& rhs) : GenericPackage(rhs.m_Dict), m_Dict(rhs.m_Dict)
+SourcePackage::SourcePackage(const SourcePackage& rhs) : GenericPackage(rhs.m_Dict)
 {
   assert(m_Dict);
   m_UL = m_Dict->ul(MDD_SourcePackage);
@@ -637,6 +672,13 @@ SourcePackage::Copy(const SourcePackage& rhs)
 }
 
 //
+InterchangeObject*
+SourcePackage::Clone() const
+{
+  return new SourcePackage(*this);
+}
+
+//
 void
 SourcePackage::Dump(FILE* stream)
 {
@@ -668,9 +710,9 @@ SourcePackage::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 // GenericTrack
 
 //
-GenericTrack::GenericTrack(const Dictionary*& d) : InterchangeObject(d), m_Dict(d), TrackID(0), TrackNumber(0) {}
+GenericTrack::GenericTrack(const Dictionary* d) : InterchangeObject(d), TrackID(0), TrackNumber(0) {}
 
-GenericTrack::GenericTrack(const GenericTrack& rhs) : InterchangeObject(rhs.m_Dict), m_Dict(rhs.m_Dict)
+GenericTrack::GenericTrack(const GenericTrack& rhs) : InterchangeObject(rhs.m_Dict)
 {
   Copy(rhs);
 }
@@ -720,6 +762,13 @@ GenericTrack::Copy(const GenericTrack& rhs)
 }
 
 //
+InterchangeObject*
+GenericTrack::Clone() const
+{
+  return new GenericTrack(*this);
+}
+
+//
 void
 GenericTrack::Dump(FILE* stream)
 {
@@ -746,13 +795,13 @@ GenericTrack::Dump(FILE* stream)
 
 //
 
-StaticTrack::StaticTrack(const Dictionary*& d) : GenericTrack(d), m_Dict(d)
+StaticTrack::StaticTrack(const Dictionary* d) : GenericTrack(d)
 {
   assert(m_Dict);
   m_UL = m_Dict->ul(MDD_StaticTrack);
 }
 
-StaticTrack::StaticTrack(const StaticTrack& rhs) : GenericTrack(rhs.m_Dict), m_Dict(rhs.m_Dict)
+StaticTrack::StaticTrack(const StaticTrack& rhs) : GenericTrack(rhs.m_Dict)
 {
   assert(m_Dict);
   m_UL = m_Dict->ul(MDD_StaticTrack);
@@ -783,6 +832,13 @@ void
 StaticTrack::Copy(const StaticTrack& rhs)
 {
   GenericTrack::Copy(rhs);
+}
+
+//
+InterchangeObject*
+StaticTrack::Clone() const
+{
+  return new StaticTrack(*this);
 }
 
 //
@@ -817,13 +873,13 @@ StaticTrack::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 
 //
 
-Track::Track(const Dictionary*& d) : GenericTrack(d), m_Dict(d), Origin(0)
+Track::Track(const Dictionary* d) : GenericTrack(d), Origin(0)
 {
   assert(m_Dict);
   m_UL = m_Dict->ul(MDD_Track);
 }
 
-Track::Track(const Track& rhs) : GenericTrack(rhs.m_Dict), m_Dict(rhs.m_Dict)
+Track::Track(const Track& rhs) : GenericTrack(rhs.m_Dict)
 {
   assert(m_Dict);
   m_UL = m_Dict->ul(MDD_Track);
@@ -863,6 +919,13 @@ Track::Copy(const Track& rhs)
 }
 
 //
+InterchangeObject*
+Track::Clone() const
+{
+  return new Track(*this);
+}
+
+//
 void
 Track::Dump(FILE* stream)
 {
@@ -895,9 +958,9 @@ Track::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 // StructuralComponent
 
 //
-StructuralComponent::StructuralComponent(const Dictionary*& d) : InterchangeObject(d), m_Dict(d) {}
+StructuralComponent::StructuralComponent(const Dictionary* d) : InterchangeObject(d) {}
 
-StructuralComponent::StructuralComponent(const StructuralComponent& rhs) : InterchangeObject(rhs.m_Dict), m_Dict(rhs.m_Dict)
+StructuralComponent::StructuralComponent(const StructuralComponent& rhs) : InterchangeObject(rhs.m_Dict)
 {
   Copy(rhs);
 }
@@ -938,6 +1001,13 @@ StructuralComponent::Copy(const StructuralComponent& rhs)
 }
 
 //
+InterchangeObject*
+StructuralComponent::Clone() const
+{
+  return new StructuralComponent(*this);
+}
+
+//
 void
 StructuralComponent::Dump(FILE* stream)
 {
@@ -960,13 +1030,13 @@ StructuralComponent::Dump(FILE* stream)
 
 //
 
-Sequence::Sequence(const Dictionary*& d) : StructuralComponent(d), m_Dict(d)
+Sequence::Sequence(const Dictionary* d) : StructuralComponent(d)
 {
   assert(m_Dict);
   m_UL = m_Dict->ul(MDD_Sequence);
 }
 
-Sequence::Sequence(const Sequence& rhs) : StructuralComponent(rhs.m_Dict), m_Dict(rhs.m_Dict)
+Sequence::Sequence(const Sequence& rhs) : StructuralComponent(rhs.m_Dict)
 {
   assert(m_Dict);
   m_UL = m_Dict->ul(MDD_Sequence);
@@ -1003,6 +1073,13 @@ Sequence::Copy(const Sequence& rhs)
 }
 
 //
+InterchangeObject*
+Sequence::Clone() const
+{
+  return new Sequence(*this);
+}
+
+//
 void
 Sequence::Dump(FILE* stream)
 {
@@ -1036,13 +1113,13 @@ Sequence::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 
 //
 
-SourceClip::SourceClip(const Dictionary*& d) : StructuralComponent(d), m_Dict(d), StartPosition(0), SourceTrackID(0)
+SourceClip::SourceClip(const Dictionary* d) : StructuralComponent(d), StartPosition(0), SourceTrackID(0)
 {
   assert(m_Dict);
   m_UL = m_Dict->ul(MDD_SourceClip);
 }
 
-SourceClip::SourceClip(const SourceClip& rhs) : StructuralComponent(rhs.m_Dict), m_Dict(rhs.m_Dict)
+SourceClip::SourceClip(const SourceClip& rhs) : StructuralComponent(rhs.m_Dict)
 {
   assert(m_Dict);
   m_UL = m_Dict->ul(MDD_SourceClip);
@@ -1085,6 +1162,13 @@ SourceClip::Copy(const SourceClip& rhs)
 }
 
 //
+InterchangeObject*
+SourceClip::Clone() const
+{
+  return new SourceClip(*this);
+}
+
+//
 void
 SourceClip::Dump(FILE* stream)
 {
@@ -1119,13 +1203,13 @@ SourceClip::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 
 //
 
-TimecodeComponent::TimecodeComponent(const Dictionary*& d) : StructuralComponent(d), m_Dict(d), RoundedTimecodeBase(0), StartTimecode(0), DropFrame(0)
+TimecodeComponent::TimecodeComponent(const Dictionary* d) : StructuralComponent(d), RoundedTimecodeBase(0), StartTimecode(0), DropFrame(0)
 {
   assert(m_Dict);
   m_UL = m_Dict->ul(MDD_TimecodeComponent);
 }
 
-TimecodeComponent::TimecodeComponent(const TimecodeComponent& rhs) : StructuralComponent(rhs.m_Dict), m_Dict(rhs.m_Dict)
+TimecodeComponent::TimecodeComponent(const TimecodeComponent& rhs) : StructuralComponent(rhs.m_Dict)
 {
   assert(m_Dict);
   m_UL = m_Dict->ul(MDD_TimecodeComponent);
@@ -1168,6 +1252,13 @@ TimecodeComponent::Copy(const TimecodeComponent& rhs)
 }
 
 //
+InterchangeObject*
+TimecodeComponent::Clone() const
+{
+  return new TimecodeComponent(*this);
+}
+
+//
 void
 TimecodeComponent::Dump(FILE* stream)
 {
@@ -1201,9 +1292,9 @@ TimecodeComponent::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 // GenericDescriptor
 
 //
-GenericDescriptor::GenericDescriptor(const Dictionary*& d) : InterchangeObject(d), m_Dict(d) {}
+GenericDescriptor::GenericDescriptor(const Dictionary* d) : InterchangeObject(d) {}
 
-GenericDescriptor::GenericDescriptor(const GenericDescriptor& rhs) : InterchangeObject(rhs.m_Dict), m_Dict(rhs.m_Dict)
+GenericDescriptor::GenericDescriptor(const GenericDescriptor& rhs) : InterchangeObject(rhs.m_Dict)
 {
   Copy(rhs);
 }
@@ -1241,6 +1332,13 @@ GenericDescriptor::Copy(const GenericDescriptor& rhs)
 }
 
 //
+InterchangeObject*
+GenericDescriptor::Clone() const
+{
+  return new GenericDescriptor(*this);
+}
+
+//
 void
 GenericDescriptor::Dump(FILE* stream)
 {
@@ -1263,13 +1361,13 @@ GenericDescriptor::Dump(FILE* stream)
 
 //
 
-FileDescriptor::FileDescriptor(const Dictionary*& d) : GenericDescriptor(d), m_Dict(d)
+FileDescriptor::FileDescriptor(const Dictionary* d) : GenericDescriptor(d)
 {
   assert(m_Dict);
   m_UL = m_Dict->ul(MDD_FileDescriptor);
 }
 
-FileDescriptor::FileDescriptor(const FileDescriptor& rhs) : GenericDescriptor(rhs.m_Dict), m_Dict(rhs.m_Dict)
+FileDescriptor::FileDescriptor(const FileDescriptor& rhs) : GenericDescriptor(rhs.m_Dict)
 {
   assert(m_Dict);
   m_UL = m_Dict->ul(MDD_FileDescriptor);
@@ -1327,6 +1425,13 @@ FileDescriptor::Copy(const FileDescriptor& rhs)
 }
 
 //
+InterchangeObject*
+FileDescriptor::Clone() const
+{
+  return new FileDescriptor(*this);
+}
+
+//
 void
 FileDescriptor::Dump(FILE* stream)
 {
@@ -1369,13 +1474,13 @@ FileDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 
 //
 
-GenericSoundEssenceDescriptor::GenericSoundEssenceDescriptor(const Dictionary*& d) : FileDescriptor(d), m_Dict(d), Locked(0), ChannelCount(0), QuantizationBits(0)
+GenericSoundEssenceDescriptor::GenericSoundEssenceDescriptor(const Dictionary* d) : FileDescriptor(d), Locked(0), ChannelCount(0), QuantizationBits(0)
 {
   assert(m_Dict);
   m_UL = m_Dict->ul(MDD_GenericSoundEssenceDescriptor);
 }
 
-GenericSoundEssenceDescriptor::GenericSoundEssenceDescriptor(const GenericSoundEssenceDescriptor& rhs) : FileDescriptor(rhs.m_Dict), m_Dict(rhs.m_Dict)
+GenericSoundEssenceDescriptor::GenericSoundEssenceDescriptor(const GenericSoundEssenceDescriptor& rhs) : FileDescriptor(rhs.m_Dict)
 {
   assert(m_Dict);
   m_UL = m_Dict->ul(MDD_GenericSoundEssenceDescriptor);
@@ -1454,6 +1559,13 @@ GenericSoundEssenceDescriptor::Copy(const GenericSoundEssenceDescriptor& rhs)
 }
 
 //
+InterchangeObject*
+GenericSoundEssenceDescriptor::Clone() const
+{
+  return new GenericSoundEssenceDescriptor(*this);
+}
+
+//
 void
 GenericSoundEssenceDescriptor::Dump(FILE* stream)
 {
@@ -1505,13 +1617,13 @@ GenericSoundEssenceDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 
 //
 
-WaveAudioDescriptor::WaveAudioDescriptor(const Dictionary*& d) : GenericSoundEssenceDescriptor(d), m_Dict(d), BlockAlign(0), AvgBps(0)
+WaveAudioDescriptor::WaveAudioDescriptor(const Dictionary* d) : GenericSoundEssenceDescriptor(d), BlockAlign(0), AvgBps(0)
 {
   assert(m_Dict);
   m_UL = m_Dict->ul(MDD_WaveAudioDescriptor);
 }
 
-WaveAudioDescriptor::WaveAudioDescriptor(const WaveAudioDescriptor& rhs) : GenericSoundEssenceDescriptor(rhs.m_Dict), m_Dict(rhs.m_Dict)
+WaveAudioDescriptor::WaveAudioDescriptor(const WaveAudioDescriptor& rhs) : GenericSoundEssenceDescriptor(rhs.m_Dict)
 {
   assert(m_Dict);
   m_UL = m_Dict->ul(MDD_WaveAudioDescriptor);
@@ -1563,6 +1675,13 @@ WaveAudioDescriptor::Copy(const WaveAudioDescriptor& rhs)
 }
 
 //
+InterchangeObject*
+WaveAudioDescriptor::Clone() const
+{
+  return new WaveAudioDescriptor(*this);
+}
+
+//
 void
 WaveAudioDescriptor::Dump(FILE* stream)
 {
@@ -1602,13 +1721,13 @@ WaveAudioDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 
 //
 
-GenericPictureEssenceDescriptor::GenericPictureEssenceDescriptor(const Dictionary*& d) : FileDescriptor(d), m_Dict(d), FrameLayout(0), StoredWidth(0), StoredHeight(0)
+GenericPictureEssenceDescriptor::GenericPictureEssenceDescriptor(const Dictionary* d) : FileDescriptor(d), FrameLayout(0), StoredWidth(0), StoredHeight(0)
 {
   assert(m_Dict);
   m_UL = m_Dict->ul(MDD_GenericPictureEssenceDescriptor);
 }
 
-GenericPictureEssenceDescriptor::GenericPictureEssenceDescriptor(const GenericPictureEssenceDescriptor& rhs) : FileDescriptor(rhs.m_Dict), m_Dict(rhs.m_Dict)
+GenericPictureEssenceDescriptor::GenericPictureEssenceDescriptor(const GenericPictureEssenceDescriptor& rhs) : FileDescriptor(rhs.m_Dict)
 {
   assert(m_Dict);
   m_UL = m_Dict->ul(MDD_GenericPictureEssenceDescriptor);
@@ -1836,6 +1955,13 @@ GenericPictureEssenceDescriptor::Copy(const GenericPictureEssenceDescriptor& rhs
 }
 
 //
+InterchangeObject*
+GenericPictureEssenceDescriptor::Clone() const
+{
+  return new GenericPictureEssenceDescriptor(*this);
+}
+
+//
 void
 GenericPictureEssenceDescriptor::Dump(FILE* stream)
 {
@@ -1963,13 +2089,13 @@ GenericPictureEssenceDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 
 //
 
-RGBAEssenceDescriptor::RGBAEssenceDescriptor(const Dictionary*& d) : GenericPictureEssenceDescriptor(d), m_Dict(d)
+RGBAEssenceDescriptor::RGBAEssenceDescriptor(const Dictionary* d) : GenericPictureEssenceDescriptor(d)
 {
   assert(m_Dict);
   m_UL = m_Dict->ul(MDD_RGBAEssenceDescriptor);
 }
 
-RGBAEssenceDescriptor::RGBAEssenceDescriptor(const RGBAEssenceDescriptor& rhs) : GenericPictureEssenceDescriptor(rhs.m_Dict), m_Dict(rhs.m_Dict)
+RGBAEssenceDescriptor::RGBAEssenceDescriptor(const RGBAEssenceDescriptor& rhs) : GenericPictureEssenceDescriptor(rhs.m_Dict)
 {
   assert(m_Dict);
   m_UL = m_Dict->ul(MDD_RGBAEssenceDescriptor);
@@ -2036,6 +2162,13 @@ RGBAEssenceDescriptor::Copy(const RGBAEssenceDescriptor& rhs)
 }
 
 //
+InterchangeObject*
+RGBAEssenceDescriptor::Clone() const
+{
+  return new RGBAEssenceDescriptor(*this);
+}
+
+//
 void
 RGBAEssenceDescriptor::Dump(FILE* stream)
 {
@@ -2083,13 +2216,13 @@ RGBAEssenceDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 
 //
 
-JPEG2000PictureSubDescriptor::JPEG2000PictureSubDescriptor(const Dictionary*& d) : InterchangeObject(d), m_Dict(d), Rsize(0), Xsize(0), Ysize(0), XOsize(0), YOsize(0), XTsize(0), YTsize(0), XTOsize(0), YTOsize(0), Csize(0)
+JPEG2000PictureSubDescriptor::JPEG2000PictureSubDescriptor(const Dictionary* d) : InterchangeObject(d), Rsize(0), Xsize(0), Ysize(0), XOsize(0), YOsize(0), XTsize(0), YTsize(0), XTOsize(0), YTOsize(0), Csize(0)
 {
   assert(m_Dict);
   m_UL = m_Dict->ul(MDD_JPEG2000PictureSubDescriptor);
 }
 
-JPEG2000PictureSubDescriptor::JPEG2000PictureSubDescriptor(const JPEG2000PictureSubDescriptor& rhs) : InterchangeObject(rhs.m_Dict), m_Dict(rhs.m_Dict)
+JPEG2000PictureSubDescriptor::JPEG2000PictureSubDescriptor(const JPEG2000PictureSubDescriptor& rhs) : InterchangeObject(rhs.m_Dict)
 {
   assert(m_Dict);
   m_UL = m_Dict->ul(MDD_JPEG2000PictureSubDescriptor);
@@ -2195,6 +2328,13 @@ JPEG2000PictureSubDescriptor::Copy(const JPEG2000PictureSubDescriptor& rhs)
 }
 
 //
+InterchangeObject*
+JPEG2000PictureSubDescriptor::Clone() const
+{
+  return new JPEG2000PictureSubDescriptor(*this);
+}
+
+//
 void
 JPEG2000PictureSubDescriptor::Dump(FILE* stream)
 {
@@ -2259,13 +2399,13 @@ JPEG2000PictureSubDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 
 //
 
-CDCIEssenceDescriptor::CDCIEssenceDescriptor(const Dictionary*& d) : GenericPictureEssenceDescriptor(d), m_Dict(d), ComponentDepth(0), HorizontalSubsampling(0)
+CDCIEssenceDescriptor::CDCIEssenceDescriptor(const Dictionary* d) : GenericPictureEssenceDescriptor(d), ComponentDepth(0), HorizontalSubsampling(0)
 {
   assert(m_Dict);
   m_UL = m_Dict->ul(MDD_CDCIEssenceDescriptor);
 }
 
-CDCIEssenceDescriptor::CDCIEssenceDescriptor(const CDCIEssenceDescriptor& rhs) : GenericPictureEssenceDescriptor(rhs.m_Dict), m_Dict(rhs.m_Dict)
+CDCIEssenceDescriptor::CDCIEssenceDescriptor(const CDCIEssenceDescriptor& rhs) : GenericPictureEssenceDescriptor(rhs.m_Dict)
 {
   assert(m_Dict);
   m_UL = m_Dict->ul(MDD_CDCIEssenceDescriptor);
@@ -2353,6 +2493,13 @@ CDCIEssenceDescriptor::Copy(const CDCIEssenceDescriptor& rhs)
 }
 
 //
+InterchangeObject*
+CDCIEssenceDescriptor::Clone() const
+{
+  return new CDCIEssenceDescriptor(*this);
+}
+
+//
 void
 CDCIEssenceDescriptor::Dump(FILE* stream)
 {
@@ -2410,13 +2557,13 @@ CDCIEssenceDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 
 //
 
-MPEG2VideoDescriptor::MPEG2VideoDescriptor(const Dictionary*& d) : CDCIEssenceDescriptor(d), m_Dict(d)
+MPEG2VideoDescriptor::MPEG2VideoDescriptor(const Dictionary* d) : CDCIEssenceDescriptor(d)
 {
   assert(m_Dict);
   m_UL = m_Dict->ul(MDD_MPEG2VideoDescriptor);
 }
 
-MPEG2VideoDescriptor::MPEG2VideoDescriptor(const MPEG2VideoDescriptor& rhs) : CDCIEssenceDescriptor(rhs.m_Dict), m_Dict(rhs.m_Dict)
+MPEG2VideoDescriptor::MPEG2VideoDescriptor(const MPEG2VideoDescriptor& rhs) : CDCIEssenceDescriptor(rhs.m_Dict)
 {
   assert(m_Dict);
   m_UL = m_Dict->ul(MDD_MPEG2VideoDescriptor);
@@ -2510,6 +2657,13 @@ MPEG2VideoDescriptor::Copy(const MPEG2VideoDescriptor& rhs)
 }
 
 //
+InterchangeObject*
+MPEG2VideoDescriptor::Clone() const
+{
+  return new MPEG2VideoDescriptor(*this);
+}
+
+//
 void
 MPEG2VideoDescriptor::Dump(FILE* stream)
 {
@@ -2571,13 +2725,13 @@ MPEG2VideoDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 
 //
 
-DMSegment::DMSegment(const Dictionary*& d) : InterchangeObject(d), m_Dict(d)
+DMSegment::DMSegment(const Dictionary* d) : InterchangeObject(d)
 {
   assert(m_Dict);
   m_UL = m_Dict->ul(MDD_DMSegment);
 }
 
-DMSegment::DMSegment(const DMSegment& rhs) : InterchangeObject(rhs.m_Dict), m_Dict(rhs.m_Dict)
+DMSegment::DMSegment(const DMSegment& rhs) : InterchangeObject(rhs.m_Dict)
 {
   assert(m_Dict);
   m_UL = m_Dict->ul(MDD_DMSegment);
@@ -2635,6 +2789,13 @@ DMSegment::Copy(const DMSegment& rhs)
 }
 
 //
+InterchangeObject*
+DMSegment::Clone() const
+{
+  return new DMSegment(*this);
+}
+
+//
 void
 DMSegment::Dump(FILE* stream)
 {
@@ -2677,13 +2838,13 @@ DMSegment::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 
 //
 
-CryptographicFramework::CryptographicFramework(const Dictionary*& d) : InterchangeObject(d), m_Dict(d)
+CryptographicFramework::CryptographicFramework(const Dictionary* d) : InterchangeObject(d)
 {
   assert(m_Dict);
   m_UL = m_Dict->ul(MDD_CryptographicFramework);
 }
 
-CryptographicFramework::CryptographicFramework(const CryptographicFramework& rhs) : InterchangeObject(rhs.m_Dict), m_Dict(rhs.m_Dict)
+CryptographicFramework::CryptographicFramework(const CryptographicFramework& rhs) : InterchangeObject(rhs.m_Dict)
 {
   assert(m_Dict);
   m_UL = m_Dict->ul(MDD_CryptographicFramework);
@@ -2720,6 +2881,13 @@ CryptographicFramework::Copy(const CryptographicFramework& rhs)
 }
 
 //
+InterchangeObject*
+CryptographicFramework::Clone() const
+{
+  return new CryptographicFramework(*this);
+}
+
+//
 void
 CryptographicFramework::Dump(FILE* stream)
 {
@@ -2752,13 +2920,13 @@ CryptographicFramework::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 
 //
 
-CryptographicContext::CryptographicContext(const Dictionary*& d) : InterchangeObject(d), m_Dict(d)
+CryptographicContext::CryptographicContext(const Dictionary* d) : InterchangeObject(d)
 {
   assert(m_Dict);
   m_UL = m_Dict->ul(MDD_CryptographicContext);
 }
 
-CryptographicContext::CryptographicContext(const CryptographicContext& rhs) : InterchangeObject(rhs.m_Dict), m_Dict(rhs.m_Dict)
+CryptographicContext::CryptographicContext(const CryptographicContext& rhs) : InterchangeObject(rhs.m_Dict)
 {
   assert(m_Dict);
   m_UL = m_Dict->ul(MDD_CryptographicContext);
@@ -2807,6 +2975,13 @@ CryptographicContext::Copy(const CryptographicContext& rhs)
 }
 
 //
+InterchangeObject*
+CryptographicContext::Clone() const
+{
+  return new CryptographicContext(*this);
+}
+
+//
 void
 CryptographicContext::Dump(FILE* stream)
 {
@@ -2843,13 +3018,13 @@ CryptographicContext::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 
 //
 
-DescriptiveFramework::DescriptiveFramework(const Dictionary*& d) : InterchangeObject(d), m_Dict(d)
+DescriptiveFramework::DescriptiveFramework(const Dictionary* d) : InterchangeObject(d)
 {
   assert(m_Dict);
   m_UL = m_Dict->ul(MDD_DescriptiveFramework);
 }
 
-DescriptiveFramework::DescriptiveFramework(const DescriptiveFramework& rhs) : InterchangeObject(rhs.m_Dict), m_Dict(rhs.m_Dict)
+DescriptiveFramework::DescriptiveFramework(const DescriptiveFramework& rhs) : InterchangeObject(rhs.m_Dict)
 {
   assert(m_Dict);
   m_UL = m_Dict->ul(MDD_DescriptiveFramework);
@@ -2889,6 +3064,13 @@ DescriptiveFramework::Copy(const DescriptiveFramework& rhs)
 }
 
 //
+InterchangeObject*
+DescriptiveFramework::Clone() const
+{
+  return new DescriptiveFramework(*this);
+}
+
+//
 void
 DescriptiveFramework::Dump(FILE* stream)
 {
@@ -2923,13 +3105,13 @@ DescriptiveFramework::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 
 //
 
-DescriptiveObject::DescriptiveObject(const Dictionary*& d) : InterchangeObject(d), m_Dict(d)
+DescriptiveObject::DescriptiveObject(const Dictionary* d) : InterchangeObject(d)
 {
   assert(m_Dict);
   m_UL = m_Dict->ul(MDD_DescriptiveObject);
 }
 
-DescriptiveObject::DescriptiveObject(const DescriptiveObject& rhs) : InterchangeObject(rhs.m_Dict), m_Dict(rhs.m_Dict)
+DescriptiveObject::DescriptiveObject(const DescriptiveObject& rhs) : InterchangeObject(rhs.m_Dict)
 {
   assert(m_Dict);
   m_UL = m_Dict->ul(MDD_DescriptiveObject);
@@ -2969,6 +3151,13 @@ DescriptiveObject::Copy(const DescriptiveObject& rhs)
 }
 
 //
+InterchangeObject*
+DescriptiveObject::Clone() const
+{
+  return new DescriptiveObject(*this);
+}
+
+//
 void
 DescriptiveObject::Dump(FILE* stream)
 {
@@ -3003,13 +3192,13 @@ DescriptiveObject::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 
 //
 
-GenericDataEssenceDescriptor::GenericDataEssenceDescriptor(const Dictionary*& d) : FileDescriptor(d), m_Dict(d)
+GenericDataEssenceDescriptor::GenericDataEssenceDescriptor(const Dictionary* d) : FileDescriptor(d)
 {
   assert(m_Dict);
   m_UL = m_Dict->ul(MDD_GenericDataEssenceDescriptor);
 }
 
-GenericDataEssenceDescriptor::GenericDataEssenceDescriptor(const GenericDataEssenceDescriptor& rhs) : FileDescriptor(rhs.m_Dict), m_Dict(rhs.m_Dict)
+GenericDataEssenceDescriptor::GenericDataEssenceDescriptor(const GenericDataEssenceDescriptor& rhs) : FileDescriptor(rhs.m_Dict)
 {
   assert(m_Dict);
   m_UL = m_Dict->ul(MDD_GenericDataEssenceDescriptor);
@@ -3046,6 +3235,13 @@ GenericDataEssenceDescriptor::Copy(const GenericDataEssenceDescriptor& rhs)
 }
 
 //
+InterchangeObject*
+GenericDataEssenceDescriptor::Clone() const
+{
+  return new GenericDataEssenceDescriptor(*this);
+}
+
+//
 void
 GenericDataEssenceDescriptor::Dump(FILE* stream)
 {
@@ -3078,13 +3274,13 @@ GenericDataEssenceDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 
 //
 
-TimedTextDescriptor::TimedTextDescriptor(const Dictionary*& d) : GenericDataEssenceDescriptor(d), m_Dict(d)
+TimedTextDescriptor::TimedTextDescriptor(const Dictionary* d) : GenericDataEssenceDescriptor(d)
 {
   assert(m_Dict);
   m_UL = m_Dict->ul(MDD_TimedTextDescriptor);
 }
 
-TimedTextDescriptor::TimedTextDescriptor(const TimedTextDescriptor& rhs) : GenericDataEssenceDescriptor(rhs.m_Dict), m_Dict(rhs.m_Dict)
+TimedTextDescriptor::TimedTextDescriptor(const TimedTextDescriptor& rhs) : GenericDataEssenceDescriptor(rhs.m_Dict)
 {
   assert(m_Dict);
   m_UL = m_Dict->ul(MDD_TimedTextDescriptor);
@@ -3151,6 +3347,13 @@ TimedTextDescriptor::Copy(const TimedTextDescriptor& rhs)
 }
 
 //
+InterchangeObject*
+TimedTextDescriptor::Clone() const
+{
+  return new TimedTextDescriptor(*this);
+}
+
+//
 void
 TimedTextDescriptor::Dump(FILE* stream)
 {
@@ -3197,13 +3400,13 @@ TimedTextDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 
 //
 
-TimedTextResourceSubDescriptor::TimedTextResourceSubDescriptor(const Dictionary*& d) : InterchangeObject(d), m_Dict(d), EssenceStreamID(0)
+TimedTextResourceSubDescriptor::TimedTextResourceSubDescriptor(const Dictionary* d) : InterchangeObject(d), EssenceStreamID(0)
 {
   assert(m_Dict);
   m_UL = m_Dict->ul(MDD_TimedTextResourceSubDescriptor);
 }
 
-TimedTextResourceSubDescriptor::TimedTextResourceSubDescriptor(const TimedTextResourceSubDescriptor& rhs) : InterchangeObject(rhs.m_Dict), m_Dict(rhs.m_Dict)
+TimedTextResourceSubDescriptor::TimedTextResourceSubDescriptor(const TimedTextResourceSubDescriptor& rhs) : InterchangeObject(rhs.m_Dict)
 {
   assert(m_Dict);
   m_UL = m_Dict->ul(MDD_TimedTextResourceSubDescriptor);
@@ -3246,6 +3449,13 @@ TimedTextResourceSubDescriptor::Copy(const TimedTextResourceSubDescriptor& rhs)
 }
 
 //
+InterchangeObject*
+TimedTextResourceSubDescriptor::Clone() const
+{
+  return new TimedTextResourceSubDescriptor(*this);
+}
+
+//
 void
 TimedTextResourceSubDescriptor::Dump(FILE* stream)
 {
@@ -3280,13 +3490,13 @@ TimedTextResourceSubDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 
 //
 
-StereoscopicPictureSubDescriptor::StereoscopicPictureSubDescriptor(const Dictionary*& d) : InterchangeObject(d), m_Dict(d)
+StereoscopicPictureSubDescriptor::StereoscopicPictureSubDescriptor(const Dictionary* d) : InterchangeObject(d)
 {
   assert(m_Dict);
   m_UL = m_Dict->ul(MDD_StereoscopicPictureSubDescriptor);
 }
 
-StereoscopicPictureSubDescriptor::StereoscopicPictureSubDescriptor(const StereoscopicPictureSubDescriptor& rhs) : InterchangeObject(rhs.m_Dict), m_Dict(rhs.m_Dict)
+StereoscopicPictureSubDescriptor::StereoscopicPictureSubDescriptor(const StereoscopicPictureSubDescriptor& rhs) : InterchangeObject(rhs.m_Dict)
 {
   assert(m_Dict);
   m_UL = m_Dict->ul(MDD_StereoscopicPictureSubDescriptor);
@@ -3317,6 +3527,13 @@ void
 StereoscopicPictureSubDescriptor::Copy(const StereoscopicPictureSubDescriptor& rhs)
 {
   InterchangeObject::Copy(rhs);
+}
+
+//
+InterchangeObject*
+StereoscopicPictureSubDescriptor::Clone() const
+{
+  return new StereoscopicPictureSubDescriptor(*this);
 }
 
 //
@@ -3351,13 +3568,13 @@ StereoscopicPictureSubDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 
 //
 
-ContainerConstraintsSubDescriptor::ContainerConstraintsSubDescriptor(const Dictionary*& d) : InterchangeObject(d), m_Dict(d)
+ContainerConstraintsSubDescriptor::ContainerConstraintsSubDescriptor(const Dictionary* d) : InterchangeObject(d)
 {
   assert(m_Dict);
   m_UL = m_Dict->ul(MDD_ContainerConstraintsSubDescriptor);
 }
 
-ContainerConstraintsSubDescriptor::ContainerConstraintsSubDescriptor(const ContainerConstraintsSubDescriptor& rhs) : InterchangeObject(rhs.m_Dict), m_Dict(rhs.m_Dict)
+ContainerConstraintsSubDescriptor::ContainerConstraintsSubDescriptor(const ContainerConstraintsSubDescriptor& rhs) : InterchangeObject(rhs.m_Dict)
 {
   assert(m_Dict);
   m_UL = m_Dict->ul(MDD_ContainerConstraintsSubDescriptor);
@@ -3388,6 +3605,13 @@ void
 ContainerConstraintsSubDescriptor::Copy(const ContainerConstraintsSubDescriptor& rhs)
 {
   InterchangeObject::Copy(rhs);
+}
+
+//
+InterchangeObject*
+ContainerConstraintsSubDescriptor::Clone() const
+{
+  return new ContainerConstraintsSubDescriptor(*this);
 }
 
 //
@@ -3422,13 +3646,13 @@ ContainerConstraintsSubDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 
 //
 
-NetworkLocator::NetworkLocator(const Dictionary*& d) : InterchangeObject(d), m_Dict(d)
+NetworkLocator::NetworkLocator(const Dictionary* d) : InterchangeObject(d)
 {
   assert(m_Dict);
   m_UL = m_Dict->ul(MDD_NetworkLocator);
 }
 
-NetworkLocator::NetworkLocator(const NetworkLocator& rhs) : InterchangeObject(rhs.m_Dict), m_Dict(rhs.m_Dict)
+NetworkLocator::NetworkLocator(const NetworkLocator& rhs) : InterchangeObject(rhs.m_Dict)
 {
   assert(m_Dict);
   m_UL = m_Dict->ul(MDD_NetworkLocator);
@@ -3465,6 +3689,13 @@ NetworkLocator::Copy(const NetworkLocator& rhs)
 }
 
 //
+InterchangeObject*
+NetworkLocator::Clone() const
+{
+  return new NetworkLocator(*this);
+}
+
+//
 void
 NetworkLocator::Dump(FILE* stream)
 {
@@ -3497,13 +3728,13 @@ NetworkLocator::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 
 //
 
-MCALabelSubDescriptor::MCALabelSubDescriptor(const Dictionary*& d) : InterchangeObject(d), m_Dict(d)
+MCALabelSubDescriptor::MCALabelSubDescriptor(const Dictionary* d) : InterchangeObject(d)
 {
   assert(m_Dict);
   m_UL = m_Dict->ul(MDD_MCALabelSubDescriptor);
 }
 
-MCALabelSubDescriptor::MCALabelSubDescriptor(const MCALabelSubDescriptor& rhs) : InterchangeObject(rhs.m_Dict), m_Dict(rhs.m_Dict)
+MCALabelSubDescriptor::MCALabelSubDescriptor(const MCALabelSubDescriptor& rhs) : InterchangeObject(rhs.m_Dict)
 {
   assert(m_Dict);
   m_UL = m_Dict->ul(MDD_MCALabelSubDescriptor);
@@ -3612,6 +3843,13 @@ MCALabelSubDescriptor::Copy(const MCALabelSubDescriptor& rhs)
 }
 
 //
+InterchangeObject*
+MCALabelSubDescriptor::Clone() const
+{
+  return new MCALabelSubDescriptor(*this);
+}
+
+//
 void
 MCALabelSubDescriptor::Dump(FILE* stream)
 {
@@ -3679,13 +3917,13 @@ MCALabelSubDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 
 //
 
-AudioChannelLabelSubDescriptor::AudioChannelLabelSubDescriptor(const Dictionary*& d) : MCALabelSubDescriptor(d), m_Dict(d)
+AudioChannelLabelSubDescriptor::AudioChannelLabelSubDescriptor(const Dictionary* d) : MCALabelSubDescriptor(d)
 {
   assert(m_Dict);
   m_UL = m_Dict->ul(MDD_AudioChannelLabelSubDescriptor);
 }
 
-AudioChannelLabelSubDescriptor::AudioChannelLabelSubDescriptor(const AudioChannelLabelSubDescriptor& rhs) : MCALabelSubDescriptor(rhs.m_Dict), m_Dict(rhs.m_Dict)
+AudioChannelLabelSubDescriptor::AudioChannelLabelSubDescriptor(const AudioChannelLabelSubDescriptor& rhs) : MCALabelSubDescriptor(rhs.m_Dict)
 {
   assert(m_Dict);
   m_UL = m_Dict->ul(MDD_AudioChannelLabelSubDescriptor);
@@ -3725,6 +3963,13 @@ AudioChannelLabelSubDescriptor::Copy(const AudioChannelLabelSubDescriptor& rhs)
 }
 
 //
+InterchangeObject*
+AudioChannelLabelSubDescriptor::Clone() const
+{
+  return new AudioChannelLabelSubDescriptor(*this);
+}
+
+//
 void
 AudioChannelLabelSubDescriptor::Dump(FILE* stream)
 {
@@ -3759,13 +4004,13 @@ AudioChannelLabelSubDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 
 //
 
-SoundfieldGroupLabelSubDescriptor::SoundfieldGroupLabelSubDescriptor(const Dictionary*& d) : MCALabelSubDescriptor(d), m_Dict(d)
+SoundfieldGroupLabelSubDescriptor::SoundfieldGroupLabelSubDescriptor(const Dictionary* d) : MCALabelSubDescriptor(d)
 {
   assert(m_Dict);
   m_UL = m_Dict->ul(MDD_SoundfieldGroupLabelSubDescriptor);
 }
 
-SoundfieldGroupLabelSubDescriptor::SoundfieldGroupLabelSubDescriptor(const SoundfieldGroupLabelSubDescriptor& rhs) : MCALabelSubDescriptor(rhs.m_Dict), m_Dict(rhs.m_Dict)
+SoundfieldGroupLabelSubDescriptor::SoundfieldGroupLabelSubDescriptor(const SoundfieldGroupLabelSubDescriptor& rhs) : MCALabelSubDescriptor(rhs.m_Dict)
 {
   assert(m_Dict);
   m_UL = m_Dict->ul(MDD_SoundfieldGroupLabelSubDescriptor);
@@ -3804,6 +4049,13 @@ SoundfieldGroupLabelSubDescriptor::Copy(const SoundfieldGroupLabelSubDescriptor&
 }
 
 //
+InterchangeObject*
+SoundfieldGroupLabelSubDescriptor::Clone() const
+{
+  return new SoundfieldGroupLabelSubDescriptor(*this);
+}
+
+//
 void
 SoundfieldGroupLabelSubDescriptor::Dump(FILE* stream)
 {
@@ -3839,13 +4091,13 @@ SoundfieldGroupLabelSubDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 
 //
 
-GroupOfSoundfieldGroupsLabelSubDescriptor::GroupOfSoundfieldGroupsLabelSubDescriptor(const Dictionary*& d) : MCALabelSubDescriptor(d), m_Dict(d)
+GroupOfSoundfieldGroupsLabelSubDescriptor::GroupOfSoundfieldGroupsLabelSubDescriptor(const Dictionary* d) : MCALabelSubDescriptor(d)
 {
   assert(m_Dict);
   m_UL = m_Dict->ul(MDD_GroupOfSoundfieldGroupsLabelSubDescriptor);
 }
 
-GroupOfSoundfieldGroupsLabelSubDescriptor::GroupOfSoundfieldGroupsLabelSubDescriptor(const GroupOfSoundfieldGroupsLabelSubDescriptor& rhs) : MCALabelSubDescriptor(rhs.m_Dict), m_Dict(rhs.m_Dict)
+GroupOfSoundfieldGroupsLabelSubDescriptor::GroupOfSoundfieldGroupsLabelSubDescriptor(const GroupOfSoundfieldGroupsLabelSubDescriptor& rhs) : MCALabelSubDescriptor(rhs.m_Dict)
 {
   assert(m_Dict);
   m_UL = m_Dict->ul(MDD_GroupOfSoundfieldGroupsLabelSubDescriptor);
@@ -3876,6 +4128,13 @@ void
 GroupOfSoundfieldGroupsLabelSubDescriptor::Copy(const GroupOfSoundfieldGroupsLabelSubDescriptor& rhs)
 {
   MCALabelSubDescriptor::Copy(rhs);
+}
+
+//
+InterchangeObject*
+GroupOfSoundfieldGroupsLabelSubDescriptor::Clone() const
+{
+  return new GroupOfSoundfieldGroupsLabelSubDescriptor(*this);
 }
 
 //
@@ -3910,13 +4169,13 @@ GroupOfSoundfieldGroupsLabelSubDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buf
 
 //
 
-DCDataDescriptor::DCDataDescriptor(const Dictionary*& d) : GenericDataEssenceDescriptor(d), m_Dict(d)
+DCDataDescriptor::DCDataDescriptor(const Dictionary* d) : GenericDataEssenceDescriptor(d)
 {
   assert(m_Dict);
   m_UL = m_Dict->ul(MDD_DCDataDescriptor);
 }
 
-DCDataDescriptor::DCDataDescriptor(const DCDataDescriptor& rhs) : GenericDataEssenceDescriptor(rhs.m_Dict), m_Dict(rhs.m_Dict)
+DCDataDescriptor::DCDataDescriptor(const DCDataDescriptor& rhs) : GenericDataEssenceDescriptor(rhs.m_Dict)
 {
   assert(m_Dict);
   m_UL = m_Dict->ul(MDD_DCDataDescriptor);
@@ -3947,6 +4206,13 @@ void
 DCDataDescriptor::Copy(const DCDataDescriptor& rhs)
 {
   GenericDataEssenceDescriptor::Copy(rhs);
+}
+
+//
+InterchangeObject*
+DCDataDescriptor::Clone() const
+{
+  return new DCDataDescriptor(*this);
 }
 
 //
@@ -3981,13 +4247,13 @@ DCDataDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 
 //
 
-PrivateDCDataDescriptor::PrivateDCDataDescriptor(const Dictionary*& d) : GenericDataEssenceDescriptor(d), m_Dict(d)
+PrivateDCDataDescriptor::PrivateDCDataDescriptor(const Dictionary* d) : GenericDataEssenceDescriptor(d)
 {
   assert(m_Dict);
   m_UL = m_Dict->ul(MDD_PrivateDCDataDescriptor);
 }
 
-PrivateDCDataDescriptor::PrivateDCDataDescriptor(const PrivateDCDataDescriptor& rhs) : GenericDataEssenceDescriptor(rhs.m_Dict), m_Dict(rhs.m_Dict)
+PrivateDCDataDescriptor::PrivateDCDataDescriptor(const PrivateDCDataDescriptor& rhs) : GenericDataEssenceDescriptor(rhs.m_Dict)
 {
   assert(m_Dict);
   m_UL = m_Dict->ul(MDD_PrivateDCDataDescriptor);
@@ -4018,6 +4284,13 @@ void
 PrivateDCDataDescriptor::Copy(const PrivateDCDataDescriptor& rhs)
 {
   GenericDataEssenceDescriptor::Copy(rhs);
+}
+
+//
+InterchangeObject*
+PrivateDCDataDescriptor::Clone() const
+{
+  return new PrivateDCDataDescriptor(*this);
 }
 
 //
@@ -4052,13 +4325,13 @@ PrivateDCDataDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 
 //
 
-DolbyAtmosSubDescriptor::DolbyAtmosSubDescriptor(const Dictionary*& d) : InterchangeObject(d), m_Dict(d), FirstFrame(0), MaxChannelCount(0), MaxObjectCount(0), AtmosVersion(0)
+DolbyAtmosSubDescriptor::DolbyAtmosSubDescriptor(const Dictionary* d) : InterchangeObject(d), FirstFrame(0), MaxChannelCount(0), MaxObjectCount(0), AtmosVersion(0)
 {
   assert(m_Dict);
   m_UL = m_Dict->ul(MDD_DolbyAtmosSubDescriptor);
 }
 
-DolbyAtmosSubDescriptor::DolbyAtmosSubDescriptor(const DolbyAtmosSubDescriptor& rhs) : InterchangeObject(rhs.m_Dict), m_Dict(rhs.m_Dict)
+DolbyAtmosSubDescriptor::DolbyAtmosSubDescriptor(const DolbyAtmosSubDescriptor& rhs) : InterchangeObject(rhs.m_Dict)
 {
   assert(m_Dict);
   m_UL = m_Dict->ul(MDD_DolbyAtmosSubDescriptor);
@@ -4107,6 +4380,13 @@ DolbyAtmosSubDescriptor::Copy(const DolbyAtmosSubDescriptor& rhs)
 }
 
 //
+InterchangeObject*
+DolbyAtmosSubDescriptor::Clone() const
+{
+  return new DolbyAtmosSubDescriptor(*this);
+}
+
+//
 void
 DolbyAtmosSubDescriptor::Dump(FILE* stream)
 {
@@ -4143,13 +4423,13 @@ DolbyAtmosSubDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 
 //
 
-ACESPictureSubDescriptor::ACESPictureSubDescriptor(const Dictionary*& d) : InterchangeObject(d), m_Dict(d)
+ACESPictureSubDescriptor::ACESPictureSubDescriptor(const Dictionary* d) : InterchangeObject(d)
 {
   assert(m_Dict);
   m_UL = m_Dict->ul(MDD_ACESPictureSubDescriptor);
 }
 
-ACESPictureSubDescriptor::ACESPictureSubDescriptor(const ACESPictureSubDescriptor& rhs) : InterchangeObject(rhs.m_Dict), m_Dict(rhs.m_Dict)
+ACESPictureSubDescriptor::ACESPictureSubDescriptor(const ACESPictureSubDescriptor& rhs) : InterchangeObject(rhs.m_Dict)
 {
   assert(m_Dict);
   m_UL = m_Dict->ul(MDD_ACESPictureSubDescriptor);
@@ -4213,6 +4493,13 @@ ACESPictureSubDescriptor::Copy(const ACESPictureSubDescriptor& rhs)
 }
 
 //
+InterchangeObject*
+ACESPictureSubDescriptor::Clone() const
+{
+  return new ACESPictureSubDescriptor(*this);
+}
+
+//
 void
 ACESPictureSubDescriptor::Dump(FILE* stream)
 {
@@ -4259,13 +4546,13 @@ ACESPictureSubDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 
 //
 
-TargetFrameSubDescriptor::TargetFrameSubDescriptor(const Dictionary*& d) : InterchangeObject(d), m_Dict(d), TargetFrameIndex(0), TargetFrameComponentMaxRef(0), TargetFrameComponentMinRef(0), TargetFrameEssenceStreamID(0)
+TargetFrameSubDescriptor::TargetFrameSubDescriptor(const Dictionary* d) : InterchangeObject(d), TargetFrameIndex(0), TargetFrameComponentMaxRef(0), TargetFrameComponentMinRef(0), TargetFrameEssenceStreamID(0)
 {
   assert(m_Dict);
   m_UL = m_Dict->ul(MDD_TargetFrameSubDescriptor);
 }
 
-TargetFrameSubDescriptor::TargetFrameSubDescriptor(const TargetFrameSubDescriptor& rhs) : InterchangeObject(rhs.m_Dict), m_Dict(rhs.m_Dict)
+TargetFrameSubDescriptor::TargetFrameSubDescriptor(const TargetFrameSubDescriptor& rhs) : InterchangeObject(rhs.m_Dict)
 {
   assert(m_Dict);
   m_UL = m_Dict->ul(MDD_TargetFrameSubDescriptor);
@@ -4335,6 +4622,13 @@ TargetFrameSubDescriptor::Copy(const TargetFrameSubDescriptor& rhs)
 }
 
 //
+InterchangeObject*
+TargetFrameSubDescriptor::Clone() const
+{
+  return new TargetFrameSubDescriptor(*this);
+}
+
+//
 void
 TargetFrameSubDescriptor::Dump(FILE* stream)
 {
@@ -4380,13 +4674,13 @@ TargetFrameSubDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 
 //
 
-TextBasedDMFramework::TextBasedDMFramework(const Dictionary*& d) : DescriptiveFramework(d), m_Dict(d)
+TextBasedDMFramework::TextBasedDMFramework(const Dictionary* d) : DescriptiveFramework(d)
 {
   assert(m_Dict);
   m_UL = m_Dict->ul(MDD_TextBasedDMFramework);
 }
 
-TextBasedDMFramework::TextBasedDMFramework(const TextBasedDMFramework& rhs) : DescriptiveFramework(rhs.m_Dict), m_Dict(rhs.m_Dict)
+TextBasedDMFramework::TextBasedDMFramework(const TextBasedDMFramework& rhs) : DescriptiveFramework(rhs.m_Dict)
 {
   assert(m_Dict);
   m_UL = m_Dict->ul(MDD_TextBasedDMFramework);
@@ -4426,6 +4720,13 @@ TextBasedDMFramework::Copy(const TextBasedDMFramework& rhs)
 }
 
 //
+InterchangeObject*
+TextBasedDMFramework::Clone() const
+{
+  return new TextBasedDMFramework(*this);
+}
+
+//
 void
 TextBasedDMFramework::Dump(FILE* stream)
 {
@@ -4460,13 +4761,13 @@ TextBasedDMFramework::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 
 //
 
-TextBasedObject::TextBasedObject(const Dictionary*& d) : DescriptiveObject(d), m_Dict(d)
+TextBasedObject::TextBasedObject(const Dictionary* d) : DescriptiveObject(d)
 {
   assert(m_Dict);
   m_UL = m_Dict->ul(MDD_TextBasedObject);
 }
 
-TextBasedObject::TextBasedObject(const TextBasedObject& rhs) : DescriptiveObject(rhs.m_Dict), m_Dict(rhs.m_Dict)
+TextBasedObject::TextBasedObject(const TextBasedObject& rhs) : DescriptiveObject(rhs.m_Dict)
 {
   assert(m_Dict);
   m_UL = m_Dict->ul(MDD_TextBasedObject);
@@ -4515,6 +4816,13 @@ TextBasedObject::Copy(const TextBasedObject& rhs)
 }
 
 //
+InterchangeObject*
+TextBasedObject::Clone() const
+{
+  return new TextBasedObject(*this);
+}
+
+//
 void
 TextBasedObject::Dump(FILE* stream)
 {
@@ -4552,13 +4860,13 @@ TextBasedObject::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 
 //
 
-GenericStreamTextBasedSet::GenericStreamTextBasedSet(const Dictionary*& d) : TextBasedObject(d), m_Dict(d), GenericStreamSID(0)
+GenericStreamTextBasedSet::GenericStreamTextBasedSet(const Dictionary* d) : TextBasedObject(d), GenericStreamSID(0)
 {
   assert(m_Dict);
   m_UL = m_Dict->ul(MDD_GenericStreamTextBasedSet);
 }
 
-GenericStreamTextBasedSet::GenericStreamTextBasedSet(const GenericStreamTextBasedSet& rhs) : TextBasedObject(rhs.m_Dict), m_Dict(rhs.m_Dict)
+GenericStreamTextBasedSet::GenericStreamTextBasedSet(const GenericStreamTextBasedSet& rhs) : TextBasedObject(rhs.m_Dict)
 {
   assert(m_Dict);
   m_UL = m_Dict->ul(MDD_GenericStreamTextBasedSet);
@@ -4595,6 +4903,13 @@ GenericStreamTextBasedSet::Copy(const GenericStreamTextBasedSet& rhs)
 }
 
 //
+InterchangeObject*
+GenericStreamTextBasedSet::Clone() const
+{
+  return new GenericStreamTextBasedSet(*this);
+}
+
+//
 void
 GenericStreamTextBasedSet::Dump(FILE* stream)
 {
@@ -4627,13 +4942,13 @@ GenericStreamTextBasedSet::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 
 //
 
-ISXDDataEssenceDescriptor::ISXDDataEssenceDescriptor(const Dictionary*& d) : GenericDataEssenceDescriptor(d), m_Dict(d)
+ISXDDataEssenceDescriptor::ISXDDataEssenceDescriptor(const Dictionary* d) : GenericDataEssenceDescriptor(d)
 {
   assert(m_Dict);
   m_UL = m_Dict->ul(MDD_ISXDDataEssenceDescriptor);
 }
 
-ISXDDataEssenceDescriptor::ISXDDataEssenceDescriptor(const ISXDDataEssenceDescriptor& rhs) : GenericDataEssenceDescriptor(rhs.m_Dict), m_Dict(rhs.m_Dict)
+ISXDDataEssenceDescriptor::ISXDDataEssenceDescriptor(const ISXDDataEssenceDescriptor& rhs) : GenericDataEssenceDescriptor(rhs.m_Dict)
 {
   assert(m_Dict);
   m_UL = m_Dict->ul(MDD_ISXDDataEssenceDescriptor);
@@ -4670,6 +4985,13 @@ ISXDDataEssenceDescriptor::Copy(const ISXDDataEssenceDescriptor& rhs)
 }
 
 //
+InterchangeObject*
+ISXDDataEssenceDescriptor::Clone() const
+{
+  return new ISXDDataEssenceDescriptor(*this);
+}
+
+//
 void
 ISXDDataEssenceDescriptor::Dump(FILE* stream)
 {
@@ -4702,13 +5024,13 @@ ISXDDataEssenceDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 
 //
 
-PHDRMetadataTrackSubDescriptor::PHDRMetadataTrackSubDescriptor(const Dictionary*& d) : InterchangeObject(d), m_Dict(d), SourceTrackID(0), SimplePayloadSID(0)
+PHDRMetadataTrackSubDescriptor::PHDRMetadataTrackSubDescriptor(const Dictionary* d) : InterchangeObject(d), SourceTrackID(0), SimplePayloadSID(0)
 {
   assert(m_Dict);
   m_UL = m_Dict->ul(MDD_PHDRMetadataTrackSubDescriptor);
 }
 
-PHDRMetadataTrackSubDescriptor::PHDRMetadataTrackSubDescriptor(const PHDRMetadataTrackSubDescriptor& rhs) : InterchangeObject(rhs.m_Dict), m_Dict(rhs.m_Dict)
+PHDRMetadataTrackSubDescriptor::PHDRMetadataTrackSubDescriptor(const PHDRMetadataTrackSubDescriptor& rhs) : InterchangeObject(rhs.m_Dict)
 {
   assert(m_Dict);
   m_UL = m_Dict->ul(MDD_PHDRMetadataTrackSubDescriptor);
@@ -4751,6 +5073,13 @@ PHDRMetadataTrackSubDescriptor::Copy(const PHDRMetadataTrackSubDescriptor& rhs)
 }
 
 //
+InterchangeObject*
+PHDRMetadataTrackSubDescriptor::Clone() const
+{
+  return new PHDRMetadataTrackSubDescriptor(*this);
+}
+
+//
 void
 PHDRMetadataTrackSubDescriptor::Dump(FILE* stream)
 {
@@ -4785,13 +5114,13 @@ PHDRMetadataTrackSubDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 
 //
 
-PIMFDynamicMetadataDescriptor::PIMFDynamicMetadataDescriptor(const Dictionary*& d) : GenericDataEssenceDescriptor(d), m_Dict(d), GlobalPayloadSID(0)
+PIMFDynamicMetadataDescriptor::PIMFDynamicMetadataDescriptor(const Dictionary* d) : GenericDataEssenceDescriptor(d), GlobalPayloadSID(0)
 {
   assert(m_Dict);
   m_UL = m_Dict->ul(MDD_PIMFDynamicMetadataDescriptor);
 }
 
-PIMFDynamicMetadataDescriptor::PIMFDynamicMetadataDescriptor(const PIMFDynamicMetadataDescriptor& rhs) : GenericDataEssenceDescriptor(rhs.m_Dict), m_Dict(rhs.m_Dict)
+PIMFDynamicMetadataDescriptor::PIMFDynamicMetadataDescriptor(const PIMFDynamicMetadataDescriptor& rhs) : GenericDataEssenceDescriptor(rhs.m_Dict)
 {
   assert(m_Dict);
   m_UL = m_Dict->ul(MDD_PIMFDynamicMetadataDescriptor);
@@ -4828,6 +5157,13 @@ PIMFDynamicMetadataDescriptor::Copy(const PIMFDynamicMetadataDescriptor& rhs)
 }
 
 //
+InterchangeObject*
+PIMFDynamicMetadataDescriptor::Clone() const
+{
+  return new PIMFDynamicMetadataDescriptor(*this);
+}
+
+//
 void
 PIMFDynamicMetadataDescriptor::Dump(FILE* stream)
 {
@@ -4860,13 +5196,13 @@ PIMFDynamicMetadataDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 
 //
 
-IABEssenceDescriptor::IABEssenceDescriptor(const Dictionary*& d) : GenericSoundEssenceDescriptor(d), m_Dict(d)
+IABEssenceDescriptor::IABEssenceDescriptor(const Dictionary* d) : GenericSoundEssenceDescriptor(d)
 {
   assert(m_Dict);
   m_UL = m_Dict->ul(MDD_IABEssenceDescriptor);
 }
 
-IABEssenceDescriptor::IABEssenceDescriptor(const IABEssenceDescriptor& rhs) : GenericSoundEssenceDescriptor(rhs.m_Dict), m_Dict(rhs.m_Dict)
+IABEssenceDescriptor::IABEssenceDescriptor(const IABEssenceDescriptor& rhs) : GenericSoundEssenceDescriptor(rhs.m_Dict)
 {
   assert(m_Dict);
   m_UL = m_Dict->ul(MDD_IABEssenceDescriptor);
@@ -4897,6 +5233,13 @@ void
 IABEssenceDescriptor::Copy(const IABEssenceDescriptor& rhs)
 {
   GenericSoundEssenceDescriptor::Copy(rhs);
+}
+
+//
+InterchangeObject*
+IABEssenceDescriptor::Clone() const
+{
+  return new IABEssenceDescriptor(*this);
 }
 
 //
@@ -4931,13 +5274,13 @@ IABEssenceDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 
 //
 
-IABSoundfieldLabelSubDescriptor::IABSoundfieldLabelSubDescriptor(const Dictionary*& d) : MCALabelSubDescriptor(d), m_Dict(d)
+IABSoundfieldLabelSubDescriptor::IABSoundfieldLabelSubDescriptor(const Dictionary* d) : MCALabelSubDescriptor(d)
 {
   assert(m_Dict);
   m_UL = m_Dict->ul(MDD_IABSoundfieldLabelSubDescriptor);
 }
 
-IABSoundfieldLabelSubDescriptor::IABSoundfieldLabelSubDescriptor(const IABSoundfieldLabelSubDescriptor& rhs) : MCALabelSubDescriptor(rhs.m_Dict), m_Dict(rhs.m_Dict)
+IABSoundfieldLabelSubDescriptor::IABSoundfieldLabelSubDescriptor(const IABSoundfieldLabelSubDescriptor& rhs) : MCALabelSubDescriptor(rhs.m_Dict)
 {
   assert(m_Dict);
   m_UL = m_Dict->ul(MDD_IABSoundfieldLabelSubDescriptor);
@@ -4968,6 +5311,13 @@ void
 IABSoundfieldLabelSubDescriptor::Copy(const IABSoundfieldLabelSubDescriptor& rhs)
 {
   MCALabelSubDescriptor::Copy(rhs);
+}
+
+//
+InterchangeObject*
+IABSoundfieldLabelSubDescriptor::Clone() const
+{
+  return new IABSoundfieldLabelSubDescriptor(*this);
 }
 
 //

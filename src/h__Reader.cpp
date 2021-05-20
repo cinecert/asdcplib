@@ -64,7 +64,8 @@ ASDCP::default_md_object_init()
 //
 
 //
-ASDCP::h__ASDCPReader::h__ASDCPReader(const Dictionary& d) : MXF::TrackFileReader<OP1aHeader, OPAtomIndexFooter>(d), m_BodyPart(m_Dict) {}
+ASDCP::h__ASDCPReader::h__ASDCPReader(const Dictionary *d) :
+  MXF::TrackFileReader<OP1aHeader, OPAtomIndexFooter>(d), m_BodyPart(d) {}
 ASDCP::h__ASDCPReader::~h__ASDCPReader() {}
 
 

@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2005-2018, John Hurst
+Copyright (c) 2005-2021, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -44,13 +44,13 @@ namespace ASDCP
       const ui32_t kl_length = ASDCP::SMPTE_UL_LENGTH + ASDCP::MXF_BER_LENGTH;
 
       //
-      typedef ASDCP::MXF::InterchangeObject* (*MXFObjectFactory_t)(const Dictionary*&);
+      typedef ASDCP::MXF::InterchangeObject* (*MXFObjectFactory_t)(const Dictionary*);
 
       //
       void SetObjectFactory(const UL& label, MXFObjectFactory_t factory);
 
       //
-      InterchangeObject* CreateObject(const Dictionary*& Dict, const UL& label);
+      InterchangeObject* CreateObject(const Dictionary* Dict, const UL& label);
 
 
       // seek an open file handle to the start of the RIP KLV packet
@@ -98,14 +98,14 @@ namespace ASDCP
 	      }
 	    };
 
-	  const Dictionary*& m_Dict;
+	  const Dictionary* m_Dict;
 
 	  typedef SimpleArray<PartitionPair>::iterator pair_iterator;
 	  typedef SimpleArray<PartitionPair>::const_iterator const_pair_iterator;
 
 	  SimpleArray<PartitionPair> PairArray;
 
-	RIP(const Dictionary*& d) : m_Dict(d) {}
+	RIP(const Dictionary* d) : m_Dict(d) {}
 	  virtual ~RIP() {}
 	  virtual Result_t InitFromFile(const Kumu::FileReader& Reader);
 	  virtual Result_t WriteToFile(Kumu::FileWriter& Writer);
@@ -137,7 +137,7 @@ namespace ASDCP
 	  mem_ptr<PacketList> m_PacketList;
 
 	public:
-	  const Dictionary*& m_Dict;
+	  const Dictionary* m_Dict;
 
 	  ui16_t    MajorVersion;
 	  ui16_t    MinorVersion;
@@ -153,7 +153,7 @@ namespace ASDCP
 	  UL        OperationalPattern;
 	  Batch<UL> EssenceContainers;
 
-	  Partition(const Dictionary*&);
+	  Partition(const Dictionary*);
 	  virtual ~Partition();
 	  virtual void     AddChildObject(InterchangeObject*); // takes ownership
 	  virtual Result_t InitFromFile(const Kumu::FileReader& Reader);
@@ -221,9 +221,9 @@ namespace ASDCP
 	    };
 
 	  Batch<LocalTagEntry> LocalTagEntryBatch;
-	  const Dictionary*& m_Dict;
+	  const Dictionary* m_Dict;
 
-	  Primer(const Dictionary*&);
+	  Primer(const Dictionary*);
 	  virtual ~Primer();
 
 	  virtual void     ClearTagList();
@@ -290,18 +290,20 @@ namespace ASDCP
       //
       class InterchangeObject : public ASDCP::KLVPacket
 	{
+	  ASDCP_NO_COPY_CONSTRUCT(InterchangeObject);
 	  InterchangeObject();
 
 	public:
-	  const Dictionary*& m_Dict;
+	  const Dictionary* m_Dict;
 	  IPrimerLookup* m_Lookup;
 	  UUID           InstanceUID;
 	  optional_property<UUID>  GenerationUID;
 
-	InterchangeObject(const Dictionary*& d) : m_Dict(d), m_Lookup(0) {}
-	  virtual ~InterchangeObject() {}
+	  InterchangeObject(const Dictionary* d);
+	  virtual ~InterchangeObject();
 
 	  virtual void Copy(const InterchangeObject& rhs);
+	  virtual InterchangeObject *Clone() const;
           virtual Result_t InitFromTLVSet(TLVReader& TLVSet);
 	  virtual Result_t InitFromBuffer(const byte_t* p, ui32_t l);
 	  virtual Result_t WriteToTLVSet(TLVWriter& TLVSet);
@@ -317,11 +319,9 @@ namespace ASDCP
       //
       class Preface : public InterchangeObject
 	{
-	  ASDCP_NO_COPY_CONSTRUCT(Preface);
 	  Preface();
 
 	public:
-	  const Dictionary*& m_Dict;
 	  Kumu::Timestamp    LastModifiedDate;
 	  ui16_t       Version;
 	  optional_property<ui32_t> ObjectModelVersion;
@@ -334,10 +334,13 @@ namespace ASDCP
 	  optional_property<Batch<UL> > ApplicationSchemes;
 	  optional_property<Batch<UL> > ConformsToSpecifications;
 
-	  Preface(const Dictionary*& d);
+	  Preface(const Dictionary* d);
+	  Preface(const Preface& rhs);
 	  virtual ~Preface() {}
 
+	  const Preface& operator=(const Preface& rhs) { Copy(rhs); return *this; }
 	  virtual void Copy(const Preface& rhs);
+	  virtual InterchangeObject *Clone() const;
           virtual Result_t InitFromTLVSet(TLVReader& TLVSet);
 	  virtual Result_t InitFromBuffer(const byte_t* p, ui32_t l);
 	  virtual Result_t WriteToTLVSet(TLVWriter& TLVSet);
@@ -351,7 +354,6 @@ namespace ASDCP
       class IndexTableSegment : public InterchangeObject
 	{
 	  IndexTableSegment();
-	  ASDCP_NO_COPY_CONSTRUCT(IndexTableSegment);
 
 	public:
 	  //
@@ -395,7 +397,6 @@ namespace ASDCP
 	      const char* EncodeString(char* str_buf, ui32_t buf_len) const;
 	    };
 
-	  const Dictionary*& m_Dict;
 	  ui64_t  RtFileOffset; // not part of the MXF structure: used to manage runtime index access 
 	  ui64_t  RtEntryOffset;
 
@@ -410,10 +411,13 @@ namespace ASDCP
 	  Array<DeltaEntry> DeltaEntryArray;
 	  Array<IndexEntry> IndexEntryArray;
 
-	  IndexTableSegment(const Dictionary*&);
+	  IndexTableSegment(const Dictionary*);
+	  IndexTableSegment(const IndexTableSegment&);
 	  virtual ~IndexTableSegment();
 
+	  const IndexTableSegment& operator=(const IndexTableSegment& rhs) { Copy(rhs); return *this; }
 	  virtual void Copy(const IndexTableSegment& rhs);
+	  virtual InterchangeObject *Clone() const;
 	  virtual Result_t InitFromTLVSet(TLVReader& TLVSet);
 	  virtual Result_t InitFromBuffer(const byte_t* p, ui32_t l);
 	  virtual Result_t WriteToTLVSet(TLVWriter& TLVSet);
@@ -434,11 +438,10 @@ namespace ASDCP
 	  OP1aHeader();
 
 	public:
-	  const Dictionary*&  m_Dict;
 	  ASDCP::MXF::Primer  m_Primer;
 	  Preface*            m_Preface;
 
-	  OP1aHeader(const Dictionary*&);
+	  OP1aHeader(const Dictionary*);
 	  virtual ~OP1aHeader();
 	  virtual Result_t InitFromFile(const Kumu::FileReader& Reader);
 	  virtual Result_t InitFromPartitionBuffer(const byte_t* p, ui32_t l);
@@ -470,11 +473,10 @@ namespace ASDCP
 	  OPAtomIndexFooter();
 
 	public:
-	  const Dictionary*&   m_Dict;
 	  Kumu::fpos_t        m_ECOffset;
 	  IPrimerLookup*      m_Lookup;
 	 
-	  OPAtomIndexFooter(const Dictionary*&);
+	  OPAtomIndexFooter(const Dictionary*);
 	  virtual ~OPAtomIndexFooter();
 	  virtual Result_t InitFromFile(const Kumu::FileReader& Reader);
 	  virtual Result_t InitFromPartitionBuffer(const byte_t* p, ui32_t l);
@@ -524,7 +526,7 @@ namespace ASDCP
       typedef std::map<const std::string, const label_traits, ci_comp> mca_label_map_t;
 
       bool decode_mca_string(const std::string& s, const mca_label_map_t& labels,
-			     const Dictionary*& dict, const std::string& language, InterchangeObject_list_t&, ui32_t&);
+			     const Dictionary* dict, const std::string& language, InterchangeObject_list_t&, ui32_t&);
 
       //
       class ASDCP_MCAConfigParser : public InterchangeObject_list_t
@@ -535,11 +537,11 @@ namespace ASDCP
 	protected:
 	  mca_label_map_t m_LabelMap;
 	  ui32_t m_ChannelCount;
-	  const Dictionary*& m_Dict;
+	  const Dictionary* m_Dict;
 
 	  
 	public:
-	  ASDCP_MCAConfigParser(const Dictionary*&);
+	  ASDCP_MCAConfigParser(const Dictionary*);
 	  bool DecodeString(const std::string& s, const std::string& language = "en-US");
 
 	  // Valid only after a successful call to DecodeString
@@ -553,7 +555,7 @@ namespace ASDCP
 	  AS02_MCAConfigParser();
 	  
 	public:
-	  AS02_MCAConfigParser(const Dictionary*&);
+	  AS02_MCAConfigParser(const Dictionary*);
 	};
 
     } // namespace MXF
