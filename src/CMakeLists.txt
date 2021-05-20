@@ -21,7 +21,7 @@ else()
 	message(STATUS "Building without encryption support")
 endif()
 
-if (XercescppLib_PATH AND XercescppLib_Debug_PATH AND XercescppLib_include_DIR)
+if (NOT WITHOUT_XML AND XercescppLib_PATH AND XercescppLib_Debug_PATH AND XercescppLib_include_DIR)
 	set (HAVE_XERCES_C 1)
 	message(STATUS "Building with XML parse support")
 	add_definitions(/DHAVE_XERCES_C=1)
@@ -30,9 +30,14 @@ else()
 endif()
 
 # This lib. doesn't export from dll with __declspec(dllexport). So this lib. must be built statically on Windows.
-if(NOT WIN32)
-	set(BUILD_SHARED_LIBS true CACHE BOOL "Build shared or static libs?" FORCE)
-endif(NOT WIN32)
+if(WIN32)
+	if (BUILD_SHARED_LIBS) # from command line
+		message(STATUS "Building shared libs is not supported for WIN32")
+		set(BUILD_SHARED_LIBS OFF CACHE BOOL "Build shared or static libs?" FORCE)
+	endif()
+else()
+	set(BUILD_SHARED_LIBS ON CACHE BOOL "Build shared or static libs?")
+endif()
 
 # ----------libkumu----------
 # source
