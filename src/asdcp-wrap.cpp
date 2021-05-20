@@ -99,6 +99,13 @@ public:
     return;								\
   }
 
+#define TEST_MCA_EXTRA_ARG(i,c)						\
+  if ( ++i >= argc || (argv[(i)][0] == '-' && argv[(i)][1] != ',')) {	\
+    fprintf(stderr, "Argument not found for option -%c.\n", (c));	\
+    return;								\
+  }
+
+
 //
 static void
 create_random_uuid(byte_t* uuidbuf)
@@ -436,7 +443,7 @@ public:
 	      case 'M': write_hmac = false; break;
 
 	      case 'm':
-		TEST_EXTRA_ARG(i, 'm');
+		TEST_MCA_EXTRA_ARG(i, 'm');
 		mca_config_str = argv[i];
 		break;
 
