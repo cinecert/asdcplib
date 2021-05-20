@@ -571,6 +571,40 @@ namespace ASDCP {
 	MDD_IABSoundfield, // 533
 	MDD_IMF_IABEssenceClipWrappedElement, // 534
 	MDD_ImmersiveAudioCoding, // 535
+	MDD_MXFGCJPEGXSPictures, // 536 
+	MDD_MXFGCFrameWrappedProgressiveJPEGXSPictures, // 537
+	MDD_MXFGCFrameWrappedInterlacedJPEGXSPictures,  // 538
+	MDD_MXFGCClipWrappedJPEGXSPictures, // 539
+	MDD_JPEGXSPictureCodingSchemes, // 540
+	MDD_JPEGXSUnrestrictedCodestream, // 541
+	MDD_JPEGXSMain422_10Profile, // 542
+	MDD_JPEGXSMain444_12Profile, // 543
+	MDD_JPEGXSMain4444_12Profile, // 544
+	MDD_JPEGXSLight422_10Profile, // 545
+	MDD_JPEGXSLight444_12Profile, // 546
+	MDD_JPEGXSLightSubline422_10Profile, // 547
+	MDD_JPEGXSHigh444_12Profile, // 548
+	MDD_JPEGXSHigh4444_12Profile, // 549
+	MDD_JPEGXSPictureSubDescriptor, // 550
+	MDD_JPEGXSCodingParameters, // 551
+	MDD_JPEGXSPictureSubDescriptor_JPEGXSPpih, // 552
+	MDD_JPEGXSPictureSubDescriptor_JPEGXSPlev, // 553
+	MDD_JPEGXSPictureSubDescriptor_JPEGXSWf,   // 554
+	MDD_JPEGXSPictureSubDescriptor_JPEGXSHf,   // 555
+	MDD_JPEGXSPictureSubDescriptor_JPEGXSNc,   // 556
+	MDD_JPEGXSPictureSubDescriptor_JPEGXSComponentTable, // 557
+	MDD_JPEGXSPictureSubDescriptor_JPEGXSCw,   // 558
+	MDD_JPEGXSPictureSubDescriptor_JPEGXSHsl,  // 559
+	MDD_JPEGXSPictureSubDescriptor_JPEGXSMaximumBitRate, // 560
+	MDD_JPEGXSEssence, // 561
+	MDD_TransferCharacteristic_HLG, // 562
+	MDD_TransferCharacteristic_BT1361, // 563
+	MDD_TransferCharacteristic_BT470, // 564
+	MDD_TransferCharacteristic_ST240M, // 565
+	MDD_TransferCharacteristic_ST428, // 566
+	MDD_CodingEquations_BGR, // 567
+	MDD_CodingEquations_ST240M, // 568
+	MDD_CodingEquations_YCGCO, // 569
 	MDD_Max
     }; // enum MDD_t
 
