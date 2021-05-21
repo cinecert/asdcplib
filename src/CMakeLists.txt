@@ -48,9 +48,12 @@ set(kumu_src ${kumu_src} KM_fileio.h KM_log.h KM_prng.h KM_util.h KM_tai.h KM_er
 
 # ----------libasdcp----------
 # source
-set(asdcp_src MPEG2_Parser.cpp MPEG.cpp JP2K_Codestream_Parser.cpp JP2K_Sequence_Parser.cpp JP2K.cpp PCM_Parser.cpp Wav.cpp
+set(asdcp_src MPEG2_Parser.cpp MPEG.cpp JP2K_Codestream_Parser.cpp
+	JP2K_Sequence_Parser.cpp JP2K.cpp PCM_Parser.cpp Wav.cpp
+	JXS_Codestream_Parser.cpp JXS_Sequence_Parser.cpp JXS.cpp
 	KLV.cpp Dict.cpp MXFTypes.cpp MXF.cpp Index.cpp Metadata.cpp AS_DCP.cpp AS_DCP_MXF.cpp TimedText_Parser.cpp
-	h__Reader.cpp h__Writer.cpp AS_DCP_MPEG2.cpp AS_DCP_JP2K.cpp AS_DCP_PCM.cpp AS_DCP_TimedText.cpp PCMParserList.cpp MDD.cpp
+	h__Reader.cpp h__Writer.cpp AS_DCP_MPEG2.cpp AS_DCP_JP2K.cpp
+	AS_DCP_JXS.cpp AS_DCP_PCM.cpp AS_DCP_TimedText.cpp PCMParserList.cpp MDD.cpp
 	AS_DCP_ATMOS.cpp AS_DCP_DCData.cpp DCData_ByteStream_Parser.cpp DCData_Sequence_Parser.cpp AtmosSyncChannel_Generator.cpp
 	AtmosSyncChannel_Mixer.cpp PCMDataProviders.cpp SyncEncoder.c CRC16.c UUIDInformation.c
 )
@@ -63,14 +66,16 @@ endif()
 set(asdcp_deploy_header AS_DCP.h PCMParserList.h AS_DCP_internal.h KM_error.h KM_fileio.h KM_util.h KM_memio.h KM_tai.h KM_platform.h KM_log.h KM_mutex.h dirent_win.h)
 
 # header
-set(asdcp_src ${asdcp_src} Wav.h WavFileWriter.h MXF.h Metadata.h JP2K.h AS_DCP.h AS_DCP_internal.h KLV.h MPEG.h MXFTypes.h MDD.h
+set(asdcp_src ${asdcp_src} Wav.h WavFileWriter.h MXF.h Metadata.h JP2K.h
+JXS.h AS_DCP.h AS_DCP_internal.h KLV.h MPEG.h MXFTypes.h MDD.h
 	PCMParserList.h S12MTimecode.h AtmosSyncChannel_Generator.h AtmosSyncChannel_Mixer.h PCMDataProviders.h
 	SyncEncoder.h SyncCommon.h CRC16.h UUIDInformation.h dirent_win.h
 )
 
 # ----------as02----------
 # source
-set(as02_src h__02_Reader.cpp h__02_Writer.cpp AS_02_ISXD.cpp AS_02_JP2K.cpp AS_02_PCM.cpp ST2052_TextParser.cpp AS_02_TimedText.cpp AS_02_ACES.cpp ACES_Codestream_Parser.cpp ACES_Sequence_Parser.cpp ACES.cpp AS_02_IAB.cpp ST2052_TextParser.cpp)
+set(as02_src h__02_Reader.cpp h__02_Writer.cpp AS_02_ISXD.cpp AS_02_JP2K.cpp
+AS_02_JXS.cpp AS_02_PCM.cpp ST2052_TextParser.cpp AS_02_TimedText.cpp AS_02_ACES.cpp ACES_Codestream_Parser.cpp ACES_Sequence_Parser.cpp ACES.cpp AS_02_IAB.cpp ST2052_TextParser.cpp)
 
 # header for deployment (install target)
 set(as02_deploy_header AS_02.h Metadata.h MXF.h MXFTypes.h KLV.h MDD.h AS_02_ACES.h ACES.h AS_02_IAB.h AS_02_internal.h)

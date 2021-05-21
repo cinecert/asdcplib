@@ -65,6 +65,7 @@ include_HEADERS += \
 	Metadata.h \
 	KLV.h \
 	JP2K.h \
+	JXS.h \
 	MXFTypes.h \
 	MXF.h \
 	Wav.h \
@@ -118,13 +119,14 @@ nodist_libasdcp_la_SOURCES = Metadata_h.tt2 Metadata_cpp.tt2 \
 
 # sources for asdcp library
 libasdcp_la_SOURCES = MPEG2_Parser.cpp MPEG.cpp JP2K_Codestream_Parser.cpp \
-	JP2K_Sequence_Parser.cpp JP2K.cpp PCM_Parser.cpp Wav.cpp \
-	TimedText_Parser.cpp KLV.cpp Dict.cpp MXFTypes.cpp MXF.cpp \
+	JP2K_Sequence_Parser.cpp JP2K.cpp \
+	JXS_Codestream_Parser.cpp JXS_Sequence_Parser.cpp JXS.cpp \
+	PCM_Parser.cpp Wav.cpp TimedText_Parser.cpp KLV.cpp Dict.cpp MXFTypes.cpp MXF.cpp \
 	Index.cpp Metadata.cpp AS_DCP.cpp AS_DCP_MXF.cpp \
 	h__Reader.cpp h__Writer.cpp AS_DCP_MPEG2.cpp AS_DCP_JP2K.cpp \
-	AS_DCP_PCM.cpp AS_DCP_TimedText.cpp PCMParserList.cpp \
+	AS_DCP_JXS.cpp AS_DCP_PCM.cpp AS_DCP_TimedText.cpp PCMParserList.cpp \
 	Wav.h WavFileWriter.h MXF.h Metadata.h \
-	JP2K.h AS_DCP.h AS_DCP_internal.h KLV.h MPEG.h MXFTypes.h MDD.h \
+	JP2K.h JXS.h AS_DCP.h AS_DCP_internal.h KLV.h MPEG.h MXFTypes.h MDD.h \
 	PCMParserList.h S12MTimecode.h MDD.cpp \
 	AS_DCP_ATMOS.cpp  AS_DCP_DCData.cpp info.in \
 	DCData_ByteStream_Parser.cpp DCData_Sequence_Parser.cpp \
@@ -155,6 +157,7 @@ libas02_la_SOURCES	= \
 	h__02_Reader.cpp \
 	h__02_Writer.cpp \
 	AS_02_JP2K.cpp \
+	AS_02_JXS.cpp \
 	AS_02_PCM.cpp \
 	AS_02_ISXD.cpp \
 	ST2052_TextParser.cpp \
