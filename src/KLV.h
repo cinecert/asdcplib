@@ -48,7 +48,7 @@ namespace ASDCP
   const byte_t SMPTE_UL_START[4] = { 0x06, 0x0e, 0x2b, 0x34 };
 
 #ifndef MAX_KLV_PACKET_LENGTH
-  const ui32_t MAX_KLV_PACKET_LENGTH = 1024*1024*64;
+  const ui32_t MAX_KLV_PACKET_LENGTH = 1024*1024*128;
 #endif
 
   const ui32_t IdentBufferLen = 128;
@@ -218,9 +218,9 @@ inline const char* ui64sz(ui64_t i, char* buf)
 	return m_KLLength;
       }
 
-      virtual UL       GetUL();
+      virtual UL       GetUL() const;
       virtual bool     SetUL(const UL&);
-      virtual bool     HasUL(const byte_t*);
+      virtual bool     HasUL(const byte_t*) const;
       virtual Result_t InitFromBuffer(const byte_t*, ui32_t);
       virtual Result_t InitFromBuffer(const byte_t*, ui32_t, const UL& label);
       virtual Result_t WriteKLToBuffer(ASDCP::FrameBuffer&, const UL& label, ui32_t length);
@@ -235,6 +235,7 @@ inline const char* ui64sz(ui64_t i, char* buf)
 	return WriteKLToBuffer(fb, m_UL, length);
       }
 
+      virtual void Detach(); // remove internal references to the buffer we init'd from
       virtual void     Dump(FILE*, const Dictionary& Dict, bool show_value);
     };
 

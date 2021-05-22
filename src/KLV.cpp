@@ -43,6 +43,13 @@ const ui32_t tmp_read_size = 32;
 //------------------------------------------------------------------------------------------
 //
 
+//
+void
+ASDCP::KLVPacket::Detach()
+{
+  m_KeyStart = m_ValueStart = 0;
+}
+
 // 
 ASDCP::Result_t
 ASDCP::KLVPacket::InitFromBuffer(const byte_t* buf, ui32_t buf_len, const UL& label)
@@ -50,14 +57,17 @@ ASDCP::KLVPacket::InitFromBuffer(const byte_t* buf, ui32_t buf_len, const UL& la
   Result_t result = KLVPacket::InitFromBuffer(buf, buf_len);
 
   if ( ASDCP_SUCCESS(result) )
-    result = ( UL(m_KeyStart) == label ) ? RESULT_OK : RESULT_FAIL;
+    {
+      assert(m_KeyStart);
+      result = ( UL(m_KeyStart) == label ) ? RESULT_OK : RESULT_FAIL;
+    }
 
   return result;
 }
 
 //
 ASDCP::UL
-ASDCP::KLVPacket::GetUL()
+ASDCP::KLVPacket::GetUL() const
 {
   if ( m_KeyStart != 0 )
     return UL(m_KeyStart);
@@ -120,7 +130,7 @@ ASDCP::KLVPacket::InitFromBuffer(const byte_t* buf, ui32_t buf_len)
 
 //
 bool
-ASDCP::KLVPacket::HasUL(const byte_t* ul)
+ASDCP::KLVPacket::HasUL(const byte_t* ul) const
 {
   if ( m_KeyStart != 0 )
     {
@@ -179,7 +189,10 @@ ASDCP::KLVPacket::Dump(FILE* stream, const Dictionary& Dict, bool show_value)
     }
   else if ( m_UL.HasValue() )
     {
-      fprintf(stream, "%s\n", m_UL.EncodeString(buf, 64));
+      const MDDEntry* Entry = Dict.FindULAnyVersion(m_UL.Value());
+      fprintf(stream, "%s  len: %7llu (%s)\n",
+              m_UL.EncodeString(buf, 64),
+              m_ValueLength, (Entry ? Entry->name : "Unknown"));
     }
   else
     {
@@ -194,7 +207,10 @@ ASDCP::KLVFilePacket::InitFromFile(const Kumu::FileReader& Reader, const UL& lab
   Result_t result = KLVFilePacket::InitFromFile(Reader);
 
   if ( ASDCP_SUCCESS(result) )
-    result = ( UL(m_KeyStart) == label ) ? RESULT_OK : RESULT_FAIL;
+    {
+      assert(m_KeyStart);
+      result = ( UL(m_KeyStart) == label ) ? RESULT_OK : RESULT_FAIL;
+    }
 
   return result;
 }
