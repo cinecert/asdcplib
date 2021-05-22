@@ -130,6 +130,7 @@ ASDCP::MXF::RIP::InitFromFile(const Kumu::FileReader& Reader)
         DefaultLogSink().Error("RIP is too short.\n");
         return RESULT_KLV_CODING(__LINE__, __FILE__);
       }
+      assert(m_ValueStart);
       Kumu::MemIOReader MemRDR(m_ValueStart, m_ValueLength - 4);
       result = PairArray.Unarchive(&MemRDR) ? RESULT_OK : RESULT_KLV_CODING(__LINE__, __FILE__);
     }
@@ -297,8 +298,11 @@ ASDCP::MXF::Partition::InitFromFile(const Kumu::FileReader& Reader)
   // test the UL
   // could be one of several values
   if ( ASDCP_SUCCESS(result) )
-    result = ASDCP::MXF::Partition::InitFromBuffer(m_ValueStart, m_ValueLength);
-  
+    {
+      assert(m_ValueStart);
+      result = ASDCP::MXF::Partition::InitFromBuffer(m_ValueStart, m_ValueLength);
+    }
+
   return result;
 }
 
@@ -454,11 +458,13 @@ ASDCP::MXF::Primer::InitFromBuffer(const byte_t* p, ui32_t l)
 
   if ( ASDCP_SUCCESS(result) )
     {
+      assert(m_ValueStart);
       if (m_ValueStart + m_ValueLength > p + l)
       {
         DefaultLogSink().Error("Primer entry too long.\n");
         return RESULT_KLV_CODING(__LINE__, __FILE__);
       }
+
       Kumu::MemIOReader MemRDR(m_ValueStart, m_ValueLength);
       result = LocalTagEntryBatch.Unarchive(&MemRDR) ? RESULT_OK : RESULT_KLV_CODING(__LINE__, __FILE__);
     }
@@ -750,11 +756,11 @@ ASDCP::MXF::OP1aHeader::~OP1aHeader() {}
 
 //
 ASDCP::Result_t
-ASDCP::MXF::OP1aHeader::InitFromFile(const Kumu::FileReader& Reader)
+ASDCP::MXF::OP1aHeader::InitFromFile(const Kumu::FileReader& reader)
 {
-  Result_t result = Partition::InitFromFile(Reader);
+  Result_t result = Partition::InitFromFile(reader);
 
-  if ( ASDCP_FAILURE(result) )
+  if ( KM_FAILURE(result) )
     return result;
 
   if ( m_Dict == &DefaultCompositeDict() )
@@ -770,44 +776,60 @@ ASDCP::MXF::OP1aHeader::InitFromFile(const Kumu::FileReader& Reader)
 	}
     }
 
-  // slurp up the remainder of the header
   if ( HeaderByteCount == 0 )
     {
-      DefaultLogSink().Warn("MXF file contents incomplete.\n");
+      DefaultLogSink().Error("MXF file contents incomplete.\n");
       return RESULT_KLV_CODING(__LINE__, __FILE__);
     }
-  else if ( HeaderByteCount < 1024 )
-    {
-      DefaultLogSink().Warn("Improbably small HeaderByteCount value: %qu\n", HeaderByteCount);
-    }
-  else if (HeaderByteCount > ( 4 * Kumu::Megabyte ) )
-    {
-      DefaultLogSink().Warn("Improbably huge HeaderByteCount value: %qu\n", HeaderByteCount);
-    }
-  
-  result = m_HeaderData.Capacity(Kumu::xmin(4*Kumu::Megabyte, static_cast<ui32_t>(HeaderByteCount)));
 
-  if ( ASDCP_SUCCESS(result) )
-    {
-      ui32_t read_count;
-      result = Reader.Read(m_HeaderData.Data(), m_HeaderData.Capacity(), &read_count);
+  i64_t bytes_consumed = 0;
+  KLVFilePacket packet_parser;
 
-      if ( ASDCP_FAILURE(result) )
+  while ( KM_SUCCESS(result) && bytes_consumed < HeaderByteCount )
+    {
+      result = packet_parser.InitFromFile(reader);
+
+      if ( KM_SUCCESS(result) )
         {
-	  DefaultLogSink().Error("OP1aHeader::InitFromFile, read failed.\n");
-	  return result;
+          bytes_consumed += packet_parser.PacketLength();
+          const ASDCP::MDDEntry* entry = m_Dict->FindULExact(packet_parser.GetUL().Value());
+
+          if ( packet_parser.GetUL() == m_Dict->ul(MDD_KLVFill) )
+            continue;
+
+          if ( packet_parser.GetUL() == m_Dict->ul(MDD_Primer) )
+            {
+              if ( m_Primer.PacketLength() != 0 )
+                {
+                  DefaultLogSink().Error("MXF file contains more than one Primer pack.\n");
+                  return RESULT_KLV_CODING(__LINE__, __FILE__);
+                }
+
+              result = m_Primer.InitFromBuffer(packet_parser.m_Buffer.RoData(), packet_parser.m_Buffer.Size());
+              m_Primer.Detach();
+              continue;
+            }
+
+          InterchangeObject* object = CreateObject(m_Dict, packet_parser.m_Buffer.RoData());
+          assert(object);
+          object->m_Lookup = &m_Primer;
+          result = object->InitFromBuffer(packet_parser.m_Buffer.RoData(), packet_parser.m_Buffer.Size());
+
+          if ( KM_SUCCESS(result) )
+            {
+              m_PacketList->AddPacket(object); // takes ownership
+              object->Detach(); // sever the connection to the underlying buffer
+
+              if ( object->IsA(m_Dict->ul(MDD_Preface)) && m_Preface == 0 )
+                m_Preface = (Preface*)object;
+            }
+          else
+            {
+              DefaultLogSink().Error("Error initializing OP1a header packet.\n");
+              delete object;
+            }
         }
-
-      if ( read_count != m_HeaderData.Capacity() )
-	{
-	  DefaultLogSink().Error("Short read of OP-Atom header metadata; wanted %u, got %u.\n",
-				 m_HeaderData.Capacity(), read_count);
-	  return RESULT_KLV_CODING(__LINE__, __FILE__);
-	}
     }
-
-  if ( ASDCP_SUCCESS(result) )
-    result = InitFromBuffer(m_HeaderData.RoData(), m_HeaderData.Capacity());
 
   return result;
 }
@@ -819,7 +841,10 @@ ASDCP::MXF::OP1aHeader::InitFromPartitionBuffer(const byte_t* p, ui32_t l)
   Result_t result = KLVPacket::InitFromBuffer(p, l);
 
   if ( ASDCP_SUCCESS(result) )
-    result = Partition::InitFromBuffer(m_ValueStart, m_ValueLength); // test UL and OP
+    {
+      assert(m_ValueStart);
+      result = Partition::InitFromBuffer(m_ValueStart, m_ValueLength); // test UL and OP
+    }
 
   if ( ASDCP_SUCCESS(result) )
     {
@@ -1104,7 +1129,10 @@ ASDCP::MXF::OPAtomIndexFooter::InitFromPartitionBuffer(const byte_t* p, ui32_t l
   Result_t result = KLVPacket::InitFromBuffer(p, l);
 
   if ( ASDCP_SUCCESS(result) )
-    result = Partition::InitFromBuffer(m_ValueStart, m_ValueLength); // test UL and OP
+    {
+      assert(m_ValueStart);
+      result = Partition::InitFromBuffer(m_ValueStart, m_ValueLength); // test UL and OP
+    }
 
   if ( ASDCP_SUCCESS(result) )
     {
@@ -1434,6 +1462,7 @@ ASDCP::MXF::InterchangeObject::WriteToTLVSet(TLVWriter& TLVSet)
 ASDCP::Result_t
 ASDCP::MXF::InterchangeObject::InitFromBuffer(const byte_t* p, ui32_t l)
 {
+  assert(m_ValueStart);
   ASDCP_TEST_NULL(p);
   Result_t result = RESULT_FALSE;
 

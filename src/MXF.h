@@ -433,7 +433,6 @@ namespace ASDCP
       //
       class OP1aHeader : public Partition
 	{
-	  Kumu::ByteString m_HeaderData;
 	  ASDCP_NO_COPY_CONSTRUCT(OP1aHeader);
 	  OP1aHeader();
 
