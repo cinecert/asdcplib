@@ -245,7 +245,7 @@ pinkwave_SOURCES = pinkwave.cpp
 pinkwave_LDADD = libasdcp.la  libkumu.la
 
 klvwalk_SOURCES = klvwalk.cpp
-klvwalk_LDADD = libasdcp.la libkumu.la
+klvwalk_LDADD = libas02.la  libasdcp.la libkumu.la
 
 wavesplit_SOURCES = wavesplit.cpp
 wavesplit_LDADD = libasdcp.la libkumu.la
