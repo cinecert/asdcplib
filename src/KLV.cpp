@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2005-2009, John Hurst
+Copyright (c) 2005-2021, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -196,7 +196,7 @@ ASDCP::KLVPacket::Dump(FILE* stream, const Dictionary& Dict, bool show_value)
     }
   else
     {
-      fprintf(stream, "*** Malformed KLV packet ***\n");
+      fprintf(stream, "Unparsed KLV packet, %llu value bytes.\n", m_ValueLength);
     }
 }
 
