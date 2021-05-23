@@ -79,7 +79,7 @@ AS_02::MXF::AS02IndexReader::InitFromFile(const Kumu::FileReader& reader, const 
   body_part_array_t::const_iterator body_part_iter;
 
   RIP::const_pair_iterator i;
-  Result_t result = m_IndexSegmentData.Capacity(128*Kumu::Kilobyte); // will be grown if needed
+  Result_t result = RESULT_OK;
   ui32_t first_body_sid = 0;
 
   // create a list of body parts and index parts
@@ -127,7 +127,6 @@ AS_02::MXF::AS02IndexReader::InitFromFile(const Kumu::FileReader& reader, const 
     }
 
   body_part_iter = body_part_array.begin();
-
   for ( i = rip.PairArray.begin(); KM_SUCCESS(result) && i != rip.PairArray.end(); ++i )
     {
       reader.Seek(i->ByteOffset);
@@ -150,50 +149,51 @@ AS_02::MXF::AS02IndexReader::InitFromFile(const Kumu::FileReader& reader, const 
 	      DefaultLogSink().Warn("File footer partition contains index data.\n");
 	    }
 
-	  // slurp up the remainder of the partition
-	  ui32_t read_count = 0;
+          i64_t bytes_consumed = 0;
+          i64_t fill_packet_length = 0;
+          KLVFilePacket packet_parser;
 
-	  assert (plain_part.IndexByteCount <= 0xFFFFFFFFL);
-	  ui32_t bytes_this_partition = (ui32_t)plain_part.IndexByteCount;
+          while ( KM_SUCCESS(result) && bytes_consumed < (fill_packet_length + plain_part.IndexByteCount ) )
+            {
+              result = packet_parser.InitFromFile(reader);
 
-	  result = m_IndexSegmentData.Capacity(m_IndexSegmentData.Length() + bytes_this_partition);
+              if ( KM_SUCCESS(result) )
+                {
+                  bytes_consumed += packet_parser.PacketLength();
 
-	  if ( KM_SUCCESS(result) )
-	    result = reader.Read(m_IndexSegmentData.Data() + m_IndexSegmentData.Length(),
-				 bytes_this_partition, &read_count);
+                  if ( packet_parser.GetUL() == m_Dict->ul(MDD_KLVFill) )
+                    {
+                      if ( fill_packet_length == 0 && bytes_consumed == packet_parser.PacketLength() )
+                        {
+                          fill_packet_length = packet_parser.PacketLength();
+                        }
+                    }
+                  else
+                    {
+                      InterchangeObject* object = CreateObject(m_Dict, packet_parser.m_Buffer.RoData());
+                      assert(object);
+                      object->m_Lookup = m_Lookup;
+                      result = object->InitFromBuffer(packet_parser.m_Buffer.RoData(), packet_parser.m_Buffer.Size());
 
-	  if ( KM_SUCCESS(result) && read_count != bytes_this_partition )
-	    {
-	      DefaultLogSink().Error("Short read of index partition: got %u, expecting %u\n",
-				     read_count, bytes_this_partition);
-	      return RESULT_AS02_FORMAT;
-	    }
+                      if ( KM_SUCCESS(result) )
+                        {
+                          m_PacketList->AddPacket(object); // takes ownership
+                          object->Detach(); // sever the connection to the underlying buffer
+                        }
+                      else
+                        {
+                          DefaultLogSink().Error("Error initializing AS-02 index partition packet.\n");
+                          delete object;
+                        }
+                    }
+                }
+            }
 
-	  if ( KM_SUCCESS(result) )
-	    {
-	      ui64_t current_body_offset = 0;
-	      ui64_t current_ec_offset = 0;
-	      assert(body_part_iter != body_part_array.end());
-
-	      assert(!body_part_iter->empty());
-	      ASDCP::MXF::Partition *tmp_partition = body_part_iter->get();
-
-	      if ( has_header_essence && tmp_partition->ThisPartition == 0 )
-		{
-		  current_body_offset = 0;
-		  current_ec_offset = tmp_partition->HeaderByteCount + tmp_partition->ArchiveSize();
-		}
-	      else
-		{
-		  current_body_offset = tmp_partition->BodyOffset;
-		  current_ec_offset += tmp_partition->ThisPartition + tmp_partition->ArchiveSize();
-		}
-
-	      result = InitFromBuffer(m_IndexSegmentData.RoData() + m_IndexSegmentData.Length(), bytes_this_partition, current_body_offset, current_ec_offset);
-	      m_IndexSegmentData.Length(m_IndexSegmentData.Length() + bytes_this_partition);
-	      ++body_part_iter;
-	    }
-	}
+          if ( KM_SUCCESS(result) )
+            {
+              ++body_part_iter;
+            }
+        }
     }
 
   if ( KM_SUCCESS(result) )
@@ -460,7 +460,9 @@ AS_02::h__AS02Reader::OpenMXFRead(const std::string& filename)
 	}
 
       // essence in header partition?
-      Kumu::fpos_t header_end = m_HeaderPart.HeaderByteCount + m_HeaderPart.ArchiveSize();
+      Kumu::fpos_t header_end =
+        m_HeaderPart.HeaderByteCountWithPartitionHeadFillLength()
+        + m_HeaderPart.ArchiveSize();
       has_header_essence = header_end < first_partition_after_header;
 
       if ( has_header_essence )

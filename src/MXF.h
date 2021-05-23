@@ -78,7 +78,7 @@ namespace ASDCP
 
 	      inline const char* EncodeString(char* str_buf, ui32_t buf_len) const {
 		Kumu::ui64Printer offset_str(ByteOffset);
-		snprintf(str_buf, buf_len, "%-6u: %s", BodySID, offset_str.c_str());
+		snprintf(str_buf, buf_len, "%-6u: %s (0x%llx)", BodySID, offset_str.c_str(), ByteOffset);
 		return str_buf;
 	      }
 
@@ -435,6 +435,7 @@ namespace ASDCP
 	{
 	  ASDCP_NO_COPY_CONSTRUCT(OP1aHeader);
 	  OP1aHeader();
+          i64_t m_PartitionHeadFillPacketLength;
 
 	public:
 	  ASDCP::MXF::Primer  m_Primer;
@@ -443,8 +444,6 @@ namespace ASDCP
 	  OP1aHeader(const Dictionary*);
 	  virtual ~OP1aHeader();
 	  virtual Result_t InitFromFile(const Kumu::FileReader& Reader);
-	  virtual Result_t InitFromPartitionBuffer(const byte_t* p, ui32_t l);
-	  virtual Result_t InitFromBuffer(const byte_t* p, ui32_t l);
 	  virtual Result_t WriteToFile(Kumu::FileWriter& Writer, ui32_t HeaderLength = 16384);
 	  virtual void     Dump(FILE* = 0);
 	  virtual Result_t GetMDObjectByID(const UUID&, InterchangeObject** = 0);
@@ -452,6 +451,10 @@ namespace ASDCP
 	  virtual Result_t GetMDObjectsByType(const byte_t* ObjectID, std::list<InterchangeObject*>& ObjectList);
 	  Identification*  GetIdentification();
 	  SourcePackage*   GetSourcePackage();
+
+          // Return the sum of HeaderByteCount and, if present, the total size
+          // of the Fill packet immediately following the Header Partion pack.
+          i64_t HeaderByteCountWithPartitionHeadFillLength() const;
 	};
 
       // Searches the header object and returns the edit rate based on the contents of the
@@ -461,7 +464,6 @@ namespace ASDCP
       //
       class OPAtomIndexFooter : public Partition
 	{
-	  Kumu::ByteString    m_FooterData;
 	  IndexTableSegment*  m_CurrentSegment;
 	  ui32_t              m_BytesPerEditUnit;
 	  Rational            m_EditRate;
@@ -478,8 +480,6 @@ namespace ASDCP
 	  OPAtomIndexFooter(const Dictionary*);
 	  virtual ~OPAtomIndexFooter();
 	  virtual Result_t InitFromFile(const Kumu::FileReader& Reader);
-	  virtual Result_t InitFromPartitionBuffer(const byte_t* p, ui32_t l);
-	  virtual Result_t InitFromBuffer(const byte_t* p, ui32_t l);
 	  virtual Result_t WriteToFile(Kumu::FileWriter& Writer, ui64_t duration);
 	  virtual void     Dump(FILE* = 0);
 

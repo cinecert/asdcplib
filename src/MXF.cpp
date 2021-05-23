@@ -130,6 +130,7 @@ ASDCP::MXF::RIP::InitFromFile(const Kumu::FileReader& Reader)
         DefaultLogSink().Error("RIP is too short.\n");
         return RESULT_KLV_CODING(__LINE__, __FILE__);
       }
+
       assert(m_ValueStart);
       Kumu::MemIOReader MemRDR(m_ValueStart, m_ValueLength - 4);
       result = PairArray.Unarchive(&MemRDR) ? RESULT_OK : RESULT_KLV_CODING(__LINE__, __FILE__);
@@ -747,12 +748,20 @@ ASDCP::MXF::Preface::Dump(FILE* stream)
 //
 
 ASDCP::MXF::OP1aHeader::OP1aHeader(const Dictionary* d) :
-  Partition(d), m_Primer(d), m_Preface(0)
+  Partition(d), m_Primer(d), m_Preface(0),
+  m_PartitionHeadFillPacketLength(0)
 {
   assert(m_Dict);
 }
 
 ASDCP::MXF::OP1aHeader::~OP1aHeader() {}
+
+//
+i64_t
+ASDCP::MXF::OP1aHeader::HeaderByteCountWithPartitionHeadFillLength() const
+{
+  return HeaderByteCount + m_PartitionHeadFillPacketLength;
+}
 
 //
 ASDCP::Result_t
@@ -778,26 +787,29 @@ ASDCP::MXF::OP1aHeader::InitFromFile(const Kumu::FileReader& reader)
 
   if ( HeaderByteCount == 0 )
     {
-      DefaultLogSink().Error("MXF file contents incomplete.\n");
+      DefaultLogSink().Error("MXF file header contents incomplete.\n");
       return RESULT_KLV_CODING(__LINE__, __FILE__);
     }
 
   i64_t bytes_consumed = 0;
   KLVFilePacket packet_parser;
 
-  while ( KM_SUCCESS(result) && bytes_consumed < HeaderByteCount )
+  while ( KM_SUCCESS(result) && bytes_consumed < HeaderByteCountWithPartitionHeadFillLength() )
     {
       result = packet_parser.InitFromFile(reader);
 
       if ( KM_SUCCESS(result) )
         {
           bytes_consumed += packet_parser.PacketLength();
-          const ASDCP::MDDEntry* entry = m_Dict->FindULExact(packet_parser.GetUL().Value());
 
           if ( packet_parser.GetUL() == m_Dict->ul(MDD_KLVFill) )
-            continue;
-
-          if ( packet_parser.GetUL() == m_Dict->ul(MDD_Primer) )
+            {
+              if ( m_PartitionHeadFillPacketLength == 0 && bytes_consumed == packet_parser.PacketLength() )
+                {
+                  m_PartitionHeadFillPacketLength = packet_parser.PacketLength();
+                }
+            }
+          else if ( packet_parser.GetUL() == m_Dict->ul(MDD_Primer) )
             {
               if ( m_Primer.PacketLength() != 0 )
                 {
@@ -807,26 +819,36 @@ ASDCP::MXF::OP1aHeader::InitFromFile(const Kumu::FileReader& reader)
 
               result = m_Primer.InitFromBuffer(packet_parser.m_Buffer.RoData(), packet_parser.m_Buffer.Size());
               m_Primer.Detach();
-              continue;
-            }
-
-          InterchangeObject* object = CreateObject(m_Dict, packet_parser.m_Buffer.RoData());
-          assert(object);
-          object->m_Lookup = &m_Primer;
-          result = object->InitFromBuffer(packet_parser.m_Buffer.RoData(), packet_parser.m_Buffer.Size());
-
-          if ( KM_SUCCESS(result) )
-            {
-              m_PacketList->AddPacket(object); // takes ownership
-              object->Detach(); // sever the connection to the underlying buffer
-
-              if ( object->IsA(m_Dict->ul(MDD_Preface)) && m_Preface == 0 )
-                m_Preface = (Preface*)object;
             }
           else
             {
-              DefaultLogSink().Error("Error initializing OP1a header packet.\n");
-              delete object;
+              if ( m_Primer.PacketLength() == 0 )
+                {
+                  DefaultLogSink().Error("MXF file contains no Primer pack.\n");
+                  return RESULT_KLV_CODING(__LINE__, __FILE__);
+                }
+
+              InterchangeObject* object = CreateObject(m_Dict, packet_parser.m_Buffer.RoData());
+              assert(object);
+              object->m_Lookup = &m_Primer;
+              result = object->InitFromBuffer(packet_parser.m_Buffer.RoData(), packet_parser.m_Buffer.Size());
+
+              if ( KM_SUCCESS(result) )
+                {
+                  m_PacketList->AddPacket(object); // takes ownership
+                  object->Detach(); // sever the connection to the underlying buffer
+
+                  if ( object->IsA(m_Dict->ul(MDD_Preface)) && m_Preface == 0 )
+                    {
+                      m_Preface = dynamic_cast<Preface*>(object);
+                      assert(m_Preface);
+                    }
+                }
+              else
+                {
+                  DefaultLogSink().Error("Error initializing OP1a header packet.\n");
+                  delete object;
+                }
             }
         }
     }
@@ -834,81 +856,6 @@ ASDCP::MXF::OP1aHeader::InitFromFile(const Kumu::FileReader& reader)
   return result;
 }
 
-//
-ASDCP::Result_t
-ASDCP::MXF::OP1aHeader::InitFromPartitionBuffer(const byte_t* p, ui32_t l)
-{
-  Result_t result = KLVPacket::InitFromBuffer(p, l);
-
-  if ( ASDCP_SUCCESS(result) )
-    {
-      assert(m_ValueStart);
-      result = Partition::InitFromBuffer(m_ValueStart, m_ValueLength); // test UL and OP
-    }
-
-  if ( ASDCP_SUCCESS(result) )
-    {
-      ui32_t pp_len = KLVPacket::PacketLength();
-      result = InitFromBuffer(p + pp_len, l - pp_len);
-    }
-
-  return result;
-}
-
-//
-ASDCP::Result_t
-ASDCP::MXF::OP1aHeader::InitFromBuffer(const byte_t* p, ui32_t l)
-{
-  assert(m_Dict);
-  Result_t result = RESULT_OK;
-  const byte_t* end_p = p + l;
-
-  while ( ASDCP_SUCCESS(result) && p < end_p )
-    {
-      // parse the packets and index them by uid, discard KLVFill items
-      InterchangeObject* object = CreateObject(m_Dict, p);
-      assert(object);
-
-      object->m_Lookup = &m_Primer;
-      result = object->InitFromBuffer(p, end_p - p);
-
-      const byte_t* redo_p = p;
-      p += object->PacketLength();
-
-      if ( ASDCP_SUCCESS(result) )
-	{
-	  if ( object->IsA(m_Dict->ul(MDD_KLVFill)) )
-	    {
-	      delete object;
-
-	      if ( p > end_p )
-		{
-		  DefaultLogSink().Error("Fill item short read: %d.\n", p - end_p);
-		}
-	    }
-	  else if ( object->IsA(m_Dict->ul(MDD_Primer)) ) // TODO: only one primer should be found
-	    {
-	      delete object;
-	      result = m_Primer.InitFromBuffer(redo_p, end_p - redo_p);
-	    }
-	  else
-	    {
-	      m_PacketList->AddPacket(object); // takes ownership
-
-	      if ( object->IsA(m_Dict->ul(MDD_Preface)) && m_Preface == 0 )
-		m_Preface = (Preface*)object;
-	    }
-	}
-      else
-	{
-	  DefaultLogSink().Error("Error initializing OP1a header packet.\n");
-	  //	  Kumu::hexdump(p-object->PacketLength(), object->PacketLength());
-	  delete object;
-	}
-    }
-
-  return result;
-}
 
 ASDCP::Result_t
 ASDCP::MXF::OP1aHeader::GetMDObjectByID(const UUID& ObjectID, InterchangeObject** Object)
@@ -1060,7 +1007,7 @@ ASDCP::MXF::OP1aHeader::Dump(FILE* stream)
   m_Primer.Dump(stream);
 
   if ( m_Preface == 0 )
-    fputs("No Preface loaded\n", stream);
+    fputs("No Preface loaded.\n", stream);
 
   std::list<InterchangeObject*>::iterator i = m_PacketList->m_List.begin();
   for ( ; i != m_PacketList->m_List.end(); i++ )
@@ -1083,97 +1030,57 @@ ASDCP::MXF::OPAtomIndexFooter::~OPAtomIndexFooter() {}
 
 //
 ASDCP::Result_t
-ASDCP::MXF::OPAtomIndexFooter::InitFromFile(const Kumu::FileReader& Reader)
+ASDCP::MXF::OPAtomIndexFooter::InitFromFile(const Kumu::FileReader& reader)
 {
-  Result_t result = Partition::InitFromFile(Reader); // test UL and OP
+  Result_t result = Partition::InitFromFile(reader); // test UL and OP
 
-  // slurp up the remainder of the footer
-  ui32_t read_count = 0;
+  if ( KM_FAILURE(result) )
+    return result;
 
-  if ( ASDCP_SUCCESS(result) && IndexByteCount > 0 )
+  if ( IndexByteCount == 0 )
     {
-      assert (IndexByteCount <= 0xFFFFFFFFL);
-      // At this point, m_FooterData may not have been initialized
-      // so it's capacity is zero and data pointer is NULL
-      // However, if IndexByteCount is zero then the capacity
-      // doesn't change and the data pointer is not set.
-      result = m_FooterData.Capacity((ui32_t) IndexByteCount);
-
-      if ( ASDCP_SUCCESS(result) )
-	result = Reader.Read(m_FooterData.Data(), m_FooterData.Capacity(), &read_count);
-
-      if ( ASDCP_SUCCESS(result) && read_count != m_FooterData.Capacity() )
-	{
-	  DefaultLogSink().Error("Short read of footer partition: got %u, expecting %u\n",
-				 read_count, m_FooterData.Capacity());
-	  return RESULT_FAIL;
-	}
-      else if( ASDCP_SUCCESS(result) && !m_FooterData.Data() )
-	{
-	  DefaultLogSink().Error( "Buffer for footer partition not created: IndexByteCount = %u\n",
-				  IndexByteCount );
-	  return RESULT_FAIL;
-	}
-
-      if ( ASDCP_SUCCESS(result) )
-	result = InitFromBuffer(m_FooterData.RoData(), m_FooterData.Capacity());
+      DefaultLogSink().Error("MXF file index contents incomplete. Is this an AS-DCP file?\n");
+      return RESULT_KLV_CODING(__LINE__, __FILE__);
     }
 
-  return result;
-}
+  i64_t bytes_consumed = 0;
+  i64_t fill_packet_length = 0;
+  KLVFilePacket packet_parser;
 
-//
-ASDCP::Result_t
-ASDCP::MXF::OPAtomIndexFooter::InitFromPartitionBuffer(const byte_t* p, ui32_t l)
-{
-  Result_t result = KLVPacket::InitFromBuffer(p, l);
-
-  if ( ASDCP_SUCCESS(result) )
+  while ( KM_SUCCESS(result) && bytes_consumed < ( fill_packet_length + IndexByteCount ) )
     {
-      assert(m_ValueStart);
-      result = Partition::InitFromBuffer(m_ValueStart, m_ValueLength); // test UL and OP
-    }
+      result = packet_parser.InitFromFile(reader);
 
-  if ( ASDCP_SUCCESS(result) )
-    {
-      ui32_t pp_len = KLVPacket::PacketLength();
-      result = InitFromBuffer(p + pp_len, l - pp_len);
-    }
+      if ( KM_SUCCESS(result) )
+        {
+          bytes_consumed += packet_parser.PacketLength();
 
-  return result;
-}
+          if ( packet_parser.GetUL() == m_Dict->ul(MDD_KLVFill) )
+            {
+              if ( fill_packet_length == 0 && bytes_consumed == packet_parser.PacketLength() )
+                {
+                  fill_packet_length = packet_parser.PacketLength();
+                }
+            }
+          else
+            {
+              InterchangeObject* object = CreateObject(m_Dict, packet_parser.m_Buffer.RoData());
+              assert(object);
+              object->m_Lookup = m_Lookup;
+              result = object->InitFromBuffer(packet_parser.m_Buffer.RoData(), packet_parser.m_Buffer.Size());
 
-//
-ASDCP::Result_t
-ASDCP::MXF::OPAtomIndexFooter::InitFromBuffer(const byte_t* p, ui32_t l)
-{
-  Result_t result = RESULT_OK;
-  const byte_t* end_p = p + l;
-  
-  while ( ASDCP_SUCCESS(result) && p < end_p )
-    {
-      // parse the packets and index them by uid, discard KLVFill items
-      InterchangeObject* object = CreateObject(m_Dict, p);
-      assert(object);
-
-      object->m_Lookup = m_Lookup;
-      result = object->InitFromBuffer(p, end_p - p);
-      p += object->PacketLength();
-
-      if ( ASDCP_SUCCESS(result) )
-	{
-	  m_PacketList->AddPacket(object); // takes ownership
-	}
-      else
-	{
-	  DefaultLogSink().Error("Error initializing OPAtom footer packet.\n");
-	  delete object;
-	}
-    }
-
-  if ( ASDCP_FAILURE(result) )
-    {
-      DefaultLogSink().Error("Failed to initialize OPAtomIndexFooter.\n");
+              if ( KM_SUCCESS(result) )
+                {
+                  m_PacketList->AddPacket(object); // takes ownership
+                  object->Detach(); // sever the connection to the underlying buffer
+                }
+              else
+                {
+                  DefaultLogSink().Error("Error initializing OPAtom footer packet.\n");
+                  delete object;
+                }
+            }
+        }
     }
 
   return result;
@@ -1462,7 +1369,6 @@ ASDCP::MXF::InterchangeObject::WriteToTLVSet(TLVWriter& TLVSet)
 ASDCP::Result_t
 ASDCP::MXF::InterchangeObject::InitFromBuffer(const byte_t* p, ui32_t l)
 {
-  assert(m_ValueStart);
   ASDCP_TEST_NULL(p);
   Result_t result = RESULT_FALSE;
 
@@ -1472,6 +1378,7 @@ ASDCP::MXF::InterchangeObject::InitFromBuffer(const byte_t* p, ui32_t l)
 
       if ( ASDCP_SUCCESS(result) )
 	{
+          assert(m_ValueStart);
 	  if ( ( m_ValueStart + m_ValueLength ) > ( p  + l ) )
 	    {
 	      DefaultLogSink().Error("Interchange Object value extends past buffer length.\n");
@@ -1530,10 +1437,10 @@ ASDCP::MXF::InterchangeObject::Dump(FILE* stream)
 bool
 ASDCP::MXF::InterchangeObject::IsA(const byte_t* label)
 {
-  if ( m_KLLength == 0 || m_KeyStart == 0 )
+  if ( ! m_UL.HasValue() )
     return false;
 
-  return ( memcmp(label, m_KeyStart, SMPTE_UL_LENGTH) == 0 );
+  return m_UL == UL(label);
 }
 
 
