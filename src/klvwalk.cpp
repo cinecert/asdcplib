@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2005-2018, John Hurst
+Copyright (c) 2005-2021, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -30,7 +30,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include "AS_DCP.h"
-#include "MXF.h"
+#include "AS_02.h"
 #include <KM_log.h>
 #include <stdlib.h>
 #include <string.h>
@@ -65,7 +65,7 @@ banner(FILE* stream = stdout)
 {
   fprintf(stream, "\n\
 %s (asdcplib %s)\n\n\
-Copyright (c) 2005-2013 John Hurst\n\
+Copyright (c) 2005-2021 John Hurst\n\
 %s is part of the asdcplib DCP tools package.\n\
 asdcplib may be copied only under the terms of the license found at\n\
 the top of every file in the asdcplib distribution kit.\n\n\
@@ -257,17 +257,36 @@ main(int argc, const char** argv)
 
 	  if ( ASDCP_SUCCESS(result) )
 	    {
-	      ASDCP::MXF::OPAtomIndexFooter Index(Dict);
-	      result = Reader.Seek(Header.FooterPartition);
-	      
-	      if ( ASDCP_SUCCESS(result) )
-		{
-		  Index.m_Lookup = &Header.m_Primer;
-		  result = Index.InitFromFile(Reader);
-		}
-	      
-	      if ( ASDCP_SUCCESS(result) )
-		Index.Dump(stdout);
+              if ( Header.OperationalPattern == UL(Dict->ul(MDD_OPAtom))
+                   || Header.OperationalPattern == UL(Dict->ul(MDD_MXFInterop_OPAtom)) )
+                {
+                  ASDCP::MXF::OPAtomIndexFooter Index(Dict);
+                  result = Reader.Seek(Header.FooterPartition);
+
+                  if ( ASDCP_SUCCESS(result) )
+                    {
+                      Index.m_Lookup = &Header.m_Primer;
+                      result = Index.InitFromFile(Reader);
+                    }
+
+                  if ( ASDCP_SUCCESS(result) )
+                    Index.Dump(stdout);
+                }
+              else
+                {
+                  AS_02::MXF::AS02IndexReader Index(Dict);
+                  result = Reader.Seek(Header.FooterPartition);
+
+                  if ( ASDCP_SUCCESS(result) )
+                    {
+                      bool has_header_essence = false; // TODO
+                      Index.m_Lookup = &Header.m_Primer;
+                      result = Index.InitFromFile(Reader, RIP, has_header_essence);
+                    }
+
+                  if ( ASDCP_SUCCESS(result) )
+                    Index.Dump(stdout);
+                }
 	    }
 
 	  if ( ASDCP_SUCCESS(result) )
