@@ -1373,6 +1373,37 @@ namespace ASDCP
       virtual Result_t WriteToBuffer(ASDCP::FrameBuffer&);
 	};
 
+      //
+      class JPEGXSPictureSubDescriptor : public InterchangeObject
+	{
+	  JPEGXSPictureSubDescriptor();
+
+	public:
+          ui16_t JPEGXSPpih;
+          ui16_t JPEGXSPlev;
+          ui16_t JPEGXSWf;
+          ui16_t JPEGXSHf;
+          ui8_t JPEGXSNc;
+          Raw JPEGXSComponentTable;
+          optional_property<ui16_t > JPEGXSCw;
+          optional_property<ui16_t > JPEGXSHsl;
+          optional_property<ui32_t > JPEGXSMaximumBitRate;
+
+      JPEGXSPictureSubDescriptor(const Dictionary* d);
+      JPEGXSPictureSubDescriptor(const JPEGXSPictureSubDescriptor& rhs);
+      virtual ~JPEGXSPictureSubDescriptor() {}
+
+      const JPEGXSPictureSubDescriptor& operator=(const JPEGXSPictureSubDescriptor& rhs) { Copy(rhs); return *this; }
+      virtual void Copy(const JPEGXSPictureSubDescriptor& rhs);
+      virtual InterchangeObject *Clone() const;
+      virtual const char* HasName() { return "JPEGXSPictureSubDescriptor"; }
+      virtual Result_t InitFromTLVSet(TLVReader& TLVSet);
+      virtual Result_t WriteToTLVSet(TLVWriter& TLVSet);
+      virtual void     Dump(FILE* = 0);
+      virtual Result_t InitFromBuffer(const byte_t* p, ui32_t l);
+      virtual Result_t WriteToBuffer(ASDCP::FrameBuffer&);
+	};
+
     } // namespace MXF
 } // namespace ASDCP
 
