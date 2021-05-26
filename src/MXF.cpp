@@ -552,8 +552,8 @@ ASDCP::MXF::Primer::InsertTag(const MDDEntry& Entry, ASDCP::TagValue& Tag)
 ASDCP::Result_t
 ASDCP::MXF::Primer::TagForKey(const ASDCP::UL& Key, ASDCP::TagValue& Tag)
 {
-  assert(m_Lookup);
-  if ( m_Lookup.empty() )
+  
+  if ( !m_Lookup || m_Lookup.empty() )
     {
       DefaultLogSink().Error("Primer lookup is empty\n");
       return RESULT_FAIL;
@@ -1509,26 +1509,35 @@ ASDCP::MXF::InterchangeObject::IsA(const byte_t* label)
 
 
 //------------------------------------------------------------------------------------------
-struct FactoryCompareUL
+namespace ASDCP {
+namespace MXF
 {
-    bool operator()(const ASDCP::UL& lhs, const ASDCP::UL& rhs) const
+    struct FactoryCompareUL
     {
-        ui32_t test_size = lhs.Size() < rhs.Size() ? lhs.Size() : rhs.Size();
-
-        for (ui32_t i = 0; i < test_size; i++)
+        bool operator()(const ASDCP::UL& lhs, const ASDCP::UL& rhs) const
         {
-            if (i == 7) continue; // skip version to be symmetrical with UL::operator==
-            if (lhs.Value()[i] != rhs.Value()[i])
-                return lhs.Value()[i] < rhs.Value()[i];
+            ui32_t test_size = lhs.Size() < rhs.Size() ? lhs.Size() : rhs.Size();
+
+            for (ui32_t i = 0; i < test_size; i++)
+            {
+                if (i == 7) continue; // skip version to be symmetrical with UL::operator==
+                if (lhs.Value()[i] != rhs.Value()[i])
+                    return lhs.Value()[i] < rhs.Value()[i];
+            }
+
+            return false;
         }
+    };
+}
+} // namespace asdcp
 
-        return false;
-    }
-};
-
-typedef std::map<ASDCP::UL, ASDCP::MXF::MXFObjectFactory_t, FactoryCompareUL>FactoryMap_t;
+typedef std::map<ASDCP::UL, ASDCP::MXF::MXFObjectFactory_t, ASDCP::MXF::FactoryCompareUL>FactoryMap_t;
 typedef FactoryMap_t::iterator FLi_t;
 
+namespace ASDCP {
+
+namespace MXF
+{
 //
 class FactoryList : public FactoryMap_t
 {
@@ -1559,8 +1568,11 @@ public:
   }
 };
 
+} // namespace MXF
+} // namespace asdcp
+
 //
-static FactoryList s_FactoryList;
+static ASDCP::MXF::FactoryList s_FactoryList;
 static Kumu::Mutex s_InitLock;
 static bool        s_TypesInit = false;
 

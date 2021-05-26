@@ -513,7 +513,10 @@ ASDCP::MD_to_JP2K_PDesc(const ASDCP::MXF::GenericPictureEssenceDescriptor&  Esse
 //
 // hidden, internal implementation of JPEG 2000 reader
 
+namespace ASDCP {
 
+namespace JP2K
+{
 class lh__Reader : public ASDCP::h__ASDCPReader
 {
   RGBAEssenceDescriptor*        m_EssenceDescriptor;
@@ -535,6 +538,8 @@ public:
   Result_t    OpenRead(const std::string&, EssenceType_t);
   Result_t    ReadFrame(ui32_t, JP2K::FrameBuffer&, AESDecContext*, HMACContext*);
 };
+} // namespace JP2K
+} // namespace asdcp
 
 
 //
@@ -1131,6 +1136,10 @@ ASDCP::JP2K::MXFSReader::Close() const
 
 
 //
+namespace ASDCP {
+
+namespace JP2K
+{
 class lh__Writer : public ASDCP::h__ASDCPWriter
 {
   ASDCP_NO_COPY_CONSTRUCT(lh__Writer);
@@ -1154,6 +1163,8 @@ public:
   Result_t WriteFrame(const JP2K::FrameBuffer&, bool add_index, AESEncContext*, HMACContext*);
   Result_t Finalize();
 };
+} // namespace JP2K
+} // namespace asdcp
 
 // Open the file for writing. The file must not exist. Returns error if
 // the operation cannot be completed.

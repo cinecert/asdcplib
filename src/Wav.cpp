@@ -206,6 +206,9 @@ ASDCP::Wav::SimpleWaveHeader::ReadFromBuffer(const byte_t* buf, ui32_t buf_len, 
 //------------------------------------------------------------------------------------------
 // conversion algorithms from http://www.borg.com/~jglatt/tech/aiff.htm
 
+namespace ASDCP {
+
+
 //
 void
 Rat_to_extended(ASDCP::Rational rate, byte_t* buf)
@@ -255,6 +258,8 @@ extended_to_Rat(const byte_t* buf)
 
   return ASDCP::Rational(mantissa, 1);
 }
+
+} // namespace asdcp
 
 //
 void
