@@ -1,7 +1,5 @@
 /*
 Copyright (c) 2003-2018, John Hurst,
-Copyright (c) 2020, Thomas Richter Fraunhofer IIS,
-Copyright (c) 2020, Christian Minuth Fraunhofer IIS,
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without

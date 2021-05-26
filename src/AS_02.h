@@ -231,6 +231,7 @@ namespace AS_02
     };
     
   } //namespace JP2K
+  
 
   //---------------------------------------------------------------------------------
   //
@@ -247,7 +248,7 @@ namespace AS_02
     // the reader to signal the number of samples to be read by each call to ReadFrame();
 
     //
-    class MXFWriter
+      class MXFWriter
     {
       class h__Writer;
       ASDCP::mem_ptr<h__Writer> m_Writer;
