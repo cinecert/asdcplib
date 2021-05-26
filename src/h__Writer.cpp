@@ -167,6 +167,7 @@ ASDCP::AddDmsTrackGenericPartUtf8Text(Kumu::FileWriter& file_writer, MXF::OP1aHe
       static_track->Sequence = Sequence_obj->InstanceUID;
       Sequence_obj->DataDefinition = UL(Dict->ul(MDD_DescriptiveMetaDataDef));
       Sequence_obj->Duration.set_has_value();
+      durationUpdateList.push_back(&Sequence_obj->Duration.get());
       header_part.m_Preface->DMSchemes.push_back(UL(Dict->ul(MDD_MXFTextBasedFramework)));
     }
 
@@ -177,6 +178,11 @@ ASDCP::AddDmsTrackGenericPartUtf8Text(Kumu::FileWriter& file_writer, MXF::OP1aHe
   Sequence_obj->StructuralComponents.push_back(Segment->InstanceUID);
   Segment->EventComment = rp2057_static_track_label;
   Segment->DataDefinition = UL(Dict->ul(MDD_DescriptiveMetaDataDef));
+  if (!Segment->Duration.empty())
+  {
+      durationUpdateList.push_back(&Segment->Duration.get());
+  }
+
 
   //
   TextBasedDMFramework *dmf_obj = new TextBasedDMFramework(Dict);
