@@ -63,11 +63,11 @@ if (HAVE_OPENSSL)
 endif()
 
 # header for deployment (install target)
-set(asdcp_deploy_header AS_DCP.h PCMParserList.h AS_DCP_internal.h KM_error.h KM_fileio.h KM_util.h KM_memio.h KM_tai.h KM_platform.h KM_log.h KM_mutex.h dirent_win.h)
+set(asdcp_deploy_header AS_DCP.h AS_DCP_JXS.h PCMParserList.h AS_DCP_internal.h KM_error.h KM_fileio.h KM_util.h KM_memio.h KM_tai.h KM_platform.h KM_log.h KM_mutex.h dirent_win.h)
 
 # header
 set(asdcp_src ${asdcp_src} Wav.h WavFileWriter.h MXF.h Metadata.h JP2K.h
-JXS.h AS_DCP.h AS_DCP_internal.h KLV.h MPEG.h MXFTypes.h MDD.h
+JXS.h AS_DCP.h AS_DCP_JXS.h AS_DCP_internal.h KLV.h MPEG.h MXFTypes.h MDD.h
 	PCMParserList.h S12MTimecode.h AtmosSyncChannel_Generator.h AtmosSyncChannel_Mixer.h PCMDataProviders.h
 	SyncEncoder.h SyncCommon.h CRC16.h UUIDInformation.h dirent_win.h
 )
@@ -78,10 +78,10 @@ set(as02_src h__02_Reader.cpp h__02_Writer.cpp AS_02_ISXD.cpp AS_02_JP2K.cpp
 AS_02_JXS.cpp AS_02_PCM.cpp ST2052_TextParser.cpp AS_02_TimedText.cpp AS_02_ACES.cpp ACES_Codestream_Parser.cpp ACES_Sequence_Parser.cpp ACES.cpp AS_02_IAB.cpp ST2052_TextParser.cpp)
 
 # header for deployment (install target)
-set(as02_deploy_header AS_02.h Metadata.h MXF.h MXFTypes.h KLV.h MDD.h AS_02_ACES.h ACES.h AS_02_IAB.h AS_02_internal.h)
+set(as02_deploy_header AS_02.h AS_02_JXS.h Metadata.h MXF.h MXFTypes.h KLV.h MDD.h AS_02_ACES.h ACES.h AS_02_IAB.h AS_02_internal.h)
 
 # header
-set(as02_src ${as02_src} AS_02.h AS_02_internal.h AS_02_ACES.h ACES.h AS_02_IAB.h)
+set(as02_src ${as02_src} AS_02.h AS_02_JXS.h AS_02_internal.h AS_02_ACES.h ACES.h AS_02_IAB.h)
 
 
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}")

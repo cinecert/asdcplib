@@ -102,6 +102,14 @@ AC_ARG_ENABLE([as-02],
        *) AC_MSG_ERROR([bad value ${enableval} for --enable-as-02]) ;;
      esac],[as_02_use=false])
      AM_CONDITIONAL([USE_AS_02], [test x$as_02_use = xtrue])
+AC_ARG_ENABLE([asdcp-jxs],
+     [  --enable-asdcp-jxs    enable support wrapping JPEG XS files],
+     [case "${enableval}" in
+       yes) asdcp_jxs_use=true ;;
+       no)  asdcp_jxs_use=false ;;
+       *) AC_MSG_ERROR([bad value ${enableval} for --enable-asdcp-jxs]) ;;
+     esac],[asdcp_jxs_use=false])
+     AM_CONDITIONAL([USE_ASDCP_JXS], [test x$asdcp_jxs_use = xtrue])
 AC_ARG_ENABLE([phdr],
      [  --enable-phdr    enable support for Prototype for High Dyamic Range in AS-02],
      [case "${enableval}" in

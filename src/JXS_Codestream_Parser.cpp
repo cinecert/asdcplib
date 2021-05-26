@@ -33,6 +33,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <KM_fileio.h>
 #include <AS_DCP.h>
+#include <AS_DCP_JXS.h>
 #include <JXS.h>
 #include <assert.h>
 #include <KM_log.h>

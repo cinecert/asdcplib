@@ -55,7 +55,8 @@ include_HEADERS = \
 	KM_util.h \
 	KM_tai.h \
 	KM_xml.h \
-	AS_DCP.h
+	AS_DCP.h \
+	AS_DCP_JXS.h
 
 if DEV_HEADERS
 include_HEADERS += \
@@ -84,6 +85,7 @@ endif
 if USE_AS_02
 include_HEADERS		+= \
 	AS_02.h \
+	AS_02_JXS.h \
 	AS_02_ACES.h
 endif
 
@@ -120,13 +122,12 @@ nodist_libasdcp_la_SOURCES = Metadata_h.tt2 Metadata_cpp.tt2 \
 # sources for asdcp library
 libasdcp_la_SOURCES = MPEG2_Parser.cpp MPEG.cpp JP2K_Codestream_Parser.cpp \
 	JP2K_Sequence_Parser.cpp JP2K.cpp \
-	JXS_Codestream_Parser.cpp JXS_Sequence_Parser.cpp JXS.cpp \
 	PCM_Parser.cpp Wav.cpp TimedText_Parser.cpp KLV.cpp Dict.cpp MXFTypes.cpp MXF.cpp \
 	Index.cpp Metadata.cpp AS_DCP.cpp AS_DCP_MXF.cpp \
 	h__Reader.cpp h__Writer.cpp AS_DCP_MPEG2.cpp AS_DCP_JP2K.cpp \
-	AS_DCP_JXS.cpp AS_DCP_PCM.cpp AS_DCP_TimedText.cpp PCMParserList.cpp \
+	AS_DCP_PCM.cpp AS_DCP_TimedText.cpp PCMParserList.cpp \
 	Wav.h WavFileWriter.h MXF.h Metadata.h \
-	JP2K.h JXS.h AS_DCP.h AS_DCP_internal.h KLV.h MPEG.h MXFTypes.h MDD.h \
+	JP2K.h JXS.h AS_DCP.h AS_DCP_JXS.h AS_DCP_internal.h KLV.h MPEG.h MXFTypes.h MDD.h \
 	PCMParserList.h S12MTimecode.h MDD.cpp \
 	AS_DCP_ATMOS.cpp  AS_DCP_DCData.cpp info.in \
 	DCData_ByteStream_Parser.cpp DCData_Sequence_Parser.cpp \
@@ -141,6 +142,10 @@ if HAVE_OPENSSL
 libasdcp_la_SOURCES += AS_DCP_AES.cpp
 endif
 
+if USE_ASDCP_JXS
+libasdcp_la_SOURCES += JXS_Codestream_Parser.cpp JXS_Sequence_Parser.cpp JXS.cpp AS_DCP_JXS.cpp
+endif
+
 libasdcp_la_LDFLAGS = -release @VERSION@
 # additional libraries to link against for a library
 libasdcp_la_LIBADD = libkumu.la
@@ -151,6 +156,7 @@ if USE_AS_02
 libas02_la_SOURCES	= \
 	AS_02.h \
 	AS_02_internal.h \
+	AS_02_JXS.h \
 	ACES.h \
 	AS_02_ACES.h \
 	AS_02_IAB.h \

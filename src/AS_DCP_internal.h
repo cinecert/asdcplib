@@ -162,15 +162,6 @@ namespace ASDCP
 			    ASDCP::MXF::GenericPictureEssenceDescriptor& EssenceDescriptor,
 			    ASDCP::MXF::JPEG2000PictureSubDescriptor& EssenceSubDescriptor);
   
-  Result_t MD_to_JXS_PDesc(const ASDCP::MXF::GenericPictureEssenceDescriptor&  EssenceDescriptor,
-			   const ASDCP::MXF::JPEGXSPictureSubDescriptor& EssenceSubDescriptor,
-			   const ASDCP::Rational& EditRate, const ASDCP::Rational& SampleRate,
-			   ASDCP::JXS::PictureDescriptor& PDesc);
-
-  Result_t JXS_PDesc_to_MD(const JXS::PictureDescriptor& PDesc,
-			   const ASDCP::Dictionary& dict,
-			   ASDCP::MXF::GenericPictureEssenceDescriptor& EssenceDescriptor,
-			   ASDCP::MXF::JPEGXSPictureSubDescriptor& EssenceSubDescriptor);
 
   Result_t PCM_ADesc_to_MD(PCM::AudioDescriptor& ADesc, ASDCP::MXF::WaveAudioDescriptor* ADescObj);
   Result_t MD_to_PCM_ADesc(ASDCP::MXF::WaveAudioDescriptor* ADescObj, PCM::AudioDescriptor& ADesc);

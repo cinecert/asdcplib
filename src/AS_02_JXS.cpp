@@ -1,7 +1,7 @@
 /*
 Copyright (c) 2011-2018, Robert Scheler, Heiko Sparenberg Fraunhofer IIS,
+Copyright (c) 2020-2021, Thomas Richter, Fraunhofer IIS
 John Hurst
-Copyright (c) 2020, Thomas Richter, Fraunhofer IIS
 
 All rights reserved.
 
@@ -33,6 +33,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include "AS_02_internal.h"
+#include "AS_DCP_JXS.h"
 
 #include <iostream>
 #include <iomanip>
