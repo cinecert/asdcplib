@@ -733,6 +733,7 @@ namespace ASDCP
 	  m_HeaderPart.AddChildObject(m_MaterialPackage);
 	  m_ContentStorage->Packages.push_back(m_MaterialPackage->InstanceUID);
 
+      ui32_t trackID = 1;
 	  if ( tc_frame_rate )
 	    {
 	      TrackSet<TimecodeComponent> MPTCTrack =
@@ -743,12 +744,13 @@ namespace ASDCP
 	      m_DurationUpdateList.push_back(&(MPTCTrack.Sequence->Duration.get()));
 	      MPTCTrack.Clip->Duration.set_has_value();
 	      m_DurationUpdateList.push_back(&(MPTCTrack.Clip->Duration.get()));
+          trackID++;
 	    }
 
 	  TrackSet<SourceClip> MPTrack =
 	    CreateTrackAndSequence<MaterialPackage, SourceClip>(m_HeaderPart, *m_MaterialPackage,
 								TrackName, clip_edit_rate, DataDefinition,
-								2, m_Dict);
+								trackID, m_Dict);
 	  MPTrack.Sequence->Duration.set_has_value();
 	  m_DurationUpdateList.push_back(&(MPTrack.Sequence->Duration.get()));
 
@@ -757,7 +759,7 @@ namespace ASDCP
 	  MPTrack.Sequence->StructuralComponents.push_back(MPTrack.Clip->InstanceUID);
 	  MPTrack.Clip->DataDefinition = DataDefinition;
 	  MPTrack.Clip->SourcePackageID = SourcePackageUMID;
-	  MPTrack.Clip->SourceTrackID = 2;
+	  MPTrack.Clip->SourceTrackID = trackID;
 
 	  MPTrack.Clip->Duration.set_has_value();
 	  m_DurationUpdateList.push_back(&(MPTrack.Clip->Duration.get()));
@@ -774,6 +776,7 @@ namespace ASDCP
 	  m_HeaderPart.AddChildObject(m_FilePackage);
 	  m_ContentStorage->Packages.push_back(m_FilePackage->InstanceUID);
 
+      trackID = 1;
 	  if ( tc_frame_rate )
 	    {
 	      TrackSet<TimecodeComponent> FPTCTrack =
@@ -784,12 +787,13 @@ namespace ASDCP
 	      m_DurationUpdateList.push_back(&(FPTCTrack.Sequence->Duration.get()));
 	      FPTCTrack.Clip->Duration.set_has_value();
 	      m_DurationUpdateList.push_back(&(FPTCTrack.Clip->Duration.get()));
+          trackID++;
 	    }
 
 	  TrackSet<SourceClip> FPTrack =
 	    CreateTrackAndSequence<SourcePackage, SourceClip>(m_HeaderPart, *m_FilePackage,
 							      TrackName, clip_edit_rate, DataDefinition,
-							      2, m_Dict);
+							      trackID, m_Dict);
 
 	  FPTrack.Sequence->Duration.set_has_value();
 	  m_DurationUpdateList.push_back(&(FPTrack.Sequence->Duration.get()));
