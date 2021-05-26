@@ -102,7 +102,9 @@ id_batch_contains(const Array<Kumu::UUID>& batch, const Kumu::UUID& value)
 //
 Result_t
 ASDCP::AddDmsTrackGenericPartUtf8Text(Kumu::FileWriter& file_writer, MXF::OP1aHeader& header_part,
-				      SourcePackage& source_package, MXF::RIP& rip, const Dictionary* Dict)
+                      SourcePackage& source_package, MXF::RIP& rip, const Dictionary* Dict,
+                      const std::string& trackDescription,  const std::string& dataDescription,
+                      std::list<ui64_t*>& durationUpdateList)
 {
   Sequence* Sequence_obj = 0;
   InterchangeObject* tmp_iobj = 0;
@@ -157,13 +159,14 @@ ASDCP::AddDmsTrackGenericPartUtf8Text(Kumu::FileWriter& file_writer, MXF::OP1aHe
       StaticTrack* static_track = new StaticTrack(Dict);
       header_part.AddChildObject(static_track);
       source_package.Tracks.push_back(static_track->InstanceUID);
-      static_track->TrackName = "Descriptive Track";
+      static_track->TrackName = trackDescription;
       static_track->TrackID = 4;
 
       Sequence_obj = new Sequence(Dict);
       header_part.AddChildObject(Sequence_obj);
       static_track->Sequence = Sequence_obj->InstanceUID;
       Sequence_obj->DataDefinition = UL(Dict->ul(MDD_DescriptiveMetaDataDef));
+      Sequence_obj->Duration.set_has_value();
       header_part.m_Preface->DMSchemes.push_back(UL(Dict->ul(MDD_MXFTextBasedFramework)));
     }
 
@@ -208,6 +211,7 @@ ASDCP::AddDmsTrackGenericPartUtf8Text(Kumu::FileWriter& file_writer, MXF::OP1aHe
   gst_obj->InstanceUID = dmf_obj->ObjectRef;
   gst_obj->GenericStreamSID = max_sid + 1;
   gst_obj->PayloadSchemeID = UL(Dict->ul(MDD_MXFTextBasedFramework));
+  gst_obj->TextDataDescription = dataDescription;
   
   return RESULT_OK;
 }

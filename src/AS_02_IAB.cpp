@@ -264,6 +264,17 @@ AS_02::IAB::MXFWriter::WriteFrame(const ui8_t* frame, ui32_t sz) {
 }
 
 Result_t
+AS_02::IAB::MXFWriter::AddDmsGenericPartUtf8Text(const ASDCP::FrameBuffer& FrameBuf, ASDCP::AESEncContext* Ctx,
+                          ASDCP::HMACContext* HMAC, const std::string& trackDescription, const std::string& dataDescription)
+{
+  if ( m_Writer.empty() )
+    return RESULT_INIT;
+
+  m_Writer->FlushIndexPartition();
+  return m_Writer->AddDmsGenericPartUtf8Text(FrameBuf, Ctx, HMAC, trackDescription, dataDescription);
+}
+
+Result_t
 AS_02::IAB::MXFWriter::Finalize() {
 
   /* are we running */
@@ -588,6 +599,17 @@ AS_02::IAB::MXFReader::ReadFrame(ui32_t frame_number, AS_02::IAB::MXFReader::Fra
   this->m_State = ST_READER_RUNNING;
 
   return result;
+}
+
+Result_t
+AS_02::IAB::MXFReader::ReadGenericStreamPartitionPayload(const ui32_t SID, ASDCP::FrameBuffer& frame_buf)
+{
+  if ( m_Reader && m_Reader->m_File->IsOpen() )
+    {
+      return m_Reader->ReadGenericStreamPartitionPayload(SID, frame_buf, 0, 0 /*no encryption*/);
+    }
+
+  return RESULT_INIT;
 }
 
 Result_t
