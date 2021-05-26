@@ -59,7 +59,6 @@ static InterchangeObject* WaveAudioDescriptor_Factory(const Dictionary* Dict) { 
 static InterchangeObject* GenericPictureEssenceDescriptor_Factory(const Dictionary* Dict) { return new GenericPictureEssenceDescriptor(Dict); }
 static InterchangeObject* RGBAEssenceDescriptor_Factory(const Dictionary* Dict) { return new RGBAEssenceDescriptor(Dict); }
 static InterchangeObject* JPEG2000PictureSubDescriptor_Factory(const Dictionary* Dict) { return new JPEG2000PictureSubDescriptor(Dict); }
-static InterchangeObject* JPEGXSPictureSubDescriptor_Factory(const Dictionary* Dict) { return new JPEGXSPictureSubDescriptor(Dict); }
 static InterchangeObject* CDCIEssenceDescriptor_Factory(const Dictionary* Dict) { return new CDCIEssenceDescriptor(Dict); }
 static InterchangeObject* MPEG2VideoDescriptor_Factory(const Dictionary* Dict) { return new MPEG2VideoDescriptor(Dict); }
 static InterchangeObject* DMSegment_Factory(const Dictionary* Dict) { return new DMSegment(Dict); }
@@ -90,6 +89,8 @@ static InterchangeObject* PHDRMetadataTrackSubDescriptor_Factory(const Dictionar
 static InterchangeObject* PIMFDynamicMetadataDescriptor_Factory(const Dictionary* Dict) { return new PIMFDynamicMetadataDescriptor(Dict); }
 static InterchangeObject* IABEssenceDescriptor_Factory(const Dictionary* Dict) { return new IABEssenceDescriptor(Dict); }
 static InterchangeObject* IABSoundfieldLabelSubDescriptor_Factory(const Dictionary* Dict) { return new IABSoundfieldLabelSubDescriptor(Dict); }
+static InterchangeObject* JPEGXSPictureSubDescriptor_Factory(const Dictionary* Dict) { return new JPEGXSPictureSubDescriptor(Dict); }
+
 
 void
 ASDCP::MXF::Metadata_InitTypes(const Dictionary* Dict)
@@ -114,7 +115,6 @@ ASDCP::MXF::Metadata_InitTypes(const Dictionary* Dict)
   SetObjectFactory(Dict->ul(MDD_GenericPictureEssenceDescriptor), GenericPictureEssenceDescriptor_Factory);
   SetObjectFactory(Dict->ul(MDD_RGBAEssenceDescriptor), RGBAEssenceDescriptor_Factory);
   SetObjectFactory(Dict->ul(MDD_JPEG2000PictureSubDescriptor), JPEG2000PictureSubDescriptor_Factory);
-  SetObjectFactory(Dict->ul(MDD_JPEGXSPictureSubDescriptor), JPEGXSPictureSubDescriptor_Factory);
   SetObjectFactory(Dict->ul(MDD_CDCIEssenceDescriptor), CDCIEssenceDescriptor_Factory);
   SetObjectFactory(Dict->ul(MDD_MPEG2VideoDescriptor), MPEG2VideoDescriptor_Factory);
   SetObjectFactory(Dict->ul(MDD_DMSegment), DMSegment_Factory);
@@ -2395,139 +2395,6 @@ JPEG2000PictureSubDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 {
   return InterchangeObject::WriteToBuffer(Buffer);
 }
-
-//------------------------------------------------------------------------------------------
-// JPEGXSPictureSubDescriptor
-
-//
-JPEGXSPictureSubDescriptor::JPEGXSPictureSubDescriptor(const Dictionary* d) : InterchangeObject(d),
-									      JPEGXSPpih(0), JPEGXSPlev(0),
-									      JPEGXSWf(0), JPEGXSHf(0), JPEGXSNc(0)
-{
-  assert(m_Dict);
-  m_UL = m_Dict->ul(MDD_JPEGXSPictureSubDescriptor);
-}
-
-JPEGXSPictureSubDescriptor::JPEGXSPictureSubDescriptor(const JPEGXSPictureSubDescriptor& rhs) : InterchangeObject(rhs.m_Dict)
-{
-  assert(m_Dict);
-  m_UL = m_Dict->ul(MDD_JPEGXSPictureSubDescriptor);
-  Copy(rhs);
-}
-
-
-//
-ASDCP::Result_t
-JPEGXSPictureSubDescriptor::InitFromTLVSet(TLVReader& TLVSet)
-{
-  assert(m_Dict);
-  Result_t result = InterchangeObject::InitFromTLVSet(TLVSet);
-  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadUi16(OBJ_READ_ARGS(JPEGXSPictureSubDescriptor, JPEGXSPpih));
-  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadUi16(OBJ_READ_ARGS(JPEGXSPictureSubDescriptor, JPEGXSPlev));
-  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadUi16(OBJ_READ_ARGS(JPEGXSPictureSubDescriptor, JPEGXSWf));
-  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadUi16(OBJ_READ_ARGS(JPEGXSPictureSubDescriptor, JPEGXSHf));
-  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadUi8(OBJ_READ_ARGS(JPEGXSPictureSubDescriptor, JPEGXSNc));
-  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(JPEGXSPictureSubDescriptor, JPEGXSComponentTable));
-  if ( ASDCP_SUCCESS(result) ) {
-    result = TLVSet.ReadUi16(OBJ_READ_ARGS_OPT(JPEGXSPictureSubDescriptor, JPEGXSCw));
-    JPEGXSCw.set_has_value( result == RESULT_OK );
-  }
-  if ( ASDCP_SUCCESS(result) ) {
-    result = TLVSet.ReadUi16(OBJ_READ_ARGS_OPT(JPEGXSPictureSubDescriptor, JPEGXSHsl));
-    JPEGXSHsl.set_has_value( result == RESULT_OK );
-  }
-  if ( ASDCP_SUCCESS(result) ) {
-    result = TLVSet.ReadUi32(OBJ_READ_ARGS_OPT(JPEGXSPictureSubDescriptor, JPEGXSMaximumBitRate));
-    JPEGXSMaximumBitRate.set_has_value( result == RESULT_OK );
-  }
-
-  return result;
-}
-
-//
-ASDCP::Result_t
-JPEGXSPictureSubDescriptor::WriteToTLVSet(TLVWriter& TLVSet)
-{
-  assert(m_Dict);
-  Result_t result = InterchangeObject::WriteToTLVSet(TLVSet);
-  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi16(OBJ_WRITE_ARGS(JPEGXSPictureSubDescriptor, JPEGXSPpih));
-  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi16(OBJ_WRITE_ARGS(JPEGXSPictureSubDescriptor, JPEGXSPlev));
-  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi16(OBJ_WRITE_ARGS(JPEGXSPictureSubDescriptor, JPEGXSWf));
-  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi16(OBJ_WRITE_ARGS(JPEGXSPictureSubDescriptor, JPEGXSHf));
-  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi8(OBJ_WRITE_ARGS(JPEGXSPictureSubDescriptor, JPEGXSNc));
-  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(JPEGXSPictureSubDescriptor, JPEGXSComponentTable));
-  if ( ASDCP_SUCCESS(result)  && ! JPEGXSCw.empty() ) result  = TLVSet.WriteUi16(OBJ_WRITE_ARGS_OPT(JPEGXSPictureSubDescriptor, JPEGXSCw));
-  if ( ASDCP_SUCCESS(result)  && ! JPEGXSHsl.empty() ) result = TLVSet.WriteUi16(OBJ_WRITE_ARGS_OPT(JPEGXSPictureSubDescriptor, JPEGXSHsl));
-  if ( ASDCP_SUCCESS(result)  && ! JPEGXSMaximumBitRate.empty() ) result = TLVSet.WriteUi32(OBJ_WRITE_ARGS_OPT(JPEGXSPictureSubDescriptor, JPEGXSMaximumBitRate));
-  return result;
-}
-
-//
-void
-JPEGXSPictureSubDescriptor::Copy(const JPEGXSPictureSubDescriptor& rhs)
-{
-  InterchangeObject::Copy(rhs);
-
-  JPEGXSPpih = rhs.JPEGXSPpih;
-  JPEGXSPlev = rhs.JPEGXSPlev;
-  JPEGXSWf   = rhs.JPEGXSWf;
-  JPEGXSHf   = rhs.JPEGXSHf;
-  JPEGXSNc   = rhs.JPEGXSNc;
-  JPEGXSComponentTable = rhs.JPEGXSComponentTable;
-  JPEGXSCw   = rhs.JPEGXSCw;
-  JPEGXSHsl  = rhs.JPEGXSHsl;
-  JPEGXSMaximumBitRate = rhs.JPEGXSMaximumBitRate;
-}
-
-//
-InterchangeObject*
-JPEGXSPictureSubDescriptor::Clone() const
-{
-  return new JPEGXSPictureSubDescriptor(*this);
-}
-
-//
-void
-JPEGXSPictureSubDescriptor::Dump(FILE* stream)
-{
-  char identbuf[IdentBufferLen];
-  *identbuf = 0;
-
-  if ( stream == 0 )
-    stream = stderr;
-
-  InterchangeObject::Dump(stream);
-  fprintf(stream, "  %22s = %d\n",  "JPEGXSPpih", JPEGXSPpih);
-  fprintf(stream, "  %22s = %d\n",  "JPEGXSPlev", JPEGXSPlev);
-  fprintf(stream, "  %22s = %d\n",  "JPEGXSWf", JPEGXSWf);
-  fprintf(stream, "  %22s = %d\n",  "JPEGXSHf", JPEGXSHf);
-  fprintf(stream, "  %22s = %d\n",  "JPEGXSNc", JPEGXSNc);
-  fprintf(stream, "  %22s = %s\n",  "JPEGXSComponentTable", JPEGXSComponentTable.EncodeString(identbuf, IdentBufferLen));
-  if ( ! JPEGXSCw.empty()) {
-    fprintf(stream, "  %22s = %d\n",  "JPEGXSCw", JPEGXSCw.get());
-  }
-  if ( ! JPEGXSHsl.empty()) {
-    fprintf(stream, "  %22s = %d\n",  "JPEGXSHsl", JPEGXSHsl.get());
-  }
-  if ( ! JPEGXSMaximumBitRate.empty()) {
-    fprintf(stream, "  %22s = %d\n",  "JPEGXSMaximumBitRate", JPEGXSMaximumBitRate.get());
-  }
-}
-
-//
-ASDCP::Result_t
-JPEGXSPictureSubDescriptor::InitFromBuffer(const byte_t* p, ui32_t l)
-{
-  return InterchangeObject::InitFromBuffer(p, l);
-}
-
-//
-ASDCP::Result_t
-JPEGXSPictureSubDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
-{
-  return InterchangeObject::WriteToBuffer(Buffer);
-}
-
 
 //------------------------------------------------------------------------------------------
 // CDCIEssenceDescriptor
@@ -5478,6 +5345,135 @@ IABSoundfieldLabelSubDescriptor::InitFromBuffer(const byte_t* p, ui32_t l)
 //
 ASDCP::Result_t
 IABSoundfieldLabelSubDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
+{
+  return InterchangeObject::WriteToBuffer(Buffer);
+}
+
+//------------------------------------------------------------------------------------------
+// JPEGXSPictureSubDescriptor
+
+//
+
+JPEGXSPictureSubDescriptor::JPEGXSPictureSubDescriptor(const Dictionary* d) : InterchangeObject(d), JPEGXSPpih(0), JPEGXSPlev(0), JPEGXSWf(0), JPEGXSHf(0), JPEGXSNc(0)
+{
+  assert(m_Dict);
+  m_UL = m_Dict->ul(MDD_JPEGXSPictureSubDescriptor);
+}
+
+JPEGXSPictureSubDescriptor::JPEGXSPictureSubDescriptor(const JPEGXSPictureSubDescriptor& rhs) : InterchangeObject(rhs.m_Dict)
+{
+  assert(m_Dict);
+  m_UL = m_Dict->ul(MDD_JPEGXSPictureSubDescriptor);
+  Copy(rhs);
+}
+
+
+//
+ASDCP::Result_t
+JPEGXSPictureSubDescriptor::InitFromTLVSet(TLVReader& TLVSet)
+{
+  assert(m_Dict);
+  Result_t result = InterchangeObject::InitFromTLVSet(TLVSet);
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadUi16(OBJ_READ_ARGS(JPEGXSPictureSubDescriptor, JPEGXSPpih));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadUi16(OBJ_READ_ARGS(JPEGXSPictureSubDescriptor, JPEGXSPlev));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadUi16(OBJ_READ_ARGS(JPEGXSPictureSubDescriptor, JPEGXSWf));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadUi16(OBJ_READ_ARGS(JPEGXSPictureSubDescriptor, JPEGXSHf));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadUi8(OBJ_READ_ARGS(JPEGXSPictureSubDescriptor, JPEGXSNc));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.ReadObject(OBJ_READ_ARGS(JPEGXSPictureSubDescriptor, JPEGXSComponentTable));
+  if ( ASDCP_SUCCESS(result) ) { 
+    result = TLVSet.ReadUi16(OBJ_READ_ARGS_OPT(JPEGXSPictureSubDescriptor, JPEGXSCw));
+    JPEGXSCw.set_has_value( result == RESULT_OK );
+  }
+  if ( ASDCP_SUCCESS(result) ) { 
+    result = TLVSet.ReadUi16(OBJ_READ_ARGS_OPT(JPEGXSPictureSubDescriptor, JPEGXSHsl));
+    JPEGXSHsl.set_has_value( result == RESULT_OK );
+  }
+  if ( ASDCP_SUCCESS(result) ) { 
+    result = TLVSet.ReadUi32(OBJ_READ_ARGS_OPT(JPEGXSPictureSubDescriptor, JPEGXSMaximumBitRate));
+    JPEGXSMaximumBitRate.set_has_value( result == RESULT_OK );
+  }
+  return result;
+}
+
+//
+ASDCP::Result_t
+JPEGXSPictureSubDescriptor::WriteToTLVSet(TLVWriter& TLVSet)
+{
+  assert(m_Dict);
+  Result_t result = InterchangeObject::WriteToTLVSet(TLVSet);
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi16(OBJ_WRITE_ARGS(JPEGXSPictureSubDescriptor, JPEGXSPpih));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi16(OBJ_WRITE_ARGS(JPEGXSPictureSubDescriptor, JPEGXSPlev));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi16(OBJ_WRITE_ARGS(JPEGXSPictureSubDescriptor, JPEGXSWf));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi16(OBJ_WRITE_ARGS(JPEGXSPictureSubDescriptor, JPEGXSHf));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteUi8(OBJ_WRITE_ARGS(JPEGXSPictureSubDescriptor, JPEGXSNc));
+  if ( ASDCP_SUCCESS(result) ) result = TLVSet.WriteObject(OBJ_WRITE_ARGS(JPEGXSPictureSubDescriptor, JPEGXSComponentTable));
+  if ( ASDCP_SUCCESS(result)  && ! JPEGXSCw.empty() ) result = TLVSet.WriteUi16(OBJ_WRITE_ARGS_OPT(JPEGXSPictureSubDescriptor, JPEGXSCw));
+  if ( ASDCP_SUCCESS(result)  && ! JPEGXSHsl.empty() ) result = TLVSet.WriteUi16(OBJ_WRITE_ARGS_OPT(JPEGXSPictureSubDescriptor, JPEGXSHsl));
+  if ( ASDCP_SUCCESS(result)  && ! JPEGXSMaximumBitRate.empty() ) result = TLVSet.WriteUi32(OBJ_WRITE_ARGS_OPT(JPEGXSPictureSubDescriptor, JPEGXSMaximumBitRate));
+  return result;
+}
+
+//
+void
+JPEGXSPictureSubDescriptor::Copy(const JPEGXSPictureSubDescriptor& rhs)
+{
+  InterchangeObject::Copy(rhs);
+  JPEGXSPpih = rhs.JPEGXSPpih;
+  JPEGXSPlev = rhs.JPEGXSPlev;
+  JPEGXSWf = rhs.JPEGXSWf;
+  JPEGXSHf = rhs.JPEGXSHf;
+  JPEGXSNc = rhs.JPEGXSNc;
+  JPEGXSComponentTable = rhs.JPEGXSComponentTable;
+  JPEGXSCw = rhs.JPEGXSCw;
+  JPEGXSHsl = rhs.JPEGXSHsl;
+  JPEGXSMaximumBitRate = rhs.JPEGXSMaximumBitRate;
+}
+
+//
+InterchangeObject*
+JPEGXSPictureSubDescriptor::Clone() const
+{
+  return new JPEGXSPictureSubDescriptor(*this);
+}
+
+//
+void
+JPEGXSPictureSubDescriptor::Dump(FILE* stream)
+{
+  char identbuf[IdentBufferLen];
+  *identbuf = 0;
+
+  if ( stream == 0 )
+    stream = stderr;
+
+  InterchangeObject::Dump(stream);
+  fprintf(stream, "  %22s = %d\n",  "JPEGXSPpih", JPEGXSPpih);
+  fprintf(stream, "  %22s = %d\n",  "JPEGXSPlev", JPEGXSPlev);
+  fprintf(stream, "  %22s = %d\n",  "JPEGXSWf", JPEGXSWf);
+  fprintf(stream, "  %22s = %d\n",  "JPEGXSHf", JPEGXSHf);
+  fprintf(stream, "  %22s = %d\n",  "JPEGXSNc", JPEGXSNc);
+  fprintf(stream, "  %22s = %s\n",  "JPEGXSComponentTable", JPEGXSComponentTable.EncodeString(identbuf, IdentBufferLen));
+  if ( ! JPEGXSCw.empty() ) {
+    fprintf(stream, "  %22s = %d\n",  "JPEGXSCw", JPEGXSCw.get());
+  }
+  if ( ! JPEGXSHsl.empty() ) {
+    fprintf(stream, "  %22s = %d\n",  "JPEGXSHsl", JPEGXSHsl.get());
+  }
+  if ( ! JPEGXSMaximumBitRate.empty() ) {
+    fprintf(stream, "  %22s = %d\n",  "JPEGXSMaximumBitRate", JPEGXSMaximumBitRate.get());
+  }
+}
+
+//
+ASDCP::Result_t
+JPEGXSPictureSubDescriptor::InitFromBuffer(const byte_t* p, ui32_t l)
+{
+  return InterchangeObject::InitFromBuffer(p, l);
+}
+
+//
+ASDCP::Result_t
+JPEGXSPictureSubDescriptor::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 {
   return InterchangeObject::WriteToBuffer(Buffer);
 }

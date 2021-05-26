@@ -550,38 +550,6 @@ namespace ASDCP
       virtual Result_t WriteToBuffer(ASDCP::FrameBuffer&);
 	};
 
-
-      // thor: this is taken from ST2124
-      class JPEGXSPictureSubDescriptor : public InterchangeObject
-      {
-	JPEGXSPictureSubDescriptor();
-
-      public:
-	ui16_t JPEGXSPpih; // Profile of this codestream, copy from PIH.Ppih
-	ui16_t JPEGXSPlev; // Level and sublevel of this codestream, copy from PIH.Plev
-	ui16_t JPEGXSWf;   // Frame width in sample grid positions, copy from PIH.Wf
-	ui16_t JPEGXSHf;   // Frame height in sample grid positions, copy from PIH.Hf
-	ui8_t  JPEGXSNc;   // Number of components, copy from PIH.Nc
-	Raw    JPEGXSComponentTable; // raw copy of the component table
-	optional_property<ui16_t> JPEGXSCw;  // Column width, copy from PIH.Cw
-	optional_property<ui16_t> JPEGXSHsl; // Slice height, copy from PIH.Slh
-	optional_property<ui32_t> JPEGXSMaximumBitRate; // Bitrate in MB/sec. This shall be consistent with the brat field of the video information box
-	
-	JPEGXSPictureSubDescriptor(const Dictionary* d);
-	JPEGXSPictureSubDescriptor(const JPEGXSPictureSubDescriptor& rhs);
-	virtual ~JPEGXSPictureSubDescriptor() {}
-	
-	const JPEGXSPictureSubDescriptor& operator=(const JPEGXSPictureSubDescriptor& rhs) { Copy(rhs); return *this; }
-	virtual void Copy(const JPEGXSPictureSubDescriptor& rhs);
-	virtual InterchangeObject *Clone() const;
-	virtual const char* HasName() { return "JPEGXSPictureSubDescriptor"; }
-	virtual Result_t InitFromTLVSet(TLVReader& TLVSet);
-	virtual Result_t WriteToTLVSet(TLVWriter& TLVSet);
-	virtual void     Dump(FILE* = 0);
-	virtual Result_t InitFromBuffer(const byte_t* p, ui32_t l);
-	virtual Result_t WriteToBuffer(ASDCP::FrameBuffer&);
-      };
-      
       //
       class JPEG2000PictureSubDescriptor : public InterchangeObject
 	{
@@ -1372,7 +1340,38 @@ namespace ASDCP
       virtual Result_t InitFromBuffer(const byte_t* p, ui32_t l);
       virtual Result_t WriteToBuffer(ASDCP::FrameBuffer&);
 	};
-      
+
+      //
+      class JPEGXSPictureSubDescriptor : public InterchangeObject
+	{
+	  JPEGXSPictureSubDescriptor();
+
+	public:
+          ui16_t JPEGXSPpih;
+          ui16_t JPEGXSPlev;
+          ui16_t JPEGXSWf;
+          ui16_t JPEGXSHf;
+          ui8_t JPEGXSNc;
+          Raw JPEGXSComponentTable;
+          optional_property<ui16_t > JPEGXSCw;
+          optional_property<ui16_t > JPEGXSHsl;
+          optional_property<ui32_t > JPEGXSMaximumBitRate;
+
+      JPEGXSPictureSubDescriptor(const Dictionary* d);
+      JPEGXSPictureSubDescriptor(const JPEGXSPictureSubDescriptor& rhs);
+      virtual ~JPEGXSPictureSubDescriptor() {}
+
+      const JPEGXSPictureSubDescriptor& operator=(const JPEGXSPictureSubDescriptor& rhs) { Copy(rhs); return *this; }
+      virtual void Copy(const JPEGXSPictureSubDescriptor& rhs);
+      virtual InterchangeObject *Clone() const;
+      virtual const char* HasName() { return "JPEGXSPictureSubDescriptor"; }
+      virtual Result_t InitFromTLVSet(TLVReader& TLVSet);
+      virtual Result_t WriteToTLVSet(TLVWriter& TLVSet);
+      virtual void     Dump(FILE* = 0);
+      virtual Result_t InitFromBuffer(const byte_t* p, ui32_t l);
+      virtual Result_t WriteToBuffer(ASDCP::FrameBuffer&);
+	};
+
     } // namespace MXF
 } // namespace ASDCP
 
