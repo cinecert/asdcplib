@@ -631,12 +631,19 @@ class FileInfoWrapper
   Result_t OpenRead(const T& m, const CommandOptions& Options)
   {
   	return m.OpenRead(Options.filenames.front().c_str());
-  };
+  }
+
+  Result_t OpenRead(AS_02::IAB::MXFReader& m, const CommandOptions& Options)
+  {
+    // OpenRead method is not const
+    return m.OpenRead(Options.filenames.front().c_str());
+  }
+
   Result_t OpenRead(const AS_02::PCM::MXFReader& m, const CommandOptions& Options)
   {
   	return m.OpenRead(Options.filenames.front().c_str(), EditRate_24);
   	//Result_t OpenRead(const std::string& filename, const ASDCP::Rational& EditRate);
-  };
+  }
 
 public:
   FileInfoWrapper() : m_MaxBitrate(0.0), m_AvgBitrate(0.0) {}
@@ -662,7 +669,7 @@ public:
 	fprintf(stdout, "%s file essence type is %s, (%d edit unit%s).\n",
 		( m_WriterInfo.LabelSetType == LS_MXF_SMPTE ? "SMPTE 2067-5" : "Unknown" ),
 		type_string,
-		(m_Desc.ContainerDuration != 0 ? m_Desc.ContainerDuration : m_Reader.AS02IndexReader().GetDuration()),
+		m_Desc.ContainerDuration,
 		(m_Desc.ContainerDuration == (ui64_t)1 ? "":"s"));
 
 	if ( Options.showheader_flag )
