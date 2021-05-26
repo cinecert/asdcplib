@@ -189,7 +189,7 @@ ASDCP::KLVPacket::Dump(FILE* stream, const Dictionary& Dict, bool show_value)
 
 // 
 ASDCP::Result_t
-ASDCP::KLVFilePacket::InitFromFile(const Kumu::FileReader& Reader, const UL& label)
+ASDCP::KLVFilePacket::InitFromFile(const Kumu::IFileReader& Reader, const UL& label)
 {
   Result_t result = KLVFilePacket::InitFromFile(Reader);
 
@@ -201,7 +201,7 @@ ASDCP::KLVFilePacket::InitFromFile(const Kumu::FileReader& Reader, const UL& lab
 
 // TODO: refactor to use InitFromBuffer
 ASDCP::Result_t
-ASDCP::KLVFilePacket::InitFromFile(const Kumu::FileReader& Reader)
+ASDCP::KLVFilePacket::InitFromFile(const Kumu::IFileReader& Reader)
 {
   ui32_t read_count;
   byte_t tmp_data[tmp_read_size];
@@ -266,7 +266,7 @@ ASDCP::KLVFilePacket::InitFromFile(const Kumu::FileReader& Reader)
       if ( (remainder = read_count - packet_length) != 0 )
 	{
 	  DefaultLogSink().Warn("Repositioning pointer for short packet\n");
-	  Kumu::fpos_t pos = Reader.Tell();
+	  Kumu::fpos_t pos = Reader.TellPosition();
 	  assert(pos > remainder);
 	  result = Reader.Seek(pos - remainder);
 	}

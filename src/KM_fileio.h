@@ -67,7 +67,7 @@ namespace Kumu
     };
 
 
-  // 
+  //
   enum DirectoryEntryType_t {
     DET_FILE,
     DET_DIR,
@@ -84,7 +84,7 @@ namespace Kumu
     KM_NO_COPY_CONSTRUCT(DirScannerEx);
 
   public:
-    
+
     DirScannerEx();
     ~DirScannerEx() { Close(); }
 
@@ -133,7 +133,7 @@ namespace Kumu
   //
   // error: 'void Kumu::compile_time_size_checker() [with bool sizecheck = false]' previously declared here
   //
-  // This is happening because the equality being tested below is false. The reason for this 
+  // This is happening because the equality being tested below is false. The reason for this
   // will depend on your OS, but on Linux it is probably because you have not used -D_FILE_OFFSET_BITS=64
   // Adding this magic macro to your CFLAGS will get you going again. If you are on a system that
   // does not support 64-bit files, you can disable this check by using -DKM_SMALL_FILES_OK. You
@@ -190,7 +190,7 @@ namespace Kumu
   std::string PathJoin(const std::string& Path1, const std::string& Path2, char separator = '/');
   std::string PathJoin(const std::string& Path1, const std::string& Path2, const std::string& Path3, char separator = '/');
   std::string PathJoin(const std::string& Path1, const std::string& Path2,
-		       const std::string& Path3, const std::string& Path4, char separator = '/');
+               const std::string& Path3, const std::string& Path4, char separator = '/');
 
 
   //------------------------------------------------------------------------------------------
@@ -247,10 +247,10 @@ namespace Kumu
   // Search all paths in SearchPaths for filenames matching Pattern (no directories are returned).
   // Put results in FoundPaths. Returns after first find if one_shot is true.
   PathList_t& FindInPath(const IPathMatch& Pattern, const std::string& SearchDir,
-			 PathList_t& FoundPaths, bool one_shot = false, char separator = '/');
+             PathList_t& FoundPaths, bool one_shot = false, char separator = '/');
 
   PathList_t& FindInPaths(const IPathMatch& Pattern, const PathList_t& SearchPaths,
-			  PathList_t& FoundPaths, bool one_shot = false, char separator = '/');
+              PathList_t& FoundPaths, bool one_shot = false, char separator = '/');
 
   std::string GetExecutablePath(const std::string& default_path);
 
@@ -294,7 +294,7 @@ namespace Kumu
   //
   // Unarchives a file into a buffer
   Result_t ReadFileIntoBuffer(const std::string& Filename, Kumu::ByteString& Buffer,
-			      ui32_t max_size = 8 * Kumu::Megabyte);
+                  ui32_t max_size = 8 * Kumu::Megabyte);
 
   // Archives a buffer into a file
   Result_t WriteBufferIntoFile(const Kumu::ByteString& Buffer, const std::string& Filename);
@@ -313,37 +313,64 @@ namespace Kumu
   //------------------------------------------------------------------------------------------
   // File I/O
   //------------------------------------------------------------------------------------------
+  //
+  class IFileReader
+    {
+    public:
+      virtual ~IFileReader(){}
+
+      virtual Result_t OpenRead(const std::string&) const = 0;                 // open the file for reading
+      virtual Result_t Close() const = 0;                                      // close the file
+      virtual int64_t  Size() const = 0;                                       // returns the file's current size
+      virtual Result_t Seek(Kumu::fpos_t = 0, SeekPos_t = SP_BEGIN) const = 0; // move the file pointer
+      virtual Result_t Tell(Kumu::fpos_t* pos) const = 0;                      // report the file pointer's location
+      virtual Result_t Read(byte_t*, ui32_t, ui32_t* = 0) const = 0;           // read a buffer of data
+      virtual bool IsOpen() const = 0;                                         // returns true if the file is open
+
+      inline int64_t TellPosition() const                                      // report the file pointer's location
+    {
+      int64_t tmp_pos;
+      Tell(&tmp_pos);
+      return tmp_pos;
+    }
+    };
 
   //
-  class FileReader
+  class FileReader : public IFileReader
     {
       KM_NO_COPY_CONSTRUCT(FileReader);
+
+    public:
+      FileReader();
+      ~FileReader();
+      virtual Result_t OpenRead(const std::string&) const;                     // open the file for reading
+      virtual Result_t Close() const;                                          // close the file
+      virtual int64_t  Size() const;                                           // returns the file's current size
+      virtual Result_t Seek(Kumu::fpos_t = 0, SeekPos_t = SP_BEGIN) const;     // move the file pointer
+      virtual Result_t Tell(Kumu::fpos_t* pos) const;                          // report the file pointer's location
+      virtual Result_t Read(byte_t*, ui32_t, ui32_t* = 0) const;               // read a buffer of data
+
+      inline virtual bool IsOpen() const {                                     // returns true if the file is open
+    return (m_Handle != INVALID_HANDLE_VALUE);
+      }
 
     protected:
       std::string m_Filename;
       FileHandle  m_Handle;
+    };
 
+  //
+  class IFileReaderFactory
+    {
     public:
-      FileReader() : m_Handle(INVALID_HANDLE_VALUE) {}
-      virtual ~FileReader() { Close(); }
+      virtual IFileReader* CreateFileReader() const = 0;
+      virtual ~IFileReaderFactory(){}
+    };
 
-      Result_t OpenRead(const std::string&) const;                          // open the file for reading
-      Result_t Close() const;                                        // close the file
-      fsize_t  Size() const;                                         // returns the file's current size
-      Result_t Seek(Kumu::fpos_t = 0, SeekPos_t = SP_BEGIN) const;   // move the file pointer
-      Result_t Tell(Kumu::fpos_t* pos) const;                        // report the file pointer's location
-      Result_t Read(byte_t*, ui32_t, ui32_t* = 0) const;             // read a buffer of data
-
-      inline Kumu::fpos_t Tell() const                               // report the file pointer's location
-	{
-	  Kumu::fpos_t tmp_pos;
-	  Tell(&tmp_pos);
-	  return tmp_pos;
-	}
-
-      inline bool IsOpen() {                                         // returns true if the file is open
-	return (m_Handle != INVALID_HANDLE_VALUE);
-      }
+  class FileReaderFactory : public IFileReaderFactory
+    {
+    public:
+      virtual IFileReader* CreateFileReader() const;
     };
 
   //

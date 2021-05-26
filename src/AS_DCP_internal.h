@@ -175,7 +175,7 @@ namespace ASDCP
   Result_t WriteGenericStreamPartition(Kumu::FileWriter&, ASDCP::MXF::OP1aHeader&, ASDCP::MXF::RIP&, const Dictionary*,
 				       const ASDCP::FrameBuffer&, ASDCP::AESEncContext* = 0, ASDCP::HMACContext* = 0);
   
-  Result_t Read_EKLV_Packet(Kumu::FileReader& File, const ASDCP::Dictionary& Dict,
+  Result_t Read_EKLV_Packet(Kumu::IFileReader& File, const ASDCP::Dictionary& Dict,
 			    const ASDCP::WriterInfo& Info, Kumu::fpos_t& LastPosition, ASDCP::FrameBuffer& CtFrameBuf,
 			    ui32_t FrameNum, ui32_t SequenceNum, ASDCP::FrameBuffer& FrameBuf,
 			    const byte_t* EssenceUL, AESDecContext* Ctx, HMACContext* HMAC);
@@ -200,7 +200,7 @@ namespace ASDCP
       inline ui64_t  Length() { return m_ValueLength; }
       inline ui64_t  KLLength() { return m_KLLength; }
 
-      Result_t ReadKLFromFile(Kumu::FileReader& Reader);
+      Result_t ReadKLFromFile(Kumu::IFileReader& Reader);
     };
 
   namespace MXF
@@ -218,7 +218,7 @@ namespace ASDCP
 
       public:
 	const Dictionary  *m_Dict;
-	Kumu::FileReader   m_File;
+	Kumu::IFileReader* m_File;
 	HeaderType         m_HeaderPart;
 	IndexAccessType    m_IndexAccess;
 	RIP                m_RIP;
@@ -226,14 +226,16 @@ namespace ASDCP
 	ASDCP::FrameBuffer m_CtFrameBuf;
 	Kumu::fpos_t       m_LastPosition;
 
-      TrackFileReader(const Dictionary *d) :
-	m_HeaderPart(d), m_IndexAccess(d), m_RIP(d), m_Dict(d)
+      TrackFileReader(const Dictionary* d, const Kumu::IFileReaderFactory& fileReaderFactory) :
+	m_HeaderPart(m_Dict), m_IndexAccess(m_Dict), m_RIP(m_Dict), m_Dict(d)
 	  {
 	    default_md_object_init();
+	    m_File = fileReaderFactory.CreateFileReader();
 	  }
 
 	virtual ~TrackFileReader() {
 	  Close();
+	  delete m_File;
 	}
 
 	const MXF::RIP& GetRIP() const { return m_RIP; }
@@ -242,14 +244,14 @@ namespace ASDCP
 	Result_t OpenMXFRead(const std::string& filename)
 	{
 	  m_LastPosition = 0;
-	  Result_t result = m_File.OpenRead(filename);
+	  Result_t result = m_File->OpenRead(filename);
 
 	  if ( ASDCP_SUCCESS(result) )
-	    result = SeekToRIP(m_File);
+        result = SeekToRIP(*m_File);
 
 	  if ( ASDCP_SUCCESS(result) )
 	    {
-	      result = m_RIP.InitFromFile(m_File);
+          result = m_RIP.InitFromFile(*m_File);
 
 	      if ( ASDCP_FAILURE(result) )
 		{
@@ -265,8 +267,8 @@ namespace ASDCP
 	      DefaultLogSink().Error("TrackFileReader::OpenMXFRead, SeekToRIP failed\n");
 	    }
 
-	  m_File.Seek(0);
-	  result = m_HeaderPart.InitFromFile(m_File);
+      m_File->Seek(0);
+      result = m_HeaderPart.InitFromFile(*m_File);
 
 	  if ( KM_FAILURE(result) )
 	    {
@@ -332,7 +334,7 @@ namespace ASDCP
 	  if ( FilePosition != m_LastPosition )
 	    {
 	      m_LastPosition = FilePosition;
-	      result = m_File.Seek(FilePosition);
+          result = m_File->Seek(FilePosition);
 	    }
 
 	  if ( KM_SUCCESS(result) )
@@ -361,7 +363,7 @@ namespace ASDCP
 	  if ( static_cast<Kumu::fpos_t>(TmpEntry.StreamOffset) != m_LastPosition )
 	    {
 	      m_LastPosition = TmpEntry.StreamOffset;
-	      result = m_File.Seek(TmpEntry.StreamOffset);
+          result = m_File->Seek(TmpEntry.StreamOffset);
 	    }
 
 	  if ( KM_SUCCESS(result) )
@@ -375,7 +377,7 @@ namespace ASDCP
 				const byte_t* EssenceUL, AESDecContext* Ctx, HMACContext* HMAC)
 	{
 	  assert(m_Dict);
-	  return Read_EKLV_Packet(m_File, *m_Dict, m_Info, m_LastPosition, m_CtFrameBuf,
+      return Read_EKLV_Packet(*m_File, *m_Dict, m_Info, m_LastPosition, m_CtFrameBuf,
 				  FrameNum, SequenceNum, FrameBuf, EssenceUL, Ctx, HMAC);
 	}
 
@@ -455,7 +457,7 @@ namespace ASDCP
 	    }
 
 	  // Read the Partition header and then read the payload.
-	  Result_t result = m_File.Seek(start_offset);
+	  Result_t result = m_File->Seek(start_offset);
 
 	  if ( KM_SUCCESS(result) )
 	    {
@@ -466,7 +468,7 @@ namespace ASDCP
 	    {
 	      // read the partition header
 	      ASDCP::MXF::Partition GSPart(m_Dict);
-	      result = GSPart.InitFromFile(m_File);
+          result = GSPart.InitFromFile(*m_File);
 
 	      if ( KM_SUCCESS(result) )
 		{
@@ -489,7 +491,7 @@ namespace ASDCP
 	//
 	void Close()
 	{
-	  m_File.Close();
+	  m_File->Close();
 	}
       };
       
@@ -863,7 +865,7 @@ namespace ASDCP
 	    {
 	      // m_RIP now contains an entry (at the back) for the new generic stream
 	      // (this entry was created during the call to AddDmsTrackGenericPartUtf8Text())
-	      if ( m_File.Tell() != m_RIP.PairArray.back().ByteOffset )
+	      if ( m_File.TellPosition() != m_RIP.PairArray.back().ByteOffset )
 		{
 		  DefaultLogSink().Error("File offset has moved since RIP modification. Unrecoverable error.\n");
 		  return RESULT_FAIL;
@@ -924,7 +926,7 @@ namespace ASDCP
     public:
       Partition m_BodyPart;
 
-      h__ASDCPReader(const Dictionary*);
+      h__ASDCPReader(const Dictionary*, const Kumu::IFileReaderFactory& fileReaderFactory);
       virtual ~h__ASDCPReader();
 
       Result_t OpenMXFRead(const std::string& filename);

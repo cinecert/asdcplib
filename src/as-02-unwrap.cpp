@@ -290,13 +290,13 @@ public:
 // Read one or more ciphertext JPEG 2000 codestreams from a ciphertext ASDCP file
 //
 Result_t
-read_JP2K_file(CommandOptions& Options)
+read_JP2K_file(CommandOptions& Options, const Kumu::IFileReaderFactory& fileReaderFactory)
 {
-  AESDecContext*     Context = 0;
-  HMACContext*       HMAC = 0;
-  AS_02::JP2K::MXFReader    Reader;
-  JP2K::FrameBuffer  FrameBuffer(Options.fb_size);
-  ui32_t             frame_count = 0;
+  AESDecContext*         Context = 0;
+  HMACContext*           HMAC = 0;
+  AS_02::JP2K::MXFReader Reader(fileReaderFactory);
+  JP2K::FrameBuffer      FrameBuffer(Options.fb_size);
+  ui32_t                 frame_count = 0;
 
   Result_t result = Reader.OpenRead(Options.input_filename);
 
@@ -436,11 +436,11 @@ read_JP2K_file(CommandOptions& Options)
 
 //
 Result_t
-read_ACES_file(CommandOptions& Options)
+read_ACES_file(CommandOptions& Options, const Kumu::IFileReaderFactory& fileReaderFactory)
 {
   AESDecContext*     Context = 0;
   HMACContext*       HMAC = 0;
-  AS_02::ACES::MXFReader Reader;
+  AS_02::ACES::MXFReader Reader(fileReaderFactory);
   AS_02::ACES::FrameBuffer FrameBuffer(Options.fb_size);
   ui64_t             frame_count = 0;
   AS_02::ACES::ResourceList_t resource_list_t;
@@ -626,11 +626,11 @@ read_ACES_file(CommandOptions& Options)
 // Read one or more ciphertext PCM audio streams from a ciphertext ASDCP file
 //
 Result_t
-read_PCM_file(CommandOptions& Options)
+read_PCM_file(CommandOptions& Options, const Kumu::IFileReaderFactory& fileReaderFactory)
 {
   AESDecContext*     Context = 0;
   HMACContext*       HMAC = 0;
-  AS_02::PCM::MXFReader     Reader;
+  AS_02::PCM::MXFReader     Reader(fileReaderFactory);
   PCM::FrameBuffer   FrameBuffer;
   WavFileWriter      OutWave;
   ui32_t last_frame = 0;
@@ -798,11 +798,11 @@ read_PCM_file(CommandOptions& Options)
 // Read one or more timed text streams from a plaintext AS-02 file
 //
 Result_t
-read_timed_text_file(CommandOptions& Options)
+read_timed_text_file(CommandOptions& Options, const Kumu::IFileReaderFactory& fileReaderFactory)
 {
   AESDecContext*     Context = 0;
   HMACContext*       HMAC = 0;
-  AS_02::TimedText::MXFReader     Reader;
+  AS_02::TimedText::MXFReader     Reader(fileReaderFactory);
   TimedText::FrameBuffer   FrameBuffer(Options.fb_size);
   //ASDCP::TimedText::FrameBuffer   FrameBuffer(Options.fb_size);
   AS_02::TimedText::TimedTextDescriptor TDesc;
@@ -875,11 +875,11 @@ read_timed_text_file(CommandOptions& Options)
 
 //
 Result_t
-read_isxd_file(CommandOptions& Options)
+read_isxd_file(CommandOptions& Options, const Kumu::IFileReaderFactory& fileReaderFactory)
 {
   AESDecContext*     Context = 0;
   HMACContext*       HMAC = 0;
-  AS_02::ISXD::MXFReader    Reader;
+  AS_02::ISXD::MXFReader    Reader(fileReaderFactory);
   ASDCP::FrameBuffer  FrameBuffer;
   ui32_t             frame_count = 0;
 
@@ -960,10 +960,10 @@ read_isxd_file(CommandOptions& Options)
 }
 
 Result_t
-extract_generic_stream_partition_payload(const std::string& in_filename, const ui32_t sid, const std::string& out_filename)
+extract_generic_stream_partition_payload(const std::string& in_filename, const ui32_t sid, const std::string& out_filename, const Kumu::IFileReaderFactory& fileReaderFactory)
 {
   ASDCP::FrameBuffer payload;
-  AS_02::ISXD::MXFReader reader;
+  AS_02::ISXD::MXFReader reader(fileReaderFactory);
 
   Result_t result = reader.OpenRead(in_filename);
           
@@ -987,11 +987,11 @@ extract_generic_stream_partition_payload(const std::string& in_filename, const u
   return result;
 }
 
-Result_t read_iab_file(CommandOptions& Options)
+Result_t read_iab_file(CommandOptions& Options, const Kumu::IFileReaderFactory& fileReaderFactory)
 {
     AESDecContext*     Context = 0;
     HMACContext*       HMAC = 0;
-    AS_02::IAB::MXFReader Reader;
+    AS_02::IAB::MXFReader Reader(fileReaderFactory);
     ASDCP::FrameBuffer   FrameBuffer;
 
     ui32_t last_frame = 0;
@@ -1123,43 +1123,44 @@ main(int argc, const char** argv)
     }
 
   EssenceType_t EssenceType;
-  Result_t result = ASDCP::EssenceType(Options.input_filename, EssenceType);
+  Kumu::FileReaderFactory defaultFactory;
+  Result_t result = ASDCP::EssenceType(Options.input_filename, EssenceType, defaultFactory);
 
   if ( ASDCP_SUCCESS(result) )
     {
       switch ( EssenceType )
 	{
 	case ESS_AS02_JPEG_2000:
-	  result = read_JP2K_file(Options);
+      result = read_JP2K_file(Options, defaultFactory);
 	  break;
 	//PB
 	case ESS_AS02_ACES:
-	  result = read_ACES_file(Options);
+      result = read_ACES_file(Options, defaultFactory);
 	  break;
 	//--
 	case ESS_AS02_PCM_24b_48k:
 	case ESS_AS02_PCM_24b_96k:
-	  result = read_PCM_file(Options);
+      result = read_PCM_file(Options, defaultFactory);
 	  break;
 
 	case ESS_AS02_TIMED_TEXT:
-	  result = read_timed_text_file(Options);
+      result = read_timed_text_file(Options, defaultFactory);
 	  break;
 
     case ESS_AS02_IAB:
-        result = read_iab_file(Options);
+      result = read_iab_file(Options, defaultFactory);
 	  break;
 
 	case ESS_AS02_ISXD:
 	  if ( Options.g_stream_sid == 0 )
 	    {
-	      result = read_isxd_file(Options);
+          result = read_isxd_file(Options, defaultFactory);
 	    }
 	  else
 	    {
 	      result = extract_generic_stream_partition_payload(Options.input_filename,
 								Options.g_stream_sid,
-								Options.file_prefix);
+                                Options.file_prefix, defaultFactory);
 	    }
 	  break;
 

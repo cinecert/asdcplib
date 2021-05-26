@@ -249,8 +249,8 @@ inline const char* ui64sz(ui64_t i, char* buf)
       KLVFilePacket() {}
       virtual ~KLVFilePacket() {}
 
-      virtual Result_t InitFromFile(const Kumu::FileReader&);
-      virtual Result_t InitFromFile(const Kumu::FileReader&, const UL& label);
+      virtual Result_t InitFromFile(const Kumu::IFileReader&);
+      virtual Result_t InitFromFile(const Kumu::IFileReader&, const UL& label);
       virtual Result_t WriteKLToFile(Kumu::FileWriter& Writer, const UL& label, ui32_t length);
     };
 

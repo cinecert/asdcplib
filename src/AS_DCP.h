@@ -234,7 +234,7 @@ namespace ASDCP {
   // Determine the type of essence contained in the given MXF file. RESULT_OK
   // is returned if the file is successfully opened and contains a valid MXF
   // stream. If there is an error, the result code will indicate the reason.
-  Result_t EssenceType(const std::string& filename, EssenceType_t& type);
+  Result_t EssenceType(const std::string& filename, EssenceType_t& type, const Kumu::IFileReaderFactory& fileReaderFactory);
 
   // Determine the type of essence contained in the given raw file. RESULT_OK
   // is returned if the file is successfully opened and contains a known
@@ -795,7 +795,7 @@ namespace ASDCP {
 	  ASDCP_NO_COPY_CONSTRUCT(MXFReader);
 
 	public:
-	  MXFReader();
+	  MXFReader(const Kumu::IFileReaderFactory& fileReaderFactory);
 	  virtual ~MXFReader();
 
 	  // Warning: direct manipulation of MXF structures can interfere
@@ -1006,7 +1006,7 @@ namespace ASDCP {
 	  ASDCP_NO_COPY_CONSTRUCT(MXFReader);
 
 	public:
-	  MXFReader();
+	  MXFReader(const Kumu::IFileReaderFactory& fileReaderFactory);
 	  virtual ~MXFReader();
 
 	  // Warning: direct manipulation of MXF structures can interfere
@@ -1284,7 +1284,7 @@ namespace ASDCP {
 	  ASDCP_NO_COPY_CONSTRUCT(MXFReader);
 
 	public:
-	  MXFReader();
+	  MXFReader(const Kumu::IFileReaderFactory& fileReaderFactory);
 	  virtual ~MXFReader();
 
 	  // Warning: direct manipulation of MXF structures can interfere
@@ -1399,7 +1399,7 @@ namespace ASDCP {
 	  ASDCP_NO_COPY_CONSTRUCT(MXFSReader);
 
 	public:
-	  MXFSReader();
+	  MXFSReader(const Kumu::IFileReaderFactory& fileReaderFactory);
 	  virtual ~MXFSReader();
 
 	  // Warning: direct manipulation of MXF structures can interfere
@@ -1624,7 +1624,7 @@ namespace ASDCP {
 	  ASDCP_NO_COPY_CONSTRUCT(MXFReader);
 
 	public:
-	  MXFReader();
+	  MXFReader(const Kumu::IFileReaderFactory& fileReaderFactory);
 	  virtual ~MXFReader();
 
 	  // Warning: direct manipulation of MXF structures can interfere
@@ -1810,7 +1810,7 @@ namespace ASDCP {
 	  ASDCP_NO_COPY_CONSTRUCT(MXFReader);
 
      public:
-	  MXFReader();
+	  MXFReader(const Kumu::IFileReaderFactory& fileReaderFactory);
 	  virtual ~MXFReader();
 
 	  // Warning: direct manipulation of MXF structures can interfere
@@ -1918,7 +1918,7 @@ namespace ASDCP {
 	  ASDCP_NO_COPY_CONSTRUCT(MXFReader);
 
      public:
-	  MXFReader();
+	  MXFReader(const Kumu::IFileReaderFactory& fileReaderFactory);
 	  virtual ~MXFReader();
 
 	  // Warning: direct manipulation of MXF structures can interfere

@@ -108,7 +108,7 @@ ASDCP::Wav::SimpleWaveHeader::WriteToFile(Kumu::FileWriter& OutFile) const
 
 //
 ASDCP::Result_t
-ASDCP::Wav::SimpleWaveHeader::ReadFromFile(const Kumu::FileReader& InFile, ui32_t* data_start)
+ASDCP::Wav::SimpleWaveHeader::ReadFromFile(const Kumu::IFileReader& InFile, ui32_t* data_start)
 {
   ui32_t read_count = 0;
   ui32_t local_data_start = 0;
@@ -274,7 +274,7 @@ ASDCP::AIFF::SimpleAIFFHeader::FillADesc(ASDCP::PCM::AudioDescriptor& ADesc, ASD
 
 //
 ASDCP::Result_t
-ASDCP::AIFF::SimpleAIFFHeader::ReadFromFile(const Kumu::FileReader& InFile, ui32_t* data_start)
+ASDCP::AIFF::SimpleAIFFHeader::ReadFromFile(const Kumu::IFileReader& InFile, ui32_t* data_start)
 {
   ui32_t read_count = 0;
   ui32_t local_data_start = 0;
@@ -483,7 +483,7 @@ ASDCP::RF64::SimpleRF64Header::WriteToFile(Kumu::FileWriter& OutFile) const
 
 //
 ASDCP::Result_t
-ASDCP::RF64::SimpleRF64Header::ReadFromFile(const Kumu::FileReader& InFile, ui32_t* data_start)
+ASDCP::RF64::SimpleRF64Header::ReadFromFile(const Kumu::IFileReader& InFile, ui32_t* data_start)
 {
   ui32_t read_count = 0;
   ui32_t local_data_start = 0;

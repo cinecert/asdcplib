@@ -816,6 +816,17 @@ Kumu::utf8_to_wbstr(const std::string& in, Kumu::ByteString& out)
 //------------------------------------------------------------------------------------------
 //
 
+Kumu::FileReader::FileReader()
+{
+  m_Handle = INVALID_HANDLE_VALUE;
+  assert(sizeof(off_t) <= sizeof(int64_t));
+}
+
+Kumu::FileReader::~FileReader()
+{
+  Kumu::FileReader::Close();
+}
+
 Kumu::Result_t
 Kumu::FileReader::OpenRead(const std::string& filename) const
 {
@@ -1066,6 +1077,18 @@ Kumu::FileWriter::Write(const byte_t* buf, ui32_t buf_len, ui32_t* bytes_written
 // POSIX
 
 //
+Kumu::FileReader::FileReader()
+{
+  m_Handle = INVALID_HANDLE_VALUE;
+  assert(sizeof(off_t) <= sizeof(int64_t));
+}
+
+//
+Kumu::FileReader::~FileReader()
+{
+  Kumu::FileReader::Close();
+}
+
 Kumu::Result_t
 Kumu::FileReader::OpenRead(const std::string& filename) const
 {
@@ -1139,7 +1162,6 @@ Kumu::FileReader::Read(byte_t* buf, ui32_t buf_len, ui32_t* read_count) const
   *read_count = tmp_count;
   return (tmp_count == 0 ? RESULT_ENDOFFILE : RESULT_OK);
 }
-
 
 //------------------------------------------------------------------------------------------
 //
@@ -1233,6 +1255,11 @@ Kumu::FileWriter::Write(const byte_t* buf, ui32_t buf_len, ui32_t* bytes_written
 
 //------------------------------------------------------------------------------------------
 
+//
+IFileReader* FileReaderFactory::CreateFileReader() const
+{
+  return new FileReader();
+}
 
 //
 Kumu::Result_t

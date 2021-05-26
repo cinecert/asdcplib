@@ -188,33 +188,35 @@ main(int argc, const char** argv)
 
   FileList_t::iterator fi;
   Result_t result = RESULT_OK;
+  Kumu::FileReaderFactory defaultFactory;
 
   for ( fi = Options.inFileList.begin(); ASDCP_SUCCESS(result) && fi != Options.inFileList.end(); fi++ )
     {
+      Kumu::IFileReader* Reader = defaultFactory.CreateFileReader();
+
       if (Options.verbose_flag)
 	fprintf(stderr, "Opening file %s\n", ((*fi).c_str()));
       
       if ( Options.read_mxf_flag ) // dump MXF
-	{
-	  Kumu::FileReader        Reader;
+	{      
 	  const Dictionary* Dict = &DefaultCompositeDict();
 	  ASDCP::MXF::OP1aHeader Header(Dict);
 	  ASDCP::MXF::RIP RIP(Dict);
 	  
-	  result = Reader.OpenRead(*fi);
+	  result = Reader->OpenRead(*fi);
 	  
 	  if ( ASDCP_SUCCESS(result) )
 	    {
-	      result = MXF::SeekToRIP(Reader);
+          result = MXF::SeekToRIP(*Reader);
 	      
 	      if ( ASDCP_SUCCESS(result) )
 		{
-		  result = RIP.InitFromFile(Reader);
+          result = RIP.InitFromFile(*Reader);
 		  ui32_t test_s = RIP.PairArray.size();
 
 		  if ( ASDCP_FAILURE(result) )
 		    {
-		      DefaultLogSink().Error("File contains no RIP\n");
+		      DefaultLogSink().Error("File contains no RIP\n");              
 		      result = RESULT_OK;
 		    }
 		  else if ( RIP.PairArray.empty() )
@@ -222,7 +224,7 @@ main(int argc, const char** argv)
 		      DefaultLogSink().Error("RIP contains no Pairs.\n");
 		    }
 
-		  Reader.Seek(0);
+		  Reader->Seek(0);
 		}
 	      else
 		{
@@ -231,7 +233,7 @@ main(int argc, const char** argv)
 	    }
 
 	  if ( ASDCP_SUCCESS(result) )
-	    result = Header.InitFromFile(Reader);
+        result = Header.InitFromFile(*Reader);
 	  
 	  if ( ASDCP_SUCCESS(result) )
 	    Header.Dump(stdout);
@@ -242,12 +244,12 @@ main(int argc, const char** argv)
 
 	      for ( pi++; pi != RIP.PairArray.end() && ASDCP_SUCCESS(result); pi++ )
 		{
-		  result = Reader.Seek((*pi).ByteOffset);
+		  result = Reader->Seek((*pi).ByteOffset);
 
 		  if ( ASDCP_SUCCESS(result) )
 		    {
 		      MXF::Partition TmpPart(Dict);
-		      result = TmpPart.InitFromFile(Reader);
+              result = TmpPart.InitFromFile(*Reader);
 
 		      if ( ASDCP_SUCCESS(result) && TmpPart.BodySID > 0 )
 			TmpPart.Dump(stdout);
@@ -258,12 +260,12 @@ main(int argc, const char** argv)
 	  if ( ASDCP_SUCCESS(result) )
 	    {
 	      ASDCP::MXF::OPAtomIndexFooter Index(Dict);
-	      result = Reader.Seek(Header.FooterPartition);
+	      result = Reader->Seek(Header.FooterPartition);
 	      
 	      if ( ASDCP_SUCCESS(result) )
 		{
 		  Index.m_Lookup = &Header.m_Primer;
-		  result = Index.InitFromFile(Reader);
+          result = Index.InitFromFile(*Reader);
 		}
 	      
 	      if ( ASDCP_SUCCESS(result) )
@@ -275,19 +277,18 @@ main(int argc, const char** argv)
 	}
       else if ( Options.walk_parts_flag )
 	{
-	  Kumu::FileReader        Reader;
 	  const Dictionary* Dict = &DefaultCompositeDict();
 	  ASDCP::MXF::OP1aHeader Header(Dict);
 	  ASDCP::MXF::RIP RIP(Dict);
 	  
-	  result = Reader.OpenRead((*fi).c_str());
+	  result = Reader->OpenRead((*fi).c_str());
 	  
 	  if ( ASDCP_SUCCESS(result) )
-	    result = MXF::SeekToRIP(Reader);
+        result = MXF::SeekToRIP(*Reader);
 
 	  if ( ASDCP_SUCCESS(result) )
 	    {
-	      result = RIP.InitFromFile(Reader);
+          result = RIP.InitFromFile(*Reader);
 	      ui32_t test_s = RIP.PairArray.size();
 
 	      if ( ASDCP_FAILURE(result) )
@@ -300,7 +301,7 @@ main(int argc, const char** argv)
 		  DefaultLogSink().Error("RIP contains no Pairs.\n");
 		}
 
-	      Reader.Seek(0);
+	      Reader->Seek(0);
 	    }
 	  else
 	    {
@@ -314,9 +315,9 @@ main(int argc, const char** argv)
 	      MXF::RIP::const_pair_iterator i;
 	      for ( i = RIP.PairArray.begin(); i != RIP.PairArray.end(); ++i )
 		{
-		  Reader.Seek(i->ByteOffset);
+		  Reader->Seek(i->ByteOffset);
 		  MXF::Partition plain_part(Dict);
-		  plain_part.InitFromFile(Reader);
+          plain_part.InitFromFile(*Reader);
 
 		  if ( plain_part.ThisPartition != i->ByteOffset )
 		    {
@@ -329,27 +330,27 @@ main(int argc, const char** argv)
 	    }
 	}
       else // dump klv
-	{
-	  Kumu::FileReader Reader;
+	{      
 	  KLVFilePacket KP;
 	  ui64_t pos = 0;
 
-	  result = Reader.OpenRead((*fi).c_str());
+	  result = Reader->OpenRead((*fi).c_str());
 	  
 	  if ( ASDCP_SUCCESS(result) )
-	    result = KP.InitFromFile(Reader);
+	    result = KP.InitFromFile(*Reader);
 	  
 	  while ( ASDCP_SUCCESS(result) )
 	    {
 	      fprintf(stdout, "@0x%08llx: ", pos);
 	      KP.Dump(stdout, DefaultCompositeDict(), true);
-	      pos = Reader.Tell();
-	      result = KP.InitFromFile(Reader);
+	      pos = Reader->TellPosition();
+	      result = KP.InitFromFile(*Reader);
 	    }
 	  
 	  if( result == RESULT_ENDOFFILE )
 	    result = RESULT_OK;
 	}
+	  delete Reader;
     }
 
   if ( ASDCP_FAILURE(result) )

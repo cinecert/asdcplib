@@ -148,6 +148,8 @@ namespace AS_02 {
       i64_t m_CurrentFrameIndex;
       std::vector<ui8_t> m_CurrentFrameBuffer;
       ReaderState_t m_State;
+        
+      const Kumu::IFileReaderFactory& m_FileReaderFactory;
 
       void Reset();
 
@@ -161,7 +163,16 @@ namespace AS_02 {
 
       /* methods */
 
-      MXFReader();
+      /**
+       * Construct MXF Reader
+       * .
+       * @param fileReaderFactory Abstract interface that allows
+       * to override asdcplib's file read access by a user implementation.
+       * Notice that the factory object reference needs to remain valid
+       * when performing OpenRead operation.
+       */
+      MXFReader(const Kumu::IFileReaderFactory& fileReaderFactory);
+
       virtual ~MXFReader();
 
       /**

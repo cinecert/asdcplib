@@ -54,7 +54,7 @@ namespace ASDCP
 
 
       // seek an open file handle to the start of the RIP KLV packet
-      Result_t SeekToRIP(const Kumu::FileReader&);
+      Result_t SeekToRIP(const Kumu::IFileReader &);
       
       //
       class RIP : public ASDCP::KLVFilePacket
@@ -107,7 +107,7 @@ namespace ASDCP
 
 	RIP(const Dictionary* d) : m_Dict(d) {}
 	  virtual ~RIP() {}
-	  virtual Result_t InitFromFile(const Kumu::FileReader& Reader);
+	  virtual Result_t InitFromFile(const Kumu::IFileReader& Reader);
 	  virtual Result_t WriteToFile(Kumu::FileWriter& Writer);
 	  virtual bool GetPairBySID(ui32_t, PartitionPair&) const;
 	  virtual void     Dump(FILE* = 0);
@@ -156,7 +156,7 @@ namespace ASDCP
 	  Partition(const Dictionary*);
 	  virtual ~Partition();
 	  virtual void     AddChildObject(InterchangeObject*); // takes ownership
-	  virtual Result_t InitFromFile(const Kumu::FileReader& Reader);
+	  virtual Result_t InitFromFile(const Kumu::IFileReader& Reader);
 	  virtual Result_t InitFromBuffer(const byte_t* p, ui32_t l);
 	  virtual Result_t WriteToFile(Kumu::FileWriter& Writer, UL& PartitionLabel);
 	  virtual ui32_t   ArchiveSize(); // returns the size of the archived structure
@@ -443,7 +443,7 @@ namespace ASDCP
 
 	  OP1aHeader(const Dictionary*);
 	  virtual ~OP1aHeader();
-	  virtual Result_t InitFromFile(const Kumu::FileReader& Reader);
+	  virtual Result_t InitFromFile(const Kumu::IFileReader& Reader);
 	  virtual Result_t InitFromPartitionBuffer(const byte_t* p, ui32_t l);
 	  virtual Result_t InitFromBuffer(const byte_t* p, ui32_t l);
 	  virtual Result_t WriteToFile(Kumu::FileWriter& Writer, ui32_t HeaderLength = 16384);
@@ -478,7 +478,7 @@ namespace ASDCP
 	 
 	  OPAtomIndexFooter(const Dictionary*);
 	  virtual ~OPAtomIndexFooter();
-	  virtual Result_t InitFromFile(const Kumu::FileReader& Reader);
+      virtual Result_t InitFromFile(const Kumu::IFileReader& Reader);
 	  virtual Result_t InitFromPartitionBuffer(const byte_t* p, ui32_t l);
 	  virtual Result_t InitFromBuffer(const byte_t* p, ui32_t l);
 	  virtual Result_t WriteToFile(Kumu::FileWriter& Writer, ui64_t duration);

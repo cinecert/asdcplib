@@ -72,7 +72,7 @@ AS_02::MXF::AS02IndexReader::~AS02IndexReader() {}
 
 //    
 Result_t
-AS_02::MXF::AS02IndexReader::InitFromFile(const Kumu::FileReader& reader, const ASDCP::MXF::RIP& rip, const bool has_header_essence)
+AS_02::MXF::AS02IndexReader::InitFromFile(const Kumu::IFileReader& reader, const ASDCP::MXF::RIP& rip, const bool has_header_essence)
 {
   typedef std::list<Kumu::mem_ptr<ASDCP::MXF::Partition> > body_part_array_t;
   body_part_array_t body_part_array;
@@ -395,8 +395,7 @@ AS_02::MXF::AS02IndexReader::Lookup(ui32_t frame_num, ASDCP::MXF::IndexTableSegm
 //
 
 
-AS_02::h__AS02Reader::h__AS02Reader(const ASDCP::Dictionary *d) :
-  ASDCP::MXF::TrackFileReader<ASDCP::MXF::OP1aHeader, AS_02::MXF::AS02IndexReader>(d) {}
+AS_02::h__AS02Reader::h__AS02Reader(const ASDCP::Dictionary *d, const Kumu::IFileReaderFactory& fileReaderFactory) : ASDCP::MXF::TrackFileReader<ASDCP::MXF::OP1aHeader, AS_02::MXF::AS02IndexReader>(d, fileReaderFactory) {}
 AS_02::h__AS02Reader::~h__AS02Reader() {}
 
 
@@ -478,7 +477,7 @@ AS_02::h__AS02Reader::OpenMXFRead(const std::string& filename)
   if ( KM_SUCCESS(result) )
     {
       m_IndexAccess.m_Lookup = &m_HeaderPart.m_Primer;
-      result = m_IndexAccess.InitFromFile(m_File, m_RIP, has_header_essence);
+      result = m_IndexAccess.InitFromFile(*m_File, m_RIP, has_header_essence);
     }
 
   return result;

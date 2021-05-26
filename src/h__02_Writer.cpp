@@ -221,7 +221,7 @@ AS_02::h__AS02WriterFrame::WriteEKLVPacket(const ASDCP::FrameBuffer& FrameBuf,co
       body_part.BodySID = 1;
       body_part.OperationalPattern = m_HeaderPart.OperationalPattern;
       body_part.EssenceContainers = m_HeaderPart.EssenceContainers;
-      body_part.ThisPartition = m_File.Tell();
+      body_part.ThisPartition = m_File.TellPosition();
 
       body_part.BodyOffset = m_StreamOffset;
       result = body_part.WriteToFile(m_File, body_ul);

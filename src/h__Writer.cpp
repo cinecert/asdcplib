@@ -200,7 +200,7 @@ ASDCP::AddDmsTrackGenericPartUtf8Text(Kumu::FileWriter& file_writer, MXF::OP1aHe
       return RESULT_FORMAT;
     }
 
-  rip.PairArray.push_back(RIP::PartitionPair(max_sid + 1, file_writer.Tell()));
+  rip.PairArray.push_back(RIP::PartitionPair(max_sid + 1, file_writer.TellPosition()));
 
   // Add new GSTBS linked to DMF
   GenericStreamTextBasedSet *gst_obj = new GenericStreamTextBasedSet(Dict);
@@ -231,7 +231,7 @@ ASDCP::h__ASDCPWriter::CreateBodyPart(const MXF::Rational& EditRate, ui32_t Byte
     {
       // Body Partition
       m_BodyPart.EssenceContainers = m_HeaderPart.EssenceContainers;
-      m_BodyPart.ThisPartition = m_File.Tell();
+      m_BodyPart.ThisPartition = m_File.TellPosition();
       m_BodyPart.BodySID = 1;
       UL OPAtomUL(m_Dict->ul(MDD_OPAtom));
       m_BodyPart.OperationalPattern = OPAtomUL;
@@ -248,7 +248,7 @@ ASDCP::h__ASDCPWriter::CreateBodyPart(const MXF::Rational& EditRate, ui32_t Byte
   if ( ASDCP_SUCCESS(result) )
     {
       // Index setup
-      Kumu::fpos_t ECoffset = m_File.Tell();
+      Kumu::fpos_t ECoffset = m_File.TellPosition();
       m_FooterPart.IndexSID = 129;
 
       if ( BytesPerEditUnit == 0 )
@@ -326,7 +326,7 @@ ASDCP::h__ASDCPWriter::WriteASDCPFooter()
   m_EssenceDescriptor->ContainerDuration = m_FramesWritten;
   m_FooterPart.PreviousPartition = m_RIP.PairArray.back().ByteOffset;
 
-  Kumu::fpos_t here = m_File.Tell();
+  Kumu::fpos_t here = m_File.TellPosition();
   m_RIP.PairArray.push_back(RIP::PartitionPair(0, here)); // Last RIP Entry
   m_HeaderPart.FooterPartition = here;
 

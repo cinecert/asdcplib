@@ -132,9 +132,9 @@ class ASDCP::TimedText::MXFReader::h__Reader : public ASDCP::h__ASDCPReader
   ASDCP_NO_COPY_CONSTRUCT(h__Reader);
 
 public:
-  TimedTextDescriptor m_TDesc;    
+  TimedTextDescriptor m_TDesc;
 
-  h__Reader(const Dictionary *d) : ASDCP::h__ASDCPReader(d), m_EssenceDescriptor(0) {
+  h__Reader(const Dictionary *d, const Kumu::IFileReaderFactory& fileReaderFactory) : ASDCP::h__ASDCPReader(d, fileReaderFactory), m_EssenceDescriptor(0) {
     memset(&m_TDesc.AssetID, 0, UUIDlen);
   }
 
@@ -231,7 +231,7 @@ ASDCP::Result_t
 ASDCP::TimedText::MXFReader::h__Reader::ReadTimedTextResource(FrameBuffer& FrameBuf,
 							      AESDecContext* Ctx, HMACContext* HMAC)
 {
-  if ( ! m_File.IsOpen() )
+  if ( ! m_File->IsOpen() )
     return RESULT_INIT;
 
   assert(m_Dict);
@@ -285,9 +285,9 @@ ASDCP::TimedText::MXFReader::h__Reader::ReadAncillaryResource(const byte_t* uuid
 
 //------------------------------------------------------------------------------------------
 
-ASDCP::TimedText::MXFReader::MXFReader()
+ASDCP::TimedText::MXFReader::MXFReader(const Kumu::IFileReaderFactory& fileReaderFactory)
 {
-  m_Reader = new h__Reader(&DefaultSMPTEDict());
+  m_Reader = new h__Reader(&DefaultSMPTEDict(), fileReaderFactory);
 }
 
 
@@ -353,7 +353,7 @@ ASDCP::TimedText::MXFReader::OpenRead(const std::string& filename) const
 ASDCP::Result_t
 ASDCP::TimedText::MXFReader::FillTimedTextDescriptor(TimedText::TimedTextDescriptor& TDesc) const
 {
-  if ( m_Reader && m_Reader->m_File.IsOpen() )
+  if ( m_Reader && m_Reader->m_File->IsOpen() )
     {
       TDesc = m_Reader->m_TDesc;
       return RESULT_OK;
@@ -367,7 +367,7 @@ ASDCP::TimedText::MXFReader::FillTimedTextDescriptor(TimedText::TimedTextDescrip
 ASDCP::Result_t
 ASDCP::TimedText::MXFReader::FillWriterInfo(WriterInfo& Info) const
 {
-  if ( m_Reader && m_Reader->m_File.IsOpen() )
+  if ( m_Reader && m_Reader->m_File->IsOpen() )
     {
       Info = m_Reader->m_Info;
       return RESULT_OK;
@@ -395,7 +395,7 @@ ASDCP::Result_t
 ASDCP::TimedText::MXFReader::ReadTimedTextResource(FrameBuffer& FrameBuf,
 						   AESDecContext* Ctx, HMACContext* HMAC) const
 {
-  if ( m_Reader && m_Reader->m_File.IsOpen() )
+  if ( m_Reader && m_Reader->m_File->IsOpen() )
     return m_Reader->ReadTimedTextResource(FrameBuf, Ctx, HMAC);
 
   return RESULT_INIT;
@@ -406,7 +406,7 @@ ASDCP::Result_t
 ASDCP::TimedText::MXFReader::ReadAncillaryResource(const byte_t* uuid, FrameBuffer& FrameBuf,
 						   AESDecContext* Ctx, HMACContext* HMAC) const
 {
-  if ( m_Reader && m_Reader->m_File.IsOpen() )
+  if ( m_Reader && m_Reader->m_File->IsOpen() )
     return m_Reader->ReadAncillaryResource(uuid, FrameBuf, Ctx, HMAC);
 
   return RESULT_INIT;
@@ -417,7 +417,7 @@ ASDCP::TimedText::MXFReader::ReadAncillaryResource(const byte_t* uuid, FrameBuff
 void
 ASDCP::TimedText::MXFReader::DumpHeaderMetadata(FILE* stream) const
 {
-  if ( m_Reader->m_File.IsOpen() )
+  if ( m_Reader->m_File->IsOpen() )
     m_Reader->m_HeaderPart.Dump(stream);
 }
 
@@ -426,7 +426,7 @@ ASDCP::TimedText::MXFReader::DumpHeaderMetadata(FILE* stream) const
 void
 ASDCP::TimedText::MXFReader::DumpIndex(FILE* stream) const
 {
-  if ( m_Reader->m_File.IsOpen() )
+  if ( m_Reader->m_File->IsOpen() )
     m_Reader->m_IndexAccess.Dump(stream);
 }
 
@@ -434,7 +434,7 @@ ASDCP::TimedText::MXFReader::DumpIndex(FILE* stream) const
 ASDCP::Result_t
 ASDCP::TimedText::MXFReader::Close() const
 {
-  if ( m_Reader && m_Reader->m_File.IsOpen() )
+  if ( m_Reader && m_Reader->m_File->IsOpen() )
     {
       m_Reader->Close();
       return RESULT_OK;
@@ -689,7 +689,7 @@ ASDCP::TimedText::MXFWriter::h__Writer::WriteAncillaryResource(const ASDCP::Time
   if ( ! m_State.Test_RUNNING() )
     return RESULT_STATE;
 
-  Kumu::fpos_t here = m_File.Tell();
+  Kumu::fpos_t here = m_File.TellPosition();
   assert(m_Dict);
 
   // create generic stream partition header

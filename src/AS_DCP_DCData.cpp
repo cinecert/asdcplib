@@ -85,7 +85,7 @@ class ASDCP::DCData::MXFReader::h__Reader : public ASDCP::h__ASDCPReader
  public:
   DCDataDescriptor m_DDesc;
 
-  h__Reader(const Dictionary *d) : ASDCP::h__ASDCPReader(d), m_PrivateLabelCompatibilityMode(false), m_DDesc() {}
+  h__Reader(const Dictionary* d, const Kumu::IFileReaderFactory& fileReaderFactory) : ASDCP::h__ASDCPReader(d, fileReaderFactory), m_PrivateLabelCompatibilityMode(false), m_DDesc() {}
   ~h__Reader() {}
   Result_t    OpenRead(const std::string&);
   Result_t    ReadFrame(ui32_t, FrameBuffer&, AESDecContext*, HMACContext*);
@@ -191,7 +191,7 @@ ASDCP::Result_t
 ASDCP::DCData::MXFReader::h__Reader::ReadFrame(ui32_t FrameNum, FrameBuffer& FrameBuf,
 		      AESDecContext* Ctx, HMACContext* HMAC)
 {
-  if ( ! m_File.IsOpen() )
+  if ( ! m_File->IsOpen() )
     return RESULT_INIT;
 
   assert(m_Dict);
@@ -224,15 +224,15 @@ ASDCP::DCData::FrameBuffer::Dump(FILE* stream, ui32_t dump_len) const
 
 //------------------------------------------------------------------------------------------
 
-ASDCP::DCData::MXFReader::MXFReader()
+ASDCP::DCData::MXFReader::MXFReader(const Kumu::IFileReaderFactory& fileReaderFactory)
 {
-  m_Reader = new h__Reader(&DefaultSMPTEDict());
+  m_Reader = new h__Reader(&DefaultSMPTEDict(), fileReaderFactory);
 }
 
 
 ASDCP::DCData::MXFReader::~MXFReader()
 {
-  if ( m_Reader && m_Reader->m_File.IsOpen() )
+  if ( m_Reader && m_Reader->m_File->IsOpen() )
     m_Reader->Close();
 }
 
@@ -294,7 +294,7 @@ ASDCP::Result_t
 ASDCP::DCData::MXFReader::ReadFrame(ui32_t FrameNum, FrameBuffer& FrameBuf,
                                     AESDecContext* Ctx, HMACContext* HMAC) const
 {
-  if ( m_Reader && m_Reader->m_File.IsOpen() )
+  if ( m_Reader && m_Reader->m_File->IsOpen() )
     return m_Reader->ReadFrame(FrameNum, FrameBuf, Ctx, HMAC);
 
   return RESULT_INIT;
@@ -312,7 +312,7 @@ ASDCP::DCData::MXFReader::LocateFrame(ui32_t FrameNum, Kumu::fpos_t& streamOffse
 ASDCP::Result_t
 ASDCP::DCData::MXFReader::FillDCDataDescriptor(DCDataDescriptor& DDesc) const
 {
-  if ( m_Reader && m_Reader->m_File.IsOpen() )
+  if ( m_Reader && m_Reader->m_File->IsOpen() )
     {
       DDesc = m_Reader->m_DDesc;
       return RESULT_OK;
@@ -327,7 +327,7 @@ ASDCP::DCData::MXFReader::FillDCDataDescriptor(DCDataDescriptor& DDesc) const
 ASDCP::Result_t
 ASDCP::DCData::MXFReader::FillWriterInfo(WriterInfo& Info) const
 {
-  if ( m_Reader && m_Reader->m_File.IsOpen() )
+  if ( m_Reader && m_Reader->m_File->IsOpen() )
     {
       Info = m_Reader->m_Info;
       return RESULT_OK;
@@ -340,7 +340,7 @@ ASDCP::DCData::MXFReader::FillWriterInfo(WriterInfo& Info) const
 void
 ASDCP::DCData::MXFReader::DumpHeaderMetadata(FILE* stream) const
 {
-  if ( m_Reader->m_File.IsOpen() )
+  if ( m_Reader->m_File->IsOpen() )
     m_Reader->m_HeaderPart.Dump(stream);
 }
 
@@ -349,7 +349,7 @@ ASDCP::DCData::MXFReader::DumpHeaderMetadata(FILE* stream) const
 void
 ASDCP::DCData::MXFReader::DumpIndex(FILE* stream) const
 {
-  if ( m_Reader->m_File.IsOpen() )
+  if ( m_Reader->m_File->IsOpen() )
     m_Reader->m_IndexAccess.Dump(stream);
 }
 
@@ -357,7 +357,7 @@ ASDCP::DCData::MXFReader::DumpIndex(FILE* stream) const
 ASDCP::Result_t
 ASDCP::DCData::MXFReader::Close() const
 {
-  if ( m_Reader && m_Reader->m_File.IsOpen() )
+  if ( m_Reader && m_Reader->m_File->IsOpen() )
     {
       m_Reader->Close();
       return RESULT_OK;
