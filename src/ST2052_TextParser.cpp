@@ -38,7 +38,7 @@ using namespace ASDCP;
 
 using Kumu::DefaultLogSink;
 
-const char* c_tt_namespace_name = "http://www.smpte-ra.org/schemas/2052-1/2010/smpte-tt";
+static const char* c_tt_namespace_name = "http://www.smpte-ra.org/schemas/2052-1/2010/smpte-tt";
 
 
 //------------------------------------------------------------------------------------------

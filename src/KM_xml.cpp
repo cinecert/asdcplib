@@ -74,20 +74,21 @@ extern "C"
 
 using namespace Kumu;
 
-
-class ns_map : public std::map<std::string, XMLNamespace*>
-{
-public:
-  ~ns_map()
+namespace{
+  class ns_map : public std::map<std::string, XMLNamespace*>
   {
-    while ( ! empty() )
-      {
-	ns_map::iterator ni = begin();
-	delete ni->second;
-	erase(ni);
-      }
-  }
-};
+  public:
+    ~ns_map()
+    {
+      while ( ! empty() )
+        {
+  	ns_map::iterator ni = begin();
+  	delete ni->second;
+  	erase(ni);
+        }
+    }
+  };
+}
 
 
 Kumu::XMLElement::XMLElement(const char* name) : m_Namespace(0), m_NamespaceOwner(0)
