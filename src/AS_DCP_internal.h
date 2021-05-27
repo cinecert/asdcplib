@@ -161,6 +161,7 @@ namespace ASDCP
 			    const ASDCP::Dictionary& dict,
 			    ASDCP::MXF::GenericPictureEssenceDescriptor& EssenceDescriptor,
 			    ASDCP::MXF::JPEG2000PictureSubDescriptor& EssenceSubDescriptor);
+  
 
   Result_t PCM_ADesc_to_MD(PCM::AudioDescriptor& ADesc, ASDCP::MXF::WaveAudioDescriptor* ADescObj);
   Result_t MD_to_PCM_ADesc(ASDCP::MXF::WaveAudioDescriptor* ADescObj, PCM::AudioDescriptor& ADesc);
@@ -376,6 +377,21 @@ namespace ASDCP
 	  assert(m_Dict);
 	  return Read_EKLV_Packet(m_File, *m_Dict, m_Info, m_LastPosition, m_CtFrameBuf,
 				  FrameNum, SequenceNum, FrameBuf, EssenceUL, Ctx, HMAC);
+	}
+
+	//
+	// Return the size of the packet
+	Result_t CalcFrameBufferSize(ui64_t &PacketLength)
+	{
+	  KLReader Reader;
+	  Result_t result = Reader.ReadKLFromFile(m_File);
+
+	  if ( KM_FAILURE(result) )
+	    return result;
+
+	  PacketLength = Reader.Length();
+
+	  return result;
 	}
 
 	// Get the position of a frame from a track file
