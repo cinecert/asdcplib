@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2003-2018, John Hurst,
+Copyright (c) 2003-2021, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -202,14 +202,13 @@ namespace ASDCP {
   // The file accessors in this library implement a bounded set of essence types.
   // This list will be expanded when support for new types is added to the library.
   enum EssenceType_t {
-    ESS_UNKNOWN,              // the file is not a supported AS-DCP of AS-02 essence container
+    ESS_UNKNOWN,              // the file is not a supported AS-DCP or AS-02 essence container
 
     // 
     ESS_MPEG2_VES,            // the file contains an MPEG-2 video elementary stream
 
-    // d-cinema essence types
+    // d-cinema essence types (AS-DCP)
     ESS_JPEG_2000,            // the file contains one or more JPEG 2000 codestreams
-    ESS_JPEG_XS,              // the file contains one or more JPEG XS codestreams
     ESS_PCM_24b_48k,          // the file contains one or more PCM audio pairs
     ESS_PCM_24b_96k,          // the file contains one or more PCM audio pairs
     ESS_TIMED_TEXT,           // the file contains an XML timed text document and one or more resources
@@ -217,15 +216,18 @@ namespace ASDCP {
     ESS_DCDATA_UNKNOWN,       // the file contains one or more D-Cinema Data bytestreams
     ESS_DCDATA_DOLBY_ATMOS,   // the file contains one or more DolbyATMOS bytestreams
 
-    // IMF essence types
+    // IMF essence types (AS-02)
     ESS_AS02_JPEG_2000,       // the file contains one or more JPEG 2000 codestreams
-    ESS_AS02_JPEG_XS,         // the file contains one or more JPEG XS codestreams
     ESS_AS02_PCM_24b_48k,     // the file contains one or more PCM audio pairs, clip wrapped
     ESS_AS02_PCM_24b_96k,     // the file contains one or more PCM audio pairs, clip wrapped
     ESS_AS02_TIMED_TEXT,      // the file contains a TTML document and zero or more resources
     ESS_AS02_ISXD,            // the file contains an ISXD document stream (per SMPTE RDD 47)
     ESS_AS02_ACES,            // the file contains two or more ACES codestreams (per SMPTE ST 2067-50)
     ESS_AS02_IAB,             // the file contains an IAB stream (per SMPTE ST 2067-201)
+    ESS_AS02_JPEG_XS,         // the file contains one or more JPEG XS codestreams
+
+    // experimental
+    ESS_JPEG_XS,              // the file contains one or more JPEG XS codestreams in an AS-DCP wrapping
     ESS_MAX
   };
 
