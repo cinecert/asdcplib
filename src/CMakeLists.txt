@@ -1,3 +1,4 @@
+option(USE_ASDCP_JXS "Build with JPEG XS support in AS-DCP?" OFF)
 option(WITHOUT_SSL "Build without encryption support?" OFF)
 if (NOT WITHOUT_SSL)
 	find_library(OpenSSLLib_PATH NAMES libeay32 crypto PATHS "${PROJECT_SOURCE_DIR}/../openssl" "${PROJECT_SOURCE_DIR}/../lib/openssl" "$ENV{CMAKE_HINT}/openssl" ENV CMAKE_HINT PATH_SUFFIXES "lib" "openssl" "lib/openssl")
@@ -50,16 +51,19 @@ set(kumu_src ${kumu_src} KM_fileio.h KM_log.h KM_prng.h KM_util.h KM_tai.h KM_er
 # source
 set(asdcp_src MPEG2_Parser.cpp MPEG.cpp JP2K_Codestream_Parser.cpp
 	JP2K_Sequence_Parser.cpp JP2K.cpp PCM_Parser.cpp Wav.cpp
-	JXS_Codestream_Parser.cpp JXS_Sequence_Parser.cpp JXS.cpp
 	KLV.cpp Dict.cpp MXFTypes.cpp MXF.cpp Index.cpp Metadata.cpp AS_DCP.cpp AS_DCP_MXF.cpp TimedText_Parser.cpp
 	h__Reader.cpp h__Writer.cpp AS_DCP_MPEG2.cpp AS_DCP_JP2K.cpp
-	AS_DCP_JXS.cpp AS_DCP_PCM.cpp AS_DCP_TimedText.cpp PCMParserList.cpp MDD.cpp
+	AS_DCP_PCM.cpp AS_DCP_TimedText.cpp PCMParserList.cpp MDD.cpp
 	AS_DCP_ATMOS.cpp AS_DCP_DCData.cpp DCData_ByteStream_Parser.cpp DCData_Sequence_Parser.cpp AtmosSyncChannel_Generator.cpp
 	AtmosSyncChannel_Mixer.cpp PCMDataProviders.cpp SyncEncoder.c CRC16.c UUIDInformation.c
 )
 
 if (HAVE_OPENSSL)
 	list(APPEND asdcp_src AS_DCP_AES.cpp)
+endif()
+
+if (USE_ASDCP_JXS)
+	list(APPEND asdcp_src AS_DCP_JXS.cpp JXS_Codestream_Parser.cpp JXS_Sequence_Parser.cpp JXS.cpp)
 endif()
 
 # header for deployment (install target)
