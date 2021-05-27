@@ -271,6 +271,11 @@ AS_02::IAB::MXFWriter::Finalize() {
   if (this->m_State == ST_BEGIN) {
     return Kumu::RESULT_INIT;
   }
+  if (this->m_State != ST_RUNNING)
+  {
+    return RESULT_STATE;
+  }
+
 
   Result_t result = RESULT_OK;
 
