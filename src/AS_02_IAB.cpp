@@ -89,6 +89,7 @@ AS_02::IAB::MXFWriter::OpenWrite(
   /* are we already running */
 
   if (this->m_State != ST_BEGIN) {
+    KM_RESULT_STATE_HERE();
     return Kumu::RESULT_STATE;
   }
 
@@ -273,6 +274,7 @@ AS_02::IAB::MXFWriter::Finalize() {
   }
   if (this->m_State != ST_RUNNING)
   {
+    KM_RESULT_STATE_HERE();
     return RESULT_STATE;
   }
 
@@ -370,6 +372,7 @@ AS_02::IAB::MXFReader::OpenRead(const std::string& filename) {
   /* are we already running */
 
   if (this->m_State != ST_READER_BEGIN) {
+    KM_RESULT_STATE_HERE();
     return Kumu::RESULT_STATE;
   }
 
