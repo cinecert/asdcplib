@@ -144,6 +144,7 @@ endif
 
 if USE_ASDCP_JXS
 libasdcp_la_SOURCES += JXS_Codestream_Parser.cpp JXS_Sequence_Parser.cpp JXS.cpp AS_DCP_JXS.cpp
+AM_CPPFLAGS += -DUSE_ASDCP_JXS
 endif
 
 libasdcp_la_LDFLAGS = -release @VERSION@

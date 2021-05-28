@@ -39,7 +39,9 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <KM_xml.h>
 #include <KM_prng.h>
 #include <AS_02.h>
+#ifdef USE_ASDCP_JXS
 #include "AS_02_JXS.h"
+#endif
 #include "AS_02_ACES.h"
 #include <PCMParserList.h>
 #include <Metadata.h>
@@ -1181,6 +1183,7 @@ write_JP2K_file(CommandOptions& Options)
 
 //------------------------------------------------------------------------------------------
 // JPEG XS essence
+#ifdef USE_ASDCP_JXS
 
 namespace ASDCP {
   Result_t JXS_PDesc_to_MD(const ASDCP::JXS::PictureDescriptor& PDesc,
@@ -1391,6 +1394,7 @@ write_JXS_file(CommandOptions& Options)
 
   return result;
 }
+#endif
 
 //------------------------------------------------------------------------------------------
 // ACES essence
@@ -2198,9 +2202,11 @@ main(int argc, const char** argv)
 	  result = write_JP2K_file(Options);
 	  break;
 	 // PB
+#ifdef USE_ASDCP_JXS
 	case ESS_JPEG_XS:
 	  result = write_JXS_file(Options);
 	  break;
+#endif
 	case ::ESS_AS02_ACES:
 	  result = write_ACES_file(Options);
 	  break;
