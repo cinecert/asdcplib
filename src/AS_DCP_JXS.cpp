@@ -203,6 +203,8 @@ ASDCP::JXS_PDesc_to_MD(const JXS::PictureDescriptor& PDesc,
 
   //
   switch(PDesc.Primaries) {
+  case 0: // If this is not set, do not update the essence descriptor.
+    break;
   case 1:
     EssenceDescriptor.ColorPrimaries = dict.ul(ASDCP::MDD_ColorPrimaries_ITU709);
     break;
@@ -230,6 +232,8 @@ ASDCP::JXS_PDesc_to_MD(const JXS::PictureDescriptor& PDesc,
   }
   
   switch(PDesc.TransferCurve) {
+  case 0:
+    break; // If this is not set, do not update the transfer curve.
   case 1:
   case 6:
     EssenceDescriptor.TransferCharacteristic = dict.ul(ASDCP::MDD_TransferCharacteristic_ITU709);
