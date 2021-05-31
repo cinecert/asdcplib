@@ -37,6 +37,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "KM_log.h"
 #include "AS_DCP_internal.h"
 #include "AS_02.h"
+#include "AS_02_JXS.h"
 
 using Kumu::DefaultLogSink;
 
