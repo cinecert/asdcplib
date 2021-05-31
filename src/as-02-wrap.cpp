@@ -956,11 +956,6 @@ public:
     out_file = filenames.back();
     filenames.pop_back();
 
-    if ( ! picture_coding.HasValue() )
-      {
-	picture_coding = UL(g_dict->ul(MDD_JP2KEssenceCompression_BroadcastProfile_1));
-      }
-
     error_flag = false;
   }
 };
@@ -1001,6 +996,11 @@ write_JP2K_file(CommandOptions& Options)
       ASDCP::JP2K::PictureDescriptor PDesc;
       Parser.FillPictureDescriptor(PDesc);
       PDesc.EditRate = Options.edit_rate;
+      
+      if ( ! Options.picture_coding.HasValue() )
+	{
+	  Options.picture_coding = UL(g_dict->ul(MDD_JP2KEssenceCompression_BroadcastProfile_1));
+	}
 
       if ( Options.verbose_flag )
 	{
@@ -1211,6 +1211,28 @@ write_JXS_file(CommandOptions& Options)
   // set up essence parser
   Result_t result = Parser.OpenRead(Options.filenames.front().c_str());
 
+  if ( ! Options.picture_coding.HasValue() )
+    {
+      Options.picture_coding = UL(g_dict->ul(MDD_JPEGXSUnrestrictedCodestream));
+    }
+  
+  if (ASDCP_SUCCESS(result) )
+    {
+    // verify the picture essence coding.
+      if (!((UL(g_dict->ul(MDD_JPEGXSUnrestrictedCodestream)) == Options.picture_coding) ||
+	    (UL(g_dict->ul(MDD_JPEGXSMain422_10Profile))      == Options.picture_coding) ||
+	    (UL(g_dict->ul(MDD_JPEGXSMain444_12Profile))      == Options.picture_coding) ||
+	    (UL(g_dict->ul(MDD_JPEGXSMain4444_12Profile))     == Options.picture_coding) ||
+	    (UL(g_dict->ul(MDD_JPEGXSLight422_10Profile))     == Options.picture_coding) ||
+	    (UL(g_dict->ul(MDD_JPEGXSLight444_12Profile))     == Options.picture_coding) ||
+	    (UL(g_dict->ul(MDD_JPEGXSLightSubline422_10Profile)) == Options.picture_coding) ||
+	    (UL(g_dict->ul(MDD_JPEGXSHigh444_12Profile))     == Options.picture_coding) ||
+	    (UL(g_dict->ul(MDD_JPEGXSHigh4444_12Profile))    == Options.picture_coding)))
+	{
+	  result = RESULT_PARAM;
+	}
+    }
+
   // set up MXF writer
   if ( ASDCP_SUCCESS(result) )
     {
@@ -1235,6 +1257,7 @@ write_JXS_file(CommandOptions& Options)
 					  *static_cast<ASDCP::MXF::GenericPictureEssenceDescriptor*>(tmp_dscr),
 					  *static_cast<ASDCP::MXF::JPEGXSPictureSubDescriptor*>(essence_sub_descriptors.back()));
 
+	  
 	  if ( ASDCP_SUCCESS(result) )
 	    {
 	      tmp_dscr->CodingEquations = Options.coding_equations;

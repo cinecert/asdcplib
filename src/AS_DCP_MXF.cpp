@@ -196,6 +196,10 @@ ASDCP::EssenceType(const std::string& filename, EssenceType_t& type)
 		  type = ESS_JPEG_2000;
 		}
 	    }
+	  else if ( ASDCP_SUCCESS(TestHeader.GetMDObjectByType(OBJ_TYPE_ARGS(JPEGXSPictureSubDescriptor))) )
+	    {
+	      type = ESS_JPEG_XS;
+	    }
 	  else if ( ASDCP_SUCCESS(TestHeader.GetMDObjectByType(OBJ_TYPE_ARGS(WaveAudioDescriptor), &md_object)) )
 	    {
 	      assert(md_object);
@@ -248,6 +252,10 @@ ASDCP::EssenceType(const std::string& filename, EssenceType_t& type)
 	    if ( ASDCP_SUCCESS(TestHeader.GetMDObjectByType(OBJ_TYPE_ARGS(JPEG2000PictureSubDescriptor))) )
 	      {
 	        type = ESS_AS02_JPEG_2000;
+	      }
+	    else if ( ASDCP_SUCCESS(TestHeader.GetMDObjectByType(OBJ_TYPE_ARGS(JPEGXSPictureSubDescriptor))) )
+	      {
+	        type = ESS_AS02_JPEG_XS;
 	      }
 	    else if ( ASDCP_SUCCESS(TestHeader.GetMDObjectByType(OBJ_TYPE_ARGS(WaveAudioDescriptor), &md_object)) )
 	      {

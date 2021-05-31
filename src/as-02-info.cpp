@@ -1,3 +1,4 @@
+
 /*
 Copyright (c) 2003-2016, John Hurst, Wolfgang Ruppel
 
@@ -40,6 +41,10 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <AS_DCP.h>
 #include <AS_02.h>
 #include <JP2K.h>
+#ifdef USE_ASDCP_JXS
+#include <AS_02_JXS.h>
+#include <JXS.h>
+#endif
 #include <AS_02_ACES.h>
 #include <ACES.h>
 #include <MXF.h>
@@ -366,6 +371,114 @@ class MyPictureDescriptor : public JP2K::PictureDescriptor
   }
 };
 
+#ifdef USE_ASDCP_JXS
+class MyXSPictureDescriptor : public JXS::PictureDescriptor
+{
+  RGBAEssenceDescriptor *m_RGBADescriptor;
+  CDCIEssenceDescriptor *m_CDCIDescriptor;
+  JPEGXSPictureSubDescriptor *m_JXSSubDescriptor;
+
+ public:
+  MyXSPictureDescriptor() :
+    m_RGBADescriptor(0),
+    m_CDCIDescriptor(0),
+    m_JXSSubDescriptor(0) {}
+
+  void FillDescriptor(AS_02::JXS::MXFReader& Reader)
+  {
+    m_CDCIDescriptor = get_descriptor_by_type<AS_02::JXS::MXFReader, CDCIEssenceDescriptor>
+      (Reader, DefaultCompositeDict().ul(MDD_CDCIEssenceDescriptor));
+
+    m_RGBADescriptor = get_descriptor_by_type<AS_02::JXS::MXFReader, RGBAEssenceDescriptor>
+      (Reader, DefaultCompositeDict().ul(MDD_RGBAEssenceDescriptor));
+
+    if ( m_RGBADescriptor != 0 )
+      {
+    	SampleRate = m_RGBADescriptor->SampleRate;
+        if ( ! m_RGBADescriptor->ContainerDuration.empty() )
+          {
+            ContainerDuration = m_RGBADescriptor->ContainerDuration;
+          }
+      }
+    else if ( m_CDCIDescriptor != 0 )
+      {
+    	SampleRate = m_CDCIDescriptor->SampleRate;
+        if ( ! m_CDCIDescriptor->ContainerDuration.empty() )
+          {
+            ContainerDuration = m_CDCIDescriptor->ContainerDuration;
+          }
+      }
+    else
+      {
+	DefaultLogSink().Error("Picture descriptor not found.\n");
+      }
+
+    m_JXSSubDescriptor = get_descriptor_by_type<AS_02::JXS::MXFReader, JPEGXSPictureSubDescriptor>
+      (Reader, DefaultCompositeDict().ul(MDD_JPEGXSPictureSubDescriptor));
+
+    if ( m_JXSSubDescriptor == 0 )
+      {
+	DefaultLogSink().Error("JPEGXSPictureSubDescriptor not found.\n");
+      }
+
+    std::list<InterchangeObject*> ObjectList;
+    Reader.OP1aHeader().GetMDObjectsByType(DefaultCompositeDict().ul(MDD_Track), ObjectList);
+    
+    if ( ObjectList.empty() )
+      {
+	DefaultLogSink().Error("MXF Metadata contains no Track Sets.\n");
+      }
+
+    EditRate = ((Track*)ObjectList.front())->EditRate;
+  }
+
+  void MyDump(FILE* stream) {
+    if ( stream == 0 )
+      {
+	stream = stderr;
+      }
+
+    if ( m_CDCIDescriptor != 0 )
+      {
+	m_CDCIDescriptor->Dump(stream);
+      }
+    else if ( m_RGBADescriptor != 0 )
+      {
+	m_RGBADescriptor->Dump(stream);
+      }
+    else
+      {
+	return;
+      }
+
+    if ( m_JXSSubDescriptor != 0 )
+      {
+	m_JXSSubDescriptor->Dump(stream);
+
+	fprintf(stream, "    ImageComponents: (max=%d)\n", JXS::MaxComponents);
+
+	//
+	ui32_t component_sizing = m_JXSSubDescriptor->JPEGXSComponentTable.Length();
+
+	if ( component_sizing ==  m_JXSSubDescriptor->JPEGXSNc * 2 + 4)
+	  {
+	    fprintf(stream, "  bits  h-sep v-sep\n");
+	    const byte_t *src = m_JXSSubDescriptor->JPEGXSComponentTable.RoData() + 4;
+	    for(int i = 0;i < m_JXSSubDescriptor->JPEGXSNc && i < JXS::MaxComponents; i++ ) {
+	      fprintf(stream, "  %4d  %5d %5d\n",
+		      src[0],src[1] >> 4,src[1] & 0x0f);
+	      src += 2;
+	    }
+	  }
+	else
+	  {
+	    DefaultLogSink().Warn("Unexpected PictureComponentSizing size: %u, should be 17.\n", component_sizing);
+	  }
+      }
+  }
+};
+#endif
+
 class MyACESPictureDescriptor : public AS_02::ACES::PictureDescriptor
 {
   RGBAEssenceDescriptor *m_RGBADescriptor;
@@ -611,9 +724,36 @@ init_rate_info()
 
   rate_ul = DefaultCompositeDict().ul(MDD_ACESUncompressedMonoscopicWithAlpha);
   g_rate_info.insert(rate_info_map::value_type(rate_ul, RateInfo(rate_ul, DBL_MAX, "ST 2065-5")));
+
+#ifdef USE_ASDCP_JXS
+  rate_ul = DefaultCompositeDict().ul(MDD_JPEGXSUnrestrictedCodestream);
+  g_rate_info.insert(rate_info_map::value_type(rate_ul, RateInfo(rate_ul, DBL_MAX, "ST 2124 JPEG XS Unrestricted Profile")));
+
+  rate_ul = DefaultCompositeDict().ul(MDD_JPEGXSMain422_10Profile);
+  g_rate_info.insert(rate_info_map::value_type(rate_ul, RateInfo(rate_ul, DBL_MAX, "ST 2124 JPEG XS Main 422 10 Profile")));
+
+  rate_ul = DefaultCompositeDict().ul(MDD_JPEGXSMain444_12Profile);
+  g_rate_info.insert(rate_info_map::value_type(rate_ul, RateInfo(rate_ul, DBL_MAX, "ST 2124 JPEG XS Main 444 12 Profile")));
+
+  rate_ul = DefaultCompositeDict().ul(MDD_JPEGXSMain4444_12Profile);
+  g_rate_info.insert(rate_info_map::value_type(rate_ul, RateInfo(rate_ul, DBL_MAX, "ST 2124 JPEG XS Main 4444 12 Profile")));
+
+  rate_ul = DefaultCompositeDict().ul(MDD_JPEGXSLight422_10Profile);
+  g_rate_info.insert(rate_info_map::value_type(rate_ul, RateInfo(rate_ul, DBL_MAX, "ST 2124 JPEG XS Light 422 10 Profile")));
+
+  rate_ul = DefaultCompositeDict().ul(MDD_JPEGXSLight444_12Profile);
+  g_rate_info.insert(rate_info_map::value_type(rate_ul, RateInfo(rate_ul, DBL_MAX, "ST 2124 JPEG XS Light 444 12 Profile")));
+
+  rate_ul = DefaultCompositeDict().ul(MDD_JPEGXSLightSubline422_10Profile);
+  g_rate_info.insert(rate_info_map::value_type(rate_ul, RateInfo(rate_ul, DBL_MAX, "ST 2124 JPEG XS Light Subline 422 10 Profile")));
+
+  rate_ul = DefaultCompositeDict().ul(MDD_JPEGXSHigh444_12Profile);
+  g_rate_info.insert(rate_info_map::value_type(rate_ul, RateInfo(rate_ul, DBL_MAX, "ST 2124 JPEG XS High 444 12 Profile")));
+
+  rate_ul = DefaultCompositeDict().ul(MDD_JPEGXSHigh4444_12Profile);
+  g_rate_info.insert(rate_info_map::value_type(rate_ul, RateInfo(rate_ul, DBL_MAX, "ST 2124 JPEG XS High 4444 12 Profile")));
+#endif
 }
-
-
 //
 //
 template<class ReaderT, class DescriptorT>
@@ -818,10 +958,12 @@ public:
 	static const double mega_const = 1.0 / ( 1000000 / 8.0 );
 
 	// we did not accumulate the last, so duration -= 1
-	double avg_bytes_frame = (double)(total_frame_bytes / ( duration - 1 ));
-
+	if (duration > 1) {
+	  double avg_bytes_frame = (double)(total_frame_bytes / ( duration - 1 ));
+	  m_AvgBitrate = avg_bytes_frame * mega_const * m_Desc.EditRate.Quotient();
+	}
+	
 	m_MaxBitrate = largest_frame * mega_const * m_Desc.EditRate.Quotient();
-	m_AvgBitrate = avg_bytes_frame * mega_const * m_Desc.EditRate.Quotient();
       }
   }
 
@@ -886,7 +1028,31 @@ show_file_info(CommandOptions& Options)
 	      result = wrapper.test_rates(Options, stdout);
 	    }
     }
+#ifdef USE_ASDCP_JXS
+  else if ( EssenceType == ESS_AS02_JPEG_XS )
+    {
+	  FileInfoWrapper<AS_02::JXS::MXFReader, MyXSPictureDescriptor> wrapper;
+	  result = wrapper.file_info(Options, "JPEG XS pictures");
 
+	  if ( KM_SUCCESS(result) )
+	    {
+	      wrapper.get_PictureEssenceCoding();
+	      wrapper.calc_Bitrate(stdout);
+
+	      if ( Options.showcoding_flag )
+		{
+		  wrapper.dump_PictureEssenceCoding(stdout);
+		}
+
+	      if ( Options.showrate_flag )
+		{
+		  wrapper.dump_Bitrate(stdout);
+		}
+
+	      result = wrapper.test_rates(Options, stdout);
+	    }
+    }
+#endif
   else if ( EssenceType == ESS_AS02_ACES )
     {
 	  FileInfoWrapper<AS_02::ACES::MXFReader, MyACESPictureDescriptor> wrapper;
