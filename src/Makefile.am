@@ -152,6 +152,10 @@ libasdcp_la_LIBADD = libkumu.la
 libasdcp_la_CPPFLAGS = -DASDCP_PLATFORM=\"@host@\"
 
 if USE_AS_02
+if ! USE_ASDCP_JXS
+libasdcp_la_SOURCES += JXS_Codestream_Parser.cpp JXS_Sequence_Parser.cpp JXS.cpp
+endif
+
 # sources for as-02 library
 libas02_la_SOURCES	= \
 	AS_02.h \
@@ -212,6 +216,7 @@ bin_PROGRAMS = \
 if USE_AS_02
 bin_PROGRAMS += \
 	as-02-wrap \
+	as-02-wrap-jxs \
 	as-02-unwrap \
 	as-02-info
 endif
@@ -268,6 +273,9 @@ klvsplit_LDADD = libasdcp.la libkumu.la
 if USE_AS_02
 as_02_wrap_SOURCES = as-02-wrap.cpp
 as_02_wrap_LDADD = libas02.la libasdcp.la libkumu.la
+
+as_02_wrap_jxs_SOURCES = as-02-wrap-jxs.cpp
+as_02_wrap_jxs_LDADD = libas02.la libasdcp.la libkumu.la
 
 as_02_unwrap_SOURCES = as-02-unwrap.cpp
 as_02_unwrap_LDADD = libas02.la libasdcp.la libkumu.la

@@ -49,7 +49,7 @@ NOTE: ciphertext support for clip-wrapped PCM is not yet complete.
 
 #include "Metadata.h"
 #include "AS_02.h"
-#include "AS_DCP_JXS.h"
+#include "JXS.h"
 
 namespace AS_02
 {
@@ -77,8 +77,8 @@ namespace AS_02
 		  // the operation cannot be completed or if nonsensical data is discovered
 		  // in the essence descriptor.
 		  Result_t OpenWrite(const std::string& filename, const ASDCP::WriterInfo&,
-			  ASDCP::MXF::FileDescriptor* essence_descriptor,
-			  ASDCP::MXF::InterchangeObject_list_t& essence_sub_descriptor_list,
+                          ASDCP::MXF::GenericPictureEssenceDescriptor& picture_descriptor,
+                          ASDCP::MXF::JPEGXSPictureSubDescriptor& jxs_sub_descriptor,
 			  const ASDCP::Rational& edit_rate, const ui32_t& header_size = 16384,
 			  const IndexStrategy_t& strategy = IS_FOLLOW, const ui32_t& partition_space = 10);
 
