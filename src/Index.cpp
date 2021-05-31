@@ -166,7 +166,7 @@ ASDCP::MXF::IndexTableSegment::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 
 //
 void
-ASDCP::MXF::IndexTableSegment::Dump(FILE* stream)
+ASDCP::MXF::IndexTableSegment::Dump(FILE* stream) const
 {
   char identbuf[IdentBufferLen];
 

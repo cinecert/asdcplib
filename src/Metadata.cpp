@@ -254,7 +254,7 @@ Identification::Dump(FILE* stream)
   fprintf(stream, "  %22s = %s\n",  "ModificationDate", ModificationDate.EncodeString(identbuf, IdentBufferLen));
   fprintf(stream, "  %22s = %s\n",  "ToolkitVersion", ToolkitVersion.EncodeString(identbuf, IdentBufferLen));
   if ( ! Platform.empty() ) {
-    fprintf(stream, "  %22s = %s\n",  "Platform", Platform.get().EncodeString(identbuf, IdentBufferLen));
+    fprintf(stream, "  %22s = %s\n",  "Platform", Platform.const_get().EncodeString(identbuf, IdentBufferLen));
   }
 }
 
@@ -436,7 +436,7 @@ EssenceContainerData::Dump(FILE* stream)
   InterchangeObject::Dump(stream);
   fprintf(stream, "  %22s = %s\n",  "LinkedPackageUID", LinkedPackageUID.EncodeString(identbuf, IdentBufferLen));
   if ( ! IndexSID.empty() ) {
-    fprintf(stream, "  %22s = %d\n",  "IndexSID", IndexSID.get());
+    fprintf(stream, "  %22s = %d\n",  "IndexSID", IndexSID.const_get());
   }
   fprintf(stream, "  %22s = %d\n",  "BodySID", BodySID);
 }
@@ -530,7 +530,7 @@ GenericPackage::Dump(FILE* stream)
   InterchangeObject::Dump(stream);
   fprintf(stream, "  %22s = %s\n",  "PackageUID", PackageUID.EncodeString(identbuf, IdentBufferLen));
   if ( ! Name.empty() ) {
-    fprintf(stream, "  %22s = %s\n",  "Name", Name.get().EncodeString(identbuf, IdentBufferLen));
+    fprintf(stream, "  %22s = %s\n",  "Name", Name.const_get().EncodeString(identbuf, IdentBufferLen));
   }
   fprintf(stream, "  %22s = %s\n",  "PackageCreationDate", PackageCreationDate.EncodeString(identbuf, IdentBufferLen));
   fprintf(stream, "  %22s = %s\n",  "PackageModifiedDate", PackageModifiedDate.EncodeString(identbuf, IdentBufferLen));
@@ -608,7 +608,7 @@ MaterialPackage::Dump(FILE* stream)
 
   GenericPackage::Dump(stream);
   if ( ! PackageMarker.empty() ) {
-    fprintf(stream, "  %22s = %s\n",  "PackageMarker", PackageMarker.get().EncodeString(identbuf, IdentBufferLen));
+    fprintf(stream, "  %22s = %s\n",  "PackageMarker", PackageMarker.const_get().EncodeString(identbuf, IdentBufferLen));
   }
 }
 
@@ -784,10 +784,10 @@ GenericTrack::Dump(FILE* stream)
   fprintf(stream, "  %22s = %d\n",  "TrackID", TrackID);
   fprintf(stream, "  %22s = %d\n",  "TrackNumber", TrackNumber);
   if ( ! TrackName.empty() ) {
-    fprintf(stream, "  %22s = %s\n",  "TrackName", TrackName.get().EncodeString(identbuf, IdentBufferLen));
+    fprintf(stream, "  %22s = %s\n",  "TrackName", TrackName.const_get().EncodeString(identbuf, IdentBufferLen));
   }
   if ( ! Sequence.empty() ) {
-    fprintf(stream, "  %22s = %s\n",  "Sequence", Sequence.get().EncodeString(identbuf, IdentBufferLen));
+    fprintf(stream, "  %22s = %s\n",  "Sequence", Sequence.const_get().EncodeString(identbuf, IdentBufferLen));
   }
 }
 
@@ -1022,7 +1022,7 @@ StructuralComponent::Dump(FILE* stream)
   InterchangeObject::Dump(stream);
   fprintf(stream, "  %22s = %s\n",  "DataDefinition", DataDefinition.EncodeString(identbuf, IdentBufferLen));
   if ( ! Duration.empty() ) {
-    fprintf(stream, "  %22s = %s\n",  "Duration", i64sz(Duration.get(), identbuf));
+    fprintf(stream, "  %22s = %s\n",  "Duration", i64sz(Duration.const_get(), identbuf));
   }
 }
 
@@ -1445,15 +1445,15 @@ FileDescriptor::Dump(FILE* stream)
 
   GenericDescriptor::Dump(stream);
   if ( ! LinkedTrackID.empty() ) {
-    fprintf(stream, "  %22s = %d\n",  "LinkedTrackID", LinkedTrackID.get());
+    fprintf(stream, "  %22s = %d\n",  "LinkedTrackID", LinkedTrackID.const_get());
   }
   fprintf(stream, "  %22s = %s\n",  "SampleRate", SampleRate.EncodeString(identbuf, IdentBufferLen));
   if ( ! ContainerDuration.empty() ) {
-    fprintf(stream, "  %22s = %s\n",  "ContainerDuration", i64sz(ContainerDuration.get(), identbuf));
+    fprintf(stream, "  %22s = %s\n",  "ContainerDuration", i64sz(ContainerDuration.const_get(), identbuf));
   }
   fprintf(stream, "  %22s = %s\n",  "EssenceContainer", EssenceContainer.EncodeString(identbuf, IdentBufferLen));
   if ( ! Codec.empty() ) {
-    fprintf(stream, "  %22s = %s\n",  "Codec", Codec.get().EncodeString(identbuf, IdentBufferLen));
+    fprintf(stream, "  %22s = %s\n",  "Codec", Codec.const_get().EncodeString(identbuf, IdentBufferLen));
   }
 }
 
@@ -1581,22 +1581,22 @@ GenericSoundEssenceDescriptor::Dump(FILE* stream)
   fprintf(stream, "  %22s = %s\n",  "AudioSamplingRate", AudioSamplingRate.EncodeString(identbuf, IdentBufferLen));
   fprintf(stream, "  %22s = %d\n",  "Locked", Locked);
   if ( ! AudioRefLevel.empty() ) {
-    fprintf(stream, "  %22s = %d\n",  "AudioRefLevel", AudioRefLevel.get());
+    fprintf(stream, "  %22s = %d\n",  "AudioRefLevel", AudioRefLevel.const_get());
   }
   if ( ! ElectroSpatialFormulation.empty() ) {
-    fprintf(stream, "  %22s = %d\n",  "ElectroSpatialFormulation", ElectroSpatialFormulation.get());
+    fprintf(stream, "  %22s = %d\n",  "ElectroSpatialFormulation", ElectroSpatialFormulation.const_get());
   }
   fprintf(stream, "  %22s = %d\n",  "ChannelCount", ChannelCount);
   fprintf(stream, "  %22s = %d\n",  "QuantizationBits", QuantizationBits);
   if ( ! DialNorm.empty() ) {
-    fprintf(stream, "  %22s = %d\n",  "DialNorm", DialNorm.get());
+    fprintf(stream, "  %22s = %d\n",  "DialNorm", DialNorm.const_get());
   }
   fprintf(stream, "  %22s = %s\n",  "SoundEssenceCoding", SoundEssenceCoding.EncodeString(identbuf, IdentBufferLen));
   if ( ! ReferenceAudioAlignmentLevel.empty() ) {
-    fprintf(stream, "  %22s = %d\n",  "ReferenceAudioAlignmentLevel", ReferenceAudioAlignmentLevel.get());
+    fprintf(stream, "  %22s = %d\n",  "ReferenceAudioAlignmentLevel", ReferenceAudioAlignmentLevel.const_get());
   }
   if ( ! ReferenceImageEditRate.empty() ) {
-    fprintf(stream, "  %22s = %s\n",  "ReferenceImageEditRate", ReferenceImageEditRate.get().EncodeString(identbuf, IdentBufferLen));
+    fprintf(stream, "  %22s = %s\n",  "ReferenceImageEditRate", ReferenceImageEditRate.const_get().EncodeString(identbuf, IdentBufferLen));
   }
 }
 
@@ -1696,11 +1696,11 @@ WaveAudioDescriptor::Dump(FILE* stream)
   GenericSoundEssenceDescriptor::Dump(stream);
   fprintf(stream, "  %22s = %d\n",  "BlockAlign", BlockAlign);
   if ( ! SequenceOffset.empty() ) {
-    fprintf(stream, "  %22s = %d\n",  "SequenceOffset", SequenceOffset.get());
+    fprintf(stream, "  %22s = %d\n",  "SequenceOffset", SequenceOffset.const_get());
   }
   fprintf(stream, "  %22s = %d\n",  "AvgBps", AvgBps);
   if ( ! ChannelAssignment.empty() ) {
-    fprintf(stream, "  %22s = %s\n",  "ChannelAssignment", ChannelAssignment.get().EncodeString(identbuf, IdentBufferLen));
+    fprintf(stream, "  %22s = %s\n",  "ChannelAssignment", ChannelAssignment.const_get().EncodeString(identbuf, IdentBufferLen));
   }
 }
 
@@ -1975,100 +1975,100 @@ GenericPictureEssenceDescriptor::Dump(FILE* stream)
 
   FileDescriptor::Dump(stream);
   if ( ! SignalStandard.empty() ) {
-    fprintf(stream, "  %22s = %d\n",  "SignalStandard", SignalStandard.get());
+    fprintf(stream, "  %22s = %d\n",  "SignalStandard", SignalStandard.const_get());
   }
   fprintf(stream, "  %22s = %d\n",  "FrameLayout", FrameLayout);
   fprintf(stream, "  %22s = %d\n",  "StoredWidth", StoredWidth);
   fprintf(stream, "  %22s = %d\n",  "StoredHeight", StoredHeight);
   if ( ! StoredF2Offset.empty() ) {
-    fprintf(stream, "  %22s = %d\n",  "StoredF2Offset", StoredF2Offset.get());
+    fprintf(stream, "  %22s = %d\n",  "StoredF2Offset", StoredF2Offset.const_get());
   }
   if ( ! SampledWidth.empty() ) {
-    fprintf(stream, "  %22s = %d\n",  "SampledWidth", SampledWidth.get());
+    fprintf(stream, "  %22s = %d\n",  "SampledWidth", SampledWidth.const_get());
   }
   if ( ! SampledHeight.empty() ) {
-    fprintf(stream, "  %22s = %d\n",  "SampledHeight", SampledHeight.get());
+    fprintf(stream, "  %22s = %d\n",  "SampledHeight", SampledHeight.const_get());
   }
   if ( ! SampledXOffset.empty() ) {
-    fprintf(stream, "  %22s = %d\n",  "SampledXOffset", SampledXOffset.get());
+    fprintf(stream, "  %22s = %d\n",  "SampledXOffset", SampledXOffset.const_get());
   }
   if ( ! SampledYOffset.empty() ) {
-    fprintf(stream, "  %22s = %d\n",  "SampledYOffset", SampledYOffset.get());
+    fprintf(stream, "  %22s = %d\n",  "SampledYOffset", SampledYOffset.const_get());
   }
   if ( ! DisplayHeight.empty() ) {
-    fprintf(stream, "  %22s = %d\n",  "DisplayHeight", DisplayHeight.get());
+    fprintf(stream, "  %22s = %d\n",  "DisplayHeight", DisplayHeight.const_get());
   }
   if ( ! DisplayWidth.empty() ) {
-    fprintf(stream, "  %22s = %d\n",  "DisplayWidth", DisplayWidth.get());
+    fprintf(stream, "  %22s = %d\n",  "DisplayWidth", DisplayWidth.const_get());
   }
   if ( ! DisplayXOffset.empty() ) {
-    fprintf(stream, "  %22s = %d\n",  "DisplayXOffset", DisplayXOffset.get());
+    fprintf(stream, "  %22s = %d\n",  "DisplayXOffset", DisplayXOffset.const_get());
   }
   if ( ! DisplayYOffset.empty() ) {
-    fprintf(stream, "  %22s = %d\n",  "DisplayYOffset", DisplayYOffset.get());
+    fprintf(stream, "  %22s = %d\n",  "DisplayYOffset", DisplayYOffset.const_get());
   }
   if ( ! DisplayF2Offset.empty() ) {
-    fprintf(stream, "  %22s = %d\n",  "DisplayF2Offset", DisplayF2Offset.get());
+    fprintf(stream, "  %22s = %d\n",  "DisplayF2Offset", DisplayF2Offset.const_get());
   }
   fprintf(stream, "  %22s = %s\n",  "AspectRatio", AspectRatio.EncodeString(identbuf, IdentBufferLen));
   if ( ! ActiveFormatDescriptor.empty() ) {
-    fprintf(stream, "  %22s = %d\n",  "ActiveFormatDescriptor", ActiveFormatDescriptor.get());
+    fprintf(stream, "  %22s = %d\n",  "ActiveFormatDescriptor", ActiveFormatDescriptor.const_get());
   }
   if ( ! AlphaTransparency.empty() ) {
-    fprintf(stream, "  %22s = %d\n",  "AlphaTransparency", AlphaTransparency.get());
+    fprintf(stream, "  %22s = %d\n",  "AlphaTransparency", AlphaTransparency.const_get());
   }
   if ( ! TransferCharacteristic.empty() ) {
-    fprintf(stream, "  %22s = %s\n",  "TransferCharacteristic", TransferCharacteristic.get().EncodeString(identbuf, IdentBufferLen));
+    fprintf(stream, "  %22s = %s\n",  "TransferCharacteristic", TransferCharacteristic.const_get().EncodeString(identbuf, IdentBufferLen));
   }
   if ( ! ImageAlignmentOffset.empty() ) {
-    fprintf(stream, "  %22s = %d\n",  "ImageAlignmentOffset", ImageAlignmentOffset.get());
+    fprintf(stream, "  %22s = %d\n",  "ImageAlignmentOffset", ImageAlignmentOffset.const_get());
   }
   if ( ! ImageStartOffset.empty() ) {
-    fprintf(stream, "  %22s = %d\n",  "ImageStartOffset", ImageStartOffset.get());
+    fprintf(stream, "  %22s = %d\n",  "ImageStartOffset", ImageStartOffset.const_get());
   }
   if ( ! ImageEndOffset.empty() ) {
-    fprintf(stream, "  %22s = %d\n",  "ImageEndOffset", ImageEndOffset.get());
+    fprintf(stream, "  %22s = %d\n",  "ImageEndOffset", ImageEndOffset.const_get());
   }
   if ( ! FieldDominance.empty() ) {
-    fprintf(stream, "  %22s = %d\n",  "FieldDominance", FieldDominance.get());
+    fprintf(stream, "  %22s = %d\n",  "FieldDominance", FieldDominance.const_get());
   }
   fprintf(stream, "  %22s = %s\n",  "PictureEssenceCoding", PictureEssenceCoding.EncodeString(identbuf, IdentBufferLen));
   if ( ! CodingEquations.empty() ) {
-    fprintf(stream, "  %22s = %s\n",  "CodingEquations", CodingEquations.get().EncodeString(identbuf, IdentBufferLen));
+    fprintf(stream, "  %22s = %s\n",  "CodingEquations", CodingEquations.const_get().EncodeString(identbuf, IdentBufferLen));
   }
   if ( ! ColorPrimaries.empty() ) {
-    fprintf(stream, "  %22s = %s\n",  "ColorPrimaries", ColorPrimaries.get().EncodeString(identbuf, IdentBufferLen));
+    fprintf(stream, "  %22s = %s\n",  "ColorPrimaries", ColorPrimaries.const_get().EncodeString(identbuf, IdentBufferLen));
   }
   if ( ! AlternativeCenterCuts.empty() ) {
     fprintf(stream, "  %22s:\n",  "AlternativeCenterCuts");
-  AlternativeCenterCuts.get().Dump(stream);
+  AlternativeCenterCuts.const_get().Dump(stream);
   }
   if ( ! ActiveWidth.empty() ) {
-    fprintf(stream, "  %22s = %d\n",  "ActiveWidth", ActiveWidth.get());
+    fprintf(stream, "  %22s = %d\n",  "ActiveWidth", ActiveWidth.const_get());
   }
   if ( ! ActiveHeight.empty() ) {
-    fprintf(stream, "  %22s = %d\n",  "ActiveHeight", ActiveHeight.get());
+    fprintf(stream, "  %22s = %d\n",  "ActiveHeight", ActiveHeight.const_get());
   }
   if ( ! ActiveXOffset.empty() ) {
-    fprintf(stream, "  %22s = %d\n",  "ActiveXOffset", ActiveXOffset.get());
+    fprintf(stream, "  %22s = %d\n",  "ActiveXOffset", ActiveXOffset.const_get());
   }
   if ( ! ActiveYOffset.empty() ) {
-    fprintf(stream, "  %22s = %d\n",  "ActiveYOffset", ActiveYOffset.get());
+    fprintf(stream, "  %22s = %d\n",  "ActiveYOffset", ActiveYOffset.const_get());
   }
   if ( ! VideoLineMap.empty() ) {
-    fprintf(stream, "  %22s = %s\n",  "VideoLineMap", VideoLineMap.get().EncodeString(identbuf, IdentBufferLen));
+    fprintf(stream, "  %22s = %s\n",  "VideoLineMap", VideoLineMap.const_get().EncodeString(identbuf, IdentBufferLen));
   }
   if ( ! MasteringDisplayPrimaries.empty() ) {
-    fprintf(stream, "  %22s = %s\n",  "MasteringDisplayPrimaries", MasteringDisplayPrimaries.get().EncodeString(identbuf, IdentBufferLen));
+    fprintf(stream, "  %22s = %s\n",  "MasteringDisplayPrimaries", MasteringDisplayPrimaries.const_get().EncodeString(identbuf, IdentBufferLen));
   }
   if ( ! MasteringDisplayWhitePointChromaticity.empty() ) {
-    fprintf(stream, "  %22s = %s\n",  "MasteringDisplayWhitePointChromaticity", MasteringDisplayWhitePointChromaticity.get().EncodeString(identbuf, IdentBufferLen));
+    fprintf(stream, "  %22s = %s\n",  "MasteringDisplayWhitePointChromaticity", MasteringDisplayWhitePointChromaticity.const_get().EncodeString(identbuf, IdentBufferLen));
   }
   if ( ! MasteringDisplayMaximumLuminance.empty() ) {
-    fprintf(stream, "  %22s = %d\n",  "MasteringDisplayMaximumLuminance", MasteringDisplayMaximumLuminance.get());
+    fprintf(stream, "  %22s = %d\n",  "MasteringDisplayMaximumLuminance", MasteringDisplayMaximumLuminance.const_get());
   }
   if ( ! MasteringDisplayMinimumLuminance.empty() ) {
-    fprintf(stream, "  %22s = %d\n",  "MasteringDisplayMinimumLuminance", MasteringDisplayMinimumLuminance.get());
+    fprintf(stream, "  %22s = %d\n",  "MasteringDisplayMinimumLuminance", MasteringDisplayMinimumLuminance.const_get());
   }
 }
 
@@ -2182,19 +2182,19 @@ RGBAEssenceDescriptor::Dump(FILE* stream)
 
   GenericPictureEssenceDescriptor::Dump(stream);
   if ( ! ComponentMaxRef.empty() ) {
-    fprintf(stream, "  %22s = %d\n",  "ComponentMaxRef", ComponentMaxRef.get());
+    fprintf(stream, "  %22s = %d\n",  "ComponentMaxRef", ComponentMaxRef.const_get());
   }
   if ( ! ComponentMinRef.empty() ) {
-    fprintf(stream, "  %22s = %d\n",  "ComponentMinRef", ComponentMinRef.get());
+    fprintf(stream, "  %22s = %d\n",  "ComponentMinRef", ComponentMinRef.const_get());
   }
   if ( ! AlphaMinRef.empty() ) {
-    fprintf(stream, "  %22s = %d\n",  "AlphaMinRef", AlphaMinRef.get());
+    fprintf(stream, "  %22s = %d\n",  "AlphaMinRef", AlphaMinRef.const_get());
   }
   if ( ! AlphaMaxRef.empty() ) {
-    fprintf(stream, "  %22s = %d\n",  "AlphaMaxRef", AlphaMaxRef.get());
+    fprintf(stream, "  %22s = %d\n",  "AlphaMaxRef", AlphaMaxRef.const_get());
   }
   if ( ! ScanningDirection.empty() ) {
-    fprintf(stream, "  %22s = %d\n",  "ScanningDirection", ScanningDirection.get());
+    fprintf(stream, "  %22s = %d\n",  "ScanningDirection", ScanningDirection.const_get());
   }
   fprintf(stream, "  %22s = %s\n",  "PixelLayout", PixelLayout.EncodeString(identbuf, IdentBufferLen));
 }
@@ -2358,27 +2358,27 @@ JPEG2000PictureSubDescriptor::Dump(FILE* stream)
   fprintf(stream, "  %22s = %d\n",  "YTOsize", YTOsize);
   fprintf(stream, "  %22s = %d\n",  "Csize", Csize);
   if ( ! PictureComponentSizing.empty() ) {
-    fprintf(stream, "  %22s = %s\n",  "PictureComponentSizing", PictureComponentSizing.get().EncodeString(identbuf, IdentBufferLen));
+    fprintf(stream, "  %22s = %s\n",  "PictureComponentSizing", PictureComponentSizing.const_get().EncodeString(identbuf, IdentBufferLen));
   }
   if ( ! CodingStyleDefault.empty() ) {
-    fprintf(stream, "  %22s = %s\n",  "CodingStyleDefault", CodingStyleDefault.get().EncodeString(identbuf, IdentBufferLen));
+    fprintf(stream, "  %22s = %s\n",  "CodingStyleDefault", CodingStyleDefault.const_get().EncodeString(identbuf, IdentBufferLen));
   }
   if ( ! QuantizationDefault.empty() ) {
-    fprintf(stream, "  %22s = %s\n",  "QuantizationDefault", QuantizationDefault.get().EncodeString(identbuf, IdentBufferLen));
+    fprintf(stream, "  %22s = %s\n",  "QuantizationDefault", QuantizationDefault.const_get().EncodeString(identbuf, IdentBufferLen));
   }
   if ( ! J2CLayout.empty() ) {
-    fprintf(stream, "  %22s = %s\n",  "J2CLayout", J2CLayout.get().EncodeString(identbuf, IdentBufferLen));
+    fprintf(stream, "  %22s = %s\n",  "J2CLayout", J2CLayout.const_get().EncodeString(identbuf, IdentBufferLen));
   }
   if ( ! J2KExtendedCapabilities.empty() ) {
-    fprintf(stream, "  %22s = %s\n",  "J2KExtendedCapabilities", J2KExtendedCapabilities.get().EncodeString(identbuf, IdentBufferLen));
+    fprintf(stream, "  %22s = %s\n",  "J2KExtendedCapabilities", J2KExtendedCapabilities.const_get().EncodeString(identbuf, IdentBufferLen));
   }
   if ( ! J2KProfile.empty() ) {
     fprintf(stream, "  %22s:\n",  "J2KProfile");
-  J2KProfile.get().Dump(stream);
+  J2KProfile.const_get().Dump(stream);
   }
   if ( ! J2KCorrespondingProfile.empty() ) {
     fprintf(stream, "  %22s:\n",  "J2KCorrespondingProfile");
-  J2KCorrespondingProfile.get().Dump(stream);
+  J2KCorrespondingProfile.const_get().Dump(stream);
   }
 }
 
@@ -2515,28 +2515,28 @@ CDCIEssenceDescriptor::Dump(FILE* stream)
   fprintf(stream, "  %22s = %d\n",  "ComponentDepth", ComponentDepth);
   fprintf(stream, "  %22s = %d\n",  "HorizontalSubsampling", HorizontalSubsampling);
   if ( ! VerticalSubsampling.empty() ) {
-    fprintf(stream, "  %22s = %d\n",  "VerticalSubsampling", VerticalSubsampling.get());
+    fprintf(stream, "  %22s = %d\n",  "VerticalSubsampling", VerticalSubsampling.const_get());
   }
   if ( ! ColorSiting.empty() ) {
-    fprintf(stream, "  %22s = %d\n",  "ColorSiting", ColorSiting.get());
+    fprintf(stream, "  %22s = %d\n",  "ColorSiting", ColorSiting.const_get());
   }
   if ( ! ReversedByteOrder.empty() ) {
-    fprintf(stream, "  %22s = %d\n",  "ReversedByteOrder", ReversedByteOrder.get());
+    fprintf(stream, "  %22s = %d\n",  "ReversedByteOrder", ReversedByteOrder.const_get());
   }
   if ( ! PaddingBits.empty() ) {
-    fprintf(stream, "  %22s = %d\n",  "PaddingBits", PaddingBits.get());
+    fprintf(stream, "  %22s = %d\n",  "PaddingBits", PaddingBits.const_get());
   }
   if ( ! AlphaSampleDepth.empty() ) {
-    fprintf(stream, "  %22s = %d\n",  "AlphaSampleDepth", AlphaSampleDepth.get());
+    fprintf(stream, "  %22s = %d\n",  "AlphaSampleDepth", AlphaSampleDepth.const_get());
   }
   if ( ! BlackRefLevel.empty() ) {
-    fprintf(stream, "  %22s = %d\n",  "BlackRefLevel", BlackRefLevel.get());
+    fprintf(stream, "  %22s = %d\n",  "BlackRefLevel", BlackRefLevel.const_get());
   }
   if ( ! WhiteReflevel.empty() ) {
-    fprintf(stream, "  %22s = %d\n",  "WhiteReflevel", WhiteReflevel.get());
+    fprintf(stream, "  %22s = %d\n",  "WhiteReflevel", WhiteReflevel.const_get());
   }
   if ( ! ColorRange.empty() ) {
-    fprintf(stream, "  %22s = %d\n",  "ColorRange", ColorRange.get());
+    fprintf(stream, "  %22s = %d\n",  "ColorRange", ColorRange.const_get());
   }
 }
 
@@ -2677,34 +2677,34 @@ MPEG2VideoDescriptor::Dump(FILE* stream)
 
   CDCIEssenceDescriptor::Dump(stream);
   if ( ! SingleSequence.empty() ) {
-    fprintf(stream, "  %22s = %d\n",  "SingleSequence", SingleSequence.get());
+    fprintf(stream, "  %22s = %d\n",  "SingleSequence", SingleSequence.const_get());
   }
   if ( ! ConstantBFrames.empty() ) {
-    fprintf(stream, "  %22s = %d\n",  "ConstantBFrames", ConstantBFrames.get());
+    fprintf(stream, "  %22s = %d\n",  "ConstantBFrames", ConstantBFrames.const_get());
   }
   if ( ! CodedContentType.empty() ) {
-    fprintf(stream, "  %22s = %d\n",  "CodedContentType", CodedContentType.get());
+    fprintf(stream, "  %22s = %d\n",  "CodedContentType", CodedContentType.const_get());
   }
   if ( ! LowDelay.empty() ) {
-    fprintf(stream, "  %22s = %d\n",  "LowDelay", LowDelay.get());
+    fprintf(stream, "  %22s = %d\n",  "LowDelay", LowDelay.const_get());
   }
   if ( ! ClosedGOP.empty() ) {
-    fprintf(stream, "  %22s = %d\n",  "ClosedGOP", ClosedGOP.get());
+    fprintf(stream, "  %22s = %d\n",  "ClosedGOP", ClosedGOP.const_get());
   }
   if ( ! IdenticalGOP.empty() ) {
-    fprintf(stream, "  %22s = %d\n",  "IdenticalGOP", IdenticalGOP.get());
+    fprintf(stream, "  %22s = %d\n",  "IdenticalGOP", IdenticalGOP.const_get());
   }
   if ( ! MaxGOP.empty() ) {
-    fprintf(stream, "  %22s = %d\n",  "MaxGOP", MaxGOP.get());
+    fprintf(stream, "  %22s = %d\n",  "MaxGOP", MaxGOP.const_get());
   }
   if ( ! BPictureCount.empty() ) {
-    fprintf(stream, "  %22s = %d\n",  "BPictureCount", BPictureCount.get());
+    fprintf(stream, "  %22s = %d\n",  "BPictureCount", BPictureCount.const_get());
   }
   if ( ! BitRate.empty() ) {
-    fprintf(stream, "  %22s = %d\n",  "BitRate", BitRate.get());
+    fprintf(stream, "  %22s = %d\n",  "BitRate", BitRate.const_get());
   }
   if ( ! ProfileAndLevel.empty() ) {
-    fprintf(stream, "  %22s = %d\n",  "ProfileAndLevel", ProfileAndLevel.get());
+    fprintf(stream, "  %22s = %d\n",  "ProfileAndLevel", ProfileAndLevel.const_get());
   }
 }
 
@@ -2810,13 +2810,13 @@ DMSegment::Dump(FILE* stream)
   InterchangeObject::Dump(stream);
   fprintf(stream, "  %22s = %s\n",  "DataDefinition", DataDefinition.EncodeString(identbuf, IdentBufferLen));
   if ( ! Duration.empty() ) {
-    fprintf(stream, "  %22s = %s\n",  "Duration", i64sz(Duration.get(), identbuf));
+    fprintf(stream, "  %22s = %s\n",  "Duration", i64sz(Duration.const_get(), identbuf));
   }
   if ( ! EventStartPosition.empty() ) {
-    fprintf(stream, "  %22s = %s\n",  "EventStartPosition", i64sz(EventStartPosition.get(), identbuf));
+    fprintf(stream, "  %22s = %s\n",  "EventStartPosition", i64sz(EventStartPosition.const_get(), identbuf));
   }
   if ( ! EventComment.empty() ) {
-    fprintf(stream, "  %22s = %s\n",  "EventComment", EventComment.get().EncodeString(identbuf, IdentBufferLen));
+    fprintf(stream, "  %22s = %s\n",  "EventComment", EventComment.const_get().EncodeString(identbuf, IdentBufferLen));
   }
   fprintf(stream, "  %22s = %s\n",  "DMFramework", DMFramework.EncodeString(identbuf, IdentBufferLen));
 }
@@ -3084,7 +3084,7 @@ DescriptiveFramework::Dump(FILE* stream)
 
   InterchangeObject::Dump(stream);
   if ( ! LinkedDescriptiveFrameworkPlugInId.empty() ) {
-    fprintf(stream, "  %22s = %s\n",  "LinkedDescriptiveFrameworkPlugInId", LinkedDescriptiveFrameworkPlugInId.get().EncodeString(identbuf, IdentBufferLen));
+    fprintf(stream, "  %22s = %s\n",  "LinkedDescriptiveFrameworkPlugInId", LinkedDescriptiveFrameworkPlugInId.const_get().EncodeString(identbuf, IdentBufferLen));
   }
 }
 
@@ -3171,7 +3171,7 @@ DescriptiveObject::Dump(FILE* stream)
 
   InterchangeObject::Dump(stream);
   if ( ! LinkedDescriptiveObjectPlugInId.empty() ) {
-    fprintf(stream, "  %22s = %s\n",  "LinkedDescriptiveObjectPlugInId", LinkedDescriptiveObjectPlugInId.get().EncodeString(identbuf, IdentBufferLen));
+    fprintf(stream, "  %22s = %s\n",  "LinkedDescriptiveObjectPlugInId", LinkedDescriptiveObjectPlugInId.const_get().EncodeString(identbuf, IdentBufferLen));
   }
 }
 
@@ -3370,16 +3370,16 @@ TimedTextDescriptor::Dump(FILE* stream)
   fprintf(stream, "  %22s = %s\n",  "UCSEncoding", UCSEncoding.EncodeString(identbuf, IdentBufferLen));
   fprintf(stream, "  %22s = %s\n",  "NamespaceURI", NamespaceURI.EncodeString(identbuf, IdentBufferLen));
   if ( ! RFC5646LanguageTagList.empty() ) {
-    fprintf(stream, "  %22s = %s\n",  "RFC5646LanguageTagList", RFC5646LanguageTagList.get().EncodeString(identbuf, IdentBufferLen));
+    fprintf(stream, "  %22s = %s\n",  "RFC5646LanguageTagList", RFC5646LanguageTagList.const_get().EncodeString(identbuf, IdentBufferLen));
   }
   if ( ! DisplayType.empty() ) {
-    fprintf(stream, "  %22s = %s\n",  "DisplayType", DisplayType.get().EncodeString(identbuf, IdentBufferLen));
+    fprintf(stream, "  %22s = %s\n",  "DisplayType", DisplayType.const_get().EncodeString(identbuf, IdentBufferLen));
   }
   if ( ! IntrinsicPictureResolution.empty() ) {
-    fprintf(stream, "  %22s = %s\n",  "IntrinsicPictureResolution", IntrinsicPictureResolution.get().EncodeString(identbuf, IdentBufferLen));
+    fprintf(stream, "  %22s = %s\n",  "IntrinsicPictureResolution", IntrinsicPictureResolution.const_get().EncodeString(identbuf, IdentBufferLen));
   }
   if ( ! ZPositionInUse.empty() ) {
-    fprintf(stream, "  %22s = %d\n",  "ZPositionInUse", ZPositionInUse.get());
+    fprintf(stream, "  %22s = %d\n",  "ZPositionInUse", ZPositionInUse.const_get());
   }
 }
 
@@ -3866,37 +3866,37 @@ MCALabelSubDescriptor::Dump(FILE* stream)
   fprintf(stream, "  %22s = %s\n",  "MCALinkID", MCALinkID.EncodeString(identbuf, IdentBufferLen));
   fprintf(stream, "  %22s = %s\n",  "MCATagSymbol", MCATagSymbol.EncodeString(identbuf, IdentBufferLen));
   if ( ! MCATagName.empty() ) {
-    fprintf(stream, "  %22s = %s\n",  "MCATagName", MCATagName.get().EncodeString(identbuf, IdentBufferLen));
+    fprintf(stream, "  %22s = %s\n",  "MCATagName", MCATagName.const_get().EncodeString(identbuf, IdentBufferLen));
   }
   if ( ! MCAChannelID.empty() ) {
-    fprintf(stream, "  %22s = %d\n",  "MCAChannelID", MCAChannelID.get());
+    fprintf(stream, "  %22s = %d\n",  "MCAChannelID", MCAChannelID.const_get());
   }
   if ( ! RFC5646SpokenLanguage.empty() ) {
-    fprintf(stream, "  %22s = %s\n",  "RFC5646SpokenLanguage", RFC5646SpokenLanguage.get().EncodeString(identbuf, IdentBufferLen));
+    fprintf(stream, "  %22s = %s\n",  "RFC5646SpokenLanguage", RFC5646SpokenLanguage.const_get().EncodeString(identbuf, IdentBufferLen));
   }
   if ( ! MCATitle.empty() ) {
-    fprintf(stream, "  %22s = %s\n",  "MCATitle", MCATitle.get().EncodeString(identbuf, IdentBufferLen));
+    fprintf(stream, "  %22s = %s\n",  "MCATitle", MCATitle.const_get().EncodeString(identbuf, IdentBufferLen));
   }
   if ( ! MCATitleVersion.empty() ) {
-    fprintf(stream, "  %22s = %s\n",  "MCATitleVersion", MCATitleVersion.get().EncodeString(identbuf, IdentBufferLen));
+    fprintf(stream, "  %22s = %s\n",  "MCATitleVersion", MCATitleVersion.const_get().EncodeString(identbuf, IdentBufferLen));
   }
   if ( ! MCATitleSubVersion.empty() ) {
-    fprintf(stream, "  %22s = %s\n",  "MCATitleSubVersion", MCATitleSubVersion.get().EncodeString(identbuf, IdentBufferLen));
+    fprintf(stream, "  %22s = %s\n",  "MCATitleSubVersion", MCATitleSubVersion.const_get().EncodeString(identbuf, IdentBufferLen));
   }
   if ( ! MCAEpisode.empty() ) {
-    fprintf(stream, "  %22s = %s\n",  "MCAEpisode", MCAEpisode.get().EncodeString(identbuf, IdentBufferLen));
+    fprintf(stream, "  %22s = %s\n",  "MCAEpisode", MCAEpisode.const_get().EncodeString(identbuf, IdentBufferLen));
   }
   if ( ! MCAPartitionKind.empty() ) {
-    fprintf(stream, "  %22s = %s\n",  "MCAPartitionKind", MCAPartitionKind.get().EncodeString(identbuf, IdentBufferLen));
+    fprintf(stream, "  %22s = %s\n",  "MCAPartitionKind", MCAPartitionKind.const_get().EncodeString(identbuf, IdentBufferLen));
   }
   if ( ! MCAPartitionNumber.empty() ) {
-    fprintf(stream, "  %22s = %s\n",  "MCAPartitionNumber", MCAPartitionNumber.get().EncodeString(identbuf, IdentBufferLen));
+    fprintf(stream, "  %22s = %s\n",  "MCAPartitionNumber", MCAPartitionNumber.const_get().EncodeString(identbuf, IdentBufferLen));
   }
   if ( ! MCAAudioContentKind.empty() ) {
-    fprintf(stream, "  %22s = %s\n",  "MCAAudioContentKind", MCAAudioContentKind.get().EncodeString(identbuf, IdentBufferLen));
+    fprintf(stream, "  %22s = %s\n",  "MCAAudioContentKind", MCAAudioContentKind.const_get().EncodeString(identbuf, IdentBufferLen));
   }
   if ( ! MCAAudioElementKind.empty() ) {
-    fprintf(stream, "  %22s = %s\n",  "MCAAudioElementKind", MCAAudioElementKind.get().EncodeString(identbuf, IdentBufferLen));
+    fprintf(stream, "  %22s = %s\n",  "MCAAudioElementKind", MCAAudioElementKind.const_get().EncodeString(identbuf, IdentBufferLen));
   }
 }
 
@@ -3983,7 +3983,7 @@ AudioChannelLabelSubDescriptor::Dump(FILE* stream)
 
   MCALabelSubDescriptor::Dump(stream);
   if ( ! SoundfieldGroupLinkID.empty() ) {
-    fprintf(stream, "  %22s = %s\n",  "SoundfieldGroupLinkID", SoundfieldGroupLinkID.get().EncodeString(identbuf, IdentBufferLen));
+    fprintf(stream, "  %22s = %s\n",  "SoundfieldGroupLinkID", SoundfieldGroupLinkID.const_get().EncodeString(identbuf, IdentBufferLen));
   }
 }
 
@@ -4070,7 +4070,7 @@ SoundfieldGroupLabelSubDescriptor::Dump(FILE* stream)
   MCALabelSubDescriptor::Dump(stream);
   if ( ! GroupOfSoundfieldGroupsLinkID.empty() ) {
     fprintf(stream, "  %22s:\n",  "GroupOfSoundfieldGroupsLinkID");
-  GroupOfSoundfieldGroupsLinkID.get().Dump(stream);
+  GroupOfSoundfieldGroupsLinkID.const_get().Dump(stream);
   }
 }
 
@@ -4513,19 +4513,19 @@ ACESPictureSubDescriptor::Dump(FILE* stream)
 
   InterchangeObject::Dump(stream);
   if ( ! ACESAuthoringInformation.empty() ) {
-    fprintf(stream, "  %22s = %s\n",  "ACESAuthoringInformation", ACESAuthoringInformation.get().EncodeString(identbuf, IdentBufferLen));
+    fprintf(stream, "  %22s = %s\n",  "ACESAuthoringInformation", ACESAuthoringInformation.const_get().EncodeString(identbuf, IdentBufferLen));
   }
   if ( ! ACESMasteringDisplayPrimaries.empty() ) {
-    fprintf(stream, "  %22s = %s\n",  "ACESMasteringDisplayPrimaries", ACESMasteringDisplayPrimaries.get().EncodeString(identbuf, IdentBufferLen));
+    fprintf(stream, "  %22s = %s\n",  "ACESMasteringDisplayPrimaries", ACESMasteringDisplayPrimaries.const_get().EncodeString(identbuf, IdentBufferLen));
   }
   if ( ! ACESMasteringDisplayWhitePointChromaticity.empty() ) {
-    fprintf(stream, "  %22s = %s\n",  "ACESMasteringDisplayWhitePointChromaticity", ACESMasteringDisplayWhitePointChromaticity.get().EncodeString(identbuf, IdentBufferLen));
+    fprintf(stream, "  %22s = %s\n",  "ACESMasteringDisplayWhitePointChromaticity", ACESMasteringDisplayWhitePointChromaticity.const_get().EncodeString(identbuf, IdentBufferLen));
   }
   if ( ! ACESMasteringDisplayMaximumLuminance.empty() ) {
-    fprintf(stream, "  %22s = %d\n",  "ACESMasteringDisplayMaximumLuminance", ACESMasteringDisplayMaximumLuminance.get());
+    fprintf(stream, "  %22s = %d\n",  "ACESMasteringDisplayMaximumLuminance", ACESMasteringDisplayMaximumLuminance.const_get());
   }
   if ( ! ACESMasteringDisplayMinimumLuminance.empty() ) {
-    fprintf(stream, "  %22s = %d\n",  "ACESMasteringDisplayMinimumLuminance", ACESMasteringDisplayMinimumLuminance.get());
+    fprintf(stream, "  %22s = %d\n",  "ACESMasteringDisplayMinimumLuminance", ACESMasteringDisplayMinimumLuminance.const_get());
   }
 }
 
@@ -4650,10 +4650,10 @@ TargetFrameSubDescriptor::Dump(FILE* stream)
   fprintf(stream, "  %22s = %d\n",  "TargetFrameComponentMinRef", TargetFrameComponentMinRef);
   fprintf(stream, "  %22s = %d\n",  "TargetFrameEssenceStreamID", TargetFrameEssenceStreamID);
   if ( ! ACESPictureSubDescriptorInstanceID.empty() ) {
-    fprintf(stream, "  %22s = %s\n",  "ACESPictureSubDescriptorInstanceID", ACESPictureSubDescriptorInstanceID.get().EncodeString(identbuf, IdentBufferLen));
+    fprintf(stream, "  %22s = %s\n",  "ACESPictureSubDescriptorInstanceID", ACESPictureSubDescriptorInstanceID.const_get().EncodeString(identbuf, IdentBufferLen));
   }
   if ( ! TargetFrameViewingEnvironment.empty() ) {
-    fprintf(stream, "  %22s = %s\n",  "TargetFrameViewingEnvironment", TargetFrameViewingEnvironment.get().EncodeString(identbuf, IdentBufferLen));
+    fprintf(stream, "  %22s = %s\n",  "TargetFrameViewingEnvironment", TargetFrameViewingEnvironment.const_get().EncodeString(identbuf, IdentBufferLen));
   }
 }
 
@@ -4740,7 +4740,7 @@ TextBasedDMFramework::Dump(FILE* stream)
 
   DescriptiveFramework::Dump(stream);
   if ( ! ObjectRef.empty() ) {
-    fprintf(stream, "  %22s = %s\n",  "ObjectRef", ObjectRef.get().EncodeString(identbuf, IdentBufferLen));
+    fprintf(stream, "  %22s = %s\n",  "ObjectRef", ObjectRef.const_get().EncodeString(identbuf, IdentBufferLen));
   }
 }
 
@@ -4839,7 +4839,7 @@ TextBasedObject::Dump(FILE* stream)
   fprintf(stream, "  %22s = %s\n",  "TextMIMEMediaType", TextMIMEMediaType.EncodeString(identbuf, IdentBufferLen));
   fprintf(stream, "  %22s = %s\n",  "RFC5646TextLanguageCode", RFC5646TextLanguageCode.EncodeString(identbuf, IdentBufferLen));
   if ( ! TextDataDescription.empty() ) {
-    fprintf(stream, "  %22s = %s\n",  "TextDataDescription", TextDataDescription.get().EncodeString(identbuf, IdentBufferLen));
+    fprintf(stream, "  %22s = %s\n",  "TextDataDescription", TextDataDescription.const_get().EncodeString(identbuf, IdentBufferLen));
   }
 }
 
@@ -5454,13 +5454,13 @@ JPEGXSPictureSubDescriptor::Dump(FILE* stream)
   fprintf(stream, "  %22s = %d\n",  "JPEGXSNc", JPEGXSNc);
   fprintf(stream, "  %22s = %s\n",  "JPEGXSComponentTable", JPEGXSComponentTable.EncodeString(identbuf, IdentBufferLen));
   if ( ! JPEGXSCw.empty() ) {
-    fprintf(stream, "  %22s = %d\n",  "JPEGXSCw", JPEGXSCw.get());
+    fprintf(stream, "  %22s = %d\n",  "JPEGXSCw", JPEGXSCw.const_get());
   }
   if ( ! JPEGXSHsl.empty() ) {
-    fprintf(stream, "  %22s = %d\n",  "JPEGXSHsl", JPEGXSHsl.get());
+    fprintf(stream, "  %22s = %d\n",  "JPEGXSHsl", JPEGXSHsl.const_get());
   }
   if ( ! JPEGXSMaximumBitRate.empty() ) {
-    fprintf(stream, "  %22s = %d\n",  "JPEGXSMaximumBitRate", JPEGXSMaximumBitRate.get());
+    fprintf(stream, "  %22s = %d\n",  "JPEGXSMaximumBitRate", JPEGXSMaximumBitRate.const_get());
   }
 }
 

@@ -206,15 +206,15 @@ inline const char* ui64sz(ui64_t i, char* buf)
       KLVPacket() : m_KeyStart(0), m_KLLength(0), m_ValueStart(0), m_ValueLength(0) {}
       virtual ~KLVPacket() {}
 
-      inline ui64_t  PacketLength() {
+      inline ui64_t  PacketLength() const {
 	return m_KLLength + m_ValueLength;
       }
 
-      inline ui64_t   ValueLength() {
+      inline ui64_t   ValueLength() const {
 	return m_ValueLength;
       }
 
-      inline ui32_t   KLLength() {
+      inline ui32_t   KLLength() const {
 	return m_KLLength;
       }
 
@@ -236,7 +236,7 @@ inline const char* ui64sz(ui64_t i, char* buf)
       }
 
       virtual void Detach(); // remove internal references to the buffer we init'd from
-      virtual void     Dump(FILE*, const Dictionary& Dict, bool show_value);
+      virtual void     Dump(FILE*, const Dictionary& Dict, bool show_value) const;
     };
 
   //

@@ -175,7 +175,7 @@ ASDCP::MXF::RIP::WriteToFile(Kumu::FileWriter& Writer)
 
 //
 void
-ASDCP::MXF::RIP::Dump(FILE* stream)
+ASDCP::MXF::RIP::Dump(FILE* stream) const
 {
   if ( stream == 0 )
     stream = stderr;
@@ -394,7 +394,7 @@ ASDCP::MXF::Partition::ArchiveSize()
 
 //
 void
-ASDCP::MXF::Partition::Dump(FILE* stream)
+ASDCP::MXF::Partition::Dump(FILE* stream) const
 {
   char identbuf[IdentBufferLen];
 
@@ -577,7 +577,7 @@ ASDCP::MXF::Primer::TagForKey(const ASDCP::UL& Key, ASDCP::TagValue& Tag)
 
 //
 void
-ASDCP::MXF::Primer::Dump(FILE* stream)
+ASDCP::MXF::Primer::Dump(FILE* stream) const
 {
   assert(m_Dict);
   char identbuf[IdentBufferLen];
@@ -712,7 +712,7 @@ ASDCP::MXF::Preface::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 
 //
 void
-ASDCP::MXF::Preface::Dump(FILE* stream)
+ASDCP::MXF::Preface::Dump(FILE* stream) const
 {
   char identbuf[IdentBufferLen];
 
@@ -724,10 +724,10 @@ ASDCP::MXF::Preface::Dump(FILE* stream)
   fprintf(stream, "  %22s = %hu\n", "Version", Version);
 
   if ( ! ObjectModelVersion.empty() )
-    fprintf(stream, "  %22s = %u\n",  "ObjectModelVersion", ObjectModelVersion.get());
+    fprintf(stream, "  %22s = %u\n",  "ObjectModelVersion", ObjectModelVersion.const_get());
 
   if ( ! PrimaryPackage.empty() )
-    fprintf(stream, "  %22s = %s\n",  "PrimaryPackage", PrimaryPackage.get().EncodeHex(identbuf, IdentBufferLen));
+    fprintf(stream, "  %22s = %s\n",  "PrimaryPackage", PrimaryPackage.const_get().EncodeHex(identbuf, IdentBufferLen));
 
   fprintf(stream, "  %22s:\n", "Identifications");  Identifications.Dump(stream);
   fprintf(stream, "  %22s = %s\n",  "ContentStorage", ContentStorage.EncodeHex(identbuf, IdentBufferLen));
@@ -736,11 +736,11 @@ ASDCP::MXF::Preface::Dump(FILE* stream)
   fprintf(stream, "  %22s:\n", "DMSchemes");  DMSchemes.Dump(stream);
   if ( ! ApplicationSchemes.empty() )
     {
-      fprintf(stream, "  %22s:\n", "ApplicationSchemes");  ApplicationSchemes.get().Dump(stream);
+      fprintf(stream, "  %22s:\n", "ApplicationSchemes");  ApplicationSchemes.const_get().Dump(stream);
     }
   if ( ! ConformsToSpecifications.empty() )
     {
-      fprintf(stream, "  %22s:\n", "ConformsToSpecifications");  ConformsToSpecifications.get().Dump(stream);
+      fprintf(stream, "  %22s:\n", "ConformsToSpecifications");  ConformsToSpecifications.const_get().Dump(stream);
     }
 }
 
@@ -998,7 +998,7 @@ ASDCP::MXF::OP1aHeader::WriteToFile(Kumu::FileWriter& Writer, ui32_t HeaderSize)
 
 //
 void
-ASDCP::MXF::OP1aHeader::Dump(FILE* stream)
+ASDCP::MXF::OP1aHeader::Dump(FILE* stream) const
 {
   if ( stream == 0 )
     stream = stderr;
@@ -1148,7 +1148,7 @@ ASDCP::MXF::OPAtomIndexFooter::WriteToFile(Kumu::FileWriter& Writer, ui64_t dura
 
 //
 void
-ASDCP::MXF::OPAtomIndexFooter::Dump(FILE* stream)
+ASDCP::MXF::OPAtomIndexFooter::Dump(FILE* stream) const
 {
   if ( stream == 0 )
     stream = stderr;
@@ -1421,7 +1421,7 @@ ASDCP::MXF::InterchangeObject::WriteToBuffer(ASDCP::FrameBuffer& Buffer)
 
 //
 void
-ASDCP::MXF::InterchangeObject::Dump(FILE* stream)
+ASDCP::MXF::InterchangeObject::Dump(FILE* stream) const
 {
   char identbuf[IdentBufferLen];
 
@@ -1430,7 +1430,7 @@ ASDCP::MXF::InterchangeObject::Dump(FILE* stream)
   fprintf(stream, "             InstanceUID = %s\n",  InstanceUID.EncodeHex(identbuf, IdentBufferLen));
 
   if ( ! GenerationUID.empty() )
-    fprintf(stream, "           GenerationUID = %s\n",  GenerationUID.get().EncodeHex(identbuf, IdentBufferLen));
+    fprintf(stream, "           GenerationUID = %s\n",  GenerationUID.const_get().EncodeHex(identbuf, IdentBufferLen));
 }
 
 //
@@ -1933,7 +1933,7 @@ ASDCP::MXF::GetEditRateFromFP(ASDCP::MXF::OP1aHeader& header, ASDCP::Rational& e
       if ( sequence == 0 )
 	{
 	  DefaultLogSink().Error("The MXF header is incomplete: %s is not a Sequence item.\n",
-				 track->Sequence.get().EncodeHex(buf, 64));
+				 track->Sequence.const_get().EncodeHex(buf, 64));
 	  return false;
 	}
 
