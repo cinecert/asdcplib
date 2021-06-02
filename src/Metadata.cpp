@@ -236,7 +236,7 @@ Identification::Clone() const
 
 //
 void
-Identification::Dump(FILE* stream)
+Identification::Dump(FILE* stream) const
 {
   char identbuf[IdentBufferLen];
   *identbuf = 0;
@@ -331,7 +331,7 @@ ContentStorage::Clone() const
 
 //
 void
-ContentStorage::Dump(FILE* stream)
+ContentStorage::Dump(FILE* stream) const
 {
   char identbuf[IdentBufferLen];
   *identbuf = 0;
@@ -425,7 +425,7 @@ EssenceContainerData::Clone() const
 
 //
 void
-EssenceContainerData::Dump(FILE* stream)
+EssenceContainerData::Dump(FILE* stream) const
 {
   char identbuf[IdentBufferLen];
   *identbuf = 0;
@@ -519,7 +519,7 @@ GenericPackage::Clone() const
 
 //
 void
-GenericPackage::Dump(FILE* stream)
+GenericPackage::Dump(FILE* stream) const
 {
   char identbuf[IdentBufferLen];
   *identbuf = 0;
@@ -598,7 +598,7 @@ MaterialPackage::Clone() const
 
 //
 void
-MaterialPackage::Dump(FILE* stream)
+MaterialPackage::Dump(FILE* stream) const
 {
   char identbuf[IdentBufferLen];
   *identbuf = 0;
@@ -682,7 +682,7 @@ SourcePackage::Clone() const
 
 //
 void
-SourcePackage::Dump(FILE* stream)
+SourcePackage::Dump(FILE* stream) const
 {
   char identbuf[IdentBufferLen];
   *identbuf = 0;
@@ -772,7 +772,7 @@ GenericTrack::Clone() const
 
 //
 void
-GenericTrack::Dump(FILE* stream)
+GenericTrack::Dump(FILE* stream) const
 {
   char identbuf[IdentBufferLen];
   *identbuf = 0;
@@ -845,7 +845,7 @@ StaticTrack::Clone() const
 
 //
 void
-StaticTrack::Dump(FILE* stream)
+StaticTrack::Dump(FILE* stream) const
 {
   char identbuf[IdentBufferLen];
   *identbuf = 0;
@@ -929,7 +929,7 @@ Track::Clone() const
 
 //
 void
-Track::Dump(FILE* stream)
+Track::Dump(FILE* stream) const
 {
   char identbuf[IdentBufferLen];
   *identbuf = 0;
@@ -1011,7 +1011,7 @@ StructuralComponent::Clone() const
 
 //
 void
-StructuralComponent::Dump(FILE* stream)
+StructuralComponent::Dump(FILE* stream) const
 {
   char identbuf[IdentBufferLen];
   *identbuf = 0;
@@ -1083,7 +1083,7 @@ Sequence::Clone() const
 
 //
 void
-Sequence::Dump(FILE* stream)
+Sequence::Dump(FILE* stream) const
 {
   char identbuf[IdentBufferLen];
   *identbuf = 0;
@@ -1172,7 +1172,7 @@ SourceClip::Clone() const
 
 //
 void
-SourceClip::Dump(FILE* stream)
+SourceClip::Dump(FILE* stream) const
 {
   char identbuf[IdentBufferLen];
   *identbuf = 0;
@@ -1262,7 +1262,7 @@ TimecodeComponent::Clone() const
 
 //
 void
-TimecodeComponent::Dump(FILE* stream)
+TimecodeComponent::Dump(FILE* stream) const
 {
   char identbuf[IdentBufferLen];
   *identbuf = 0;
@@ -1342,7 +1342,7 @@ GenericDescriptor::Clone() const
 
 //
 void
-GenericDescriptor::Dump(FILE* stream)
+GenericDescriptor::Dump(FILE* stream) const
 {
   char identbuf[IdentBufferLen];
   *identbuf = 0;
@@ -1435,7 +1435,7 @@ FileDescriptor::Clone() const
 
 //
 void
-FileDescriptor::Dump(FILE* stream)
+FileDescriptor::Dump(FILE* stream) const
 {
   char identbuf[IdentBufferLen];
   *identbuf = 0;
@@ -1569,7 +1569,7 @@ GenericSoundEssenceDescriptor::Clone() const
 
 //
 void
-GenericSoundEssenceDescriptor::Dump(FILE* stream)
+GenericSoundEssenceDescriptor::Dump(FILE* stream) const
 {
   char identbuf[IdentBufferLen];
   *identbuf = 0;
@@ -1685,7 +1685,7 @@ WaveAudioDescriptor::Clone() const
 
 //
 void
-WaveAudioDescriptor::Dump(FILE* stream)
+WaveAudioDescriptor::Dump(FILE* stream) const
 {
   char identbuf[IdentBufferLen];
   *identbuf = 0;
@@ -1965,7 +1965,7 @@ GenericPictureEssenceDescriptor::Clone() const
 
 //
 void
-GenericPictureEssenceDescriptor::Dump(FILE* stream)
+GenericPictureEssenceDescriptor::Dump(FILE* stream) const
 {
   char identbuf[IdentBufferLen];
   *identbuf = 0;
@@ -2172,7 +2172,7 @@ RGBAEssenceDescriptor::Clone() const
 
 //
 void
-RGBAEssenceDescriptor::Dump(FILE* stream)
+RGBAEssenceDescriptor::Dump(FILE* stream) const
 {
   char identbuf[IdentBufferLen];
   *identbuf = 0;
@@ -2338,7 +2338,7 @@ JPEG2000PictureSubDescriptor::Clone() const
 
 //
 void
-JPEG2000PictureSubDescriptor::Dump(FILE* stream)
+JPEG2000PictureSubDescriptor::Dump(FILE* stream) const
 {
   char identbuf[IdentBufferLen];
   *identbuf = 0;
@@ -2503,7 +2503,7 @@ CDCIEssenceDescriptor::Clone() const
 
 //
 void
-CDCIEssenceDescriptor::Dump(FILE* stream)
+CDCIEssenceDescriptor::Dump(FILE* stream) const
 {
   char identbuf[IdentBufferLen];
   *identbuf = 0;
@@ -2667,7 +2667,7 @@ MPEG2VideoDescriptor::Clone() const
 
 //
 void
-MPEG2VideoDescriptor::Dump(FILE* stream)
+MPEG2VideoDescriptor::Dump(FILE* stream) const
 {
   char identbuf[IdentBufferLen];
   *identbuf = 0;
@@ -2799,7 +2799,7 @@ DMSegment::Clone() const
 
 //
 void
-DMSegment::Dump(FILE* stream)
+DMSegment::Dump(FILE* stream) const
 {
   char identbuf[IdentBufferLen];
   *identbuf = 0;
@@ -2891,7 +2891,7 @@ CryptographicFramework::Clone() const
 
 //
 void
-CryptographicFramework::Dump(FILE* stream)
+CryptographicFramework::Dump(FILE* stream) const
 {
   char identbuf[IdentBufferLen];
   *identbuf = 0;
@@ -2985,7 +2985,7 @@ CryptographicContext::Clone() const
 
 //
 void
-CryptographicContext::Dump(FILE* stream)
+CryptographicContext::Dump(FILE* stream) const
 {
   char identbuf[IdentBufferLen];
   *identbuf = 0;
@@ -3074,7 +3074,7 @@ DescriptiveFramework::Clone() const
 
 //
 void
-DescriptiveFramework::Dump(FILE* stream)
+DescriptiveFramework::Dump(FILE* stream) const
 {
   char identbuf[IdentBufferLen];
   *identbuf = 0;
@@ -3161,7 +3161,7 @@ DescriptiveObject::Clone() const
 
 //
 void
-DescriptiveObject::Dump(FILE* stream)
+DescriptiveObject::Dump(FILE* stream) const
 {
   char identbuf[IdentBufferLen];
   *identbuf = 0;
@@ -3245,7 +3245,7 @@ GenericDataEssenceDescriptor::Clone() const
 
 //
 void
-GenericDataEssenceDescriptor::Dump(FILE* stream)
+GenericDataEssenceDescriptor::Dump(FILE* stream) const
 {
   char identbuf[IdentBufferLen];
   *identbuf = 0;
@@ -3357,7 +3357,7 @@ TimedTextDescriptor::Clone() const
 
 //
 void
-TimedTextDescriptor::Dump(FILE* stream)
+TimedTextDescriptor::Dump(FILE* stream) const
 {
   char identbuf[IdentBufferLen];
   *identbuf = 0;
@@ -3459,7 +3459,7 @@ TimedTextResourceSubDescriptor::Clone() const
 
 //
 void
-TimedTextResourceSubDescriptor::Dump(FILE* stream)
+TimedTextResourceSubDescriptor::Dump(FILE* stream) const
 {
   char identbuf[IdentBufferLen];
   *identbuf = 0;
@@ -3540,7 +3540,7 @@ StereoscopicPictureSubDescriptor::Clone() const
 
 //
 void
-StereoscopicPictureSubDescriptor::Dump(FILE* stream)
+StereoscopicPictureSubDescriptor::Dump(FILE* stream) const
 {
   char identbuf[IdentBufferLen];
   *identbuf = 0;
@@ -3618,7 +3618,7 @@ ContainerConstraintsSubDescriptor::Clone() const
 
 //
 void
-ContainerConstraintsSubDescriptor::Dump(FILE* stream)
+ContainerConstraintsSubDescriptor::Dump(FILE* stream) const
 {
   char identbuf[IdentBufferLen];
   *identbuf = 0;
@@ -3699,7 +3699,7 @@ NetworkLocator::Clone() const
 
 //
 void
-NetworkLocator::Dump(FILE* stream)
+NetworkLocator::Dump(FILE* stream) const
 {
   char identbuf[IdentBufferLen];
   *identbuf = 0;
@@ -3853,7 +3853,7 @@ MCALabelSubDescriptor::Clone() const
 
 //
 void
-MCALabelSubDescriptor::Dump(FILE* stream)
+MCALabelSubDescriptor::Dump(FILE* stream) const
 {
   char identbuf[IdentBufferLen];
   *identbuf = 0;
@@ -3973,7 +3973,7 @@ AudioChannelLabelSubDescriptor::Clone() const
 
 //
 void
-AudioChannelLabelSubDescriptor::Dump(FILE* stream)
+AudioChannelLabelSubDescriptor::Dump(FILE* stream) const
 {
   char identbuf[IdentBufferLen];
   *identbuf = 0;
@@ -4059,7 +4059,7 @@ SoundfieldGroupLabelSubDescriptor::Clone() const
 
 //
 void
-SoundfieldGroupLabelSubDescriptor::Dump(FILE* stream)
+SoundfieldGroupLabelSubDescriptor::Dump(FILE* stream) const
 {
   char identbuf[IdentBufferLen];
   *identbuf = 0;
@@ -4141,7 +4141,7 @@ GroupOfSoundfieldGroupsLabelSubDescriptor::Clone() const
 
 //
 void
-GroupOfSoundfieldGroupsLabelSubDescriptor::Dump(FILE* stream)
+GroupOfSoundfieldGroupsLabelSubDescriptor::Dump(FILE* stream) const
 {
   char identbuf[IdentBufferLen];
   *identbuf = 0;
@@ -4219,7 +4219,7 @@ DCDataDescriptor::Clone() const
 
 //
 void
-DCDataDescriptor::Dump(FILE* stream)
+DCDataDescriptor::Dump(FILE* stream) const
 {
   char identbuf[IdentBufferLen];
   *identbuf = 0;
@@ -4297,7 +4297,7 @@ PrivateDCDataDescriptor::Clone() const
 
 //
 void
-PrivateDCDataDescriptor::Dump(FILE* stream)
+PrivateDCDataDescriptor::Dump(FILE* stream) const
 {
   char identbuf[IdentBufferLen];
   *identbuf = 0;
@@ -4390,7 +4390,7 @@ DolbyAtmosSubDescriptor::Clone() const
 
 //
 void
-DolbyAtmosSubDescriptor::Dump(FILE* stream)
+DolbyAtmosSubDescriptor::Dump(FILE* stream) const
 {
   char identbuf[IdentBufferLen];
   *identbuf = 0;
@@ -4503,7 +4503,7 @@ ACESPictureSubDescriptor::Clone() const
 
 //
 void
-ACESPictureSubDescriptor::Dump(FILE* stream)
+ACESPictureSubDescriptor::Dump(FILE* stream) const
 {
   char identbuf[IdentBufferLen];
   *identbuf = 0;
@@ -4632,7 +4632,7 @@ TargetFrameSubDescriptor::Clone() const
 
 //
 void
-TargetFrameSubDescriptor::Dump(FILE* stream)
+TargetFrameSubDescriptor::Dump(FILE* stream) const
 {
   char identbuf[IdentBufferLen];
   *identbuf = 0;
@@ -4730,7 +4730,7 @@ TextBasedDMFramework::Clone() const
 
 //
 void
-TextBasedDMFramework::Dump(FILE* stream)
+TextBasedDMFramework::Dump(FILE* stream) const
 {
   char identbuf[IdentBufferLen];
   *identbuf = 0;
@@ -4826,7 +4826,7 @@ TextBasedObject::Clone() const
 
 //
 void
-TextBasedObject::Dump(FILE* stream)
+TextBasedObject::Dump(FILE* stream) const
 {
   char identbuf[IdentBufferLen];
   *identbuf = 0;
@@ -4913,7 +4913,7 @@ GenericStreamTextBasedSet::Clone() const
 
 //
 void
-GenericStreamTextBasedSet::Dump(FILE* stream)
+GenericStreamTextBasedSet::Dump(FILE* stream) const
 {
   char identbuf[IdentBufferLen];
   *identbuf = 0;
@@ -4995,7 +4995,7 @@ ISXDDataEssenceDescriptor::Clone() const
 
 //
 void
-ISXDDataEssenceDescriptor::Dump(FILE* stream)
+ISXDDataEssenceDescriptor::Dump(FILE* stream) const
 {
   char identbuf[IdentBufferLen];
   *identbuf = 0;
@@ -5083,7 +5083,7 @@ PHDRMetadataTrackSubDescriptor::Clone() const
 
 //
 void
-PHDRMetadataTrackSubDescriptor::Dump(FILE* stream)
+PHDRMetadataTrackSubDescriptor::Dump(FILE* stream) const
 {
   char identbuf[IdentBufferLen];
   *identbuf = 0;
@@ -5167,7 +5167,7 @@ PIMFDynamicMetadataDescriptor::Clone() const
 
 //
 void
-PIMFDynamicMetadataDescriptor::Dump(FILE* stream)
+PIMFDynamicMetadataDescriptor::Dump(FILE* stream) const
 {
   char identbuf[IdentBufferLen];
   *identbuf = 0;
@@ -5246,7 +5246,7 @@ IABEssenceDescriptor::Clone() const
 
 //
 void
-IABEssenceDescriptor::Dump(FILE* stream)
+IABEssenceDescriptor::Dump(FILE* stream) const
 {
   char identbuf[IdentBufferLen];
   *identbuf = 0;
@@ -5324,7 +5324,7 @@ IABSoundfieldLabelSubDescriptor::Clone() const
 
 //
 void
-IABSoundfieldLabelSubDescriptor::Dump(FILE* stream)
+IABSoundfieldLabelSubDescriptor::Dump(FILE* stream) const
 {
   char identbuf[IdentBufferLen];
   *identbuf = 0;
@@ -5438,7 +5438,7 @@ JPEGXSPictureSubDescriptor::Clone() const
 
 //
 void
-JPEGXSPictureSubDescriptor::Dump(FILE* stream)
+JPEGXSPictureSubDescriptor::Dump(FILE* stream) const
 {
   char identbuf[IdentBufferLen];
   *identbuf = 0;
