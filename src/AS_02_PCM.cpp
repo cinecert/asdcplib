@@ -326,7 +326,7 @@ AS_02::PCM::MXFReader::DumpIndex(FILE* stream) const
 //------------------------------------------------------------------------------------------
 
 //
-class AS_02::PCM::MXFWriter::h__Writer : public AS_02::h__AS02WriterClip
+class AS_02::PCM::MXFWriter::h__Writer : public AS_02::h__AS02WriterClip<AS_02::MXF::AS02IndexWriterCBR>
 {
   ASDCP_NO_COPY_CONSTRUCT(h__Writer);
   h__Writer();
@@ -335,8 +335,8 @@ public:
   ASDCP::MXF::WaveAudioDescriptor *m_WaveAudioDescriptor;
   byte_t m_EssenceUL[SMPTE_UL_LENGTH];
   ui32_t m_BytesPerSample;
-  
-  h__Writer(const Dictionary *d) : AS_02::h__AS02WriterClip(d), m_WaveAudioDescriptor(0), m_BytesPerSample(0)
+    
+  h__Writer(const Dictionary *d) : AS_02::h__AS02WriterClip<AS_02::MXF::AS02IndexWriterCBR>(d), m_WaveAudioDescriptor(0), m_BytesPerSample(0)
   {
     memset(m_EssenceUL, 0, SMPTE_UL_LENGTH);
   }
