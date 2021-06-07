@@ -272,6 +272,7 @@ main(int argc, const char** argv)
                   if ( ASDCP_SUCCESS(result) )
                     Index.Dump(stdout);
                 }
+#if USE_AS_02
               else
                 {
                   AS_02::MXF::AS02IndexReader Index(Dict);
@@ -279,14 +280,14 @@ main(int argc, const char** argv)
 
                   if ( ASDCP_SUCCESS(result) )
                     {
-                      bool has_header_essence = false; // TODO
                       Index.m_Lookup = &Header.m_Primer;
-                      result = Index.InitFromFile(Reader, RIP, has_header_essence);
+                      result = Index.InitFromFile(Reader, RIP, Header.HasHeaderEssence());
                     }
 
                   if ( ASDCP_SUCCESS(result) )
                     Index.Dump(stdout);
                 }
+#endif // USE_AS_02
 	    }
 
 	  if ( ASDCP_SUCCESS(result) )

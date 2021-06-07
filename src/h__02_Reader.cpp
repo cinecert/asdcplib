@@ -126,6 +126,13 @@ AS_02::MXF::AS02IndexReader::InitFromFile(const Kumu::FileReader& reader, const 
       return RESULT_AS02_FORMAT;
     }
 
+    ui64_t current_body_offset = 0;
+    ui64_t current_ec_offset = 0;
+    body_part_iter = body_part_array.begin();
+    assert(body_part_iter != body_part_array.end());
+    assert(!body_part_iter->empty());
+    ASDCP::MXF::Partition *tmp_partition = body_part_iter->get();
+
   body_part_iter = body_part_array.begin();
   for ( i = rip.PairArray.begin(); KM_SUCCESS(result) && i != rip.PairArray.end(); ++i )
     {
@@ -148,6 +155,17 @@ AS_02::MXF::AS02IndexReader::InitFromFile(const Kumu::FileReader& reader, const 
 	    {
 	      DefaultLogSink().Warn("File footer partition contains index data.\n");
 	    }
+
+          if ( has_header_essence && tmp_partition->ThisPartition == 0 )
+            {
+              assert(current_body_offset == 0);
+              current_ec_offset = tmp_partition->HeaderByteCount + tmp_partition->ArchiveSize();
+            }
+          else
+            {
+              current_body_offset = tmp_partition->BodyOffset;
+              current_ec_offset += tmp_partition->ThisPartition + tmp_partition->ArchiveSize();
+            }
 
           i64_t bytes_consumed = 0;
           i64_t fill_packet_length = 0;
@@ -177,6 +195,10 @@ AS_02::MXF::AS02IndexReader::InitFromFile(const Kumu::FileReader& reader, const 
 
                       if ( KM_SUCCESS(result) )
                         {
+                          IndexTableSegment *segment = dynamic_cast<IndexTableSegment*>(object);
+                          assert(segment);
+                          segment->RtFileOffset = current_ec_offset;
+                          segment->RtEntryOffset = current_body_offset;
                           m_PacketList->AddPacket(object); // takes ownership
                           object->Detach(); // sever the connection to the underlying buffer
                         }
@@ -249,54 +271,6 @@ AS_02::MXF::AS02IndexReader::InitFromFile(const Kumu::FileReader& reader, const 
 }
 
 //
-ASDCP::Result_t
-AS_02::MXF::AS02IndexReader::InitFromBuffer(const byte_t* p, ui32_t l, const ui64_t& body_offset, const ui64_t& essence_container_offset)
-{
-  assert(m_Dict);
-  Result_t result = RESULT_OK;
-  const byte_t* end_p = p + l;
-
-  while ( KM_SUCCESS(result) && p < end_p )
-    {
-      // parse the packets and index them by uid, discard KLVFill items
-      InterchangeObject* object = CreateObject(m_Dict, p);
-      assert(object);
-
-      object->m_Lookup = m_Lookup;
-      result = object->InitFromBuffer(p, end_p - p);
-      p += object->PacketLength();
-
-      if ( KM_SUCCESS(result) )
-	{
-	  IndexTableSegment *segment = dynamic_cast<IndexTableSegment*>(object);
-
-	  if ( segment != 0 )
-	    {
-	      segment->RtFileOffset = essence_container_offset;
-	      segment->RtEntryOffset = body_offset;
-	      m_PacketList->AddPacket(object); // takes ownership
-	    }
-	  else
-	    {
-	      delete object;
-	    }
-	}
-      else
-	{
-	  DefaultLogSink().Error("Error initializing index segment packet.\n");
-	  delete object;
-	}
-    }
-
-  if ( KM_FAILURE(result) )
-    {
-      DefaultLogSink().Error("Failed to initialize AS02IndexReader.\n");
-    }
-
-  return result;
-}
-
-//
 void
 AS_02::MXF::AS02IndexReader::Dump(FILE* stream)
 {
@@ -336,7 +310,7 @@ AS_02::MXF::AS02IndexReader::GetMDObjectsByType(const byte_t* ObjectID, std::lis
 
 
 //
-ui32_t
+ui64_t
 AS_02::MXF::AS02IndexReader::GetDuration() const
 {
   return m_Duration;

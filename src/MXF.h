@@ -436,6 +436,7 @@ namespace ASDCP
 	  ASDCP_NO_COPY_CONSTRUCT(OP1aHeader);
 	  OP1aHeader();
           i64_t m_PartitionHeadFillPacketLength;
+          i64_t m_HeaderEssenceOffet;
 
 	public:
 	  ASDCP::MXF::Primer  m_Primer;
@@ -455,6 +456,10 @@ namespace ASDCP
           // Return the sum of HeaderByteCount and, if present, the total size
           // of the Fill packet immediately following the Header Partion pack.
           i64_t HeaderByteCountWithPartitionHeadFillLength() const;
+
+          // if zero, there is no essence data in the header
+          i64_t HeaderEssenceOffet() const { return m_HeaderEssenceOffet; }
+          bool HasHeaderEssence() const { return m_HeaderEssenceOffet > 0; }
 	};
 
       // Searches the header object and returns the edit rate based on the contents of the

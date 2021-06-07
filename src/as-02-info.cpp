@@ -659,7 +659,7 @@ public:
 	m_Desc.FillDescriptor(m_Reader);
 	m_Reader.FillWriterInfo(m_WriterInfo);
 
-	fprintf(stdout, "%s file essence type is %s, (%d edit unit%s).\n",
+	fprintf(stdout, "%s file essence type is %s, (%llu edit unit%s).\n",
 		( m_WriterInfo.LabelSetType == LS_MXF_SMPTE ? "SMPTE 2067-5" : "Unknown" ),
 		type_string,
 		(m_Desc.ContainerDuration != 0 ? m_Desc.ContainerDuration : m_Reader.AS02IndexReader().GetDuration()),

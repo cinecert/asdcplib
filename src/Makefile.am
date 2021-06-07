@@ -83,6 +83,8 @@ include_HEADERS += \
 endif
 
 if USE_AS_02
+AM_CPPFLAGS += -DUSE_AS_02
+
 include_HEADERS		+= \
 	AS_02.h \
 	AS_02_JXS.h \
@@ -254,7 +256,10 @@ pinkwave_SOURCES = pinkwave.cpp
 pinkwave_LDADD = libasdcp.la  libkumu.la
 
 klvwalk_SOURCES = klvwalk.cpp
-klvwalk_LDADD = libas02.la  libasdcp.la libkumu.la
+klvwalk_LDADD = libasdcp.la libkumu.la
+if USE_AS_02
+klvwalk_LDADD += libas02.la
+endif
 
 wavesplit_SOURCES = wavesplit.cpp
 wavesplit_LDADD = libasdcp.la libkumu.la

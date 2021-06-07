@@ -749,7 +749,8 @@ ASDCP::MXF::Preface::Dump(FILE* stream) const
 
 ASDCP::MXF::OP1aHeader::OP1aHeader(const Dictionary* d) :
   Partition(d), m_Primer(d), m_Preface(0),
-  m_PartitionHeadFillPacketLength(0)
+  m_PartitionHeadFillPacketLength(0),
+  m_HeaderEssenceOffet(0)
 {
   assert(m_Dict);
 }
