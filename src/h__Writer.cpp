@@ -205,7 +205,7 @@ ASDCP::AddDmsTrackGenericPartUtf8Text(Kumu::FileWriter& file_writer, MXF::OP1aHe
     {
       if ( max_sid < i->BodySID )
 	{
-      max_sid = i->BodySID;
+	  max_sid = i->BodySID;
 	}
     }
 
