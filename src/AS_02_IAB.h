@@ -112,17 +112,16 @@ namespace AS_02 {
         const ASDCP::Rational& sampling_rate = ASDCP::SampleRate_48k
       );
 
-        /**
-         * Writes a single frame.
-         *
-         * Must be preceded by a succesful OpenWrite() call followed by zero or more WriteFrame() calls
-         *
-         * @param frame a complete IA Frame
-         * @return RESULT_OK indicates that the frame is written and additional frames can be written,
-         * otherwise the reader is reset and the file is left is an undermined state.
-         */
+      /**
+       * Writes a single frame.
+       * 
+       * Must be preceded by a succesful OpenWrite() call followed by zero or more WriteFrame() calls
+       * 
+       * @param frame a complete IA Frame
+       * @return RESULT_OK indicates that the frame is written and additional frames can be written, 
+       * otherwise the reader is reset and the file is left is an undermined state.
+       */
       Result_t WriteFrame(const ASDCP::FrameBuffer& frame);
-
 
       /**
        * Writes an XML text document to the MXF file as per RP 2057. If the
@@ -135,10 +134,10 @@ namespace AS_02 {
 
       /**
        * Writes the Track File footer and closes the file.
-       *
+       * 
        * Must be preceded by a succesful OpenWrite() call followed by zero or more WriteFrame() calls
-       *
-       * @return RESULT_OK indicates that the frame is written and additional frames can be written,
+       * 
+       * @return RESULT_OK indicates that the frame is written and additional frames can be written, 
        * otherwise the reader is reset and the file is left is an undermined state.
        */
       Result_t Finalize();
@@ -229,14 +228,14 @@ namespace AS_02 {
        */
       Result_t FillWriterInfo(ASDCP::WriterInfo& writer_info) const;
 
-        /**
-         * Reads an IA Frame.
-         *
-         * @param frame_number Index of the frame to be read. Must be in the range [0, GetFrameCount()).
-         * @param frame Frame data. Must not be modified. Remains valid until the next call to ReadFrame().
-         * @return RESULT_OK indicates that more frames are ready to be read,
-         * otherwise the file is closed and the reader reset
-         */
+      /**
+       * Reads an IA Frame.
+       * 
+       * @param frame_number Index of the frame to be read. Must be in the range [0, GetFrameCount()).
+       * @param frame Frame data. Must not be modified. Remains valid until the next call to ReadFrame().
+       * @return RESULT_OK indicates that more frames are ready to be read,
+       * otherwise the file is closed and the reader reset
+       */
       Result_t ReadFrame(ui32_t frame_number, ASDCP::FrameBuffer& frame);
 
       /** Reads a Generic Stream Partition payload. Returns RESULT_INIT if the file is
