@@ -296,7 +296,7 @@ namespace AS_02
       }
     };
 
-    //
+  //
   class h__AS02WriterFrame : public h__AS02Writer<AS_02::MXF::AS02IndexWriterVBR>
     {
       ASDCP_NO_COPY_CONSTRUCT(h__AS02WriterFrame);
