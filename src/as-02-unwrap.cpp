@@ -1131,24 +1131,24 @@ main(int argc, const char** argv)
       switch ( EssenceType )
 	{
 	case ESS_AS02_JPEG_2000:
-      result = read_JP2K_file(Options, defaultFactory);
+	  result = read_JP2K_file(Options, defaultFactory);
 	  break;
 	//PB
 	case ESS_AS02_ACES:
-      result = read_ACES_file(Options, defaultFactory);
+	  result = read_ACES_file(Options, defaultFactory);
 	  break;
 	//--
 	case ESS_AS02_PCM_24b_48k:
 	case ESS_AS02_PCM_24b_96k:
-      result = read_PCM_file(Options, defaultFactory);
+	  result = read_PCM_file(Options, defaultFactory);
 	  break;
 
 	case ESS_AS02_TIMED_TEXT:
-      result = read_timed_text_file(Options, defaultFactory);
+	  result = read_timed_text_file(Options, defaultFactory);
 	  break;
 
     case ESS_AS02_IAB:
-      result = read_iab_file(Options, defaultFactory);
+	  result = read_iab_file(Options, defaultFactory);
 	  break;
 
 	case ESS_AS02_ISXD:

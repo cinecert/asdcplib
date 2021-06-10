@@ -207,16 +207,16 @@ main(int argc, const char** argv)
 	  
 	  if ( ASDCP_SUCCESS(result) )
 	    {
-          result = MXF::SeekToRIP(*Reader);
+		  result = MXF::SeekToRIP(*Reader);
 	      
 	      if ( ASDCP_SUCCESS(result) )
 		{
-          result = RIP.InitFromFile(*Reader);
+		  result = RIP.InitFromFile(*Reader);
 		  ui32_t test_s = RIP.PairArray.size();
 
 		  if ( ASDCP_FAILURE(result) )
 		    {
-		      DefaultLogSink().Error("File contains no RIP\n");              
+		      DefaultLogSink().Error("File contains no RIP\n");
 		      result = RESULT_OK;
 		    }
 		  else if ( RIP.PairArray.empty() )

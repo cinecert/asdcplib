@@ -169,7 +169,7 @@ ASDCP::EssenceType(const std::string& filename, EssenceType_t& type, const Kumu:
   InterchangeObject* md_object = 0;
 
   assert(m_Dict);
-  Kumu::IFileReader*   Reader = fileReaderFactory.CreateFileReader();
+  ASDCP::mem_ptr<Kumu::IFileReader> Reader(fileReaderFactory.CreateFileReader());
   OP1aHeader TestHeader(m_Dict);
 
   Result_t result = Reader->OpenRead(filename);
@@ -285,11 +285,11 @@ ASDCP::EssenceType(const std::string& filename, EssenceType_t& type, const Kumu:
       else
 	{
 	  DefaultLogSink().Error("Unsupported MXF Operational Pattern.\n");
-	  result = RESULT_FORMAT;
+      return RESULT_FORMAT;
 	}
     }
 
-  delete Reader;
+
   return result;
 }
 

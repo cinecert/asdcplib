@@ -2018,30 +2018,30 @@ main(int argc, const char** argv)
 	  switch ( EssenceType )
 	    {
 	    case ESS_MPEG2_VES:
-          result = read_MPEG2_file(Options, defaultFactory);
+	      result = read_MPEG2_file(Options, defaultFactory);
 	      break;
 
 	    case ESS_JPEG_2000:
 	      if ( Options.stereo_image_flag )
-        result = read_JP2K_S_file(Options, defaultFactory);
+	      result = read_JP2K_S_file(Options, defaultFactory);
 	      else
-        result = read_JP2K_file(Options, defaultFactory);
+	      result = read_JP2K_file(Options, defaultFactory);
 	      break;
 
 	    case ESS_JPEG_2000_S:
-          result = read_JP2K_S_file(Options, defaultFactory);
+	      result = read_JP2K_S_file(Options, defaultFactory);
 	      break;
 
 	    case ESS_PCM_24b_48k:
 	    case ESS_PCM_24b_96k:
-          result = read_PCM_file(Options, defaultFactory);
+	      result = read_PCM_file(Options, defaultFactory);
 	      break;
 
 	    case ESS_TIMED_TEXT:
-          result = read_timed_text_file(Options, defaultFactory);
+	      result = read_timed_text_file(Options, defaultFactory);
 	      break;
 
-		default:
+	      default:
 	      fprintf(stderr, "%s: Unknown file type, not ASDCP essence.\n", Options.filenames[0]);
 	      return 5;
 	    }
