@@ -386,7 +386,7 @@ namespace ASDCP
 	Result_t CalcFrameBufferSize(ui64_t &PacketLength)
 	{
 	  KLReader Reader;
-	  Result_t result = Reader.ReadKLFromFile(m_File);
+      Result_t result = Reader.ReadKLFromFile(*m_File);
 
 	  if ( KM_FAILURE(result) )
 	    return result;
