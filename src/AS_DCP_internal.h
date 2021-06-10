@@ -733,7 +733,7 @@ namespace ASDCP
 	  m_HeaderPart.AddChildObject(m_MaterialPackage);
 	  m_ContentStorage->Packages.push_back(m_MaterialPackage->InstanceUID);
 
-      ui32_t trackID = 1;
+	  ui32_t trackID = 1;
 	  if ( tc_frame_rate )
 	    {
 	      TrackSet<TimecodeComponent> MPTCTrack =
@@ -744,7 +744,7 @@ namespace ASDCP
 	      m_DurationUpdateList.push_back(&(MPTCTrack.Sequence->Duration.get()));
 	      MPTCTrack.Clip->Duration.set_has_value();
 	      m_DurationUpdateList.push_back(&(MPTCTrack.Clip->Duration.get()));
-          trackID++;
+	      trackID++;
 	    }
 
 	  TrackSet<SourceClip> MPTrack =
