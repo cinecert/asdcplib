@@ -133,7 +133,7 @@ ASDCP::AddDmsTrackGenericPartUtf8Text(Kumu::FileWriter& file_writer, MXF::OP1aHe
 	   && StaticTrack_obj->TrackName.get() == rp2057_static_track_label )
 	{
           newTrackId = StaticTrack_obj->TrackID;
-	      break;
+          break;
 	}
       if (StaticTrack_obj->TrackID >= newTrackId)
       {
