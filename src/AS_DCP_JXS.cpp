@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2004-2016, John Hurst,
+Copyright (c) 2004-2021, John Hurst,
 Copyright (c) 2020, Thomas Richter Fraunhofer IIS
 All rights reserved.
 
@@ -499,15 +499,11 @@ ih__Writer::SetSourceStream(
       return RESULT_PARAM;
     }
 
-  assert(m_Dict);
-
-  m_EssenceDescriptor = new ASDCP::MXF::GenericPictureEssenceDescriptor(m_Dict);
-  m_EssenceDescriptor->Copy(picture_descriptor);
   assert(m_EssenceDescriptor);
+  m_EssenceDescriptor->Copy(picture_descriptor);
 
-  m_EssenceSubDescriptor = new ASDCP::MXF::JPEGXSPictureSubDescriptor(m_Dict);
-  m_EssenceSubDescriptor->Copy(jxs_sub_descriptor);
   assert(m_EssenceSubDescriptor);
+  m_EssenceSubDescriptor->Copy(jxs_sub_descriptor);
 
   memcpy(m_EssenceUL, m_Dict->ul(MDD_JPEGXSEssence), SMPTE_UL_LENGTH);
   m_EssenceUL[SMPTE_UL_LENGTH-1] = 1; // first (and only) essence container
