@@ -192,8 +192,7 @@ main(int argc, const char** argv)
 
   for ( fi = Options.inFileList.begin(); ASDCP_SUCCESS(result) && fi != Options.inFileList.end(); fi++ )
     {
-      Kumu::IFileReader* Reader = defaultFactory.CreateFileReader();
-
+      ASDCP::mem_ptr<Kumu::IFileReader> Reader(defaultFactory.CreateFileReader());
       if (Options.verbose_flag)
 	fprintf(stderr, "Opening file %s\n", ((*fi).c_str()));
       
@@ -350,7 +349,6 @@ main(int argc, const char** argv)
 	  if( result == RESULT_ENDOFFILE )
 	    result = RESULT_OK;
 	}
-	  delete Reader;
     }
 
   if ( ASDCP_FAILURE(result) )

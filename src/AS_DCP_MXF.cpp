@@ -285,10 +285,9 @@ ASDCP::EssenceType(const std::string& filename, EssenceType_t& type, const Kumu:
       else
 	{
 	  DefaultLogSink().Error("Unsupported MXF Operational Pattern.\n");
-      return RESULT_FORMAT;
+	  return RESULT_FORMAT;
 	}
     }
-
 
   return result;
 }

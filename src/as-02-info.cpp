@@ -930,7 +930,7 @@ show_file_info(CommandOptions& Options, const Kumu::IFileReaderFactory& fileRead
   else
     {
       fprintf(stderr, "Unknown/unsupported essence type: %s\n", Options.filenames.front().c_str());
-      Kumu::IFileReader*   Reader = fileReaderFactory.CreateFileReader();
+      ASDCP::mem_ptr<Kumu::IFileReader> Reader(fileReaderFactory.CreateFileReader());
       const Dictionary* Dict = &DefaultCompositeDict();
       MXF::OP1aHeader TestHeader(Dict);
 
@@ -957,7 +957,6 @@ show_file_info(CommandOptions& Options, const Kumu::IFileReaderFactory& fileRead
 	{
 	  fputs("File is not MXF.\n", stdout);
 	}
-    delete Reader;
     }  
   return result;
 }
