@@ -826,6 +826,7 @@ Kumu::utf8_to_wbstr(const std::string& in, Kumu::ByteString& out)
 //------------------------------------------------------------------------------------------
 //
 
+Kumu::Result_t
 Kumu::FileReader::OpenRead(const std::string& filename) const
 {
   const_cast<FileReader*>(this)->m_Filename = filename;
