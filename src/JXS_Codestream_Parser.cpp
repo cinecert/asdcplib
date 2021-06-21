@@ -32,8 +32,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include <KM_fileio.h>
-#include <AS_DCP.h>
-#include <AS_DCP_JXS.h>
 #include <JXS.h>
 #include <assert.h>
 #include <KM_log.h>
@@ -46,15 +44,12 @@ class ASDCP::JXS::CodestreamParser::h__CodestreamParser
 	ASDCP_NO_COPY_CONSTRUCT(h__CodestreamParser);
 
 public:
-	PictureDescriptor  m_PDesc;
+	ASDCP::MXF::GenericPictureEssenceDescriptor m_PDesc;
+	ASDCP::MXF::JPEGXSPictureSubDescriptor m_JxsSubdesc;
 	Kumu::FileReader   m_File;
 
-	h__CodestreamParser()
-	{
-		memset(&m_PDesc, 0, sizeof(m_PDesc));
-		m_PDesc.EditRate = Rational(24, 1);
-		m_PDesc.SampleRate = m_PDesc.EditRate;
-	}
+	h__CodestreamParser() 
+          : m_PDesc(&DefaultSMPTEDict()), m_JxsSubdesc(&DefaultSMPTEDict()) {}
 
 	~h__CodestreamParser() {}
 
@@ -85,7 +80,7 @@ public:
 		if (ASDCP_SUCCESS(result))
 		{
 			byte_t start_of_data = 0; // out param
-			result = ParseMetadataIntoDesc(FB, m_PDesc, &start_of_data);
+			result = ParseMetadataIntoDesc(FB, m_PDesc, m_JxsSubdesc, &start_of_data);
 
 			if (ASDCP_SUCCESS(result))
 				FB.PlaintextOffset(start_of_data);
@@ -96,7 +91,8 @@ public:
 };
 
 ASDCP::Result_t
-ASDCP::JXS::ParseMetadataIntoDesc(const FrameBuffer& FB, PictureDescriptor& PDesc, byte_t* start_of_data)
+ASDCP::JXS::ParseMetadataIntoDesc(const FrameBuffer& FB, ASDCP::MXF::GenericPictureEssenceDescriptor& picture_descriptor,
+		      ASDCP::MXF::JPEGXSPictureSubDescriptor& jxs_subdescriptor, byte_t* start_of_data)
 {
 	Result_t result = RESULT_OK;
 	Marker NextMarker;
@@ -107,6 +103,8 @@ ASDCP::JXS::ParseMetadataIntoDesc(const FrameBuffer& FB, PictureDescriptor& PDes
 	/* initialize optional items */
 	bool  pih = false;
 	bool  havesoc = false;
+
+        ImageComponent_t image_components[MaxComponents];
 
 	while (p < end_p && ASDCP_SUCCESS(result))
 	{
@@ -158,23 +156,23 @@ ASDCP::JXS::ParseMetadataIntoDesc(const FrameBuffer& FB, PictureDescriptor& PDes
 				// size of the bitstream: ignore, just store away.
 				size = PIH_.LcodSize();
 				// Profile and level
-				PDesc.Ppih = PIH_.Ppih();
-				PDesc.Plev = PIH_.Plev();
+				jxs_subdescriptor.JPEGXSPpih = PIH_.Ppih();
+				jxs_subdescriptor.JPEGXSPlev = PIH_.Plev();
 				// Width and Height
-				PDesc.AspectRatio = Rational(PIH_.Wf(), PIH_.Hf());
-				PDesc.StoredWidth = PIH_.Wf();
-				PDesc.StoredHeight = PIH_.Hf();
-				PDesc.Wf = PIH_.Wf();
-				PDesc.Hf = PIH_.Hf();
-				PDesc.Cw = PIH_.Cw();
-				PDesc.Hsl = PIH_.Hsl();
+				picture_descriptor.AspectRatio = Rational(PIH_.Wf(), PIH_.Hf());
+				picture_descriptor.StoredWidth = PIH_.Wf();
+				picture_descriptor.StoredHeight = PIH_.Hf();
+				jxs_subdescriptor.JPEGXSWf = PIH_.Wf();
+				jxs_subdescriptor.JPEGXSHf = PIH_.Hf();
+				jxs_subdescriptor.JPEGXSCw = PIH_.Cw();
+				jxs_subdescriptor.JPEGXSHsl = PIH_.Hsl();
 				if (PIH_.Hsl() < 1 || PIH_.Hsl() > 0xffff) // This includes the EOF check
 					DefaultLogSink().Error("JXS::ParseMetadataIntoDesc: unsupported slice height specified, must be > 0 and < 65536");
 				// Number of compoennts.
-				PDesc.Nc = PIH_.Nc();
-				if (PDesc.Nc != 3)
+				jxs_subdescriptor.JPEGXSNc = PIH_.Nc();
+				if (jxs_subdescriptor.JPEGXSNc != 3)
 				{
-					DefaultLogSink().Error("Unexpected number of components: %u\n", PDesc.Nc);
+					DefaultLogSink().Error("Unexpected number of components: %u\n", jxs_subdescriptor.JPEGXSNc);
 					return RESULT_RAW_FORMAT;
 				}
 				// A lot of settings that must be fixed right now.
@@ -196,10 +194,10 @@ ASDCP::JXS::ParseMetadataIntoDesc(const FrameBuffer& FB, PictureDescriptor& PDes
 				Accessor::CDT CDT_(NextMarker);
 				int i, count = NextMarker.m_DataSize >> 1;
 
-				for (i = 0; i < count && i < PDesc.Nc; i++) {
-					PDesc.ImageComponents[i].Bc = CDT_.Bc(i);
-					PDesc.ImageComponents[i].Sx = CDT_.Sx(i);
-					PDesc.ImageComponents[i].Sy = CDT_.Sy(i);
+				for (i = 0; i < count && i < jxs_subdescriptor.JPEGXSNc; i++) {
+					image_components[i].Bc = CDT_.Bc(i);
+					image_components[i].Sx = CDT_.Sx(i);
+					image_components[i].Sy = CDT_.Sy(i);
 				}
 		}
 		else {
@@ -213,10 +211,28 @@ ASDCP::JXS::ParseMetadataIntoDesc(const FrameBuffer& FB, PictureDescriptor& PDes
 
 			p = end_p;
 			break;
+		}
 	}
-}
+
+	const ui32_t cdt_buffer_len = 8 * 2; // at most 8 components.
+	byte_t tmp_buffer[cdt_buffer_len];
+	int comps = (jxs_subdescriptor.JPEGXSNc > 8)?8:jxs_subdescriptor.JPEGXSNc;
+	jxs_subdescriptor.JPEGXSComponentTable.Length(4 + (comps << 1));
+
+	// thor: unclear whether the marker size is part of this data.
+	tmp_buffer[0] = 0xff;
+	tmp_buffer[1] = 0x13; // the marker 
+	tmp_buffer[2] = 0x00;
+	tmp_buffer[3] = comps * 2 + 2; // The size.
+	for(int j = 0;j < comps;j++) {
+	    tmp_buffer[4 + (j << 1)] = image_components[j].Bc;
+	    tmp_buffer[5 + (j << 1)] = (image_components[j].Sx << 4) | (image_components[j].Sy);
+	}
+
+	memcpy(jxs_subdescriptor.JPEGXSComponentTable.Data(), tmp_buffer, 4 + (comps << 1));
 	return result;
 }
+
 //------------------------------------------------------------------------------------------
 
 ASDCP::JXS::CodestreamParser::CodestreamParser()
@@ -238,12 +254,15 @@ ASDCP::JXS::CodestreamParser::OpenReadFrame(const std::string& filename, FrameBu
 
 //
 ASDCP::Result_t
-ASDCP::JXS::CodestreamParser::FillPictureDescriptor(PictureDescriptor& PDesc) const
+ASDCP::JXS::CodestreamParser::FillPictureDescriptor(
+    ASDCP::MXF::GenericPictureEssenceDescriptor& picture_descriptor,
+    ASDCP::MXF::JPEGXSPictureSubDescriptor& jxs_subdescriptor) const
 {
 	if (m_Parser.empty())
 		return RESULT_INIT;
 
-	PDesc = m_Parser->m_PDesc;
+	picture_descriptor = m_Parser->m_PDesc;
+	jxs_subdescriptor = m_Parser->m_JxsSubdesc;
 	return RESULT_OK;
 }
 
