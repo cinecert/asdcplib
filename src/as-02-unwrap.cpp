@@ -38,9 +38,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <KM_fileio.h>
 #include <AS_02.h>
-#ifdef USE_ASDCP_JXS
-#include "AS_02_JXS.h"
-#endif
 #include "AS_02_ACES.h"
 #include <WavFileWriter.h>
 
@@ -432,156 +429,6 @@ read_JP2K_file(CommandOptions& Options)
   return result;
 }
 
-
-//------------------------------------------------------------------------------------------
-// JPEG XS essence
-
-#ifdef USE_ASDCP_JXS
-// Read one or more plaintext JPEG XS codestreams from a plaintext ASDCP file
-// Read one or more plaintext JPEG XS codestreams from a ciphertext ASDCP file
-// Read one or more ciphertext JPEG XS codestreams from a ciphertext ASDCP file
-//
-Result_t
-read_JXS_file(CommandOptions& Options)
-{
-	AESDecContext*			Context = 0;
-	HMACContext*			HMAC = 0;
-	AS_02::JXS::MXFReader   Reader;
-	JXS::FrameBuffer		FrameBuffer(Options.fb_size);
-	ui32_t					frame_count = 0;
-
-	Result_t result = Reader.OpenRead(Options.input_filename);
-
-	if (ASDCP_SUCCESS(result))
-	{
-		if (Options.verbose_flag)
-		{
-			fprintf(stderr, "Frame Buffer size: %u\n", Options.fb_size);
-		}
-
-		ASDCP::MXF::RGBAEssenceDescriptor *rgba_descriptor = 0;
-		ASDCP::MXF::CDCIEssenceDescriptor *cdci_descriptor = 0;
-
-		result = Reader.OP1aHeader().GetMDObjectByType(DefaultCompositeDict().ul(MDD_RGBAEssenceDescriptor),
-			reinterpret_cast<MXF::InterchangeObject**>(&rgba_descriptor));
-
-		if (KM_SUCCESS(result))
-		{
-			assert(rgba_descriptor);
-			if (!rgba_descriptor->ContainerDuration.empty())
-			{
-				frame_count = (ui32_t)rgba_descriptor->ContainerDuration;
-			}
-			if (Options.verbose_flag)
-			{
-				rgba_descriptor->Dump();
-			}
-		}
-		else
-		{
-			result = Reader.OP1aHeader().GetMDObjectByType(DefaultCompositeDict().ul(MDD_CDCIEssenceDescriptor),
-				reinterpret_cast<MXF::InterchangeObject**>(&cdci_descriptor));
-
-			if (KM_SUCCESS(result))
-			{
-				assert(cdci_descriptor);
-				if (!cdci_descriptor->ContainerDuration.empty())
-				{
-					frame_count = (ui32_t)cdci_descriptor->ContainerDuration;
-				}
-				if (Options.verbose_flag)
-				{
-					cdci_descriptor->Dump();
-				}
-			}
-			else
-			{
-				fprintf(stderr, "File does not contain an essence descriptor.\n");
-				frame_count = Reader.AS02IndexReader().GetDuration();
-			}
-		}
-
-		if (frame_count == 0)
-		{
-			frame_count = Reader.AS02IndexReader().GetDuration();
-		}
-
-		if (frame_count == 0)
-		{
-			fprintf(stderr, "Unable to determine file duration.\n");
-			return RESULT_FAIL;
-		}
-	}
-
-#ifdef HAVE_OPENSSL
-	if (ASDCP_SUCCESS(result) && Options.key_flag)
-	{
-		Context = new AESDecContext;
-		result = Context->InitKey(Options.key_value);
-
-		if (ASDCP_SUCCESS(result) && Options.read_hmac)
-		{
-			WriterInfo Info;
-			Reader.FillWriterInfo(Info);
-
-			if (Info.UsesHMAC)
-			{
-				HMAC = new HMACContext;
-				result = HMAC->InitKey(Options.key_value, Info.LabelSetType);
-			}
-			else
-			{
-				fputs("File does not contain HMAC values, ignoring -m option.\n", stderr);
-			}
-		}
-	}
-#endif
-
-	ui32_t last_frame = Options.start_frame + (Options.duration ? Options.duration : frame_count);
-	if (last_frame > frame_count)
-		last_frame = frame_count;
-
-	char name_format[64];
-	snprintf(name_format, 64, "%%s%%0%du.jxc", Options.number_width);
-
-	for (ui32_t i = Options.start_frame; ASDCP_SUCCESS(result) && i < last_frame; i++)
-	{
-		result = Reader.ReadFrame(i, FrameBuffer, Context, HMAC);
-
-		char filename[1024];
-		snprintf(filename, 1024, name_format, Options.file_prefix, i);
-
-		if (ASDCP_SUCCESS(result) && Options.verbose_flag)
-		{
-			printf("Frame %d, %d bytes", i, FrameBuffer.Size());
-
-			if (!Options.no_write_flag)
-			{
-				printf(" -> %s", filename);
-			}
-
-			printf("\n");
-		}
-
-		if (ASDCP_SUCCESS(result) && (!Options.no_write_flag))
-		{
-			Kumu::FileWriter OutFile;
-			ui32_t write_count;
-			result = OutFile.OpenWrite(filename);
-
-			if (ASDCP_SUCCESS(result))
-				result = OutFile.Write(FrameBuffer.Data(), FrameBuffer.Size(), &write_count);
-
-			if (ASDCP_SUCCESS(result) && Options.verbose_flag)
-			{
-				FrameBuffer.Dump(stderr, Options.fb_dump_size);
-			}
-		}
-	}
-
-	return result;
-}
-#endif
 
 //------------------------------------------------------------------------------------------
 // ACES essence
@@ -1172,11 +1019,6 @@ main(int argc, const char** argv)
 	  result = read_JP2K_file(Options);
 	  break;
 	//PB
-#ifdef USE_ASDCP_JXS
-	case ESS_AS02_JPEG_XS:
-	  result = read_JXS_file(Options);
-	  break;
-#endif
 	case ESS_AS02_ACES:
 	  result = read_ACES_file(Options);
 	  break;

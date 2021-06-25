@@ -31,16 +31,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 	\brief   AS-DCP library, JPEG XS sequence codestream essence reader implementation
 */
 
-#include <AS_DCP.h>
-#include <AS_DCP_JXS.h>
-#include <KM_fileio.h>
-#include <KM_log.h>
-#include <list>
-#include <string>
-#include <algorithm>
-#include <string.h>
-#include <assert.h>
-
+#include <JXS.h>
 using namespace ASDCP;
 
 //------------------------------------------------------------------------------------------
@@ -107,13 +98,10 @@ class ASDCP::JXS::SequenceParser::h__SequenceParser
 	ASDCP_NO_COPY_CONSTRUCT(h__SequenceParser);
 
 public:
-	PictureDescriptor  m_PDesc;
+	ASDCP::MXF::GenericPictureEssenceDescriptor m_PDesc;
+	ASDCP::MXF::JPEGXSPictureSubDescriptor m_JxsSubdesc;
 
-	h__SequenceParser() : m_FramesRead(0)
-	{
-		memset(&m_PDesc, 0, sizeof(m_PDesc));
-		m_PDesc.EditRate = Rational(24, 1);
-	}
+	h__SequenceParser() : m_FramesRead(0), m_PDesc(&DefaultSMPTEDict()), m_JxsSubdesc(&DefaultSMPTEDict()) {}
 
 	~h__SequenceParser()
 	{
@@ -157,7 +145,7 @@ ASDCP::JXS::SequenceParser::h__SequenceParser::OpenRead()
 		result = Parser.OpenReadFrame((*m_CurrentFile).c_str(), TmpBuffer);
 
 	if (ASDCP_SUCCESS(result))
-		result = Parser.FillPictureDescriptor(m_PDesc);
+		result = Parser.FillPictureDescriptor(m_PDesc, m_JxsSubdesc);
 
 	// how big is it?
 	if (ASDCP_SUCCESS(result))
@@ -268,12 +256,15 @@ ASDCP::JXS::SequenceParser::ReadFrame(FrameBuffer& FB) const
 
 //
 ASDCP::Result_t
-ASDCP::JXS::SequenceParser::FillPictureDescriptor(PictureDescriptor& PDesc) const
+ASDCP::JXS::SequenceParser::FillPictureDescriptor(
+    ASDCP::MXF::GenericPictureEssenceDescriptor& picture_descriptor,
+    ASDCP::MXF::JPEGXSPictureSubDescriptor& jxs_subdescriptor) const
 {
 	if (m_Parser.empty())
 		return RESULT_INIT;
 
-	PDesc = m_Parser->m_PDesc;
+	picture_descriptor = m_Parser->m_PDesc;
+	jxs_subdescriptor = m_Parser->m_JxsSubdesc;
 	return RESULT_OK;
 }
 

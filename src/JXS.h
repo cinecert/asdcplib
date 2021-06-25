@@ -40,14 +40,31 @@ support parsing picture metadata from a codestream header.
 // AS_DCP.h is included only for it's base type definitions.
 #include <KM_platform.h>
 #include <KM_util.h>
-#include <AS_DCP.h>
+#include <Metadata.h>
 #include <assert.h>
 
 namespace ASDCP
 {
 	namespace JXS
 	{
-		const byte_t Magic[] = { 0xff, 0x10, 0xff };
+		const ui32_t MaxComponents = 4; // ISO 21122-1 Annex A.2 up to 8 components
+		const ui32_t MaxHorizontalLevels = 15;
+		const ui32_t MaxVerticalLevels = 2;
+
+#pragma pack(1)
+		struct ImageComponent_t  // Essentially, a lookalike of the CDT marker, just with less bit-packing
+		{
+		  ui8_t Bc;  // Bitdepth (literal, not -1)
+		  ui8_t Sx;
+		  ui8_t Sy;  // Subsampling factors, horizontal and vertically. Bit-packed in the marker.
+		};
+#pragma pack()
+
+                const byte_t Magic[] = { 0xff, 0x10, 0xff };
+
+		bool lookup_ColorPrimaries(int value, ASDCP::UL& ul);
+		bool lookup_TransferCharacteristic(int value, ASDCP::UL& ul);
+		bool lookup_CodingEquations(int value, ASDCP::UL& ul);
 
 		enum Marker_t
 		{
@@ -229,11 +246,106 @@ namespace ASDCP
 				void Dump(FILE* stream = 0) const;
 			};
 		}
+
+	  //
+	  class FrameBuffer : public ASDCP::FrameBuffer
+	  {
+	  public:
+		  FrameBuffer() {}
+		  FrameBuffer(ui32_t size) { Capacity(size); }
+		  virtual ~FrameBuffer() {}
+
+		  // Print debugging information to stream (stderr default)
+		  void Dump(FILE* = 0, ui32_t dump_bytes = 0) const;
+	  };
+
+	  // An object which opens and reads a JPEG XS codestream file.  The file is expected
+	  // to contain exactly one complete frame of picture essence as an unwrapped (raw)
+	  // ISO/IEC 21122 codestream.
+	  class CodestreamParser
+	  {
+		  class h__CodestreamParser;
+		  mem_ptr<h__CodestreamParser> m_Parser;
+		  ASDCP_NO_COPY_CONSTRUCT(CodestreamParser);
+
+	  public:
+		  CodestreamParser();
+		  virtual ~CodestreamParser();
+
+		  // Opens a file for reading, parses enough data to provide a complete
+			  // set of stream metadata for the MXFWriter below.
+		  // The frame buffer's PlaintextOffset parameter will be set to the first
+		  // byte of the data segment. Set this value to zero if you want
+		  // encrypted headers.
+		  Result_t OpenReadFrame(const std::string& filename, FrameBuffer&) const;
+
+		  // Fill the MXF descriptor objects with the values from the file's codestream.
+		  // Returns RESULT_INIT if the file is not open.
+		  Result_t FillPictureDescriptor(
+                      ASDCP::MXF::GenericPictureEssenceDescriptor& picture_descriptor,
+		      ASDCP::MXF::JPEGXSPictureSubDescriptor& jxs_subdescriptor) const;
+	  };
+
+	  // Parses the data in the frame buffer to fill in the picture descriptor. Copies
+	  // the offset of the image data into start_of_data. Returns error if the parser fails.
+	  Result_t ParseMetadataIntoDesc(const FrameBuffer&,
+					 ASDCP::MXF::GenericPictureEssenceDescriptor& picture_descriptor,
+					 ASDCP::MXF::JPEGXSPictureSubDescriptor& jxs_subdescriptor,
+					 byte_t* start_of_data = 0);
+
+	  // An object which reads a sequence of files containing JPEG XS pictures.
+	  class SequenceParser
+	  {
+		  class h__SequenceParser;
+		  mem_ptr<h__SequenceParser> m_Parser;
+		  ASDCP_NO_COPY_CONSTRUCT(SequenceParser);
+
+	  public:
+		  SequenceParser();
+		  virtual ~SequenceParser();
+
+		  // Opens a directory for reading.  The directory is expected to contain one or
+		  // more files, each containing the codestream for exactly one picture. The
+		  // files must be named such that the frames are in temporal order when sorted
+		  // alphabetically by filename. The parser will automatically parse enough data
+		  // from the first file to provide a complete set of stream metadata for the
+		  // MXFWriter below.  If the "pedantic" parameter is given and is true, the
+		  // parser will check the metadata for each codestream and fail if a
+		  // mismatch is detected.
+		  Result_t OpenRead(const std::string& filename) const;
+
+		  // Opens a file sequence for reading.  The sequence is expected to contain one or
+		  // more filenames, each naming a file containing the codestream for exactly one
+		  // picture. The parser will automatically parse enough data
+		  // from the first file to provide a complete set of stream metadata for the
+		  // MXFWriter below.  If the "pedantic" parameter is given and is true, the
+		  // parser will check the metadata for each codestream and fail if a
+		  // mismatch is detected.
+		  Result_t OpenRead(const std::list<std::string>& file_list) const;
+
+		  // Fill a PictureDescriptor struct with the values from the first file's codestream.
+		  // Returns RESULT_INIT if the directory is not open.
+		  Result_t FillPictureDescriptor(
+                      ASDCP::MXF::GenericPictureEssenceDescriptor& picture_descriptor,
+		      ASDCP::MXF::JPEGXSPictureSubDescriptor& jxs_subdescriptor) const;
+
+		  // Rewind the directory to the beginning.
+		  Result_t Reset() const;
+
+		  // Reads the next sequential frame in the directory and places it in the
+		  // frame buffer. Fails if the buffer is too small or the direcdtory
+		  // contains no more files.
+		  // The frame buffer's PlaintextOffset parameter will be set to the first
+		  // byte of the data segment. Set this value to zero if you want
+		  // encrypted headers.
+		  Result_t ReadFrame(FrameBuffer&) const;
+	  };
+
 	} //namespace JXS
 } // namespace ASDCP
 
 #endif // _JXS_H_
 
 //
-// end JP2K.h
+// end JXS.h
 //

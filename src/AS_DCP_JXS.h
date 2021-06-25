@@ -79,16 +79,8 @@ This project depends upon the following libraries:
 #ifndef _AS_DCP_JXS_H_
 #define _AS_DCP_JXS_H_
 
-#include <KM_error.h>
-#include <KM_fileio.h>
-#include <stdio.h>
-#include <stdarg.h>
-#include <math.h>
-#include <iosfwd>
-#include <string>
-#include <cstring>
-#include <list>
 #include "AS_DCP.h"
+#include "JXS.h"
 #include "Metadata.h"
 
 //--------------------------------------------------------------------------------
@@ -100,134 +92,7 @@ namespace ASDCP {
   //
   namespace JXS 
   {
-	  const ui32_t MaxComponents = 4; // ISO 21122-1 Annex A.2 up to 8 components
-	  const ui32_t MaxHorizontalLevels = 15;
-	  const ui32_t MaxVerticalLevels = 2;
-
-#pragma pack(1)
-	  struct ImageComponent_t  // Essentially, a lookalike of the CDT marker, just with less bit-packing
-	  {
-		  ui8_t Bc;  // Bitdepth (literal, not -1)
-		  ui8_t Sx;
-		  ui8_t Sy;  // Subsampling factors, horizontal and vertically. Bit-packed in the marker.
-	  };
-#pragma pack()
-
-	  struct PictureDescriptor
-	  {
-		  Rational       EditRate;
-		  ui32_t         ContainerDuration;
-		  Rational       SampleRate;
-		  ui32_t         StoredWidth;
-		  ui32_t         StoredHeight;
-		  Rational       AspectRatio;
-		  ui16_t         Ppih; // Profile, copy from the PIH marker
-		  ui16_t         Plev; // Level and sublevel, copy from the PIH marker
-		  ui16_t         Wf;  // Frame width, copy from the PIH marker
-		  ui16_t         Hf;  // Frame height, copy from the PIH marker
-		  ui16_t         Hsl; // slice height, copy from the PIH marker
-		  ui16_t         Cw;  // column width, or 0 for no columns, copy from the PIH marker
-		  ui8_t          Nc;  // number of components, copy from the PIH marker
-	          ui32_t         MaximumBitRate; // bit rate in MB/sec, or 0 if not known
-	          ui8_t          Primaries; // Color primaries as defined by CICP
-	          ui8_t          TransferCurve; // Transfer curve as defined by CICP
-	          ui8_t          Matrix; // Transform matrix, as defined by CICP
-	          bool           fullRange; // If true, no head and toe region
-		  ImageComponent_t ImageComponents[MaxComponents]; // These are copies from the CDT (component table)
-	  };
-	  // Print debugging information to std::ostream
-	  std::ostream& operator << (std::ostream& strm, const PictureDescriptor& pdesc);
-	  // Print debugging information to stream (stderr default)
-	  void   PictureDescriptorDump(const PictureDescriptor&, FILE* = 0);
-
-	  //
-	  class FrameBuffer : public ASDCP::FrameBuffer
-	  {
-	  public:
-		  FrameBuffer() {}
-		  FrameBuffer(ui32_t size) { Capacity(size); }
-		  virtual ~FrameBuffer() {}
-
-		  // Print debugging information to stream (stderr default)
-		  void Dump(FILE* = 0, ui32_t dump_bytes = 0) const;
-	  };
-
-
-	  // An object which opens and reads a JPEG XS codestream file.  The file is expected
-	  // to contain exactly one complete frame of picture essence as an unwrapped (raw)
-	  // ISO/IEC 21122 codestream.
-	  class CodestreamParser
-	  {
-		  class h__CodestreamParser;
-		  mem_ptr<h__CodestreamParser> m_Parser;
-		  ASDCP_NO_COPY_CONSTRUCT(CodestreamParser);
-
-	  public:
-		  CodestreamParser();
-		  virtual ~CodestreamParser();
-
-		  // Opens a file for reading, parses enough data to provide a complete
-			  // set of stream metadata for the MXFWriter below.
-		  // The frame buffer's PlaintextOffset parameter will be set to the first
-		  // byte of the data segment. Set this value to zero if you want
-		  // encrypted headers.
-		  Result_t OpenReadFrame(const std::string& filename, FrameBuffer&) const;
-
-		  // Fill a PictureDescriptor struct with the values from the file's codestream.
-		  // Returns RESULT_INIT if the file is not open.
-		  Result_t FillPictureDescriptor(PictureDescriptor&) const;
-	  };
-
-	  // Parses the data in the frame buffer to fill in the picture descriptor. Copies
-	  // the offset of the image data into start_of_data. Returns error if the parser fails.
-	  Result_t ParseMetadataIntoDesc(const FrameBuffer&, PictureDescriptor&, byte_t* start_of_data = 0);
-
-	  // An object which reads a sequence of files containing JPEG XS pictures.
-	  class SequenceParser
-	  {
-		  class h__SequenceParser;
-		  mem_ptr<h__SequenceParser> m_Parser;
-		  ASDCP_NO_COPY_CONSTRUCT(SequenceParser);
-
-	  public:
-		  SequenceParser();
-		  virtual ~SequenceParser();
-
-		  // Opens a directory for reading.  The directory is expected to contain one or
-		  // more files, each containing the codestream for exactly one picture. The
-		  // files must be named such that the frames are in temporal order when sorted
-		  // alphabetically by filename. The parser will automatically parse enough data
-		  // from the first file to provide a complete set of stream metadata for the
-		  // MXFWriter below.  If the "pedantic" parameter is given and is true, the
-		  // parser will check the metadata for each codestream and fail if a
-		  // mismatch is detected.
-		  Result_t OpenRead(const std::string& filename) const;
-
-		  // Opens a file sequence for reading.  The sequence is expected to contain one or
-		  // more filenames, each naming a file containing the codestream for exactly one
-		  // picture. The parser will automatically parse enough data
-		  // from the first file to provide a complete set of stream metadata for the
-		  // MXFWriter below.  If the "pedantic" parameter is given and is true, the
-		  // parser will check the metadata for each codestream and fail if a
-		  // mismatch is detected.
-		  Result_t OpenRead(const std::list<std::string>& file_list) const;
-
-		  // Fill a PictureDescriptor struct with the values from the first file's codestream.
-		  // Returns RESULT_INIT if the directory is not open.
-		  Result_t FillPictureDescriptor(PictureDescriptor&) const;
-
-		  // Rewind the directory to the beginning.
-		  Result_t Reset() const;
-
-		  // Reads the next sequential frame in the directory and places it in the
-		  // frame buffer. Fails if the buffer is too small or the direcdtory
-		  // contains no more files.
-		  // The frame buffer's PlaintextOffset parameter will be set to the first
-		  // byte of the data segment. Set this value to zero if you want
-		  // encrypted headers.
-		  Result_t ReadFrame(FrameBuffer&) const;
-	  };
-
+	  bool lookup_PictureEssenceCoding(int value, ASDCP::UL& ul);
 
 	  //
 	  class MXFWriter
@@ -250,7 +115,9 @@ namespace ASDCP {
 		  // the operation cannot be completed or if nonsensical data is discovered
 		  // in the essence descriptor.
 		  Result_t OpenWrite(const std::string& filename, const WriterInfo&,
-			  const PictureDescriptor&, ui32_t HeaderSize = 16384);
+                                     ASDCP::MXF::GenericPictureEssenceDescriptor& picture_descriptor,
+                                     ASDCP::MXF::JPEGXSPictureSubDescriptor& jxs_sub_descriptor,
+                                     const ASDCP::Rational& edit_rate, ui32_t header_size = 16384);
 
 		  // Writes a frame of essence to the MXF file. If the optional AESEncContext
 		  // argument is present, the essence is encrypted prior to writing.
@@ -286,10 +153,6 @@ namespace ASDCP {
 		  // Returns RESULT_INIT if the file is not open.
 		  Result_t Close() const;
 
-		  // Fill an AudioDescriptor struct with the values from the file's header.
-		  // Returns RESULT_INIT if the file is not open.
-		  Result_t FillPictureDescriptor(PictureDescriptor&) const;
-
 		  // Fill a WriterInfo struct with the values from the file's header.
 		  // Returns RESULT_INIT if the file is not open.
 		  Result_t FillWriterInfo(WriterInfo&) const;
@@ -318,16 +181,12 @@ namespace ASDCP {
 		  void     DumpIndex(FILE* = 0) const;
 	  };
   }
-  Result_t MD_to_JXS_PDesc(const ASDCP::MXF::GenericPictureEssenceDescriptor&  EssenceDescriptor,
-			   const ASDCP::MXF::JPEGXSPictureSubDescriptor& EssenceSubDescriptor,
-			   const ASDCP::Rational& EditRate, const ASDCP::Rational& SampleRate,
-			   ASDCP::JXS::PictureDescriptor& PDesc);
-
-  Result_t JXS_PDesc_to_MD(const JXS::PictureDescriptor& PDesc,
-			   const ASDCP::Dictionary& dict,
-			   ASDCP::MXF::GenericPictureEssenceDescriptor& EssenceDescriptor,
-			   ASDCP::MXF::JPEGXSPictureSubDescriptor& EssenceSubDescriptor);
 };
 
 ///
-#endif
+#endif // _AS_DCP_JXS_H_
+
+
+//
+// end AS_DCP_JXS.h
+//
