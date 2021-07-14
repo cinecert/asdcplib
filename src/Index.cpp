@@ -127,7 +127,7 @@ ASDCP::MXF::IndexTableSegment::InitFromTLVSet(TLVReader& TLVSet)
           if (IndexEntryArray.size() != item_count)
           {
               DefaultLogSink().Error("Malformed index table segment, could not decode all IndexEntries.\n");
-              return RESULT_FAIL;
+              return RESULT_KLV_CODING;
           }
 		}
 	    }
