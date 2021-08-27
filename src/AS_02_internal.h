@@ -314,23 +314,112 @@ namespace AS_02
     };
 
   //
-  class h__AS02WriterClip : public h__AS02Writer<AS_02::MXF::AS02IndexWriterCBR>
+  template <typename IndexWriterType>
+  class h__AS02WriterClip : public h__AS02Writer<IndexWriterType>
     {
       ASDCP_NO_COPY_CONSTRUCT(h__AS02WriterClip);
-      h__AS02WriterClip();
+      h__AS02WriterClip() {}
 
     public:
-      ui64_t  m_ECStart; // offset of the first essence element
-      ui64_t  m_ClipStart;  // state variable for clip-wrap-in-progress
-      IndexStrategy_t m_IndexStrategy; // per SMPTE ST 2067-5
+        ui64_t  m_ECStart; // offset of the first essence element
+        ui64_t  m_ClipStart;  // state variable for clip-wrap-in-progress
+        IndexStrategy_t m_IndexStrategy; // per SMPTE ST 2067-5
 
-      h__AS02WriterClip(const Dictionary*);
-      virtual ~h__AS02WriterClip();
+        h__AS02WriterClip(const Dictionary* d) :
+            h__AS02Writer<IndexWriterType>(d),
+            m_ECStart(0), m_ClipStart(0), m_IndexStrategy(AS_02::IS_FOLLOW)
+        {}
+        virtual ~h__AS02WriterClip()
+        {}
 
-      bool HasOpenClip() const;
-      Result_t StartClip(const byte_t* EssenceUL, AESEncContext* Ctx, HMACContext* HMAC);
-      Result_t WriteClipBlock(const ASDCP::FrameBuffer& FrameBuf);
-      Result_t FinalizeClip(ui32_t bytes_per_frame);
+        bool HasOpenClip() const { return m_ClipStart != 0; }
+        Result_t StartClip(const byte_t* EssenceUL, AESEncContext* Ctx, HMACContext* HMAC)
+        {
+            if (Ctx != 0)
+            {
+                DefaultLogSink().Error("Encryption not yet supported for PCM clip-wrap.\n");
+                return RESULT_STATE;
+            }
+
+            if (m_ClipStart != 0)
+            {
+                DefaultLogSink().Error("Cannot open clip, clip already open.\n");
+                return RESULT_STATE;
+            }
+
+            m_ClipStart = h__AS02Writer<IndexWriterType>::m_File.TellPosition();
+            byte_t clip_buffer[24] = { 0 };
+            memcpy(clip_buffer, EssenceUL, 16);
+            bool check = Kumu::write_BER(clip_buffer + 16, 0, 8);
+            assert(check);
+            return h__AS02Writer<IndexWriterType>::m_File.Write(clip_buffer, 24);
+        }
+        Result_t WriteClipBlock(const ASDCP::FrameBuffer& FrameBuf)
+        {
+            if (m_ClipStart == 0)
+            {
+                DefaultLogSink().Error("Cannot write clip block, no clip open.\n");
+                return RESULT_STATE;
+            }
+
+            return h__AS02Writer<IndexWriterType>::m_File.Write(FrameBuf.RoData(), FrameBuf.Size());
+        }
+        Result_t FinalizeClip(ui32_t bytes_per_frame)
+        {
+            if (m_ClipStart == 0)
+            {
+                DefaultLogSink().Error("Cannot close clip, clip not open.\n");
+                return RESULT_STATE;
+            }
+
+            ui64_t current_position = h__AS02Writer<IndexWriterType>::m_File.TellPosition();
+            Result_t result = h__AS02Writer<IndexWriterType>::m_File.Seek(m_ClipStart + 16);
+
+            if (KM_SUCCESS(result))
+            {
+                byte_t clip_buffer[8] = { 0 };
+                ui64_t size = static_cast<ui64_t>(h__AS02Writer<IndexWriterType>::m_FramesWritten) * bytes_per_frame;
+                bool check = Kumu::write_BER(clip_buffer, size, 8);
+                assert(check);
+                result = h__AS02Writer<IndexWriterType>::m_File.Write(clip_buffer, 8);
+            }
+
+            if (KM_SUCCESS(result))
+            {
+                result = h__AS02Writer<IndexWriterType>::m_File.Seek(current_position);
+                m_ClipStart = 0;
+            }
+
+            return result;
+        }
+        Result_t FinalizeClip(ui64_t total_bytes_written)
+        {
+            if (m_ClipStart == 0)
+            {
+                DefaultLogSink().Error("Cannot close clip, clip not open.\n");
+                return RESULT_STATE;
+            }
+
+            ui64_t current_position = h__AS02Writer<IndexWriterType>::m_File.TellPosition();
+            Result_t result = h__AS02Writer<IndexWriterType>::m_File.Seek(m_ClipStart + 16);
+
+            if (KM_SUCCESS(result))
+            {
+                byte_t clip_buffer[8] = { 0 };
+                bool check = Kumu::write_BER(clip_buffer, total_bytes_written, 8);
+                assert(check);
+                result = h__AS02Writer<IndexWriterType>::m_File.Write(clip_buffer, 8);
+            }
+
+            if (KM_SUCCESS(result))
+            {
+                result = h__AS02Writer<IndexWriterType>::m_File.Seek(current_position);
+                m_ClipStart = 0;
+            }
+
+            return result;
+
+        }
     };
 
 } // namespace AS_02
