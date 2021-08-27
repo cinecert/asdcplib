@@ -613,6 +613,9 @@ Kumu::XMLElement::ParseFirstFromString(const char* document, ui32_t doc_len)
 
   if ( ! XML_Parse(Parser, document, doc_len, 1) )
     {
+      DefaultLogSink().Error("XML Parse error on line %d: %s\n",
+			     XML_GetCurrentLineNumber(Parser),
+			     XML_ErrorString(XML_GetErrorCode(Parser)));
       XML_ParserFree(Parser);
       return false;
     }
@@ -1023,8 +1026,23 @@ Kumu::XMLElement::ParseFirstFromString(const char* document, ui32_t doc_len)
 	  ++errorCount;
 	}
     }
+  catch (const XMLException& e)
+    {
+      char* message = XMLString::transcode(e.getMessage());
+      DefaultLogSink().Error("Parser error: %s\n", message);
+      XMLString::release(&message);
+      errorCount++;
+    }
+  catch (const SAXParseException& e)
+    {
+      char* message = XMLString::transcode(e.getMessage());
+      DefaultLogSink().Error("Parser error: %s at line %d\n", message, e.getLineNumber());
+      XMLString::release(&message);
+      errorCount++;
+    }
   catch (...)
     {
+      DefaultLogSink().Error("Unexpected XML parser error\n");
       errorCount++;
     }
   
