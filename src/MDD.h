@@ -379,7 +379,7 @@ namespace ASDCP {
 	MDD_IMFAudioSoundfield_60, // 341
 	MDD_IMFAudioSoundfield_70, // 342
 	MDD_IMFAudioSoundfield_LtRt, // 343
-	MDD_IMFAudioSoundfield_51Ex, // 344
+	MDD_IMFAudioSoundfield_51EX, // 344
 	MDD_IMFAudioSoundfield_HI, // 345
 	MDD_IMFAudioSoundfield_VIN, // 346
 	MDD_IMFAudioGroup_MPg, // 347

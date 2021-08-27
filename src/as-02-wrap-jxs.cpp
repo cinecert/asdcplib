@@ -139,7 +139,7 @@ Options:\n\
                       Defaults to 4,194,304 (4MB)\n\
   -c <num>          - Select the IMF color system to be signaled:\n\
                       Application 2 (2067-20): 1, 2, or 3\n\
-                      Application 2e (2067-21): 4 or 5\n\
+                      Application 2e (2067-21): 4, 5, or 7\n\
                       All color system values assume YCbCr; also use -R for RGB\n\
   -d <duration>     - Number of frames to process, default all\n\
   -D <depth>        - Component depth for YCbCr images (default: 10)\n\
@@ -410,8 +410,15 @@ public:
 	use_cdci_descriptor = true;
 	break;
 
+      case '7':
+	coding_equations = g_dict->ul(MDD_CodingEquations_Rec2020);
+	transfer_characteristic = g_dict->ul(MDD_TransferCharacteristic_SMPTEST2084);
+	color_primaries = g_dict->ul(MDD_ColorPrimaries_ITU2020);
+	use_cdci_descriptor = true;
+	break;
+
       default:
-	fprintf(stderr, "Unrecognized color system number, expecting one of 1-5.\n");
+	fprintf(stderr, "Unrecognized color system number, expecting one of 1-5 or 7.\n");
 	return false;
       }
     
