@@ -670,11 +670,11 @@ write_MPEG2_file(CommandOptions& Options)
 // Read a ciphertext MPEG2 Video Elementary Stream from a ciphertext ASDCP file
 //
 Result_t
-read_MPEG2_file(CommandOptions& Options)
+read_MPEG2_file(CommandOptions& Options, const Kumu::IFileReaderFactory& fileReaderFactory)
 {
   AESDecContext*     Context = 0;
   HMACContext*       HMAC = 0;
-  MPEG2::MXFReader   Reader;
+  MPEG2::MXFReader   Reader(fileReaderFactory);
   MPEG2::FrameBuffer FrameBuffer(Options.fb_size);
   Kumu::FileWriter   OutFile;
   ui32_t             frame_count = 0;
@@ -749,11 +749,11 @@ read_MPEG2_file(CommandOptions& Options)
 
 //
 Result_t
-gop_start_test(CommandOptions& Options)
+gop_start_test(CommandOptions& Options, const Kumu::IFileReaderFactory& fileReaderFactory)
 {
   using namespace ASDCP::MPEG2;
 
-  MXFReader   Reader;
+  MXFReader   Reader(fileReaderFactory);
   MPEG2::FrameBuffer FrameBuffer(Options.fb_size);
   ui32_t      frame_count = 0;
 
@@ -937,11 +937,11 @@ write_JP2K_S_file(CommandOptions& Options)
 // Read one or more plaintext JPEG 2000 stereoscopic codestream pairs from a ciphertext ASDCP file
 // Read one or more ciphertext JPEG 2000 stereoscopic codestream pairs from a ciphertext ASDCP file
 Result_t
-read_JP2K_S_file(CommandOptions& Options)
+read_JP2K_S_file(CommandOptions& Options, const Kumu::IFileReaderFactory& fileReaderFactory)
 {
   AESDecContext*     Context = 0;
   HMACContext*       HMAC = 0;
-  JP2K::MXFSReader    Reader;
+  JP2K::MXFSReader    Reader(fileReaderFactory);
   JP2K::FrameBuffer  FrameBuffer(Options.fb_size);
   ui32_t             frame_count = 0;
 
@@ -1160,11 +1160,11 @@ write_JP2K_file(CommandOptions& Options)
 // Read one or more ciphertext JPEG 2000 codestreams from a ciphertext ASDCP file
 //
 Result_t
-read_JP2K_file(CommandOptions& Options)
+read_JP2K_file(CommandOptions& Options, const Kumu::IFileReaderFactory& fileReaderFactory)
 {
   AESDecContext*     Context = 0;
   HMACContext*       HMAC = 0;
-  JP2K::MXFReader    Reader;
+  JP2K::MXFReader    Reader(fileReaderFactory);
   JP2K::FrameBuffer  FrameBuffer(Options.fb_size);
   ui32_t             frame_count = 0;
 
@@ -1382,11 +1382,11 @@ write_PCM_file(CommandOptions& Options)
 // Read one or more ciphertext PCM audio streams from a ciphertext ASDCP file
 //
 Result_t
-read_PCM_file(CommandOptions& Options)
+read_PCM_file(CommandOptions& Options, const Kumu::IFileReaderFactory& fileReaderFactory)
 {
   AESDecContext*     Context = 0;
   HMACContext*       HMAC = 0;
-  PCM::MXFReader     Reader;
+  PCM::MXFReader     Reader(fileReaderFactory);
   PCM::FrameBuffer   FrameBuffer;
   WavFileWriter      OutWave;
   PCM::AudioDescriptor ADesc;
@@ -1607,11 +1607,11 @@ write_timed_text_file(CommandOptions& Options)
 // Read one or more timed text streams from a ciphertext ASDCP file
 //
 Result_t
-read_timed_text_file(CommandOptions& Options)
+read_timed_text_file(CommandOptions& Options, const Kumu::IFileReaderFactory& fileReaderFactory)
 {
   AESDecContext*     Context = 0;
   HMACContext*       HMAC = 0;
-  TimedText::MXFReader     Reader;
+  TimedText::MXFReader     Reader(fileReaderFactory);
   TimedText::FrameBuffer   FrameBuffer;
   TimedText::TimedTextDescriptor TDesc;
 
@@ -1766,7 +1766,7 @@ class FileInfoWrapper
 {
 public:
   static Result_t
-  file_info(CommandOptions& Options, const char* type_string, FILE* stream = 0)
+  file_info(CommandOptions& Options, const char* type_string, const Kumu::IFileReaderFactory& fileReaderFactory, FILE* stream = 0)
   {
     assert(type_string);
     if ( stream == 0 )
@@ -1776,7 +1776,7 @@ public:
 
     if ( Options.verbose_flag || Options.showheader_flag )
       {
-	ReaderT     Reader;
+	ReaderT     Reader(fileReaderFactory);
 	result = Reader.OpenRead(Options.filenames[0]);
 
 	if ( ASDCP_SUCCESS(result) )
@@ -1810,26 +1810,26 @@ public:
 // Read header metadata from an ASDCP file
 //
 Result_t
-show_file_info(CommandOptions& Options)
+show_file_info(CommandOptions& Options, const Kumu::IFileReaderFactory& fileReaderFactory)
 {
   EssenceType_t EssenceType;
-  Result_t result = ASDCP::EssenceType(Options.filenames[0], EssenceType);
+  Result_t result = ASDCP::EssenceType(Options.filenames[0], EssenceType, fileReaderFactory);
 
   if ( ASDCP_FAILURE(result) )
     return result;
 
   if ( EssenceType == ESS_MPEG2_VES )
     {
-      result = FileInfoWrapper<ASDCP::MPEG2::MXFReader, MyVideoDescriptor>::file_info(Options, "MPEG2 video");
+      result = FileInfoWrapper<ASDCP::MPEG2::MXFReader, MyVideoDescriptor>::file_info(Options, "MPEG2 video", fileReaderFactory);
     }
   else if ( EssenceType == ESS_PCM_24b_48k || EssenceType == ESS_PCM_24b_96k )
     {
-      result = FileInfoWrapper<ASDCP::PCM::MXFReader, MyAudioDescriptor>::file_info(Options, "PCM audio");
+      result = FileInfoWrapper<ASDCP::PCM::MXFReader, MyAudioDescriptor>::file_info(Options, "PCM audio", fileReaderFactory);
 
       if ( ASDCP_SUCCESS(result) )
 	{
 	  const Dictionary* Dict = &DefaultCompositeDict();
-	  PCM::MXFReader Reader;
+	  PCM::MXFReader Reader(fileReaderFactory);
 	  MXF::OP1aHeader Header(Dict);
 	  MXF::WaveAudioDescriptor *descriptor = 0;
 
@@ -1850,34 +1850,34 @@ show_file_info(CommandOptions& Options)
       if ( Options.stereo_image_flag )
 	{
 	  result = FileInfoWrapper<ASDCP::JP2K::MXFSReader,
-				   MyStereoPictureDescriptor>::file_info(Options, "JPEG 2000 stereoscopic pictures");
+				   MyStereoPictureDescriptor>::file_info(Options, "JPEG 2000 stereoscopic pictures", fileReaderFactory);
 	}
       else
 	{
 	  result = FileInfoWrapper<ASDCP::JP2K::MXFReader,
-				   MyPictureDescriptor>::file_info(Options, "JPEG 2000 pictures");
+				   MyPictureDescriptor>::file_info(Options, "JPEG 2000 pictures", fileReaderFactory);
 	}
     }
   else if ( EssenceType == ESS_JPEG_2000_S )
     {
       result = FileInfoWrapper<ASDCP::JP2K::MXFSReader,
-			       MyStereoPictureDescriptor>::file_info(Options, "JPEG 2000 stereoscopic pictures");
+			       MyStereoPictureDescriptor>::file_info(Options, "JPEG 2000 stereoscopic pictures", fileReaderFactory);
     }
   else if ( EssenceType == ESS_TIMED_TEXT )
     {
-      result = FileInfoWrapper<ASDCP::TimedText::MXFReader, MyTextDescriptor>::file_info(Options, "Timed Text");
+      result = FileInfoWrapper<ASDCP::TimedText::MXFReader, MyTextDescriptor>::file_info(Options, "Timed Text", fileReaderFactory);
     }
   else
     {
-      fprintf(stderr, "File is not AS-DCP: %s\n", Options.filenames[0]);
-      Kumu::FileReader   Reader;
+      fprintf(stderr, "File is not AS-DCP: %s\n", Options.filenames[0]);      
+      ASDCP::mem_ptr<Kumu::IFileReader> Reader(fileReaderFactory.CreateFileReader());
       const Dictionary* Dict = &DefaultCompositeDict();
       MXF::OP1aHeader TestHeader(Dict);
 
-      result = Reader.OpenRead(Options.filenames[0]);
+      result = Reader->OpenRead(Options.filenames[0]);
 
       if ( ASDCP_SUCCESS(result) )
-	result = TestHeader.InitFromFile(Reader); // test UL and OP
+        result = TestHeader.InitFromFile(*Reader); // test UL and OP
 
       if ( ASDCP_SUCCESS(result) )
 	{
@@ -1967,19 +1967,21 @@ main(int argc, const char** argv)
       return 3;
     }
 
+  Kumu::FileReaderFactory defaultFactory;
+
   if ( Options.mode == MMT_INFO )
     {
-      result = show_file_info(Options);
+      result = show_file_info(Options, defaultFactory);
 
       for ( int i = 1; ASDCP_SUCCESS(result) && i < Options.file_count; ++i )
 	{
 	  Options.filenames[0] = Options.filenames[i]; // oh-so hackish
-	  result = show_file_info(Options);
+      result = show_file_info(Options, defaultFactory);
 	}
     }
   else if ( Options.mode == MMT_GOP_START )
     {
-      result = gop_start_test(Options);
+      result = gop_start_test(Options, defaultFactory);
     }
   else if ( Options.mode == MMT_GEN_KEY )
     {
@@ -2008,37 +2010,37 @@ main(int argc, const char** argv)
   else if ( Options.mode == MMT_EXTRACT )
     {
       EssenceType_t EssenceType;
-      result = ASDCP::EssenceType(Options.filenames[0], EssenceType);
+      result = ASDCP::EssenceType(Options.filenames[0], EssenceType, defaultFactory);
 
       if ( ASDCP_SUCCESS(result) )
 	{
 	  switch ( EssenceType )
 	    {
 	    case ESS_MPEG2_VES:
-	      result = read_MPEG2_file(Options);
+	      result = read_MPEG2_file(Options, defaultFactory);
 	      break;
 
 	    case ESS_JPEG_2000:
 	      if ( Options.stereo_image_flag )
-		result = read_JP2K_S_file(Options);
+	      result = read_JP2K_S_file(Options, defaultFactory);
 	      else
-		result = read_JP2K_file(Options);
+	      result = read_JP2K_file(Options, defaultFactory);
 	      break;
 
 	    case ESS_JPEG_2000_S:
-	      result = read_JP2K_S_file(Options);
+	      result = read_JP2K_S_file(Options, defaultFactory);
 	      break;
 
 	    case ESS_PCM_24b_48k:
 	    case ESS_PCM_24b_96k:
-	      result = read_PCM_file(Options);
+	      result = read_PCM_file(Options, defaultFactory);
 	      break;
 
 	    case ESS_TIMED_TEXT:
-	      result = read_timed_text_file(Options);
+	      result = read_timed_text_file(Options, defaultFactory);
 	      break;
 
-	    default:
+	      default:
 	      fprintf(stderr, "%s: Unknown file type, not ASDCP essence.\n", Options.filenames[0]);
 	      return 5;
 	    }

@@ -309,7 +309,7 @@ class FileInfoWrapper
   KM_NO_COPY_CONSTRUCT(FileInfoWrapper);
 
 public:
-  FileInfoWrapper() : m_MaxBitrate(0.0), m_AvgBitrate(0.0) {}
+  FileInfoWrapper(const Kumu::IFileReaderFactory& fileReaderFactory) : m_MaxBitrate(0.0), m_AvgBitrate(0.0), m_Reader(fileReaderFactory) {}
   virtual ~FileInfoWrapper() {}
 
   Result_t
@@ -532,17 +532,17 @@ public:
 // Read header metadata from an ASDCP file
 //
 Result_t
-show_file_info(CommandOptions& Options)
+show_file_info(CommandOptions& Options, const Kumu::IFileReaderFactory& fileReaderFactory)
 {
   EssenceType_t EssenceType;
-  Result_t result = ASDCP::EssenceType(Options.filenames.front().c_str(), EssenceType);
+  Result_t result = ASDCP::EssenceType(Options.filenames.front().c_str(), EssenceType, fileReaderFactory);
 
   if ( ASDCP_FAILURE(result) )
     return result;
 
   if ( EssenceType == ESS_MPEG2_VES )
     {
-      FileInfoWrapper<ASDCP::MPEG2::MXFReader, MyVideoDescriptor> wrapper;
+      FileInfoWrapper<ASDCP::MPEG2::MXFReader, MyVideoDescriptor> wrapper(fileReaderFactory);
       result = wrapper.file_info(Options, "MPEG2 video");
 
       if ( ASDCP_SUCCESS(result) && Options.showrate_flag )
@@ -550,7 +550,7 @@ show_file_info(CommandOptions& Options)
     }
   else if ( EssenceType == ESS_PCM_24b_48k || EssenceType == ESS_PCM_24b_96k )
     {
-      FileInfoWrapper<ASDCP::PCM::MXFReader, MyAudioDescriptor> wrapper;
+      FileInfoWrapper<ASDCP::PCM::MXFReader, MyAudioDescriptor> wrapper(fileReaderFactory);
       result = wrapper.file_info(Options, "PCM audio");
 
       if ( ASDCP_SUCCESS(result) && Options.showcoding_flag )
@@ -560,7 +560,7 @@ show_file_info(CommandOptions& Options)
     {
       if ( Options.stereo_image_flag )
 	{
-	  FileInfoWrapper<ASDCP::JP2K::MXFSReader, MyStereoPictureDescriptor> wrapper;
+	  FileInfoWrapper<ASDCP::JP2K::MXFSReader, MyStereoPictureDescriptor> wrapper(fileReaderFactory);
 	  result = wrapper.file_info(Options, "JPEG 2000 stereoscopic pictures");
 
 	  if ( KM_SUCCESS(result) )
@@ -579,7 +579,7 @@ show_file_info(CommandOptions& Options)
 	}
       else
 	{
-	  FileInfoWrapper<ASDCP::JP2K::MXFReader, MyPictureDescriptor>wrapper;
+	  FileInfoWrapper<ASDCP::JP2K::MXFReader, MyPictureDescriptor>wrapper(fileReaderFactory);
 	  result = wrapper.file_info(Options, "JPEG 2000 pictures");
 
 	  if ( KM_SUCCESS(result) )
@@ -599,7 +599,7 @@ show_file_info(CommandOptions& Options)
     }
   else if ( EssenceType == ESS_JPEG_2000_S )
     {
-      FileInfoWrapper<ASDCP::JP2K::MXFSReader, MyStereoPictureDescriptor>wrapper;
+      FileInfoWrapper<ASDCP::JP2K::MXFSReader, MyStereoPictureDescriptor>wrapper(fileReaderFactory);
       result = wrapper.file_info(Options, "JPEG 2000 stereoscopic pictures");
 
       if ( KM_SUCCESS(result) )
@@ -618,17 +618,17 @@ show_file_info(CommandOptions& Options)
     }
   else if ( EssenceType == ESS_TIMED_TEXT )
     {
-      FileInfoWrapper<ASDCP::TimedText::MXFReader, MyTextDescriptor>wrapper;
+      FileInfoWrapper<ASDCP::TimedText::MXFReader, MyTextDescriptor>wrapper(fileReaderFactory);
       result = wrapper.file_info(Options, "Timed Text");
     }
   else if ( EssenceType == ESS_DCDATA_UNKNOWN )
     {
-      FileInfoWrapper<ASDCP::DCData::MXFReader, MyDCDataDescriptor> wrapper;
+      FileInfoWrapper<ASDCP::DCData::MXFReader, MyDCDataDescriptor> wrapper(fileReaderFactory);
       result = wrapper.file_info(Options, "D-Cinema Generic Data");
     }
   else if ( EssenceType == ESS_DCDATA_DOLBY_ATMOS )
     {
-      FileInfoWrapper<ASDCP::ATMOS::MXFReader, MyAtmosDescriptor> wrapper;
+      FileInfoWrapper<ASDCP::ATMOS::MXFReader, MyAtmosDescriptor> wrapper(fileReaderFactory);
       result = wrapper.file_info(Options, "Dolby ATMOS");
     }
   else if ( EssenceType == ESS_AS02_PCM_24b_48k
@@ -641,14 +641,14 @@ show_file_info(CommandOptions& Options)
   else
     {
       fprintf(stderr, "File is not AS-DCP: %s\n", Options.filenames.front().c_str());
-      Kumu::FileReader   Reader;
+      Kumu::IFileReader*   Reader = fileReaderFactory.CreateFileReader();
       const Dictionary* Dict = &DefaultCompositeDict();
       MXF::OP1aHeader TestHeader(Dict);
 
-      result = Reader.OpenRead(Options.filenames.front().c_str());
+      result = Reader->OpenRead(Options.filenames.front().c_str());
 
       if ( ASDCP_SUCCESS(result) )
-	result = TestHeader.InitFromFile(Reader); // test UL and OP
+    result = TestHeader.InitFromFile(*Reader); // test UL and OP
 
       if ( ASDCP_SUCCESS(result) )
 	{
@@ -668,6 +668,7 @@ show_file_info(CommandOptions& Options)
 	{
 	  fputs("File is not MXF.\n", stdout);
 	}
+	  delete Reader;
     }
 
   return result;
@@ -696,9 +697,10 @@ main(int argc, const char** argv)
       return 3;
     }
 
+  Kumu::FileReaderFactory defaultFactory;
   while ( ! Options.filenames.empty() && ASDCP_SUCCESS(result) )
     {
-      result = show_file_info(Options);
+      result = show_file_info(Options, defaultFactory);
       Options.filenames.pop_front();
     }
 

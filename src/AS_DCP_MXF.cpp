@@ -163,19 +163,19 @@ ASDCP::MD_to_CryptoInfo(CryptographicContext* InfoObj, WriterInfo& Info, const D
 //
 //
 ASDCP::Result_t
-ASDCP::EssenceType(const std::string& filename, EssenceType_t& type)
+ASDCP::EssenceType(const std::string& filename, EssenceType_t& type, const Kumu::IFileReaderFactory& fileReaderFactory)
 {
   const Dictionary* m_Dict = &DefaultCompositeDict();
   InterchangeObject* md_object = 0;
 
   assert(m_Dict);
-  Kumu::FileReader   Reader;
+  ASDCP::mem_ptr<Kumu::IFileReader> Reader(fileReaderFactory.CreateFileReader());
   OP1aHeader TestHeader(m_Dict);
 
-  Result_t result = Reader.OpenRead(filename);
+  Result_t result = Reader->OpenRead(filename);
 
   if ( ASDCP_SUCCESS(result) )
-    result = TestHeader.InitFromFile(Reader); // test UL and OP
+    result = TestHeader.InitFromFile(*Reader); // test UL and OP
 
   if ( ASDCP_SUCCESS(result) )
     {

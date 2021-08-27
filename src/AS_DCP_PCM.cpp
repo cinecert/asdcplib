@@ -254,7 +254,7 @@ class ASDCP::PCM::MXFReader::h__Reader : public ASDCP::h__ASDCPReader
 public:
   AudioDescriptor m_ADesc;
 
-  h__Reader(const Dictionary *d) : ASDCP::h__ASDCPReader(d) {}
+  h__Reader(const Dictionary *d, const Kumu::IFileReaderFactory& fileReaderFactory) : ASDCP::h__ASDCPReader(d, fileReaderFactory) {}
   virtual ~h__Reader() {}
   Result_t    OpenRead(const std::string&);
   Result_t    ReadFrame(ui32_t, FrameBuffer&, AESDecContext*, HMACContext*);
@@ -339,7 +339,7 @@ ASDCP::Result_t
 ASDCP::PCM::MXFReader::h__Reader::ReadFrame(ui32_t FrameNum, FrameBuffer& FrameBuf,
 					    AESDecContext* Ctx, HMACContext* HMAC)
 {
-  if ( ! m_File.IsOpen() )
+  if ( ! m_File->IsOpen() )
     return RESULT_INIT;
 
   if ( (FrameNum+1) > m_ADesc.ContainerDuration )
@@ -370,15 +370,15 @@ ASDCP::PCM::FrameBuffer::Dump(FILE* stream, ui32_t dump_len) const
 
 //------------------------------------------------------------------------------------------
 
-ASDCP::PCM::MXFReader::MXFReader()
+ASDCP::PCM::MXFReader::MXFReader(const Kumu::IFileReaderFactory& fileReaderFactory)
 {
-  m_Reader = new h__Reader(&DefaultCompositeDict());
+  m_Reader = new h__Reader(&DefaultCompositeDict(), fileReaderFactory);
 }
 
 
 ASDCP::PCM::MXFReader::~MXFReader()
 {
-  if ( m_Reader && m_Reader->m_File.IsOpen() )
+  if ( m_Reader && m_Reader->m_File->IsOpen() )
     m_Reader->Close();
 }
 
@@ -443,7 +443,7 @@ ASDCP::Result_t
 ASDCP::PCM::MXFReader::ReadFrame(ui32_t FrameNum, FrameBuffer& FrameBuf,
 				 AESDecContext* Ctx, HMACContext* HMAC) const
 {
-  if ( m_Reader && m_Reader->m_File.IsOpen() )
+  if ( m_Reader && m_Reader->m_File->IsOpen() )
     return m_Reader->ReadFrame(FrameNum, FrameBuf, Ctx, HMAC);
 
   return RESULT_INIT;
@@ -461,7 +461,7 @@ ASDCP::PCM::MXFReader::LocateFrame(ui32_t FrameNum, Kumu::fpos_t& streamOffset, 
 ASDCP::Result_t
 ASDCP::PCM::MXFReader::FillAudioDescriptor(AudioDescriptor& ADesc) const
 {
-  if ( m_Reader && m_Reader->m_File.IsOpen() )
+  if ( m_Reader && m_Reader->m_File->IsOpen() )
     {
       ADesc = m_Reader->m_ADesc;
       return RESULT_OK;
@@ -475,7 +475,7 @@ ASDCP::PCM::MXFReader::FillAudioDescriptor(AudioDescriptor& ADesc) const
 ASDCP::Result_t
 ASDCP::PCM::MXFReader::FillWriterInfo(WriterInfo& Info) const
 {
-  if ( m_Reader && m_Reader->m_File.IsOpen() )
+  if ( m_Reader && m_Reader->m_File->IsOpen() )
     {
       Info = m_Reader->m_Info;
       return RESULT_OK;
@@ -488,7 +488,7 @@ ASDCP::PCM::MXFReader::FillWriterInfo(WriterInfo& Info) const
 void
 ASDCP::PCM::MXFReader::DumpHeaderMetadata(FILE* stream) const
 {
-  if ( m_Reader && m_Reader->m_File.IsOpen() )
+  if ( m_Reader && m_Reader->m_File->IsOpen() )
     m_Reader->m_HeaderPart.Dump(stream);
 }
 
@@ -497,7 +497,7 @@ ASDCP::PCM::MXFReader::DumpHeaderMetadata(FILE* stream) const
 void
 ASDCP::PCM::MXFReader::DumpIndex(FILE* stream) const
 {
-  if ( m_Reader->m_File.IsOpen() )
+  if ( m_Reader->m_File->IsOpen() )
     m_Reader->m_IndexAccess.Dump(stream);
 }
 
@@ -505,7 +505,7 @@ ASDCP::PCM::MXFReader::DumpIndex(FILE* stream) const
 ASDCP::Result_t
 ASDCP::PCM::MXFReader::Close() const
 {
-  if ( m_Reader && m_Reader->m_File.IsOpen() )
+  if ( m_Reader && m_Reader->m_File->IsOpen() )
     {
       m_Reader->Close();
       return RESULT_OK;

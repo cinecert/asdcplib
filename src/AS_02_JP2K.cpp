@@ -55,8 +55,8 @@ class AS_02::JP2K::MXFReader::h__Reader : public AS_02::h__AS02Reader
   ASDCP_NO_COPY_CONSTRUCT(h__Reader);
 
 public:
-  h__Reader(const Dictionary *d) :
-    AS_02::h__AS02Reader(d) {}
+  h__Reader(const Dictionary* d, const Kumu::IFileReaderFactory& fileReaderFactory) :
+    AS_02::h__AS02Reader(d, fileReaderFactory) {}
 
   virtual ~h__Reader() {}
 
@@ -112,7 +112,7 @@ Result_t
 AS_02::JP2K::MXFReader::h__Reader::ReadFrame(ui32_t FrameNum, ASDCP::JP2K::FrameBuffer& FrameBuf,
 		      ASDCP::AESDecContext* Ctx, ASDCP::HMACContext* HMAC)
 {
-  if ( ! m_File.IsOpen() )
+  if ( ! m_File->IsOpen() )
     return RESULT_INIT;
 
   assert(m_Dict);
@@ -122,9 +122,9 @@ AS_02::JP2K::MXFReader::h__Reader::ReadFrame(ui32_t FrameNum, ASDCP::JP2K::Frame
 //------------------------------------------------------------------------------------------
 //
 
-AS_02::JP2K::MXFReader::MXFReader()
+AS_02::JP2K::MXFReader::MXFReader(const Kumu::IFileReaderFactory& fileReaderFactory)
 {
-  m_Reader = new h__Reader(&DefaultCompositeDict());
+  m_Reader = new h__Reader(&DefaultCompositeDict(), fileReaderFactory);
 }
 
 
@@ -189,7 +189,7 @@ AS_02::JP2K::MXFReader::OpenRead(const std::string& filename) const
 Result_t
 AS_02::JP2K::MXFReader::Close() const
 {
-  if ( m_Reader && m_Reader->m_File.IsOpen() )
+  if ( m_Reader && m_Reader->m_File->IsOpen() )
     {
       m_Reader->Close();
       return RESULT_OK;
@@ -203,7 +203,7 @@ Result_t
 AS_02::JP2K::MXFReader::ReadFrame(ui32_t FrameNum, ASDCP::JP2K::FrameBuffer& FrameBuf,
 					   ASDCP::AESDecContext* Ctx, ASDCP::HMACContext* HMAC) const
 {
-  if ( m_Reader && m_Reader->m_File.IsOpen() )
+  if ( m_Reader && m_Reader->m_File->IsOpen() )
     return m_Reader->ReadFrame(FrameNum, FrameBuf, Ctx, HMAC);
 
   return RESULT_INIT;
@@ -214,7 +214,7 @@ AS_02::JP2K::MXFReader::ReadFrame(ui32_t FrameNum, ASDCP::JP2K::FrameBuffer& Fra
 Result_t
 AS_02::JP2K::MXFReader::FillWriterInfo(WriterInfo& Info) const
 {
-  if ( m_Reader && m_Reader->m_File.IsOpen() )
+  if ( m_Reader && m_Reader->m_File->IsOpen() )
     {
       Info = m_Reader->m_Info;
       return RESULT_OK;
@@ -227,7 +227,7 @@ AS_02::JP2K::MXFReader::FillWriterInfo(WriterInfo& Info) const
 void
 AS_02::JP2K::MXFReader::DumpHeaderMetadata(FILE* stream) const
 {
-  if ( m_Reader && m_Reader->m_File.IsOpen() )
+  if ( m_Reader && m_Reader->m_File->IsOpen() )
     {
       m_Reader->m_HeaderPart.Dump(stream);
     }
@@ -238,7 +238,7 @@ AS_02::JP2K::MXFReader::DumpHeaderMetadata(FILE* stream) const
 void
 AS_02::JP2K::MXFReader::DumpIndex(FILE* stream) const
 {
-  if ( m_Reader && m_Reader->m_File.IsOpen() )
+  if ( m_Reader && m_Reader->m_File->IsOpen() )
     {
       m_Reader->m_IndexAccess.Dump(stream);
     }

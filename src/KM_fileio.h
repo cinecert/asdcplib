@@ -84,7 +84,7 @@ namespace Kumu
     KM_NO_COPY_CONSTRUCT(DirScannerEx);
 
   public:
-    
+   
     DirScannerEx();
     ~DirScannerEx() { Close(); }
 
@@ -313,37 +313,65 @@ namespace Kumu
   //------------------------------------------------------------------------------------------
   // File I/O
   //------------------------------------------------------------------------------------------
+  //
+  class IFileReader
+  {
+    public:
+      virtual ~IFileReader(){}
+
+      virtual Result_t OpenRead(const std::string&) const = 0;                 // open the file for reading
+      virtual Result_t Close() const = 0;                                      // close the file
+      virtual int64_t  Size() const = 0;                                       // returns the file's current size
+      virtual Result_t Seek(Kumu::fpos_t = 0, SeekPos_t = SP_BEGIN) const = 0; // move the file pointer
+      virtual Result_t Tell(Kumu::fpos_t* pos) const = 0;                      // report the file pointer's location
+      virtual Result_t Read(byte_t*, ui32_t, ui32_t* = 0) const = 0;           // read a buffer of data
+      virtual bool IsOpen() const = 0;                                         // returns true if the file is open
+
+      inline int64_t TellPosition() const                                      // report the file pointer's location
+      {
+        int64_t tmp_pos;
+        Tell(&tmp_pos);
+        return tmp_pos;
+      }
+  };
 
   //
-  class FileReader
-    {
-      KM_NO_COPY_CONSTRUCT(FileReader);
+  class FileReader : public IFileReader
+  {
+    KM_NO_COPY_CONSTRUCT(FileReader);
+
+    public:
+      FileReader();
+      ~FileReader();
+      virtual Result_t OpenRead(const std::string&) const;                     // open the file for reading
+      virtual Result_t Close() const;                                          // close the file
+      virtual int64_t  Size() const;                                           // returns the file's current size
+      virtual Result_t Seek(Kumu::fpos_t = 0, SeekPos_t = SP_BEGIN) const;     // move the file pointer
+      virtual Result_t Tell(Kumu::fpos_t* pos) const;                          // report the file pointer's location
+      virtual Result_t Read(byte_t*, ui32_t, ui32_t* = 0) const;               // read a buffer of data
+
+      inline virtual bool IsOpen() const                                       // returns true if the file is open
+      {
+        return (m_Handle != INVALID_HANDLE_VALUE);
+      }
 
     protected:
       std::string m_Filename;
       FileHandle  m_Handle;
+  };
 
+  //
+  class IFileReaderFactory
+    {
     public:
-      FileReader() : m_Handle(INVALID_HANDLE_VALUE) {}
-      virtual ~FileReader() { Close(); }
+      virtual IFileReader* CreateFileReader() const = 0;
+      virtual ~IFileReaderFactory(){}
+    };
 
-      Result_t OpenRead(const std::string&) const;                          // open the file for reading
-      Result_t Close() const;                                        // close the file
-      fsize_t  Size() const;                                         // returns the file's current size
-      Result_t Seek(Kumu::fpos_t = 0, SeekPos_t = SP_BEGIN) const;   // move the file pointer
-      Result_t Tell(Kumu::fpos_t* pos) const;                        // report the file pointer's location
-      Result_t Read(byte_t*, ui32_t, ui32_t* = 0) const;             // read a buffer of data
-
-      inline Kumu::fpos_t Tell() const                               // report the file pointer's location
-	{
-	  Kumu::fpos_t tmp_pos;
-	  Tell(&tmp_pos);
-	  return tmp_pos;
-	}
-
-      inline bool IsOpen() {                                         // returns true if the file is open
-	return (m_Handle != INVALID_HANDLE_VALUE);
-      }
+  class FileReaderFactory : public IFileReaderFactory
+    {
+    public:
+      virtual IFileReader* CreateFileReader() const;
     };
 
   //

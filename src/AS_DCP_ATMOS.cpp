@@ -117,8 +117,9 @@ class ASDCP::ATMOS::MXFReader::h__Reader : public ASDCP::h__ASDCPReader
   ASDCP::DCData::DCDataDescriptor m_DDesc;
   AtmosDescriptor m_ADesc;
 
-  h__Reader(const Dictionary *d) :
-    ASDCP::h__ASDCPReader(d),  m_EssenceDescriptor(0), m_EssenceSubDescriptor(0) {}
+  h__Reader(const Dictionary* d, const Kumu::IFileReaderFactory& fileReaderFactory) :
+    ASDCP::h__ASDCPReader(d, fileReaderFactory),  m_EssenceDescriptor(0), m_EssenceSubDescriptor(0) {}
+
   virtual ~h__Reader() {}
   Result_t    OpenRead(const std::string&);
   Result_t    ReadFrame(ui32_t, FrameBuffer&, AESDecContext*, HMACContext*);
@@ -239,7 +240,7 @@ ASDCP::Result_t
 ASDCP::ATMOS::MXFReader::h__Reader::ReadFrame(ui32_t FrameNum, FrameBuffer& FrameBuf,
 					      AESDecContext* Ctx, HMACContext* HMAC)
 {
-  if ( ! m_File.IsOpen() )
+  if ( ! m_File->IsOpen() )
     return RESULT_INIT;
 
   assert(m_Dict);
@@ -249,15 +250,15 @@ ASDCP::ATMOS::MXFReader::h__Reader::ReadFrame(ui32_t FrameNum, FrameBuffer& Fram
 
 //------------------------------------------------------------------------------------------
 
-ASDCP::ATMOS::MXFReader::MXFReader()
+ASDCP::ATMOS::MXFReader::MXFReader(const Kumu::IFileReaderFactory& fileReaderFactory)
 {
-  m_Reader = new h__Reader(&AtmosSMPTEDict());
+  m_Reader = new h__Reader(&AtmosSMPTEDict(), fileReaderFactory);
 }
 
 
 ASDCP::ATMOS::MXFReader::~MXFReader()
 {
-  if ( m_Reader && m_Reader->m_File.IsOpen() )
+  if ( m_Reader && m_Reader->m_File->IsOpen() )
     m_Reader->Close();
 }
 
@@ -319,7 +320,7 @@ ASDCP::Result_t
 ASDCP::ATMOS::MXFReader::ReadFrame(ui32_t FrameNum, DCData::FrameBuffer& FrameBuf,
                                     AESDecContext* Ctx, HMACContext* HMAC) const
 {
-  if ( m_Reader && m_Reader->m_File.IsOpen() )
+  if ( m_Reader && m_Reader->m_File->IsOpen() )
     return m_Reader->ReadFrame(FrameNum, FrameBuf, Ctx, HMAC);
 
   return RESULT_INIT;
@@ -337,7 +338,7 @@ ASDCP::ATMOS::MXFReader::LocateFrame(ui32_t FrameNum, Kumu::fpos_t& streamOffset
 ASDCP::Result_t
 ASDCP::ATMOS::MXFReader::FillAtmosDescriptor(AtmosDescriptor& ADesc) const
 {
-  if ( m_Reader && m_Reader->m_File.IsOpen() )
+  if ( m_Reader && m_Reader->m_File->IsOpen() )
   {
     ADesc = m_Reader->m_ADesc;
     return RESULT_OK;
@@ -352,7 +353,7 @@ ASDCP::ATMOS::MXFReader::FillAtmosDescriptor(AtmosDescriptor& ADesc) const
 ASDCP::Result_t
 ASDCP::ATMOS::MXFReader::FillWriterInfo(WriterInfo& Info) const
 {
-  if ( m_Reader && m_Reader->m_File.IsOpen() )
+  if ( m_Reader && m_Reader->m_File->IsOpen() )
   {
     Info = m_Reader->m_Info;
     return RESULT_OK;
@@ -365,7 +366,7 @@ ASDCP::ATMOS::MXFReader::FillWriterInfo(WriterInfo& Info) const
 void
 ASDCP::ATMOS::MXFReader::DumpHeaderMetadata(FILE* stream) const
 {
-  if ( m_Reader->m_File.IsOpen() )
+  if ( m_Reader->m_File->IsOpen() )
     m_Reader->m_HeaderPart.Dump(stream);
 }
 
@@ -373,7 +374,7 @@ ASDCP::ATMOS::MXFReader::DumpHeaderMetadata(FILE* stream) const
 void
 ASDCP::ATMOS::MXFReader::DumpIndex(FILE* stream) const
 {
-  if ( m_Reader->m_File.IsOpen() )
+  if ( m_Reader->m_File->IsOpen() )
     m_Reader->m_IndexAccess.Dump(stream);
 }
 
@@ -381,7 +382,7 @@ ASDCP::ATMOS::MXFReader::DumpIndex(FILE* stream) const
 ASDCP::Result_t
 ASDCP::ATMOS::MXFReader::Close() const
 {
-  if ( m_Reader && m_Reader->m_File.IsOpen() )
+  if ( m_Reader && m_Reader->m_File->IsOpen() )
     {
       m_Reader->Close();
       return RESULT_OK;

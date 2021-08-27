@@ -41,15 +41,14 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 using Kumu::DefaultLogSink;
 
-#ifdef DEFAULT_02_MD_DECL
-AS_02::MXF::AS02IndexReader *g_AS02IndexReader;
-#else
-extern AS_02::MXF::AS02IndexReader *g_AS02IndexReader;
-#endif
-
-
 namespace AS_02
 {
+  
+  #ifdef DEFAULT_02_MD_DECL
+  AS_02::MXF::AS02IndexReader *g_AS02IndexReader;
+  #else
+  extern AS_02::MXF::AS02IndexReader *g_AS02IndexReader;
+  #endif
 
   void default_md_object_init();
 
@@ -61,7 +60,8 @@ namespace AS_02
       h__AS02Reader();
 
     public:
-      h__AS02Reader(const ASDCP::Dictionary*);
+      h__AS02Reader(const ASDCP::Dictionary*, const Kumu::IFileReaderFactory& fileReaderFactory);
+
       virtual ~h__AS02Reader();
 
       Result_t OpenMXFRead(const std::string& filename);
@@ -191,7 +191,7 @@ namespace AS_02
 	if ( KM_SUCCESS(result) )
 	  {
 	    this->m_PartitionSpace *= (ui32_t)floor( EditRate.Quotient() + 0.5 );  // convert seconds to edit units
-	    this->m_ECStart = this->m_File.Tell();
+	    this->m_ECStart = this->m_File.TellPosition();
 	    this->m_IndexWriter.IndexSID = 129;
 
 	    UL body_ul(this->m_Dict->ul(MDD_ClosedCompleteBodyPartition));
@@ -209,21 +209,23 @@ namespace AS_02
 	return result;
       }
 
-      void FlushIndexPartition()
+      Result_t FlushIndexPartition()
       {
-	if ( this->m_IndexWriter.GetDuration() > 0 )
-	  {
-	    this->m_IndexWriter.ThisPartition = this->m_File.Tell();
-	    this->m_IndexWriter.WriteToFile(this->m_File);
+          Result_t result = RESULT_OK;
+	    if ( this->m_IndexWriter.GetDuration() > 0 )
+	    {
+	    this->m_IndexWriter.ThisPartition = this->m_File.TellPosition();
+	    result = this->m_IndexWriter.WriteToFile(this->m_File);
 	    this->m_RIP.PairArray.push_back(RIP::PartitionPair(0, this->m_IndexWriter.ThisPartition));
-	  }
+	    }
+          return result;
       }
       
       // standard method of writing the header and footer of a completed AS-02 file
       //
       Result_t WriteAS02Footer()
       {
-	this->FlushIndexPartition();
+          Result_t result = this->FlushIndexPartition();
 	  
 	// update all Duration properties
 	ASDCP::MXF::Partition footer_part(this->m_Dict);
@@ -237,7 +239,7 @@ namespace AS_02
 	this->m_EssenceDescriptor->ContainerDuration = this->m_FramesWritten;
 	footer_part.PreviousPartition = this->m_RIP.PairArray.back().ByteOffset;
 
-	Kumu::fpos_t here = this->m_File.Tell();
+	Kumu::fpos_t here = this->m_File.TellPosition();
 	this->m_RIP.PairArray.push_back(RIP::PartitionPair(0, here)); // Last RIP Entry
 	this->m_HeaderPart.FooterPartition = here;
 
@@ -249,8 +251,11 @@ namespace AS_02
 	footer_part.FooterPartition = here;
 	footer_part.ThisPartition = here;
 
-	UL footer_ul(this->m_Dict->ul(MDD_CompleteFooter));
-	Result_t result = footer_part.WriteToFile(this->m_File, footer_ul);
+    if (KM_SUCCESS(result))
+    {
+        UL footer_ul(this->m_Dict->ul(MDD_CompleteFooter));
+        result = footer_part.WriteToFile(this->m_File, footer_ul);
+    }
 
 	if ( KM_SUCCESS(result) )
 	  result = this->m_RIP.WriteToFile(this->m_File);

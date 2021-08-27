@@ -45,7 +45,7 @@ const ui32_t CBRIndexEntriesPerSegment = 5000;
 
 //
 ASDCP::Result_t
-ASDCP::MXF::SeekToRIP(const Kumu::FileReader& Reader)
+ASDCP::MXF::SeekToRIP(const Kumu::IFileReader& Reader)
 {
   Kumu::fpos_t end_pos;
 
@@ -118,7 +118,7 @@ ASDCP::MXF::RIP::GetPairBySID(ui32_t SID, PartitionPair& outPair) const
 
 //
 ASDCP::Result_t
-ASDCP::MXF::RIP::InitFromFile(const Kumu::FileReader& Reader)
+ASDCP::MXF::RIP::InitFromFile(const Kumu::IFileReader& Reader)
 {
   assert(m_Dict);
   Result_t result = KLVFilePacket::InitFromFile(Reader, m_Dict->ul(MDD_RandomIndexMetadata));
@@ -291,7 +291,7 @@ ASDCP::MXF::Partition::AddChildObject(InterchangeObject* Object)
 
 //
 ASDCP::Result_t
-ASDCP::MXF::Partition::InitFromFile(const Kumu::FileReader& Reader)
+ASDCP::MXF::Partition::InitFromFile(const Kumu::IFileReader& Reader)
 {
   Result_t result = KLVFilePacket::InitFromFile(Reader);
   // test the UL
@@ -750,7 +750,7 @@ ASDCP::MXF::OP1aHeader::~OP1aHeader() {}
 
 //
 ASDCP::Result_t
-ASDCP::MXF::OP1aHeader::InitFromFile(const Kumu::FileReader& Reader)
+ASDCP::MXF::OP1aHeader::InitFromFile(const Kumu::IFileReader& Reader)
 {
   Result_t result = Partition::InitFromFile(Reader);
 
@@ -986,7 +986,7 @@ ASDCP::MXF::OP1aHeader::WriteToFile(Kumu::FileWriter& Writer, ui32_t HeaderSize)
   // KLV Fill
   if ( ASDCP_SUCCESS(result) )
     {
-      Kumu::fpos_t pos = Writer.Tell();
+      Kumu::fpos_t pos = Writer.TellPosition();
 
       if ( pos > (Kumu::fpos_t)HeaderByteCount )
 	{
@@ -1058,7 +1058,7 @@ ASDCP::MXF::OPAtomIndexFooter::~OPAtomIndexFooter() {}
 
 //
 ASDCP::Result_t
-ASDCP::MXF::OPAtomIndexFooter::InitFromFile(const Kumu::FileReader& Reader)
+ASDCP::MXF::OPAtomIndexFooter::InitFromFile(const Kumu::IFileReader& Reader)
 {
   Result_t result = Partition::InitFromFile(Reader); // test UL and OP
 

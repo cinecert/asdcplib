@@ -57,8 +57,8 @@ class AS_02::JXS::MXFReader::h__Reader : public AS_02::h__AS02Reader
   ASDCP_NO_COPY_CONSTRUCT(h__Reader);
 
 public:
-  h__Reader(const Dictionary *d) :
-    AS_02::h__AS02Reader(d) {}
+  h__Reader(const Dictionary* d, const Kumu::IFileReaderFactory& fileReaderFactory) :
+    AS_02::h__AS02Reader(d, fileReaderFactory) {}
 
   virtual ~h__Reader() {}
 
@@ -73,7 +73,7 @@ AS_02::JXS::MXFReader::h__Reader::CalcFrameBufferSize(ui64_t &size)
 {
   IndexTableSegment::IndexEntry TmpEntry;
   
-  if ( ! m_File.IsOpen() )
+  if ( ! m_File->IsOpen() )
     return RESULT_INIT;
 
   if ( KM_FAILURE(m_IndexAccess.Lookup(0, TmpEntry)) ) {
@@ -87,7 +87,7 @@ AS_02::JXS::MXFReader::h__Reader::CalcFrameBufferSize(ui64_t &size)
 
   if ( FilePosition != m_LastPosition ) {
     m_LastPosition = FilePosition;
-    result = m_File.Seek(FilePosition);
+    result = m_File->Seek(FilePosition);
   }
 
   if ( KM_SUCCESS(result) ) {
@@ -97,7 +97,7 @@ AS_02::JXS::MXFReader::h__Reader::CalcFrameBufferSize(ui64_t &size)
   //
   // Return the file to where it was
   m_LastPosition = old;
-  m_File.Seek(old);
+  m_File->Seek(old);
   
   return result;
 }
@@ -150,7 +150,7 @@ Result_t
 AS_02::JXS::MXFReader::h__Reader::ReadFrame(ui32_t FrameNum, ASDCP::JXS::FrameBuffer& FrameBuf,
 		      ASDCP::AESDecContext* Ctx, ASDCP::HMACContext* HMAC)
 {
-  if ( ! m_File.IsOpen() )
+  if ( ! m_File->IsOpen() )
     return RESULT_INIT;
 
   assert(m_Dict);
@@ -160,9 +160,9 @@ AS_02::JXS::MXFReader::h__Reader::ReadFrame(ui32_t FrameNum, ASDCP::JXS::FrameBu
 //------------------------------------------------------------------------------------------
 //
 
-AS_02::JXS::MXFReader::MXFReader()
+AS_02::JXS::MXFReader::MXFReader(const Kumu::IFileReaderFactory& fileReaderFactory)
 {
-  m_Reader = new h__Reader(&DefaultCompositeDict());
+  m_Reader = new h__Reader(&DefaultSMPTEDict(), fileReaderFactory);
 }
 
 
@@ -227,7 +227,7 @@ AS_02::JXS::MXFReader::OpenRead(const std::string& filename) const
 Result_t
 AS_02::JXS::MXFReader::Close() const
 {
-  if ( m_Reader && m_Reader->m_File.IsOpen() )
+  if ( m_Reader && m_Reader->m_File->IsOpen() )
     {
       m_Reader->Close();
       return RESULT_OK;
@@ -241,7 +241,7 @@ Result_t
 AS_02::JXS::MXFReader::ReadFrame(ui32_t FrameNum, ASDCP::JXS::FrameBuffer& FrameBuf,
 					   ASDCP::AESDecContext* Ctx, ASDCP::HMACContext* HMAC) const
 {
-  if ( m_Reader && m_Reader->m_File.IsOpen() )
+  if ( m_Reader && m_Reader->m_File->IsOpen() )
     return m_Reader->ReadFrame(FrameNum, FrameBuf, Ctx, HMAC);
 
   return RESULT_INIT;
@@ -252,7 +252,7 @@ AS_02::JXS::MXFReader::ReadFrame(ui32_t FrameNum, ASDCP::JXS::FrameBuffer& Frame
 Result_t
 AS_02::JXS::MXFReader::CalcFrameBufferSize(ui64_t &size) const
 {
-  if ( m_Reader && m_Reader->m_File.IsOpen() )
+  if ( m_Reader && m_Reader->m_File->IsOpen() )
     return m_Reader->CalcFrameBufferSize(size);
 
   return RESULT_INIT;
@@ -263,7 +263,7 @@ AS_02::JXS::MXFReader::CalcFrameBufferSize(ui64_t &size) const
 Result_t
 AS_02::JXS::MXFReader::FillWriterInfo(WriterInfo& Info) const
 {
-  if ( m_Reader && m_Reader->m_File.IsOpen() )
+  if ( m_Reader && m_Reader->m_File->IsOpen() )
     {
       Info = m_Reader->m_Info;
       return RESULT_OK;
@@ -276,7 +276,7 @@ AS_02::JXS::MXFReader::FillWriterInfo(WriterInfo& Info) const
 void
 AS_02::JXS::MXFReader::DumpHeaderMetadata(FILE* stream) const
 {
-  if ( m_Reader && m_Reader->m_File.IsOpen() )
+  if ( m_Reader && m_Reader->m_File->IsOpen() )
     {
       m_Reader->m_HeaderPart.Dump(stream);
     }
@@ -287,7 +287,7 @@ AS_02::JXS::MXFReader::DumpHeaderMetadata(FILE* stream) const
 void
 AS_02::JXS::MXFReader::DumpIndex(FILE* stream) const
 {
-  if ( m_Reader && m_Reader->m_File.IsOpen() )
+  if ( m_Reader && m_Reader->m_File->IsOpen() )
     {
       m_Reader->m_IndexAccess.Dump(stream);
     }

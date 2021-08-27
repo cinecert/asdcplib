@@ -54,8 +54,8 @@ class AS_02::ISXD::MXFReader::h__Reader : public AS_02::h__AS02Reader
   ASDCP_NO_COPY_CONSTRUCT(h__Reader);
 
 public:
-  h__Reader(const Dictionary *d) :
-    AS_02::h__AS02Reader(d) {}
+  h__Reader(const Dictionary* d, const Kumu::IFileReaderFactory& fileReaderFactory) :
+    AS_02::h__AS02Reader(d, fileReaderFactory) {}
 
   virtual ~h__Reader() {}
 
@@ -101,7 +101,7 @@ Result_t
 AS_02::ISXD::MXFReader::h__Reader::ReadFrame(ui32_t FrameNum, ASDCP::FrameBuffer& FrameBuf,
 		      ASDCP::AESDecContext* Ctx, ASDCP::HMACContext* HMAC)
 {
-  if ( ! m_File.IsOpen() )
+  if ( ! m_File->IsOpen() )
     return RESULT_INIT;
 
   assert(m_Dict);
@@ -113,9 +113,9 @@ AS_02::ISXD::MXFReader::h__Reader::ReadFrame(ui32_t FrameNum, ASDCP::FrameBuffer
 //------------------------------------------------------------------------------------------
 //
 
-AS_02::ISXD::MXFReader::MXFReader()
+AS_02::ISXD::MXFReader::MXFReader(const Kumu::IFileReaderFactory& fileReaderFactory)
 {
-  m_Reader = new h__Reader(&DefaultCompositeDict());
+  m_Reader = new h__Reader(&DefaultCompositeDict(), fileReaderFactory);
 }
 
 
@@ -181,7 +181,7 @@ AS_02::ISXD::MXFReader::OpenRead(const std::string& filename) const
 Result_t
 AS_02::ISXD::MXFReader::Close() const
 {
-  if ( m_Reader && m_Reader->m_File.IsOpen() )
+  if ( m_Reader && m_Reader->m_File->IsOpen() )
     {
       m_Reader->Close();
       return RESULT_OK;
@@ -195,7 +195,7 @@ Result_t
 AS_02::ISXD::MXFReader::ReadFrame(ui32_t FrameNum, ASDCP::FrameBuffer& FrameBuf,
 					   ASDCP::AESDecContext* Ctx, ASDCP::HMACContext* HMAC) const
 {
-  if ( m_Reader && m_Reader->m_File.IsOpen() )
+  if ( m_Reader && m_Reader->m_File->IsOpen() )
     {
       return m_Reader->ReadFrame(FrameNum, FrameBuf, Ctx, HMAC);
     }
@@ -207,7 +207,7 @@ AS_02::ISXD::MXFReader::ReadFrame(ui32_t FrameNum, ASDCP::FrameBuffer& FrameBuf,
 Result_t
 AS_02::ISXD::MXFReader::ReadGenericStreamPartitionPayload(const ui32_t SID, ASDCP::FrameBuffer& frame_buf)
 {
-  if ( m_Reader && m_Reader->m_File.IsOpen() )
+  if ( m_Reader && m_Reader->m_File->IsOpen() )
     {
       return m_Reader->ReadGenericStreamPartitionPayload(SID, frame_buf, 0, 0 /*no encryption*/);
     }
@@ -220,7 +220,7 @@ AS_02::ISXD::MXFReader::ReadGenericStreamPartitionPayload(const ui32_t SID, ASDC
 Result_t
 AS_02::ISXD::MXFReader::FillWriterInfo(WriterInfo& Info) const
 {
-  if ( m_Reader && m_Reader->m_File.IsOpen() )
+  if ( m_Reader && m_Reader->m_File->IsOpen() )
     {
       Info = m_Reader->m_Info;
       return RESULT_OK;
@@ -233,7 +233,7 @@ AS_02::ISXD::MXFReader::FillWriterInfo(WriterInfo& Info) const
 void
 AS_02::ISXD::MXFReader::DumpHeaderMetadata(FILE* stream) const
 {
-  if ( m_Reader && m_Reader->m_File.IsOpen() )
+  if ( m_Reader && m_Reader->m_File->IsOpen() )
     {
       m_Reader->m_HeaderPart.Dump(stream);
     }
@@ -244,7 +244,7 @@ AS_02::ISXD::MXFReader::DumpHeaderMetadata(FILE* stream) const
 void
 AS_02::ISXD::MXFReader::DumpIndex(FILE* stream) const
 {
-  if ( m_Reader && m_Reader->m_File.IsOpen() )
+  if ( m_Reader && m_Reader->m_File->IsOpen() )
     {
       m_Reader->m_IndexAccess.Dump(stream);
     }

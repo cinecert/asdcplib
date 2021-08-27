@@ -178,7 +178,7 @@ AS_02::IAB::MXFWriter::OpenWrite(
 
     /* start the clip */
 
-    this->m_ClipStart = this->m_Writer->m_File.Tell();
+    this->m_ClipStart = this->m_Writer->m_File.TellPosition();
 
     /* reserve space for the KL of the KLV, which will be written later during finalization */
 
@@ -295,7 +295,7 @@ AS_02::IAB::MXFWriter::Finalize() {
 
     /* write clip length */
 
-    ui64_t current_position = this->m_Writer->m_File.Tell();
+    ui64_t current_position = this->m_Writer->m_File.TellPosition();
 
     result = this->m_Writer->m_File.Seek(m_ClipStart + ASDCP::SMPTE_UL_LENGTH);
 
@@ -354,7 +354,7 @@ AS_02::IAB::MXFWriter::Reset() {
 //------------------------------------------------------------------------------------------
 
 
-AS_02::IAB::MXFReader::MXFReader() : m_State(ST_READER_BEGIN) {}
+AS_02::IAB::MXFReader::MXFReader(const Kumu::IFileReaderFactory& fileReaderFactory) : m_State(ST_READER_BEGIN), m_FileReaderFactory(fileReaderFactory) {}
 
 AS_02::IAB::MXFReader::~MXFReader() {
     if ( m_Reader && m_Reader->m_File->IsOpen()) {
@@ -394,7 +394,7 @@ AS_02::IAB::MXFReader::OpenRead(const std::string& filename) {
 
   /* initialize the writer */
 
-  this->m_Reader = new h__Reader(&DefaultCompositeDict());
+  this->m_Reader = new h__Reader(&DefaultCompositeDict(), m_FileReaderFactory);
 
   try {
 

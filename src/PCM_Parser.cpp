@@ -45,14 +45,14 @@ using namespace ASDCP::RF64;
 //
 class ASDCP::PCM::WAVParser::h__WAVParser
 {
-  Kumu::FileReader m_FileReader;
-  bool             m_EOF;
-  ui32_t           m_DataStart;
-  ui64_t           m_DataLength;
-  ui64_t           m_ReadCount;
-  ui32_t           m_FrameBufferSize;
-  ui32_t           m_FramesRead;
-  Rational         m_PictureRate;
+  Kumu::IFileReader* m_FileReader;
+  bool               m_EOF;
+  ui32_t             m_DataStart;
+  ui64_t             m_DataLength;
+  ui64_t             m_ReadCount;
+  ui32_t             m_FrameBufferSize;
+  ui32_t             m_FramesRead;
+  Rational           m_PictureRate;
 
   ASDCP_NO_COPY_CONSTRUCT(h__WAVParser);
 
@@ -81,14 +81,14 @@ public:
 void
 ASDCP::PCM::WAVParser::h__WAVParser::Close()
 {
-  m_FileReader.Close();
+  m_FileReader->Close();
 }
 
 //
 void
 ASDCP::PCM::WAVParser::h__WAVParser::Reset()
 {
-  m_FileReader.Seek(m_DataStart);
+  m_FileReader->Seek(m_DataStart);
   m_FramesRead = 0;
   m_ReadCount = 0;
 }
@@ -97,12 +97,12 @@ ASDCP::PCM::WAVParser::h__WAVParser::Reset()
 ASDCP::Result_t
 ASDCP::PCM::WAVParser::h__WAVParser::OpenRead(const std::string& filename, const Rational& PictureRate)
 {
-  Result_t result = m_FileReader.OpenRead(filename);
+  Result_t result = m_FileReader->OpenRead(filename);
 
   if ( ASDCP_SUCCESS(result) )
     {
       SimpleWaveHeader WavHeader;
-      result = WavHeader.ReadFromFile(m_FileReader, &m_DataStart);
+      result = WavHeader.ReadFromFile(*m_FileReader, &m_DataStart);
   
       if ( ASDCP_SUCCESS(result) )
 	{
@@ -116,9 +116,9 @@ ASDCP::PCM::WAVParser::h__WAVParser::OpenRead(const std::string& filename, const
       else
 	{
 	  ASDCP::AIFF::SimpleAIFFHeader AIFFHeader;
-	  m_FileReader.Seek(0);
+	  m_FileReader->Seek(0);
 
-	  result = AIFFHeader.ReadFromFile(m_FileReader, &m_DataStart);
+      result = AIFFHeader.ReadFromFile(*m_FileReader, &m_DataStart);
 
 	  if ( ASDCP_SUCCESS(result) )
 	    {
@@ -132,8 +132,8 @@ ASDCP::PCM::WAVParser::h__WAVParser::OpenRead(const std::string& filename, const
 	  else
 	    {
 	      SimpleRF64Header RF64Header;
-	      m_FileReader.Seek(0);
-	      result = RF64Header.ReadFromFile(m_FileReader, &m_DataStart);
+	      m_FileReader->Seek(0);
+          result = RF64Header.ReadFromFile(*m_FileReader, &m_DataStart);
 
 	      if ( ASDCP_SUCCESS(result) )
 		{
@@ -170,7 +170,7 @@ ASDCP::PCM::WAVParser::h__WAVParser::ReadFrame(FrameBuffer& FB)
     }
 
   ui32_t read_count = 0;
-  Result_t result = m_FileReader.Read(FB.Data(), m_FrameBufferSize, &read_count);
+  Result_t result = m_FileReader->Read(FB.Data(), m_FrameBufferSize, &read_count);
 
   if ( result == RESULT_ENDOFFILE )
     {
@@ -202,7 +202,7 @@ ASDCP::Result_t ASDCP::PCM::WAVParser::h__WAVParser::Seek(ui32_t frame_number)
 {
   m_FramesRead = frame_number - 1;
   m_ReadCount = 0;
-  return m_FileReader.Seek(m_DataStart + m_FrameBufferSize * frame_number);
+  return m_FileReader->Seek(m_DataStart + m_FrameBufferSize * frame_number);
 }
 
 
