@@ -123,6 +123,8 @@ ASDCP::AddDmsTrackGenericPartUtf8Text(Kumu::FileWriter& file_writer, MXF::OP1aHe
   StaticTrack *StaticTrack_obj = 0;
   header_part.GetMDObjectsByType(Dict->ul(MDD_StaticTrack), object_list);
   std::list<InterchangeObject*>::iterator j;
+  // start with 2 because there one other track in Material Package: Audio Essence track
+  ui32_t newTrackId = 2;
   for ( j = object_list.begin(); j != object_list.end(); ++j )
     {
       StaticTrack_obj = dynamic_cast<StaticTrack*>(*j);
@@ -130,8 +132,13 @@ ASDCP::AddDmsTrackGenericPartUtf8Text(Kumu::FileWriter& file_writer, MXF::OP1aHe
       if ( id_batch_contains(SourcePackage_obj->Tracks, StaticTrack_obj->InstanceUID)
 	   && StaticTrack_obj->TrackName.get() == rp2057_static_track_label )
 	{
-	  break;
+          newTrackId = StaticTrack_obj->TrackID;
+          break;
 	}
+      if (StaticTrack_obj->TrackID >= newTrackId)
+      {
+          newTrackId = StaticTrack_obj->TrackID + 1;
+      }
       StaticTrack_obj = 0;
     }
 
@@ -160,7 +167,7 @@ ASDCP::AddDmsTrackGenericPartUtf8Text(Kumu::FileWriter& file_writer, MXF::OP1aHe
       header_part.AddChildObject(static_track);
       source_package.Tracks.push_back(static_track->InstanceUID);
       static_track->TrackName = trackDescription;
-      static_track->TrackID = 4;
+      static_track->TrackID = newTrackId;
 
       Sequence_obj = new Sequence(Dict);
       header_part.AddChildObject(Sequence_obj);
