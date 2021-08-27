@@ -170,7 +170,8 @@ namespace ASDCP
 		       WriterInfo& Descr, const UL& WrappingUL, const Dictionary *Dict);
 
   Result_t AddDmsTrackGenericPartUtf8Text(Kumu::FileWriter&, ASDCP::MXF::OP1aHeader&, SourcePackage&,
-					  ASDCP::MXF::RIP&, const Dictionary*);
+                      ASDCP::MXF::RIP&, const Dictionary*, const std::string&, const std::string&, std::list<ui64_t*>&);
+
   //
   Result_t WriteGenericStreamPartition(Kumu::FileWriter&, ASDCP::MXF::OP1aHeader&, ASDCP::MXF::RIP&, const Dictionary*,
 				       const ASDCP::FrameBuffer&, ASDCP::AESEncContext* = 0, ASDCP::HMACContext* = 0);
@@ -854,10 +855,13 @@ namespace ASDCP
 	}
 
 	Result_t AddDmsGenericPartUtf8Text(const ASDCP::FrameBuffer& frame_buffer,
-					   ASDCP::AESEncContext* enc = 0, ASDCP::HMACContext* hmac = 0)
+					   ASDCP::AESEncContext* enc = 0, ASDCP::HMACContext* hmac = 0, 
+                       const std::string& trackDescription = "Descriptive Track",
+                       const std::string& dataDescription = "")
 	{
 	  Kumu::fpos_t previous_partition_offset = m_RIP.PairArray.back().ByteOffset;
-	  Result_t result = AddDmsTrackGenericPartUtf8Text(m_File, m_HeaderPart, *m_FilePackage, m_RIP, m_Dict);
+
+      Result_t result = AddDmsTrackGenericPartUtf8Text(m_File, m_HeaderPart, *m_FilePackage, m_RIP, m_Dict, trackDescription, dataDescription, m_DurationUpdateList);
 
 	  if ( KM_SUCCESS(result) )
 	    {
@@ -886,8 +890,9 @@ namespace ASDCP
 	  
 	      if ( KM_SUCCESS(result) )
 		{
+          ui64_t streamOffset = m_StreamOffset;
 		  result = Write_EKLV_Packet(m_File, *m_Dict, m_HeaderPart, m_Info, m_CtFrameBuf, m_FramesWritten,
-					     m_StreamOffset, frame_buffer, GenericStream_DataElement.Value(),
+                         streamOffset, frame_buffer, GenericStream_DataElement.Value(),
 					     MXF_BER_LENGTH, enc, hmac);
 		}
 	    }

@@ -125,6 +125,15 @@ namespace AS_02 {
       Result_t WriteFrame(const ui8_t* frame, ui32_t sz);
 
       /**
+       * Writes an XML text document to the MXF file as per RP 2057. If the
+       * optional AESEncContext argument is present, the document is encrypted
+       * prior to writing. Fails if the file is not open, is finalized, or an
+       * operating system error occurs.
+       */
+      Result_t AddDmsGenericPartUtf8Text(const ASDCP::FrameBuffer& frame_buffer, ASDCP::AESEncContext* enc = 0, ASDCP::HMACContext* hmac = 0,
+                                         const std::string& trackDescription = "Descriptive Track", const std::string& dataDescription = "");
+
+      /**
        * Writes the Track File footer and closes the file.
        * 
        * Must be preceded by a succesful OpenWrite() call followed by zero or more WriteFrame() calls
@@ -211,13 +220,21 @@ namespace AS_02 {
 
       /**
        * Reads an IA Frame.
-       * 
+       *
        * @param frame_number Index of the frame to be read. Must be in the range [0, GetFrameCount()).
        * @param frame Frame data. Must not be modified. Remains valid until the next call to ReadFrame().
        * @return RESULT_OK indicates that more frames are ready to be read,
        * otherwise the file is closed and the reader reset
        */
       Result_t ReadFrame(ui32_t frame_number, Frame& frame);
+
+
+      /** Reads a Generic Stream Partition payload. Returns RESULT_INIT if the file is
+       * not open, or RESULT_FORMAT if the SID is not present in the  RIP, or if the
+       * actual partition at ByteOffset does not have a matching BodySID value.
+       * Encryption is not currently supported.
+       */
+      Result_t ReadGenericStreamPartitionPayload(ui32_t SID, ASDCP::FrameBuffer& FrameBuf);
 
       /**
        * Returns the number of IA Frame in the Track File.
