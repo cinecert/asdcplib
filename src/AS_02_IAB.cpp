@@ -396,18 +396,17 @@ AS_02::IAB::MXFReader::OpenRead(const std::string& filename) {
 
     result = this->m_Reader->OpenMXFRead(filename);
 
-    if (result.Failure()) {
-      throw Kumu::RuntimeError(result);
-    }
-
     InterchangeObject* tmp_iobj = 0;
 
-    this->m_Reader->m_HeaderPart.GetMDObjectByType(
-      this->m_Reader->m_Dict->Type(MDD_IABEssenceDescriptor).ul,
-      &tmp_iobj
+    if ( ASDCP_SUCCESS(result)){
+      this->m_Reader->m_HeaderPart.GetMDObjectByType(
+        this->m_Reader->m_Dict->Type(MDD_IABEssenceDescriptor).ul,
+        &tmp_iobj
     );
+    }
 
     if (!tmp_iobj) {
+      DefaultLogSink().Error("IABEssenceDescriptor object not found in IMF/IAB MXF file.\n");
       throw Kumu::RuntimeError(Kumu::RESULT_FAIL);
     }
 
@@ -417,6 +416,7 @@ AS_02::IAB::MXFReader::OpenRead(const std::string& filename) {
     );
 
     if (!tmp_iobj) {
+      DefaultLogSink().Error("IABSoundfieldLabelSubDescriptor object not found.\n");
       throw Kumu::RuntimeError(Kumu::RESULT_FAIL);
     }
 
