@@ -1915,7 +1915,7 @@ ASDCP::MXF::AS02_MCAConfigParser::AS02_MCAConfigParser(const Dictionary* d) : AS
   m_LabelMap.insert(pair("60",    label_traits("6.0",  true,  m_Dict->ul(MDD_IMFAudioSoundfield_60))));
   m_LabelMap.insert(pair("70",    label_traits("7.0DS",  true,  m_Dict->ul(MDD_IMFAudioSoundfield_70))));
   m_LabelMap.insert(pair("LtRt",  label_traits("Lt-Rt",true,  m_Dict->ul(MDD_IMFAudioSoundfield_LtRt))));
-  m_LabelMap.insert(pair("51Ex",  label_traits("5.1EX",true,  m_Dict->ul(MDD_IMFAudioSoundfield_51Ex))));
+  m_LabelMap.insert(pair("51EX",  label_traits("5.1EX",true,  m_Dict->ul(MDD_IMFAudioSoundfield_51EX))));
   m_LabelMap.insert(pair("HA",    label_traits("Hearing Accessibility",  true,  m_Dict->ul(MDD_IMFAudioSoundfield_HI))));
   m_LabelMap.insert(pair("VA",   label_traits("Visual Accessibility", true,  m_Dict->ul(MDD_IMFAudioSoundfield_VIN))));
 
