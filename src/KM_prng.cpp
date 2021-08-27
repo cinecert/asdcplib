@@ -50,7 +50,7 @@ using namespace Kumu;
 # include <wincrypt.h>
 #else // KM_WIN32
 # include <KM_fileio.h>
-const char* DEV_URANDOM = "/dev/urandom";
+static const char* DEV_URANDOM = "/dev/urandom";
 #endif // KM_WIN32
 
 
@@ -59,94 +59,95 @@ const ui32_t RNG_KEY_SIZE_BITS = 256UL;
 const ui32_t RNG_BLOCK_SIZE = AES_BLOCKLEN;
 const ui32_t MAX_SEQUENCE_LEN = 0x00040000UL;
 
+namespace{
+    // internal implementation class
+    class h__RNG
+    {
+      KM_NO_COPY_CONSTRUCT(h__RNG);
 
-// internal implementation class
-class h__RNG
-{
-  KM_NO_COPY_CONSTRUCT(h__RNG);
+    public:
+      AES_ctx   m_Context;
+      byte_t    m_ctr_buf[RNG_BLOCK_SIZE];
+      Mutex     m_Lock;
 
-public:
-  AES_ctx   m_Context;
-  byte_t    m_ctr_buf[RNG_BLOCK_SIZE];
-  Mutex     m_Lock;
-
-  h__RNG()
-  {
-    memset(m_ctr_buf, 0, RNG_BLOCK_SIZE);
-    byte_t rng_key[RNG_KEY_SIZE];
-
-    { // this block scopes the following AutoMutex so that it will be
-      // released before the call to set_key() below.
-      AutoMutex Lock(m_Lock);
-
-#ifdef KM_WIN32
-      HCRYPTPROV hProvider = 0;
-      CryptAcquireContext(&hProvider, 0, 0, PROV_RSA_FULL, CRYPT_VERIFYCONTEXT);
-      CryptGenRandom(hProvider, RNG_KEY_SIZE, rng_key);
-#else // KM_WIN32
-      // on POSIX systems we simply read some seed from /dev/urandom
-      FileReader URandom;
-
-      Result_t result = URandom.OpenRead(DEV_URANDOM);
-
-      if ( KM_SUCCESS(result) )
-	{
-	  ui32_t read_count;
-	  result = URandom.Read(rng_key, RNG_KEY_SIZE, &read_count);
-	}
-
-      if ( KM_FAILURE(result) )
-	DefaultLogSink().Error("Error opening random device: %s\n", DEV_URANDOM);
-
-#endif // KM_WIN32
-    } // end AutoMutex context
-
-    set_key(rng_key);
-  }
-	
-  //
-  void
-  set_key(const byte_t* key_fodder)
-  {
-    assert(key_fodder);
-    byte_t sha_buf[20];
-    SHA1_CTX SHA;
-    SHA1_Init(&SHA);
-
-    SHA1_Update(&SHA, (byte_t*)&m_Context, sizeof(m_Context));
-    SHA1_Update(&SHA, key_fodder, RNG_KEY_SIZE);
-    SHA1_Final(sha_buf, &SHA);
-
-    AutoMutex Lock(m_Lock);
-    AES_init_ctx(&m_Context, sha_buf);
-    *(ui32_t*)(m_ctr_buf + 12) = 1;
-  }
-	
-  //
-  void
-  fill_rand(byte_t* buf, ui32_t len)
-  {
-    assert(len <= MAX_SEQUENCE_LEN);
-    ui32_t gen_count = 0;
-    AutoMutex Lock(m_Lock);
-
-    while ( gen_count + RNG_BLOCK_SIZE <= len )
+      h__RNG()
       {
-	memcpy(buf + gen_count, m_ctr_buf, RNG_BLOCK_SIZE);
-	AES_encrypt(&m_Context, buf + gen_count);
-	*(ui32_t*)(m_ctr_buf + 12) += 1;
-	gen_count += RNG_BLOCK_SIZE;
+        memset(m_ctr_buf, 0, RNG_BLOCK_SIZE);
+        byte_t rng_key[RNG_KEY_SIZE];
+
+        { // this block scopes the following AutoMutex so that it will be
+          // released before the call to set_key() below.
+          AutoMutex Lock(m_Lock);
+
+    #ifdef KM_WIN32
+          HCRYPTPROV hProvider = 0;
+          CryptAcquireContext(&hProvider, 0, 0, PROV_RSA_FULL, CRYPT_VERIFYCONTEXT);
+          CryptGenRandom(hProvider, RNG_KEY_SIZE, rng_key);
+    #else // KM_WIN32
+          // on POSIX systems we simply read some seed from /dev/urandom
+          FileReader URandom;
+
+          Result_t result = URandom.OpenRead(DEV_URANDOM);
+
+          if ( KM_SUCCESS(result) )
+        {
+          ui32_t read_count;
+          result = URandom.Read(rng_key, RNG_KEY_SIZE, &read_count);
+        }
+
+          if ( KM_FAILURE(result) )
+        DefaultLogSink().Error("Error opening random device: %s\n", DEV_URANDOM);
+
+    #endif // KM_WIN32
+        } // end AutoMutex context
+
+        set_key(rng_key);
       }
-			
-    if ( len != gen_count ) // partial count needed?
+        
+      //
+      void
+      set_key(const byte_t* key_fodder)
       {
-	byte_t tmp[RNG_BLOCK_SIZE];
-	memcpy(tmp, m_ctr_buf, RNG_BLOCK_SIZE);
-	AES_encrypt(&m_Context, tmp);
-	memcpy(buf + gen_count, tmp, len - gen_count);
+        assert(key_fodder);
+        byte_t sha_buf[20];
+        SHA1_CTX SHA;
+        SHA1_Init(&SHA);
+
+        SHA1_Update(&SHA, (byte_t*)&m_Context, sizeof(m_Context));
+        SHA1_Update(&SHA, key_fodder, RNG_KEY_SIZE);
+        SHA1_Final(sha_buf, &SHA);
+
+        AutoMutex Lock(m_Lock);
+        AES_init_ctx(&m_Context, sha_buf);
+        *(ui32_t*)(m_ctr_buf + 12) = 1;
       }
-  }
-};
+        
+      //
+      void
+      fill_rand(byte_t* buf, ui32_t len)
+      {
+        assert(len <= MAX_SEQUENCE_LEN);
+        ui32_t gen_count = 0;
+        AutoMutex Lock(m_Lock);
+
+        while ( gen_count + RNG_BLOCK_SIZE <= len )
+          {
+        memcpy(buf + gen_count, m_ctr_buf, RNG_BLOCK_SIZE);
+        AES_encrypt(&m_Context, buf + gen_count);
+        *(ui32_t*)(m_ctr_buf + 12) += 1;
+        gen_count += RNG_BLOCK_SIZE;
+          }
+                
+        if ( len != gen_count ) // partial count needed?
+          {
+        byte_t tmp[RNG_BLOCK_SIZE];
+        memcpy(tmp, m_ctr_buf, RNG_BLOCK_SIZE);
+        AES_encrypt(&m_Context, tmp);
+        memcpy(buf + gen_count, tmp, len - gen_count);
+          }
+      }
+    };
+}
 
 
 static h__RNG* s_RNG = 0;
