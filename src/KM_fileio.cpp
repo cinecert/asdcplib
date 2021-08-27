@@ -1690,6 +1690,9 @@ Kumu::DeleteFile(const std::string& filename)
   return RESULT_FAIL;
 }
 
+namespace Kumu
+{
+
 //
 Result_t
 h__DeletePath(const std::string& pathname)
@@ -1750,6 +1753,8 @@ h__DeletePath(const std::string& pathname)
 
   return result;
 }
+
+} // namespace KUMU
 
 //
 Result_t

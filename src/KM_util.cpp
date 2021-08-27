@@ -244,6 +244,9 @@ Kumu::DTrace_t::~DTrace_t()
 
 //------------------------------------------------------------------------------------------
 
+namespace Kumu
+{
+
 
 const char  fill = '=';
 const char* base64_chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
@@ -283,6 +286,7 @@ const byte_t decode_map[] =
   0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff
 };
 
+} // namespace Kumu
 
 // Convert a binary string to NULL-terminated UTF-8 hexadecimal, returns the buffer
 // if the binary buffer was large enough to hold the result. If the output buffer

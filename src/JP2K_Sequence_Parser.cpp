@@ -42,7 +42,9 @@ using namespace ASDCP;
 
 
 //------------------------------------------------------------------------------------------
-  
+
+namespace ASDCP {
+
 class FileList : public std::list<std::string>
 {
   std::string m_DirName;
@@ -89,6 +91,7 @@ public:
     return result;
   }
 };
+} // namespace asdcp
 
 //------------------------------------------------------------------------------------------
 
@@ -190,6 +193,8 @@ ASDCP::JP2K::SequenceParser::h__SequenceParser::OpenRead(const std::list<std::st
   return OpenRead();
 }
 
+
+namespace ASDCP {
 
 //
 bool
@@ -334,6 +339,7 @@ operator==(const ASDCP::JP2K::PictureDescriptor& lhs, const ASDCP::JP2K::Picture
 
   return true;
 }
+} // namespace asdcp
 
 //
 ASDCP::Result_t

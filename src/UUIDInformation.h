@@ -35,9 +35,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "SyncCommon.h"
 #include <stdio.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+namespace ASDCP {
 
 typedef struct UUIInformation{
 	BYTE abyUUIDBytes[16];
@@ -51,8 +49,6 @@ void UUIDPrint(	FILE				*pFilePtr,
 void UUIDPrintFormated(	FILE				*pFilePtr,
 						LPUUIDINFORMATION	pUUID);
 
-#ifdef __cplusplus
-} /* extern "C" */
-#endif
+} // namespace asdcp
 
 #endif
