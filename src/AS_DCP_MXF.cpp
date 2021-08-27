@@ -466,6 +466,8 @@ ASDCP::RawEssenceType(const std::string& filename, EssenceType_t& type)
   return result;
 }
 
+#ifdef HAVE_OPENSSL
+
 //
 Result_t
 ASDCP::EncryptFrameBuffer(const ASDCP::FrameBuffer& FBin, ASDCP::FrameBuffer& FBout, AESEncContext* Ctx)
@@ -720,6 +722,8 @@ ASDCP::IntegrityPack::TestValues(const ASDCP::FrameBuffer& FB, const byte_t* Ass
 
   return result;
 }
+
+#endif //HAVE_OPENSSL
 
 //
 // end AS_DCP_MXF.cpp

@@ -402,6 +402,9 @@ ASDCP::Write_EKLV_Packet(Kumu::FileWriter& File, const ASDCP::Dictionary& Dict, 
 
   if ( Info.EncryptedEssence )
     {
+    #ifndef HAVE_OPENSSL
+      return RESULT_CRYPT_CTX;
+    #else
       if ( ! Ctx )
 	return RESULT_CRYPT_CTX;
 
@@ -489,6 +492,7 @@ ASDCP::Write_EKLV_Packet(Kumu::FileWriter& File, const ASDCP::Dictionary& Dict, 
 	  result = File.Writev(HMACOverhead.Data(), HMACOverhead.Length());
 	  StreamOffset += HMACOverhead.Length();
 	}
+#endif //HAVE_OPENSSL
     }
   else
     {
