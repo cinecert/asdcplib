@@ -356,7 +356,11 @@ AS_02::IAB::MXFWriter::Reset() {
 
 AS_02::IAB::MXFReader::MXFReader() : m_State(ST_READER_BEGIN) {}
 
-AS_02::IAB::MXFReader::~MXFReader() {}
+AS_02::IAB::MXFReader::~MXFReader() {
+    if ( m_Reader && m_Reader->m_File->IsOpen()) {
+      m_Reader->Close();
+    }
+}
 
 ASDCP::MXF::OP1aHeader&
 AS_02::IAB::MXFReader::OP1aHeader() const {
@@ -649,6 +653,10 @@ AS_02::IAB::MXFReader::DumpIndex(FILE* stream) const {
 
 void
 AS_02::IAB::MXFReader::Reset() {
+  if ( m_Reader && m_Reader->m_File->IsOpen()) {
+    m_Reader->Close();
+  }
+
   this->m_Reader.set(NULL);
   this->m_State = ST_READER_BEGIN;
 }
