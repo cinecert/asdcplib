@@ -143,7 +143,7 @@ Options:\n\
                       All color system values assume YCbCr; also use -R for RGB\n\
   -C <ul>           - Set ChannelAssignment UL value\n\
   -d <duration>     - Number of frames to process, default all\n\
-  -D <depth>        - Component depth for YCbCr images (default: 10)\n\
+  -D <depth>        - Component depth for YCbCr or RGB images (default: 10)\n\
   -e                - Encrypt JP2K headers (default)\n\
   -E                - Do not encrypt JP2K headers\n\
   -F (0|1)          - Set field dominance for interlaced image (default: 0)\n\
