@@ -143,7 +143,7 @@ Options:\n\
                       All color system values assume YCbCr; also use -R for RGB\n\
   -C <ul>           - Set ChannelAssignment UL value\n\
   -d <duration>     - Number of frames to process, default all\n\
-  -D <depth>        - Component depth for YCbCr images (default: 10)\n\
+  -D <depth>        - Component depth for YCbCr or RGB images (default: 10)\n\
   -e                - Encrypt JP2K headers (default)\n\
   -E                - Do not encrypt JP2K headers\n\
   -F (0|1)          - Set field dominance for interlaced image (default: 0)\n\
@@ -155,6 +155,7 @@ Options:\n\
                       Stream. May be issued multiple times.\n\
   -i                - Indicates input essence is interlaced fields (forces -Y)\n\
   -j <key-id-str>   - Write key ID instead of creating a random value\n\
+  -J                - Write J2CLayout\n\
   -k <key-string>   - Use key for ciphertext operations\n\
   -l <first>,<second>\n\
                     - Integer values that set the VideoLineMap\n\
@@ -273,6 +274,7 @@ public:
   bool   help_flag;      // true if the help display option was selected
   ui32_t duration;       // number of frames to be processed
   bool   j2c_pedantic;   // passed to JP2K::SequenceParser::OpenRead
+  bool   write_j2clayout; // true if a J2CLayout field should be written
   bool use_cdci_descriptor; // 
   Rational edit_rate;    // edit rate of JP2K sequence
   ui32_t fb_size;        // size of picture frame buffer
@@ -512,7 +514,7 @@ public:
     error_flag(true), key_flag(false), key_id_flag(false), asset_id_flag(false),
     encrypt_header_flag(true), write_hmac(true), verbose_flag(false), fb_dump_size(0),
     no_write_flag(false), version_flag(false), help_flag(false),
-    duration(0xffffffff), j2c_pedantic(true), use_cdci_descriptor(false),
+    duration(0xffffffff), j2c_pedantic(true), write_j2clayout(false), use_cdci_descriptor(false),
     edit_rate(24,1), fb_size(FRAME_BUFFER_SIZE),
     show_ul_values_flag(false), index_strategy(AS_02::IS_FOLLOW), partition_space(60),
     mca_config(g_dict), rgba_MaxRef(1023), rgba_MinRef(0),
@@ -733,6 +735,8 @@ public:
 		    }
 		}
 		break;
+
+	      case 'J': write_j2clayout = true; break;
 
 	      case 'k': key_flag = true;
 		TEST_EXTRA_ARG(i, 'k');
@@ -995,6 +999,7 @@ write_JP2K_file(CommandOptions& Options)
   JP2K::SequenceParser    Parser;
   ASDCP::MXF::FileDescriptor *essence_descriptor = 0;
   ASDCP::MXF::InterchangeObject_list_t essence_sub_descriptors;
+  ASDCP::MXF::JPEG2000PictureSubDescriptor *jp2k_sub_descriptor = NULL;
 
   // set up essence parser
   Result_t result = Parser.OpenRead(Options.filenames.front().c_str(), Options.j2c_pedantic);
@@ -1053,6 +1058,31 @@ write_JP2K_file(CommandOptions& Options)
 		}
 
 	      essence_descriptor = static_cast<ASDCP::MXF::FileDescriptor*>(tmp_dscr);
+
+	      if (Options.write_j2clayout)
+		{
+		  jp2k_sub_descriptor = static_cast<ASDCP::MXF::JPEG2000PictureSubDescriptor*>(essence_sub_descriptors.back());
+		  if (Options.component_depth == 16)
+		    {
+		      jp2k_sub_descriptor->J2CLayout = ASDCP::MXF::RGBALayout(ASDCP::MXF::RGBAValue_YUV_16);
+		    }
+		  else if (Options.component_depth == 12)
+		    {
+		      jp2k_sub_descriptor->J2CLayout = ASDCP::MXF::RGBALayout(ASDCP::MXF::RGBAValue_YUV_12);
+		    }
+		  else if (Options.component_depth == 10)
+		    {
+		      jp2k_sub_descriptor->J2CLayout = ASDCP::MXF::RGBALayout(ASDCP::MXF::RGBAValue_YUV_10);
+		    }
+		  else if (Options.component_depth == 8)
+		    {
+		      jp2k_sub_descriptor->J2CLayout = ASDCP::MXF::RGBALayout(ASDCP::MXF::RGBAValue_YUV_8);
+		    }
+		  else
+		    {
+		      fprintf(stderr, "Warning: could not determine J2CLayout to write.\n");
+		    }
+		}
 	    }
 	}
       else
@@ -1088,6 +1118,31 @@ write_JP2K_file(CommandOptions& Options)
 		}
 
 	      essence_descriptor = static_cast<ASDCP::MXF::FileDescriptor*>(tmp_dscr);
+
+	      if (Options.write_j2clayout)
+		{
+		  jp2k_sub_descriptor = static_cast<ASDCP::MXF::JPEG2000PictureSubDescriptor*>(essence_sub_descriptors.back());
+		  if (Options.component_depth == 16)
+		    {
+		      jp2k_sub_descriptor->J2CLayout = ASDCP::MXF::RGBALayout(ASDCP::MXF::RGBAValue_RGB_16);
+		    }
+		  else if (Options.component_depth == 12)
+		    {
+		      jp2k_sub_descriptor->J2CLayout = ASDCP::MXF::RGBALayout(ASDCP::MXF::RGBAValue_RGB_12);
+		    }
+		  else if (Options.component_depth == 10)
+		    {
+		      jp2k_sub_descriptor->J2CLayout = ASDCP::MXF::RGBALayout(ASDCP::MXF::RGBAValue_RGB_10);
+		    }
+		  else if (Options.component_depth == 8)
+		    {
+		      jp2k_sub_descriptor->J2CLayout = ASDCP::MXF::RGBALayout(ASDCP::MXF::RGBAValue_RGB_8);
+		    }
+		  else
+		    {
+		      fprintf(stderr, "Warning: could not determine J2CLayout to write.\n");
+		    }
+		}
 	    }
 	}
     }
