@@ -120,19 +120,19 @@ ASDCP::JXS::Accessor::PIH::Dump(FILE* stream) const
 
 	fprintf(stream, "PIH: \n");
 	fprintf(stream, "  LpihSize: %hu\n", LpihSize());
-	fprintf(stream, "  LcodSize: %hu\n", LcodSize());
+	fprintf(stream, "  LcodSize: %u\n", LcodSize());
 	fprintf(stream, "  Ppih: %hu\n", Ppih());
 	fprintf(stream, "  Plev: %hu\n", Plev());
 	fprintf(stream, "  Wf: %hu\n", Wf());
 	fprintf(stream, "  Hf: %hu\n", Hf());
 	fprintf(stream, "  Cw: %hu\n", Cw());
 	fprintf(stream, "  Hsl: %hu\n", Hsl());
-	fprintf(stream, "  Nc: %hu\n", Nc());
-	fprintf(stream, "  Ng: %hu\n", Ng());
-	fprintf(stream, "  Ss: %hu\n", Ss());
-	fprintf(stream, "  Cpih: %hu\n", Cpih());
-	fprintf(stream, "  Nlx: %hu\n", Nlx());
-	fprintf(stream, "  Nly: %hu\n", Nly());
+	fprintf(stream, "  Nc: %hhu\n", Nc());
+	fprintf(stream, "  Ng: %hhu\n", Ng());
+	fprintf(stream, "  Ss: %hhu\n", Ss());
+	fprintf(stream, "  Cpih: %hhu\n", Cpih());
+	fprintf(stream, "  Nlx: %hhu\n", Nlx());
+	fprintf(stream, "  Nly: %hhu\n", Nly());
 	Kumu::hexdump(m_MarkerData, m_DataSize, stream);
 }
 
@@ -146,11 +146,168 @@ ASDCP::JXS::Accessor::CDT::Dump(FILE* stream) const
 	fprintf(stream, "CDT: \n");
 
 	for (ui32_t i = 0; i < 3; i++) {
-	  fprintf(stream, " Component %u Bc: %hu\n", i,Bc(i));
-	  fprintf(stream, " Component %u Sx: %hu\n", i,Sx(i));
-	  fprintf(stream, " Component %u Sy: %hu\n", i,Sy(i));
+	  fprintf(stream, " Component %u Bc: %hhu\n", i,Bc(i));
+	  fprintf(stream, " Component %u Sx: %hhu\n", i,Sx(i));
+	  fprintf(stream, " Component %u Sy: %hhu\n", i,Sy(i));
 	}
 }
+
+//
+bool
+ASDCP::JXS::lookup_ColorPrimaries(int cicp_value, ASDCP::UL& ul)
+{
+  const ASDCP::Dictionary& dict = DefaultSMPTEDict();
+  switch ( cicp_value )
+    {
+    case 1:
+      ul = dict.ul(ASDCP::MDD_ColorPrimaries_ITU709);
+      break;
+    case 5:
+      ul = dict.ul(ASDCP::MDD_ColorPrimaries_ITU470_PAL);
+      break;
+    case 6:
+      ul = dict.ul(ASDCP::MDD_ColorPrimaries_SMPTE170M);
+      break;
+    case 9:
+      ul = dict.ul(ASDCP::MDD_ColorPrimaries_ITU2020);
+      break;
+    case 10:
+      ul = dict.ul(ASDCP::MDD_ColorPrimaries_SMPTE_DCDM);
+      break;
+    case 11:
+      ul = dict.ul(ASDCP::MDD_TheatricalViewingEnvironment);
+      break;
+    case 12:
+      ul = dict.ul(ASDCP::MDD_ColorPrimaries_P3D65);
+      break;
+
+    default:
+      return false;
+      break;
+    }
+
+  return true;
+}
+
+//
+bool
+ASDCP::JXS::lookup_TransferCharacteristic(int cicp_value, ASDCP::UL& ul)
+{
+  const ASDCP::Dictionary& dict = DefaultSMPTEDict();
+  switch ( cicp_value )
+    {
+    case 1:
+    case 6:
+      ul = dict.ul(ASDCP::MDD_TransferCharacteristic_ITU709);
+      break;
+    case 5: // Display Gamma 2.8, BT.470-6 This does not seem to be supported
+    case 9: // Log(100:1) range This does not seem to be supported
+    case 10:// Log(100*Sqrt(10):1 range)
+      return Kumu::RESULT_NOTIMPL;
+      break;
+    case 8:
+      ul = dict.ul(ASDCP::MDD_TransferCharacteristic_linear);
+      break;
+    case 11:
+      ul = dict.ul(ASDCP::MDD_TransferCharacteristic_IEC6196624_xvYCC);
+      break;
+    case 13:
+      ul = dict.ul(ASDCP::MDD_TransferCharacteristic_sRGB);
+      break;
+    case 14:
+    case 15:
+      ul = dict.ul(ASDCP::MDD_TransferCharacteristic_ITU2020);
+      break;
+    case 16:
+      ul = dict.ul(ASDCP::MDD_TransferCharacteristic_SMPTEST2084);
+      break;
+    case 17:
+      ul = dict.ul(ASDCP::MDD_TransferCharacteristic_ST428);
+      break;
+    case 18: // HLG
+      ul = dict.ul(ASDCP::MDD_TransferCharacteristic_HLG);
+      break;
+    case 12: // Rec. BT.1361
+      ul = dict.ul(ASDCP::MDD_TransferCharacteristic_BT1361);
+      break;
+    case 4: // Rec. BT.470
+      ul = dict.ul(ASDCP::MDD_TransferCharacteristic_BT470);
+      break;
+    case 7: // SMPTE 240M
+      ul = dict.ul(ASDCP::MDD_TransferCharacteristic_ST240M);
+      break;
+    case 2: // Unspecified. This leaves the data intentionally undefined.
+      break;
+
+    default:
+      return false;
+      break;
+    }
+
+  return true;
+}
+
+//
+bool
+ASDCP::JXS::lookup_CodingEquations(int value, ASDCP::UL& ul)
+{
+  const ASDCP::Dictionary& dict = DefaultSMPTEDict();
+  switch ( value )
+    {
+    case 0: // Identity matrix. Use the BGR coding equations.
+      ul = dict.ul(ASDCP::MDD_CodingEquations_BGR);
+      break;
+    case 4: // Title 47.
+    case 10: // ITU 2020 constant luminance? Does not seem to be supported
+    case 11: // SMPTE ST-2085
+      return Kumu::RESULT_NOTIMPL;
+    case 1:
+      ul = dict.ul(ASDCP::MDD_CodingEquations_709);
+      break;
+      // Note: Matrix=2 does not set the optional parameter. This is intentional.
+    case 5:
+    case 6:
+      ul = dict.ul(ASDCP::MDD_CodingEquations_601);
+      break;
+    case 9: // ITU 2020 non-constant luminance?
+      ul = dict.ul(ASDCP::MDD_CodingEquations_Rec2020);
+      break;
+    case 2: // This is unspecified. The metadata item remains undefined on purpose.
+      break;
+    case 7: // ST 240M
+      ul = dict.ul(ASDCP::MDD_CodingEquations_ST240M);
+      break;
+    case 8: // YCgCo
+      ul = dict.ul(ASDCP::MDD_CodingEquations_YCGCO);
+      break;
+
+    default:
+      return false;
+      break;
+    }
+
+  return true;
+}
+
+
+//------------------------------------------------------------------------------------------
+
+
+//
+void
+ASDCP::JXS::FrameBuffer::Dump(FILE* stream, ui32_t dump_len) const
+{
+  if ( stream == 0 )
+    stream = stderr;
+
+  fprintf(stream, "Frame: %06u, %7u bytes", m_FrameNumber, m_Size);
+  
+  fputc('\n', stream);
+
+  if ( dump_len > 0 )
+    Kumu::hexdump(m_Data, dump_len, stream);
+}
+
 //
 // end JXS.cpp
 //

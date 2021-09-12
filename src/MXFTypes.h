@@ -624,8 +624,12 @@ namespace ASDCP
 
       size_t const RGBAValueLength = 16;
 
+      byte_t const RGBAValue_RGB_16[RGBAValueLength] = { 'R', 16, 'G', 16, 'B', 16, 0, 0 };
+      byte_t const RGBAValue_RGB_12[RGBAValueLength] = { 'R', 12, 'G', 12, 'B', 12, 0, 0 };
       byte_t const RGBAValue_RGB_10[RGBAValueLength] = { 'R', 10, 'G', 10, 'B', 10, 0, 0 };
       byte_t const RGBAValue_RGB_8[RGBAValueLength]  = { 'R', 8,  'G', 8,  'B', 8,  0, 0 };
+      byte_t const RGBAValue_YUV_16[RGBAValueLength] = { 'Y', 16, 'U', 16, 'V', 16, 0, 0 };
+      byte_t const RGBAValue_YUV_12[RGBAValueLength] = { 'Y', 12, 'U', 12, 'V', 12, 0, 0 };
       byte_t const RGBAValue_YUV_10[RGBAValueLength] = { 'Y', 10, 'U', 10, 'V', 10, 0, 0 };
       byte_t const RGBAValue_YUV_8[RGBAValueLength]  = { 'Y', 8,  'U', 8,  'V', 8,  0, 0 };
       byte_t const RGBAValue_DCDM[RGBAValueLength] = { 0xd8, 10, 0xd9, 10, 0xda, 10, 0, 0 };

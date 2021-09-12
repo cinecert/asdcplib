@@ -113,7 +113,7 @@ AC_ARG_ENABLE([asdcp-jxs],
 AC_ARG_ENABLE([phdr],
      [  --enable-phdr    enable support for Prototype for High Dyamic Range in AS-02],
      [case "${enableval}" in
-       yes) phdr_use=true ;;
+       yes) AS_IF([test x$as_02_use = xtrue], phdr_use=true, AC_MSG_ERROR([--enable-phdr cannot be used without --enable-as-02])) ;;
        no)  phdr_use=false ;;
        *) AC_MSG_ERROR([bad value ${enableval} for --enable-phdr]) ;;
      esac],[phdr_use=false])

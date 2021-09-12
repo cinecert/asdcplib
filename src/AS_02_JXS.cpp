@@ -33,7 +33,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include "AS_02_internal.h"
-#include "AS_DCP_JXS.h"
+#include "JXS.h"
 
 #include <iostream>
 #include <iomanip>
@@ -312,8 +312,9 @@ public:
 
   virtual ~h__Writer(){}
 
-  Result_t OpenWrite(const std::string&, ASDCP::MXF::FileDescriptor* essence_descriptor,
-		     ASDCP::MXF::InterchangeObject_list_t& essence_sub_descriptor_list,
+  Result_t OpenWrite(const std::string&,
+                     ASDCP::MXF::GenericPictureEssenceDescriptor& picture_descriptor,
+                     ASDCP::MXF::JPEGXSPictureSubDescriptor& jxs_sub_descriptor,
 		     const AS_02::IndexStrategy_t& IndexStrategy,
 		     const ui32_t& PartitionSpace, const ui32_t& HeaderSize);
   Result_t SetSourceStream(const std::string& label, const ASDCP::Rational& edit_rate);
@@ -326,10 +327,10 @@ public:
 // the operation cannot be completed.
 Result_t
 AS_02::JXS::MXFWriter::h__Writer::OpenWrite(const std::string& filename,
-					     ASDCP::MXF::FileDescriptor* essence_descriptor,
-					     ASDCP::MXF::InterchangeObject_list_t& essence_sub_descriptor_list,
-					     const AS_02::IndexStrategy_t& IndexStrategy,
-					     const ui32_t& PartitionSpace_sec, const ui32_t& HeaderSize)
+                                            ASDCP::MXF::GenericPictureEssenceDescriptor& picture_descriptor,
+                                            ASDCP::MXF::JPEGXSPictureSubDescriptor& jxs_sub_descriptor,
+                                            const AS_02::IndexStrategy_t& IndexStrategy,
+                                            const ui32_t& PartitionSpace_sec, const ui32_t& HeaderSize)
 {
   if ( ! m_State.Test_BEGIN() )
     {
@@ -351,30 +352,23 @@ AS_02::JXS::MXFWriter::h__Writer::OpenWrite(const std::string& filename,
       m_PartitionSpace = PartitionSpace_sec; // later converted to edit units by SetSourceStream()
       m_HeaderSize = HeaderSize;
 
-      if ( essence_descriptor->GetUL() != UL(m_Dict->ul(MDD_RGBAEssenceDescriptor))
-	   && essence_descriptor->GetUL() != UL(m_Dict->ul(MDD_CDCIEssenceDescriptor)) )
+      if ( picture_descriptor.GetUL() != UL(m_Dict->ul(MDD_RGBAEssenceDescriptor))
+	   && picture_descriptor.GetUL() != UL(m_Dict->ul(MDD_CDCIEssenceDescriptor)) )
 	{
 	  DefaultLogSink().Error("Essence descriptor is not a RGBAEssenceDescriptor or CDCIEssenceDescriptor.\n");
-	  essence_descriptor->Dump();
+	  picture_descriptor.Dump();
 	  return RESULT_AS02_FORMAT;
 	}
 
-      m_EssenceDescriptor = essence_descriptor;
+      m_EssenceDescriptor = new ASDCP::MXF::GenericPictureEssenceDescriptor(m_Dict);
+      m_EssenceDescriptor->Copy(picture_descriptor);
 
-      ASDCP::MXF::InterchangeObject_list_t::iterator i;
-      for ( i = essence_sub_descriptor_list.begin(); i != essence_sub_descriptor_list.end(); ++i )
-	{
-	  if ( (*i)->GetUL() != UL(m_Dict->ul(MDD_JPEGXSPictureSubDescriptor)) )
-	    {
-	      DefaultLogSink().Error("Essence sub-descriptor is not a JPEGXSPictureSubDescriptor.\n");
-	      (*i)->Dump();
-	    }
+      ASDCP::MXF::JPEGXSPictureSubDescriptor *jxs_subdesc = new ASDCP::MXF::JPEGXSPictureSubDescriptor(m_Dict);
+      jxs_subdesc->Copy(jxs_sub_descriptor);
 
-	  m_EssenceSubDescriptorList.push_back(*i);
-	  GenRandomValue((*i)->InstanceUID);
-	  m_EssenceDescriptor->SubDescriptors.push_back((*i)->InstanceUID);
-	  *i = 0; // parent will only free the ones we don't keep
-	}
+      m_EssenceSubDescriptorList.push_back(jxs_subdesc);
+      GenRandomValue(jxs_subdesc->InstanceUID);
+      m_EssenceDescriptor->SubDescriptors.push_back(jxs_subdesc->InstanceUID);
 
       result = m_State.Goto_INIT();
     }
@@ -523,21 +517,15 @@ AS_02::JXS::MXFWriter::RIP()
 // the operation cannot be completed.
 Result_t
 AS_02::JXS::MXFWriter::OpenWrite(const std::string& filename, const ASDCP::WriterInfo& Info,
-				  ASDCP::MXF::FileDescriptor* essence_descriptor,
-				  ASDCP::MXF::InterchangeObject_list_t& essence_sub_descriptor_list,
-				  const ASDCP::Rational& edit_rate, const ui32_t& header_size,
-				  const IndexStrategy_t& strategy, const ui32_t& partition_space)
+                                 ASDCP::MXF::GenericPictureEssenceDescriptor& picture_descriptor,
+                                 ASDCP::MXF::JPEGXSPictureSubDescriptor& jxs_sub_descriptor,
+                                 const ASDCP::Rational& edit_rate, const ui32_t& header_size,
+                                 const IndexStrategy_t& strategy, const ui32_t& partition_space)
 {
-  if ( essence_descriptor == 0 )
-    {
-      DefaultLogSink().Error("Essence descriptor object required.\n");
-      return RESULT_PARAM;
-    }
-
   m_Writer = new AS_02::JXS::MXFWriter::h__Writer(&DefaultSMPTEDict());
   m_Writer->m_Info = Info;
 
-  Result_t result = m_Writer->OpenWrite(filename, essence_descriptor, essence_sub_descriptor_list,
+  Result_t result = m_Writer->OpenWrite(filename, picture_descriptor, jxs_sub_descriptor,
 					strategy, partition_space, header_size);
 
   if ( KM_SUCCESS(result) )
