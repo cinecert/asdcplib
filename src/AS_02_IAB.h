@@ -116,13 +116,26 @@ namespace AS_02 {
        * Writes a single frame.
        * 
        * Must be preceded by a succesful OpenWrite() call followed by zero or more WriteFrame() calls
-       * 
-       * @param frame Pointer to a complete IA Frame 
+       *
+       *
+       * @param frame Pointer to a complete IA Frame
        * @param sz Size in bytes of the IA Frame
        * @return RESULT_OK indicates that the frame is written and additional frames can be written, 
        * otherwise the reader is reset and the file is left is an undermined state.
        */
       Result_t WriteFrame(const ui8_t* frame, ui32_t sz);
+
+      /**
+       * Writes a single frame.
+       * 
+       * Must be preceded by a succesful OpenWrite() call followed by zero or more WriteFrame() calls
+       *
+       *
+       * @param frame a complete IA Frame
+       * @return RESULT_OK indicates that the frame is written and additional frames can be written, 
+       * otherwise the reader is reset and the file is left is an undermined state.
+       */
+      Result_t WriteFrame(const ASDCP::FrameBuffer& frame);
 
       /**
        * Writes an XML text document to the MXF file as per RP 2057. If the
@@ -154,8 +167,8 @@ namespace AS_02 {
 
       ASDCP::mem_ptr<h__Reader> m_Reader;
 
-      i64_t m_CurrentFrameIndex;
-      std::vector<ui8_t> m_CurrentFrameBuffer;
+      ASDCP::FrameBuffer m_FrameBuffer;
+
       ReaderState_t m_State;
         
       const Kumu::IFileReaderFactory& m_FileReaderFactory;
@@ -231,7 +244,7 @@ namespace AS_02 {
 
       /**
        * Reads an IA Frame.
-       *
+       * 
        * @param frame_number Index of the frame to be read. Must be in the range [0, GetFrameCount()).
        * @param frame Frame data. Must not be modified. Remains valid until the next call to ReadFrame().
        * @return RESULT_OK indicates that more frames are ready to be read,
@@ -239,6 +252,15 @@ namespace AS_02 {
        */
       Result_t ReadFrame(ui32_t frame_number, Frame& frame);
 
+      /**
+       * Reads an IA Frame.
+       *
+       * @param frame_number Index of the frame to be read. Must be in the range [0, GetFrameCount()).
+       * @param frame Frame data. Must not be modified. Remains valid until the next call to ReadFrame().
+       * @return RESULT_OK indicates that more frames are ready to be read,
+       * otherwise the file is closed and the reader reset
+       */
+      Result_t ReadFrame(ui32_t frame_number, ASDCP::FrameBuffer& frame);
 
       /** Reads a Generic Stream Partition payload. Returns RESULT_INIT if the file is
        * not open, or RESULT_FORMAT if the SID is not present in the  RIP, or if the
