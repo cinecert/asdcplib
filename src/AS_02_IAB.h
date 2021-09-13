@@ -37,7 +37,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define AS_02_IAB_h__
 
 #include "AS_02.h"
-#include "AS_02_internal.h"
 #include "Metadata.h"
 
 namespace AS_02 {
@@ -49,12 +48,9 @@ namespace AS_02 {
      * 
      */
     class MXFWriter {
-
-      typedef h__AS02Writer<AS_02::MXF::AS02IndexWriterVBR> h__Writer;
-
+      class h__Writer;
       ASDCP::mem_ptr<h__Writer> m_Writer;
       ui64_t m_ClipStart;
-      WriterState_t m_State;
 
       void Reset();
 
@@ -162,15 +158,11 @@ namespace AS_02 {
      *
      */
     class MXFReader {
-
-      typedef h__AS02Reader h__Reader;
-
+      class h__Reader;
       ASDCP::mem_ptr<h__Reader> m_Reader;
 
       ASDCP::FrameBuffer m_FrameBuffer;
 
-      ReaderState_t m_State;
-        
       const Kumu::IFileReaderFactory& m_FileReaderFactory;
 
       void Reset();
