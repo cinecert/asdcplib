@@ -43,7 +43,7 @@ const ui32_t FRAME_BUFFER_SIZE = 4 * Kumu::Megabyte;
 //
 // command line option parser class
 
-static const char* PROGRAM_NAME = "as-02-unwrap";  // program name for messages
+static const char* PROGRAM_NAME = "phdr-unwrap";  // program name for messages
 
 // Increment the iterator, test for an additional non-option command line argument.
 // Causes the caller to return if there are no remaining arguments or if the next
@@ -60,7 +60,7 @@ banner(FILE* stream = stdout)
 {
   fprintf(stream, "\n\
 %s (asdcplib %s)\n\n\
-Copyright (c) 2011-2018, John Hurst\n\n\
+Copyright (c) 2011-2021, John Hurst\n\n\
 asdcplib may be copied only under the terms of the license found at\n\
 the top of every file in the asdcplib distribution kit.\n\n\
 Specify the -h (help) option for further information about %s\n\n",
