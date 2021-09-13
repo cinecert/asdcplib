@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2011-2018, John Hurst
+Copyright (c) 2011-2021, John Hurst
 
 All rights reserved.
 
@@ -252,11 +252,11 @@ public:
 // Read one or more ciphertext JPEG 2000 codestreams from a ciphertext P-HDR file
 //
 Result_t
-read_JP2K_file(CommandOptions& Options)
+read_JP2K_file(CommandOptions& Options, const Kumu::IFileReaderFactory& fileReaderFactory)
 {
   AESDecContext*     Context = 0;
   HMACContext*       HMAC = 0;
-  AS_02::PHDR::MXFReader    Reader;
+  AS_02::PHDR::MXFReader    Reader(fileReaderFactory);
   AS_02::PHDR::FrameBuffer  FrameBuffer(Options.fb_size);
   ui32_t             frame_count = 0;
 
@@ -418,14 +418,15 @@ main(int argc, const char** argv)
     }
 
   EssenceType_t EssenceType;
-  Result_t result = ASDCP::EssenceType(Options.input_filename, EssenceType);
+  Kumu::FileReaderFactory defaultFactory;
+  Result_t result = ASDCP::EssenceType(Options.input_filename, EssenceType, defaultFactory);
 
   if ( ASDCP_SUCCESS(result) )
     {
       switch ( EssenceType )
 	{
 	case ESS_AS02_JPEG_2000:
-	  result = read_JP2K_file(Options);
+	  result = read_JP2K_file(Options, defaultFactory);
 	  break;
 
 	default:

@@ -76,8 +76,8 @@ class AS_02::PHDR::MXFReader::h__Reader : public AS_02::h__AS02Reader
   ASDCP_NO_COPY_CONSTRUCT(h__Reader);
 
 public:
-  h__Reader(const Dictionary *d) :
-    AS_02::h__AS02Reader(d) {}
+  h__Reader(const Dictionary *d, const Kumu::IFileReaderFactory& fileReaderFactory) :
+    AS_02::h__AS02Reader(d, fileReaderFactory) {}
 
   virtual ~h__Reader() {}
 
@@ -167,12 +167,12 @@ AS_02::PHDR::MXFReader::h__Reader::OpenRead(const std::string& filename, std::st
       if ( (Kumu::fpos_t)TmpPair.ByteOffset != m_LastPosition )
 	{
 	  m_LastPosition = TmpPair.ByteOffset;
-	  result = m_File.Seek(TmpPair.ByteOffset);
+	  result = m_File->Seek(TmpPair.ByteOffset);
 	}
 
       // read the partition header
       ASDCP::MXF::Partition GSPart(m_Dict);
-      result = GSPart.InitFromFile(m_File);
+      result = GSPart.InitFromFile(*m_File);
 
       if ( KM_SUCCESS(result) )
 	{
@@ -182,7 +182,7 @@ AS_02::PHDR::MXFReader::h__Reader::OpenRead(const std::string& filename, std::st
 	      ASDCP::FrameBuffer tmp_buf;
 	      tmp_buf.Capacity(Kumu::Megabyte);
 
-	      result = Read_EKLV_Packet(m_File, *m_Dict, m_Info, m_LastPosition, m_CtFrameBuf,
+	      result = Read_EKLV_Packet(*m_File, *m_Dict, m_Info, m_LastPosition, m_CtFrameBuf,
 					0, 0, tmp_buf, m_Dict->ul(MDD_GenericStream_DataElement), 0, 0);
 
 	      if ( KM_SUCCESS(result) )
@@ -202,7 +202,7 @@ Result_t
 AS_02::PHDR::MXFReader::h__Reader::ReadFrame(ui32_t FrameNum, AS_02::PHDR::FrameBuffer& FrameBuf,
 		      ASDCP::AESDecContext* Ctx, ASDCP::HMACContext* HMAC)
 {
-  if ( ! m_File.IsOpen() )
+  if ( ! m_File->IsOpen() )
     return RESULT_INIT;
 
   assert(m_Dict);
@@ -213,7 +213,7 @@ AS_02::PHDR::MXFReader::h__Reader::ReadFrame(ui32_t FrameNum, AS_02::PHDR::Frame
       ASDCP::FrameBuffer tmp_metadata_buffer;
       tmp_metadata_buffer.Capacity(8192);
 
-      result = Read_EKLV_Packet(m_File, *m_Dict, m_Info, m_LastPosition, m_CtFrameBuf,
+      result = Read_EKLV_Packet(*m_File, *m_Dict, m_Info, m_LastPosition, m_CtFrameBuf,
 				FrameNum, FrameNum + 1, tmp_metadata_buffer, m_Dict->ul(MDD_PHDRImageMetadataItem), Ctx, HMAC);
 
       if ( KM_SUCCESS(result) )
@@ -233,9 +233,9 @@ AS_02::PHDR::MXFReader::h__Reader::ReadFrame(ui32_t FrameNum, AS_02::PHDR::Frame
 //------------------------------------------------------------------------------------------
 //
 
-AS_02::PHDR::MXFReader::MXFReader()
+AS_02::PHDR::MXFReader::MXFReader(const Kumu::IFileReaderFactory& fileReaderFactory)
 {
-  m_Reader = new h__Reader(&DefaultCompositeDict());
+  m_Reader = new h__Reader(&DefaultCompositeDict(), fileReaderFactory);
 }
 
 
@@ -300,7 +300,7 @@ AS_02::PHDR::MXFReader::OpenRead(const std::string& filename, std::string& PHDR_
 Result_t
 AS_02::PHDR::MXFReader::Close() const
 {
-  if ( m_Reader && m_Reader->m_File.IsOpen() )
+  if ( m_Reader && m_Reader->m_File->IsOpen() )
     {
       m_Reader->Close();
       return RESULT_OK;
@@ -314,7 +314,7 @@ Result_t
 AS_02::PHDR::MXFReader::ReadFrame(ui32_t FrameNum, AS_02::PHDR::FrameBuffer& FrameBuf,
 					   ASDCP::AESDecContext* Ctx, ASDCP::HMACContext* HMAC) const
 {
-  if ( m_Reader && m_Reader->m_File.IsOpen() )
+  if ( m_Reader && m_Reader->m_File->IsOpen() )
     return m_Reader->ReadFrame(FrameNum, FrameBuf, Ctx, HMAC);
 
   return RESULT_INIT;
@@ -325,7 +325,7 @@ AS_02::PHDR::MXFReader::ReadFrame(ui32_t FrameNum, AS_02::PHDR::FrameBuffer& Fra
 Result_t
 AS_02::PHDR::MXFReader::FillWriterInfo(WriterInfo& Info) const
 {
-  if ( m_Reader && m_Reader->m_File.IsOpen() )
+  if ( m_Reader && m_Reader->m_File->IsOpen() )
     {
       Info = m_Reader->m_Info;
       return RESULT_OK;
@@ -492,7 +492,7 @@ AS_02::PHDR::MXFWriter::h__Writer::WritePHDRHeader(const std::string& PackageLab
   if ( KM_SUCCESS(result) )
     {
       m_PartitionSpace *= floor( EditRate.Quotient() + 0.5 );  // convert seconds to edit units
-      m_ECStart = m_File.Tell();
+      m_ECStart = m_File.TellPosition();
       m_IndexWriter.IndexSID = 129;
 
       UL body_ul(m_Dict->ul(MDD_ClosedCompleteBodyPartition));
@@ -603,7 +603,7 @@ AS_02::PHDR::MXFWriter::h__Writer::WriteFrame(const AS_02::PHDR::FrameBuffer& Fr
 	  body_part.MinorVersion = m_HeaderPart.MinorVersion;
 	  body_part.OperationalPattern = m_HeaderPart.OperationalPattern;
 	  body_part.EssenceContainers = m_HeaderPart.EssenceContainers;
-	  body_part.ThisPartition = m_File.Tell();
+	  body_part.ThisPartition = m_File.TellPosition();
 
 	  body_part.BodyOffset = m_StreamOffset;
 	  result = body_part.WriteToFile(m_File, body_ul);
@@ -639,7 +639,7 @@ AS_02::PHDR::MXFWriter::h__Writer::Finalize(const std::string& PHDR_master_metad
       if ( ! PHDR_master_metadata.empty() )
 	{
 	  // write PHDRSimplePayload
-	  Kumu::fpos_t here = m_File.Tell();
+	  Kumu::fpos_t here = m_File.TellPosition();
 
 	  // create generic stream partition header
 	  static UL GenericStream_DataElement(m_Dict->ul(MDD_GenericStream_DataElement));
