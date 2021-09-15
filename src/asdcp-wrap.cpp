@@ -507,6 +507,11 @@ public:
 		return;
 	      }
 	  }
+
+        if ( ! mca_config.Validate() && ! getenv("ASDCP_ANY_MCA") )
+          {
+            return;
+          }
       }
 		
     if ( help_flag || version_flag )

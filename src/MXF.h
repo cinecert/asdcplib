@@ -518,12 +518,13 @@ namespace ASDCP
         const std::string tag_name;
 	const bool requires_prefix;
 	const UL ul;
+        std::list<std::string> group_channels; // used only by soundfield entries
 
       label_traits(const std::string& tag_name, const bool requires_prefix, const UL ul) : 
 	tag_name(tag_name), requires_prefix(requires_prefix), ul(ul) { }
       };
 
-      typedef std::map<const std::string, const label_traits, ci_comp> mca_label_map_t;
+      typedef std::map<const std::string, label_traits, ci_comp> mca_label_map_t;
 
       bool decode_mca_string(const std::string& s, const mca_label_map_t& labels,
 			     const Dictionary* dict, const std::string& language, InterchangeObject_list_t&, ui32_t&);
@@ -546,6 +547,12 @@ namespace ASDCP
 
 	  // Valid only after a successful call to DecodeString
 	  ui32_t ChannelCount() const;
+
+          // Scan the list of interchange objects, return true if all of the
+          // objects are inherited from MCALabelSubDescriptor, all MCATagSymbol
+          // values are valid, and all soundfield group referencess are
+          // valid and complete.
+          bool Validate() const;
 	};
 
       //

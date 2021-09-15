@@ -1863,34 +1863,106 @@ ASDCP::MXF::decode_mca_string(const std::string& s, const mca_label_map_t& label
   return true;
 }
 
+static const std::string clabel_L   = "L";
+static const std::string clabel_Lc  = "Lc";
+static const std::string clabel_C   = "C";
+static const std::string clabel_R   = "R";
+static const std::string clabel_Rc  = "Rc";
+static const std::string clabel_LFE = "LFE";
+static const std::string clabel_Ls  = "Ls";
+static const std::string clabel_Rs  = "Rs";
+static const std::string clabel_Lss = "Lss";
+static const std::string clabel_Rss = "Rss";
+static const std::string clabel_Lrs = "Lrs";
+static const std::string clabel_Cs  = "Cs";
+static const std::string clabel_Rrs = "Rrs";
+static const std::string clabel_HI  = "HI";
+static const std::string clabel_VIN = "VIN";
+
+static const std::string glabel_51  = "51";
+static const std::string glabel_71  = "71";
+static const std::string glabel_SDS = "SDS";
+static const std::string glabel_61  = "61";
+static const std::string glabel_M   = "M";
+
 //
 ASDCP::MXF::ASDCP_MCAConfigParser::ASDCP_MCAConfigParser(const Dictionary* d) : m_Dict(d), m_ChannelCount(0)
 {
   typedef mca_label_map_t::value_type pair;
-  m_LabelMap.insert(pair("L",     label_traits("Left"                              , true,  m_Dict->ul(MDD_DCAudioChannel_L))));
-  m_LabelMap.insert(pair("R",     label_traits("Right"                             , true,  m_Dict->ul(MDD_DCAudioChannel_R))));
-  m_LabelMap.insert(pair("C",     label_traits("Center"                            , true,  m_Dict->ul(MDD_DCAudioChannel_C))));
-  m_LabelMap.insert(pair("LFE",   label_traits("LFE"                               , true,  m_Dict->ul(MDD_DCAudioChannel_LFE))));
-  m_LabelMap.insert(pair("Ls",    label_traits("Left Surround"                     , true,  m_Dict->ul(MDD_DCAudioChannel_Ls))));
-  m_LabelMap.insert(pair("Rs",    label_traits("Right Surround"                    , true,  m_Dict->ul(MDD_DCAudioChannel_Rs))));
-  m_LabelMap.insert(pair("Lss",   label_traits("Left Side Surround"                , true,  m_Dict->ul(MDD_DCAudioChannel_Lss))));
-  m_LabelMap.insert(pair("Rss",   label_traits("Right Side Surround"               , true,  m_Dict->ul(MDD_DCAudioChannel_Rss))));
-  m_LabelMap.insert(pair("Lrs",   label_traits("Left Rear Surround"                , true,  m_Dict->ul(MDD_DCAudioChannel_Lrs))));
-  m_LabelMap.insert(pair("Rrs",   label_traits("Right Rear Surround"               , true,  m_Dict->ul(MDD_DCAudioChannel_Rrs))));
-  m_LabelMap.insert(pair("Lc",    label_traits("Left Center"                       , true,  m_Dict->ul(MDD_DCAudioChannel_Lc))));
-  m_LabelMap.insert(pair("Rc",    label_traits("Right Center"                      , true,  m_Dict->ul(MDD_DCAudioChannel_Rc))));
-  m_LabelMap.insert(pair("Cs",    label_traits("Center Surround"                   , true,  m_Dict->ul(MDD_DCAudioChannel_Cs))));
-  m_LabelMap.insert(pair("HI",    label_traits("Hearing Impaired"                  , true,  m_Dict->ul(MDD_DCAudioChannel_HI))));
-  m_LabelMap.insert(pair("VIN",   label_traits("Visually Impaired-Narrative"       , true,  m_Dict->ul(MDD_DCAudioChannel_VIN))));
-  m_LabelMap.insert(pair("51",    label_traits("5.1"                               , true,  m_Dict->ul(MDD_DCAudioSoundfield_51))));
-  m_LabelMap.insert(pair("71",    label_traits("7.1DS"                             , true,  m_Dict->ul(MDD_DCAudioSoundfield_71))));
-  m_LabelMap.insert(pair("SDS",   label_traits("7.1SDS"                            , true,  m_Dict->ul(MDD_DCAudioSoundfield_SDS))));
-  m_LabelMap.insert(pair("61",    label_traits("6.1"                               , true,  m_Dict->ul(MDD_DCAudioSoundfield_61))));
-  m_LabelMap.insert(pair("M",     label_traits("1.0 Monaural"                      , true,  m_Dict->ul(MDD_DCAudioSoundfield_M))));
+  m_LabelMap.insert(pair(clabel_L,     label_traits("Left"                              , true,  m_Dict->ul(MDD_DCAudioChannel_L))));
+  m_LabelMap.insert(pair(clabel_R,     label_traits("Right"                             , true,  m_Dict->ul(MDD_DCAudioChannel_R))));
+  m_LabelMap.insert(pair(clabel_C,     label_traits("Center"                            , true,  m_Dict->ul(MDD_DCAudioChannel_C))));
+  m_LabelMap.insert(pair(clabel_LFE,   label_traits("LFE"                               , true,  m_Dict->ul(MDD_DCAudioChannel_LFE))));
+  m_LabelMap.insert(pair(clabel_Ls,    label_traits("Left Surround"                     , true,  m_Dict->ul(MDD_DCAudioChannel_Ls))));
+  m_LabelMap.insert(pair(clabel_Rs,    label_traits("Right Surround"                    , true,  m_Dict->ul(MDD_DCAudioChannel_Rs))));
+  m_LabelMap.insert(pair(clabel_Lss,   label_traits("Left Side Surround"                , true,  m_Dict->ul(MDD_DCAudioChannel_Lss))));
+  m_LabelMap.insert(pair(clabel_Rss,   label_traits("Right Side Surround"               , true,  m_Dict->ul(MDD_DCAudioChannel_Rss))));
+  m_LabelMap.insert(pair(clabel_Lrs,   label_traits("Left Rear Surround"                , true,  m_Dict->ul(MDD_DCAudioChannel_Lrs))));
+  m_LabelMap.insert(pair(clabel_Rrs,   label_traits("Right Rear Surround"               , true,  m_Dict->ul(MDD_DCAudioChannel_Rrs))));
+  m_LabelMap.insert(pair(clabel_Lc,    label_traits("Left Center"                       , true,  m_Dict->ul(MDD_DCAudioChannel_Lc))));
+  m_LabelMap.insert(pair(clabel_Rc,    label_traits("Right Center"                      , true,  m_Dict->ul(MDD_DCAudioChannel_Rc))));
+  m_LabelMap.insert(pair(clabel_Cs,    label_traits("Center Surround"                   , true,  m_Dict->ul(MDD_DCAudioChannel_Cs))));
+  m_LabelMap.insert(pair(clabel_HI,    label_traits("Hearing Impaired"                  , true,  m_Dict->ul(MDD_DCAudioChannel_HI))));
+  m_LabelMap.insert(pair(clabel_VIN,   label_traits("Visually Impaired-Narrative"       , true,  m_Dict->ul(MDD_DCAudioChannel_VIN))));
+  m_LabelMap.insert(pair(glabel_51,    label_traits("5.1"                               , true,  m_Dict->ul(MDD_DCAudioSoundfield_51))));
+  m_LabelMap.insert(pair(glabel_71,    label_traits("7.1DS"                             , true,  m_Dict->ul(MDD_DCAudioSoundfield_71))));
+  m_LabelMap.insert(pair(glabel_SDS,   label_traits("7.1SDS"                            , true,  m_Dict->ul(MDD_DCAudioSoundfield_SDS))));
+  m_LabelMap.insert(pair(glabel_61,    label_traits("6.1"                               , true,  m_Dict->ul(MDD_DCAudioSoundfield_61))));
+  m_LabelMap.insert(pair(glabel_M,     label_traits("1.0 Monaural"                      , true,  m_Dict->ul(MDD_DCAudioSoundfield_M))));
   m_LabelMap.insert(pair("FSKSync",   label_traits("FSK Sync"                      , true,  m_Dict->ul(MDD_DCAudioChannel_FSKSyncSignalChannel))));
   m_LabelMap.insert(pair("DBOX",  label_traits("D-BOX Motion Code Primary Stream"  , false, m_Dict->ul(MDD_DBOXMotionCodePrimaryStream))));
   m_LabelMap.insert(pair("DBOX2", label_traits("D-BOX Motion Code Secondary Stream", false, m_Dict->ul(MDD_DBOXMotionCodeSecondaryStream))));
   m_LabelMap.insert(pair("SLVS",  label_traits("Sign Language Video Stream"        , false, m_Dict->ul(MDD_AudioChannelSLVS))));
+
+  // 51: L C R Ls Rs LFE
+  mca_label_map_t::iterator entry = m_LabelMap.find(glabel_51);
+  assert(entry != m_LabelMap.end());
+  entry->second.group_channels.push_back(clabel_L);
+  entry->second.group_channels.push_back(clabel_C);
+  entry->second.group_channels.push_back(clabel_R);
+  entry->second.group_channels.push_back(clabel_Ls);
+  entry->second.group_channels.push_back(clabel_Rs);
+  entry->second.group_channels.push_back(clabel_LFE);
+
+  // 71: L C R Lss Rss Lrs Rrs LFE
+  entry = m_LabelMap.find(glabel_71);
+  assert(entry != m_LabelMap.end());
+  entry->second.group_channels.push_back(clabel_L);
+  entry->second.group_channels.push_back(clabel_C);
+  entry->second.group_channels.push_back(clabel_R);
+  entry->second.group_channels.push_back(clabel_Lss);
+  entry->second.group_channels.push_back(clabel_Rss);
+  entry->second.group_channels.push_back(clabel_Lrs);
+  entry->second.group_channels.push_back(clabel_Rrs);
+  entry->second.group_channels.push_back(clabel_LFE);
+
+  // SDS: L Lc C Rc R Lrs Rrs LFE
+  entry = m_LabelMap.find(glabel_SDS);
+  assert(entry != m_LabelMap.end());
+  entry->second.group_channels.push_back(clabel_L);
+  entry->second.group_channels.push_back(clabel_Lc);
+  entry->second.group_channels.push_back(clabel_C);
+  entry->second.group_channels.push_back(clabel_Rc);
+  entry->second.group_channels.push_back(clabel_R);
+  entry->second.group_channels.push_back(clabel_Lrs);
+  entry->second.group_channels.push_back(clabel_Rrs);
+  entry->second.group_channels.push_back(clabel_LFE);
+
+  // 61:  L C R Lss Cs Rss LFE
+  entry = m_LabelMap.find(glabel_SDS);
+  assert(entry != m_LabelMap.end());
+  entry->second.group_channels.push_back(clabel_L);
+  entry->second.group_channels.push_back(clabel_C);
+  entry->second.group_channels.push_back(clabel_R);
+  entry->second.group_channels.push_back(clabel_Lss);
+  entry->second.group_channels.push_back(clabel_Cs);
+  entry->second.group_channels.push_back(clabel_Rss);
+  entry->second.group_channels.push_back(clabel_LFE);
+
+  // M: C
+  entry = m_LabelMap.find(glabel_M);
+  assert(entry != m_LabelMap.end());
+  entry->second.group_channels.push_back(clabel_C);
 }
 
 //
@@ -1907,6 +1979,19 @@ ASDCP::MXF::ASDCP_MCAConfigParser::DecodeString(const std::string& s, const std:
   return decode_mca_string(s, m_LabelMap, m_Dict, language, *this, m_ChannelCount);
 }
 
+static const std::string glabel_ST   = "ST";
+static const std::string glabel_DM   = "DM";
+static const std::string glabel_DNS  = "DNS";
+static const std::string glabel_30   = "30";
+static const std::string glabel_40   = "40";
+static const std::string glabel_50   = "50";
+static const std::string glabel_60   = "60";
+static const std::string glabel_70   = "70";
+static const std::string glabel_LtRt = "LtRt";
+static const std::string glabel_51EX = "51EX";
+static const std::string glabel_HA   = "HA";
+static const std::string glabel_VA   = "VA";
+
 // ST(L,R),DNS(NSC001,NSC002),-,VIN
 ASDCP::MXF::AS02_MCAConfigParser::AS02_MCAConfigParser(const Dictionary* d) : ASDCP::MXF::ASDCP_MCAConfigParser(d)
 {
@@ -1918,18 +2003,18 @@ ASDCP::MXF::AS02_MCAConfigParser::AS02_MCAConfigParser(const Dictionary* d) : AS
   m_LabelMap.insert(pair("Lst",   label_traits("Left Surround Total", true,  m_Dict->ul(MDD_IMFAudioChannel_Lst))));
   m_LabelMap.insert(pair("Rst",   label_traits("Right Surround Total", true,  m_Dict->ul(MDD_IMFAudioChannel_Rst))));
   m_LabelMap.insert(pair("S",     label_traits("Surround",   true,  m_Dict->ul(MDD_IMFAudioChannel_S))));
-  m_LabelMap.insert(pair("ST",    label_traits("Standard Stereo",  true,  m_Dict->ul(MDD_IMFAudioSoundfield_ST))));
-  m_LabelMap.insert(pair("DM",    label_traits("Dual Mono",  true,  m_Dict->ul(MDD_IMFAudioSoundfield_DM))));
-  m_LabelMap.insert(pair("DNS",   label_traits("Discrete Numbered Sources", true,  m_Dict->ul(MDD_IMFAudioSoundfield_DNS))));
-  m_LabelMap.insert(pair("30",    label_traits("3.0",  true,  m_Dict->ul(MDD_IMFAudioSoundfield_30))));
-  m_LabelMap.insert(pair("40",    label_traits("4.0",  true,  m_Dict->ul(MDD_IMFAudioSoundfield_40))));
-  m_LabelMap.insert(pair("50",    label_traits("5.0",  true,  m_Dict->ul(MDD_IMFAudioSoundfield_50))));
-  m_LabelMap.insert(pair("60",    label_traits("6.0",  true,  m_Dict->ul(MDD_IMFAudioSoundfield_60))));
-  m_LabelMap.insert(pair("70",    label_traits("7.0DS",  true,  m_Dict->ul(MDD_IMFAudioSoundfield_70))));
-  m_LabelMap.insert(pair("LtRt",  label_traits("Lt-Rt",true,  m_Dict->ul(MDD_IMFAudioSoundfield_LtRt))));
-  m_LabelMap.insert(pair("51EX",  label_traits("5.1EX",true,  m_Dict->ul(MDD_IMFAudioSoundfield_51EX))));
-  m_LabelMap.insert(pair("HA",    label_traits("Hearing Accessibility",  true,  m_Dict->ul(MDD_IMFAudioSoundfield_HI))));
-  m_LabelMap.insert(pair("VA",   label_traits("Visual Accessibility", true,  m_Dict->ul(MDD_IMFAudioSoundfield_VIN))));
+  m_LabelMap.insert(pair(glabel_ST,    label_traits("Standard Stereo",  true,  m_Dict->ul(MDD_IMFAudioSoundfield_ST))));
+  m_LabelMap.insert(pair(glabel_DM,    label_traits("Dual Mono",  true,  m_Dict->ul(MDD_IMFAudioSoundfield_DM))));
+  m_LabelMap.insert(pair(glabel_DNS,   label_traits("Discrete Numbered Sources", true,  m_Dict->ul(MDD_IMFAudioSoundfield_DNS))));
+  m_LabelMap.insert(pair(glabel_30,    label_traits("3.0",  true,  m_Dict->ul(MDD_IMFAudioSoundfield_30))));
+  m_LabelMap.insert(pair(glabel_40,    label_traits("4.0",  true,  m_Dict->ul(MDD_IMFAudioSoundfield_40))));
+  m_LabelMap.insert(pair(glabel_50,    label_traits("5.0",  true,  m_Dict->ul(MDD_IMFAudioSoundfield_50))));
+  m_LabelMap.insert(pair(glabel_60,    label_traits("6.0",  true,  m_Dict->ul(MDD_IMFAudioSoundfield_60))));
+  m_LabelMap.insert(pair(glabel_70,    label_traits("7.0DS",  true,  m_Dict->ul(MDD_IMFAudioSoundfield_70))));
+  m_LabelMap.insert(pair(glabel_LtRt,  label_traits("Lt-Rt",true,  m_Dict->ul(MDD_IMFAudioSoundfield_LtRt))));
+  m_LabelMap.insert(pair(glabel_51EX,  label_traits("5.1EX",true,  m_Dict->ul(MDD_IMFAudioSoundfield_51EX))));
+  m_LabelMap.insert(pair(glabel_HA,    label_traits("Hearing Accessibility",  true,  m_Dict->ul(MDD_IMFAudioSoundfield_HI))));
+  m_LabelMap.insert(pair(glabel_VA,   label_traits("Visual Accessibility", true,  m_Dict->ul(MDD_IMFAudioSoundfield_VIN))));
 
   // assemble the  set of Numbered Source Channel labels
   char name_buf[64], symbol_buf[64];
@@ -1943,6 +2028,197 @@ ASDCP::MXF::AS02_MCAConfigParser::AS02_MCAConfigParser(const Dictionary* d) : AS
       ul_buf[13] = i;
       m_LabelMap.insert(pair(symbol_buf, label_traits(name_buf, true, UL(ul_buf))));
     }
+}
+
+//
+struct mca_group_validator
+{
+  std::list<ASDCP::MXF::AudioChannelLabelSubDescriptor*> members;
+  ASDCP::MXF::SoundfieldGroupLabelSubDescriptor *group;
+
+  // A given channel is already present if the descriptor pointer is the
+  // same (I have seen this channel before) or MCATagSymbol is the same
+  // (the channel label is a duplicate.)
+  //
+  bool
+  channel_exists(ASDCP::MXF::AudioChannelLabelSubDescriptor* channel) const
+  {
+    assert(channel);
+    std::list<ASDCP::MXF::AudioChannelLabelSubDescriptor*>::const_iterator i;
+    for ( i = members.begin(); i != members.end(); ++i )
+      {
+        if ( *i == channel )
+          {
+            return true;
+          }
+        if ( (*i)->MCATagSymbol == channel->MCATagSymbol )
+          {
+            return true;
+          }
+      }
+
+    return false;
+  }
+
+  // Record the given channel in the "seen" list.
+  //
+  void
+  add_channel(ASDCP::MXF::AudioChannelLabelSubDescriptor* channel)
+  {
+    assert(channel);
+    members.push_back(channel);
+  }
+
+  // The given channel may be referenced by this group if the group is
+  // a member of label_map and the respective map entry contains the
+  // channel's label.
+  //
+  bool
+  channel_is_allowed(const ASDCP::MXF::AudioChannelLabelSubDescriptor* channel,
+                     const ASDCP::MXF::mca_label_map_t& label_map) const
+  {
+    ASDCP::MXF::mca_label_map_t::const_iterator i = label_map.find(group->MCATagSymbol.substr(2));
+    assert(i != label_map.end());
+    std::list<std::string>::const_iterator j;
+
+    if ( i != label_map.end() )
+      {
+        const std::string label = channel->MCATagSymbol.substr(2);
+        for ( j = i->second.group_channels.begin(); j != i->second.group_channels.end(); ++j )
+          {
+            if ( *j == label )
+              {
+                return true;
+              }
+          }
+      }
+
+    return false;
+  }
+
+  //
+  bool
+  all_channels_are_present(const ASDCP::MXF::mca_label_map_t& label_map) const
+  {
+    ASDCP::MXF::mca_label_map_t::const_iterator i = label_map.find(group->MCATagSymbol.substr(2));
+    assert(i != label_map.end());
+    std::set<std::string> channel_names;
+    std::list<std::string>::const_iterator j;
+    for ( j = i->second.group_channels.begin(); j != i->second.group_channels.end(); ++j )
+      {
+        channel_names.insert(*j);
+      }
+
+    assert(channel_names.size() == i->second.group_channels.size());
+
+    std::list<ASDCP::MXF::AudioChannelLabelSubDescriptor*>::const_iterator k;
+    for ( k = members.begin(); k != members.end(); ++k )
+      {
+        channel_names.erase((*k)->MCATagSymbol.substr(2));
+      }
+
+    return channel_names.empty();
+  }
+
+  mca_group_validator() : group(0) {}
+};
+
+typedef std::map<Kumu::UUID, mca_group_validator> group_validator_map;
+
+//
+bool
+ASDCP::MXF::ASDCP_MCAConfigParser::Validate() const
+{
+  char buf[64];
+  group_validator_map group_cache;
+  ASDCP::MXF::InterchangeObject_list_t::const_iterator i;
+
+  // Gather the group descriptors and check them for validity and uniqueness.
+  for ( i = this->begin(); i != this->end(); ++i )
+    {
+      ASDCP::MXF::SoundfieldGroupLabelSubDescriptor *group =
+        dynamic_cast<ASDCP::MXF::SoundfieldGroupLabelSubDescriptor*>(*i);
+
+      if ( group )
+        {
+          mca_label_map_t::const_iterator i = m_LabelMap.find(group->MCATagSymbol.substr(2));
+          if ( i == m_LabelMap.end() )
+            {
+              DefaultLogSink().Error("No such Soundfield Group label: \"%s\".\n", group->MCATagSymbol.c_str());
+              return false;
+            }
+
+          if ( group_cache.find(group->MCALinkID) != group_cache.end() )
+            {
+              DefaultLogSink().Error("Duplicate Soundfield Group link Id: \"%s\".\n", group->MCALinkID.EncodeHex(buf, 64));
+              return false;
+            }
+
+          group_cache.insert(group_validator_map::value_type(group->MCALinkID, mca_group_validator()));
+          group_validator_map::iterator j = group_cache.find(group->MCALinkID);
+          assert(j != group_cache.end());
+          assert(j->second.group==0);
+          j->second.group = group;
+        }
+    }
+
+  for ( i = this->begin(); i != this->end(); ++i )
+    {
+      ASDCP::MXF::AudioChannelLabelSubDescriptor *channel =
+        dynamic_cast<ASDCP::MXF::AudioChannelLabelSubDescriptor*>(*i);
+
+      if ( channel )
+        {
+          mca_label_map_t::const_iterator i = m_LabelMap.find(channel->MCATagSymbol.substr(2));
+          if ( i == m_LabelMap.end() )
+            {
+              DefaultLogSink().Error("No such Audio Channel label: \"%s\".\n", channel->MCATagSymbol.c_str());
+              return false;
+            }
+
+          if ( channel->SoundfieldGroupLinkID.const_get().HasValue() )
+            {
+              group_validator_map::iterator j = group_cache.find(channel->SoundfieldGroupLinkID);
+              if ( j == group_cache.end() )
+                {
+                  DefaultLogSink().Error("No such Soundfield Group link Id: \"%s\".\n",
+                                         channel->SoundfieldGroupLinkID.const_get().EncodeHex(buf, 64));
+                  return false;
+                }
+
+              if ( j->second.channel_exists(channel) )
+                {
+                  DefaultLogSink().Error("Duplicate group assignemnt for channel \"%s\".\n",
+                                         channel->MCATagSymbol.substr(2).c_str());
+                  return false;
+                }
+
+              if ( ! j->second.channel_is_allowed(channel, m_LabelMap) )
+                {
+                  DefaultLogSink().Error("Channel \"%s\" is not allowed in group \"%s\".\n",
+                                         channel->MCATagSymbol.substr(2).c_str(),
+                                         j->second.group->MCATagSymbol.substr(2).c_str());
+                  return false;
+                }
+
+              j->second.add_channel(channel);
+            }
+        }
+    }
+
+  // Fail if any group is incomplete.
+  group_validator_map::const_iterator j;
+  for ( j = group_cache.begin(); j != group_cache.end(); ++j )
+    {
+      if ( ! j->second.all_channels_are_present(m_LabelMap) )
+        {
+          DefaultLogSink().Error("Some channels are missing from group \"%s\".\n",
+                                 j->second.group->MCATagSymbol.substr(2).c_str());
+          return false;
+        }
+    }
+
+  return true;
 }
 
 //
