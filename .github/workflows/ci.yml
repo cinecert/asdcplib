@@ -37,3 +37,33 @@ jobs:
     - name: make
       working-directory: build
       run: make
+
+  build_ubuntu_cmake_without_ssl:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Create build dir
+      run: mkdir build
+    - name: cmake
+      working-directory: build
+      run: cmake .. -DWITHOUT_SSL=ON
+    - name: make
+      working-directory: build
+      run: make
+
+  build_ubuntu_cmake_without_xml:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Create build dir
+      run: mkdir build
+    - name: cmake
+      working-directory: build
+      run: cmake .. -DWITHOUT_XML=ON
+    - name: make
+      working-directory: build
+      run: make
