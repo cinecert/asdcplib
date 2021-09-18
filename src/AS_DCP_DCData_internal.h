@@ -57,8 +57,8 @@ namespace DCData
    public:
     DCDataDescriptor m_DDesc;
 
-    h__Reader(const Dictionary *d) : ASDCP::h__ASDCPReader(d), m_EssenceDescriptor(0),
-                                     m_DDesc() {}
+  h__Reader(const Dictionary *d, Kumu::IFileReaderFactory& f) :
+    ASDCP::h__ASDCPReader(d, f), m_EssenceDescriptor(0), m_DDesc() {}
     ~h__Reader() {}
     Result_t    OpenRead(const std::string&);
     Result_t    ReadFrame(ui32_t, FrameBuffer&, AESDecContext*, HMACContext*);
