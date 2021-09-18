@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2005-2019, John Hurst
+Copyright (c) 2005-2021, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -157,7 +157,7 @@ namespace ASDCP
 	    return result;
 	  }
 
-	  void Dump(FILE* stream = 0, ui32_t depth = 0) {
+	  void Dump(FILE* stream = 0, ui32_t depth = 0) const {
 	    (void) depth;
 	    char identbuf[IdentBufferLen];
 
@@ -252,7 +252,7 @@ namespace ASDCP
 	  }
 
 	  //
-	  void Dump(FILE* stream = 0, ui32_t depth = 0)
+	  void Dump(FILE* stream = 0, ui32_t depth = 0) const
 	    {
 	      (void) depth;
 	      char identbuf[IdentBufferLen];
@@ -260,10 +260,12 @@ namespace ASDCP
 	      if ( stream == 0 )
 		stream = stderr;
 
-	      typename std::list<T>::iterator i = this->begin();
+	      typename std::list<T>::const_iterator i = this->begin();
 	      for ( ; i != this->end(); i++ )
-		fprintf(stream, "  %s\n", (*i).EncodeString(identbuf, IdentBufferLen));
-	    }
+                {
+                  fprintf(stream, "  %s\n", (*i).EncodeString(identbuf, IdentBufferLen));
+                }
+            }
 	};
 
       //
@@ -530,7 +532,7 @@ namespace ASDCP
 	    Release = rhs.Release;
 	  }
 
-	  void Dump(FILE* = 0);
+	  void Dump(FILE* = 0) const;
 
 	  const char* EncodeString(char* str_buf, ui32_t buf_len) const {
 	    snprintf(str_buf, buf_len, "%hu.%hu.%hu.%hur%hu", Major, Minor, Patch, Build, ui16_t(Release));

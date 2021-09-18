@@ -235,7 +235,7 @@ inline const char* ui64sz(ui64_t i, char* buf)
 	return WriteKLToBuffer(fb, m_UL, length);
       }
 
-      virtual void     Dump(FILE*, const Dictionary& Dict, bool show_value);
+      virtual void     Dump(FILE*, const Dictionary& Dict, bool show_value) const;
     };
 
   //

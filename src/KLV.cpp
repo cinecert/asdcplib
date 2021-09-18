@@ -158,7 +158,7 @@ ASDCP::KLVPacket::WriteKLToBuffer(ASDCP::FrameBuffer& Buffer, const UL& label, u
 
 //
 void
-ASDCP::KLVPacket::Dump(FILE* stream, const Dictionary& Dict, bool show_value)
+ASDCP::KLVPacket::Dump(FILE* stream, const Dictionary& Dict, bool show_value) const
 {
   char buf[64];
 

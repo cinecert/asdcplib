@@ -110,7 +110,7 @@ namespace ASDCP
 	  virtual Result_t InitFromFile(const Kumu::IFileReader& Reader);
 	  virtual Result_t WriteToFile(Kumu::FileWriter& Writer);
 	  virtual bool GetPairBySID(ui32_t, PartitionPair&) const;
-	  virtual void     Dump(FILE* = 0);
+	  virtual void     Dump(FILE* = 0) const;
 	};
 
 
@@ -160,7 +160,7 @@ namespace ASDCP
 	  virtual Result_t InitFromBuffer(const byte_t* p, ui32_t l);
 	  virtual Result_t WriteToFile(Kumu::FileWriter& Writer, UL& PartitionLabel);
 	  virtual ui32_t   ArchiveSize(); // returns the size of the archived structure
-	  virtual void     Dump(FILE* = 0);
+	  virtual void     Dump(FILE* = 0) const;
 	};
 
 
@@ -233,7 +233,7 @@ namespace ASDCP
           virtual Result_t InitFromBuffer(const byte_t* p, ui32_t l);
           virtual Result_t WriteToBuffer(ASDCP::FrameBuffer&);
 	  virtual Result_t WriteToFile(Kumu::FileWriter& Writer);
-	  virtual void     Dump(FILE* = 0);
+	  virtual void     Dump(FILE* = 0) const;
 	};
 
       // wrapper object manages optional properties
@@ -310,7 +310,7 @@ namespace ASDCP
 	  virtual Result_t WriteToBuffer(ASDCP::FrameBuffer&);
 	  virtual bool     IsA(const byte_t* label);
 	  virtual const char* ObjectName() { return "InterchangeObject"; }
-	  virtual void     Dump(FILE* stream = 0);
+	  virtual void     Dump(FILE* stream = 0) const;
 	};
 
       //
@@ -345,7 +345,7 @@ namespace ASDCP
 	  virtual Result_t InitFromBuffer(const byte_t* p, ui32_t l);
 	  virtual Result_t WriteToTLVSet(TLVWriter& TLVSet);
 	  virtual Result_t WriteToBuffer(ASDCP::FrameBuffer&);
-	  virtual void     Dump(FILE* = 0);
+	  virtual void     Dump(FILE* = 0) const;
 	};
 
       const ui32_t MaxIndexSegmentSize = 65536;
@@ -422,7 +422,7 @@ namespace ASDCP
 	  virtual Result_t InitFromBuffer(const byte_t* p, ui32_t l);
 	  virtual Result_t WriteToTLVSet(TLVWriter& TLVSet);
 	  virtual Result_t WriteToBuffer(ASDCP::FrameBuffer&);
-	  virtual void     Dump(FILE* = 0);
+	  virtual void     Dump(FILE* = 0) const;
 	};
 
       //---------------------------------------------------------------------------------
@@ -447,7 +447,7 @@ namespace ASDCP
 	  virtual Result_t InitFromPartitionBuffer(const byte_t* p, ui32_t l);
 	  virtual Result_t InitFromBuffer(const byte_t* p, ui32_t l);
 	  virtual Result_t WriteToFile(Kumu::FileWriter& Writer, ui32_t HeaderLength = 16384);
-	  virtual void     Dump(FILE* = 0);
+	  virtual void     Dump(FILE* = 0) const;
 	  virtual Result_t GetMDObjectByID(const UUID&, InterchangeObject** = 0);
 	  virtual Result_t GetMDObjectByType(const byte_t*, InterchangeObject** = 0);
 	  virtual Result_t GetMDObjectsByType(const byte_t* ObjectID, std::list<InterchangeObject*>& ObjectList);
@@ -482,7 +482,7 @@ namespace ASDCP
 	  virtual Result_t InitFromPartitionBuffer(const byte_t* p, ui32_t l);
 	  virtual Result_t InitFromBuffer(const byte_t* p, ui32_t l);
 	  virtual Result_t WriteToFile(Kumu::FileWriter& Writer, ui64_t duration);
-	  virtual void     Dump(FILE* = 0);
+	  virtual void     Dump(FILE* = 0) const;
 
 	  virtual Result_t GetMDObjectByID(const UUID&, InterchangeObject** = 0);
 	  virtual Result_t GetMDObjectByType(const byte_t*, InterchangeObject** = 0);
