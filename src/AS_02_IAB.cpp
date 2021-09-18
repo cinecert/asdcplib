@@ -80,7 +80,7 @@ static const int CLIP_BER_LENGTH_SIZE = 8;
 static const int RESERVED_KL_SIZE = ASDCP::SMPTE_UL_LENGTH + CLIP_BER_LENGTH_SIZE;
 
 
-AS_02::IAB::MXFWriter::MXFWriter() : m_ClipStart(0) {
+AS_02::IAB::MXFWriter::MXFWriter() : m_ClipStart(0), m_Writer(0) {
 }
 
 AS_02::IAB::MXFWriter::~MXFWriter() {}
@@ -114,7 +114,7 @@ AS_02::IAB::MXFWriter::OpenWrite(
 
   /* are we already running */
 
-  if (this->m_Writer->m_State != ST_BEGIN) {
+  if ( this->m_Writer && this->m_Writer->m_State != ST_BEGIN ) {
     KM_RESULT_STATE_HERE();
     return Kumu::RESULT_STATE;
   }
@@ -370,15 +370,15 @@ AS_02::IAB::MXFWriter::Finalize() {
 
 void
 AS_02::IAB::MXFWriter::Reset() {
-  this->m_Writer.set(NULL);
-  this->m_Writer->m_State = ST_BEGIN;
+  this->m_Writer.set(0);
 }
 
 
 //------------------------------------------------------------------------------------------
 
 
-AS_02::IAB::MXFReader::MXFReader(const Kumu::IFileReaderFactory& fileReaderFactory) : m_FileReaderFactory(fileReaderFactory) {}
+AS_02::IAB::MXFReader::MXFReader(const Kumu::IFileReaderFactory& fileReaderFactory) :
+  m_FileReaderFactory(fileReaderFactory), m_Reader(0) {}
 
 AS_02::IAB::MXFReader::~MXFReader() {
     if ( m_Reader && m_Reader->m_File->IsOpen()) {
@@ -409,7 +409,7 @@ AS_02::IAB::MXFReader::OpenRead(const std::string& filename) {
 
   /* are we already running */
 
-  if (this->m_Reader->m_State != ST_READER_BEGIN) {
+  if ( this->m_Reader && this->m_Reader->m_State != ST_READER_BEGIN ) {
     KM_RESULT_STATE_HERE();
     return Kumu::RESULT_STATE;
   }
@@ -695,8 +695,7 @@ AS_02::IAB::MXFReader::Reset() {
     m_Reader->Close();
   }
 
-  this->m_Reader.set(NULL);
-  this->m_Reader->m_State = ST_READER_BEGIN;
+  this->m_Reader.set(0);
 }
 
 //
