@@ -137,7 +137,7 @@ namespace ASDCP {
 		  ASDCP_NO_COPY_CONSTRUCT(MXFReader);
 
 	  public:
-		  MXFReader();
+		  MXFReader(const Kumu::IFileReaderFactory& fileReaderFactory);
 		  virtual ~MXFReader();
 
 		  // Warning: direct manipulation of MXF structures can interfere
