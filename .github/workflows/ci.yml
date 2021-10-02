@@ -67,3 +67,21 @@ jobs:
     - name: make
       working-directory: build
       run: make
+
+  build_ubuntu_cmake_with_jxs:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: dependencies
+      run: sudo apt-get update && sudo apt-get install -y
+        libxerces-c-dev
+    - name: Create build dir
+      run: mkdir build
+    - name: cmake
+      working-directory: build
+      run: cmake .. -DUSE_ASDCP_JXS=ON
+    - name: make
+      working-directory: build
+      run: make
