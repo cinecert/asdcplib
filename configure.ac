@@ -37,7 +37,7 @@ AC_PREREQ([2.59])
 # For example, if asdcplib version 1.0.0 were modified to accomodate changes
 # in file format, and if no changes were made to AS_DCP.h, the new version would be
 # 1.0.1. If changes were also required in AS_DCP.h, the new version would be 1.1.1.
-AC_INIT([asdcplib], [2.12.0], [asdcplib@cinecert.com])
+AC_INIT([asdcplib], [2.12.1], [asdcplib@cinecert.com])
 
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_SRCDIR([src/KM_error.h])
