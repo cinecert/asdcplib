@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2005-2009, John Hurst
+Copyright (c) 2005-2021, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -167,14 +167,13 @@ ASDCP::KLVPacket::Dump(FILE* stream, const Dictionary& Dict, bool show_value)
 
   if ( m_KeyStart != 0 )
     {
-      assert(m_ValueStart);
       UL TmpUL(m_KeyStart);
       fprintf(stream, "%s", TmpUL.EncodeString(buf, 64));
 
       const MDDEntry* Entry = Dict.FindULAnyVersion(m_KeyStart);
       fprintf(stream, "  len: %7llu (%s)\n", m_ValueLength, (Entry ? Entry->name : "Unknown"));
 
-      if ( show_value && m_ValueLength < 1000 )
+      if ( m_ValueStart && show_value && m_ValueLength < 1000 )
 	Kumu::hexdump(m_ValueStart, Kumu::xmin(m_ValueLength, (ui64_t)128), stream);
     }
   else if ( m_UL.HasValue() )
@@ -234,16 +233,27 @@ ASDCP::KLVFilePacket::InitFromFile(const Kumu::IFileReader& Reader)
       return RESULT_FAIL;
     }
 
+  ui32_t ber_len = Kumu::BER_length(tmp_data + SMPTE_UL_LENGTH);
+  m_KLLength = SMPTE_UL_LENGTH + ber_len;
+
   if ( tmp_size > MAX_KLV_PACKET_LENGTH )
     {
-      Kumu::ui64Printer tmp_size_str(tmp_size);
-      DefaultLogSink().Error("Packet length %s exceeds internal limit\n", tmp_size_str.c_str());
-      return RESULT_FAIL;
+      result = Reader.Seek(tmp_size - (tmp_read_size - SMPTE_UL_LENGTH - ber_len), Kumu::SP_POS);
+
+      if ( ASDCP_SUCCESS(result) )
+        {
+          memcpy(m_Buffer.Data(), tmp_data, SMPTE_UL_LENGTH);
+          m_KeyStart = m_Buffer.Data();
+
+          Kumu::ui64Printer tmp_size_str(tmp_size);
+          DefaultLogSink().Error("Packet length %s exceeds internal limit.\n", tmp_size_str.c_str());
+          result = RESULT_ALLOC;
+        }
+
+      return result;
     }
 
   ui32_t remainder = 0;
-  ui32_t ber_len = Kumu::BER_length(tmp_data + SMPTE_UL_LENGTH);
-  m_KLLength = SMPTE_UL_LENGTH + ber_len;
   assert(tmp_size <= 0xFFFFFFFFL);
   m_ValueLength = (ui32_t) tmp_size;
   ui32_t packet_length = m_ValueLength + m_KLLength;
