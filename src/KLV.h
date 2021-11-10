@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2005-2018, John Hurst
+Copyright (c) 2005-2021, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -109,6 +109,7 @@ inline const char* ui64sz(ui64_t i, char* buf)
       bool operator==(const UL& rhs) const;
       bool MatchIgnoreStream(const UL& rhs) const;
       bool MatchExact(const UL& rhs) const;
+      bool MatchIgnorePlaceholder(const UL& rhs) const;
     };
 
   // UMID

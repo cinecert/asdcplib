@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2005-2019, John Hurst
+Copyright (c) 2005-2021, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -85,6 +85,32 @@ ASDCP::UL::MatchIgnoreStream(const UL& rhs) const
        m_Value[13] == rhs.m_Value[13] &&
        m_Value[14] == rhs.m_Value[14]
        //       m_Value[15] == rhs.m_Value[15] // ignore stream number
+       )
+    return true;
+
+  return false;
+}
+
+//
+bool
+ASDCP::UL::MatchIgnorePlaceholder(const UL& rhs) const
+{
+  if ( m_Value[0] == rhs.m_Value[0] &&
+       m_Value[1] == rhs.m_Value[1] &&
+       m_Value[2] == rhs.m_Value[2] &&
+       m_Value[3] == rhs.m_Value[3] &&
+       ( m_Value[4] == 0x7f || m_Value[4] == rhs.m_Value[4] ) &&
+       ( m_Value[5] == 0x7f || m_Value[5] == rhs.m_Value[5] ) &&
+       ( m_Value[6] == 0x7f || m_Value[6] == rhs.m_Value[6] ) &&
+       //       m_Value[7] == rhs.m_Value[7] &&  // version is ignored when performing lookups
+       ( m_Value[8] == 0x7f || m_Value[8] == rhs.m_Value[8] ) &&
+       ( m_Value[9] == 0x7f || m_Value[9] == rhs.m_Value[9] ) &&
+       ( m_Value[10] == 0x7f || m_Value[10] == rhs.m_Value[10] ) &&
+       ( m_Value[11] == 0x7f || m_Value[11] == rhs.m_Value[11] ) &&
+       ( m_Value[12] == 0x7f || m_Value[12] == rhs.m_Value[12] ) &&
+       ( m_Value[13] == 0x7f || m_Value[13] == rhs.m_Value[13] ) &&
+       ( m_Value[14] == 0x7f || m_Value[14] == rhs.m_Value[14] ) &&
+       ( m_Value[15] == 0x7f || m_Value[15] == rhs.m_Value[15] )
        )
     return true;
 
