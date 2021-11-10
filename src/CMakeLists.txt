@@ -217,6 +217,18 @@ if(WIN32)
 	target_link_libraries(as-02-wrap general Advapi32.lib) 
 endif(WIN32)
 
+add_executable(as-02-wrap-jxs "as-02-wrap-jxs.cpp")
+target_link_libraries(as-02-wrap-jxs general libas02)
+if(WIN32)
+	target_link_libraries(as-02-wrap-jxs general Advapi32.lib) 
+endif(WIN32)
+
+add_executable(as-02-wrap-iab "as-02-wrap-iab.cpp")
+target_link_libraries(as-02-wrap-iab general libas02)
+if(WIN32)
+	target_link_libraries(as-02-wrap-iab general Advapi32.lib) 
+endif(WIN32)
+
 add_executable(as-02-unwrap "as-02-unwrap.cpp")
 target_link_libraries(as-02-unwrap general libas02)
 if(WIN32)
@@ -232,7 +244,7 @@ endif(WIN32)
 # add the install target
 install(TARGETS libkumu libasdcp libas02 EXPORT asdcplibtargets RUNTIME DESTINATION bin LIBRARY DESTINATION lib ARCHIVE DESTINATION lib INCLUDES DESTINATION "${OpenSSLLib_include_DIR}" "${XercescppLib_include_DIR}")
 
-set(install_targets blackwave wavesplit klvwalk asdcp-test asdcp-wrap asdcp-unwrap asdcp-info asdcp-util j2c-test as-02-wrap as-02-unwrap as-02-info kmfilegen kmuuidgen kmrandgen)
+set(install_targets blackwave wavesplit klvwalk asdcp-test asdcp-wrap asdcp-unwrap asdcp-info asdcp-util j2c-test as-02-wrap as-02-wrap-jxs as-02-wrap-iab as-02-unwrap as-02-info kmfilegen kmuuidgen kmrandgen)
 
 install(TARGETS ${install_targets} RUNTIME DESTINATION bin)
 install(FILES ${as02_deploy_header} ${asdcp_deploy_header} DESTINATION include)
