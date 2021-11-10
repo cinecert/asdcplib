@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2005-2018, John Hurst
+Copyright (c) 2005-2021, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -65,7 +65,7 @@ banner(FILE* stream = stdout)
 {
   fprintf(stream, "\n\
 %s (asdcplib %s)\n\n\
-Copyright (c) 2005-2013 John Hurst\n\
+Copyright (c) 2005-2021 John Hurst\n\
 %s is part of the asdcplib DCP tools package.\n\
 asdcplib may be copied only under the terms of the license found at\n\
 the top of every file in the asdcplib distribution kit.\n\n\
@@ -85,6 +85,7 @@ USAGE: %s [-r|-p] [-v] <input-file> [<input-file2> ...]\n\
   -h | -help   - Show help\n\
   -r           - When KLV data is an MXF OPAtom or OP 1a file, display headers\n\
   -p           - Display partition headers by walking the RIP\n\
+  -s           - Allow skipping huge packets when scanning\n\
   -v           - Verbose. Prints informative messages to stderr\n\
   -V           - Show version information\n\
 \n\
@@ -106,11 +107,13 @@ USAGE: %s [-r|-p] [-v] <input-file> [<input-file2> ...]\n\
    bool   verbose_flag;             // true if the informative messages option was selected
    bool   read_mxf_flag;            // true if the -r option was selected
    bool   walk_parts_flag;          // true if the -p option was selected
+   bool   allow_skip_flag;          // true if the -s option was selected
    FileList_t inFileList;           // File to operate on
 
    CommandOptions(int argc, const char** argv) :
      error_flag(true), version_flag(false), help_flag(false),
-     verbose_flag(false), read_mxf_flag(false), walk_parts_flag(false)
+     verbose_flag(false), read_mxf_flag(false), walk_parts_flag(false),
+     allow_skip_flag(false)
    {
      for ( int i = 1; i < argc; i++ )
        {
@@ -128,6 +131,7 @@ USAGE: %s [-r|-p] [-v] <input-file> [<input-file2> ...]\n\
 	       case 'h': help_flag = true; break;
 	       case 'r': read_mxf_flag = true; break;
 	       case 'p': walk_parts_flag = true; break;
+               case 's': allow_skip_flag = true; break;
 	       case 'V': version_flag = true; break;
 	       case 'v': verbose_flag = true; break;
 
@@ -344,7 +348,13 @@ main(int argc, const char** argv)
 	      KP.Dump(stdout, DefaultCompositeDict(), true);
 	      pos = Reader->TellPosition();
 	      result = KP.InitFromFile(*Reader);
-	    }
+
+              if ( result == RESULT_ALLOC && Options.allow_skip_flag )
+                {
+                  fprintf(stdout, "Skipping huge packet, reporting zero packet size.\n");
+                  result = RESULT_OK;
+                }
+            }
 	  
 	  if( result == RESULT_ENDOFFILE )
 	    result = RESULT_OK;
