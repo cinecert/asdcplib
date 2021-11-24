@@ -170,9 +170,9 @@ ASDCP::PCM::WAVParser::h__WAVParser::ReadFrame(FrameBuffer& FB)
     }
 
   ui32_t read_count = 0;
-  Result_t result = m_FileReader.Read(FB.Data(), m_FrameBufferSize, &read_count);
+  Result_t result = m_FileReader.Read(FB.Data(), (m_DataLength - m_ReadCount >= m_FrameBufferSize) ? m_FrameBufferSize : m_DataLength - m_ReadCount, &read_count);
 
-  if ( result == RESULT_ENDOFFILE )
+  if ( result == RESULT_ENDOFFILE || (m_DataLength == m_ReadCount + read_count) )
     {
       m_EOF = true;
 
