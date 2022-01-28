@@ -102,7 +102,9 @@ id_batch_contains(const Array<Kumu::UUID>& batch, const Kumu::UUID& value)
 //
 Result_t
 ASDCP::AddDmsTrackGenericPartUtf8Text(Kumu::FileWriter& file_writer, MXF::OP1aHeader& header_part,
-				      SourcePackage& source_package, MXF::RIP& rip, const Dictionary* Dict)
+                      SourcePackage& source_package, MXF::RIP& rip, const Dictionary* Dict,
+                      const std::string& trackDescription,  const std::string& dataDescription,
+                      std::list<ui64_t*>& durationUpdateList)
 {
   Sequence* Sequence_obj = 0;
   InterchangeObject* tmp_iobj = 0;
@@ -121,6 +123,8 @@ ASDCP::AddDmsTrackGenericPartUtf8Text(Kumu::FileWriter& file_writer, MXF::OP1aHe
   StaticTrack *StaticTrack_obj = 0;
   header_part.GetMDObjectsByType(Dict->ul(MDD_StaticTrack), object_list);
   std::list<InterchangeObject*>::iterator j;
+  // start with 2 because there one other track in Material Package: Audio Essence track
+  ui32_t newTrackId = 2;
   for ( j = object_list.begin(); j != object_list.end(); ++j )
     {
       StaticTrack_obj = dynamic_cast<StaticTrack*>(*j);
@@ -128,8 +132,13 @@ ASDCP::AddDmsTrackGenericPartUtf8Text(Kumu::FileWriter& file_writer, MXF::OP1aHe
       if ( id_batch_contains(SourcePackage_obj->Tracks, StaticTrack_obj->InstanceUID)
 	   && StaticTrack_obj->TrackName.get() == rp2057_static_track_label )
 	{
-	  break;
+          newTrackId = StaticTrack_obj->TrackID;
+          break;
 	}
+      if (StaticTrack_obj->TrackID >= newTrackId)
+      {
+          newTrackId = StaticTrack_obj->TrackID + 1;
+      }
       StaticTrack_obj = 0;
     }
 
@@ -157,13 +166,15 @@ ASDCP::AddDmsTrackGenericPartUtf8Text(Kumu::FileWriter& file_writer, MXF::OP1aHe
       StaticTrack* static_track = new StaticTrack(Dict);
       header_part.AddChildObject(static_track);
       source_package.Tracks.push_back(static_track->InstanceUID);
-      static_track->TrackName = "Descriptive Track";
-      static_track->TrackID = 4;
+      static_track->TrackName = trackDescription;
+      static_track->TrackID = newTrackId;
 
       Sequence_obj = new Sequence(Dict);
       header_part.AddChildObject(Sequence_obj);
       static_track->Sequence = Sequence_obj->InstanceUID;
       Sequence_obj->DataDefinition = UL(Dict->ul(MDD_DescriptiveMetaDataDef));
+      Sequence_obj->Duration.set_has_value();
+      durationUpdateList.push_back(&Sequence_obj->Duration.get());
       header_part.m_Preface->DMSchemes.push_back(UL(Dict->ul(MDD_MXFTextBasedFramework)));
     }
 
@@ -174,6 +185,11 @@ ASDCP::AddDmsTrackGenericPartUtf8Text(Kumu::FileWriter& file_writer, MXF::OP1aHe
   Sequence_obj->StructuralComponents.push_back(Segment->InstanceUID);
   Segment->EventComment = rp2057_static_track_label;
   Segment->DataDefinition = UL(Dict->ul(MDD_DescriptiveMetaDataDef));
+  if (!Segment->Duration.empty())
+  {
+      durationUpdateList.push_back(&Segment->Duration.get());
+  }
+
 
   //
   TextBasedDMFramework *dmf_obj = new TextBasedDMFramework(Dict);
@@ -200,7 +216,7 @@ ASDCP::AddDmsTrackGenericPartUtf8Text(Kumu::FileWriter& file_writer, MXF::OP1aHe
       return RESULT_FORMAT;
     }
 
-  rip.PairArray.push_back(RIP::PartitionPair(max_sid + 1, file_writer.Tell()));
+  rip.PairArray.push_back(RIP::PartitionPair(max_sid + 1, file_writer.TellPosition()));
 
   // Add new GSTBS linked to DMF
   GenericStreamTextBasedSet *gst_obj = new GenericStreamTextBasedSet(Dict);
@@ -208,6 +224,7 @@ ASDCP::AddDmsTrackGenericPartUtf8Text(Kumu::FileWriter& file_writer, MXF::OP1aHe
   gst_obj->InstanceUID = dmf_obj->ObjectRef;
   gst_obj->GenericStreamSID = max_sid + 1;
   gst_obj->PayloadSchemeID = UL(Dict->ul(MDD_MXFTextBasedFramework));
+  gst_obj->TextDataDescription = dataDescription;
   
   return RESULT_OK;
 }
@@ -231,7 +248,7 @@ ASDCP::h__ASDCPWriter::CreateBodyPart(const MXF::Rational& EditRate, ui32_t Byte
     {
       // Body Partition
       m_BodyPart.EssenceContainers = m_HeaderPart.EssenceContainers;
-      m_BodyPart.ThisPartition = m_File.Tell();
+      m_BodyPart.ThisPartition = m_File.TellPosition();
       m_BodyPart.BodySID = 1;
       UL OPAtomUL(m_Dict->ul(MDD_OPAtom));
       m_BodyPart.OperationalPattern = OPAtomUL;
@@ -248,7 +265,7 @@ ASDCP::h__ASDCPWriter::CreateBodyPart(const MXF::Rational& EditRate, ui32_t Byte
   if ( ASDCP_SUCCESS(result) )
     {
       // Index setup
-      Kumu::fpos_t ECoffset = m_File.Tell();
+      Kumu::fpos_t ECoffset = m_File.TellPosition();
       m_FooterPart.IndexSID = 129;
 
       if ( BytesPerEditUnit == 0 )
@@ -326,7 +343,7 @@ ASDCP::h__ASDCPWriter::WriteASDCPFooter()
   m_EssenceDescriptor->ContainerDuration = m_FramesWritten;
   m_FooterPart.PreviousPartition = m_RIP.PairArray.back().ByteOffset;
 
-  Kumu::fpos_t here = m_File.Tell();
+  Kumu::fpos_t here = m_File.TellPosition();
   m_RIP.PairArray.push_back(RIP::PartitionPair(0, here)); // Last RIP Entry
   m_HeaderPart.FooterPartition = here;
 
@@ -392,6 +409,9 @@ ASDCP::Write_EKLV_Packet(Kumu::FileWriter& File, const ASDCP::Dictionary& Dict, 
 
   if ( Info.EncryptedEssence )
     {
+    #ifndef HAVE_OPENSSL
+      return RESULT_CRYPT_CTX;
+    #else
       if ( ! Ctx )
 	return RESULT_CRYPT_CTX;
 
@@ -479,6 +499,7 @@ ASDCP::Write_EKLV_Packet(Kumu::FileWriter& File, const ASDCP::Dictionary& Dict, 
 	  result = File.Writev(HMACOverhead.Data(), HMACOverhead.Length());
 	  StreamOffset += HMACOverhead.Length();
 	}
+#endif //HAVE_OPENSSL
     }
   else
     {

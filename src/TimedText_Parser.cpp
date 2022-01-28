@@ -39,7 +39,7 @@ using namespace ASDCP;
 
 using Kumu::DefaultLogSink;
 
-const char* c_dcst_namespace_name = "http://www.smpte-ra.org/schemas/428-7/2007/DCST";
+static const char* c_dcst_namespace_name = "http://www.smpte-ra.org/schemas/428-7/2007/DCST";
 
 //------------------------------------------------------------------------------------------
 
@@ -144,36 +144,37 @@ public:
   Result_t OpenRead(const std::string& xml_doc, const std::string& filename);
   Result_t ReadAncillaryResource(const byte_t* uuid, FrameBuffer& FrameBuf, const IResourceResolver& Resolver) const;
 };
-
-//
-bool
-get_UUID_from_element(XMLElement* Element, UUID& ID)
-{
-  assert(Element);
-  const char* p = Element->GetBody().c_str();
-
-  if ( strncmp(p, "urn:uuid:", 9) == 0 )
+namespace {
+    //
+    bool
+    get_UUID_from_element(XMLElement* Element, UUID& ID)
     {
-      p += 9;
-    }
-  
-  return ID.DecodeHex(p);
-}
+      assert(Element);
+      const char* p = Element->GetBody().c_str();
 
-//
-bool
-get_UUID_from_child_element(const char* name, XMLElement* Parent, UUID& outID)
-{
-  assert(name);
-  assert(Parent);
-  XMLElement* Child = Parent->GetChildWithName(name);
-
-  if ( Child == 0 )
-    {
-      return false;
+      if ( strncmp(p, "urn:uuid:", 9) == 0 )
+        {
+          p += 9;
+        }
+      
+      return ID.DecodeHex(p);
     }
 
-  return get_UUID_from_element(Child, outID);
+    //
+    bool
+    get_UUID_from_child_element(const char* name, XMLElement* Parent, UUID& outID)
+    {
+      assert(name);
+      assert(Parent);
+      XMLElement* Child = Parent->GetChildWithName(name);
+
+      if ( Child == 0 )
+        {
+          return false;
+        }
+
+      return get_UUID_from_element(Child, outID);
+    }
 }
 
 //

@@ -134,8 +134,8 @@ libasdcp_la_SOURCES = MPEG2_Parser.cpp MPEG.cpp JP2K_Codestream_Parser.cpp \
 	AtmosSyncChannel_Generator.cpp AtmosSyncChannel_Generator.h \
 	AtmosSyncChannel_Mixer.cpp AtmosSyncChannel_Mixer.h \
 	PCMDataProviders.cpp PCMDataProviders.h \
-	SyncEncoder.c SyncEncoder.h SyncCommon.h CRC16.c CRC16.h \
-	UUIDInformation.c UUIDInformation.h \
+	SyncEncoder.cpp SyncEncoder.h SyncCommon.h CRC16.cpp CRC16.h \
+	UUIDInformation.cpp UUIDInformation.h \
 	ST2095_PinkNoise.cpp
 
 if HAVE_OPENSSL

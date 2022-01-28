@@ -39,6 +39,10 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 static std::string MPEG_PACKAGE_LABEL = "File Package: SMPTE 381M frame wrapping of MPEG2 video elementary stream";
 static std::string PICT_DEF_LABEL = "Picture Track";
 
+namespace ASDCP {
+
+namespace MPEG2
+{
 //
 ASDCP::Result_t
 MD_to_MPEG2_VDesc(MXF::MPEG2VideoDescriptor* VDescObj, MPEG2::VideoDescriptor& VDesc)
@@ -111,6 +115,8 @@ MPEG2_VDesc_to_MD(MPEG2::VideoDescriptor& VDesc, MXF::MPEG2VideoDescriptor* VDes
   VDescObj->ProfileAndLevel = VDesc.ProfileAndLevel;
   return RESULT_OK;
 }
+} // namespace MPEG2
+} // namespace asdcp
 
 //
 std::ostream&
@@ -185,7 +191,7 @@ class ASDCP::MPEG2::MXFReader::h__Reader : public ASDCP::h__ASDCPReader
 public:
   VideoDescriptor m_VDesc;        // video parameter list
 
-  h__Reader(const Dictionary *d) : ASDCP::h__ASDCPReader(d) {}
+  h__Reader(const Dictionary *d, const Kumu::IFileReaderFactory& fileReaderFactory) : ASDCP::h__ASDCPReader(d, fileReaderFactory) {}
   virtual ~h__Reader() {}
   Result_t    OpenRead(const std::string&);
   Result_t    ReadFrame(ui32_t, FrameBuffer&, AESDecContext*, HMACContext*);
@@ -246,7 +252,7 @@ ASDCP::MPEG2::MXFReader::h__Reader::FindFrameGOPStart(ui32_t FrameNum, ui32_t& K
 {
   KeyFrameNum = 0;
 
-  if ( ! m_File.IsOpen() )
+  if ( ! m_File->IsOpen() )
     return RESULT_INIT;
 
   // look up frame index node
@@ -266,7 +272,7 @@ ASDCP::MPEG2::MXFReader::h__Reader::FindFrameGOPStart(ui32_t FrameNum, ui32_t& K
 ASDCP::Result_t
 ASDCP::MPEG2::MXFReader::h__Reader::FrameType(ui32_t FrameNum, FrameType_t& type)
 {
-  if ( ! m_File.IsOpen() )
+  if ( ! m_File->IsOpen() )
     return RESULT_INIT;
 
   // look up frame index node
@@ -289,7 +295,7 @@ ASDCP::MPEG2::MXFReader::h__Reader::ReadFrame(ui32_t FrameNum, FrameBuffer& Fram
 					      AESDecContext* Ctx, HMACContext* HMAC)
 {
   assert(m_Dict);
-  if ( ! m_File.IsOpen() )
+  if ( ! m_File->IsOpen() )
     return RESULT_INIT;
 
   Result_t result = ReadEKLVFrame(FrameNum, FrameBuf, m_Dict->ul(MDD_MPEG2Essence), Ctx, HMAC);
@@ -340,15 +346,15 @@ ASDCP::MPEG2::FrameBuffer::Dump(FILE* stream, ui32_t dump_len) const
 
 //------------------------------------------------------------------------------------------
 
-ASDCP::MPEG2::MXFReader::MXFReader()
+ASDCP::MPEG2::MXFReader::MXFReader(const Kumu::IFileReaderFactory& fileReaderFactory)
 {
-  m_Reader = new h__Reader(&DefaultCompositeDict());
+  m_Reader = new h__Reader(&DefaultCompositeDict(), fileReaderFactory);
 }
 
 
 ASDCP::MPEG2::MXFReader::~MXFReader()
 {
-  if ( m_Reader && m_Reader->m_File.IsOpen() )
+  if ( m_Reader && m_Reader->m_File->IsOpen() )
     m_Reader->Close();
 }
 
@@ -410,7 +416,7 @@ ASDCP::Result_t
 ASDCP::MPEG2::MXFReader::ReadFrame(ui32_t FrameNum, FrameBuffer& FrameBuf,
 				   AESDecContext* Ctx, HMACContext* HMAC) const
 {
-  if ( m_Reader && m_Reader->m_File.IsOpen() )
+  if ( m_Reader && m_Reader->m_File->IsOpen() )
     return m_Reader->ReadFrame(FrameNum, FrameBuf, Ctx, HMAC);
 
   return RESULT_INIT;
@@ -429,7 +435,7 @@ ASDCP::Result_t
 ASDCP::MPEG2::MXFReader::ReadFrameGOPStart(ui32_t FrameNum, FrameBuffer& FrameBuf,
 					   AESDecContext* Ctx, HMACContext* HMAC) const
 {
-  if ( m_Reader && m_Reader->m_File.IsOpen() )
+  if ( m_Reader && m_Reader->m_File->IsOpen() )
     return m_Reader->ReadFrameGOPStart(FrameNum, FrameBuf, Ctx, HMAC);
 
   return RESULT_INIT;
@@ -440,7 +446,7 @@ ASDCP::MPEG2::MXFReader::ReadFrameGOPStart(ui32_t FrameNum, FrameBuffer& FrameBu
 ASDCP::Result_t
 ASDCP::MPEG2::MXFReader::FindFrameGOPStart(ui32_t FrameNum, ui32_t& KeyFrameNum) const
 {
-  if ( m_Reader && m_Reader->m_File.IsOpen() )
+  if ( m_Reader && m_Reader->m_File->IsOpen() )
     return m_Reader->FindFrameGOPStart(FrameNum, KeyFrameNum);
 
   return RESULT_INIT;
@@ -452,7 +458,7 @@ ASDCP::MPEG2::MXFReader::FindFrameGOPStart(ui32_t FrameNum, ui32_t& KeyFrameNum)
 ASDCP::Result_t
 ASDCP::MPEG2::MXFReader::FillVideoDescriptor(VideoDescriptor& VDesc) const
 {
-  if ( m_Reader && m_Reader->m_File.IsOpen() )
+  if ( m_Reader && m_Reader->m_File->IsOpen() )
     {
       VDesc = m_Reader->m_VDesc;
       return RESULT_OK;
@@ -467,7 +473,7 @@ ASDCP::MPEG2::MXFReader::FillVideoDescriptor(VideoDescriptor& VDesc) const
 ASDCP::Result_t
 ASDCP::MPEG2::MXFReader::FillWriterInfo(WriterInfo& Info) const
 {
-  if ( m_Reader && m_Reader->m_File.IsOpen() )
+  if ( m_Reader && m_Reader->m_File->IsOpen() )
     {
       Info = m_Reader->m_Info;
       return RESULT_OK;
@@ -480,7 +486,7 @@ ASDCP::MPEG2::MXFReader::FillWriterInfo(WriterInfo& Info) const
 void
 ASDCP::MPEG2::MXFReader::DumpHeaderMetadata(FILE* stream) const
 {
-  if ( m_Reader->m_File.IsOpen() )
+  if ( m_Reader->m_File->IsOpen() )
     m_Reader->m_HeaderPart.Dump(stream);
 }
 
@@ -489,7 +495,7 @@ ASDCP::MPEG2::MXFReader::DumpHeaderMetadata(FILE* stream) const
 void
 ASDCP::MPEG2::MXFReader::DumpIndex(FILE* stream) const
 {
-  if ( m_Reader->m_File.IsOpen() )
+  if ( m_Reader->m_File->IsOpen() )
     m_Reader->m_IndexAccess.Dump(stream);
 }
 
@@ -497,7 +503,7 @@ ASDCP::MPEG2::MXFReader::DumpIndex(FILE* stream) const
 ASDCP::Result_t
 ASDCP::MPEG2::MXFReader::Close() const
 {
-  if ( m_Reader && m_Reader->m_File.IsOpen() )
+  if ( m_Reader && m_Reader->m_File->IsOpen() )
     {
       m_Reader->Close();
       return RESULT_OK;

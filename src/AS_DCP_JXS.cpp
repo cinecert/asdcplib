@@ -62,8 +62,8 @@ class ih__Reader : public ASDCP::h__ASDCPReader
 
 public:
 
-  ih__Reader(const Dictionary *d) :
-    ASDCP::h__ASDCPReader(d), m_EssenceDescriptor(0), m_EssenceSubDescriptor(0), m_Format(ESS_UNKNOWN) {}
+  ih__Reader(const Dictionary *d, const Kumu::IFileReaderFactory& fileReaderFactory) :
+    ASDCP::h__ASDCPReader(d, fileReaderFactory), m_EssenceDescriptor(0), m_EssenceSubDescriptor(0), m_Format(ESS_UNKNOWN) {}
 
   virtual ~ih__Reader() {}
 
@@ -243,7 +243,7 @@ ASDCP::Result_t
 ih__Reader::ReadFrame(ui32_t FrameNum, JXS::FrameBuffer& FrameBuf,
 		      AESDecContext* Ctx, HMACContext* HMAC)
 {
-  if ( ! m_File.IsOpen() )
+  if ( ! m_File->IsOpen() )
     return RESULT_INIT;
 
   assert(m_Dict);
@@ -253,7 +253,7 @@ ih__Reader::ReadFrame(ui32_t FrameNum, JXS::FrameBuffer& FrameBuf,
 //
 Result_t ih__Reader::CalcFrameBufferSize(ui64_t &size)
 {
-  if ( ! m_File.IsOpen() )
+  if ( ! m_File->IsOpen() )
     return RESULT_INIT;
 
   assert(m_Dict);
@@ -267,21 +267,21 @@ class ASDCP::JXS::MXFReader::h__Reader : public ih__Reader
   h__Reader();
 
 public:
-  h__Reader(const Dictionary *d) : ih__Reader(d) {}
+  h__Reader(const Dictionary *d, const Kumu::IFileReaderFactory& fileReaderFactory) : ih__Reader(d, fileReaderFactory) {}
 };
 
 
 //------------------------------------------------------------------------------------------
 
-ASDCP::JXS::MXFReader::MXFReader()
+ASDCP::JXS::MXFReader::MXFReader(const Kumu::IFileReaderFactory& fileReaderFactory)
 {
-  m_Reader = new h__Reader(&DefaultCompositeDict());
+  m_Reader = new h__Reader(&DefaultCompositeDict(), fileReaderFactory);
 }
 
 
 ASDCP::JXS::MXFReader::~MXFReader()
 {
-  if ( m_Reader && m_Reader->m_File.IsOpen() )
+  if ( m_Reader && m_Reader->m_File->IsOpen() )
     m_Reader->Close();
 }
 
@@ -343,7 +343,7 @@ ASDCP::Result_t
 ASDCP::JXS::MXFReader::ReadFrame(ui32_t FrameNum, FrameBuffer& FrameBuf,
 				   AESDecContext* Ctx, HMACContext* HMAC) const
 {
-  if ( m_Reader && m_Reader->m_File.IsOpen() )
+  if ( m_Reader && m_Reader->m_File->IsOpen() )
     return m_Reader->ReadFrame(FrameNum, FrameBuf, Ctx, HMAC);
 
   return RESULT_INIT;
@@ -353,7 +353,7 @@ ASDCP::JXS::MXFReader::ReadFrame(ui32_t FrameNum, FrameBuffer& FrameBuf,
 ASDCP::Result_t
 ASDCP::JXS::MXFReader::CalcFrameBufferSize(ui64_t &size) const
 {
-  if ( m_Reader && m_Reader->m_File.IsOpen() )
+  if ( m_Reader && m_Reader->m_File->IsOpen() )
     return m_Reader->CalcFrameBufferSize(size);
 
   return RESULT_INIT;
@@ -371,7 +371,7 @@ ASDCP::JXS::MXFReader::LocateFrame(ui32_t FrameNum, Kumu::fpos_t& streamOffset, 
 ASDCP::Result_t
 ASDCP::JXS::MXFReader::FillWriterInfo(WriterInfo& Info) const
 {
-  if ( m_Reader && m_Reader->m_File.IsOpen() )
+  if ( m_Reader && m_Reader->m_File->IsOpen() )
     {
       Info = m_Reader->m_Info;
       return RESULT_OK;
@@ -384,7 +384,7 @@ ASDCP::JXS::MXFReader::FillWriterInfo(WriterInfo& Info) const
 void
 ASDCP::JXS::MXFReader::DumpHeaderMetadata(FILE* stream) const
 {
-  if ( m_Reader->m_File.IsOpen() )
+  if ( m_Reader->m_File->IsOpen() )
     m_Reader->m_HeaderPart.Dump(stream);
 }
 
@@ -393,7 +393,7 @@ ASDCP::JXS::MXFReader::DumpHeaderMetadata(FILE* stream) const
 void
 ASDCP::JXS::MXFReader::DumpIndex(FILE* stream) const
 {
-  if ( m_Reader->m_File.IsOpen() )
+  if ( m_Reader->m_File->IsOpen() )
     m_Reader->m_IndexAccess.Dump(stream);
 }
 
@@ -401,7 +401,7 @@ ASDCP::JXS::MXFReader::DumpIndex(FILE* stream) const
 ASDCP::Result_t
 ASDCP::JXS::MXFReader::Close() const
 {
-  if ( m_Reader && m_Reader->m_File.IsOpen() )
+  if ( m_Reader && m_Reader->m_File->IsOpen() )
     {
       m_Reader->Close();
       return RESULT_OK;

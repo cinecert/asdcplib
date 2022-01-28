@@ -34,9 +34,13 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <memory.h>
 
+using namespace ASDCP;
+
+static
 void ConstructFrame(LPSYNCENCODER	pSyncEncoder,
 					INT				iFrameIndex);
 
+static
 FLOAT SEWriteBits(	INT			iSampleRate,		/* In:	Sample rate of signal */
 					FLOAT		*pfAudioBuffer,		/* Out: Audio buffer containing signal */
 					INT			iBits,				/* In:	Number of bits to write */
@@ -45,7 +49,7 @@ FLOAT SEWriteBits(	INT			iSampleRate,		/* In:	Sample rate of signal */
 
 
 
-INT SyncEncoderInit(LPSYNCENCODER		pSyncEncoder,	/* Out: SYNCENCODER structure to be initialized */
+INT ASDCP::SyncEncoderInit(LPSYNCENCODER		pSyncEncoder,	/* Out: SYNCENCODER structure to be initialized */
 					INT					iSampleRate,	/* In:	Signal sample rate */
 					INT					iFrameRate,		/* In:	frame rate */
 					LPUUIDINFORMATION	pUUID)			/* In:	UUID */
@@ -142,7 +146,7 @@ INT SyncEncoderInit(LPSYNCENCODER		pSyncEncoder,	/* Out: SYNCENCODER structure t
 	return pSyncEncoder->iError;
 }
 
-INT GetSyncEncoderAudioBufferLength(LPSYNCENCODER pSyncEncoder)	/* In: Sync encoder structure */
+INT ASDCP::GetSyncEncoderAudioBufferLength(LPSYNCENCODER pSyncEncoder)	/* In: Sync encoder structure */
 {
 	if(pSyncEncoder->iError != SYNC_ENCODER_ERROR_NONE){
 		return pSyncEncoder->iError;
@@ -153,7 +157,7 @@ INT GetSyncEncoderAudioBufferLength(LPSYNCENCODER pSyncEncoder)	/* In: Sync enco
 
 
 
-INT EncodeSync(	LPSYNCENCODER	pSyncEncoder,	/* In:	Sync encoder structure */
+INT ASDCP::EncodeSync(	LPSYNCENCODER	pSyncEncoder,	/* In:	Sync encoder structure */
 				INT				iBufferLength,	/* In:	Length of audio buffer */
 				FLOAT			*pfAudioBuffer,	/* Out: Audio buffer with signal */
 				INT				iFrameIndex)	/* In:	Frame Index */

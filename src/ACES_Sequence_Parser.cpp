@@ -32,57 +32,57 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <assert.h>
 #include <KM_log.h>
 
-
 using Kumu::DefaultLogSink;
 
-
-class FileList : public std::list<std::string>
-{
-  std::string m_DirName;
-
-public:
-  FileList() {}
-  ~FileList() {}
-
-  const FileList& operator=(const std::list<std::string>& pathlist)
-  {
-    std::list<std::string>::const_iterator i;
-    for(i = pathlist.begin(); i != pathlist.end(); i++)
-      push_back(*i);
-    return *this;
-  }
-
-  //
-  ASDCP::Result_t InitFromDirectory(const std::string& path)
-  {
-    char next_file[Kumu::MaxFilePath];
-    Kumu::DirScanner Scanner;
-
-    ASDCP::Result_t result = Scanner.Open(path);
-
-    if(ASDCP_SUCCESS(result))
+namespace {
+    class FileList : public std::list<std::string>
     {
-      m_DirName = path;
+      std::string m_DirName;
 
-      while(ASDCP_SUCCESS(Scanner.GetNext(next_file)))
+    public:
+      FileList() {}
+      ~FileList() {}
+
+      const FileList& operator=(const std::list<std::string>& pathlist)
       {
-        if(next_file[0] == '.') // no hidden files or internal links
-          continue;
-
-        std::string Str(m_DirName);
-        Str += "/";
-        Str += next_file;
-
-        if(!Kumu::PathIsDirectory(Str))
-          push_back(Str);
+        std::list<std::string>::const_iterator i;
+        for(i = pathlist.begin(); i != pathlist.end(); i++)
+          push_back(*i);
+        return *this;
       }
 
-      sort();
-    }
+      //
+      ASDCP::Result_t InitFromDirectory(const std::string& path)
+      {
+        char next_file[Kumu::MaxFilePath];
+        Kumu::DirScanner Scanner;
 
-    return result;
-  }
-};
+        ASDCP::Result_t result = Scanner.Open(path);
+
+        if(ASDCP_SUCCESS(result))
+        {
+          m_DirName = path;
+
+          while(ASDCP_SUCCESS(Scanner.GetNext(next_file)))
+          {
+            if(next_file[0] == '.') // no hidden files or internal links
+              continue;
+
+            std::string Str(m_DirName);
+            Str += "/";
+            Str += next_file;
+
+            if(!Kumu::PathIsDirectory(Str))
+              push_back(Str);
+          }
+
+          sort();
+        }
+
+        return result;
+      }
+    };
+}
 
 
 class AS_02::ACES::SequenceParser::h__SequenceParser

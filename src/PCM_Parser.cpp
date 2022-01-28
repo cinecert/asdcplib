@@ -45,14 +45,14 @@ using namespace ASDCP::RF64;
 //
 class ASDCP::PCM::WAVParser::h__WAVParser
 {
-  Kumu::FileReader m_FileReader;
-  bool             m_EOF;
-  ui32_t           m_DataStart;
-  ui64_t           m_DataLength;
-  ui64_t           m_ReadCount;
-  ui32_t           m_FrameBufferSize;
-  ui32_t           m_FramesRead;
-  Rational         m_PictureRate;
+  Kumu::FileReader   m_FileReader;
+  bool               m_EOF;
+  ui32_t             m_DataStart;
+  ui64_t             m_DataLength;
+  ui64_t             m_ReadCount;
+  ui32_t             m_FrameBufferSize;
+  ui32_t             m_FramesRead;
+  Rational           m_PictureRate;
 
   ASDCP_NO_COPY_CONSTRUCT(h__WAVParser);
 
@@ -118,7 +118,7 @@ ASDCP::PCM::WAVParser::h__WAVParser::OpenRead(const std::string& filename, const
 	  ASDCP::AIFF::SimpleAIFFHeader AIFFHeader;
 	  m_FileReader.Seek(0);
 
-	  result = AIFFHeader.ReadFromFile(m_FileReader, &m_DataStart);
+      result = AIFFHeader.ReadFromFile(m_FileReader, &m_DataStart);
 
 	  if ( ASDCP_SUCCESS(result) )
 	    {
@@ -133,7 +133,7 @@ ASDCP::PCM::WAVParser::h__WAVParser::OpenRead(const std::string& filename, const
 	    {
 	      SimpleRF64Header RF64Header;
 	      m_FileReader.Seek(0);
-	      result = RF64Header.ReadFromFile(m_FileReader, &m_DataStart);
+          result = RF64Header.ReadFromFile(m_FileReader, &m_DataStart);
 
 	      if ( ASDCP_SUCCESS(result) )
 		{

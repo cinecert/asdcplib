@@ -74,7 +74,7 @@ namespace ASDCP
 	  }
       	  
 	  Result_t  ReadFromBuffer(const byte_t* buf, ui32_t buf_len, ui32_t* data_start);
-	  Result_t  ReadFromFile(const Kumu::FileReader& InFile, ui32_t* data_start);
+      Result_t  ReadFromFile(const Kumu::IFileReader& InFile, ui32_t* data_start);
 	  void      FillADesc(ASDCP::PCM::AudioDescriptor& ADesc, Rational PictureRate) const;
 	};
 
@@ -112,7 +112,7 @@ namespace ASDCP
 	  SimpleWaveHeader(ASDCP::PCM::AudioDescriptor& ADesc);
 	  
 	  Result_t  ReadFromBuffer(const byte_t* buf, ui32_t buf_len, ui32_t* data_start);
-	  Result_t  ReadFromFile(const Kumu::FileReader& InFile, ui32_t* data_start);
+      Result_t  ReadFromFile(const Kumu::IFileReader& InFile, ui32_t* data_start);
 	  Result_t  WriteToFile(Kumu::FileWriter& OutFile) const;
 	  void      FillADesc(ASDCP::PCM::AudioDescriptor& ADesc, Rational PictureRate) const;
 	};
@@ -148,7 +148,7 @@ namespace ASDCP
 	  SimpleRF64Header(ASDCP::PCM::AudioDescriptor& ADesc);
 
 	  Result_t  ReadFromBuffer(const byte_t* buf, ui32_t buf_len, ui32_t* data_start);
-	  Result_t  ReadFromFile(const Kumu::FileReader& InFile, ui32_t* data_start);
+      Result_t  ReadFromFile(const Kumu::IFileReader& InFile, ui32_t* data_start);
 	  Result_t  WriteToFile(Kumu::FileWriter& OutFile) const;
 	  void      FillADesc(ASDCP::PCM::AudioDescriptor& ADesc, Rational PictureRate) const;
 

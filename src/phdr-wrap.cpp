@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2011-2018, John Hurst
+Copyright (c) 2011-2021, John Hurst
 
 All rights reserved.
 
@@ -55,7 +55,7 @@ RationalToString(const ASDCP::Rational& r, char* buf, const ui32_t& len)
 //
 // command line option parser class
 
-static const char* PROGRAM_NAME = "as-02-wrap";  // program name for messages
+static const char* PROGRAM_NAME = "phdr-wrap";  // program name for messages
 
 // local program identification info written to file headers
 class MyInfo : public WriterInfo
@@ -100,7 +100,7 @@ banner(FILE* stream = stdout)
 {
   fprintf(stream, "\n\
 %s (asdcplib %s)\n\n\
-Copyright (c) 2011-2018, John Hurst\n\n\
+Copyright (c) 2011-2021, John Hurst\n\n\
 asdcplib may be copied only under the terms of the license found at\n\
 the top of every file in the asdcplib distribution kit.\n\n\
 Specify the -h (help) option for further information about %s\n\n",

@@ -33,6 +33,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <iostream>
 #include <iomanip>
 #include <stdexcept>
+#include "AS_02_internal.h"
 
 namespace Kumu {
   class RuntimeError : public std::runtime_error {
@@ -45,6 +46,31 @@ namespace Kumu {
   };
 }
 
+//
+class AS_02::IAB::MXFWriter::h__Writer : public h__AS02Writer<AS_02::MXF::AS02IndexWriterVBR>
+{
+  ASDCP_NO_COPY_CONSTRUCT(h__Writer);
+  h__Writer();
+public:
+    WriterState_t m_State;
+
+  h__Writer(const Dictionary *d) : h__AS02Writer(d), m_State(ST_BEGIN) {}
+  virtual ~h__Writer(){}
+};
+
+//
+class AS_02::IAB::MXFReader::h__Reader : public h__AS02Reader
+{
+  ASDCP_NO_COPY_CONSTRUCT(h__Reader);
+  h__Reader();
+public:
+  ReaderState_t m_State;
+
+  h__Reader(const Dictionary *d, const Kumu::IFileReaderFactory& fileReaderFactory) :
+    h__AS02Reader(d, fileReaderFactory), m_State(ST_READER_BEGIN) {}
+  virtual ~h__Reader(){}
+};
+
 //------------------------------------------------------------------------------------------
 
 /* Size of the BER Length of the clip */
@@ -54,14 +80,14 @@ static const int CLIP_BER_LENGTH_SIZE = 8;
 static const int RESERVED_KL_SIZE = ASDCP::SMPTE_UL_LENGTH + CLIP_BER_LENGTH_SIZE;
 
 
-AS_02::IAB::MXFWriter::MXFWriter() : m_ClipStart(0), m_State(ST_BEGIN) {
+AS_02::IAB::MXFWriter::MXFWriter() : m_ClipStart(0), m_Writer(0) {
 }
 
 AS_02::IAB::MXFWriter::~MXFWriter() {}
 
 const ASDCP::MXF::OP1aHeader&
 AS_02::IAB::MXFWriter::OP1aHeader() const {
-  if (this->m_State == ST_BEGIN) {
+  if (this->m_Writer->m_State == ST_BEGIN) {
     throw Kumu::RuntimeError(Kumu::RESULT_INIT);
   }
 
@@ -70,7 +96,7 @@ AS_02::IAB::MXFWriter::OP1aHeader() const {
 
 const ASDCP::MXF::RIP&
 AS_02::IAB::MXFWriter::RIP() const {
-  if (this->m_State == ST_BEGIN) {
+  if (this->m_Writer->m_State == ST_BEGIN) {
     throw Kumu::RuntimeError(Kumu::RESULT_INIT);
   }
 
@@ -88,7 +114,8 @@ AS_02::IAB::MXFWriter::OpenWrite(
 
   /* are we already running */
 
-  if (this->m_State != ST_BEGIN) {
+  if ( this->m_Writer && this->m_Writer->m_State != ST_BEGIN ) {
+    KM_RESULT_STATE_HERE();
     return Kumu::RESULT_STATE;
   }
 
@@ -177,7 +204,7 @@ AS_02::IAB::MXFWriter::OpenWrite(
 
     /* start the clip */
 
-    this->m_ClipStart = this->m_Writer->m_File.Tell();
+    this->m_ClipStart = this->m_Writer->m_File.TellPosition();
 
     /* reserve space for the KL of the KLV, which will be written later during finalization */
 
@@ -197,7 +224,7 @@ AS_02::IAB::MXFWriter::OpenWrite(
 
     this->m_Writer->m_StreamOffset = RESERVED_KL_SIZE;
 
-    this->m_State = ST_READY;
+    this->m_Writer->m_State = ST_READY;
 
   } catch (Kumu::RuntimeError e) {
 
@@ -213,54 +240,63 @@ AS_02::IAB::MXFWriter::OpenWrite(
 
 Result_t
 AS_02::IAB::MXFWriter::WriteFrame(const ui8_t* frame, ui32_t sz) {
-
   /* are we running */
 
-  if (this->m_State == ST_BEGIN) {
+  if (this->m_Writer->m_State == ST_BEGIN) {
     return Kumu::RESULT_INIT;
+  }
+
+  if (sz == 0) {
+    DefaultLogSink().Error("The frame buffer size is zero.\n");
+    return RESULT_PARAM;
   }
 
   Result_t result = Kumu::RESULT_OK;
 
   /* update the index */
-
   IndexTableSegment::IndexEntry Entry;
 
   Entry.StreamOffset = this->m_Writer->m_StreamOffset;
 
   this->m_Writer->m_IndexWriter.PushIndexEntry(Entry);
 
-  try {
+  /* write the frame */
 
-    /* write the frame */
+  result = this->m_Writer->m_File.Write(frame, sz);
 
-    result = this->m_Writer->m_File.Write(frame, sz);
-
-    if (result.Failure()) {
-      throw Kumu::RuntimeError(result);
-    }
-
-    /* increment the frame counter */
-
-    this->m_Writer->m_FramesWritten++;
-
-    /* increment stream offset */
-
-    this->m_Writer->m_StreamOffset += sz;
-
-    /* we are running now */
-
-    this->m_State = ST_RUNNING;
-
-  } catch (Kumu::RuntimeError e) {
-
+  if (result.Failure()) {
     this->Reset();
-
-    return e.GetResult();
-
+    return result;
   }
 
+  /* increment the frame counter */
+
+  this->m_Writer->m_FramesWritten++;
+
+  /* increment stream offset */
+
+  this->m_Writer->m_StreamOffset += sz;
+
+  /* we are running now */
+
+  this->m_Writer->m_State = ST_RUNNING;
+
   return result;
+}
+
+Result_t AS_02::IAB::MXFWriter::WriteFrame(const ASDCP::FrameBuffer& frame) {
+  return WriteFrame(frame.RoData(), frame.Size());
+}
+
+Result_t
+AS_02::IAB::MXFWriter::AddDmsGenericPartUtf8Text(const ASDCP::FrameBuffer& FrameBuf, ASDCP::AESEncContext* Ctx,
+                          ASDCP::HMACContext* HMAC, const std::string& trackDescription, const std::string& dataDescription)
+{
+  if ( m_Writer.empty() )
+    return RESULT_INIT;
+
+  m_Writer->FlushIndexPartition();
+  return m_Writer->AddDmsGenericPartUtf8Text(FrameBuf, Ctx, HMAC, trackDescription, dataDescription);
 }
 
 Result_t
@@ -268,9 +304,14 @@ AS_02::IAB::MXFWriter::Finalize() {
 
   /* are we running */
 
-  if (this->m_State == ST_BEGIN) {
+  if (this->m_Writer->m_State == ST_BEGIN) {
     return Kumu::RESULT_INIT;
   }
+  if (this->m_Writer->m_State != ST_RUNNING) {
+    KM_RESULT_STATE_HERE();
+    return RESULT_STATE;
+  }
+
 
   Result_t result = RESULT_OK;
 
@@ -278,7 +319,7 @@ AS_02::IAB::MXFWriter::Finalize() {
 
     /* write clip length */
 
-    ui64_t current_position = this->m_Writer->m_File.Tell();
+    ui64_t current_position = this->m_Writer->m_File.TellPosition();
 
     result = this->m_Writer->m_File.Seek(m_ClipStart + ASDCP::SMPTE_UL_LENGTH);
 
@@ -329,21 +370,25 @@ AS_02::IAB::MXFWriter::Finalize() {
 
 void
 AS_02::IAB::MXFWriter::Reset() {
-  this->m_Writer.set(NULL);
-  this->m_State = ST_BEGIN;
+  this->m_Writer.set(0);
 }
 
 
 //------------------------------------------------------------------------------------------
 
 
-AS_02::IAB::MXFReader::MXFReader() : m_State(ST_READER_BEGIN) {}
+AS_02::IAB::MXFReader::MXFReader(const Kumu::IFileReaderFactory& fileReaderFactory) :
+  m_FileReaderFactory(fileReaderFactory), m_Reader(0) {}
 
-AS_02::IAB::MXFReader::~MXFReader() {}
+AS_02::IAB::MXFReader::~MXFReader() {
+    if ( m_Reader && m_Reader->m_File->IsOpen()) {
+      m_Reader->Close();
+    }
+}
 
 ASDCP::MXF::OP1aHeader&
 AS_02::IAB::MXFReader::OP1aHeader() const {
-  if (this->m_State == ST_READER_BEGIN) {
+  if (this->m_Reader->m_State == ST_READER_BEGIN) {
     throw Kumu::RuntimeError(Kumu::RESULT_INIT);
   }
 
@@ -352,7 +397,7 @@ AS_02::IAB::MXFReader::OP1aHeader() const {
 
 const ASDCP::MXF::RIP&
 AS_02::IAB::MXFReader::RIP() const {
-  if (this->m_State == ST_READER_BEGIN) {
+  if (this->m_Reader->m_State == ST_READER_BEGIN) {
     throw Kumu::RuntimeError(Kumu::RESULT_INIT);
   }
 
@@ -364,7 +409,8 @@ AS_02::IAB::MXFReader::OpenRead(const std::string& filename) {
 
   /* are we already running */
 
-  if (this->m_State != ST_READER_BEGIN) {
+  if ( this->m_Reader && this->m_Reader->m_State != ST_READER_BEGIN ) {
+    KM_RESULT_STATE_HERE();
     return Kumu::RESULT_STATE;
   }
 
@@ -372,24 +418,23 @@ AS_02::IAB::MXFReader::OpenRead(const std::string& filename) {
 
   /* initialize the writer */
 
-  this->m_Reader = new h__Reader(&DefaultCompositeDict());
+  this->m_Reader = new h__Reader(&DefaultCompositeDict(), m_FileReaderFactory);
 
   try {
 
     result = this->m_Reader->OpenMXFRead(filename);
 
-    if (result.Failure()) {
-      throw Kumu::RuntimeError(result);
-    }
-
     InterchangeObject* tmp_iobj = 0;
 
-    this->m_Reader->m_HeaderPart.GetMDObjectByType(
-      this->m_Reader->m_Dict->Type(MDD_IABEssenceDescriptor).ul,
-      &tmp_iobj
+    if ( ASDCP_SUCCESS(result)){
+      this->m_Reader->m_HeaderPart.GetMDObjectByType(
+        this->m_Reader->m_Dict->Type(MDD_IABEssenceDescriptor).ul,
+        &tmp_iobj
     );
+    }
 
     if (!tmp_iobj) {
+      DefaultLogSink().Error("IABEssenceDescriptor object not found in IMF/IAB MXF file.\n");
       throw Kumu::RuntimeError(Kumu::RESULT_FAIL);
     }
 
@@ -399,6 +444,7 @@ AS_02::IAB::MXFReader::OpenRead(const std::string& filename) {
     );
 
     if (!tmp_iobj) {
+      DefaultLogSink().Error("IABSoundfieldLabelSubDescriptor object not found.\n");
       throw Kumu::RuntimeError(Kumu::RESULT_FAIL);
     }
 
@@ -415,11 +461,9 @@ AS_02::IAB::MXFReader::OpenRead(const std::string& filename) {
 
     /* invalidate current frame */
 
-    this->m_CurrentFrameIndex = -1;
-
     /* we are ready */
 
-    this->m_State = ST_READER_READY;
+    this->m_Reader->m_State = ST_READER_READY;
 
   } catch (Kumu::RuntimeError e) {
 
@@ -437,7 +481,7 @@ AS_02::IAB::MXFReader::Close() {
 
   /* are we already running */
 
-  if (this->m_State == ST_READER_BEGIN) {
+  if (this->m_Reader->m_State == ST_READER_BEGIN) {
     return Kumu::RESULT_INIT;
   }
 
@@ -451,7 +495,7 @@ Result_t AS_02::IAB::MXFReader::GetFrameCount(ui32_t& frameCount) const {
 
   /* are we already running */
 
-  if (this->m_State == ST_READER_BEGIN) {
+  if (this->m_Reader->m_State == ST_READER_BEGIN) {
     return Kumu::RESULT_INIT;
   }
 
@@ -460,141 +504,168 @@ Result_t AS_02::IAB::MXFReader::GetFrameCount(ui32_t& frameCount) const {
   return Kumu::RESULT_OK;
 }
 
-Result_t
-AS_02::IAB::MXFReader::ReadFrame(ui32_t frame_number, AS_02::IAB::MXFReader::Frame& frame) {
+/* Anonymous namespace with ReadFrame helpers */
+namespace {
+  bool checkFrameCapacity(ASDCP::FrameBuffer& frame, size_t size, bool reallocate_if_needed) {
 
-  /* are we already running */
-
-  if (this->m_State == ST_READER_BEGIN) {
-    return Kumu::RESULT_INIT;
+    if (frame.Capacity() < size) {
+      if (!reallocate_if_needed) {
+        return false;
+      }
+      Result_t result = frame.Capacity(size);
+      return result == RESULT_OK;
+    }
+    return true;
   }
 
-  Result_t result = RESULT_OK;
+  Result_t
+  ReadFrameImpl(ui32_t frame_number, ASDCP::FrameBuffer& frame, ReaderState_t& reader_state, AS_02::h__AS02Reader *reader, bool reallocate_if_needed) {
+    assert(reader);
+    /* are we already running */
 
-  /* have we already read the frame */
+    if (reader_state == ST_READER_BEGIN) {
+      return Kumu::RESULT_INIT;
+    }
 
-  if (frame_number != this->m_CurrentFrameIndex) {
+    Result_t result = RESULT_OK;
 
-    try {
+    // look up frame index node
+    IndexTableSegment::IndexEntry index_entry;
 
-      // look up frame index node
-      IndexTableSegment::IndexEntry index_entry;
+    result = reader->m_IndexAccess.Lookup(frame_number, index_entry);
 
-      result = this->m_Reader->m_IndexAccess.Lookup(frame_number, index_entry);
+    if (result.Failure()) {
+      DefaultLogSink().Error("Frame value out of range: %u\n", frame_number);
+      return result;
+    }
 
-      if (result.Failure()) {
-        DefaultLogSink().Error("Frame value out of range: %u\n", frame_number);
-        throw Kumu::RuntimeError(result);
+    result = reader->m_File->Seek(index_entry.StreamOffset);
+
+    if (result.Failure()) {
+      DefaultLogSink().Error("Cannot seek to stream offset: %u\n", index_entry.StreamOffset);
+      return result;
+    }
+
+    /* read the preamble info */
+
+    const int preambleTLLen = 5;
+    const int frameTLLen = 5;
+
+    ui32_t buffer_offset = 0;
+
+    if (!checkFrameCapacity(frame, preambleTLLen, reallocate_if_needed)) {
+        return RESULT_SMALLBUF;
+    }
+
+    result = reader->m_File->Read(&frame.Data()[buffer_offset], preambleTLLen);
+
+    if (result.Failure()) {
+      DefaultLogSink().Error("Error reading IA Frame preamble\n", index_entry.StreamOffset);
+      return result;
+    }
+
+    ui32_t preambleLen = ((ui32_t)frame.Data()[1 + buffer_offset] << 24) +
+      ((ui32_t)frame.Data()[2 + buffer_offset] << 16) +
+      ((ui32_t)frame.Data()[3 + buffer_offset] << 8) +
+      (ui32_t)frame.Data()[4 + buffer_offset];
+
+    buffer_offset += preambleTLLen;
+
+    /* read the preamble*/
+
+    if (preambleLen > 0) {
+
+      if (!checkFrameCapacity(frame, preambleTLLen + preambleLen, reallocate_if_needed)) {
+        return RESULT_SMALLBUF;
       }
 
-      result = this->m_Reader->m_File.Seek(index_entry.StreamOffset);
-
-      if (result.Failure()) {
-        DefaultLogSink().Error("Cannot seek to stream offset: %u\n", index_entry.StreamOffset);
-        throw Kumu::RuntimeError(result);
-      }
-
-      /* read the preamble info */
-
-      const int preambleTLLen = 5;
-      const int frameTLLen = 5;
-
-      ui32_t buffer_offset = 0;
-
-      this->m_CurrentFrameBuffer.resize(preambleTLLen);
-
-      result = this->m_Reader->m_File.Read(&this->m_CurrentFrameBuffer[buffer_offset], preambleTLLen);
+      result = reader->m_File->Read(&frame.Data()[buffer_offset], preambleLen);
 
       if (result.Failure()) {
         DefaultLogSink().Error("Error reading IA Frame preamble\n", index_entry.StreamOffset);
-        throw Kumu::RuntimeError(result);
+        return result;
       }
 
-      ui32_t preambleLen = ((ui32_t)this->m_CurrentFrameBuffer[1 + buffer_offset] << 24) +
-        ((ui32_t)this->m_CurrentFrameBuffer[2 + buffer_offset] << 16) +
-        ((ui32_t)this->m_CurrentFrameBuffer[3 + buffer_offset] << 8) +
-        (ui32_t)this->m_CurrentFrameBuffer[4 + buffer_offset];
-
-      buffer_offset += preambleTLLen;
-
-      /* read the preamble*/
-
-      if (preambleLen > 0) {
-
-        this->m_CurrentFrameBuffer.resize(preambleTLLen + preambleLen);
-
-        result = this->m_Reader->m_File.Read(&this->m_CurrentFrameBuffer[buffer_offset], preambleLen);
-
-        if (result.Failure()) {
-          DefaultLogSink().Error("Error reading IA Frame preamble\n", index_entry.StreamOffset);
-          throw Kumu::RuntimeError(result);
-        }
-
-        buffer_offset += preambleLen;
-
-      }
-
-      /* read the IA Frame info */
-
-      this->m_CurrentFrameBuffer.resize(preambleTLLen + preambleLen + frameTLLen);
-
-      result = this->m_Reader->m_File.Read(&this->m_CurrentFrameBuffer[buffer_offset], frameTLLen);
-
-      if (result.Failure()) {
-        DefaultLogSink().Error("Error reading IA Frame data\n", index_entry.StreamOffset);
-        throw Kumu::RuntimeError(result);
-      }
-
-      ui32_t frameLen = ((ui32_t)this->m_CurrentFrameBuffer[buffer_offset + 1] << 24) +
-        ((ui32_t)this->m_CurrentFrameBuffer[buffer_offset + 2] << 16) +
-        ((ui32_t)this->m_CurrentFrameBuffer[buffer_offset + 3] << 8) +
-        (ui32_t)this->m_CurrentFrameBuffer[buffer_offset + 4];
-
-      buffer_offset += frameTLLen;
-
-      /* read the IA Frame */
-
-      if (frameLen > 0) {
-
-        this->m_CurrentFrameBuffer.resize(preambleTLLen + preambleLen + frameTLLen + frameLen);
-
-        result = this->m_Reader->m_File.Read(&this->m_CurrentFrameBuffer[buffer_offset], frameLen);
-
-        if (result.Failure()) {
-          DefaultLogSink().Error("Error reading IA Frame data\n", index_entry.StreamOffset);
-          throw Kumu::RuntimeError(result);
-        }
-
-        buffer_offset += frameLen;
-
-      }
-
-      /* update current frame */
-
-      this->m_CurrentFrameIndex = frame_number;
-
-    } catch (Kumu::RuntimeError e) {
-
-      this->Reset();
-
-      return e.GetResult();
+      buffer_offset += preambleLen;
 
     }
 
+    /* read the IA Frame info */
+
+    if (!checkFrameCapacity(frame,  preambleTLLen + preambleLen + frameTLLen, reallocate_if_needed)) {
+      return RESULT_SMALLBUF;
+    }
+
+    result = reader->m_File->Read(&frame.Data()[buffer_offset], frameTLLen);
+
+    if (result.Failure()) {
+      DefaultLogSink().Error("Error reading IA Frame data\n", index_entry.StreamOffset);
+      return result;
+    }
+
+    ui32_t frameLen = ((ui32_t)frame.Data()[buffer_offset + 1] << 24) +
+      ((ui32_t)frame.Data()[buffer_offset + 2] << 16) +
+      ((ui32_t)frame.Data()[buffer_offset + 3] << 8) +
+      (ui32_t)frame.Data()[buffer_offset + 4];
+
+    buffer_offset += frameTLLen;
+
+    /* read the IA Frame */
+
+    if (frameLen > 0) {
+
+      if (!checkFrameCapacity(frame, preambleTLLen + preambleLen + frameTLLen + frameLen, reallocate_if_needed)) {
+        return RESULT_SMALLBUF;
+      }
+      frame.Size(preambleTLLen + preambleLen + frameTLLen + frameLen);
+
+      result = reader->m_File->Read(&frame.Data()[buffer_offset], frameLen);
+
+      if (result.Failure()) {
+        DefaultLogSink().Error("Error reading IA Frame data\n", index_entry.StreamOffset);
+        return result;
+      }
+    }
+
+    reader_state = ST_READER_RUNNING;
+
+    return result;
   }
+} // namespace
 
-  frame = std::pair<size_t, const ui8_t*>(this->m_CurrentFrameBuffer.size(), &this->m_CurrentFrameBuffer[0]);
+Result_t AS_02::IAB::MXFReader::ReadFrame(ui32_t frame_number,
+                                          AS_02::IAB::MXFReader::Frame &frame) {
+  assert(!this->m_Reader.empty());
+  Result_t result = ReadFrameImpl(frame_number, this->m_FrameBuffer,
+                                  this->m_Reader->m_State, this->m_Reader, true);
 
-  this->m_State = ST_READER_RUNNING;
-
+  frame = std::pair<size_t, const ui8_t *>(this->m_FrameBuffer.Size(),
+                                           this->m_FrameBuffer.Data());
   return result;
+}
+
+Result_t AS_02::IAB::MXFReader::ReadFrame(ui32_t frame_number,
+                                          ASDCP::FrameBuffer &frame) {
+  return ReadFrameImpl(frame_number, frame, this->m_Reader->m_State, this->m_Reader,
+                       false);
+}
+
+Result_t
+AS_02::IAB::MXFReader::ReadGenericStreamPartitionPayload(const ui32_t SID, ASDCP::FrameBuffer& frame_buf)
+{
+  if ( m_Reader && m_Reader->m_File->IsOpen() )
+    {
+      return m_Reader->ReadGenericStreamPartitionPayload(SID, frame_buf, 0, 0 /*no encryption*/);
+    }
+
+  return RESULT_INIT;
 }
 
 Result_t
 AS_02::IAB::MXFReader::FillWriterInfo(WriterInfo& Info) const {
   /* are we already running */
 
-  if (this->m_State == ST_READER_BEGIN) {
+  if (this->m_Reader->m_State == ST_READER_BEGIN) {
     return Kumu::RESULT_FAIL;
   }
 
@@ -605,7 +676,7 @@ AS_02::IAB::MXFReader::FillWriterInfo(WriterInfo& Info) const {
 
 void
 AS_02::IAB::MXFReader::DumpHeaderMetadata(FILE* stream) const {
-  if (this->m_State != ST_READER_BEGIN) {
+  if (this->m_Reader->m_State != ST_READER_BEGIN) {
     this->m_Reader->m_HeaderPart.Dump(stream);
   }
 }
@@ -613,15 +684,18 @@ AS_02::IAB::MXFReader::DumpHeaderMetadata(FILE* stream) const {
 
 void
 AS_02::IAB::MXFReader::DumpIndex(FILE* stream) const {
-  if (this->m_State != ST_READER_BEGIN) {
+  if (this->m_Reader->m_State != ST_READER_BEGIN) {
     this->m_Reader->m_IndexAccess.Dump(stream);
   }
 }
 
 void
 AS_02::IAB::MXFReader::Reset() {
-  this->m_Reader.set(NULL);
-  this->m_State = ST_READER_BEGIN;
+  if ( m_Reader && m_Reader->m_File->IsOpen()) {
+    m_Reader->Close();
+  }
+
+  this->m_Reader.set(0);
 }
 
 //

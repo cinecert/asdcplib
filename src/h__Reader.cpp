@@ -64,8 +64,7 @@ ASDCP::default_md_object_init()
 //
 
 //
-ASDCP::h__ASDCPReader::h__ASDCPReader(const Dictionary *d) :
-  MXF::TrackFileReader<OP1aHeader, OPAtomIndexFooter>(d), m_BodyPart(d) {}
+ASDCP::h__ASDCPReader::h__ASDCPReader(const Dictionary *d, const Kumu::IFileReaderFactory& fileReaderFactory) : MXF::TrackFileReader<OP1aHeader, OPAtomIndexFooter>(d, fileReaderFactory), m_BodyPart(m_Dict) {}
 ASDCP::h__ASDCPReader::~h__ASDCPReader() {}
 
 
@@ -127,8 +126,8 @@ ASDCP::h__ASDCPReader::OpenMXFRead(const std::string& filename)
 	  // partition and read the partition pack
 	  RIP::const_pair_iterator r_i = m_RIP.PairArray.begin();
 	  r_i++;
-	  m_File.Seek((*r_i).ByteOffset);
-	  result = m_BodyPart.InitFromFile(m_File);
+	  m_File->Seek((*r_i).ByteOffset);
+	  result = m_BodyPart.InitFromFile(*m_File);
 
 	  if( ASDCP_FAILURE(result) )
             {
@@ -142,18 +141,18 @@ ASDCP::h__ASDCPReader::OpenMXFRead(const std::string& filename)
       // this position will be at either
       //     a) the spot in the header partition where essence units appear, or
       //     b) right after the body partition header (where essence units appear)
-      m_HeaderPart.BodyOffset = m_File.Tell();
+      m_HeaderPart.BodyOffset = m_File->TellPosition();
 
-      result = m_File.Seek(m_HeaderPart.FooterPartition);
+      result = m_File->Seek(m_HeaderPart.FooterPartition);
 
       if ( ASDCP_SUCCESS(result) )
 	{
 	  m_IndexAccess.m_Lookup = &m_HeaderPart.m_Primer;
-	  result = m_IndexAccess.InitFromFile(m_File);
+      result = m_IndexAccess.InitFromFile(*m_File);
 	}
     }
 
-  m_File.Seek(m_HeaderPart.BodyOffset);
+  m_File->Seek(m_HeaderPart.BodyOffset);
   return result;
 }
 
@@ -181,7 +180,7 @@ ASDCP::h__ASDCPReader::LocateFrame(ui32_t FrameNum, Kumu::fpos_t& streamOffset,
 
 //
 Result_t
-ASDCP::KLReader::ReadKLFromFile(Kumu::FileReader& Reader)
+ASDCP::KLReader::ReadKLFromFile(Kumu::IFileReader& Reader)
 {
   ui32_t read_count;
   ui32_t header_length = SMPTE_UL_LENGTH + MXF_BER_LENGTH;
@@ -241,7 +240,7 @@ ASDCP::KLReader::ReadKLFromFile(Kumu::FileReader& Reader)
 
 // base subroutine for reading a KLV packet, assumes file position is at the first byte of the packet
 Result_t
-ASDCP::Read_EKLV_Packet(Kumu::FileReader& File, const ASDCP::Dictionary& Dict,
+ASDCP::Read_EKLV_Packet(Kumu::IFileReader& File, const ASDCP::Dictionary& Dict,
 			const ASDCP::WriterInfo& Info, Kumu::fpos_t& LastPosition, ASDCP::FrameBuffer& CtFrameBuf,
 			ui32_t FrameNum, ui32_t SequenceNum, ASDCP::FrameBuffer& FrameBuf,
 			const byte_t* EssenceUL, AESDecContext* Ctx, HMACContext* HMAC)
@@ -358,6 +357,7 @@ ASDCP::Read_EKLV_Packet(Kumu::FileReader& File, const ASDCP::Dictionary& Dict,
 	  return RESULT_FORMAT;
 	}
 
+#ifdef HAVE_OPENSSL      
       if ( Ctx )
 	{
 	  // wrap the pointer and length as a FrameBuffer for use by
@@ -379,7 +379,8 @@ ASDCP::Read_EKLV_Packet(Kumu::FileReader& File, const ASDCP::Dictionary& Dict,
 	    }
 	}
       else // return ciphertext to caller
-	{
+#endif //HAVE_OPENSSL	
+    {
 	  if ( FrameBuf.Capacity() < tmp_len )
 	    {
 	      char intbuf[IntBufferLen];

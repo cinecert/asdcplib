@@ -290,8 +290,8 @@ class AS_02::ACES::MXFReader::h__Reader : public AS_02::h__AS02Reader
   ASDCP::MXF::RGBAEssenceDescriptor *m_EssenceDescriptor;
 
 public:
-  h__Reader(const Dictionary *d) :
-    AS_02::h__AS02Reader(d), m_EssenceDescriptor(NULL) {}
+  h__Reader(const Dictionary *d, const Kumu::IFileReaderFactory& fileReaderFactory) :
+    AS_02::h__AS02Reader(d, fileReaderFactory), m_EssenceDescriptor(NULL) {}
 
   AS_02::ACES::ResourceList_t m_Anc_Resources;
 
@@ -343,7 +343,7 @@ Result_t AS_02::ACES::MXFReader::h__Reader::OpenRead(const std::string& filename
 
 Result_t AS_02::ACES::MXFReader::h__Reader::ReadFrame(ui32_t FrameNum, AS_02::ACES::FrameBuffer& FrameBuf, ASDCP::AESDecContext* Ctx, ASDCP::HMACContext* HMAC)
 {
-  if(!m_File.IsOpen()) return RESULT_INIT;
+  if(!m_File->IsOpen()) return RESULT_INIT;
 
   assert(m_Dict);
   return ReadEKLVFrame(FrameNum, FrameBuf, m_Dict->ul(MDD_ACESFrameWrappedEssence), Ctx, HMAC); //PB:new UL
@@ -395,12 +395,12 @@ AS_02::Result_t AS_02::ACES::MXFReader::h__Reader::ReadAncillaryResource(const K
     if((Kumu::fpos_t)TmpPair.ByteOffset != m_LastPosition)
     {
       m_LastPosition = TmpPair.ByteOffset;
-      result = m_File.Seek(TmpPair.ByteOffset);
+      result = m_File->Seek(TmpPair.ByteOffset);
     }
 
     // read the partition header
     ASDCP::MXF::Partition GSPart(m_Dict);
-    result = GSPart.InitFromFile(m_File);
+    result = GSPart.InitFromFile(*m_File);
 
     if(ASDCP_SUCCESS(result))
     {
@@ -473,7 +473,7 @@ AS_02::Result_t AS_02::ACES::MXFReader::h__Reader::FillAncillaryResourceDescript
 void
 AS_02::ACES::MXFReader::DumpHeaderMetadata(FILE* stream) const
 {
-  if ( m_Reader && m_Reader->m_File.IsOpen() )
+  if ( m_Reader && m_Reader->m_File->IsOpen() )
     {
       m_Reader->m_HeaderPart.Dump(stream);
     }
@@ -484,7 +484,7 @@ AS_02::ACES::MXFReader::DumpHeaderMetadata(FILE* stream) const
 void
 AS_02::ACES::MXFReader::DumpIndex(FILE* stream) const
 {
-  if ( m_Reader && m_Reader->m_File.IsOpen() )
+  if ( m_Reader && m_Reader->m_File->IsOpen() )
     {
       m_Reader->m_IndexAccess.Dump(stream);
     }
@@ -672,7 +672,7 @@ AS_02::Result_t AS_02::ACES::MXFWriter::h__Writer::WriteAncillaryResource(const 
     return RESULT_STATE;
   }
 
-  Kumu::fpos_t here = m_File.Tell();
+  Kumu::fpos_t here = m_File.TellPosition();
   assert(m_Dict);
 
   // create generic stream partition header
@@ -782,10 +782,9 @@ AS_02::Result_t AS_02::ACES::MXFWriter::WriteAncillaryResource(const AS_02::ACES
 }
 
 
-AS_02::ACES::MXFReader::MXFReader()
+AS_02::ACES::MXFReader::MXFReader(const Kumu::IFileReaderFactory& fileReaderFactory)
 {
-
-  m_Reader = new h__Reader(&DefaultCompositeDict());
+  m_Reader = new h__Reader(&DefaultCompositeDict(), fileReaderFactory);
 }
 
 AS_02::ACES::MXFReader::~MXFReader()
@@ -841,7 +840,7 @@ AS_02::Result_t AS_02::ACES::MXFReader::OpenRead(const std::string& filename) co
 AS_02::Result_t AS_02::ACES::MXFReader::Close() const
 {
 
-  if(m_Reader && m_Reader->m_File.IsOpen())
+  if(m_Reader && m_Reader->m_File->IsOpen())
   {
     m_Reader->Close();
     return RESULT_OK;
@@ -852,7 +851,7 @@ AS_02::Result_t AS_02::ACES::MXFReader::Close() const
 AS_02::Result_t AS_02::ACES::MXFReader::FillWriterInfo(ASDCP::WriterInfo& Info) const
 {
 
-  if(m_Reader && m_Reader->m_File.IsOpen())
+  if(m_Reader && m_Reader->m_File->IsOpen())
   {
     Info = m_Reader->m_Info;
     return RESULT_OK;
@@ -863,7 +862,7 @@ AS_02::Result_t AS_02::ACES::MXFReader::FillWriterInfo(ASDCP::WriterInfo& Info) 
 AS_02::Result_t AS_02::ACES::MXFReader::ReadFrame(ui32_t FrameNum, AS_02::ACES::FrameBuffer &FrameBuf, ASDCP::AESDecContext *Ctx /*= 0*/, ASDCP::HMACContext *HMAC /*= 0*/) const
 {
 
-  if(m_Reader && m_Reader->m_File.IsOpen())
+  if(m_Reader && m_Reader->m_File->IsOpen())
     return m_Reader->ReadFrame(FrameNum, FrameBuf, Ctx, HMAC);
 
   return RESULT_INIT;
@@ -872,7 +871,7 @@ AS_02::Result_t AS_02::ACES::MXFReader::ReadFrame(ui32_t FrameNum, AS_02::ACES::
 AS_02::Result_t AS_02::ACES::MXFReader::ReadAncillaryResource(const Kumu::UUID &uuid, AS_02::ACES::FrameBuffer &FrameBuf, ASDCP::AESDecContext *Ctx , ASDCP::HMACContext *HMAC ) const
 {
 
-  if(m_Reader && m_Reader->m_File.IsOpen())
+  if(m_Reader && m_Reader->m_File->IsOpen())
     return m_Reader->ReadAncillaryResource(uuid, FrameBuf, Ctx, HMAC);
   
   return RESULT_INIT;
@@ -881,7 +880,7 @@ AS_02::Result_t AS_02::ACES::MXFReader::ReadAncillaryResource(const Kumu::UUID &
 AS_02::Result_t AS_02::ACES::MXFReader::FillAncillaryResourceList(AS_02::ACES::ResourceList_t &ancillary_resources) const
 {
 
-  if(m_Reader && m_Reader->m_File.IsOpen())
+  if(m_Reader && m_Reader->m_File->IsOpen())
   {
     ancillary_resources = m_Reader->m_Anc_Resources;
     return RESULT_OK;

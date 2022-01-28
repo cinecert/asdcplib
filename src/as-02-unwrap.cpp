@@ -38,12 +38,13 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <KM_fileio.h>
 #include <AS_02.h>
+#include <AS_02_IAB.h>
 #include "AS_02_ACES.h"
 #include <WavFileWriter.h>
 
 namespace ASDCP {
   Result_t MD_to_PCM_ADesc(ASDCP::MXF::WaveAudioDescriptor* ADescObj, ASDCP::PCM::AudioDescriptor& ADesc);
-}
+} // namespace asdcp
 
 using namespace ASDCP;
 
@@ -140,7 +141,7 @@ public:
   bool   j2c_pedantic;   // passed to JP2K::SequenceParser::OpenRead
   ui32_t picture_rate;   // fps of picture when wrapping PCM
   ui32_t fb_size;        // size of picture frame buffer
-  Rational edit_rate;    // frame buffer size for reading clip-wrapped PCM
+  ASDCP::Rational edit_rate;    // frame buffer size for reading clip-wrapped PCM
   const char* file_prefix; // filename pre for files written by the extract mode
   byte_t key_value[KeyLen];  // value of given encryption key (when key_flag is true)
   byte_t key_id_value[UUIDlen];// value of given key ID (when key_id_flag is true)
@@ -289,13 +290,13 @@ public:
 // Read one or more ciphertext JPEG 2000 codestreams from a ciphertext ASDCP file
 //
 Result_t
-read_JP2K_file(CommandOptions& Options)
+read_JP2K_file(CommandOptions& Options, const Kumu::IFileReaderFactory& fileReaderFactory)
 {
-  AESDecContext*     Context = 0;
-  HMACContext*       HMAC = 0;
-  AS_02::JP2K::MXFReader    Reader;
-  JP2K::FrameBuffer  FrameBuffer(Options.fb_size);
-  ui32_t             frame_count = 0;
+  AESDecContext*         Context = 0;
+  HMACContext*           HMAC = 0;
+  AS_02::JP2K::MXFReader Reader(fileReaderFactory);
+  JP2K::FrameBuffer      FrameBuffer(Options.fb_size);
+  ui32_t                 frame_count = 0;
 
   Result_t result = Reader.OpenRead(Options.input_filename);
 
@@ -435,11 +436,11 @@ read_JP2K_file(CommandOptions& Options)
 
 //
 Result_t
-read_ACES_file(CommandOptions& Options)
+read_ACES_file(CommandOptions& Options, const Kumu::IFileReaderFactory& fileReaderFactory)
 {
   AESDecContext*     Context = 0;
   HMACContext*       HMAC = 0;
-  AS_02::ACES::MXFReader Reader;
+  AS_02::ACES::MXFReader Reader(fileReaderFactory);
   AS_02::ACES::FrameBuffer FrameBuffer(Options.fb_size);
   ui64_t             frame_count = 0;
   AS_02::ACES::ResourceList_t resource_list_t;
@@ -625,17 +626,17 @@ read_ACES_file(CommandOptions& Options)
 // Read one or more ciphertext PCM audio streams from a ciphertext ASDCP file
 //
 Result_t
-read_PCM_file(CommandOptions& Options)
+read_PCM_file(CommandOptions& Options, const Kumu::IFileReaderFactory& fileReaderFactory)
 {
   AESDecContext*     Context = 0;
   HMACContext*       HMAC = 0;
-  AS_02::PCM::MXFReader     Reader;
+  AS_02::PCM::MXFReader     Reader(fileReaderFactory);
   PCM::FrameBuffer   FrameBuffer;
   WavFileWriter      OutWave;
   ui32_t last_frame = 0;
   ASDCP::MXF::WaveAudioDescriptor *wave_descriptor = 0;
 
-  if ( Options.edit_rate == Rational(0,0) ) // todo, make this available to the CLI
+  if ( Options.edit_rate == ASDCP::Rational(0,0) ) // todo, make this available to the CLI
     {
       Options.edit_rate = EditRate_24;
     }
@@ -797,11 +798,11 @@ read_PCM_file(CommandOptions& Options)
 // Read one or more timed text streams from a plaintext AS-02 file
 //
 Result_t
-read_timed_text_file(CommandOptions& Options)
+read_timed_text_file(CommandOptions& Options, const Kumu::IFileReaderFactory& fileReaderFactory)
 {
   AESDecContext*     Context = 0;
   HMACContext*       HMAC = 0;
-  AS_02::TimedText::MXFReader     Reader;
+  AS_02::TimedText::MXFReader     Reader(fileReaderFactory);
   TimedText::FrameBuffer   FrameBuffer(Options.fb_size);
   //ASDCP::TimedText::FrameBuffer   FrameBuffer(Options.fb_size);
   AS_02::TimedText::TimedTextDescriptor TDesc;
@@ -874,11 +875,11 @@ read_timed_text_file(CommandOptions& Options)
 
 //
 Result_t
-read_isxd_file(CommandOptions& Options)
+read_isxd_file(CommandOptions& Options, const Kumu::IFileReaderFactory& fileReaderFactory)
 {
   AESDecContext*     Context = 0;
   HMACContext*       HMAC = 0;
-  AS_02::ISXD::MXFReader    Reader;
+  AS_02::ISXD::MXFReader    Reader(fileReaderFactory);
   ASDCP::FrameBuffer  FrameBuffer;
   ui32_t             frame_count = 0;
 
@@ -959,10 +960,10 @@ read_isxd_file(CommandOptions& Options)
 }
 
 Result_t
-extract_generic_stream_partition_payload(const std::string& in_filename, const ui32_t sid, const std::string& out_filename)
+extract_generic_stream_partition_payload(const std::string& in_filename, const ui32_t sid, const std::string& out_filename, const Kumu::IFileReaderFactory& fileReaderFactory)
 {
   ASDCP::FrameBuffer payload;
-  AS_02::ISXD::MXFReader reader;
+  AS_02::ISXD::MXFReader reader(fileReaderFactory);
 
   Result_t result = reader.OpenRead(in_filename);
           
@@ -984,6 +985,119 @@ extract_generic_stream_partition_payload(const std::string& in_filename, const u
     }
 
   return result;
+}
+
+Result_t read_iab_file(CommandOptions& Options, const Kumu::IFileReaderFactory& fileReaderFactory)
+{
+    AESDecContext*     Context = 0;
+    HMACContext*       HMAC = 0;
+    AS_02::IAB::MXFReader Reader(fileReaderFactory);
+    ASDCP::FrameBuffer   FrameBuffer;
+
+    ui32_t last_frame = 0;
+    ASDCP::MXF::IABEssenceDescriptor *iab_descriptor = 0;
+
+    Result_t result = Reader.OpenRead(Options.input_filename);
+
+    if ( KM_SUCCESS(result) )
+    {
+        if ( Options.verbose_flag )
+        {
+            fprintf(stderr, "Frame Buffer size: %u\n", Options.fb_size);
+        }
+
+        ASDCP::MXF::InterchangeObject* tmp_obj = 0;
+
+        result = Reader.OP1aHeader().GetMDObjectByType(DefaultCompositeDict().ul(MDD_IABEssenceDescriptor), &tmp_obj);
+
+        if ( KM_SUCCESS(result) )
+        {
+            iab_descriptor = dynamic_cast<ASDCP::MXF::IABEssenceDescriptor*>(tmp_obj);
+
+            if ( iab_descriptor == 0 )
+            {
+                fprintf(stderr, "File does not contain an essence descriptor.\n");
+                return RESULT_FAIL;
+            }
+
+            if ( Options.verbose_flag )
+            {
+                iab_descriptor->Dump();
+            }
+
+            if ( iab_descriptor->ContainerDuration.get() == 0 )
+            {
+                fprintf(stderr, "ContainerDuration not set in file descriptor, attempting to use index duration.\n");
+                Reader.GetFrameCount(last_frame);
+            }
+            else
+            {
+                last_frame = (ui32_t)iab_descriptor->ContainerDuration;
+            }
+
+            if ( last_frame == 0 )
+            {
+                fprintf(stderr, "ContainerDuration not set in index, attempting to use Duration from SourceClip.\n");
+                result = Reader.OP1aHeader().GetMDObjectByType(DefaultCompositeDict().ul(MDD_SourceClip), &tmp_obj);
+                if ( KM_SUCCESS(result))
+                {
+                    ASDCP::MXF::SourceClip *sourceClip = dynamic_cast<ASDCP::MXF::SourceClip*>(tmp_obj);
+                    if ( ! sourceClip->Duration.empty() )
+                    {
+                        last_frame = (ui32_t)sourceClip->Duration;
+                    }
+                }
+            }
+
+            if ( last_frame == 0 )
+            {
+                fprintf(stderr, "Unable to determine file duration.\n");
+                return RESULT_FAIL;
+            }
+
+            assert(iab_descriptor);
+            FrameBuffer.Capacity(24000); // TODO what size?
+            last_frame = (ui32_t)iab_descriptor->ContainerDuration;
+        }
+    }
+
+    if ( ASDCP_SUCCESS(result) )
+    {
+        if ( Options.duration > 0 && Options.duration < last_frame )
+            last_frame = Options.duration;
+
+        if ( Options.start_frame > 0 )
+        {
+            if ( Options.start_frame > last_frame )
+            {
+                fprintf(stderr, "Start value greater than file duration.\n");
+                return RESULT_FAIL;
+            }
+
+            last_frame = Kumu::xmin(Options.start_frame + last_frame, last_frame);
+        }
+
+        last_frame = last_frame - Options.start_frame;
+
+
+    }
+
+    for ( ui32_t i = Options.start_frame; ASDCP_SUCCESS(result) && i < last_frame; i++ )
+    {
+        result = Reader.ReadFrame(i, FrameBuffer);
+
+        if ( ASDCP_SUCCESS(result) )
+        {
+            if ( Options.verbose_flag )
+            {
+                FrameBuffer.FrameNumber(i);
+                fprintf(stdout, "Frame(%d):\n", i);
+                Kumu::hexdump(FrameBuffer.RoData(), Kumu::xmin(FrameBuffer.Size(), (ui32_t)Options.fb_dump_size), stdout);
+            }
+        }
+    }
+
+    return result;
 }
 
 
@@ -1009,39 +1123,44 @@ main(int argc, const char** argv)
     }
 
   EssenceType_t EssenceType;
-  Result_t result = ASDCP::EssenceType(Options.input_filename, EssenceType);
+  Kumu::FileReaderFactory defaultFactory;
+  Result_t result = ASDCP::EssenceType(Options.input_filename, EssenceType, defaultFactory);
 
   if ( ASDCP_SUCCESS(result) )
     {
       switch ( EssenceType )
 	{
 	case ESS_AS02_JPEG_2000:
-	  result = read_JP2K_file(Options);
+	  result = read_JP2K_file(Options, defaultFactory);
 	  break;
 	//PB
 	case ESS_AS02_ACES:
-	  result = read_ACES_file(Options);
+	  result = read_ACES_file(Options, defaultFactory);
 	  break;
 	//--
 	case ESS_AS02_PCM_24b_48k:
 	case ESS_AS02_PCM_24b_96k:
-	  result = read_PCM_file(Options);
+	  result = read_PCM_file(Options, defaultFactory);
 	  break;
 
 	case ESS_AS02_TIMED_TEXT:
-	  result = read_timed_text_file(Options);
+	  result = read_timed_text_file(Options, defaultFactory);
+	  break;
+
+    case ESS_AS02_IAB:
+	  result = read_iab_file(Options, defaultFactory);
 	  break;
 
 	case ESS_AS02_ISXD:
 	  if ( Options.g_stream_sid == 0 )
 	    {
-	      result = read_isxd_file(Options);
+          result = read_isxd_file(Options, defaultFactory);
 	    }
 	  else
 	    {
 	      result = extract_generic_stream_partition_payload(Options.input_filename,
 								Options.g_stream_sid,
-								Options.file_prefix);
+                                Options.file_prefix, defaultFactory);
 	    }
 	  break;
 

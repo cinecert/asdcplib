@@ -108,7 +108,7 @@ ASDCP::Wav::SimpleWaveHeader::WriteToFile(Kumu::FileWriter& OutFile) const
 
 //
 ASDCP::Result_t
-ASDCP::Wav::SimpleWaveHeader::ReadFromFile(const Kumu::FileReader& InFile, ui32_t* data_start)
+ASDCP::Wav::SimpleWaveHeader::ReadFromFile(const Kumu::IFileReader& InFile, ui32_t* data_start)
 {
   ui32_t read_count = 0;
   ui32_t local_data_start = 0;
@@ -206,6 +206,9 @@ ASDCP::Wav::SimpleWaveHeader::ReadFromBuffer(const byte_t* buf, ui32_t buf_len, 
 //------------------------------------------------------------------------------------------
 // conversion algorithms from http://www.borg.com/~jglatt/tech/aiff.htm
 
+namespace ASDCP {
+
+
 //
 void
 Rat_to_extended(ASDCP::Rational rate, byte_t* buf)
@@ -256,6 +259,8 @@ extended_to_Rat(const byte_t* buf)
   return ASDCP::Rational(mantissa, 1);
 }
 
+} // namespace asdcp
+
 //
 void
 ASDCP::AIFF::SimpleAIFFHeader::FillADesc(ASDCP::PCM::AudioDescriptor& ADesc, ASDCP::Rational PictureRate) const
@@ -274,7 +279,7 @@ ASDCP::AIFF::SimpleAIFFHeader::FillADesc(ASDCP::PCM::AudioDescriptor& ADesc, ASD
 
 //
 ASDCP::Result_t
-ASDCP::AIFF::SimpleAIFFHeader::ReadFromFile(const Kumu::FileReader& InFile, ui32_t* data_start)
+ASDCP::AIFF::SimpleAIFFHeader::ReadFromFile(const Kumu::IFileReader& InFile, ui32_t* data_start)
 {
   ui32_t read_count = 0;
   ui32_t local_data_start = 0;
@@ -483,7 +488,7 @@ ASDCP::RF64::SimpleRF64Header::WriteToFile(Kumu::FileWriter& OutFile) const
 
 //
 ASDCP::Result_t
-ASDCP::RF64::SimpleRF64Header::ReadFromFile(const Kumu::FileReader& InFile, ui32_t* data_start)
+ASDCP::RF64::SimpleRF64Header::ReadFromFile(const Kumu::IFileReader& InFile, ui32_t* data_start)
 {
   ui32_t read_count = 0;
   ui32_t local_data_start = 0;

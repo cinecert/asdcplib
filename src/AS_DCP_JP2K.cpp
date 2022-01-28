@@ -513,7 +513,10 @@ ASDCP::MD_to_JP2K_PDesc(const ASDCP::MXF::GenericPictureEssenceDescriptor&  Esse
 //
 // hidden, internal implementation of JPEG 2000 reader
 
+namespace ASDCP {
 
+namespace JP2K
+{
 class lh__Reader : public ASDCP::h__ASDCPReader
 {
   RGBAEssenceDescriptor*        m_EssenceDescriptor;
@@ -527,14 +530,16 @@ class lh__Reader : public ASDCP::h__ASDCPReader
 public:
   PictureDescriptor m_PDesc;        // codestream parameter list
 
-  lh__Reader(const Dictionary *d) :
-    ASDCP::h__ASDCPReader(d), m_EssenceDescriptor(0), m_EssenceSubDescriptor(0), m_Format(ESS_UNKNOWN) {}
+  lh__Reader(const Dictionary *d, const Kumu::IFileReaderFactory& fileReaderFactory) :
+    ASDCP::h__ASDCPReader(d, fileReaderFactory), m_EssenceDescriptor(0), m_EssenceSubDescriptor(0), m_Format(ESS_UNKNOWN) {}
 
   virtual ~lh__Reader() {}
 
   Result_t    OpenRead(const std::string&, EssenceType_t);
   Result_t    ReadFrame(ui32_t, JP2K::FrameBuffer&, AESDecContext*, HMACContext*);
 };
+} // namespace JP2K
+} // namespace asdcp
 
 
 //
@@ -701,7 +706,7 @@ ASDCP::Result_t
 lh__Reader::ReadFrame(ui32_t FrameNum, JP2K::FrameBuffer& FrameBuf,
 		      AESDecContext* Ctx, HMACContext* HMAC)
 {
-  if ( ! m_File.IsOpen() )
+  if ( ! m_File->IsOpen() )
     return RESULT_INIT;
 
   assert(m_Dict);
@@ -716,7 +721,7 @@ class ASDCP::JP2K::MXFReader::h__Reader : public lh__Reader
   h__Reader();
 
 public:
-  h__Reader(const Dictionary *d) : lh__Reader(d) {}
+  h__Reader(const Dictionary *d, const Kumu::IFileReaderFactory& fileReaderFactory) : lh__Reader(d, fileReaderFactory) {}
 };
 
 
@@ -742,15 +747,15 @@ ASDCP::JP2K::FrameBuffer::Dump(FILE* stream, ui32_t dump_len) const
 
 //------------------------------------------------------------------------------------------
 
-ASDCP::JP2K::MXFReader::MXFReader()
+ASDCP::JP2K::MXFReader::MXFReader(const Kumu::IFileReaderFactory& fileReaderFactory)
 {
-  m_Reader = new h__Reader(&DefaultCompositeDict());
+  m_Reader = new h__Reader(&DefaultCompositeDict(), fileReaderFactory);
 }
 
 
 ASDCP::JP2K::MXFReader::~MXFReader()
 {
-  if ( m_Reader && m_Reader->m_File.IsOpen() )
+  if ( m_Reader && m_Reader->m_File->IsOpen() )
     m_Reader->Close();
 }
 
@@ -812,7 +817,7 @@ ASDCP::Result_t
 ASDCP::JP2K::MXFReader::ReadFrame(ui32_t FrameNum, FrameBuffer& FrameBuf,
 				   AESDecContext* Ctx, HMACContext* HMAC) const
 {
-  if ( m_Reader && m_Reader->m_File.IsOpen() )
+  if ( m_Reader && m_Reader->m_File->IsOpen() )
     return m_Reader->ReadFrame(FrameNum, FrameBuf, Ctx, HMAC);
 
   return RESULT_INIT;
@@ -830,7 +835,7 @@ ASDCP::JP2K::MXFReader::LocateFrame(ui32_t FrameNum, Kumu::fpos_t& streamOffset,
 ASDCP::Result_t
 ASDCP::JP2K::MXFReader::FillPictureDescriptor(PictureDescriptor& PDesc) const
 {
-  if ( m_Reader && m_Reader->m_File.IsOpen() )
+  if ( m_Reader && m_Reader->m_File->IsOpen() )
     {
       PDesc = m_Reader->m_PDesc;
       return RESULT_OK;
@@ -845,7 +850,7 @@ ASDCP::JP2K::MXFReader::FillPictureDescriptor(PictureDescriptor& PDesc) const
 ASDCP::Result_t
 ASDCP::JP2K::MXFReader::FillWriterInfo(WriterInfo& Info) const
 {
-  if ( m_Reader && m_Reader->m_File.IsOpen() )
+  if ( m_Reader && m_Reader->m_File->IsOpen() )
     {
       Info = m_Reader->m_Info;
       return RESULT_OK;
@@ -858,7 +863,7 @@ ASDCP::JP2K::MXFReader::FillWriterInfo(WriterInfo& Info) const
 void
 ASDCP::JP2K::MXFReader::DumpHeaderMetadata(FILE* stream) const
 {
-  if ( m_Reader->m_File.IsOpen() )
+  if ( m_Reader->m_File->IsOpen() )
     m_Reader->m_HeaderPart.Dump(stream);
 }
 
@@ -867,7 +872,7 @@ ASDCP::JP2K::MXFReader::DumpHeaderMetadata(FILE* stream) const
 void
 ASDCP::JP2K::MXFReader::DumpIndex(FILE* stream) const
 {
-  if ( m_Reader->m_File.IsOpen() )
+  if ( m_Reader->m_File->IsOpen() )
     m_Reader->m_IndexAccess.Dump(stream);
 }
 
@@ -875,7 +880,7 @@ ASDCP::JP2K::MXFReader::DumpIndex(FILE* stream) const
 ASDCP::Result_t
 ASDCP::JP2K::MXFReader::Close() const
 {
-  if ( m_Reader && m_Reader->m_File.IsOpen() )
+  if ( m_Reader && m_Reader->m_File->IsOpen() )
     {
       m_Reader->Close();
       return RESULT_OK;
@@ -893,7 +898,7 @@ class ASDCP::JP2K::MXFSReader::h__SReader : public lh__Reader
   ui32_t m_StereoFrameReady;
 
 public:
-  h__SReader(const Dictionary *d) : lh__Reader(d), m_StereoFrameReady(0xffffffff) {}
+  h__SReader(const Dictionary *d, const Kumu::IFileReaderFactory& fileReaderFactory) : lh__Reader(d, fileReaderFactory), m_StereoFrameReady(0xffffffff) {}
 
   //
   Result_t ReadFrame(ui32_t FrameNum, StereoscopicPhase_t phase, FrameBuffer& FrameBuf,
@@ -916,7 +921,7 @@ public:
 	if ( FilePosition != m_LastPosition )
 	  {
 	    m_LastPosition = FilePosition;
-	    result = m_File.Seek(FilePosition);
+	    result = m_File->Seek(FilePosition);
 	  }
 
 	// the call to ReadEKLVPacket() will leave the file on an R frame
@@ -931,17 +936,17 @@ public:
 	    if ( FilePosition != m_LastPosition )
 	      {
 		m_LastPosition = FilePosition;
-		result = m_File.Seek(FilePosition);
+		result = m_File->Seek(FilePosition);
 	      }
 
 	    KLReader Reader;
-	    result = Reader.ReadKLFromFile(m_File);
+        result = Reader.ReadKLFromFile(*m_File);
 
 	    if ( ASDCP_SUCCESS(result) )
 	      {
 		// skip over the companion SP_LEFT frame
 		Kumu::fpos_t new_pos = FilePosition + SMPTE_UL_LENGTH + Reader.KLLength() + Reader.Length();
-		result = m_File.Seek(new_pos);
+		result = m_File->Seek(new_pos);
 	      }
 	  }
 
@@ -968,15 +973,15 @@ public:
 
 
 
-ASDCP::JP2K::MXFSReader::MXFSReader()
+ASDCP::JP2K::MXFSReader::MXFSReader(const Kumu::IFileReaderFactory& fileReaderFactory)
 {
-  m_Reader = new h__SReader(&DefaultCompositeDict());
+  m_Reader = new h__SReader(&DefaultCompositeDict(), fileReaderFactory);
 }
 
 
 ASDCP::JP2K::MXFSReader::~MXFSReader()
 {
-  if ( m_Reader && m_Reader->m_File.IsOpen() )
+  if ( m_Reader && m_Reader->m_File->IsOpen() )
     m_Reader->Close();
 }
 
@@ -1039,7 +1044,7 @@ ASDCP::JP2K::MXFSReader::ReadFrame(ui32_t FrameNum, SFrameBuffer& FrameBuf, AESD
 {
   Result_t result = RESULT_INIT;
 
-  if ( m_Reader && m_Reader->m_File.IsOpen() )
+  if ( m_Reader && m_Reader->m_File->IsOpen() )
     {
       result = m_Reader->ReadFrame(FrameNum, SP_LEFT, FrameBuf.Left, Ctx, HMAC);
 
@@ -1055,7 +1060,7 @@ ASDCP::Result_t
 ASDCP::JP2K::MXFSReader::ReadFrame(ui32_t FrameNum, StereoscopicPhase_t phase, FrameBuffer& FrameBuf,
 				   AESDecContext* Ctx, HMACContext* HMAC) const
 {
-  if ( m_Reader && m_Reader->m_File.IsOpen() )
+  if ( m_Reader && m_Reader->m_File->IsOpen() )
     return m_Reader->ReadFrame(FrameNum, phase, FrameBuf, Ctx, HMAC);
 
   return RESULT_INIT;
@@ -1072,7 +1077,7 @@ ASDCP::JP2K::MXFSReader::LocateFrame(ui32_t FrameNum, Kumu::fpos_t& streamOffset
 ASDCP::Result_t
 ASDCP::JP2K::MXFSReader::FillPictureDescriptor(PictureDescriptor& PDesc) const
 {
-  if ( m_Reader && m_Reader->m_File.IsOpen() )
+  if ( m_Reader && m_Reader->m_File->IsOpen() )
     {
       PDesc = m_Reader->m_PDesc;
       return RESULT_OK;
@@ -1087,7 +1092,7 @@ ASDCP::JP2K::MXFSReader::FillPictureDescriptor(PictureDescriptor& PDesc) const
 ASDCP::Result_t
 ASDCP::JP2K::MXFSReader::FillWriterInfo(WriterInfo& Info) const
 {
-  if ( m_Reader && m_Reader->m_File.IsOpen() )
+  if ( m_Reader && m_Reader->m_File->IsOpen() )
     {
       Info = m_Reader->m_Info;
       return RESULT_OK;
@@ -1100,7 +1105,7 @@ ASDCP::JP2K::MXFSReader::FillWriterInfo(WriterInfo& Info) const
 void
 ASDCP::JP2K::MXFSReader::DumpHeaderMetadata(FILE* stream) const
 {
-  if ( m_Reader->m_File.IsOpen() )
+  if ( m_Reader->m_File->IsOpen() )
     m_Reader->m_HeaderPart.Dump(stream);
 }
 
@@ -1109,7 +1114,7 @@ ASDCP::JP2K::MXFSReader::DumpHeaderMetadata(FILE* stream) const
 void
 ASDCP::JP2K::MXFSReader::DumpIndex(FILE* stream) const
 {
-  if ( m_Reader->m_File.IsOpen() )
+  if ( m_Reader->m_File->IsOpen() )
     m_Reader->m_IndexAccess.Dump(stream);
 }
 
@@ -1117,7 +1122,7 @@ ASDCP::JP2K::MXFSReader::DumpIndex(FILE* stream) const
 ASDCP::Result_t
 ASDCP::JP2K::MXFSReader::Close() const
 {
-  if ( m_Reader && m_Reader->m_File.IsOpen() )
+  if ( m_Reader && m_Reader->m_File->IsOpen() )
     {
       m_Reader->Close();
       return RESULT_OK;
@@ -1131,6 +1136,10 @@ ASDCP::JP2K::MXFSReader::Close() const
 
 
 //
+namespace ASDCP {
+
+namespace JP2K
+{
 class lh__Writer : public ASDCP::h__ASDCPWriter
 {
   ASDCP_NO_COPY_CONSTRUCT(lh__Writer);
@@ -1154,6 +1163,8 @@ public:
   Result_t WriteFrame(const JP2K::FrameBuffer&, bool add_index, AESEncContext*, HMACContext*);
   Result_t Finalize();
 };
+} // namespace JP2K
+} // namespace asdcp
 
 // Open the file for writing. The file must not exist. Returns error if
 // the operation cannot be completed.

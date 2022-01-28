@@ -45,7 +45,7 @@ const ui32_t CBRIndexEntriesPerSegment = 5000;
 
 //
 ASDCP::Result_t
-ASDCP::MXF::SeekToRIP(const Kumu::FileReader& Reader)
+ASDCP::MXF::SeekToRIP(const Kumu::IFileReader& Reader)
 {
   Kumu::fpos_t end_pos;
 
@@ -118,7 +118,7 @@ ASDCP::MXF::RIP::GetPairBySID(ui32_t SID, PartitionPair& outPair) const
 
 //
 ASDCP::Result_t
-ASDCP::MXF::RIP::InitFromFile(const Kumu::FileReader& Reader)
+ASDCP::MXF::RIP::InitFromFile(const Kumu::IFileReader& Reader)
 {
   assert(m_Dict);
   Result_t result = KLVFilePacket::InitFromFile(Reader, m_Dict->ul(MDD_RandomIndexMetadata));
@@ -291,7 +291,7 @@ ASDCP::MXF::Partition::AddChildObject(InterchangeObject* Object)
 
 //
 ASDCP::Result_t
-ASDCP::MXF::Partition::InitFromFile(const Kumu::FileReader& Reader)
+ASDCP::MXF::Partition::InitFromFile(const Kumu::IFileReader& Reader)
 {
   Result_t result = KLVFilePacket::InitFromFile(Reader);
   // test the UL
@@ -552,8 +552,8 @@ ASDCP::MXF::Primer::InsertTag(const MDDEntry& Entry, ASDCP::TagValue& Tag)
 ASDCP::Result_t
 ASDCP::MXF::Primer::TagForKey(const ASDCP::UL& Key, ASDCP::TagValue& Tag)
 {
-  assert(m_Lookup);
-  if ( m_Lookup.empty() )
+  
+  if ( !m_Lookup || m_Lookup.empty() )
     {
       DefaultLogSink().Error("Primer lookup is empty\n");
       return RESULT_FAIL;
@@ -750,7 +750,7 @@ ASDCP::MXF::OP1aHeader::~OP1aHeader() {}
 
 //
 ASDCP::Result_t
-ASDCP::MXF::OP1aHeader::InitFromFile(const Kumu::FileReader& Reader)
+ASDCP::MXF::OP1aHeader::InitFromFile(const Kumu::IFileReader& Reader)
 {
   Result_t result = Partition::InitFromFile(Reader);
 
@@ -986,7 +986,7 @@ ASDCP::MXF::OP1aHeader::WriteToFile(Kumu::FileWriter& Writer, ui32_t HeaderSize)
   // KLV Fill
   if ( ASDCP_SUCCESS(result) )
     {
-      Kumu::fpos_t pos = Writer.Tell();
+      Kumu::fpos_t pos = Writer.TellPosition();
 
       if ( pos > (Kumu::fpos_t)HeaderByteCount )
 	{
@@ -1058,7 +1058,7 @@ ASDCP::MXF::OPAtomIndexFooter::~OPAtomIndexFooter() {}
 
 //
 ASDCP::Result_t
-ASDCP::MXF::OPAtomIndexFooter::InitFromFile(const Kumu::FileReader& Reader)
+ASDCP::MXF::OPAtomIndexFooter::InitFromFile(const Kumu::IFileReader& Reader)
 {
   Result_t result = Partition::InitFromFile(Reader); // test UL and OP
 
@@ -1509,26 +1509,35 @@ ASDCP::MXF::InterchangeObject::IsA(const byte_t* label)
 
 
 //------------------------------------------------------------------------------------------
-struct FactoryCompareUL
+namespace ASDCP {
+namespace MXF
 {
-    bool operator()(const ASDCP::UL& lhs, const ASDCP::UL& rhs) const
+    struct FactoryCompareUL
     {
-        ui32_t test_size = lhs.Size() < rhs.Size() ? lhs.Size() : rhs.Size();
-
-        for (ui32_t i = 0; i < test_size; i++)
+        bool operator()(const ASDCP::UL& lhs, const ASDCP::UL& rhs) const
         {
-            if (i == 7) continue; // skip version to be symmetrical with UL::operator==
-            if (lhs.Value()[i] != rhs.Value()[i])
-                return lhs.Value()[i] < rhs.Value()[i];
+            ui32_t test_size = lhs.Size() < rhs.Size() ? lhs.Size() : rhs.Size();
+
+            for (ui32_t i = 0; i < test_size; i++)
+            {
+                if (i == 7) continue; // skip version to be symmetrical with UL::operator==
+                if (lhs.Value()[i] != rhs.Value()[i])
+                    return lhs.Value()[i] < rhs.Value()[i];
+            }
+
+            return false;
         }
+    };
+}
+} // namespace asdcp
 
-        return false;
-    }
-};
-
-typedef std::map<ASDCP::UL, ASDCP::MXF::MXFObjectFactory_t, FactoryCompareUL>FactoryMap_t;
+typedef std::map<ASDCP::UL, ASDCP::MXF::MXFObjectFactory_t, ASDCP::MXF::FactoryCompareUL>FactoryMap_t;
 typedef FactoryMap_t::iterator FLi_t;
 
+namespace ASDCP {
+
+namespace MXF
+{
 //
 class FactoryList : public FactoryMap_t
 {
@@ -1559,8 +1568,11 @@ public:
   }
 };
 
+} // namespace MXF
+} // namespace asdcp
+
 //
-static FactoryList s_FactoryList;
+static ASDCP::MXF::FactoryList s_FactoryList;
 static Kumu::Mutex s_InitLock;
 static bool        s_TypesInit = false;
 

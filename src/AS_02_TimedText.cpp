@@ -32,6 +32,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "AS_02_internal.h"
 #include "KM_xml.h"
+#include "KM_fileio.h"
 #include <iostream>
 #include <iomanip>
 
@@ -67,9 +68,9 @@ class AS_02::TimedText::MXFReader::h__Reader : public AS_02::h__AS02Reader
   ASDCP_NO_COPY_CONSTRUCT(h__Reader);
 
 public:
-  TimedTextDescriptor m_TDesc;    
+  TimedTextDescriptor m_TDesc;
 
-  h__Reader(const Dictionary *d) : AS_02::h__AS02Reader(d), m_EssenceDescriptor(0) {
+  h__Reader(const Dictionary* d, const Kumu::IFileReaderFactory& fileReaderFactory) : AS_02::h__AS02Reader(d, fileReaderFactory), m_EssenceDescriptor(0) {
     memset(&m_TDesc.AssetID, 0, UUIDlen);
   }
 
@@ -169,7 +170,7 @@ ASDCP::Result_t
 AS_02::TimedText::MXFReader::h__Reader::ReadTimedTextResource(ASDCP::TimedText::FrameBuffer& FrameBuf,
 							      AESDecContext* Ctx, HMACContext* HMAC)
 {
-  if ( ! m_File.IsOpen() )
+  if ( ! m_File->IsOpen() )
     {
       return RESULT_INIT;
     }
@@ -223,9 +224,9 @@ AS_02::TimedText::MXFReader::h__Reader::ReadAncillaryResource(const Kumu::UUID& 
 
 //------------------------------------------------------------------------------------------
 
-AS_02::TimedText::MXFReader::MXFReader()
+AS_02::TimedText::MXFReader::MXFReader(const Kumu::IFileReaderFactory& fileReaderFactory)
 {
-  m_Reader = new h__Reader(&DefaultSMPTEDict());
+  m_Reader = new h__Reader(&DefaultSMPTEDict(), fileReaderFactory);
 }
 
 
@@ -291,7 +292,7 @@ AS_02::TimedText::MXFReader::OpenRead(const std::string& filename) const
 ASDCP::Result_t
 AS_02::TimedText::MXFReader::FillTimedTextDescriptor(TimedText::TimedTextDescriptor& TDesc) const
 {
-  if ( m_Reader && m_Reader->m_File.IsOpen() )
+  if ( m_Reader && m_Reader->m_File->IsOpen() )
     {
       TDesc = m_Reader->m_TDesc;
       return RESULT_OK;
@@ -305,7 +306,7 @@ AS_02::TimedText::MXFReader::FillTimedTextDescriptor(TimedText::TimedTextDescrip
 ASDCP::Result_t
 AS_02::TimedText::MXFReader::FillWriterInfo(WriterInfo& Info) const
 {
-  if ( m_Reader && m_Reader->m_File.IsOpen() )
+  if ( m_Reader && m_Reader->m_File->IsOpen() )
     {
       Info = m_Reader->m_Info;
       return RESULT_OK;
@@ -333,7 +334,7 @@ ASDCP::Result_t
 AS_02::TimedText::MXFReader::ReadTimedTextResource(ASDCP::TimedText::FrameBuffer& FrameBuf,
 						   AESDecContext* Ctx, HMACContext* HMAC) const
 {
-  if ( m_Reader && m_Reader->m_File.IsOpen() )
+  if ( m_Reader && m_Reader->m_File->IsOpen() )
     return m_Reader->ReadTimedTextResource(FrameBuf, Ctx, HMAC);
 
   return RESULT_INIT;
@@ -344,7 +345,7 @@ ASDCP::Result_t
 AS_02::TimedText::MXFReader::ReadAncillaryResource(const Kumu::UUID& uuid, ASDCP::TimedText::FrameBuffer& FrameBuf,
 						   AESDecContext* Ctx, HMACContext* HMAC) const
 {
-  if ( m_Reader && m_Reader->m_File.IsOpen() )
+  if ( m_Reader && m_Reader->m_File->IsOpen() )
     return m_Reader->ReadAncillaryResource(uuid, FrameBuf, Ctx, HMAC);
 
   return RESULT_INIT;
@@ -355,7 +356,7 @@ AS_02::TimedText::MXFReader::ReadAncillaryResource(const Kumu::UUID& uuid, ASDCP
 void
 AS_02::TimedText::MXFReader::DumpHeaderMetadata(FILE* stream) const
 {
-  if ( m_Reader->m_File.IsOpen() )
+  if ( m_Reader->m_File->IsOpen() )
     m_Reader->m_HeaderPart.Dump(stream);
 }
 
@@ -364,7 +365,7 @@ AS_02::TimedText::MXFReader::DumpHeaderMetadata(FILE* stream) const
 void
 AS_02::TimedText::MXFReader::DumpIndex(FILE* stream) const
 {
-  if ( m_Reader->m_File.IsOpen() )
+  if ( m_Reader->m_File->IsOpen() )
     m_Reader->m_IndexAccess.Dump(stream);
 }
 
@@ -372,7 +373,7 @@ AS_02::TimedText::MXFReader::DumpIndex(FILE* stream) const
 ASDCP::Result_t
 AS_02::TimedText::MXFReader::Close() const
 {
-  if ( m_Reader && m_Reader->m_File.IsOpen() )
+  if ( m_Reader && m_Reader->m_File->IsOpen() )
     {
       m_Reader->Close();
       return RESULT_OK;
@@ -386,7 +387,7 @@ AS_02::TimedText::MXFReader::Close() const
 
 
 //
-class AS_02::TimedText::MXFWriter::h__Writer : public AS_02::h__AS02WriterClip
+class AS_02::TimedText::MXFWriter::h__Writer : public AS_02::h__AS02WriterClip<AS_02::MXF::AS02IndexWriterCBR>
 {
   ASDCP_NO_COPY_CONSTRUCT(h__Writer);
   h__Writer();
@@ -397,7 +398,7 @@ public:
   ui32_t m_EssenceStreamID;
   ASDCP::Rational m_EditRate;
 
-  h__Writer(const Dictionary *d) : AS_02::h__AS02WriterClip(d), m_EssenceStreamID(10)
+  h__Writer(const Dictionary *d) : AS_02::h__AS02WriterClip<AS_02::MXF::AS02IndexWriterCBR>(d), m_EssenceStreamID(10)
   {
     memset(m_EssenceUL, 0, SMPTE_UL_LENGTH);
   }
@@ -554,7 +555,7 @@ AS_02::TimedText::MXFWriter::h__Writer::WriteTimedTextResource(const std::string
   if ( KM_SUCCESS(result) )
     {
       // create an index partition header
-      Kumu::fpos_t here = m_File.Tell();
+      Kumu::fpos_t here = m_File.TellPosition();
       assert(m_Dict);
 
       ASDCP::MXF::Partition partition(m_Dict);
@@ -601,7 +602,7 @@ AS_02::TimedText::MXFWriter::h__Writer::WriteAncillaryResource(const ASDCP::Time
       return RESULT_STATE;
     }
 
-  Kumu::fpos_t here = m_File.Tell();
+  Kumu::fpos_t here = m_File.TellPosition();
   assert(m_Dict);
 
   // create generic stream partition header

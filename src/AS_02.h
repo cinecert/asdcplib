@@ -87,7 +87,7 @@ namespace AS_02
       AS02IndexReader(const ASDCP::Dictionary*);
       virtual ~AS02IndexReader();
     
-      Result_t InitFromFile(const Kumu::FileReader& reader, const ASDCP::MXF::RIP& rip, const bool has_header_essence);
+      Result_t InitFromFile(const Kumu::IFileReader& reader, const ASDCP::MXF::RIP& rip, const bool has_header_essence);
       ui32_t GetDuration() const;
       void     Dump(FILE* = 0);
       Result_t GetMDObjectByID(const Kumu::UUID&, ASDCP::MXF::InterchangeObject** = 0);
@@ -196,7 +196,7 @@ namespace AS_02
       ASDCP_NO_COPY_CONSTRUCT(MXFReader);
 
     public:
-      MXFReader();
+      MXFReader(const Kumu::IFileReaderFactory& fileReaderFactory);
       virtual ~MXFReader();
 
       // Warning: direct manipulation of MXF structures can interfere
@@ -289,7 +289,7 @@ namespace AS_02
       ASDCP_NO_COPY_CONSTRUCT(MXFReader);
 
     public:
-      MXFReader();
+      MXFReader(const Kumu::IFileReaderFactory& fileReaderFactory);
       virtual ~MXFReader();
 
       // Warning: direct manipulation of MXF structures can interfere
@@ -443,8 +443,8 @@ namespace AS_02
 	  ASDCP::mem_ptr<h__Reader> m_Reader;
 	  ASDCP_NO_COPY_CONSTRUCT(MXFReader);
 
-	public:
-	  MXFReader();
+    public:
+	  MXFReader(const Kumu::IFileReaderFactory& fileReaderFactory);
 	  virtual ~MXFReader();
 
 	  // Warning: direct manipulation of MXF structures can interfere
@@ -547,7 +547,7 @@ namespace AS_02
       ASDCP_NO_COPY_CONSTRUCT(MXFReader);
 
     public:
-      MXFReader();
+      MXFReader(const Kumu::IFileReaderFactory& fileReaderFactory);
       virtual ~MXFReader();
 
       // Warning: direct manipulation of MXF structures can interfere

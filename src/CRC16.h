@@ -32,14 +32,10 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef _CRC_16_H_
 #define _CRC_16_H_
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+namespace ASDCP {
 
 unsigned short CRC16(const void *pData, int ilength);
 
-#ifdef __cplusplus
-} /* extern "C" */
-#endif
+} // namespace asdcp
 
 #endif

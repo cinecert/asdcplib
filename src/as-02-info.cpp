@@ -39,6 +39,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <KM_log.h>
 #include <AS_DCP.h>
 #include <AS_02.h>
+#include <AS_02_IAB.h>
 #include <JP2K.h>
 #include <AS_02_ACES.h>
 #include <ACES.h>
@@ -631,15 +632,22 @@ class FileInfoWrapper
   Result_t OpenRead(const T& m, const CommandOptions& Options)
   {
   	return m.OpenRead(Options.filenames.front().c_str());
-  };
+  }
+
+  Result_t OpenRead(AS_02::IAB::MXFReader& m, const CommandOptions& Options)
+  {
+    // OpenRead method is not const
+    return m.OpenRead(Options.filenames.front().c_str());
+  }
+
   Result_t OpenRead(const AS_02::PCM::MXFReader& m, const CommandOptions& Options)
   {
   	return m.OpenRead(Options.filenames.front().c_str(), EditRate_24);
   	//Result_t OpenRead(const std::string& filename, const ASDCP::Rational& EditRate);
-  };
+  }
 
 public:
-  FileInfoWrapper() : m_MaxBitrate(0.0), m_AvgBitrate(0.0) {}
+  FileInfoWrapper(const IFileReaderFactory& fileReaderFactory) : m_MaxBitrate(0.0), m_AvgBitrate(0.0), m_Reader(fileReaderFactory) {}
   virtual ~FileInfoWrapper() {}
 
   Result_t
@@ -662,7 +670,7 @@ public:
 	fprintf(stdout, "%s file essence type is %s, (%d edit unit%s).\n",
 		( m_WriterInfo.LabelSetType == LS_MXF_SMPTE ? "SMPTE 2067-5" : "Unknown" ),
 		type_string,
-		(m_Desc.ContainerDuration != 0 ? m_Desc.ContainerDuration : m_Reader.AS02IndexReader().GetDuration()),
+		m_Desc.ContainerDuration,
 		(m_Desc.ContainerDuration == (ui64_t)1 ? "":"s"));
 
 	if ( Options.showheader_flag )
@@ -855,17 +863,17 @@ public:
 // Read header metadata from an ASDCP file
 //
 Result_t
-show_file_info(CommandOptions& Options)
+show_file_info(CommandOptions& Options, const Kumu::IFileReaderFactory& fileReaderFactory)
 {
   EssenceType_t EssenceType;
-  Result_t result = ASDCP::EssenceType(Options.filenames.front().c_str(), EssenceType);
+  Result_t result = ASDCP::EssenceType(Options.filenames.front().c_str(), EssenceType, fileReaderFactory);
 
   if ( ASDCP_FAILURE(result) )
     return result;
 
   if ( EssenceType == ESS_AS02_JPEG_2000 )
     {
-	  FileInfoWrapper<AS_02::JP2K::MXFReader, MyPictureDescriptor> wrapper;
+	  FileInfoWrapper<AS_02::JP2K::MXFReader, MyPictureDescriptor> wrapper(fileReaderFactory);
 	  result = wrapper.file_info(Options, "JPEG 2000 pictures");
 
 	  if ( KM_SUCCESS(result) )
@@ -889,7 +897,7 @@ show_file_info(CommandOptions& Options)
 
   else if ( EssenceType == ESS_AS02_ACES )
     {
-	  FileInfoWrapper<AS_02::ACES::MXFReader, MyACESPictureDescriptor> wrapper;
+	  FileInfoWrapper<AS_02::ACES::MXFReader, MyACESPictureDescriptor> wrapper(fileReaderFactory);
 	  result = wrapper.file_info(Options, "ACES pictures");
 
 	  if ( KM_SUCCESS(result) )
@@ -913,7 +921,7 @@ show_file_info(CommandOptions& Options)
 
   else if ( EssenceType == ESS_AS02_PCM_24b_48k || EssenceType == ESS_AS02_PCM_24b_96k )
     {
-      FileInfoWrapper<AS_02::PCM::MXFReader, MyAudioDescriptor> wrapper;
+      FileInfoWrapper<AS_02::PCM::MXFReader, MyAudioDescriptor> wrapper(fileReaderFactory);
       result = wrapper.file_info(Options, "PCM audio");
 
       if ( ASDCP_SUCCESS(result) && Options.showcoding_flag )
@@ -922,14 +930,14 @@ show_file_info(CommandOptions& Options)
   else
     {
       fprintf(stderr, "Unknown/unsupported essence type: %s\n", Options.filenames.front().c_str());
-      Kumu::FileReader   Reader;
+      ASDCP::mem_ptr<Kumu::IFileReader> Reader(fileReaderFactory.CreateFileReader());
       const Dictionary* Dict = &DefaultCompositeDict();
       MXF::OP1aHeader TestHeader(Dict);
 
-      result = Reader.OpenRead(Options.filenames.front().c_str());
+      result = Reader->OpenRead(Options.filenames.front().c_str());
 
       if ( ASDCP_SUCCESS(result) )
-	result = TestHeader.InitFromFile(Reader); // test UL and OP
+	    result = TestHeader.InitFromFile(*Reader); // test UL and OP
 
       if ( ASDCP_SUCCESS(result) )
 	{
@@ -949,8 +957,7 @@ show_file_info(CommandOptions& Options)
 	{
 	  fputs("File is not MXF.\n", stdout);
 	}
-    }
-
+    }  
   return result;
 }
 
@@ -977,10 +984,10 @@ main(int argc, const char** argv)
     }
 
   init_rate_info();
-
+  Kumu::FileReaderFactory defaultFactory;
   while ( ! Options.filenames.empty() && ASDCP_SUCCESS(result) )
     {
-      result = show_file_info(Options);
+      result = show_file_info(Options, defaultFactory);
       Options.filenames.pop_front();
     }
 

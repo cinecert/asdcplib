@@ -74,20 +74,21 @@ extern "C"
 
 using namespace Kumu;
 
-
-class ns_map : public std::map<std::string, XMLNamespace*>
-{
-public:
-  ~ns_map()
+namespace{
+  class ns_map : public std::map<std::string, XMLNamespace*>
   {
-    while ( ! empty() )
-      {
-	ns_map::iterator ni = begin();
-	delete ni->second;
-	erase(ni);
-      }
-  }
-};
+  public:
+    ~ns_map()
+    {
+      while ( ! empty() )
+        {
+  	ns_map::iterator ni = begin();
+  	delete ni->second;
+  	erase(ni);
+        }
+    }
+  };
+}
 
 
 Kumu::XMLElement::XMLElement(const char* name) : m_Namespace(0), m_NamespaceOwner(0)
@@ -612,6 +613,9 @@ Kumu::XMLElement::ParseFirstFromString(const char* document, ui32_t doc_len)
 
   if ( ! XML_Parse(Parser, document, doc_len, 1) )
     {
+      DefaultLogSink().Error("XML Parse error on line %d: %s\n",
+			     XML_GetCurrentLineNumber(Parser),
+			     XML_ErrorString(XML_GetErrorCode(Parser)));
       XML_ParserFree(Parser);
       return false;
     }
@@ -1022,8 +1026,23 @@ Kumu::XMLElement::ParseFirstFromString(const char* document, ui32_t doc_len)
 	  ++errorCount;
 	}
     }
+  catch (const XMLException& e)
+    {
+      char* message = XMLString::transcode(e.getMessage());
+      DefaultLogSink().Error("Parser error: %s\n", message);
+      XMLString::release(&message);
+      errorCount++;
+    }
+  catch (const SAXParseException& e)
+    {
+      char* message = XMLString::transcode(e.getMessage());
+      DefaultLogSink().Error("Parser error: %s at line %d\n", message, e.getLineNumber());
+      XMLString::release(&message);
+      errorCount++;
+    }
   catch (...)
     {
+      DefaultLogSink().Error("Unexpected XML parser error\n");
       errorCount++;
     }
   

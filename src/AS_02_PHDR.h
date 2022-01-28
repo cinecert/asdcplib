@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2011-2018, John Hurst
+Copyright (c) 2011-2021, John Hurst
 
 All rights reserved.
 
@@ -145,7 +145,7 @@ namespace AS_02
       ASDCP_NO_COPY_CONSTRUCT(MXFReader);
 
     public:
-      MXFReader();
+      MXFReader(const Kumu::IFileReaderFactory& fileReaderFactory);
       virtual ~MXFReader();
 
       // Warning: direct manipulation of MXF structures can interfere

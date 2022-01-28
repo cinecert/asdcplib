@@ -56,7 +56,7 @@ class AS_02::PCM::MXFReader::h__Reader : public AS_02::h__AS02Reader
   h__Reader();
 
 public:
-  h__Reader(const Dictionary *d) : AS_02::h__AS02Reader(d), m_ClipEssenceBegin(0), m_ClipSize(0),
+  h__Reader(const Dictionary* d, const Kumu::IFileReaderFactory& fileReaderFactory) : AS_02::h__AS02Reader(d, fileReaderFactory), m_ClipEssenceBegin(0), m_ClipSize(0),
 				   m_ClipDurationFrames(0) {}
   virtual ~h__Reader() {}
 
@@ -94,13 +94,13 @@ AS_02::PCM::MXFReader::h__Reader::OpenRead(const std::string& filename, const AS
     result = m_IndexAccess.Lookup(0, tmp_entry);
 
   if ( KM_SUCCESS(result) )
-    result = m_File.Seek(tmp_entry.StreamOffset);
+    result = m_File->Seek(tmp_entry.StreamOffset);
 
   if ( KM_SUCCESS(result) )
     {
       assert(wave_descriptor);
       KLReader reader;
-      result = reader.ReadKLFromFile(m_File);
+      result = reader.ReadKLFromFile(*m_File);
 
       if ( KM_SUCCESS(result) )
 	{
@@ -133,7 +133,7 @@ AS_02::PCM::MXFReader::h__Reader::OpenRead(const std::string& filename, const AS
 	      return RESULT_AS02_FORMAT;
 	    }
 
-	  m_ClipEssenceBegin = m_File.Tell();
+	  m_ClipEssenceBegin = m_File->TellPosition();
 	  m_ClipSize = reader.Length();
 	  m_BytesPerFrame = AS_02::MXF::CalcFrameBufferSize(*wave_descriptor, edit_rate);
 	  m_ClipDurationFrames = m_ClipSize / m_BytesPerFrame;
@@ -153,7 +153,7 @@ ASDCP::Result_t
 AS_02::PCM::MXFReader::h__Reader::ReadFrame(ui32_t FrameNum, ASDCP::PCM::FrameBuffer& FrameBuf,
 					    ASDCP::AESDecContext*, ASDCP::HMACContext*)
 {
-  if ( ! m_File.IsOpen() )
+  if ( ! m_File->IsOpen() )
     {
       return RESULT_INIT;
     }
@@ -168,16 +168,16 @@ AS_02::PCM::MXFReader::h__Reader::ReadFrame(ui32_t FrameNum, ASDCP::PCM::FrameBu
   ui64_t position = m_ClipEssenceBegin + offset;
   Result_t result = RESULT_OK;
 
-  if ( m_File.Tell() != static_cast<Kumu::fpos_t>(position) )
+  if ( m_File->TellPosition() != static_cast<Kumu::fpos_t>(position) )
     {
-      result = m_File.Seek(position);
+      result = m_File->Seek(position);
     }
 
   if ( KM_SUCCESS(result) )
     {
       ui64_t remainder = m_ClipSize - offset;
       ui32_t read_size = ( remainder < m_BytesPerFrame ) ? remainder : m_BytesPerFrame;
-      result = m_File.Read(FrameBuf.Data(), read_size);
+      result = m_File->Read(FrameBuf.Data(), read_size);
 
       if ( KM_SUCCESS(result) )
 	{
@@ -198,9 +198,9 @@ AS_02::PCM::MXFReader::h__Reader::ReadFrame(ui32_t FrameNum, ASDCP::PCM::FrameBu
 //
 
 
-AS_02::PCM::MXFReader::MXFReader()
+AS_02::PCM::MXFReader::MXFReader(const Kumu::IFileReaderFactory& fileReaderFactory)
 {
-  m_Reader = new h__Reader(&DefaultCompositeDict());
+  m_Reader = new h__Reader(&DefaultCompositeDict(), fileReaderFactory);
 }
 
 AS_02::PCM::MXFReader::~MXFReader()
@@ -264,7 +264,7 @@ AS_02::PCM::MXFReader::OpenRead(const std::string& filename, const ASDCP::Ration
 Result_t
 AS_02::PCM::MXFReader::Close() const
 {
-  if ( m_Reader && m_Reader->m_File.IsOpen() )
+  if ( m_Reader && m_Reader->m_File->IsOpen() )
     {
       m_Reader->Close();
       return RESULT_OK;
@@ -281,7 +281,7 @@ ASDCP::Result_t
 AS_02::PCM::MXFReader::ReadFrame(ui32_t FrameNum, ASDCP::PCM::FrameBuffer& FrameBuf,
 				 ASDCP::AESDecContext* Ctx, ASDCP::HMACContext* HMAC) const
 {
-  if ( m_Reader && m_Reader->m_File.IsOpen() )
+  if ( m_Reader && m_Reader->m_File->IsOpen() )
     return m_Reader->ReadFrame(FrameNum, FrameBuf, Ctx, HMAC);
 
   return RESULT_INIT;
@@ -293,7 +293,7 @@ AS_02::PCM::MXFReader::ReadFrame(ui32_t FrameNum, ASDCP::PCM::FrameBuffer& Frame
 ASDCP::Result_t
 AS_02::PCM::MXFReader::FillWriterInfo(WriterInfo& Info) const
 {
-  if ( m_Reader && m_Reader->m_File.IsOpen() )
+  if ( m_Reader && m_Reader->m_File->IsOpen() )
     {
       Info = m_Reader->m_Info;
       return RESULT_OK;
@@ -306,7 +306,7 @@ AS_02::PCM::MXFReader::FillWriterInfo(WriterInfo& Info) const
 void
 AS_02::PCM::MXFReader::DumpHeaderMetadata(FILE* stream) const
 {
-  if ( m_Reader && m_Reader->m_File.IsOpen() )
+  if ( m_Reader && m_Reader->m_File->IsOpen() )
     {
       m_Reader->m_HeaderPart.Dump(stream);
     }
@@ -316,7 +316,7 @@ AS_02::PCM::MXFReader::DumpHeaderMetadata(FILE* stream) const
 void
 AS_02::PCM::MXFReader::DumpIndex(FILE* stream) const
 {
-  if ( m_Reader && m_Reader->m_File.IsOpen() )
+  if ( m_Reader && m_Reader->m_File->IsOpen() )
     {
       m_Reader->m_IndexAccess.Dump(stream);
     }
@@ -326,7 +326,7 @@ AS_02::PCM::MXFReader::DumpIndex(FILE* stream) const
 //------------------------------------------------------------------------------------------
 
 //
-class AS_02::PCM::MXFWriter::h__Writer : public AS_02::h__AS02WriterClip
+class AS_02::PCM::MXFWriter::h__Writer : public AS_02::h__AS02WriterClip<AS_02::MXF::AS02IndexWriterCBR>
 {
   ASDCP_NO_COPY_CONSTRUCT(h__Writer);
   h__Writer();
@@ -335,8 +335,8 @@ public:
   ASDCP::MXF::WaveAudioDescriptor *m_WaveAudioDescriptor;
   byte_t m_EssenceUL[SMPTE_UL_LENGTH];
   ui32_t m_BytesPerSample;
-  
-  h__Writer(const Dictionary *d) : AS_02::h__AS02WriterClip(d), m_WaveAudioDescriptor(0), m_BytesPerSample(0)
+    
+  h__Writer(const Dictionary *d) : AS_02::h__AS02WriterClip<AS_02::MXF::AS02IndexWriterCBR>(d), m_WaveAudioDescriptor(0), m_BytesPerSample(0)
   {
     memset(m_EssenceUL, 0, SMPTE_UL_LENGTH);
   }

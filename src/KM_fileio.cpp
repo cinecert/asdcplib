@@ -762,6 +762,16 @@ Kumu::FileWriter::Writev(const byte_t* buf, ui32_t buf_len)
   return RESULT_OK;
 }
 
+Kumu::FileReader::FileReader()
+{
+  m_Handle = INVALID_HANDLE_VALUE;
+  assert(sizeof(off_t) <= sizeof(int64_t));
+}
+
+Kumu::FileReader::~FileReader()
+{
+  Kumu::FileReader::Close();
+}
 
 #ifdef KM_WIN32
 #ifdef KM_WIN32_UTF8
@@ -1066,6 +1076,7 @@ Kumu::FileWriter::Write(const byte_t* buf, ui32_t buf_len, ui32_t* bytes_written
 // POSIX
 
 //
+
 Kumu::Result_t
 Kumu::FileReader::OpenRead(const std::string& filename) const
 {
@@ -1139,7 +1150,6 @@ Kumu::FileReader::Read(byte_t* buf, ui32_t buf_len, ui32_t* read_count) const
   *read_count = tmp_count;
   return (tmp_count == 0 ? RESULT_ENDOFFILE : RESULT_OK);
 }
-
 
 //------------------------------------------------------------------------------------------
 //
@@ -1233,6 +1243,11 @@ Kumu::FileWriter::Write(const byte_t* buf, ui32_t buf_len, ui32_t* bytes_written
 
 //------------------------------------------------------------------------------------------
 
+//
+IFileReader* FileReaderFactory::CreateFileReader() const
+{
+  return new FileReader();
+}
 
 //
 Kumu::Result_t
@@ -1690,6 +1705,9 @@ Kumu::DeleteFile(const std::string& filename)
   return RESULT_FAIL;
 }
 
+namespace Kumu
+{
+
 //
 Result_t
 h__DeletePath(const std::string& pathname)
@@ -1750,6 +1768,8 @@ h__DeletePath(const std::string& pathname)
 
   return result;
 }
+
+} // namespace KUMU
 
 //
 Result_t

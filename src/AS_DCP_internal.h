@@ -47,6 +47,8 @@ using namespace ASDCP::MXF;
 #endif
 
 
+namespace ASDCP {
+
 // uncomment to remove MXFGCGenericEssenceMultipleMappings from your AS-02 files
 // #define ASDCP_GCMULTI_PATCH
 
@@ -60,10 +62,6 @@ extern MXF::OP1aHeader *g_OP1aHeader;
 extern MXF::OPAtomIndexFooter *g_OPAtomIndexFooter;
 extern MXF::RIP *g_RIP;
 #endif
-
-
-namespace ASDCP
-{
 
   //
   static std::vector<int>
@@ -170,12 +168,13 @@ namespace ASDCP
 		       WriterInfo& Descr, const UL& WrappingUL, const Dictionary *Dict);
 
   Result_t AddDmsTrackGenericPartUtf8Text(Kumu::FileWriter&, ASDCP::MXF::OP1aHeader&, SourcePackage&,
-					  ASDCP::MXF::RIP&, const Dictionary*);
+                      ASDCP::MXF::RIP&, const Dictionary*, const std::string&, const std::string&, std::list<ui64_t*>&);
+
   //
   Result_t WriteGenericStreamPartition(Kumu::FileWriter&, ASDCP::MXF::OP1aHeader&, ASDCP::MXF::RIP&, const Dictionary*,
 				       const ASDCP::FrameBuffer&, ASDCP::AESEncContext* = 0, ASDCP::HMACContext* = 0);
   
-  Result_t Read_EKLV_Packet(Kumu::FileReader& File, const ASDCP::Dictionary& Dict,
+  Result_t Read_EKLV_Packet(Kumu::IFileReader& File, const ASDCP::Dictionary& Dict,
 			    const ASDCP::WriterInfo& Info, Kumu::fpos_t& LastPosition, ASDCP::FrameBuffer& CtFrameBuf,
 			    ui32_t FrameNum, ui32_t SequenceNum, ASDCP::FrameBuffer& FrameBuf,
 			    const byte_t* EssenceUL, AESDecContext* Ctx, HMACContext* HMAC);
@@ -200,7 +199,7 @@ namespace ASDCP
       inline ui64_t  Length() { return m_ValueLength; }
       inline ui64_t  KLLength() { return m_KLLength; }
 
-      Result_t ReadKLFromFile(Kumu::FileReader& Reader);
+      Result_t ReadKLFromFile(Kumu::IFileReader& Reader);
     };
 
   namespace MXF
@@ -218,7 +217,7 @@ namespace ASDCP
 
       public:
 	const Dictionary  *m_Dict;
-	Kumu::FileReader   m_File;
+	Kumu::IFileReader* m_File;
 	HeaderType         m_HeaderPart;
 	IndexAccessType    m_IndexAccess;
 	RIP                m_RIP;
@@ -226,14 +225,16 @@ namespace ASDCP
 	ASDCP::FrameBuffer m_CtFrameBuf;
 	Kumu::fpos_t       m_LastPosition;
 
-      TrackFileReader(const Dictionary *d) :
-	m_HeaderPart(d), m_IndexAccess(d), m_RIP(d), m_Dict(d)
+      TrackFileReader(const Dictionary* d, const Kumu::IFileReaderFactory& fileReaderFactory) :
+	m_HeaderPart(m_Dict), m_IndexAccess(m_Dict), m_RIP(m_Dict), m_Dict(d)
 	  {
 	    default_md_object_init();
+	    m_File = fileReaderFactory.CreateFileReader();
 	  }
 
 	virtual ~TrackFileReader() {
 	  Close();
+	  delete m_File;
 	}
 
 	const MXF::RIP& GetRIP() const { return m_RIP; }
@@ -242,14 +243,14 @@ namespace ASDCP
 	Result_t OpenMXFRead(const std::string& filename)
 	{
 	  m_LastPosition = 0;
-	  Result_t result = m_File.OpenRead(filename);
+	  Result_t result = m_File->OpenRead(filename);
 
 	  if ( ASDCP_SUCCESS(result) )
-	    result = SeekToRIP(m_File);
+        result = SeekToRIP(*m_File);
 
 	  if ( ASDCP_SUCCESS(result) )
 	    {
-	      result = m_RIP.InitFromFile(m_File);
+          result = m_RIP.InitFromFile(*m_File);
 
 	      if ( ASDCP_FAILURE(result) )
 		{
@@ -265,8 +266,8 @@ namespace ASDCP
 	      DefaultLogSink().Error("TrackFileReader::OpenMXFRead, SeekToRIP failed\n");
 	    }
 
-	  m_File.Seek(0);
-	  result = m_HeaderPart.InitFromFile(m_File);
+      m_File->Seek(0);
+      result = m_HeaderPart.InitFromFile(*m_File);
 
 	  if ( KM_FAILURE(result) )
 	    {
@@ -332,7 +333,7 @@ namespace ASDCP
 	  if ( FilePosition != m_LastPosition )
 	    {
 	      m_LastPosition = FilePosition;
-	      result = m_File.Seek(FilePosition);
+          result = m_File->Seek(FilePosition);
 	    }
 
 	  if ( KM_SUCCESS(result) )
@@ -361,7 +362,7 @@ namespace ASDCP
 	  if ( static_cast<Kumu::fpos_t>(TmpEntry.StreamOffset) != m_LastPosition )
 	    {
 	      m_LastPosition = TmpEntry.StreamOffset;
-	      result = m_File.Seek(TmpEntry.StreamOffset);
+          result = m_File->Seek(TmpEntry.StreamOffset);
 	    }
 
 	  if ( KM_SUCCESS(result) )
@@ -375,7 +376,7 @@ namespace ASDCP
 				const byte_t* EssenceUL, AESDecContext* Ctx, HMACContext* HMAC)
 	{
 	  assert(m_Dict);
-	  return Read_EKLV_Packet(m_File, *m_Dict, m_Info, m_LastPosition, m_CtFrameBuf,
+      return Read_EKLV_Packet(*m_File, *m_Dict, m_Info, m_LastPosition, m_CtFrameBuf,
 				  FrameNum, SequenceNum, FrameBuf, EssenceUL, Ctx, HMAC);
 	}
 
@@ -384,7 +385,7 @@ namespace ASDCP
 	Result_t CalcFrameBufferSize(ui64_t &PacketLength)
 	{
 	  KLReader Reader;
-	  Result_t result = Reader.ReadKLFromFile(m_File);
+      Result_t result = Reader.ReadKLFromFile(*m_File);
 
 	  if ( KM_FAILURE(result) )
 	    return result;
@@ -455,7 +456,7 @@ namespace ASDCP
 	    }
 
 	  // Read the Partition header and then read the payload.
-	  Result_t result = m_File.Seek(start_offset);
+	  Result_t result = m_File->Seek(start_offset);
 
 	  if ( KM_SUCCESS(result) )
 	    {
@@ -466,7 +467,7 @@ namespace ASDCP
 	    {
 	      // read the partition header
 	      ASDCP::MXF::Partition GSPart(m_Dict);
-	      result = GSPart.InitFromFile(m_File);
+          result = GSPart.InitFromFile(*m_File);
 
 	      if ( KM_SUCCESS(result) )
 		{
@@ -489,7 +490,7 @@ namespace ASDCP
 	//
 	void Close()
 	{
-	  m_File.Close();
+	  m_File->Close();
 	}
       };
       
@@ -733,6 +734,7 @@ namespace ASDCP
 	  m_HeaderPart.AddChildObject(m_MaterialPackage);
 	  m_ContentStorage->Packages.push_back(m_MaterialPackage->InstanceUID);
 
+	  ui32_t trackID = 1;
 	  if ( tc_frame_rate )
 	    {
 	      TrackSet<TimecodeComponent> MPTCTrack =
@@ -743,12 +745,13 @@ namespace ASDCP
 	      m_DurationUpdateList.push_back(&(MPTCTrack.Sequence->Duration.get()));
 	      MPTCTrack.Clip->Duration.set_has_value();
 	      m_DurationUpdateList.push_back(&(MPTCTrack.Clip->Duration.get()));
+	      trackID++;
 	    }
 
 	  TrackSet<SourceClip> MPTrack =
 	    CreateTrackAndSequence<MaterialPackage, SourceClip>(m_HeaderPart, *m_MaterialPackage,
 								TrackName, clip_edit_rate, DataDefinition,
-								2, m_Dict);
+								trackID, m_Dict);
 	  MPTrack.Sequence->Duration.set_has_value();
 	  m_DurationUpdateList.push_back(&(MPTrack.Sequence->Duration.get()));
 
@@ -757,7 +760,7 @@ namespace ASDCP
 	  MPTrack.Sequence->StructuralComponents.push_back(MPTrack.Clip->InstanceUID);
 	  MPTrack.Clip->DataDefinition = DataDefinition;
 	  MPTrack.Clip->SourcePackageID = SourcePackageUMID;
-	  MPTrack.Clip->SourceTrackID = 2;
+	  MPTrack.Clip->SourceTrackID = trackID;
 
 	  MPTrack.Clip->Duration.set_has_value();
 	  m_DurationUpdateList.push_back(&(MPTrack.Clip->Duration.get()));
@@ -774,6 +777,7 @@ namespace ASDCP
 	  m_HeaderPart.AddChildObject(m_FilePackage);
 	  m_ContentStorage->Packages.push_back(m_FilePackage->InstanceUID);
 
+      trackID = 1;
 	  if ( tc_frame_rate )
 	    {
 	      TrackSet<TimecodeComponent> FPTCTrack =
@@ -784,12 +788,13 @@ namespace ASDCP
 	      m_DurationUpdateList.push_back(&(FPTCTrack.Sequence->Duration.get()));
 	      FPTCTrack.Clip->Duration.set_has_value();
 	      m_DurationUpdateList.push_back(&(FPTCTrack.Clip->Duration.get()));
+          trackID++;
 	    }
 
 	  TrackSet<SourceClip> FPTrack =
 	    CreateTrackAndSequence<SourcePackage, SourceClip>(m_HeaderPart, *m_FilePackage,
 							      TrackName, clip_edit_rate, DataDefinition,
-							      2, m_Dict);
+							      trackID, m_Dict);
 
 	  FPTrack.Sequence->Duration.set_has_value();
 	  m_DurationUpdateList.push_back(&(FPTrack.Sequence->Duration.get()));
@@ -854,16 +859,19 @@ namespace ASDCP
 	}
 
 	Result_t AddDmsGenericPartUtf8Text(const ASDCP::FrameBuffer& frame_buffer,
-					   ASDCP::AESEncContext* enc = 0, ASDCP::HMACContext* hmac = 0)
+					   ASDCP::AESEncContext* enc = 0, ASDCP::HMACContext* hmac = 0, 
+                       const std::string& trackDescription = "Descriptive Track",
+                       const std::string& dataDescription = "")
 	{
 	  Kumu::fpos_t previous_partition_offset = m_RIP.PairArray.back().ByteOffset;
-	  Result_t result = AddDmsTrackGenericPartUtf8Text(m_File, m_HeaderPart, *m_FilePackage, m_RIP, m_Dict);
+
+      Result_t result = AddDmsTrackGenericPartUtf8Text(m_File, m_HeaderPart, *m_FilePackage, m_RIP, m_Dict, trackDescription, dataDescription, m_DurationUpdateList);
 
 	  if ( KM_SUCCESS(result) )
 	    {
 	      // m_RIP now contains an entry (at the back) for the new generic stream
 	      // (this entry was created during the call to AddDmsTrackGenericPartUtf8Text())
-	      if ( m_File.Tell() != m_RIP.PairArray.back().ByteOffset )
+	      if ( m_File.TellPosition() != m_RIP.PairArray.back().ByteOffset )
 		{
 		  DefaultLogSink().Error("File offset has moved since RIP modification. Unrecoverable error.\n");
 		  return RESULT_FAIL;
@@ -886,8 +894,9 @@ namespace ASDCP
 	  
 	      if ( KM_SUCCESS(result) )
 		{
+          ui64_t streamOffset = m_StreamOffset;
 		  result = Write_EKLV_Packet(m_File, *m_Dict, m_HeaderPart, m_Info, m_CtFrameBuf, m_FramesWritten,
-					     m_StreamOffset, frame_buffer, GenericStream_DataElement.Value(),
+                         streamOffset, frame_buffer, GenericStream_DataElement.Value(),
 					     MXF_BER_LENGTH, enc, hmac);
 		}
 	    }
@@ -924,7 +933,7 @@ namespace ASDCP
     public:
       Partition m_BodyPart;
 
-      h__ASDCPReader(const Dictionary*);
+      h__ASDCPReader(const Dictionary*, const Kumu::IFileReaderFactory& fileReaderFactory);
       virtual ~h__ASDCPReader();
 
       Result_t OpenMXFRead(const std::string& filename);
