@@ -393,14 +393,16 @@ AS_02::JXS::MXFWriter::h__Writer::SetSourceStream(const std::string& label, cons
 
   if ( KM_SUCCESS(result) )
     {
-      UL wrapping_label = UL(m_Dict->ul(MDD_MXFGCP1FrameWrappedPictureElement));
+      UL wrapping_label = UL(m_Dict->ul(MDD_MXFGCFrameWrappedProgressiveJPEGXSPictures
+					/*MDD_MXFGCP1FrameWrappedPictureElement*/));
 
       CDCIEssenceDescriptor *cdci_descriptor = dynamic_cast<CDCIEssenceDescriptor*>(m_EssenceDescriptor);
       if ( cdci_descriptor )
 	{
 	  if ( cdci_descriptor->FrameLayout ) // 0 == progressive, 1 == interlace
 	    {
-	      wrapping_label = UL(m_Dict->ul(MDD_MXFGCI1FrameWrappedPictureElement));
+	      wrapping_label = UL(m_Dict->ul(MDD_MXFGCFrameWrappedInterlacedJPEGXSPictures
+					     /*MDD_MXFGCI1FrameWrappedPictureElement*/));
 	    }
 	}
 
