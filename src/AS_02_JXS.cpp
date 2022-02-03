@@ -44,7 +44,7 @@ using Kumu::GenRandomValue;
 
 //------------------------------------------------------------------------------------------
 
-static std::string JXS_PACKAGE_LABEL = "File Package: SMPTE ST 422 / ST 2124 frame wrapping of JPEG XS codestreams";
+static std::string JXS_PACKAGE_LABEL = "File Package: SMPTE ST 2124 frame wrapping of JPEG XS codestreams";
 static std::string PICT_DEF_LABEL = "Image Track";
 
 //------------------------------------------------------------------------------------------
