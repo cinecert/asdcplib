@@ -553,6 +553,33 @@ class MyAudioDescriptor : public PCM::AudioDescriptor
   }
 };
 
+struct IabDescriptor
+{
+  int ContainerDuration;
+  IabDescriptor() : ContainerDuration(0) {}
+};
+
+class MyIabDescriptor : public IabDescriptor
+{
+ public:
+  void FillDescriptor(AS_02::IAB::MXFReader& reader) {
+    const Dictionary& Dict = DefaultCompositeDict();
+    IABEssenceDescriptor *essence_descriptor_mxf = 0;
+
+    std::list<MXF::InterchangeObject*> object_list;
+    reader.OP1aHeader().GetMDObjectsByType(DefaultSMPTEDict().ul(MDD_IABEssenceDescriptor), object_list);
+
+    if ( ! object_list.empty() )
+      {
+        essence_descriptor_mxf = dynamic_cast<MXF::IABEssenceDescriptor*>(object_list.back());
+        assert(essence_descriptor_mxf);
+        ContainerDuration = (int)essence_descriptor_mxf->ContainerDuration.get();
+      }
+  }
+  void Dump(FILE* stream) {}
+  void MyDump(FILE* stream) {}
+};
+
 class MyTextDescriptor : public TimedText::TimedTextDescriptor
 {
  public:
@@ -926,6 +953,11 @@ show_file_info(CommandOptions& Options, const Kumu::IFileReaderFactory& fileRead
 
       if ( ASDCP_SUCCESS(result) && Options.showcoding_flag )
 	wrapper.dump_WaveAudioDescriptor(stdout);
+    }
+  else if ( EssenceType == ESS_AS02_IAB )
+    {
+      FileInfoWrapper<AS_02::IAB::MXFReader, MyIabDescriptor> wrapper(fileReaderFactory);
+      result = wrapper.file_info(Options, "IAB audio");
     }
   else
     {

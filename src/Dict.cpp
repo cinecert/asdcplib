@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2006-2018, John Hurst
+Copyright (c) 2006-2021, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -319,6 +319,10 @@ ASDCP::Dictionary::FindULAnyVersion(const byte_t* ul_buf) const
 	  break;
 	}
       else if ( found_entry == 0 && lower->first.MatchIgnoreStream(target) )
+	{
+	  found_entry = &m_MDD_Table[lower->second];
+	}
+      else if ( found_entry == 0 && lower->first.MatchIgnorePlaceholder(target) )
 	{
 	  found_entry = &m_MDD_Table[lower->second];
 	}
