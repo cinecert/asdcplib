@@ -351,18 +351,24 @@ AS_02::JXS::MXFWriter::h__Writer::OpenWrite(const std::string& filename,
       m_IndexStrategy = IndexStrategy;
       m_PartitionSpace = PartitionSpace_sec; // later converted to edit units by SetSourceStream()
       m_HeaderSize = HeaderSize;
+  
+      if ( picture_descriptor.GetUL() == UL(m_Dict->ul(MDD_RGBAEssenceDescriptor))) {
+	ASDCP::MXF::RGBAEssenceDescriptor *essence = new ASDCP::MXF::RGBAEssenceDescriptor(m_Dict);
+	ASDCP::MXF::RGBAEssenceDescriptor *mine    = dynamic_cast<ASDCP::MXF::RGBAEssenceDescriptor *>(&picture_descriptor);
+	essence->Copy(*mine);
+	m_EssenceDescriptor = essence;
+      } else if ( picture_descriptor.GetUL() == UL(m_Dict->ul(MDD_CDCIEssenceDescriptor)) ) {
+	ASDCP::MXF::CDCIEssenceDescriptor *essence = new ASDCP::MXF::CDCIEssenceDescriptor(m_Dict);
+	ASDCP::MXF::CDCIEssenceDescriptor *mine    = dynamic_cast<ASDCP::MXF::CDCIEssenceDescriptor *>(&picture_descriptor);
+	essence->Copy(*mine);
+	m_EssenceDescriptor = essence;
+      } else {
+	DefaultLogSink().Error("Essence descriptor is not a RGBAEssenceDescriptor or CDCIEssenceDescriptor.\n");
+	picture_descriptor.Dump();
+	return RESULT_AS02_FORMAT;
+      }
 
-      if ( picture_descriptor.GetUL() != UL(m_Dict->ul(MDD_RGBAEssenceDescriptor))
-	   && picture_descriptor.GetUL() != UL(m_Dict->ul(MDD_CDCIEssenceDescriptor)) )
-	{
-	  DefaultLogSink().Error("Essence descriptor is not a RGBAEssenceDescriptor or CDCIEssenceDescriptor.\n");
-	  picture_descriptor.Dump();
-	  return RESULT_AS02_FORMAT;
-	}
-
-      m_EssenceDescriptor = new ASDCP::MXF::GenericPictureEssenceDescriptor(m_Dict);
-      m_EssenceDescriptor->Copy(picture_descriptor);
-
+      
       ASDCP::MXF::JPEGXSPictureSubDescriptor *jxs_subdesc = new ASDCP::MXF::JPEGXSPictureSubDescriptor(m_Dict);
       jxs_subdesc->Copy(jxs_sub_descriptor);
 
