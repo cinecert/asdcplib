@@ -44,7 +44,7 @@ using Kumu::GenRandomValue;
 
 //------------------------------------------------------------------------------------------
 
-static std::string JXS_PACKAGE_LABEL = "File Package: SMPTE ST 422 / ST 2124 frame wrapping of JPEG XS codestreams";
+static std::string JXS_PACKAGE_LABEL = "File Package: SMPTE ST 2124 frame wrapping of JPEG XS codestreams";
 static std::string PICT_DEF_LABEL = "Image Track";
 
 //------------------------------------------------------------------------------------------
@@ -351,18 +351,24 @@ AS_02::JXS::MXFWriter::h__Writer::OpenWrite(const std::string& filename,
       m_IndexStrategy = IndexStrategy;
       m_PartitionSpace = PartitionSpace_sec; // later converted to edit units by SetSourceStream()
       m_HeaderSize = HeaderSize;
+  
+      if ( picture_descriptor.GetUL() == UL(m_Dict->ul(MDD_RGBAEssenceDescriptor))) {
+	ASDCP::MXF::RGBAEssenceDescriptor *essence = new ASDCP::MXF::RGBAEssenceDescriptor(m_Dict);
+	ASDCP::MXF::RGBAEssenceDescriptor *mine    = dynamic_cast<ASDCP::MXF::RGBAEssenceDescriptor *>(&picture_descriptor);
+	essence->Copy(*mine);
+	m_EssenceDescriptor = essence;
+      } else if ( picture_descriptor.GetUL() == UL(m_Dict->ul(MDD_CDCIEssenceDescriptor)) ) {
+	ASDCP::MXF::CDCIEssenceDescriptor *essence = new ASDCP::MXF::CDCIEssenceDescriptor(m_Dict);
+	ASDCP::MXF::CDCIEssenceDescriptor *mine    = dynamic_cast<ASDCP::MXF::CDCIEssenceDescriptor *>(&picture_descriptor);
+	essence->Copy(*mine);
+	m_EssenceDescriptor = essence;
+      } else {
+	DefaultLogSink().Error("Essence descriptor is not a RGBAEssenceDescriptor or CDCIEssenceDescriptor.\n");
+	picture_descriptor.Dump();
+	return RESULT_AS02_FORMAT;
+      }
 
-      if ( picture_descriptor.GetUL() != UL(m_Dict->ul(MDD_RGBAEssenceDescriptor))
-	   && picture_descriptor.GetUL() != UL(m_Dict->ul(MDD_CDCIEssenceDescriptor)) )
-	{
-	  DefaultLogSink().Error("Essence descriptor is not a RGBAEssenceDescriptor or CDCIEssenceDescriptor.\n");
-	  picture_descriptor.Dump();
-	  return RESULT_AS02_FORMAT;
-	}
-
-      m_EssenceDescriptor = new ASDCP::MXF::GenericPictureEssenceDescriptor(m_Dict);
-      m_EssenceDescriptor->Copy(picture_descriptor);
-
+      
       ASDCP::MXF::JPEGXSPictureSubDescriptor *jxs_subdesc = new ASDCP::MXF::JPEGXSPictureSubDescriptor(m_Dict);
       jxs_subdesc->Copy(jxs_sub_descriptor);
 
@@ -393,14 +399,16 @@ AS_02::JXS::MXFWriter::h__Writer::SetSourceStream(const std::string& label, cons
 
   if ( KM_SUCCESS(result) )
     {
-      UL wrapping_label = UL(m_Dict->ul(MDD_MXFGCP1FrameWrappedPictureElement));
+      UL wrapping_label = UL(m_Dict->ul(MDD_MXFGCFrameWrappedProgressiveJPEGXSPictures
+					/*MDD_MXFGCP1FrameWrappedPictureElement*/));
 
       CDCIEssenceDescriptor *cdci_descriptor = dynamic_cast<CDCIEssenceDescriptor*>(m_EssenceDescriptor);
       if ( cdci_descriptor )
 	{
 	  if ( cdci_descriptor->FrameLayout ) // 0 == progressive, 1 == interlace
 	    {
-	      wrapping_label = UL(m_Dict->ul(MDD_MXFGCI1FrameWrappedPictureElement));
+	      wrapping_label = UL(m_Dict->ul(MDD_MXFGCFrameWrappedInterlacedJPEGXSPictures
+					     /*MDD_MXFGCI1FrameWrappedPictureElement*/));
 	    }
 	}
 
