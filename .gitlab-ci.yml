@@ -1,0 +1,94 @@
+# The runner VM is expected to already have dependencies installed.
+# see https://docs.gitlab.com/ce/ci/yaml/README.html for all available options
+
+
+#### SETUP ####
+workflow:
+  rules:
+    - if: '$CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "master"'
+    - if: '$CI_PIPELINE_SOURCE == "pipeline"'
+    - if: '$CI_COMMIT_BRANCH == "master"'
+    - if: '$CI_PIPELINE_SOURCE == "web"'
+
+stages:
+  - build
+  - test
+  - trigger_downstream
+
+.run_build: &run_build
+  stage: build
+  script:
+    - echo "Building"
+    - autoreconf -if
+    - "./configure --enable-as-02 --enable-dev-headers --with-xerces --prefix=/opt/cinecert CPPFLAGS=-I/opt/cinecert/include LDFLAGS=-L/opt/cinecert/lib"
+    - make
+    - sudo make install
+    - sudo ldconfig
+
+.run_tests: &run_tests
+  stage: test
+  script:
+    - echo "No Unittests available."
+
+
+
+#### BUILD ####
+Ubuntu_16.04.6:
+  tags: ["Ubuntu_16.04.6"]
+  <<: *run_build
+
+Ubuntu_20.04:
+  stage: build
+  tags: ["Ubuntu_20.04", "Python_3.8"]
+  script:
+    - echo "Building"
+    - autoreconf -if
+    - "./configure --enable-as-02 --enable-dev-headers --with-xerces=/opt/cinecert --prefix=/opt/cinecert CPPFLAGS=-I/opt/cinecert/include LDFLAGS=-L/opt/cinecert/lib"
+    - make
+    - sudo make install
+    - sudo ldconfig
+  
+Centos_7.2.1511:
+  tags: ["Centos_7.2.1511"]
+  variables:
+    GIT_STRATEGY: clone
+  <<: *run_build
+
+Docker:
+  tags: ["docker"]
+  image: "registry.eng.cinecert.com/cc_projects/kalai/build_ubuntu_16.04:1.0.0"
+  <<: *run_build
+
+
+
+#### TEST ####
+Ubuntu__16_tests:
+  tags: ["Ubuntu_16.04.6"]
+  variables:
+    GIT_STRATEGY: none
+  <<: *run_tests
+
+Ubuntu_20_tests:
+  tags: ["Ubuntu_20.04", "Python_3.8"]
+  variables:
+    GIT_STRATEGY: none
+  <<: *run_tests
+
+Centos_7_tests:
+  tags: ["Centos_7.2.1511"]
+  variables:
+    GIT_STRATEGY: none
+  <<: *run_tests
+
+
+
+#### TRIGGER ####
+trigger_downstream:
+  stage: trigger_downstream
+  trigger:
+    project: cc_projects/napali
+    branch: master
+
+#
+#
+#
