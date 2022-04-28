@@ -85,6 +85,7 @@ endif
 if USE_AS_02
 include_HEADERS		+= \
 	AS_02.h \
+	AS_02_IAB.h \
 	AS_02_JXS.h \
 	AS_02_ACES.h
 endif
