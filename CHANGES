@@ -1,6 +1,61 @@
 
 Change History
 
+2022-04-28 2.12.2 -- bug fixes, IMF JPEG XS, no-OpenSSL build
+ o Fixes to JPEG XS wrapping contributed.
+ o correctly handle WAVE files that don't end with the "data" chunk.
+ o Modified the KLV parser to return RESULT_ALLOC instead of RESULT_FAIL when an
+   attempt is made to read a packet that is larger than the internal limit. The
+   file handle is Seek()ed to the first byte following the huge packet, allowing
+   the caller to get over it and continue parsing MXF.
+ o Added a new UL matching operator MatchIgnorePlaceholder()
+ O new command as-02-wrap-iab contributed.
+ o as-02-wrap changes contributed:
+    update -D documentation
+    add -J option for writing J2CLayout
+    add additional predefined RGBALayout values
+    add support for COLOR.7
+ o Set StaticTrack.TrackID incrementally from 2 instead of hardcoded.
+ o Templatize h__AS02WriteClip, move functions definition to header. Note that
+   this depends on filereader pluggable at runtime commit as the reader is called
+   as a pointer here.
+ o IFileReaderFactory API contributed.
+ o Fix compilation without OpenSSL.
+ o New command as-02-wrap-jxs contributed.
+ o API functions contributed to AS_02_IAB.h: AddDmsGenericPartUtf8Text,
+   ReadGenericStreamPartitionPayload.
+ o Added JPEG XS items to EssenceType_t.
+ o CMake patches contributed for WITHOUT_XML option and building static libs
+ o Fixed "Argument parser fails when first MCA label track is empty"
+ o Add SLVS language assignment functionality
+ o Added a Clone() method to InterchangeObject and derivatives that allows making
+   a descriptor copy that is not owned by any other strucure. The caller must
+   arrange to delete the object pointer returned.
+ o Replaced reference-to-a-pointer-to-the-dictionary idiom with simle pointer.
+   Removes some edge cases where the wrong dictionary was being used.
+ o Increase header buffer size when wrapping 428-7.
+ o ST 429-5 now limits timed text resources to 4095; error log and failure return
+   when exceeded.
+ o Fixed reading of AS-02 files larger than 4 GB.
+
+2020-10-21 2.10.38 -- bug fixes, IMF IAB
+ o Add new subroutine to calculate ContainerDuration from IndexTableSegment.
+ o Fixed issues with ContainerDuration validation before use.
+ o Fixed conditional XML parser support.
+ o Add API call to expose the MIC key from an encrypted MXF.
+ o Add Dolby labels to MDD.h/MDD.cpp.
+ o Fixes to out-of-bounds read conditions.
+ o Add support for multi-segment index tables to AS_02.
+ o The PRNG implementation has been modified to use the newly-added internal AES
+   and SHA-1 instead of relying on OpenSSL (or LibreSSL.) This paves the way for
+   building the library without OpenSSL when cinema encryption is not required.
+ o Added SHA-1 builtin code for build w/o OpenSSL.
+ o Added built-in AES support to reduce external dependency.
+ o Fix large file support on Windows.
+ o Support for IAB Track Files (SMPTE ST 2067-201) contributed.
+ o No longer emit Timecode Tracks when writing AS-02 files.
+ o Fixed "ResourceID and AssetID not zeroed".
+
 2020-02-10 - 2.10.35 -- HTJ2c support, minor extensions, bug fixes
  o Support for wrapping High-Throughput j2c contrinuted by Pierre Lemieux.
  o Added support for DisplayType, IntrinsicPictureResolution, ZPositionInUse
