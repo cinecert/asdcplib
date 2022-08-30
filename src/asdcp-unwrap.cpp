@@ -845,7 +845,7 @@ read_timed_text_file(CommandOptions& Options, const Kumu::IFileReaderFactory& fi
   /* if empty out_path, store ancillary resources in current directory */
   if (out_path == "")
     {
-      out_path = "./";
+      out_path = Kumu::PathJoin(".", out_path);
     }
   for ( ri = TDesc.ResourceList.begin() ; ri != TDesc.ResourceList.end() && ASDCP_SUCCESS(result); ri++ )
     {
