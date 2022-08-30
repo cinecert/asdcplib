@@ -1670,6 +1670,11 @@ read_timed_text_file(CommandOptions& Options, const Kumu::IFileReaderFactory& fi
 	result = Writer.Write(reinterpret_cast<const byte_t*>(XMLDoc.c_str()), XMLDoc.size(), &write_count);
     }
 
+  if ( out_path.empty() )
+    {
+      out_path = ".";
+    }
+
   for ( ri = TDesc.ResourceList.begin() ; ri != TDesc.ResourceList.end() && ASDCP_SUCCESS(result); ri++ )
     {
       result = Reader.ReadAncillaryResource(ri->ResourceID, FrameBuffer, Context, HMAC);
