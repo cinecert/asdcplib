@@ -605,6 +605,18 @@ namespace ASDCP {
 	MDD_CodingEquations_BGR, // 567
 	MDD_CodingEquations_ST240M, // 568
 	MDD_CodingEquations_YCGCO, // 569
+	MDD_JP2KEssenceCompression_IMFProfile_2K_Lossy_1_1, // 570
+	MDD_JP2KEssenceCompression_IMFProfile_2K_Lossy_2_1, // 571
+	MDD_JP2KEssenceCompression_IMFProfile_2K_Lossy_3_1, // 572
+	MDD_JP2KEssenceCompression_IMFProfile_2K_Lossy_4_1, // 573
+	MDD_JP2KEssenceCompression_IMFProfile_2K_Lossy_4_2, // 574
+	MDD_JP2KEssenceCompression_IMFProfile_2K_Lossy_5_1, // 575
+	MDD_JP2KEssenceCompression_IMFProfile_2K_Lossy_5_2, // 576
+	MDD_JP2KEssenceCompression_IMFProfile_2K_Lossy_5_3, // 577
+	MDD_JP2KEssenceCompression_IMFProfile_2K_Lossy_6_1, // 578
+	MDD_JP2KEssenceCompression_IMFProfile_2K_Lossy_6_2, // 579
+	MDD_JP2KEssenceCompression_IMFProfile_2K_Lossy_6_3, // 580
+	MDD_JP2KEssenceCompression_IMFProfile_2K_Lossy_6_4, // 581
 	MDD_Max
     }; // enum MDD_t
 
