@@ -39,7 +39,7 @@ using namespace ASDCP;
 
 using Kumu::DefaultLogSink;
 
-static const char* c_dcst_namespace_name = "http://www.smpte-ra.org/schemas/428-7/2007/DCST";
+static const char* c_dcst_namespace_name = "http://www.smpte-ra.org/schemas/428-7/2014/DCST";
 
 //------------------------------------------------------------------------------------------
 
