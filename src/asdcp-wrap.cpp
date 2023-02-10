@@ -105,6 +105,12 @@ public:
     return;								\
   }
 
+#define TEST_EXTRA_ARG_ALLOW_DASH(i,c)					\
+  if ( ++i >= argc ) {							\
+    fprintf(stderr, "Argument not found for option -%c.\n", (c));	\
+    return;								\
+  }
+
 
 //
 static void
@@ -443,7 +449,7 @@ public:
 	      case 'M': write_hmac = false; break;
 
 	      case 'm':
-		TEST_MCA_EXTRA_ARG(i, 'm');
+		TEST_EXTRA_ARG_ALLOW_DASH(i, 'm');
 		mca_config_str = argv[i];
 		break;
 
