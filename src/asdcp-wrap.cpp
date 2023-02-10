@@ -160,6 +160,8 @@ Options:\n\
                       Defaults to 4,194,304 (4MB)\n\
   -C <UL>           - Set ChannelAssignment UL value in a PCM file\n\
   -d <duration>     - Number of frames to process, default all\n\
+                      Note: For timed-text MXFs, this option forces the\n\
+                      value for the Asset's intrinsic duration.\n\
   -e                - Encrypt MPEG or JP2K headers (default)\n\
   -E                - Do not encrypt MPEG or JP2K headers\n\
   -f <start-frame>  - Starting frame number, default 0\n\
@@ -1368,7 +1370,8 @@ write_timed_text_file(CommandOptions& Options)
   byte_t            IV_buf[CBC_BLOCK_SIZE];
 
   // set up essence parser
-  Result_t result = Parser.OpenRead(Options.filenames.front());
+  Result_t result = Parser.OpenRead(Options.filenames.front(),
+				    (Options.duration == 0xffffffff ? 0 : Options.duration));
 
   // set up MXF writer
   if ( ASDCP_SUCCESS(result) )
