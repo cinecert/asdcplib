@@ -493,6 +493,12 @@ namespace ASDCP {
       // argument is NULL.
       Result_t InitKey(const byte_t* key, LabelSet_t);
 
+      // Initializes HMAC context in a FIPS 3-compliant manner.
+      // The key argument must point to a binary
+      // key that is CBC_KEY_SIZE bytes in length. Returns error if the key
+      // argument is NULL.
+      Result_t InitMICKey(const byte_t* key);
+
       // Reset internal state, allows repeated cycles of Update -> Finalize
       void Reset();
 

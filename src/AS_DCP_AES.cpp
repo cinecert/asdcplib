@@ -261,6 +261,14 @@ public:
   h__HMACContext() : m_Final(false) {}
   ~h__HMACContext() {}
 
+  // passes through a (hopefully) randomly-generated key
+  // for DCI-compliant MIC keying; no generation
+  void SetMICKey(const byte_t* key)
+  {
+    memcpy(m_key, key, KeyLen);
+    Reset();
+  }
+
   // SMPTE 429.6 MIC key generation
   void SetKey(const byte_t* key)
   {
@@ -384,6 +392,19 @@ HMACContext::InitKey(const byte_t* key, LabelSet_t SetType)
       m_Context = 0;
       return RESULT_INIT;
     }
+
+  return RESULT_OK;
+}
+
+
+//
+Result_t
+HMACContext::InitMICKey(const byte_t* key)
+{
+  KM_TEST_NULL_L(key);
+
+  m_Context = new h__HMACContext;
+  m_Context->SetMICKey(key);
 
   return RESULT_OK;
 }

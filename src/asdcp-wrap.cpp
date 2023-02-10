@@ -136,7 +136,7 @@ usage(FILE* stream = stdout)
 USAGE: %s [-h|-help] [-V]\n\
 \n\
        %s [-3] [-a <uuid>] [-b <buffer-size>] [-C <UL>] [-d <duration>]\n\
-          [-e|-E] [-f <start-frame>] [-j <key-id-string>] [-k <key-string>]\n\
+          [-e|-E] [-f <start-frame>] [-j <key-id-string>] [-k <key-string>] [-K <key-string>]\n\
           [-l <label>] [-L] [-M] [-m <expr>] [-p <frame-rate>] [-s] [-v]\n\
           [-W] [-z|-Z] <input-file>+ <output-file>\n\n",
 	  PROGRAM_NAME, PROGRAM_NAME);
@@ -162,6 +162,7 @@ Options:\n\
                       (requires option \"-m\")\n\
   -j <key-id-str>   - Write key ID instead of creating a random value\n\
   -k <key-string>   - Use key for ciphertext operations\n\
+  -K <key-string>   - Pass through a hex key for MIC in HMAC. Ensure this is random!\n\
   -l <label>        - Use given channel format label when writing MXF sound\n\
                       files. SMPTE 429-2 labels: '5.1', '6.1', '7.1',\n\
                       '7.1DS', 'WTF'\n\
@@ -245,6 +246,8 @@ public:
   byte_t key_value[KeyLen];  // value of given encryption key (when key_flag is true)
   bool   key_id_flag;    // true if a key ID was given
   byte_t key_id_value[UUIDlen];// value of given key ID (when key_id_flag is true)
+  bool   mic_key_flag;    // true if a MIC key was given
+  byte_t mic_key_value[UUIDlen];// value of given MIC key (when mic_key_flag is true)
   byte_t asset_id_value[UUIDlen];// value of asset ID (when asset_id_flag is true)
   PCM::ChannelFormat_t channel_fmt; // audio channel arrangement
   std::string out_file; //
@@ -310,7 +313,7 @@ public:
   //
   CommandOptions(int argc, const char** argv) :
     error_flag(true), key_flag(false), key_id_flag(false), asset_id_flag(false),
-    encrypt_header_flag(true), write_hmac(true),
+    encrypt_header_flag(true), write_hmac(true), mic_key_flag(false),
     verbose_flag(false), fb_dump_size(0),
     no_write_flag(false), version_flag(false), help_flag(false), stereo_image_flag(false),
     write_partial_pcm_flag(false), start_frame(0),
@@ -325,6 +328,7 @@ public:
   {
     memset(key_value, 0, KeyLen);
     memset(key_id_value, 0, UUIDlen);
+    memset(mic_key_value, 0, KeyLen);
     std::string mca_config_str;
 
     for ( int i = 1; i < argc; i++ )
@@ -429,6 +433,20 @@ public:
 		  if ( length != KeyLen )
 		    {
 		      fprintf(stderr, "Unexpected key length: %u, expecting %u characters.\n", length, KeyLen);
+		      return;
+		    }
+		}
+		break;
+
+	      case 'K': mic_key_flag = true;
+		TEST_EXTRA_ARG(i, 'K');
+		{
+		  ui32_t length;
+		  Kumu::hex2bin(argv[i], mic_key_value, KeyLen, &length);
+
+		  if ( length != KeyLen )
+		    {
+		      fprintf(stderr, "Unexpected key length: %u, expecting %u hex characters.\n", length, 2U * KeyLen);
 		      return;
 		    }
 		}
@@ -601,7 +619,11 @@ write_MPEG2_file(CommandOptions& Options)
 	    {
 	      Info.UsesHMAC = true;
 	      HMAC = new HMACContext;
-	      result = HMAC->InitKey(Options.key_value, Info.LabelSetType);
+	      if (Options.mic_key_flag) {
+		result = HMAC->InitMICKey(Options.mic_key_value);
+	      } else {
+		result = HMAC->InitKey(Options.key_value, Info.LabelSetType);
+	      }
 	    }
 	}
 #endif // HAVE_OPENSSL
@@ -773,7 +795,11 @@ write_JP2K_S_file(CommandOptions& Options)
 	    {
 	      Info.UsesHMAC = true;
 	      HMAC = new HMACContext;
-	      result = HMAC->InitKey(Options.key_value, Info.LabelSetType);
+	      if (Options.mic_key_flag) {
+		result = HMAC->InitMICKey(Options.mic_key_value);
+	      } else {
+		result = HMAC->InitKey(Options.key_value, Info.LabelSetType);
+	      }
 	    }
 	}
 #endif // HAVE_OPENSSL
@@ -914,7 +940,11 @@ write_JP2K_file(CommandOptions& Options)
 	    {
 	      Info.UsesHMAC = true;
 	      HMAC = new HMACContext;
-	      result = HMAC->InitKey(Options.key_value, Info.LabelSetType);
+	      if (Options.mic_key_flag) {
+		result = HMAC->InitMICKey(Options.mic_key_value);
+	      } else {
+		result = HMAC->InitKey(Options.key_value, Info.LabelSetType);
+	      }
 	    }
 	}
 #endif // HAVE_OPENSSL
@@ -1060,7 +1090,11 @@ write_PCM_file(CommandOptions& Options)
 	    {
 	      Info.UsesHMAC = true;
 	      HMAC = new HMACContext;
-	      result = HMAC->InitKey(Options.key_value, Info.LabelSetType);
+	      if (Options.mic_key_flag) {
+		result = HMAC->InitMICKey(Options.mic_key_value);
+	      } else {
+		result = HMAC->InitKey(Options.key_value, Info.LabelSetType);
+	      }
 	    }
 	}
 #endif // HAVE_OPENSSL
@@ -1254,7 +1288,11 @@ write_PCM_with_ATMOS_sync_file(CommandOptions& Options)
       {
         Info.UsesHMAC = true;
         HMAC = new HMACContext;
-        result = HMAC->InitKey(Options.key_value, Info.LabelSetType);
+        if (Options.mic_key_flag) {
+          result = HMAC->InitMICKey(Options.mic_key_value);
+        } else {
+          result = HMAC->InitKey(Options.key_value, Info.LabelSetType);
+        }
       }
 	}
 #endif // HAVE_OPENSSL
@@ -1386,7 +1424,11 @@ write_timed_text_file(CommandOptions& Options)
 	    {
 	      Info.UsesHMAC = true;
 	      HMAC = new HMACContext;
-	      result = HMAC->InitKey(Options.key_value, Info.LabelSetType);
+	      if (Options.mic_key_flag) {
+		result = HMAC->InitMICKey(Options.mic_key_value);
+	      } else {
+		result = HMAC->InitKey(Options.key_value, Info.LabelSetType);
+	      }
 	    }
 	}
 #endif // HAVE_OPENSSL
@@ -1512,7 +1554,11 @@ write_dolby_atmos_file(CommandOptions& Options)
       {
         Info.UsesHMAC = true;
         HMAC = new HMACContext;
-        result = HMAC->InitKey(Options.key_value, Info.LabelSetType);
+        if (Options.mic_key_flag) {
+          result = HMAC->InitMICKey(Options.mic_key_value);
+        } else {
+          result = HMAC->InitKey(Options.key_value, Info.LabelSetType);
+        }
       }
 	}
 #endif
@@ -1631,7 +1677,11 @@ write_aux_data_file(CommandOptions& Options)
       {
         Info.UsesHMAC = true;
         HMAC = new HMACContext;
-        result = HMAC->InitKey(Options.key_value, Info.LabelSetType);
+        if (Options.mic_key_flag) {
+          result = HMAC->InitMICKey(Options.mic_key_value);
+        } else {
+          result = HMAC->InitKey(Options.key_value, Info.LabelSetType);
+        }
       }
 	}
 #endif // HAVE_OPENSSL
