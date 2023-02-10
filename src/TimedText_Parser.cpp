@@ -271,6 +271,17 @@ ASDCP::TimedText::DCSubtitleParser::h__SubtitleParser::OpenRead()
       return RESULT_FORMAT;
     }
 
+  // Language
+  XMLElement* Language = m_Root.GetChildWithName("Language");
+
+  if ( Language == 0 )
+    {
+      DefaultLogSink().Error("Language element missing from input document.\n");
+      return RESULT_FORMAT;
+    }
+
+  m_TDesc.Language = Language->GetBody();
+
   // list of fonts
   ElementList FontList;
   m_Root.GetChildrenWithName("LoadFont", FontList);

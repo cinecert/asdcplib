@@ -1477,6 +1477,7 @@ namespace ASDCP {
 	byte_t         AssetID[UUIDlen];
 	std::string    NamespaceName;
 	std::string    EncodingName;
+	std::string    Language;
 	ResourceList_t ResourceList;
 
       TimedTextDescriptor() : ContainerDuration(0), EncodingName("UTF-8") { memset(AssetID, 0, UUIDlen); } // D-Cinema format is always UTF-8
