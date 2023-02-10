@@ -1644,11 +1644,15 @@ bool
 ASDCP::MXF::decode_mca_string(const std::string& s, const mca_label_map_t& labels, const Dictionary* dict, const std::string& language,
 			      InterchangeObject_list_t& descriptor_list, ui32_t& channel_count)
 {
+  typedef std::map<const std::string, ASDCP::MXF::SoundfieldGroupLabelSubDescriptor *, ci_comp> sfg_map_t;
   std::string symbol_buf;
   std::string current_language;
   channel_count = 0;
   ASDCP::MXF::SoundfieldGroupLabelSubDescriptor *current_soundfield = 0, *prev_soundfield = 0;
   std::string::const_iterator i;
+  sfg_map_t used_soundfields; /* Track old soundfields, so that they can be reused. This allows
+                                 for the following type of layout:
+                                 71(L,R,C,LFE,Lss,Rss),HI,VIN,-,-,71(Lrs,Rrs),DBOX,-  */
 
   for ( i = s.begin(); i != s.end(); ++i )
     {
@@ -1693,15 +1697,23 @@ ASDCP::MXF::decode_mca_string(const std::string& s, const mca_label_map_t& label
 	      return false;
 	    }
 
-	  current_soundfield = new ASDCP::MXF::SoundfieldGroupLabelSubDescriptor(dict);
-	  GenRandomValue(current_soundfield->MCALinkID);
+	  sfg_map_t::const_iterator ui = used_soundfields.find(symbol_buf);
+	  if ( ui != used_soundfields.end() )
+	    {
+	      current_soundfield = ui->second;  // reuse the old soundfield.
+	    }
+	  else
+	    {
+	      current_soundfield = new ASDCP::MXF::SoundfieldGroupLabelSubDescriptor(dict);
+	      GenRandomValue(current_soundfield->MCALinkID);
 
-	  current_soundfield->MCATagSymbol = (i->second.requires_prefix ? "sg" : "") + i->first;
-	  current_soundfield->MCATagName = i->second.tag_name;
-	  current_soundfield->RFC5646SpokenLanguage = language;
-	  current_soundfield->MCALabelDictionaryID = i->second.ul;
-	  descriptor_list.push_back(reinterpret_cast<ASDCP::MXF::InterchangeObject*>(current_soundfield));
-	  prev_soundfield = current_soundfield;
+	      current_soundfield->MCATagSymbol = (i->second.requires_prefix ? "sg" : "") + i->first;
+	      current_soundfield->MCATagName = i->second.tag_name;
+	      current_soundfield->RFC5646SpokenLanguage = language;
+	      current_soundfield->MCALabelDictionaryID = i->second.ul;
+	      descriptor_list.push_back(reinterpret_cast<ASDCP::MXF::InterchangeObject*>(current_soundfield));
+	      prev_soundfield = current_soundfield;
+	    }
 	  symbol_buf.clear();
 	}
       else if ( *i == ')' )
