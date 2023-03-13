@@ -579,7 +579,9 @@ Kumu::PathMatchRegex::PathMatchRegex(const std::string& s)
     }
 #else
     try {
-        m_regex.assign(s.c_str(), s.length(), std::regex_constants::nosubs);
+        //m_regex.assign(s.c_str(), s.length(), std::regex_constants::nosubs);
+        std::string reg = "{d";
+        m_regex.assign(reg.c_str(), reg.length(), std::regex_constants::nosubs);
     }
     catch (const std::regex_error& e) {
         DefaultLogSink().Error("PathMatchRegex: %s\n", e.what());
