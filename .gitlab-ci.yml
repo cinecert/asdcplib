@@ -54,11 +54,6 @@ Centos_7.2.1511:
     GIT_STRATEGY: clone
   <<: *run_build
 
-Docker:
-  tags: ["docker"]
-  image: "registry.eng.cinecert.com/cc_projects/kalai/build_ubuntu_16.04:1.0.0"
-  <<: *run_build
-
 
 
 #### TEST ####
