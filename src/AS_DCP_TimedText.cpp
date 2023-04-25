@@ -63,11 +63,12 @@ ASDCP::TimedText::operator << (std::ostream& strm, const TimedTextDescriptor& TD
   UUID TmpID(TDesc.AssetID);
   char buf[64];
 
-  strm << "         EditRate: " << (unsigned) TDesc.EditRate.Numerator << "/" << (unsigned) TDesc.EditRate.Denominator << std::endl;
-  strm << "ContainerDuration: " << (unsigned) TDesc.ContainerDuration << std::endl;
-  strm << "          AssetID: " << TmpID.EncodeHex(buf, 64) << std::endl;
-  strm << "    NamespaceName: " << TDesc.NamespaceName << std::endl;
-  strm << "    ResourceCount: " << (unsigned long) TDesc.ResourceList.size() << std::endl;
+  strm << "              EditRate: " << (unsigned) TDesc.EditRate.Numerator << "/" << (unsigned) TDesc.EditRate.Denominator << std::endl;
+  strm << "     ContainerDuration: " << (unsigned) TDesc.ContainerDuration << std::endl;
+  strm << "               AssetID: " << TmpID.EncodeHex(buf, 64) << std::endl;
+  strm << "         NamespaceName: " << TDesc.NamespaceName << std::endl;
+  strm << "         ResourceCount: " << (unsigned long) TDesc.ResourceList.size() << std::endl;
+  strm << "RFC5646LanguageTagList: " << TDesc.RFC5646LanguageTagList << std::endl;
 
   TimedText::ResourceList_t::const_iterator ri;
   for ( ri = TDesc.ResourceList.begin() ; ri != TDesc.ResourceList.end(); ri++ )
@@ -89,11 +90,12 @@ ASDCP::TimedText::DescriptorDump(ASDCP::TimedText::TimedTextDescriptor const& TD
   UUID TmpID(TDesc.AssetID);
   char buf[64];
 
-  fprintf(stream, "         EditRate: %u/%u\n", TDesc.EditRate.Numerator, TDesc.EditRate.Denominator);
-  fprintf(stream, "ContainerDuration: %u\n",    TDesc.ContainerDuration);
-  fprintf(stream, "          AssetID: %s\n",    TmpID.EncodeHex(buf, 64));
-  fprintf(stream, "    NamespaceName: %s\n",    TDesc.NamespaceName.c_str());
-  fprintf(stream, "    ResourceCount: %zu\n",   TDesc.ResourceList.size());
+  fprintf(stream, "              EditRate: %u/%u\n", TDesc.EditRate.Numerator, TDesc.EditRate.Denominator);
+  fprintf(stream, "     ContainerDuration: %u\n",    TDesc.ContainerDuration);
+  fprintf(stream, "               AssetID: %s\n",    TmpID.EncodeHex(buf, 64));
+  fprintf(stream, "         NamespaceName: %s\n",    TDesc.NamespaceName.c_str());
+  fprintf(stream, "         ResourceCount: %zu\n",   TDesc.ResourceList.size());
+  fprintf(stream, "RFC5646LanguageTagList: %s\n",    TDesc.RFC5646LanguageTagList.c_str());
 
   TimedText::ResourceList_t::const_iterator ri;
   for ( ri = TDesc.ResourceList.begin() ; ri != TDesc.ResourceList.end(); ri++ )
@@ -163,6 +165,7 @@ ASDCP::TimedText::MXFReader::h__Reader::MD_to_TimedText_TDesc(TimedText::TimedTe
   memcpy(TDesc.AssetID, TDescObj->ResourceID.Value(), UUIDlen);
   TDesc.NamespaceName = TDescObj->NamespaceURI;
   TDesc.EncodingName = TDescObj->UCSEncoding;
+  TDesc.RFC5646LanguageTagList = TDescObj->RFC5646LanguageTagList;
   TDesc.ResourceList.clear();
 
   Array<UUID>::const_iterator sdi = TDescObj->SubDescriptors.begin();
@@ -484,6 +487,7 @@ ASDCP::TimedText::MXFWriter::h__Writer::TimedText_TDesc_to_MD(TimedText::TimedTe
   TDescObj->ResourceID.Set(TDesc.AssetID);
   TDescObj->NamespaceURI = TDesc.NamespaceName;
   TDescObj->UCSEncoding = TDesc.EncodingName;
+  TDescObj->RFC5646LanguageTagList = TDesc.RFC5646LanguageTagList;
 
   return RESULT_OK;
 }
