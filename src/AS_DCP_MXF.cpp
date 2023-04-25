@@ -630,8 +630,7 @@ ASDCP::IntegrityPack::CalcValues(const ASDCP::FrameBuffer& FB, const byte_t* Ass
   p += MXF_BER_LENGTH;
 
   // sequence number
-  Kumu::i2p<ui64_t>(KM_i64_BE(sequence), p);
-  p += sizeof(ui64_t);
+  p += Kumu::i2p<ui64_t>(KM_i64_BE(sequence), p);
 
   // HMAC length
   memcpy(p, ber_4, MXF_BER_LENGTH);

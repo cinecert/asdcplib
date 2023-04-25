@@ -147,9 +147,11 @@ namespace Kumu
   }
 
   // write an integer to byte-structured storage
+  // returns the number of bytes written
   template<class T>
-  inline void i2p(T i, byte_t* p) {
+  inline size_t i2p(T i, byte_t* p) {
       memcpy(p, &i, sizeof(T));
+      return sizeof(T);
   }
 
 

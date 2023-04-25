@@ -99,8 +99,7 @@ namespace Kumu
 	if ( ( m_size + sizeof(ui16_t) ) > m_capacity )
 	  return false;
 	
-	i2p<ui16_t>(KM_i16_BE(i), m_p + m_size);
-	m_size += sizeof(ui16_t);
+	m_size += i2p<ui16_t>(KM_i16_BE(i), m_p + m_size);
 	return true;
       }
 
@@ -108,8 +107,7 @@ namespace Kumu
 	if ( ( m_size + sizeof(ui32_t) ) > m_capacity )
 	  return false;
 	
-	i2p<ui32_t>(KM_i32_BE(i), m_p + m_size);
-	m_size += sizeof(ui32_t);
+	m_size += i2p<ui32_t>(KM_i32_BE(i), m_p + m_size);
 	return true;
       }
 
@@ -117,8 +115,7 @@ namespace Kumu
 	if ( ( m_size + sizeof(ui64_t) ) > m_capacity )
 	  return false;
 	
-	i2p<ui64_t>(KM_i64_BE(i), m_p + m_size);
-	m_size += sizeof(ui64_t);
+	m_size += i2p<ui64_t>(KM_i64_BE(i), m_p + m_size);
 	return true;
       }
 
