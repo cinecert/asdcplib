@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2005-2021, John Hurst
+Copyright (c) 2005-2022, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -130,6 +130,7 @@ namespace ASDCP
 	    ~PacketList();
 	    void AddPacket(InterchangeObject* ThePacket); // takes ownership
 	    Result_t GetMDObjectByID(const UUID& ObjectID, InterchangeObject** Object);
+	    Result_t DeleteMDObjectByID(const UUID& ObjectID);
 	    Result_t GetMDObjectByType(const byte_t* ObjectID, InterchangeObject** Object);
 	    Result_t GetMDObjectsByType(const byte_t* ObjectID, std::list<InterchangeObject*>& ObjectList);
 	  };
@@ -449,6 +450,7 @@ namespace ASDCP
 	  virtual Result_t WriteToFile(Kumu::FileWriter& Writer, ui32_t HeaderLength = 16384);
 	  virtual void     Dump(FILE* = 0);
 	  virtual Result_t GetMDObjectByID(const UUID&, InterchangeObject** = 0);
+	  virtual Result_t DeleteMDObjectByID(const UUID& ObjectID);
 	  virtual Result_t GetMDObjectByType(const byte_t*, InterchangeObject** = 0);
 	  virtual Result_t GetMDObjectsByType(const byte_t* ObjectID, std::list<InterchangeObject*>& ObjectList);
 	  Identification*  GetIdentification();
@@ -485,6 +487,7 @@ namespace ASDCP
 	  virtual void     Dump(FILE* = 0);
 
 	  virtual Result_t GetMDObjectByID(const UUID&, InterchangeObject** = 0);
+	  virtual Result_t DeleteMDObjectByID(const UUID& ObjectID);
 	  virtual Result_t GetMDObjectByType(const byte_t*, InterchangeObject** = 0);
 	  virtual Result_t GetMDObjectsByType(const byte_t* ObjectID, std::list<InterchangeObject*>& ObjectList);
 

@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2005-2021, John Hurst
+Copyright (c) 2005-2022, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -218,6 +218,22 @@ ASDCP::MXF::Partition::PacketList::GetMDObjectByID(const UUID& ObjectID, Interch
     }
 
   *Object = (*mi).second;
+  return RESULT_OK;
+}
+
+//
+ASDCP::Result_t
+ASDCP::MXF::Partition::PacketList::DeleteMDObjectByID(const UUID& ObjectID)
+{
+  std::map<UUID, InterchangeObject*>::iterator mi = m_Map.find(ObjectID);
+  
+  if ( mi == m_Map.end() )
+    {
+       return RESULT_FAIL;
+    }
+
+  delete (*mi).second;
+  m_Map.erase(mi);
   return RESULT_OK;
 }
 
@@ -885,10 +901,18 @@ ASDCP::MXF::OP1aHeader::InitFromBuffer(const byte_t* p, ui32_t l)
   return result;
 }
 
+//
 ASDCP::Result_t
 ASDCP::MXF::OP1aHeader::GetMDObjectByID(const UUID& ObjectID, InterchangeObject** Object)
 {
   return m_PacketList->GetMDObjectByID(ObjectID, Object);
+}
+
+//
+ASDCP::Result_t
+ASDCP::MXF::OP1aHeader::DeleteMDObjectByID(const UUID& ObjectID)
+{
+  return m_PacketList->DeleteMDObjectByID(ObjectID);
 }
 
 //
@@ -1225,10 +1249,18 @@ ASDCP::MXF::OPAtomIndexFooter::Dump(FILE* stream)
     (*i)->Dump(stream);
 }
 
+//
 ASDCP::Result_t
 ASDCP::MXF::OPAtomIndexFooter::GetMDObjectByID(const UUID& ObjectID, InterchangeObject** Object)
 {
   return m_PacketList->GetMDObjectByID(ObjectID, Object);
+}
+
+//
+ASDCP::Result_t
+ASDCP::MXF::OPAtomIndexFooter::DeleteMDObjectByID(const UUID& ObjectID)
+{
+  return m_PacketList->DeleteMDObjectByID(ObjectID);
 }
 
 //
