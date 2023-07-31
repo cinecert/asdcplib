@@ -161,8 +161,8 @@ namespace JP2K
 	  void Dump(FILE* stream = 0) const;
 	};
 
-      const int SqcdOFST = 1;
-      const int SPqcdOFST = 2;
+      const int SqcdOFST = 0;
+      const int SPqcdOFST = 1;
 
       enum QuantizationType_t
       {
