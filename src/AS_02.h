@@ -73,7 +73,7 @@ namespace AS_02
     class AS02IndexReader : public ASDCP::MXF::Partition
     {
       Kumu::ByteString m_IndexSegmentData;
-      ui32_t m_Duration;
+      ui64_t m_Duration;
       ui32_t m_BytesPerEditUnit;
 
       Result_t InitFromBuffer(const byte_t* p, ui32_t l, const ui64_t& body_offset, const ui64_t& essence_container_offset);
@@ -88,7 +88,7 @@ namespace AS_02
       virtual ~AS02IndexReader();
     
       Result_t InitFromFile(const Kumu::IFileReader& reader, const ASDCP::MXF::RIP& rip, const bool has_header_essence);
-      ui32_t GetDuration() const;
+      ui64_t GetDuration() const;
       void     Dump(FILE* = 0);
       Result_t GetMDObjectByID(const Kumu::UUID&, ASDCP::MXF::InterchangeObject** = 0);
       Result_t GetMDObjectByType(const byte_t*, ASDCP::MXF::InterchangeObject** = 0);

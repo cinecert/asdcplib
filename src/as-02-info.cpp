@@ -786,12 +786,12 @@ public:
       {
 	m_Desc.FillDescriptor(m_Reader);
 	m_Reader.FillWriterInfo(m_WriterInfo);
-
-	fprintf(stdout, "%s file essence type is %s, (%d edit unit%s).\n",
+        ui64_t container_duration = m_Desc.ContainerDuration;
+	fprintf(stdout, "%s file essence type is %s, (%llu edit unit%s).\n",
 		( m_WriterInfo.LabelSetType == LS_MXF_SMPTE ? "SMPTE 2067-5" : "Unknown" ),
 		type_string,
-		m_Desc.ContainerDuration,
-		(m_Desc.ContainerDuration == (ui64_t)1 ? "":"s"));
+		container_duration,
+		(container_duration == ui64_C(1) ? "":"s"));
 
 	if ( Options.showheader_flag )
 	  {

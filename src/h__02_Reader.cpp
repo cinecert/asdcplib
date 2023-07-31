@@ -336,7 +336,7 @@ AS_02::MXF::AS02IndexReader::GetMDObjectsByType(const byte_t* ObjectID, std::lis
 
 
 //
-ui32_t
+ui64_t
 AS_02::MXF::AS02IndexReader::GetDuration() const
 {
   return m_Duration;
