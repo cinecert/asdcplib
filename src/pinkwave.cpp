@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2015, John Hurst
+Copyright (c) 2022, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -32,6 +32,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "Wav.h"
 #include "ST2095_PinkNoise.h"
 #include <assert.h>
+#include <math.h>
 
 using namespace ASDCP;
 
@@ -57,7 +58,7 @@ banner(FILE* stream = stderr)
 {
   fprintf(stream, "\n\
 %s (asdcplib %s)\n\n\
-Copyright (c) 2015 John Hurst\n\n\
+Copyright (c) 2015, 2022 John Hurst\n\n\
 %s is part of asdcplib.\n\
 asdcplib may be copied only under the terms of the license found at\n\
 the top of every file in the asdcplib distribution kit.\n\n\
@@ -75,6 +76,7 @@ USAGE: %s [-v|-h[-d]] <filename>\n\
   -V              - Show version\n\
   -h              - Show help\n\
   -d <duration>   - Number of edit units to process, default 1440\n\
+  -g <[+-]dB>     - Apply a fixed gain value to each sample\n\
   -9              - Make a 96 kHz file (default 48 kHz)\n\
 \n\
 Other Options:\n\
@@ -84,6 +86,48 @@ Other Options:\n\
          o All option arguments must be separated from the option by whitespace.\n\
 \n", PROGRAM_NAME);
 }
+
+//
+static bool
+looks_floaty(const std::string& candidate)
+{
+  bool has_dot = false;
+  bool has_sign = false;
+  bool has_digit = false;
+
+  for ( std::string::const_iterator i = candidate.begin(); i != candidate.end(); ++i )
+    {
+      if ( *i == '-' || *i == '+' )
+	{
+	  if ( has_digit || has_sign )
+	    {
+	      return false;
+	    }
+
+	  has_sign = true;
+	}
+      else if ( *i == '.' )
+	{
+	  if ( ! has_digit || has_dot )
+	    {
+	      return false;
+	    }
+
+	  has_dot = true;
+	}
+      else if ( isdigit(*i) )
+	{
+	  has_digit = true;
+	}
+      else
+	{
+	  return false;
+	}
+    }
+
+  return true;
+}
+
 
 //
 //
@@ -100,12 +144,15 @@ public:
   ui32_t duration;       // number of frames to be processed
   float  HpFc;           // Highpass filter cutoff frequency in Hz
   float  LpFc;           // Lowpass filter cutoff frequency in Hz
-  const char* filename;  //
+  float gain;            // raise or lower the level in the output
+  const char* filename;  // 
 
   CommandOptions(int argc, const char** argv) :
     error_flag(true), verbose_flag(false), version_flag(false), help_flag(false), s96_flag(false),
-    duration(1440), HpFc(PinkFilterHighPassConstant), LpFc(PinkFilterLowPassConstant), filename(0)
+    duration(1440), HpFc(PinkFilterHighPassConstant), LpFc(PinkFilterLowPassConstant), gain(1.0), filename(0)
   {
+    double gain_in = 0;
+
     for ( int i = 1; i < argc; i++ )
       {
 	if ( argv[i][0] == '-' && ( isalpha(argv[i][1]) || isdigit(argv[i][1]) ) && argv[i][2] == 0 )
@@ -119,6 +166,24 @@ public:
 	      case 'd':
 		TEST_EXTRA_ARG(i, 'd');
 		duration = Kumu::xabs(strtol(argv[i], 0, 10));
+		break;
+
+	      case 'g':
+		if ( ++i >= argc )
+		  {
+		    fprintf(stderr, "Argument not found for option -g.\n");
+		    return;
+		  }
+
+		if ( ! looks_floaty(argv[(i)]) )
+		  {
+		    fprintf(stderr, "Option -g requires a numerical argument.\n");
+		    return;
+		  }
+
+		gain_in = strtod(argv[i], 0);
+		gain = pow(10, gain_in / 20);
+		fprintf(stderr, "Gain: %f dB (%f).\n", gain_in, gain);
 		break;
 
 	      case '9':
@@ -212,7 +277,7 @@ make_pink_wav_file(CommandOptions& Options)
 
 	  for ( int i = 0; i < samples_per_frame; ++i )
 	    {
-	      float pink_sample = pink_filter.GetNextSample(lcg.GetNextSample());
+	      float pink_sample = pink_filter.GetNextSample(lcg.GetNextSample()) * Options.gain;
 	      ScalePackSample(pink_sample, p, ADesc.BlockAlign);
 	      p += ADesc.BlockAlign;
 	    }
