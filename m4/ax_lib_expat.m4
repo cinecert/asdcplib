@@ -1,4 +1,6 @@
-##### http://autoconf-archive.cryp.to/ax_lib_expat.html
+# ===========================================================================
+#       https://www.gnu.org/software/autoconf-archive/ax_lib_expat.html
+# ===========================================================================
 #
 # SYNOPSIS
 #
@@ -26,6 +28,7 @@
 #   This macro calls:
 #
 #     AC_SUBST(EXPAT_CFLAGS)
+#     AC_SUBST(EXPAT_LIBS)
 #     AC_SUBST(EXPAT_LDFLAGS)
 #     AC_SUBST(EXPAT_VERSION)  -- only if version requirement is used
 #
@@ -33,22 +36,21 @@
 #
 #     HAVE_EXPAT
 #
-# LAST MODIFICATION
+# LICENSE
 #
-#   2007-12-05
+#   Copyright (c) 2008 Mateusz Loskot <mateusz@loskot.net>
 #
-# COPYLEFT
-#
-#   Copyright (c) 2007 Mateusz Loskot <mateusz@loskot.net>
-#
-#   Copying and distribution of this file, with or without
-#   modification, are permitted in any medium without royalty provided
-#   the copyright notice and this notice are preserved.
+#   Copying and distribution of this file, with or without modification, are
+#   permitted in any medium without royalty provided the copyright notice
+#   and this notice are preserved. This file is offered as-is, without any
+#   warranty.
+
+#serial 11
 
 AC_DEFUN([AX_LIB_EXPAT],
 [
     AC_ARG_WITH([expat],
-        AC_HELP_STRING([--with-expat=@<:@ARG@:>@],
+        AS_HELP_STRING([--with-expat=@<:@ARG@:>@],
             [use Expat XML Parser from given prefix (ARG=path); check standard prefixes (ARG=yes); disable (ARG=no)]
         ),
         [
@@ -70,29 +72,26 @@ AC_DEFUN([AX_LIB_EXPAT],
         fi
         ],
         [
-#        dnl Default behavior is implicit yes
-#        if test -f /usr/local/include/expat.h ; then
-#            expat_prefix=/usr/local
-#        elif test -f /usr/include/expat.h ; then
-#            expat_prefix=/usr
-#        else
-#            expat_prefix=""
-#        fi
-        dnl Default behavior is implicit no
-        expat_prefix=""
-        expat_requested="no"
+        dnl Default behavior is implicit yes
+        if test -f /usr/local/include/expat.h ; then
+            expat_prefix=/usr/local
+        elif test -f /usr/include/expat.h ; then
+            expat_prefix=/usr
+        else
+            expat_prefix=""
+        fi
         ]
     )
 
     AC_ARG_WITH([expat-inc],
-        AC_HELP_STRING([--with-expat-inc=@<:@DIR@:>@],
+        AS_HELP_STRING([--with-expat-inc=@<:@DIR@:>@],
             [path to Expat XML Parser headers]
         ),
         [expat_include_dir="$withval"],
         [expat_include_dir=""]
     )
     AC_ARG_WITH([expat-lib],
-        AC_HELP_STRING([--with-expat-lib=@<:@ARG@:>@],
+        AS_HELP_STRING([--with-expat-lib=@<:@ARG@:>@],
             [link options for Expat XML Parser libraries]
         ),
         [expat_lib_flags="$withval"],
@@ -100,7 +99,7 @@ AC_DEFUN([AX_LIB_EXPAT],
     )
 
     EXPAT_CFLAGS=""
-    EXPAT_LDFLAGS=""
+    EXPAT_LIBS=""
     EXPAT_VERSION=""
 
     dnl
@@ -110,7 +109,8 @@ AC_DEFUN([AX_LIB_EXPAT],
 
     if test -n "$expat_prefix"; then
         expat_include_dir="$expat_prefix/include"
-        expat_lib_flags="-L$expat_prefix/lib64 -L$expat_prefix/lib -lexpat"
+        expat_ld_flags="-L$expat_prefix/lib"
+        expat_lib_flags="-lexpat"
         run_expat_test="yes"
     elif test "$expat_requested" = "yes"; then
         if test -n "$expat_include_dir" -a -n "$expat_lib_flags"; then
@@ -128,8 +128,11 @@ AC_DEFUN([AX_LIB_EXPAT],
         saved_CPPFLAGS="$CPPFLAGS"
         CPPFLAGS="$CPPFLAGS -I$expat_include_dir"
 
+        saved_LIBS="$LIBS"
+        LIBS="$LIBS $expat_lib_flags"
+
         saved_LDFLAGS="$LDFLAGS"
-        LDFLAGS="$LDFLAGS $expat_lib_flags"
+        LDFLAGS="$LDFLAGS $expat_ld_flags"
 
         dnl
         dnl Check Expat headers
@@ -176,7 +179,8 @@ p = NULL;
                     ]]
                 )],
                 [
-                EXPAT_LDFLAGS="$expat_lib_flags"
+                EXPAT_LIBS="$expat_lib_flags"
+                EXPAT_LDFLAGS="$expat_ld_flags"
                 expat_lib_found="yes"
                 AC_MSG_RESULT([found])
                 ],
@@ -190,6 +194,7 @@ p = NULL;
 
         CPPFLAGS="$saved_CPPFLAGS"
         LDFLAGS="$saved_LDFLAGS"
+        LIBS="$saved_LIBS"
     fi
 
     AC_MSG_CHECKING([for Expat XML Parser])
@@ -199,6 +204,7 @@ p = NULL;
 
             AC_SUBST([EXPAT_CFLAGS])
             AC_SUBST([EXPAT_LDFLAGS])
+            AC_SUBST([EXPAT_LIBS])
 
             HAVE_EXPAT="yes"
         else
@@ -273,9 +279,5 @@ p = NULL;
         if test "$expat_requested" = "yes"; then
             AC_MSG_WARN([Expat XML Parser support requested but headers or library not found. Specify valid prefix of Expat using --with-expat=@<:@DIR@:>@ or provide include directory and linker flags using --with-expat-inc and --with-expat-lib])
         fi
-    fi
-    if test "$HAVE_EXPAT" = "yes"; then
-        CPPFLAGS="$CPPFLAGS $EXPAT_CFLAGS -DHAVE_EXPAT=1"
-        LDFLAGS="$LDFLAGS $EXPAT_LDFLAGS"
     fi
 ])
