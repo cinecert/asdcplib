@@ -43,7 +43,7 @@ Ubuntu_20.04:
   script:
     - echo "Building"
     - autoreconf -if
-    - "./configure --enable-as-02 --enable-dev-headers --with-xerces=/opt/cinecert --prefix=/opt/cinecert CPPFLAGS=-I/opt/cinecert/include LDFLAGS=-L/opt/cinecert/lib"
+    - "./configure --enable-as-02 --enable-dev-headers --with-xerces --prefix=/opt/cinecert CPPFLAGS=-I/opt/cinecert/include LDFLAGS=-L/opt/cinecert/lib"
     - make
     - sudo make install
     - sudo ldconfig
