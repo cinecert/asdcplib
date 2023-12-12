@@ -219,7 +219,7 @@ ASDCP::AESDecContext::DecryptBlock(const byte_t* ct_buf, byte_t* pt_buf, ui32_t 
   if ( m_Context.empty() )
     return  RESULT_INIT;
 
-  register h__AESContext* Ctx = m_Context;
+  h__AESContext* Ctx = m_Context;
 
   const byte_t* in_p = ct_buf;
   byte_t* out_p = pt_buf;

@@ -745,7 +745,7 @@ Kumu::Result_t
 Kumu::FileWriter::Writev(const byte_t* buf, ui32_t buf_len)
 {
   assert( ! m_IOVec.empty() );
-  register h__iovec* iov = m_IOVec;
+  h__iovec* iov = m_IOVec;
   KM_TEST_NULL_L(buf);
 
   if ( iov->m_Count >= IOVecMaxEntries )
@@ -1009,7 +1009,7 @@ Kumu::Result_t
 Kumu::FileWriter::Writev(ui32_t* bytes_written)
 {
   assert( ! m_IOVec.empty() );
-  register h__iovec* iov = m_IOVec;
+  h__iovec* iov = m_IOVec;
   ui32_t tmp_int;
 
   if ( bytes_written == 0 )
@@ -1023,7 +1023,7 @@ Kumu::FileWriter::Writev(ui32_t* bytes_written)
   Result_t result = Kumu::RESULT_OK;
 
   // AFAIK, there is no writev() equivalent in the win32 API
-  for ( register int i = 0; i < iov->m_Count; i++ )
+  for ( int i = 0; i < iov->m_Count; i++ )
     {
       ui32_t tmp_count = 0;
       BOOL wr_result = ::WriteFile(m_Handle,
@@ -1193,7 +1193,7 @@ Kumu::Result_t
 Kumu::FileWriter::Writev(ui32_t* bytes_written)
 {
   assert( ! m_IOVec.empty() );
-  register h__iovec* iov = m_IOVec;
+  h__iovec* iov = m_IOVec;
   ui32_t tmp_int;
 
   if ( bytes_written == 0 )

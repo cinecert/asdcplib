@@ -358,8 +358,8 @@ Kumu::base64encode(const byte_t* buf, ui32_t buf_len, char* strbuf, ui32_t strbu
 i32_t
 Kumu::base64decode(const char* str, byte_t* buf, ui32_t buf_len, ui32_t* char_count)
 {
-  register byte_t c = 0, d = 0;
-  register ui32_t phase = 0, i = 0;
+  byte_t c = 0, d = 0;
+  ui32_t phase = 0, i = 0;
 
   if ( str == 0 || buf == 0 || char_count == 0 )
     return -1;
