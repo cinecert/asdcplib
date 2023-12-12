@@ -143,7 +143,7 @@ USAGE: %s [-h|-help] [-V]\n\
 \n\
        %s [-3] [-a <uuid>] [-b <buffer-size>] [-C <UL>] [-d <duration>]\n\
           [-e|-E] [-f <start-frame>] [-j <key-id-string>] [-k <key-string>]\n\
-          [-l <label>] [-L] [-M] [-m <expr>] [-p <frame-rate>] [-s] [-v]\n\
+          [-l <label>] [-L] [-M] [-m <expr>] [-p <frame-rate>] [-Q] [-s] [-v]\n\
           [-W] [-z|-Z] <input-file>+ <output-file>\n\n",
 	  PROGRAM_NAME, PROGRAM_NAME);
 
@@ -181,10 +181,13 @@ Options:\n\
   -p <rate>         - fps of picture when wrapping PCM or JP2K:\n\
                       Use one of [23|24|25|30|48|50|60], 24 is default\n\
   -P <UL>           - Set PictureEssenceCoding UL value in a JP2K file\n\
+  -Q                - Set TransferCharacteristic UL value in a JP2K file\n\
+                      to that of SMPTE ST 2084\n\
   -s                - Insert a Dolby Atmos synchronization channel when\n\
                       wrapping PCM. This implies a -L option(SMPTE ULs) and \n\
                       will overide -C and -l options with Configuration 4 \n\
                       Channel Assigment and no format label respectively. \n\
+  -T <UL>           - Set TransferCharacteristic UL value in a JP2K file\n\
   -v                - Verbose, prints informative messages to stderr\n\
   -w                - When writing 377-4 MCA labels, use the WTF Channel\n\
                       assignment label instead of the standard MCA label\n\
@@ -258,6 +261,7 @@ public:
   Kumu::PathList_t filenames;  // list of filenames to be processed
   UL channel_assignment;
   UL picture_coding;
+  UL transfer_characteristic;
   UL aux_data_coding;
   bool dolby_atmos_sync_flag;  // if true, insert a Dolby Atmos Synchronization channel.
   ui32_t ffoa;                 // first frame of action for atmos wrapping
@@ -467,7 +471,19 @@ public:
 		picture_rate = Kumu::xabs(strtol(argv[i], 0, 10));
 		break;
 
+	      case 'Q': transfer_characteristic.Set(g_dict->ul(MDD_TransferCharacteristic_SMPTEST2084)); break;
+
 	      case 's': dolby_atmos_sync_flag = true; break;
+
+	      case 'T':
+		TEST_EXTRA_ARG(i, 'T');
+		if ( ! transfer_characteristic.DecodeHex(argv[i]) )
+		  {
+		    fprintf(stderr, "Error decoding UL value: %s\n", argv[i]);
+		    return;
+		  }
+		break;
+
 	      case 'u': show_ul_values_flag = true; break;
 	      case 'V': version_flag = true; break;
 	      case 'v': verbose_flag = true; break;
@@ -794,6 +810,13 @@ write_JP2K_S_file(CommandOptions& Options)
 						reinterpret_cast<MXF::InterchangeObject**>(&descriptor));
 	  descriptor->PictureEssenceCoding = Options.picture_coding;
 	}
+      if ( ASDCP_SUCCESS(result) && Options.transfer_characteristic.HasValue() )
+	{
+	  MXF::RGBAEssenceDescriptor *descriptor = 0;
+	  Writer.OP1aHeader().GetMDObjectByType(g_dict->ul(MDD_RGBAEssenceDescriptor),
+						reinterpret_cast<MXF::InterchangeObject**>(&descriptor));
+	  descriptor->TransferCharacteristic = Options.transfer_characteristic;
+	}
     }
 
   if ( ASDCP_SUCCESS(result) )
@@ -934,6 +957,13 @@ write_JP2K_file(CommandOptions& Options)
 	  Writer.OP1aHeader().GetMDObjectByType(g_dict->ul(MDD_RGBAEssenceDescriptor),
 						reinterpret_cast<MXF::InterchangeObject**>(&descriptor));
 	  descriptor->PictureEssenceCoding = Options.picture_coding;
+	}
+      if ( ASDCP_SUCCESS(result) && Options.transfer_characteristic.HasValue() )
+	{
+	  MXF::RGBAEssenceDescriptor *descriptor = 0;
+	  Writer.OP1aHeader().GetMDObjectByType(g_dict->ul(MDD_RGBAEssenceDescriptor),
+						reinterpret_cast<MXF::InterchangeObject**>(&descriptor));
+	  descriptor->TransferCharacteristic = Options.transfer_characteristic;
 	}
     }
 
