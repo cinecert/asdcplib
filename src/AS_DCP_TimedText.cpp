@@ -167,9 +167,6 @@ ASDCP::TimedText::MXFReader::h__Reader::MD_to_TimedText_TDesc(TimedText::TimedTe
   TDesc.EncodingName = TDescObj->UCSEncoding;
   TDesc.RFC5646LanguageTagList = TDescObj->RFC5646LanguageTagList;
   TDesc.ResourceList.clear();
-  if (! TDescObj->RFC5646LanguageTagList.empty() ) {
-    TDesc.Language = TDescObj->RFC5646LanguageTagList.get();
-  }
 
   Array<UUID>::const_iterator sdi = TDescObj->SubDescriptors.begin();
   TimedTextResourceSubDescriptor* DescObject = 0;
