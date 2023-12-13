@@ -1477,7 +1477,6 @@ namespace ASDCP {
 	byte_t         AssetID[UUIDlen];
 	std::string    NamespaceName;
 	std::string    EncodingName;
-	std::string    Language;
 	ResourceList_t ResourceList;
 	std::string    RFC5646LanguageTagList;
 
