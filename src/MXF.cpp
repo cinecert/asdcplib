@@ -1838,7 +1838,6 @@ ASDCP::MXF::decode_mca_string(const std::string& s, const mca_label_map_t& label
                 {
                   channel_descr->RFC5646SpokenLanguage = current_language;
                 }
-              current_language.empty();
 	      channel_descr->MCALabelDictionaryID = i->second.ul;
 	      descriptor_list.push_back(reinterpret_cast<ASDCP::MXF::InterchangeObject*>(channel_descr));
 	      symbol_buf.clear();

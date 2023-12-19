@@ -1,5 +1,5 @@
 # ===========================================================================
-#             http://autoconf-archive.cryp.to/ax_lib_xerces.html
+#      https://www.gnu.org/software/autoconf-archive/ax_lib_xerces.html
 # ===========================================================================
 #
 # SYNOPSIS
@@ -34,24 +34,23 @@
 #
 #     HAVE_XERCES
 #
-# LAST MODIFICATION
-#
-#   2008-04-12
-#
-# COPYLEFT
+# LICENSE
 #
 #   Copyright (c) 2008 Mateusz Loskot <mateusz@loskot.net>
 #
 #   Copying and distribution of this file, with or without modification, are
 #   permitted in any medium without royalty provided the copyright notice
-#   and this notice are preserved.
+#   and this notice are preserved. This file is offered as-is, without any
+#   warranty.
+
+#serial 11
 
 AC_DEFUN([AX_LIB_XERCES],
 [
-#    AC_REQUIRE([ACX_PTHREAD])
+    AC_REQUIRE([AX_PTHREAD])
 
     AC_ARG_WITH([xerces],
-        AC_HELP_STRING([--with-xerces=@<:@ARG@:>@],
+        AS_HELP_STRING([--with-xerces=@<:@ARG@:>@],
             [use Xerces C++ Parser from given prefix (ARG=path); check standard prefixes (ARG=yes); disable (ARG=no)]
         ),
         [
@@ -73,29 +72,26 @@ AC_DEFUN([AX_LIB_XERCES],
         fi
         ],
         [
-#        dnl Default behavior is implicit yes
-#        if test -d /usr/local/include/xercesc ; then
-#            xerces_prefix=/usr/local
-#        elif test -d /usr/include/xercesc ; then
-#            xerces_prefix=/usr
-#        else
-#            xerces_prefix=""
-#        fi
-        dnl Default behavior is implicit no
-        xerces_prefix=""
-        xerces_requested="no"
+        dnl Default behavior is implicit yes
+        if test -d /usr/local/include/xercesc ; then
+            xerces_prefix=/usr/local
+        elif test -d /usr/include/xercesc ; then
+            xerces_prefix=/usr
+        else
+            xerces_prefix=""
+        fi
         ]
     )
 
     AC_ARG_WITH([xerces-inc],
-        AC_HELP_STRING([--with-xerces-inc=@<:@DIR@:>@],
+        AS_HELP_STRING([--with-xerces-inc=@<:@DIR@:>@],
             [path to Xerces C++ Parser headers]
         ),
         [xerces_include_dir="$withval"],
         [xerces_include_dir=""]
     )
     AC_ARG_WITH([xerces-lib],
-        AC_HELP_STRING([--with-xerces-lib=@<:@ARG@:>@],
+        AS_HELP_STRING([--with-xerces-lib=@<:@ARG@:>@],
             [link options for Xerces C++ Parser libraries]
         ),
         [xerces_ldflags="$withval"],
@@ -136,7 +132,7 @@ AC_DEFUN([AX_LIB_XERCES],
         CPPFLAGS="$CPPFLAGS -I$xerces_include_dir -I$xerces_include_dir2"
 
         saved_LDFLAGS="$LDFLAGS"
-        LDFLAGS="$xerces_ldflags $PTHREAD_LDFLAGS $LDFLAGS"
+        LDFLAGS="$LDFLAGS $xerces_ldflags $PTHREAD_LDFLAGS"
 
         saved_LIBS="$LIBS"
         LIBS="$xerces_libs $PTHREAD_LIBS $LIBS"
@@ -289,9 +285,5 @@ XMLPlatformUtils::Initialize();
         if test "$xerces_requested" = "yes"; then
             AC_MSG_WARN([Xerces C++ Parser support requested but headers or library not found. Specify valid prefix of Xerces C++ using --with-xerces=@<:@DIR@:>@ or provide include directory and linker flags using --with-xerces-inc and --with-xerces-lib])
         fi
-    fi
-    if test "$HAVE_XERCES" = "yes"; then
-        CPPFLAGS="$CPPFLAGS $XERCES_CPPFLAGS -DHAVE_XERCES_C=1"
-        LDFLAGS="$LDFLAGS $XERCES_LDFLAGS $XERCES_LIBS"
     fi
 ])
