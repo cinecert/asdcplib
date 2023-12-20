@@ -508,7 +508,7 @@ public:
 		return;
 	      }
 
-	    if ( file_count >= MAX_IN_FILES )
+	    if ( file_count > MAX_IN_FILES )
 	      {
 		fprintf(stderr, "Filename lists exceeds maximum list size: %u\n", MAX_IN_FILES);
 		return;
