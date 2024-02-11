@@ -585,13 +585,11 @@ construct_HMAC(WriterInfo& Info, CommandOptions& Options, HMACContext*& HMAC)
   Info.UsesHMAC = true;
   HMAC = new HMACContext;
 
-  fprintf(stderr, "Options.mic_key_flag: %d\n", Options.mic_key_flag);
   if ( Options.mic_key_flag )
     result = HMAC->InitKey(Options.mic_key_value, LS_MAX);
   else
     result = HMAC->InitKey(Options.key_value, Info.LabelSetType);
 
-  fprintf(stderr, "Woof: %s\n", result.Label());
   if ( KM_FAILURE(result) )
     {
       delete HMAC;
