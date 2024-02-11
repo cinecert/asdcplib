@@ -239,6 +239,11 @@ asdcp_wrap_LDADD = libasdcp.la libkumu.la
 asdcp_unwrap_SOURCES = asdcp-unwrap.cpp
 asdcp_unwrap_LDADD = libasdcp.la libkumu.la
 
+if USE_EXT_HMAC_KEY
+asdcp_wrap_CPPFLAGS = -DASDCP_EXT_HMAC_KEY
+asdcp_unwrap_CPPFLAGS = -DASDCP_EXT_HMAC_KEY
+endif
+
 asdcp_util_SOURCES = asdcp-util.cpp
 asdcp_util_LDADD = libasdcp.la libkumu.la
 

@@ -1,6 +1,5 @@
 /*
-Copyright (c) 2003-2018
-, John Hurst
+Copyright (c) 2003-2024, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -127,7 +126,7 @@ banner(FILE* stream = stdout)
 {
   fprintf(stream, "\n\
 %s (asdcplib %s)\n\n\
-Copyright (c) 2003-2018 John Hurst\n\n\
+Copyright (c) 2003-2024 John Hurst\n\n\
 asdcplib may be copied only under the terms of the license found at\n\
 the top of every file in the asdcplib distribution kit.\n\n\
 Specify the -h (help) option for further information about %s\n\n",
@@ -200,6 +199,13 @@ Options:\n\
          o An argument of \"23\" to the -p option will be interpreted\n\
            as 24000/1001 fps.\n\
 \n");
+
+#ifdef ASDCP_EXT_HMAC_KEY
+  fprintf(stream, "\
+Developer options:\n\
+  -K <key-string>   - Enable external MIC using the given key value\n\
+\n");
+#endif // ASDCP_EXT_HMAC_KEY
 }
 
 //
@@ -270,6 +276,8 @@ public:
   bool use_interop_sound_wtf;  // make true to force WTF assignment label instead of MCA
   ASDCP::MXF::ASDCP_MCAConfigParser mca_config;
   std::string mca_language;
+  bool   mic_key_flag;   // true if a MIC key was given
+  byte_t mic_key_value[KeyLen];  // value of given MIC key (ignored unless key_flag is true)
 
   //
   Rational PictureRate()
@@ -424,7 +432,8 @@ public:
 
 		  if ( length != UUIDlen )
 		    {
-		      fprintf(stderr, "Unexpected key ID length: %u, expecting %u characters.\n", length, UUIDlen);
+		      fprintf(stderr, "Unexpected key ID length: %u, expecting %u hexadecimal characters.\n",
+                              length, UUIDlen*2);
 		      return;
 		    }
 		}
@@ -438,11 +447,30 @@ public:
 
 		  if ( length != KeyLen )
 		    {
-		      fprintf(stderr, "Unexpected key length: %u, expecting %u characters.\n", length, KeyLen);
+		      fprintf(stderr, "Unexpected key length: %u, expecting %u hexadecimal characters.\n",
+                              length, KeyLen*2);
 		      return;
 		    }
 		}
 		break;
+
+#ifdef ASDCP_EXT_HMAC_KEY
+	      case 'K':
+                mic_key_flag = true;
+		TEST_EXTRA_ARG(i, 'K');
+		{
+		  ui32_t length;
+		  Kumu::hex2bin(argv[i], mic_key_value, KeyLen, &length);
+
+		  if ( length != KeyLen )
+		    {
+		      fprintf(stderr, "Unexpected MIC key length: %u, expecting %u hexadecimal characters.\n",
+                              length, KeyLen*2);
+		      return;
+		    }
+		}
+		break;
+#endif // ASDCP_EXT_HMAC_KEY
 
 	      case 'l':
 		TEST_EXTRA_ARG(i, 'l');
@@ -548,6 +576,32 @@ public:
   }
 };
 
+
+//
+Result_t
+construct_HMAC(WriterInfo& Info, CommandOptions& Options, HMACContext*& HMAC)
+{
+  Result_t result = RESULT_OK;
+  Info.UsesHMAC = true;
+  HMAC = new HMACContext;
+
+  fprintf(stderr, "Options.mic_key_flag: %d\n", Options.mic_key_flag);
+  if ( Options.mic_key_flag )
+    result = HMAC->InitKey(Options.mic_key_value, LS_MAX);
+  else
+    result = HMAC->InitKey(Options.key_value, Info.LabelSetType);
+
+  fprintf(stderr, "Woof: %s\n", result.Label());
+  if ( KM_FAILURE(result) )
+    {
+      delete HMAC;
+      HMAC = 0;
+    }
+
+  return result;
+}
+
+
 //------------------------------------------------------------------------------------------
 // MPEG2 essence
 
@@ -621,10 +675,8 @@ write_MPEG2_file(CommandOptions& Options)
 
 	  if ( ASDCP_SUCCESS(result) && Options.write_hmac )
 	    {
-	      Info.UsesHMAC = true;
-	      HMAC = new HMACContext;
-	      result = HMAC->InitKey(Options.key_value, Info.LabelSetType);
-	    }
+	      result = construct_HMAC(Info, Options, HMAC);
+            }
 	}
 #endif // HAVE_OPENSSL
 
@@ -793,9 +845,7 @@ write_JP2K_S_file(CommandOptions& Options)
 
 	  if ( ASDCP_SUCCESS(result) && Options.write_hmac )
 	    {
-	      Info.UsesHMAC = true;
-	      HMAC = new HMACContext;
-	      result = HMAC->InitKey(Options.key_value, Info.LabelSetType);
+	      result = construct_HMAC(Info, Options, HMAC);
 	    }
 	}
 #endif // HAVE_OPENSSL
@@ -941,9 +991,7 @@ write_JP2K_file(CommandOptions& Options)
 
 	  if ( ASDCP_SUCCESS(result) && Options.write_hmac )
 	    {
-	      Info.UsesHMAC = true;
-	      HMAC = new HMACContext;
-	      result = HMAC->InitKey(Options.key_value, Info.LabelSetType);
+              result = construct_HMAC(Info, Options, HMAC);
 	    }
 	}
 #endif // HAVE_OPENSSL
@@ -1094,9 +1142,7 @@ write_PCM_file(CommandOptions& Options)
 
 	  if ( ASDCP_SUCCESS(result) && Options.write_hmac )
 	    {
-	      Info.UsesHMAC = true;
-	      HMAC = new HMACContext;
-	      result = HMAC->InitKey(Options.key_value, Info.LabelSetType);
+              result = construct_HMAC(Info, Options, HMAC);
 	    }
 	}
 #endif // HAVE_OPENSSL
@@ -1287,11 +1333,9 @@ write_PCM_with_ATMOS_sync_file(CommandOptions& Options)
 	    result = Context->SetIVec(RNG.FillRandom(IV_buf, CBC_BLOCK_SIZE));
 
 	  if ( ASDCP_SUCCESS(result) && Options.write_hmac )
-      {
-        Info.UsesHMAC = true;
-        HMAC = new HMACContext;
-        result = HMAC->InitKey(Options.key_value, Info.LabelSetType);
-      }
+            {
+              result = construct_HMAC(Info, Options, HMAC);
+            }
 	}
 #endif // HAVE_OPENSSL
 
@@ -1420,9 +1464,7 @@ write_timed_text_file(CommandOptions& Options)
 
 	  if ( ASDCP_SUCCESS(result) && Options.write_hmac )
 	    {
-	      Info.UsesHMAC = true;
-	      HMAC = new HMACContext;
-	      result = HMAC->InitKey(Options.key_value, Info.LabelSetType);
+              result = construct_HMAC(Info, Options, HMAC);
 	    }
 	}
 #endif // HAVE_OPENSSL
@@ -1545,11 +1587,9 @@ write_dolby_atmos_file(CommandOptions& Options)
 	    result = Context->SetIVec(RNG.FillRandom(IV_buf, CBC_BLOCK_SIZE));
 
 	  if ( ASDCP_SUCCESS(result) && Options.write_hmac )
-      {
-        Info.UsesHMAC = true;
-        HMAC = new HMACContext;
-        result = HMAC->InitKey(Options.key_value, Info.LabelSetType);
-      }
+            {
+              result = construct_HMAC(Info, Options, HMAC);
+            }
 	}
 #endif
 
@@ -1664,11 +1704,9 @@ write_aux_data_file(CommandOptions& Options)
 	    result = Context->SetIVec(RNG.FillRandom(IV_buf, CBC_BLOCK_SIZE));
 
 	  if ( ASDCP_SUCCESS(result) && Options.write_hmac )
-      {
-        Info.UsesHMAC = true;
-        HMAC = new HMACContext;
-        result = HMAC->InitKey(Options.key_value, Info.LabelSetType);
-      }
+            {
+              result = construct_HMAC(Info, Options, HMAC);
+            }
 	}
 #endif // HAVE_OPENSSL
 

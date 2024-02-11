@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2003-2016, John Hurst
+Copyright (c) 2003-2024, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -61,7 +61,7 @@ banner(FILE* stream = stdout)
 {
   fprintf(stream, "\n\
 %s (asdcplib %s)\n\n\
-Copyright (c) 2003-2015 John Hurst\n\n\
+Copyright (c) 2003-2024 John Hurst\n\n\
 asdcplib may be copied only under the terms of the license found at\n\
 the top of every file in the asdcplib distribution kit.\n\n\
 Specify the -h (help) option for further information about %s\n\n",
@@ -113,6 +113,13 @@ Options:\n\
          o All option arguments must be separated from the option by whitespace.\n\
          o An argument of \"23\" to the -p option will be interpreted\n\
            as 24000/1001 fps.\n\n");
+
+#ifdef ASDCP_EXT_HMAC_KEY
+  fprintf(stream, "\
+Developer options:\n\
+  -K <key-string>   - Enable external MIC using the given key value\n\
+\n");
+#endif // ASDCP_EXT_HMAC_KEY
 }
 
 //
@@ -155,6 +162,8 @@ public:
   const char* input_filename;
   std::string prefix_buffer;
   const char* extension; // file extension to use for unknown D-Cinema Data track files.
+  bool   mic_key_flag;   // true if a MIC key was given
+  byte_t mic_key_value[KeyLen];  // value of given MIC key (ignored unless key_flag is true)
 
   //
   Rational PictureRate()
@@ -186,7 +195,7 @@ public:
     version_flag(false), help_flag(false), stereo_image_flag(false), number_width(6),
     start_frame(0), duration(0xffffffff), duration_flag(false), j2c_pedantic(true),
     picture_rate(24), fb_size(FRAME_BUFFER_SIZE), file_prefix(0),
-    channel_fmt(PCM::CF_NONE), input_filename(0), extension("dcdata")
+    channel_fmt(PCM::CF_NONE), input_filename(0), extension("dcdata"), mic_key_flag(false)
   {
     memset(key_value, 0, KeyLen);
     memset(key_id_value, 0, UUIDlen);
@@ -247,6 +256,24 @@ public:
 		    }
 		}
 		break;
+
+#ifdef ASDCP_EXT_HMAC_KEY
+	      case 'K':
+                mic_key_flag = true;
+		TEST_EXTRA_ARG(i, 'K');
+		{
+		  ui32_t length;
+		  Kumu::hex2bin(argv[i], mic_key_value, KeyLen, &length);
+
+		  if ( length != KeyLen )
+		    {
+		      fprintf(stderr, "Unexpected MIC key length: %u, expecting %u hexadecimal characters.\n",
+                              length, KeyLen*2);
+		      return;
+		    }
+		}
+		break;
+#endif // ASDCP_EXT_HMAC_KEY
 
 	      case 'm': read_hmac = true; break;
 
@@ -317,6 +344,27 @@ public:
   }
 };
 
+//
+Result_t
+construct_HMAC(WriterInfo& Info, CommandOptions& Options, HMACContext*& HMAC)
+{
+  Result_t result = RESULT_OK;
+  HMAC = new HMACContext;
+
+  if ( Options.mic_key_flag )
+    result = HMAC->InitKey(Options.mic_key_value, LS_MAX);
+  else
+    result = HMAC->InitKey(Options.key_value, Info.LabelSetType);
+
+  if ( KM_FAILURE(result) )
+    {
+      delete HMAC;
+      HMAC = 0;
+    }
+
+  return result;
+}
+
 //------------------------------------------------------------------------------------------
 // MPEG2 essence
 
@@ -369,14 +417,13 @@ read_MPEG2_file(CommandOptions& Options, const Kumu::IFileReaderFactory& fileRea
 
 	  if ( Info.UsesHMAC )
 	    {
-	      HMAC = new HMACContext;
-	      result = HMAC->InitKey(Options.key_value, Info.LabelSetType);
-	    }
+              result = construct_HMAC(Info, Options, HMAC);
+            }
 	  else
 	    {
 	      fputs("File does not contain HMAC values, ignoring -m option.\n", stderr);
 	    }
-	}
+        }
     }
 #endif // HAVE_OPENSSL
 
@@ -498,8 +545,7 @@ read_JP2K_S_file(CommandOptions& Options, const Kumu::IFileReaderFactory& fileRe
 
 	  if ( Info.UsesHMAC )
 	    {
-	      HMAC = new HMACContext;
-	      result = HMAC->InitKey(Options.key_value, Info.LabelSetType);
+              result = construct_HMAC(Info, Options, HMAC);
 	    }
 	  else
 	    {
@@ -606,8 +652,7 @@ read_JP2K_file(CommandOptions& Options, const Kumu::IFileReaderFactory& fileRead
 
 	  if ( Info.UsesHMAC )
 	    {
-	      HMAC = new HMACContext;
-	      result = HMAC->InitKey(Options.key_value, Info.LabelSetType);
+              result = construct_HMAC(Info, Options, HMAC);
 	    }
 	  else
 	    {
@@ -740,8 +785,7 @@ read_PCM_file(CommandOptions& Options, const Kumu::IFileReaderFactory& fileReade
 
 	  if ( Info.UsesHMAC )
 	    {
-	      HMAC = new HMACContext;
-	      result = HMAC->InitKey(Options.key_value, Info.LabelSetType);
+              result = construct_HMAC(Info, Options, HMAC);
 	    }
 	  else
 	    {
@@ -811,8 +855,7 @@ read_timed_text_file(CommandOptions& Options, const Kumu::IFileReaderFactory& fi
 
 	  if ( Info.UsesHMAC )
 	    {
-	      HMAC = new HMACContext;
-	      result = HMAC->InitKey(Options.key_value, Info.LabelSetType);
+              result = construct_HMAC(Info, Options, HMAC);
 	    }
 	  else
 	    {
@@ -909,8 +952,7 @@ read_DCData_file(CommandOptions& Options, const Kumu::IFileReaderFactory& fileRe
 
 	  if ( Info.UsesHMAC )
 	    {
-	      HMAC = new HMACContext;
-	      result = HMAC->InitKey(Options.key_value, Info.LabelSetType);
+              result = construct_HMAC(Info, Options, HMAC);
 	    }
 	  else
 	    {

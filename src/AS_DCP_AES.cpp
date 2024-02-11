@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2004-2009, John Hurst
+Copyright (c) 2004-2024, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -261,16 +261,21 @@ public:
   h__HMACContext() : m_Final(false) {}
   ~h__HMACContext() {}
 
+  void SetVerbatimKey(const byte_t* key)
+  {
+    memcpy(m_key, key, KeyLen);
+    Reset();
+  }
+
   // SMPTE 429.6 MIC key generation
-  void SetKey(const byte_t* key)
+  void SetDerivedKey(const byte_t* key)
   {
     byte_t rng_buf[SHA_DIGEST_LENGTH*2];
     Kumu::Gen_FIPS_186_Value(key, KeyLen, rng_buf, SHA_DIGEST_LENGTH*2);
 
     // rng_buf contains two rounds, x0 and x1 (each 160 bits).
     // Use x1 per SMPTE 430-6-2006 Sec. 7.10
-    memcpy(m_key, rng_buf+SHA_DIGEST_LENGTH, KeyLen);
-    Reset();
+    SetVerbatimKey(rng_buf+SHA_DIGEST_LENGTH);
   }
 
   // MXF Interop MIC key generation
@@ -286,8 +291,7 @@ public:
     SHA1_Update(&SHA, key, KeyLen);
     SHA1_Update(&SHA, key_nonce, KeyLen);
     SHA1_Final(sha_buf, &SHA);
-    memcpy(m_key, sha_buf, KeyLen);
-    Reset();
+    SetVerbatimKey(sha_buf);
   }
 
   //
@@ -373,13 +377,13 @@ Result_t
 HMACContext::InitKey(const byte_t* key, LabelSet_t SetType)
 {
   KM_TEST_NULL_L(key);
-
   m_Context = new h__HMACContext;
 
   switch ( SetType )
     {
+    case LS_MAX: m_Context->SetVerbatimKey(key); break;
     case LS_MXF_INTEROP: m_Context->SetInteropKey(key); break;
-    case LS_MXF_SMPTE:   m_Context->SetKey(key); break;
+    case LS_MXF_SMPTE:   m_Context->SetDerivedKey(key); break;
     default:
       m_Context = 0;
       return RESULT_INIT;

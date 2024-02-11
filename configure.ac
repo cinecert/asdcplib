@@ -37,7 +37,7 @@ AC_PREREQ([2.59])
 # For example, if asdcplib version 1.0.0 were modified to accomodate changes
 # in file format, and if no changes were made to AS_DCP.h, the new version would be
 # 1.0.1. If changes were also required in AS_DCP.h, the new version would be 1.1.1.
-AC_INIT([asdcplib], [2.13.1], [asdcplib@cinecert.com])
+AC_INIT([asdcplib], [2.13.2], [asdcplib@cinecert.com])
 
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_SRCDIR([src/KM_error.h])
@@ -118,6 +118,14 @@ AC_ARG_ENABLE([phdr],
        *) AC_MSG_ERROR([bad value ${enableval} for --enable-phdr]) ;;
      esac],[phdr_use=false])
      AM_CONDITIONAL([USE_PHDR], [test x$phdr_use = xtrue])
+AC_ARG_ENABLE([ext-hmac],
+     [  --enable-ext-hmac    enable support in asdcp tools for KDM-borne HMAC keying per ST 430-1-2017],
+     [case "${enableval}" in
+       yes) ext_hmac_use=true ;;
+       no)  ext_hmac_use=false ;;
+       *) AC_MSG_ERROR([bad value ${enableval} for --enable-ext-hmac]) ;;
+     esac],[ext_hmac_use=false])
+     AM_CONDITIONAL([USE_EXT_HMAC_KEY], [test x$ext_hmac_use = xtrue])
 
 # Checks for libraries.
 AC_CHECK_LIB([pthread], [pthread_create])
