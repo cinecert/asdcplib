@@ -75,7 +75,7 @@ LIBFLAGS = $(LIBFLAGS1)
 
 CPPFLAGS = $(CXXFLAGS)
 
-KUMU_OBJS = KM_fileio.obj KM_log.obj KM_prng.obj KM_util.obj KM_xml.obj KM_tai.obj
+KUMU_OBJS = KM_aes.obj KM_fileio.obj KM_log.obj KM_prng.obj KM_sha1.obj KM_tai.obj KM_util.obj KM_xml.obj
 ASDCP_OBJS = MPEG2_Parser.obj MPEG.obj JP2K_Codestream_Parser.obj \
 	JP2K_Sequence_Parser.obj JP2K.obj PCM_Parser.obj Wav.obj \
 	TimedText_Parser.obj KLV.obj Dict.obj MXFTypes.obj MXF.obj \

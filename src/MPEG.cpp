@@ -151,13 +151,13 @@ ASDCP::MPEG2::VESParser::Parse(const byte_t* buf, ui32_t buf_len)
   ASDCP_TEST_NULL(m_Delegate);
 
   Result_t result = RESULT_OK;
-  register const byte_t* end_p = buf + buf_len;
-  register const byte_t* run_pos = buf; // track runs of uninteresting data using a position and count
-  register ui32_t  run_len = 0;
+  const byte_t* end_p = buf + buf_len;
+  const byte_t* run_pos = buf; // track runs of uninteresting data using a position and count
+  ui32_t  run_len = 0;
 
   // search for MPEG2 headers
   // copy interesting data to a buffer and pass to delegate for processing
-  for ( register const byte_t* p = buf; p < end_p; p++ )
+  for ( const byte_t* p = buf; p < end_p; p++ )
     {
       if ( m_State->Test_IN_HEADER() )
 	{
