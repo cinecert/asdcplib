@@ -43,6 +43,7 @@ const int KEY_SIZE_BITS = 128;
 #include <openssl/sha.h>
 #include <openssl/bn.h>
 #include <openssl/err.h>
+#include <openssl/evp.h>
 
 
 void
@@ -55,11 +56,18 @@ print_ssl_error()
 
 //------------------------------------------------------------------------------------------
 
-class ASDCP::AESEncContext::h__AESContext : public AES_KEY
+struct ASDCP::AESEncContext::h__AESContext
 {
-public:
   Kumu::SymmetricKey m_KeyBuf;
-  byte_t m_IVec[CBC_BLOCK_SIZE];
+  EVP_CIPHER_CTX* m_Ctx = nullptr;
+
+  ~h__AESContext()
+  {
+      if (m_Ctx)
+      {
+          EVP_CIPHER_CTX_free(m_Ctx);
+      }
+  }
 };
 
 
@@ -79,11 +87,14 @@ ASDCP::AESEncContext::InitKey(const byte_t* key)
   m_Context = new h__AESContext;
   m_Context->m_KeyBuf.Set(key);
 
-  if ( AES_set_encrypt_key(m_Context->m_KeyBuf.Value(), KEY_SIZE_BITS, m_Context) )
-    {
-      print_ssl_error();
-      return RESULT_CRYPT_INIT;
-    }
+  m_Context->m_Ctx = EVP_CIPHER_CTX_new();
+  EVP_CIPHER_CTX_init(m_Context->m_Ctx);
+
+  if (!EVP_EncryptInit_ex(m_Context->m_Ctx, EVP_aes_128_cbc(), nullptr, m_Context->m_KeyBuf.Value(), nullptr))
+  {
+    print_ssl_error();
+    return RESULT_CRYPT_INIT;
+  }
 
   return RESULT_OK;
 }
@@ -100,7 +111,11 @@ ASDCP::AESEncContext::SetIVec(const byte_t* i_vec)
   if ( ! m_Context )
     return  RESULT_INIT;
 
-  memcpy(m_Context->m_IVec, i_vec, CBC_BLOCK_SIZE);
+  if (!EVP_EncryptInit_ex(m_Context->m_Ctx, nullptr, nullptr, nullptr, i_vec))
+  {
+    print_ssl_error();
+    return RESULT_CRYPT_INIT;
+  }
   return RESULT_OK;
 }
 
@@ -115,7 +130,7 @@ ASDCP::AESEncContext::GetIVec(byte_t* i_vec) const
   if ( ! m_Context )
     return  RESULT_INIT;
 
-  memcpy(i_vec, m_Context->m_IVec, CBC_BLOCK_SIZE);
+  EVP_CIPHER_CTX_get_updated_iv(m_Context->m_Ctx, i_vec, CBC_BLOCK_SIZE);
   return RESULT_OK;
 }
 
@@ -134,23 +149,12 @@ ASDCP::AESEncContext::EncryptBlock(const byte_t* pt_buf, byte_t* ct_buf, ui32_t 
     return  RESULT_INIT;
 
   h__AESContext* Ctx = m_Context;
-  byte_t tmp_buf[CBC_BLOCK_SIZE];
-  const byte_t* in_p = pt_buf;
-  byte_t* out_p = ct_buf;
-
-  while ( block_size )
-    {
-      // xor with the previous block
-      for ( ui32_t i = 0; i < CBC_BLOCK_SIZE; i++ )
-	tmp_buf[i] = in_p[i] ^ Ctx->m_IVec[i]; 
-          
-      AES_encrypt(tmp_buf, Ctx->m_IVec, Ctx);
-      memcpy(out_p, Ctx->m_IVec, CBC_BLOCK_SIZE);
-
-      in_p += CBC_BLOCK_SIZE;
-      out_p += CBC_BLOCK_SIZE;
-      block_size -= CBC_BLOCK_SIZE;
-    }
+  int outlen = 0;
+  if (!EVP_EncryptUpdate(Ctx->m_Ctx, ct_buf, &outlen, pt_buf, block_size))
+  {
+    print_ssl_error();
+    return RESULT_CRYPT_CTX;
+  }
 
   return RESULT_OK;
 }
@@ -158,16 +162,22 @@ ASDCP::AESEncContext::EncryptBlock(const byte_t* pt_buf, byte_t* ct_buf, ui32_t 
 
 //------------------------------------------------------------------------------------------
 
-class ASDCP::AESDecContext::h__AESContext : public AES_KEY
+struct ASDCP::AESDecContext::h__AESContext
 {
-public:
   Kumu::SymmetricKey m_KeyBuf;
-  byte_t m_IVec[CBC_BLOCK_SIZE];
+  EVP_CIPHER_CTX* m_Ctx = nullptr;
+
+  ~h__AESContext()
+  {
+    if (m_Ctx)
+    {
+        EVP_CIPHER_CTX_free(m_Ctx);
+    }
+  }
 };
 
 ASDCP::AESDecContext::AESDecContext()  {}
 ASDCP::AESDecContext::~AESDecContext() {}
-
 
 // Initializes Rijndael CBC decryption context.
 // Returns error if the key argument is NULL.
@@ -182,11 +192,17 @@ ASDCP::AESDecContext::InitKey(const byte_t* key)
   m_Context = new h__AESContext;
   m_Context->m_KeyBuf.Set(key);
 
-  if ( AES_set_decrypt_key(m_Context->m_KeyBuf.Value(), KEY_SIZE_BITS, m_Context) )
-    {
-      print_ssl_error();
-      return RESULT_CRYPT_INIT;
-    }
+  m_Context->m_Ctx = EVP_CIPHER_CTX_new();
+  EVP_CIPHER_CTX_init(m_Context->m_Ctx);
+  // Disable padding, otherwise EVP_DecryptUpdate might not return the decrypted block.
+  // See https://github.com/openssl/openssl/blob/master/providers/implementations/ciphers/ciphercommon.c#L344
+  EVP_CIPHER_CTX_set_padding(m_Context->m_Ctx, 0);
+
+  if (!EVP_DecryptInit_ex(m_Context->m_Ctx, EVP_aes_128_cbc(), nullptr, m_Context->m_KeyBuf.Value(), nullptr))
+  {
+    print_ssl_error();
+    return RESULT_CRYPT_INIT;
+  }
 
   return RESULT_OK;
 }
@@ -202,7 +218,11 @@ ASDCP::AESDecContext::SetIVec(const byte_t* i_vec)
   if ( ! m_Context )
     return  RESULT_INIT;
 
-  memcpy(m_Context->m_IVec, i_vec, CBC_BLOCK_SIZE);
+  if (!EVP_DecryptInit_ex(m_Context->m_Ctx, nullptr, nullptr, nullptr, i_vec))
+  {
+    print_ssl_error();
+    return RESULT_CRYPT_INIT;
+  }
   return RESULT_OK;
 }
 
@@ -219,24 +239,12 @@ ASDCP::AESDecContext::DecryptBlock(const byte_t* ct_buf, byte_t* pt_buf, ui32_t 
   if ( m_Context.empty() )
     return  RESULT_INIT;
 
-  h__AESContext* Ctx = m_Context;
-
-  const byte_t* in_p = ct_buf;
-  byte_t* out_p = pt_buf;
-
-  while ( block_size )
-    {
-      AES_decrypt(in_p, out_p, Ctx);  
-
-      for ( ui32_t i = 0; i < CBC_BLOCK_SIZE; i++ )
-	out_p[i] ^= Ctx->m_IVec[i];
-
-      memcpy(Ctx->m_IVec, in_p, CBC_BLOCK_SIZE);
-
-      in_p += CBC_BLOCK_SIZE;
-      out_p += CBC_BLOCK_SIZE;
-      block_size -= CBC_BLOCK_SIZE;
-    }
+  int outlen = 0;
+  if (!EVP_DecryptUpdate(m_Context->m_Ctx, pt_buf, &outlen, ct_buf, block_size))
+  {
+    print_ssl_error();
+    return RESULT_CRYPT_CTX;
+  }
 
   return RESULT_OK;
 }
