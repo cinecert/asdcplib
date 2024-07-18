@@ -286,4 +286,8 @@ XMLPlatformUtils::Initialize();
             AC_MSG_WARN([Xerces C++ Parser support requested but headers or library not found. Specify valid prefix of Xerces C++ using --with-xerces=@<:@DIR@:>@ or provide include directory and linker flags using --with-xerces-inc and --with-xerces-lib])
         fi
     fi
+    if test "$HAVE_XERCES" = "yes"; then
+        CPPFLAGS="$CPPFLAGS $XERCES_CPPFLAGS -DHAVE_XERCES_C=1"
+        LDFLAGS="$LDFLAGS $XERCES_LDFLAGS $XERCES_LIBS"
+    fi
 ])
