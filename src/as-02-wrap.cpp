@@ -1117,6 +1117,27 @@ write_JP2K_file(CommandOptions& Options)
 		  tmp_dscr->MasteringDisplayWhitePointChromaticity = Options.md_white_point;
 		}
 
+		 if (Options.component_depth == 16)
+		    {
+		      tmp_dscr->PixelLayout = ASDCP::MXF::RGBALayout(ASDCP::MXF::RGBAValue_RGB_16);
+		    }
+		  else if (Options.component_depth == 12)
+		    {
+		      tmp_dscr->PixelLayout = ASDCP::MXF::RGBALayout(ASDCP::MXF::RGBAValue_RGB_12);
+		    }
+		  else if (Options.component_depth == 10)
+		    {
+		      tmp_dscr->PixelLayout = ASDCP::MXF::RGBALayout(ASDCP::MXF::RGBAValue_RGB_10);
+		    }
+		  else if (Options.component_depth == 8)
+		    {
+		      tmp_dscr->PixelLayout = ASDCP::MXF::RGBALayout(ASDCP::MXF::RGBAValue_RGB_8);
+		    }
+		  else
+		    {
+		      fprintf(stderr, "Warning: could not determine PixelLayout to write.\n");
+		    }
+
 	      essence_descriptor = static_cast<ASDCP::MXF::FileDescriptor*>(tmp_dscr);
 
 	      if (Options.write_j2clayout)
