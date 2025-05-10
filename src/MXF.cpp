@@ -1651,6 +1651,11 @@ ul_is_an_mca_group(const ASDCP::UL& ul)
       return true;
     }
 
+  if ( ul == ASDCP::DefaultSMPTEDict().ul(ASDCP::MDD_DCAudioSoundfield_514) ) // not all ULs obey ST 428-12
+    {
+      return true;
+    }
+
   return false;
 }
 
@@ -1934,6 +1939,11 @@ ASDCP::MXF::ASDCP_MCAConfigParser::ASDCP_MCAConfigParser(const Dictionary* d) : 
   m_LabelMap.insert(pair("DBOX",  label_traits("D-BOX Motion Code Primary Stream"  , false, m_Dict->ul(MDD_DBOXMotionCodePrimaryStream))));
   m_LabelMap.insert(pair("DBOX2", label_traits("D-BOX Motion Code Secondary Stream", false, m_Dict->ul(MDD_DBOXMotionCodeSecondaryStream))));
   m_LabelMap.insert(pair("SLVS",  label_traits("Sign Language Video Stream"        , false, m_Dict->ul(MDD_AudioChannelSLVS))));
+  m_LabelMap.insert(pair("514",   label_traits("5.1.4"                             , true,  m_Dict->ul(MDD_DCAudioSoundfield_514))));
+  m_LabelMap.insert(pair("Ltfs",  label_traits("Left Top Front Surround"           , true,  m_Dict->ul(MDD_DCAudioChannel_Ltfs))));
+  m_LabelMap.insert(pair("Rtfs",  label_traits("Right Top Front Surround"          , true,  m_Dict->ul(MDD_DCAudioChannel_Rtfs))));
+  m_LabelMap.insert(pair("Ltrs",  label_traits("Left Top Rear Surround"            , true,  m_Dict->ul(MDD_DCAudioChannel_Ltrs))));
+  m_LabelMap.insert(pair("Rtrs",  label_traits("Right Top Rear Surround"           , true,  m_Dict->ul(MDD_DCAudioChannel_Rtrs))));
 }
 
 //

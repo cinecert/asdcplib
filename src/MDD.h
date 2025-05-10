@@ -617,6 +617,11 @@ namespace ASDCP {
 	MDD_JP2KEssenceCompression_IMFProfile_2K_Lossy_6_2, // 579
 	MDD_JP2KEssenceCompression_IMFProfile_2K_Lossy_6_3, // 580
 	MDD_JP2KEssenceCompression_IMFProfile_2K_Lossy_6_4, // 581
+	MDD_DCAudioSoundfield_514, // 582
+	MDD_DCAudioChannel_Ltfs, // 583
+	MDD_DCAudioChannel_Rtfs, // 584
+	MDD_DCAudioChannel_Ltrs, // 585
+	MDD_DCAudioChannel_Rtrs, // 586
 	MDD_Max
     }; // enum MDD_t
 
