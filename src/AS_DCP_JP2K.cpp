@@ -945,7 +945,7 @@ public:
 	    if ( ASDCP_SUCCESS(result) )
 	      {
 		// skip over the companion SP_LEFT frame
-		Kumu::fpos_t new_pos = FilePosition + SMPTE_UL_LENGTH + Reader.KLLength() + Reader.Length();
+		Kumu::fpos_t new_pos = FilePosition + Reader.KLLength() + Reader.Length();
 		result = m_File->Seek(new_pos);
 	      }
 	  }
