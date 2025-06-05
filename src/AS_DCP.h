@@ -1549,7 +1549,7 @@ namespace ASDCP {
 
 	  // Opens an XML file for reading, parses data to provide a complete
 	  // set of stream metadata for the MXFWriter below.
-	  Result_t OpenRead(const std::string& filename) const;
+	  Result_t OpenRead(const std::string& filename, ui32_t d=0) const;
 
 	  // Parses an XML document to provide a complete set of stream metadata
 	  // for the MXFWriter below. The optional filename argument is used to
