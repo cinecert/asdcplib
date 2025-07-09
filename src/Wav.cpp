@@ -157,7 +157,7 @@ ASDCP::Wav::SimpleWaveHeader::ReadFromBuffer(const byte_t* buf, ui32_t buf_len, 
   while ( p < end_p )
     {
       test_fcc = fourcc(p); p += 4;
-      ui32_t chunk_size = KM_i32_LE(Kumu::cp2i<ui32_t>(p)); p += sizeof(ui32_t);
+      ui32_t chunk_size = KM_i32_LE(Kumu::cp2i<ui32_t>(p) + (Kumu::cp2i<ui32_t>(p) % 2)); p += sizeof(ui32_t);
 
       if ( test_fcc == FCC_data )
 	{

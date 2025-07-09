@@ -195,6 +195,10 @@ Options:\n\
                     - UL value for MCA descriptor MCAAudioContentKind property\n\
   --mca-audio-element-kind <string>\n\
                     - UL value for MCA descriptor MCAAudioElementKind property\n\
+  --mca-title <string>\n\
+                    - String value for MCA descriptor MCATitle property\n\
+  --mca-title-version <string>\n\
+                    - String value for MCA descriptor MCATitleVersion property\n\
 \n\
 \n\
 Options specific to ACES ST2067-50:\n\
@@ -320,7 +324,7 @@ public:
   MXF::LineMapPair line_map;
   bool line_map_flag;
   std::string out_file, profile_name; //
-  std::string mca_audio_element_kind, mca_audio_content_kind;
+  std::string mca_audio_element_kind, mca_audio_content_kind, mca_title, mca_title_version;
 
   //ST 2067-50 options
   bool aces_authoring_information_flag, aces_picture_subdescriptor_flag, target_frame_subdescriptor_flag, target_frame_index_flag;
@@ -912,6 +916,26 @@ public:
 
 		mca_audio_element_kind = argv[i];
 	      }
+		else if ( strcmp(argv[i]+2, "mca-title") == 0 )
+	      {
+		if ( ++i >= argc || argv[(i)][0] == '-' )
+		  {
+		    fprintf(stderr, "Argument not found for option -mca-title.\n");
+		    return;
+		  }
+
+		mca_title = argv[i];
+	      }
+		else if ( strcmp(argv[i]+2, "mca-title-version") == 0 )
+	      {
+		if ( ++i >= argc || argv[(i)][0] == '-' )
+		  {
+		    fprintf(stderr, "Argument not found for option -mca-title-version.\n");
+		    return;
+		  }
+
+		mca_title_version = argv[i];
+	      }
 	    else
 	      {
 		fprintf(stderr, "Unrecognized argument: %s\n", argv[i]);
@@ -1116,6 +1140,27 @@ write_JP2K_file(CommandOptions& Options)
 		  tmp_dscr->MasteringDisplayPrimaries = Options.md_primaries;
 		  tmp_dscr->MasteringDisplayWhitePointChromaticity = Options.md_white_point;
 		}
+
+		 if (Options.component_depth == 16)
+		    {
+		      tmp_dscr->PixelLayout = ASDCP::MXF::RGBALayout(ASDCP::MXF::RGBAValue_RGB_16);
+		    }
+		  else if (Options.component_depth == 12)
+		    {
+		      tmp_dscr->PixelLayout = ASDCP::MXF::RGBALayout(ASDCP::MXF::RGBAValue_RGB_12);
+		    }
+		  else if (Options.component_depth == 10)
+		    {
+		      tmp_dscr->PixelLayout = ASDCP::MXF::RGBALayout(ASDCP::MXF::RGBAValue_RGB_10);
+		    }
+		  else if (Options.component_depth == 8)
+		    {
+		      tmp_dscr->PixelLayout = ASDCP::MXF::RGBALayout(ASDCP::MXF::RGBAValue_RGB_8);
+		    }
+		  else
+		    {
+		      fprintf(stderr, "Warning: could not determine PixelLayout to write.\n");
+		    }
 
 	      essence_descriptor = static_cast<ASDCP::MXF::FileDescriptor*>(tmp_dscr);
 
@@ -1557,6 +1602,14 @@ write_PCM_file(CommandOptions& Options)
 		  if ( ! Options.mca_audio_element_kind.empty() )
 		    {
 		      desc->MCAAudioElementKind = Options.mca_audio_element_kind;
+		    }
+		  if ( ! Options.mca_title.empty() )
+		    {
+		      desc->MCATitle = Options.mca_title;
+		    }
+		  if ( ! Options.mca_title_version.empty() )
+		    {
+		      desc->MCATitleVersion = Options.mca_title_version;
 		    }
 		}
 	    }
