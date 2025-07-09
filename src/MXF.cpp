@@ -794,11 +794,11 @@ ASDCP::MXF::OP1aHeader::InitFromFile(const Kumu::IFileReader& Reader)
     }
   else if ( HeaderByteCount < 1024 )
     {
-      DefaultLogSink().Warn("Improbably small HeaderByteCount value: %qu\n", HeaderByteCount);
+      DefaultLogSink().Warn("Improbably small HeaderByteCount value: %llu\n", HeaderByteCount);
     }
   else if (HeaderByteCount > ( 4 * Kumu::Megabyte ) )
     {
-      DefaultLogSink().Warn("Improbably huge HeaderByteCount value: %qu\n", HeaderByteCount);
+      DefaultLogSink().Warn("Improbably huge HeaderByteCount value: %llu\n", HeaderByteCount);
     }
   
   result = m_HeaderData.Capacity(Kumu::xmin(4*Kumu::Megabyte, static_cast<ui32_t>(HeaderByteCount)));
