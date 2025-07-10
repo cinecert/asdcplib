@@ -103,11 +103,11 @@ namespace Kumu
   };
 #else
   struct i64Printer : public IntPrinter<i64_t, 32> {
-    i64Printer(i64_t value) : IntPrinter<i64_t, 32>("%qd", value) {}
+    i64Printer(i64_t value) : IntPrinter<i64_t, 32>("%lld", value) {}
   };
 
   struct ui64Printer : public IntPrinter<ui64_t, 32> {
-    ui64Printer(ui64_t value) : IntPrinter<ui64_t, 32>("%qu", value) {}
+    ui64Printer(ui64_t value) : IntPrinter<ui64_t, 32>("%llu", value) {}
   };
 #endif
 
