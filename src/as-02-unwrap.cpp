@@ -1078,8 +1078,23 @@ Result_t read_iab_file(CommandOptions& Options, const Kumu::IFileReaderFactory& 
         }
 
         last_frame = last_frame - Options.start_frame;
+    }
 
+    Kumu::FileWriter writer;
+    ui32_t write_count = 0;
 
+    if ( ! Options.no_write_flag )
+    {
+        if ( Options.verbose_flag )
+        {
+            fprintf(stdout, "Opening output file %s\n", Options.file_prefix);
+        }
+        result = writer.OpenWrite(Options.file_prefix);
+        if ( ! ASDCP_SUCCESS(result) )
+        {
+            fprintf(stderr, "Error opening output file %s.\n", Options.file_prefix);
+            return RESULT_FAIL;
+        }
     }
 
     for ( ui32_t i = Options.start_frame; ASDCP_SUCCESS(result) && i < last_frame; i++ )
@@ -1088,6 +1103,15 @@ Result_t read_iab_file(CommandOptions& Options, const Kumu::IFileReaderFactory& 
 
         if ( ASDCP_SUCCESS(result) )
         {
+            if ( ! Options.no_write_flag )
+            {
+                result = writer.Write(FrameBuffer.RoData(), FrameBuffer.Size(), &write_count);
+                if ( ! ASDCP_SUCCESS(result) )
+                {
+                    fprintf(stderr, "Error writing to output file %s.\n", Options.file_prefix);
+                    return RESULT_FAIL;
+                }
+            }
             if ( Options.verbose_flag )
             {
                 FrameBuffer.FrameNumber(i);
