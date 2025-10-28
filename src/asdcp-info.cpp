@@ -372,18 +372,20 @@ public:
 
     if ( m_PictureEssenceCoding.HasValue() )
       {
-	const char *encoding_ul_type = "**UNKNOWN**";
+        const char *encoding_ul_type = "**UNKNOWN**";
 
-	if ( m_PictureEssenceCoding == UL(P_HFR_UL_2K) )
-	  encoding_ul_type = "P-HFR-2K";
-	else if ( m_PictureEssenceCoding == UL(P_HFR_UL_4K) )
-	  encoding_ul_type = "**P-HFR-4K**";
-	else if ( m_PictureEssenceCoding == DefaultCompositeDict().ul(MDD_JP2KEssenceCompression_2K) )
-	  encoding_ul_type = "ST-429-4-2K";
-	else if ( m_PictureEssenceCoding == DefaultCompositeDict().ul(MDD_JP2KEssenceCompression_4K) )
-	  encoding_ul_type = "ST-429-4-4K";
+        if ( m_PictureEssenceCoding == UL(P_HFR_UL_2K) )
+          encoding_ul_type = "P-HFR-2K";
+        else if ( m_PictureEssenceCoding == UL(P_HFR_UL_4K) )
+          encoding_ul_type = "**P-HFR-4K**";
+        else if ( m_PictureEssenceCoding == DefaultCompositeDict().ul(MDD_JP2KEssenceCompression_2K) )
+          encoding_ul_type = "ST-429-4-2K";
+        else if ( m_PictureEssenceCoding == DefaultCompositeDict().ul(MDD_JP2KEssenceCompression_4K) )
+          encoding_ul_type = "ST-429-4-4K";
+        else if (m_PictureEssenceCoding == DefaultCompositeDict().ul(MDD_TransferCharacteristic_SMPTEST2084) )
+          encoding_ul_type = "SMPTE-ST-2084";
 
-	fprintf(stream, "PictureEssenceCoding: %s (%s)\n", m_PictureEssenceCoding.EncodeString(buf, 64), encoding_ul_type);
+        fprintf(stream, "PictureEssenceCoding: %s (%s)\n", m_PictureEssenceCoding.EncodeString(buf, 64), encoding_ul_type);
       }
   }
 
@@ -399,62 +401,59 @@ public:
 
     if ( m_PictureEssenceCoding == UL(P_HFR_UL_2K) )
       {
-	if ( m_Desc.StoredWidth > 2048 ) // 4k
-	  {
-	    fprintf(stream, "4k images marked as 2k HFR.\n");
-	    ++errors;
-	  }
+        if ( m_Desc.StoredWidth > 2048 ) // 4k
+          {
+            fprintf(stream, "4k images marked as 2k HFR.\n");
+            ++errors;
+          }
 
-	if ( m_Desc.SampleRate < ASDCP::EditRate_96 )
-	  {
-	    fprintf(stream, "HFR UL used for fps < 96.\n");
-	    ++errors;
-	  }
+        if ( m_Desc.SampleRate < ASDCP::EditRate_96 )
+          {
+            fprintf(stream, "HFR UL used for fps < 96.\n");
+            ++errors;
+          }
 
-	if ( ! Options.max_bitrate_flag )
-	  max_bitrate = p_hfr_max_bitrate;
+        if ( ! Options.max_bitrate_flag )
+          max_bitrate = p_hfr_max_bitrate;
       }
     else if ( m_PictureEssenceCoding == UL(P_HFR_UL_4K) )
       {
-	fprintf(stream, "4k HFR support undefined.\n");
-	++errors;
+        fprintf(stream, "4k HFR support undefined.\n");
+        ++errors;
 
-	if ( m_Desc.StoredWidth <= 2048 ) // 2k
-	  {
-	    fprintf(stream, "2k images marked as 4k HFR.\n");
-	    ++errors;
-	  }
+        if ( m_Desc.StoredWidth <= 2048 ) // 2k
+          {
+            fprintf(stream, "2k images marked as 4k HFR.\n");
+            ++errors;
+          }
       }
-    else if ( m_PictureEssenceCoding != DefaultCompositeDict().ul(MDD_JP2KEssenceCompression_2K)
-	      && m_PictureEssenceCoding != DefaultCompositeDict().ul(MDD_JP2KEssenceCompression_4K) )
+    else if ( m_PictureEssenceCoding == DefaultCompositeDict().ul(MDD_JP2KEssenceCompression_2K) )
       {
-	fprintf(stream, "Unknown PictureEssenceCoding UL value.\n");
-	++errors;
+        if ( m_Desc.StoredWidth > 2048 ) // 4k
+          {
+            fprintf(stream, "4k images marked as 2k ST 429-4.\n");
+            ++errors;
+          }
       }
-    else
+    else if ( m_PictureEssenceCoding == DefaultCompositeDict().ul(MDD_JP2KEssenceCompression_4K) )
       {
-	if ( m_PictureEssenceCoding == DefaultCompositeDict().ul(MDD_JP2KEssenceCompression_2K) )
-	  {
-	    if ( m_Desc.StoredWidth > 2048 ) // 4k
-	      {
-		fprintf(stream, "4k images marked as 2k ST 429-4.\n");
-		++errors;
-	      }
-	  }
-	else if ( m_PictureEssenceCoding == DefaultCompositeDict().ul(MDD_JP2KEssenceCompression_4K) )
-	  {
-	    if ( m_Desc.StoredWidth <= 2048 ) // 2k
-	      {
-		fprintf(stream, "2k images marked as 4k ST 429-4.\n");
-		++errors;
-	      }
-	  }
+        if ( m_Desc.StoredWidth <= 2048 ) // 2k
+          {
+            fprintf(stream, "2k images marked as 4k ST 429-4.\n");
+            ++errors;
+          }
       }
+    else if ( m_PictureEssenceCoding != DefaultCompositeDict().ul(MDD_TransferCharacteristic_SMPTEST2084) )
+      {
+        fprintf(stream, "Unknown PictureEssenceCoding UL value.\n");
+        ++errors;
+      }
+
 
     if ( m_MaxBitrate > max_bitrate )
       {
-	fprintf(stream, "Bitrate %0.0f exceeds maximum %0.0f (see option -r).\n", m_MaxBitrate, max_bitrate);
-	++errors;
+        fprintf(stream, "Bitrate %0.0f exceeds maximum %0.0f (see option -r).\n", m_MaxBitrate, max_bitrate);
+        ++errors;
       }
 
     return errors ? RESULT_FAIL : RESULT_OK;

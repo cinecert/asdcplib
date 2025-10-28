@@ -324,7 +324,7 @@ main(int argc, const char** argv)
 
 		  if ( plain_part.ThisPartition != i->ByteOffset )
 		    {
-		      DefaultLogSink().Error("ThisPartition value error: wanted=%qu, got=%qu\n",
+		      DefaultLogSink().Error("ThisPartition value error: wanted=%llu, got=%llu\n",
 					     plain_part.ThisPartition, i->ByteOffset);
 		    }
 
