@@ -88,7 +88,7 @@ ASDCP::AESEncContext::InitKey(const byte_t* key)
   m_Context->m_KeyBuf.Set(key);
 
   m_Context->m_Ctx = EVP_CIPHER_CTX_new();
-  EVP_CIPHER_CTX_init(m_Context->m_Ctx);
+  EVP_CIPHER_CTX_reset(m_Context->m_Ctx);
 
   if (!EVP_EncryptInit_ex(m_Context->m_Ctx, EVP_aes_128_cbc(), nullptr, m_Context->m_KeyBuf.Value(), nullptr))
   {
@@ -193,7 +193,7 @@ ASDCP::AESDecContext::InitKey(const byte_t* key)
   m_Context->m_KeyBuf.Set(key);
 
   m_Context->m_Ctx = EVP_CIPHER_CTX_new();
-  EVP_CIPHER_CTX_init(m_Context->m_Ctx);
+  EVP_CIPHER_CTX_reset(m_Context->m_Ctx);
   // Disable padding, otherwise EVP_DecryptUpdate might not return the decrypted block.
   // See https://github.com/openssl/openssl/blob/master/providers/implementations/ciphers/ciphercommon.c#L344
   EVP_CIPHER_CTX_set_padding(m_Context->m_Ctx, 0);
