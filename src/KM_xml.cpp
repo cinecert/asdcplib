@@ -988,6 +988,15 @@ Kumu::XMLElement::ParseString(const char* document, ui32_t doc_len)
   return errorCount > 0 ? false : true;
 }
 
+
+class IgnoreDTDResolver : public xercesc::EntityResolver {
+public:
+    InputSource* resolveEntity(const XMLCh* const, const XMLCh* const) override {
+        static const XMLByte dummy[] = "";
+        return new xercesc::MemBufInputSource(dummy, 0, "dummy-dtd", false);
+    }
+};
+
 //
 bool
 Kumu::XMLElement::ParseFirstFromString(const char* document, ui32_t doc_len)
@@ -1009,6 +1018,9 @@ Kumu::XMLElement::ParseFirstFromString(const char* document, ui32_t doc_len)
   parser->setDocumentHandler(docHandler);
   parser->setErrorHandler(docHandler);
   XMLPScanToken token;
+
+  // Ignore references to DTD files
+  parser->setEntityResolver(new IgnoreDTDResolver());
 
   try
     {
