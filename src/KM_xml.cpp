@@ -1011,7 +1011,7 @@ Kumu::XMLElement::ParseFirstFromString(const char* document, ui32_t doc_len)
   int errorCount = 0;
   SAXParser* parser = new SAXParser();
 
-  parser->setValidationScheme(SAXParser::Val_Always);
+  parser->setValidationScheme(SAXParser::Val_Never);
   parser->setDoNamespaces(true);    // optional
 
   MyTreeHandler* docHandler = new MyTreeHandler(this);
@@ -1020,7 +1020,8 @@ Kumu::XMLElement::ParseFirstFromString(const char* document, ui32_t doc_len)
   XMLPScanToken token;
 
   // Ignore references to DTD files
-  parser->setEntityResolver(new IgnoreDTDResolver());
+  IgnoreDTDResolver resolver;
+  parser->setEntityResolver(&resolver);
 
   try
     {
