@@ -112,7 +112,7 @@ class ASDCP::TimedText::DCSubtitleParser::h__SubtitleParser
 {
   XMLElement  m_Root;
   ResourceTypeMap_t m_ResourceTypes;
-  Result_t OpenRead();
+  Result_t OpenRead(ui32_t d=0);
 
   ASDCP_NO_COPY_CONSTRUCT(h__SubtitleParser);
 
@@ -140,8 +140,8 @@ public:
     return m_DefaultResolver;
   }
 
-  Result_t OpenRead(const std::string& filename);
-  Result_t OpenRead(const std::string& xml_doc, const std::string& filename);
+  Result_t OpenRead(const std::string& filename, ui32_t duration_override=0);
+  Result_t OpenRead(const std::string& xml_doc, const std::string& filename, ui32_t duration_override=0);
   Result_t ReadAncillaryResource(const byte_t* uuid, FrameBuffer& FrameBuf, const IResourceResolver& Resolver) const;
 };
 namespace {
@@ -179,12 +179,12 @@ namespace {
 
 //
 Result_t
-ASDCP::TimedText::DCSubtitleParser::h__SubtitleParser::OpenRead(const std::string& filename)
+ASDCP::TimedText::DCSubtitleParser::h__SubtitleParser::OpenRead(const std::string& filename, ui32_t duration_override)
 {
   Result_t result = ReadFileIntoString(filename, m_XMLDoc);
 
   if ( KM_SUCCESS(result) )
-    result = OpenRead();
+    result = OpenRead(duration_override);
 
   m_Filename = filename;
   return result;
@@ -192,7 +192,7 @@ ASDCP::TimedText::DCSubtitleParser::h__SubtitleParser::OpenRead(const std::strin
 
 //
 Result_t
-ASDCP::TimedText::DCSubtitleParser::h__SubtitleParser::OpenRead(const std::string& xml_doc, const std::string& filename)
+ASDCP::TimedText::DCSubtitleParser::h__SubtitleParser::OpenRead(const std::string& xml_doc, const std::string& filename, ui32_t duration_override)
 {
   m_XMLDoc = xml_doc;
 
@@ -205,12 +205,12 @@ ASDCP::TimedText::DCSubtitleParser::h__SubtitleParser::OpenRead(const std::strin
       m_Filename = filename;
     }
 
-  return OpenRead();
+  return OpenRead(duration_override);
 }
 
 //
 Result_t
-ASDCP::TimedText::DCSubtitleParser::h__SubtitleParser::OpenRead()
+ASDCP::TimedText::DCSubtitleParser::h__SubtitleParser::OpenRead(ui32_t duration_override)
 {
   if ( ! m_Root.ParseString(m_XMLDoc) )
     return RESULT_FORMAT;
@@ -370,6 +370,17 @@ ASDCP::TimedText::DCSubtitleParser::h__SubtitleParser::OpenRead()
 
   m_TDesc.ContainerDuration = end_count - beginTC.GetFrames();
 
+  if (duration_override)
+    {
+	if (duration_override < m_TDesc.ContainerDuration)
+	 {
+	   DefaultLogSink(). Error("Override Duration (%d) may not be less than the actual intrinsic duration (%d).\n",
+				   duration_override,  m_TDesc.ContainerDuration);
+	   return RESULT_FORMAT;
+	  }
+      m_TDesc.ContainerDuration = duration_override;
+    }
+
   return RESULT_OK;
 }
 
@@ -426,11 +437,11 @@ ASDCP::TimedText::DCSubtitleParser::~DCSubtitleParser()
 // Opens the stream for reading, parses enough data to provide a complete
 // set of stream metadata for the MXFWriter below.
 ASDCP::Result_t
-ASDCP::TimedText::DCSubtitleParser::OpenRead(const std::string& filename) const
+ASDCP::TimedText::DCSubtitleParser::OpenRead(const std::string& filename, ui32_t d) const
 {
   const_cast<ASDCP::TimedText::DCSubtitleParser*>(this)->m_Parser = new h__SubtitleParser;
 
-  Result_t result = m_Parser->OpenRead(filename);
+  Result_t result = m_Parser->OpenRead(filename, d);
 
   if ( ASDCP_FAILURE(result) )
     const_cast<ASDCP::TimedText::DCSubtitleParser*>(this)->m_Parser = 0;
