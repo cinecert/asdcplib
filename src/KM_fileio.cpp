@@ -37,6 +37,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #ifdef KM_WIN32
 #include <direct.h>
+#include <regex>
 #else
 #define _getcwd getcwd
 #define _unlink unlink
@@ -563,12 +564,10 @@ Kumu::FindInPath(const IPathMatch& Pattern, const std::string& SearchDir,
   return FoundPaths;
 }
 
-
-#ifndef KM_WIN32
-
 //
 Kumu::PathMatchRegex::PathMatchRegex(const std::string& s)
 {
+#ifndef KM_WIN32
   int result = regcomp(&m_regex, s.c_str(), REG_NOSUB); // (REG_EXTENDED|REG_NOSUB|REG_NEWLINE));
 
   if ( result )
@@ -578,6 +577,14 @@ Kumu::PathMatchRegex::PathMatchRegex(const std::string& s)
       DefaultLogSink().Error("PathMatchRegex: %s\n", buf);
       regfree(&m_regex);
     }
+#else
+    try {
+        m_regex.assign(s.c_str(), s.length(), std::regex_constants::nosubs);
+    }
+    catch (const std::regex_error& e) {
+        DefaultLogSink().Error("PathMatchRegex: %s\n", e.what());
+    }
+#endif
 }
 
 Kumu::PathMatchRegex::PathMatchRegex(const PathMatchRegex& rhs) : IPathMatch() {
@@ -585,15 +592,21 @@ Kumu::PathMatchRegex::PathMatchRegex(const PathMatchRegex& rhs) : IPathMatch() {
 }
 
 Kumu::PathMatchRegex::~PathMatchRegex() {
+#ifndef KM_WIN32
   regfree(&m_regex);
+#endif
 }
 
 bool
 Kumu::PathMatchRegex::Match(const std::string& s) const {
+#ifndef KM_WIN32
   return ( regexec(&m_regex, s.c_str(), 0, 0, 0) == 0 );
+#else
+    return std::regex_match(s, m_regex);
+#endif
 }
 
-
+#ifndef KM_WIN32
 
 //
 Kumu::PathMatchGlob::PathMatchGlob(const std::string& glob)
@@ -652,7 +665,7 @@ Kumu::GetExecutablePath(const std::string& default_path)
 
 #if defined(KM_WIN32)
   DWORD size = X_BUFSIZE;
-  DWORD rc = GetModuleFileName(0, path, size);
+  DWORD rc = GetModuleFileNameA(0, path, size);
   success = ( rc != 0 );
 #elif defined(KM_MACOSX)
   uint32_t size = X_BUFSIZE;
