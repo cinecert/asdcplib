@@ -162,7 +162,6 @@ namespace JP2K
 	};
 
       const int SqcdOFST = 0;
-      const int SPqcdOFST = 1;
 
       enum QuantizationType_t
       {
@@ -186,8 +185,8 @@ namespace JP2K
 	  QCD(const Marker& M)
 	    {
 	      assert(M.m_Type == MRK_QCD);
-	      m_MarkerData = M.m_Data + 2;
-	      m_DataSize = M.m_DataSize - 2;
+	      m_MarkerData = M.m_Data;
+	      m_DataSize = M.m_DataSize;
 	    }
 
 	  ~QCD() {}
