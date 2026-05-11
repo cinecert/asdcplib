@@ -48,11 +48,13 @@ Ubuntu_20.04:
     - sudo make install
     - sudo ldconfig
   
-Centos_7.2.1511:
-  tags: ["Centos_7.2.1511"]
+Ubuntu_24.04:
+  stage: build
+  tags: ["Ubuntu24", "Py3.12"]
   variables:
-    GIT_STRATEGY: clone
+    GIT_STRATEGY: fetch
   <<: *run_build
+
 
 
 
@@ -69,11 +71,12 @@ Ubuntu_20_tests:
     GIT_STRATEGY: none
   <<: *run_tests
 
-Centos_7_tests:
-  tags: ["Centos_7.2.1511"]
+Ubuntu_24_tests:
+  tags: ["Ubuntu24", "Py3.12"]
   variables:
     GIT_STRATEGY: none
   <<: *run_tests
+
 
 
 
