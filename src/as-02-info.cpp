@@ -554,15 +554,18 @@ class MyAudioDescriptor : public PCM::AudioDescriptor
   }
 };
 
-struct IabDescriptor
-{
-  int ContainerDuration;
-  IabDescriptor() : ContainerDuration(0) {}
-};
 
-class MyIabDescriptor : public IabDescriptor
+class MyIabDescriptor
 {
  public:
+  int ContainerDuration;
+  int IABMaxObjectCount;
+   MyIabDescriptor() : 
+    ContainerDuration(0), 
+    IABMaxObjectCount(0) 
+    {}
+
+
   void FillDescriptor(AS_02::IAB::MXFReader& reader) {
     const Dictionary& Dict = DefaultCompositeDict();
     IABEssenceDescriptor *essence_descriptor_mxf = 0;
@@ -575,6 +578,10 @@ class MyIabDescriptor : public IabDescriptor
         essence_descriptor_mxf = dynamic_cast<MXF::IABEssenceDescriptor*>(object_list.back());
         assert(essence_descriptor_mxf);
         ContainerDuration = (int)essence_descriptor_mxf->ContainerDuration.get();
+
+        if (!essence_descriptor_mxf->IABMaxObjectCount.empty()) {
+          IABMaxObjectCount = essence_descriptor_mxf->IABMaxObjectCount.get();
+        }
       }
   }
   void Dump(FILE* stream) {}

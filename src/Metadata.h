@@ -940,6 +940,8 @@ namespace ASDCP
           optional_property<UTF16String > MCAPartitionNumber;
           optional_property<UTF16String > MCAAudioContentKind;
           optional_property<UTF16String > MCAAudioElementKind;
+          optional_property<UTF16String > MCAContent;
+          optional_property<UTF16String > MCAUseClass;
 
       MCALabelSubDescriptor(const Dictionary* d);
       MCALabelSubDescriptor(const MCALabelSubDescriptor& rhs);
@@ -1304,6 +1306,9 @@ namespace ASDCP
 
 	public:
 
+      // introduced in SMPTE ST 2067-201:2026
+      optional_property<ui16_t > IABMaxObjectCount;
+
       IABEssenceDescriptor(const Dictionary* d);
       IABEssenceDescriptor(const IABEssenceDescriptor& rhs);
       virtual ~IABEssenceDescriptor() {}
@@ -1340,6 +1345,34 @@ namespace ASDCP
       virtual Result_t InitFromBuffer(const byte_t* p, ui32_t l);
       virtual Result_t WriteToBuffer(ASDCP::FrameBuffer&);
 	};
+
+
+      // introduced in SMPTE ST 2067-201:2026
+      class IABChannelSubDescriptor : public InterchangeObject
+      {
+            IABChannelSubDescriptor();
+
+      public:
+            ui32_t IABBedMetaID;
+            ui32_t IABChannelID;
+            ui8_t IABAudioDescription;
+            optional_property<UTF16String > IABAudioDescriptionText;
+
+      IABChannelSubDescriptor(const Dictionary* d);
+      IABChannelSubDescriptor(const IABChannelSubDescriptor& rhs);
+      virtual ~IABChannelSubDescriptor() {}
+
+      const IABChannelSubDescriptor& operator=(const IABChannelSubDescriptor& rhs) { Copy(rhs); return *this; }
+      virtual void Copy(const IABChannelSubDescriptor& rhs);
+      virtual InterchangeObject *Clone() const;
+      virtual const char* HasName() { return "IABChannelSubDescriptor"; }
+      virtual Result_t InitFromTLVSet(TLVReader& TLVSet);
+      virtual Result_t WriteToTLVSet(TLVWriter& TLVSet);
+      virtual void     Dump(FILE* = 0);
+      virtual Result_t InitFromBuffer(const byte_t* p, ui32_t l);
+      virtual Result_t WriteToBuffer(ASDCP::FrameBuffer&);
+      };
+
 
       //
       class JPEGXSPictureSubDescriptor : public InterchangeObject

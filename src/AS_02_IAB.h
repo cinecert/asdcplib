@@ -95,6 +95,9 @@ namespace AS_02 {
        * @param conformsToSpecs Value of the ConformsToSpecifications preface item
        * @param edit_rate Frame rate of the IA Bitstream
        * @param sampling_rate Sampling rate of the audio essence within the IA Bitstream
+       * @param write_max_object_count Indicates whether max object count should be written to MXF descriptor.
+       * @param max_object_count max object count present in any IAFrame within the IAB.
+       * @param channelSubs Vector of IAB Channel Subdescriptors.
        * 
        * @return RESULT_OK indicates that frames are ready to be written,
        * otherwise the reader is reset and the file is left is an undermined state.
@@ -105,7 +108,10 @@ namespace AS_02 {
         const ASDCP::MXF::IABSoundfieldLabelSubDescriptor& sub,
         const std::vector<ASDCP::UL>& conformsToSpecs,
         const ASDCP::Rational& edit_rate,
-        const ASDCP::Rational& sampling_rate = ASDCP::SampleRate_48k
+        const ASDCP::Rational& sampling_rate = ASDCP::SampleRate_48k,
+        const bool& write_max_object_count = false,
+        const ui16_t& max_object_count = 0,
+        const std::vector<ASDCP::MXF::IABChannelSubDescriptor>& channelSubs = std::vector<ASDCP::MXF::IABChannelSubDescriptor>()
       );
 
       /**

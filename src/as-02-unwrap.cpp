@@ -1056,7 +1056,7 @@ Result_t read_iab_file(CommandOptions& Options, const Kumu::IFileReaderFactory& 
             }
 
             assert(iab_descriptor);
-            FrameBuffer.Capacity(24000); // TODO what size?
+            FrameBuffer.Capacity(Options.fb_size);
             last_frame = (ui32_t)iab_descriptor->ContainerDuration;
         }
     }
@@ -1082,17 +1082,40 @@ Result_t read_iab_file(CommandOptions& Options, const Kumu::IFileReaderFactory& 
 
     }
 
+    char name_format[64];
+    snprintf(name_format,  64, "%%s%%0%du.iab", Options.number_width);
+
     for ( ui32_t i = Options.start_frame; ASDCP_SUCCESS(result) && i < last_frame; i++ )
     {
         result = Reader.ReadFrame(i, FrameBuffer);
 
+        char filename[1024];
+        snprintf(filename, 1024, name_format, Options.file_prefix, i);
+    
+        if (ASDCP_SUCCESS(result) && Options.verbose_flag)
+        {
+          printf("Frame %d, %d bytes", i, FrameBuffer.Size());
+    
+          if (!Options.no_write_flag)
+          {
+            printf(" -> %s", filename);
+          }
+    
+          printf("\n");
+
+          Kumu::hexdump(FrameBuffer.RoData(), Kumu::xmin(FrameBuffer.Size(), (ui32_t)Options.fb_dump_size), stdout);
+        }
+
         if ( ASDCP_SUCCESS(result) )
         {
-            if ( Options.verbose_flag )
+          if ( ! Options.no_write_flag )
             {
-                FrameBuffer.FrameNumber(i);
-                fprintf(stdout, "Frame(%d):\n", i);
-                Kumu::hexdump(FrameBuffer.RoData(), Kumu::xmin(FrameBuffer.Size(), (ui32_t)Options.fb_dump_size), stdout);
+              Kumu::FileWriter OutFile;
+              ui32_t write_count;
+              result = OutFile.OpenWrite(filename);
+      
+              if ( ASDCP_SUCCESS(result) )
+          result = OutFile.Write(FrameBuffer.Data(), FrameBuffer.Size(), &write_count);
             }
         }
     }

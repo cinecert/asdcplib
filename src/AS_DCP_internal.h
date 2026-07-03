@@ -49,8 +49,8 @@ using namespace ASDCP::MXF;
 
 namespace ASDCP {
 
-// uncomment to remove MXFGCGenericEssenceMultipleMappings from your AS-02 files
-// #define ASDCP_GCMULTI_PATCH
+// Uncomment to remove MXFGCGenericEssenceMultipleMappings from your AS-02 files
+#define ASDCP_GCMULTI_PATCH
 
 
 #ifdef DEFAULT_MD_DECL

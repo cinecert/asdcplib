@@ -622,6 +622,14 @@ namespace ASDCP {
 	MDD_DCAudioChannel_Rtfs, // 584
 	MDD_DCAudioChannel_Ltrs, // 585
 	MDD_DCAudioChannel_Rtrs, // 586
+    MDD_IABChannelSubDescriptor, // 587
+    MDD_IABChannelSubDescriptor_IABBedMetaID, // 588
+    MDD_IABChannelSubDescriptor_IABChannelID, // 589
+    MDD_IABChannelSubDescriptor_IABAudioDescription, // 590
+    MDD_IABChannelSubDescriptor_IABAudioDescriptionText, // 591
+    MDD_IABEssenceDescriptor_IABMaxObjectCount, // 592
+    MDD_MCALabelSubDescriptor_MCAContent, // 593
+    MDD_MCALabelSubDescriptor_MCAUseClass, // 594
 	MDD_Max
     }; // enum MDD_t
 
