@@ -232,6 +232,7 @@ ASDCP::MXF::Partition::PacketList::DeleteMDObjectByID(const UUID& ObjectID)
        return RESULT_FAIL;
     }
 
+  m_List.remove((*mi).second);
   delete (*mi).second;
   m_Map.erase(mi);
   return RESULT_OK;
