@@ -1271,11 +1271,16 @@ Kumu::ReadFileIntoString(const std::string& filename, std::string& outString, ui
 	}
 
       if ( fsize == 0 )
+#ifdef KM_WSL
+	{
+	  fsize = (Kumu::fpos_t)max_size;
+	}
+#else
 	{
 	  outString = "";
 	  return RESULT_OK;
 	}
-
+#endif
       result = ReadBuf.Capacity((ui32_t)fsize);
     }
 
