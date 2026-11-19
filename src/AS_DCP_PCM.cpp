@@ -268,6 +268,9 @@ ASDCP::PCM::MXFReader::h__Reader::OpenRead(const std::string& filename)
 {
   Result_t result = OpenMXFRead(filename);
 
+  if ( ASDCP_FAILURE(result) )
+    return result;
+
   if( ASDCP_SUCCESS(result) )
     {
       InterchangeObject* Object = 0
