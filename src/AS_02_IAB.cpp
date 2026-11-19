@@ -33,7 +33,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <iostream>
 #include <iomanip>
 #include <stdexcept>
-#include "AS_02_internal.h"
 
 namespace Kumu {
   class RuntimeError : public std::runtime_error {
@@ -110,7 +109,10 @@ AS_02::IAB::MXFWriter::OpenWrite(
   const ASDCP::MXF::IABSoundfieldLabelSubDescriptor& sub,
   const std::vector<ASDCP::UL>& conformsToSpecs,
   const ASDCP::Rational& edit_rate,
-  const ASDCP::Rational& sample_rate) {
+  const ASDCP::Rational& sample_rate,
+  const bool& write_max_object_count,
+  const ui16_t& max_object_count,
+  const std::vector<ASDCP::MXF::IABChannelSubDescriptor>& chSubDescriptors) {
 
   /* are we already running */
 
@@ -149,6 +151,9 @@ AS_02::IAB::MXFWriter::OpenWrite(
     desc->ChannelCount = 0;
     desc->SoundEssenceCoding = this->m_Writer->m_Dict->ul(MDD_ImmersiveAudioCoding);
     desc->QuantizationBits = 24;
+    if (write_max_object_count) {
+      desc->IABMaxObjectCount = max_object_count;
+    }
 
     this->m_Writer->m_EssenceDescriptor = desc;
 
@@ -165,9 +170,17 @@ AS_02::IAB::MXFWriter::OpenWrite(
     this->m_Writer->m_EssenceSubDescriptorList.push_back(subdesc);
     this->m_Writer->m_EssenceDescriptor->SubDescriptors.push_back(subdesc->InstanceUID);
 
-    /* initialize the index write */
 
-    this->m_Writer->m_IndexWriter.SetEditRate(edit_rate);
+    /* copy and add the IAB channel subdescriptors */
+    for (const auto& chSub : chSubDescriptors) {
+      ASDCP::MXF::IABChannelSubDescriptor* iabChSubDesc = new ASDCP::MXF::IABChannelSubDescriptor(this->m_Writer->m_Dict);
+      iabChSubDesc->Copy(chSub);
+
+      GenRandomValue(iabChSubDesc->InstanceUID);
+
+      this->m_Writer->m_EssenceSubDescriptorList.push_back(iabChSubDesc);
+      this->m_Writer->m_EssenceDescriptor->SubDescriptors.push_back(iabChSubDesc->InstanceUID);
+    }
 
     /* Essence Element UL */
 
@@ -197,6 +210,12 @@ AS_02::IAB::MXFWriter::OpenWrite(
       edit_rate,
       &conformsToSpecs
     );
+
+    if(KM_SUCCESS(result))
+    {
+      this->m_Writer->m_IndexWriter.SetEditRate(edit_rate);
+      this->m_Writer->m_IndexWriter.SetPrimerLookup(&this->m_Writer->m_HeaderPart.m_Primer);
+    }
 
     if (result.Failure()) {
       throw Kumu::RuntimeError(result);

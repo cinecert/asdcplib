@@ -38,11 +38,14 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <AS_02.h>
 #include "AS_02_IAB.h"
 #include <Metadata.h>
+#include <sstream>
+#include <memory>
 
 using namespace ASDCP;
 
 const ui32_t FRAME_BUFFER_SIZE = 4 * Kumu::Megabyte;
 const ASDCP::Dictionary *g_dict = 0;
+
 
 //------------------------------------------------------------------------------------------
 //
@@ -119,6 +122,11 @@ Options:\n\
   -g <rfc-5646-code>\n\
                     - Create an MCA label having the given RFC 5646 language code\n\
   -r <n>/<d>        - Edit Rate of the output file.  24/1 is the default\n\
+  -m <count>        - maximum count of Object Definitions per IAFrame in the IAB \n\
+  -c <bedMetaId>,<channelId>,<audioDescription>[,<audioDescriptionText>]    - set of values for a single IAB channel subdescriptor, parameter can be used multiple time\n\
+  -C <mca-content>  - MCA Content value of the IAB Soundfield Label SubDescriptor (per SMPTE ST 377-41)\n\
+  -u <mca-use-class>\n\
+                    - MCA Use Class value of the IAB Soundfield Label SubDescriptor (per SMPTE ST 377-41)\n\
   -v                - Verbose, prints informative messages to stderr\n\
 \n\
   NOTES: o There is no option grouping, all options must be distinct arguments.\n\
@@ -126,6 +134,89 @@ Options:\n\
 }
 
 //
+struct IABChannelSubDescriptorParameters {
+  ui32_t iabBedMetaId;
+  ui32_t iabChannelId;
+  ui8_t iabAudioDescription;
+  std::shared_ptr<std::string> iabAudioDescriptionText; // Use a smart pointer
+    
+  IABChannelSubDescriptorParameters()
+    : iabBedMetaId(0), iabChannelId(0), iabAudioDescription(0), iabAudioDescriptionText(nullptr) {}
+};
+
+// Sanity check for IABChannelSubDescriptor parameters:
+// - ensures that no two descriptors have the same iabBedMetaId AND iabChannelId
+// - ensures that iabAudioDescriptionText is present if and only if the most
+//   significant bit (0x80) of iabAudioDescription is set (see SMPTE ST 2067-201
+//   Annex E.2.5 and SMPTE ST 2098-2 Subclause 10.3.13)
+bool validateIABChannelSubDescriptorParameters(const std::vector<IABChannelSubDescriptorParameters>& descriptors) {
+    for (size_t i = 0; i < descriptors.size(); ++i) {
+        const auto& current = descriptors[i];
+
+        // AudioDescriptionText is present if and only if the MSB of AudioDescription is set.
+        const bool text_present = current.iabAudioDescriptionText != nullptr;
+        const bool msb_set = (current.iabAudioDescription & 0x80) != 0;
+        if (text_present && !msb_set) {
+            fprintf(stderr, "Invalid parameter: AudioDescriptionText can only be provided when the most significant bit (0x80) of AudioDescription is set (value: %u).\n", current.iabAudioDescription);
+            return false;
+        }
+        if (msb_set && !text_present) {
+            fprintf(stderr, "Invalid parameter: AudioDescriptionText is required when the most significant bit (0x80) of AudioDescription is set (value: %u).\n", current.iabAudioDescription);
+            return false;
+        }
+
+        // Check for duplicate iabBedMetaId and iabChannelId
+        for (size_t j = i + 1; j < descriptors.size(); ++j) {
+            const auto& other = descriptors[j];
+            if (current.iabBedMetaId == other.iabBedMetaId &&
+                current.iabChannelId == other.iabChannelId) {
+                fprintf(stderr, "Invalid parameter: ChannelIds are required to be unique within a given BedMetaId (duplicate value: %d).\n", (current.iabChannelId));
+                return false;
+            }
+        }
+    }
+
+    return true;
+}
+
+bool parseIABChannelSubDescriptor(const std::string& descriptorStr, IABChannelSubDescriptorParameters& descriptor) {
+  // example inputs: "4096,9,1" or "4096,9,128,Dialog"
+  std::istringstream stream(descriptorStr);
+  std::string token;
+  std::vector<std::string> tokens;
+
+  while (std::getline(stream, token, ',')) {
+      tokens.push_back(token);
+  }
+
+  // Ensure the descriptor has at least 3 fields and at most 4 fields
+  if (tokens.size() < 3 || tokens.size() > 4) {
+      fprintf(stderr, "Invalid descriptor format: %s\n", descriptorStr.c_str());
+      return false;
+  }
+
+  try {
+    descriptor.iabBedMetaId = std::stoi(tokens[0]);
+    descriptor.iabChannelId = std::stoi(tokens[1]);
+
+    int audioDescription = std::stoi(tokens[2]);
+    if (audioDescription < 0 || audioDescription > 255) {
+      fprintf(stderr, "AudioDescription value is out of range for ui8_t: %d\n", audioDescription);
+      return false;
+    }
+    descriptor.iabAudioDescription = static_cast<ui8_t>(audioDescription);
+
+    if (tokens.size() == 4 && !tokens[3].empty()) {
+        descriptor.iabAudioDescriptionText = std::make_unique<std::string>(tokens[3]);
+    }
+  } catch (const std::exception& e) {
+      fprintf(stderr, "Error parsing descriptor: %s\n", e.what());
+      return false;
+  }
+
+  return true;
+}
+
 class CommandOptions
 {
   CommandOptions();
@@ -138,15 +229,21 @@ public:
   bool   help_flag;      // true if the help display option was selected
   Rational edit_rate;    // edit rate of JP2K sequence
   ui32_t fb_size;        // size of picture frame buffer
+  bool  max_object_count_set;  // indicates whether max_object_count was provided
+  ui32_t max_object_count;  // maximum count of Object Definitions per IAFrame in the IAB
+  std::vector<IABChannelSubDescriptorParameters> iabChannelSubDescriptors; // IABChannelSubDescriptor parameters
   byte_t asset_id_value[UUIDlen];// value of asset ID (when asset_id_flag is true)
   Kumu::PathList_t filenames;  // list of filenames to be processed
   std::string language;
+  std::string mca_content;    // MCA Content value for the IAB Soundfield Label SubDescriptor
+  std::string mca_use_class;  // MCA Use Class value for the IAB Soundfield Label SubDescriptor
   std::string out_file;
 
   CommandOptions(int argc, const char** argv) :
     error_flag(true), asset_id_flag(false),
     verbose_flag(false), version_flag(false), help_flag(false),
-    edit_rate(24,1), fb_size(FRAME_BUFFER_SIZE)
+    edit_rate(24,1), fb_size(FRAME_BUFFER_SIZE), max_object_count_set(false),
+    max_object_count(0)
   {
     for ( int i = 1; i < argc; i++ )
       {
@@ -193,6 +290,34 @@ public:
 		    return;
 		  }
 		
+		break;
+
+    case 'm':
+      TEST_EXTRA_ARG(i, 'm');
+      max_object_count_set = true;
+      max_object_count = atoi(argv[i]);
+      break;
+
+    case 'c':
+    {
+      TEST_EXTRA_ARG(i, 'c');
+      IABChannelSubDescriptorParameters descriptor;
+      if (!parseIABChannelSubDescriptor(argv[i], descriptor)) {
+          fprintf(stderr, "Error parsing IABChannelSubDescriptor: %s\n", argv[i]);
+          return;
+      }
+      iabChannelSubDescriptors.push_back(descriptor);
+      break;
+    }
+      
+	      case 'C':
+		TEST_EXTRA_ARG(i, 'C');
+		mca_content = argv[i];
+		break;
+
+	      case 'u':
+		TEST_EXTRA_ARG(i, 'u');
+		mca_use_class = argv[i];
 		break;
 
 	      case 'V': version_flag = true; break;
@@ -245,10 +370,42 @@ write_IAB_file(CommandOptions& Options)
   AS_02::IAB::MXFWriter Writer;
   DCData::FrameBuffer FrameBuffer(Options.fb_size);
   std::vector<ASDCP::UL> conforms_to_spec;
+  ui16_t max_object_count;
   conforms_to_spec.push_back(g_dict->ul(MDD_IMF_IABTrackFileLevel0));
   ASDCP::MXF::IABSoundfieldLabelSubDescriptor iab_subdescr(g_dict);
+
+  if (!Options.iabChannelSubDescriptors.empty()) {
+    // Validate the IABChannelSubDescriptor parameters
+    if (!validateIABChannelSubDescriptorParameters(Options.iabChannelSubDescriptors)) {
+      return RESULT_FAIL;
+    }
+  }
+
+  std::vector<ASDCP::MXF::IABChannelSubDescriptor> channelSubs;
+
+  for (const auto& param : Options.iabChannelSubDescriptors) {
+    ASDCP::MXF::IABChannelSubDescriptor channelSub(g_dict);
+
+    channelSub.IABBedMetaID = param.iabBedMetaId;
+    channelSub.IABChannelID = param.iabChannelId;
+    channelSub.IABAudioDescription = param.iabAudioDescription;
+    if (param.iabAudioDescriptionText) {
+        channelSub.IABAudioDescriptionText.set(ASDCP::MXF::UTF16String(param.iabAudioDescriptionText->c_str()));
+    }
+
+    channelSubs.push_back(channelSub);
+  }
+
   iab_subdescr.RFC5646SpokenLanguage = Options.language;
- 
+
+  // MCA Content and MCA Use Class (SMPTE ST 2067-201 5.10.3, per ST 377-41:2023)
+  if ( ! Options.mca_content.empty() ) {
+    iab_subdescr.MCAContent.set(ASDCP::MXF::UTF16String(Options.mca_content.c_str()));
+  }
+  if ( ! Options.mca_use_class.empty() ) {
+    iab_subdescr.MCAUseClass.set(ASDCP::MXF::UTF16String(Options.mca_use_class.c_str()));
+  }
+
   // set up essence parser
   assert(Options.filenames.size() == 1);
   Result_t result = Parser.OpenRead(Options.filenames.front());
@@ -269,10 +426,15 @@ write_IAB_file(CommandOptions& Options)
       if ( ASDCP_SUCCESS(result) )
 	{
 	  result = Writer.OpenWrite(Options.out_file,
-                                    Info,
-                                    iab_subdescr,
-				    conforms_to_spec,
-                                    Options.edit_rate);
+                                Info,
+                                iab_subdescr,
+                                conforms_to_spec,
+                                Options.edit_rate,
+                                ASDCP::SampleRate_48k,
+                                Options.max_object_count_set,
+                                Options.max_object_count,
+                                channelSubs
+                              );
 	}
     }
 
