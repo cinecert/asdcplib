@@ -279,7 +279,8 @@ public:
   ui32_t duration;       // number of frames to be processed
   bool   j2c_pedantic;   // passed to JP2K::SequenceParser::OpenRead
   bool   write_j2clayout; // true if a J2CLayout field should be written
-  bool use_cdci_descriptor; // 
+  bool use_cdci_descriptor; //
+  bool has_coding_equations; //
   Rational edit_rate;    // edit rate of JP2K sequence
   ui32_t fb_size;        // size of picture frame buffer
   byte_t key_value[KeyLen];  // value of given encryption key (when key_flag is true)
@@ -465,6 +466,13 @@ public:
 	use_cdci_descriptor = true;
 	break;
 
+      case '6':
+	transfer_characteristic = g_dict->ul(MDD_TransferCharacteristic_SMPTEST2084);
+	color_primaries = g_dict->ul(MDD_ColorPrimaries_P3D65);
+	use_cdci_descriptor = false;
+	has_coding_equations = false;
+	break;
+
       case '7':
 	coding_equations = g_dict->ul(MDD_CodingEquations_Rec2020);
 	transfer_characteristic = g_dict->ul(MDD_TransferCharacteristic_SMPTEST2084);
@@ -473,7 +481,7 @@ public:
 	break;
 
       default:
-	fprintf(stderr, "Unrecognized color system number, expecting one of 1-5 or 7.\n");
+	fprintf(stderr, "Unrecognized color system number, expecting one of 1-7.\n");
 	return false;
       }
     
@@ -518,7 +526,7 @@ public:
     error_flag(true), key_flag(false), key_id_flag(false), asset_id_flag(false),
     encrypt_header_flag(true), write_hmac(true), verbose_flag(false), fb_dump_size(0),
     no_write_flag(false), version_flag(false), help_flag(false),
-    duration(0xffffffff), j2c_pedantic(true), write_j2clayout(false), use_cdci_descriptor(false),
+    duration(0xffffffff), j2c_pedantic(true), write_j2clayout(false), use_cdci_descriptor(false), has_coding_equations(true),
     edit_rate(24,1), fb_size(FRAME_BUFFER_SIZE),
     show_ul_values_flag(false), index_strategy(AS_02::IS_FOLLOW), partition_space(60),
     mca_config(g_dict), rgba_MaxRef(1023), rgba_MinRef(0),
@@ -1120,7 +1128,8 @@ write_JP2K_file(CommandOptions& Options)
 
 	  if ( ASDCP_SUCCESS(result) )
 	    {
-	      tmp_dscr->CodingEquations = Options.coding_equations;
+	      if ( Options.has_coding_equations )
+		tmp_dscr->CodingEquations = Options.coding_equations;
 	      tmp_dscr->TransferCharacteristic = Options.transfer_characteristic;
 	      tmp_dscr->ColorPrimaries = Options.color_primaries;
 	      tmp_dscr->ScanningDirection = 0;
