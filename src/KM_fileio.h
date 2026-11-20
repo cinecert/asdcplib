@@ -36,8 +36,10 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <string>
 
 #ifdef KM_WIN32
-# include <io.h>
-# include "dirent_win.h"
+#include <io.h>
+#include <regex>
+#include "dirent_win.h"
+
 #else
 # include <dirent.h>
 # include <unistd.h>
@@ -214,11 +216,14 @@ namespace Kumu
     inline bool Match(const std::string&) const { return true; }
   };
 
-#ifndef KM_WIN32
   // matches pathnames using a regular expression
  class PathMatchRegex : public IPathMatch
   {
+#ifndef KM_WIN32
     regex_t m_regex;
+#else
+     std::regex m_regex;
+#endif
     PathMatchRegex();
     const PathMatchRegex& operator=(const PathMatchRegex&);
 
@@ -229,6 +234,7 @@ namespace Kumu
     bool Match(const std::string& s) const;
   };
 
+#ifndef KM_WIN32
   // matches pathnames using a Bourne shell glob expression
  class PathMatchGlob : public IPathMatch
   {
