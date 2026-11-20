@@ -34,6 +34,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <KM_util.h>
 #include <string>
+#include <cstdint>
 
 #ifdef KM_WIN32
 # include <io.h>
