@@ -474,8 +474,9 @@ namespace Kumu
       void SetComponents(const ui16_t& Year, const ui8_t&  Month, const ui8_t&  Day,
 			 const ui8_t&  Hour, const ui8_t&  Minute, const ui8_t&  Second);
 
-      // Write the timestamp value to the given buffer in the form 2004-05-01T13:20:00+00:00
-      // returns 0 if the buffer is smaller than DateTimeLen
+      // Write the timestamp value to the given buffer as a null terminated string
+      //    in the form 2004-05-01T13:20:00+00:00
+      // returns 0 if the buffer is smaller than DateTimeLen+1
       const char* EncodeString(char* str_buf, ui32_t buf_len) const;
 
       // decode and set value from string formatted by EncodeString
