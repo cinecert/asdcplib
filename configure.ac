@@ -49,6 +49,23 @@ AC_CONFIG_MACRO_DIR([m4])
 # Checks for programs.
 AC_CANONICAL_BUILD
 AC_CANONICAL_HOST
+
+# Checking for WSL
+AC_MSG_CHECKING([whether running under WSL])
+
+if grep -qi microsoft /proc/sys/kernel/osrelease 2>/dev/null; then
+    wsl_host=yes
+else
+    wsl_host=no
+fi
+
+AC_MSG_RESULT([$wsl_host])
+
+if test "$wsl_host" = yes; then
+    CPPFLAGS="$CPPFLAGS -DKM_WSL"
+fi
+#
+
 case $host_os in
        openbsd*) openbsd_host=true ;;
        *)        openbsd_host=false ;;
